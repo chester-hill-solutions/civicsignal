@@ -134,6 +134,13 @@ async function main(): Promise<void> {
   const jsonlPath = join(args.out, 'statutes.jsonl');
   writeFileSync(jsonlPath, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
   console.log(`wrote ${jsonlPath}`);
+
+  // The instrument titles, for citation parsing. Longest first, so that
+  // "Canada Labour Code" wins over a shorter title that is a substring of it.
+  const titles = [...new Set(rows.map((r) => r.act))].sort((a, b) => b.length - a.length || a.localeCompare(b));
+  const titlesPath = join(args.out, 'act-titles.json');
+  writeFileSync(titlesPath, JSON.stringify(titles));
+  console.log(`wrote ${titlesPath} — ${titles.length} instrument titles`);
 }
 
 await main();

@@ -9,6 +9,8 @@ import { createCivicSignalMcpHandler } from './mcp/server';
 import { corsHeaders, errorResponse, jsonResponse, newCorrelationId } from './http';
 import type { Env } from './types';
 import { parseScope, ScopeParseError } from './corpora/scope';
+import { loadActTitles } from './corpora/act-titles';
+import { parseCitation } from '@chester-hill-solutions/corpus';
 import type { CorpusContext, CorpusQuery } from './corpora/types';
 
 /**
@@ -103,7 +105,11 @@ async function handleApi(
   const query = parseQuery(url);
   let body: unknown;
   try {
-    body = await runQuery(url.pathname, query, env);
+    // A citation is a key, not a similarity. If the question names a section, it is
+    // resolved structurally and that provision leads the answer, rather than being
+    // ranked against 191,000 sections by a search index.
+    const citation = await resolveCitationFromTopic(query.topic, env);
+    body = await runQuery(url.pathname, query, env, citation);
   } catch (err: unknown) {
     if (err instanceof ScopeParseError) {
       return errorResponse('INVALID_ARGUMENT', err.message, env, origin, correlationId, 400);
@@ -121,15 +127,35 @@ async function handleApi(
   return jsonResponse(body, env, origin, correlationId);
 }
 
+/**
+ * Resolve a citation out of the question, if the question names one.
+ *
+ * Returns undefined when there is no citation, or when the section does not exist —
+ * a citation that names a section the instrument does not have is wrong, and the
+ * nearest section would be worse than no answer.
+ */
+async function resolveCitationFromTopic(
+  topic: string | undefined,
+  env: Env,
+): Promise<{ act: string; section: string } | undefined> {
+  if (!topic) return undefined;
+  const titles = await loadActTitles(env);
+  if (titles.length === 0) return undefined;
+  const match = parseCitation(topic, titles);
+  if (!match) return undefined;
+  return { act: match.citation.act, section: match.citation.section };
+}
+
 async function runQuery(
   pathname: string,
   query: CorpusQuery,
   env: Env,
+  citation?: { act: string; section: string },
 ): Promise<unknown> {
   const corpusContextValue = corpusContext(env);
 
   if (pathname === '/api/brief') {
-    const brief = await buildBrief(query as BriefRequest, corpusContextValue);
+    const brief = await buildBrief({ ...(query as BriefRequest), citation }, corpusContextValue);
     return brief;
   }
 
