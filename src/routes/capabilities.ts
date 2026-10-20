@@ -1,4 +1,5 @@
 import { CORPUS_POLICIES } from '../corpora/policies';
+import { ENCODER_CONTRACT, type EncoderContract } from '../encoder';
 import { corsHeaders } from '../http';
 import type { Env } from '../types';
 
@@ -11,6 +12,15 @@ import type { Env } from '../types';
  */
 
 export interface Capabilities {
+  /**
+   * The encoder contract.
+   *
+   * A client that embeds a query locally — in a browser, with the public
+   * Apache 2.0 model — has to be in the same vector space as the index. This is
+   * published so a client can *read* the contract rather than be told it, and so
+   * a mismatch is detectable instead of producing confident wrong answers.
+   */
+  encoder: EncoderContract;
   product: string;
   description: string;
   baseUrl: string;
@@ -67,6 +77,7 @@ export function buildCapabilities(env: Env, origin: string): Capabilities {
         'Free allowance resets each UTC calendar month and is shared across the workspace. ' +
         'Errors never count. Failed lookups become account credit.',
     },
+    encoder: ENCODER_CONTRACT,
     coverage: CORPUS_POLICIES.map((p) => ({
       corpusId: p.id,
       title: p.title,
