@@ -1,4 +1,4 @@
-import { defineRailway, github, postgres, project, service, volume } from 'railway/iac';
+import { defineRailway, github, postgres, project, service } from 'railway/iac';
 
 /**
  * The corpus plane.
@@ -14,7 +14,12 @@ import { defineRailway, github, postgres, project, service, volume } from 'railw
  *
  *   postgres  the corpus rows and their vectors, in one table, in one database
  *   encoder   EmbeddingGemma 2, served from the .litertlm artefact itself
- *   pipeline  the continuous ingest: pull the corpus, reconcile, embed, write
+ *   pipeline  the continuous ingest: fetch the corpus, reconcile, embed, write
+ *
+ * There is no volume. The pipeline does not clone the corpus: it streams the
+ * tree from the public repository over HTTPS and keeps only the commit SHA, so
+ * it needs no disk, no git binary and no volume that only one service can
+ * mount.
  *
  * ## Two secrets, and why they are shared
  *
@@ -50,15 +55,6 @@ export default defineRailway((ctx) => {
     },
   });
 
-  /**
-   * The corpus clone.
-   *
-   * A gigabyte, on a volume, so the pipeline pulls rather than re-clones. It is
-   * also what makes the pipeline cheap: the store's own `corpus_state` says which
-   * revision it is at, so only the instruments that changed are parsed.
-   */
-  const corpusClone = volume('corpus-clone', { sizeMB: 2048 });
-
   const pipeline = service('pipeline', {
     source: github('chester-hill-solutions/civicsignal', {
       rootDirectory: 'services/pipeline',
@@ -67,10 +63,6 @@ export default defineRailway((ctx) => {
       builder: 'DOCKERFILE',
       dockerfilePath: 'Dockerfile',
     },
-    // The key is the mount path inside the container; the value is the volume.
-    volumeMounts: {
-      '/corpus': corpusClone,
-    },
     env: {
       DATABASE_URL: database.env.DATABASE_URL,
       // The private domain, not the public one: the pipeline is inside the
@@ -78,7 +70,6 @@ export default defineRailway((ctx) => {
       ENCODER_DOMAIN: encoder.env.RAILWAY_PRIVATE_DOMAIN,
       ENCODER_PORT: '8080',
       ENCODER_TOKEN: ctx.shared.ENCODER_TOKEN,
-      CORPUS_DIR: '/corpus',
       // The corpus repo changes every three to eight days. Six hours is often
       // enough and cheap; the pipeline does nothing when the revision has not
       // moved.

@@ -79,10 +79,26 @@ async function ensureCorpus(fetchIt: boolean): Promise<void> {
  */
 const CORPUS_LANG_DIR: Record<'en' | 'fr', string> = { en: 'eng', fr: 'fra' };
 
+/** The corpus's directory names, by language. */
+const CORPUS_DIRS: Record<'en' | 'fr', [string, 'acts' | 'regulations'][]> = {
+  en: [
+    ['acts', 'acts'],
+    ['regulations', 'regulations'],
+  ],
+  fr: [
+    ['lois', 'acts'],
+    ['reglements', 'regulations'],
+  ],
+};
+
 function readStatuteFiles(lang: 'en' | 'fr'): { kind: 'acts' | 'regulations'; file: string }[] {
   const out: { kind: 'acts' | 'regulations'; file: string }[] = [];
-  for (const kind of ['acts', 'regulations'] as const) {
-    const dir = join(CORPUS_DIR, CORPUS_LANG_DIR[lang], kind);
+  // The directory names differ by language, and getting them wrong is silent:
+  // the French tree is `fra/lois` and `fra/reglements`, not `fra/acts` and
+  // `fra/regulations`. Looking in the wrong place finds nothing, and the ingest
+  // reports a corpus with no French in it and no error.
+  for (const [dirName, kind] of CORPUS_DIRS[lang]) {
+    const dir = join(CORPUS_DIR, CORPUS_LANG_DIR[lang], dirName);
     if (!existsSync(dir)) continue;
     for (const name of readdirSync(dir)) {
       if (!name.endsWith('.xml')) continue;

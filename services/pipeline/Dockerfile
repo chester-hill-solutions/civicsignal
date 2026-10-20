@@ -2,18 +2,18 @@
 #
 # A long-running service that keeps the corpus current.
 #
-# It needs things a Cloudflare Worker cannot have: a filesystem, a git binary,
-# and a process that stays up. The corpus repo is a gigabyte with a hundred and
-# thirty megabytes of history, and it has to be cloned and pulled — so it lives
-# on a Railway volume, not in memory.
+# It needs one thing a Cloudflare Worker cannot have: a process that stays up.
 #
-# The volume is also what makes the pipeline cheap: the clone is pulled, not
-# re-cloned, and the store's own `corpus_state` says which revision it is at, so
-# the pipeline only parses the instruments that changed.
+# It does *not* need a filesystem, a git binary or a volume. The corpus is a
+# public git repository, and the pipeline needs two things from it — the current
+# revision and the content of the instruments at that revision — and both come
+# over HTTPS. The tree is streamed and parsed one instrument at a time, so the
+# pipeline's memory is the size of the largest instrument rather than the size of
+# the corpus, and the only state is a commit SHA that lives in the database.
 
 FROM oven/bun:1.3-alpine
 
-RUN apk add --no-cache git ca-certificates
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
@@ -25,10 +25,5 @@ COPY src ./src
 COPY scripts ./scripts
 COPY services ./services
 COPY vendor ./vendor
-
-# The corpus clone. A Railway volume is mounted here.
-ENV CORPUS_DIR=/corpus
-
-RUN mkdir -p /corpus
 
 CMD ["bun", "scripts/pipeline-run.ts", "--watch"]
