@@ -166,19 +166,37 @@ one thing to test before committing.
 (296 MB Q8_0). It fits in a `basic` container with room to spare. Throughput was not
 benchmarked and the cost case rests on it — measure before committing.
 
-### No model can run inside a Worker or a Durable Object
+### The stock builds do not fit a Worker; the LiteRT build nearly does
 
 | Model | fp32 | fp16 | int8 | q4 |
 |---|---|---|---|---|
 | `embeddinggemma-2` ONNX (text encoder) | 1034 MB | 517 MB | 299 MB | 166 MB |
 | `embeddinggemma-300m` ONNX | 1177 MB | 589 MB | 295 MB | 188 MB |
 | `embeddinggemma-2` GGUF Q8_0 | 296 MB (+529 MB mmproj) | | | |
+| **`embeddinggemma-2` LiteRT, text-only** | | | | **157 MB** |
 
-Every candidate exceeds 128 MB even at q4, and Workers have **no WebGPU** — the
-runtime API does not exist. The largest models people actually run in a Worker are
-the BERT-tiny/MiniLM/distilbert class, 15–70 MB at int8. A Durable Object is a
-Worker with the same ceiling, so a DO is a coordinator and a cache, not a place to
-run inference.
+Every stock build exceeds 128 MB even at q4, and Workers have **no WebGPU** — the
+runtime API does not exist, only WASM with SIMD and **no threading**. The largest
+models people actually run in a Worker are the BERT-tiny/MiniLM/distilbert class,
+15–70 MB at int8. A Durable Object is a Worker with the same ceiling, so a DO is a
+coordinator and a cache, not a place to run inference.
+
+**But the artefact that matters is not an ONNX blob.** Google ships EmbeddingGemma 2
+through LiteRT — its own edge runtime, with CPU, GPU, NPU and **WASM** backends —
+as a single portable file with Quantization-Aware Training applied:
+
+```
+litert-community/embeddinggemma-2-text-270m-litert-lm
+  embeddinggemma-2-text-270m.litertlm     157.0 MB   ← text-only
+  + per-vendor variants                   158–397 MB
+```
+
+Google reports **~191 MB active RAM for the text-only weights**, and the model runs
+in a **browser today** — the LiteRT-LM web demo of embedding search is live. So
+"light enough for WASM" is a shipping fact, not a claim.
+
+At 157 MB it is still about 30 MB over a Worker's default ceiling, which is a
+limit-increase request away and irrelevant in a Container.
 
 
 ## Where EmbeddingGemma 2 can run
@@ -325,7 +343,67 @@ The set is 36 questions. Every gold answer is an Act and a section, both checked
 against the corpus before anything is scored, so a mis-specified question is reported
 rather than quietly counted as a miss.
 
-## Where the vector arm should run
+## Bring your own vector
+
+The LiteRT bundle runs in a browser. That means **the client can embed the query,
+or embed a document, and send a vector instead of the text.** It is the most
+consequential thing in this document, and it is a product decision rather than an
+infrastructure one.
+
+**The API becomes a matching service over a curated index.** Two surfaces fall out
+of it:
+
+- **A query that never reaches the server.** `POST /v1/match {vector, corpus}`.
+  For a civic product where the question might be a voter's address, a health
+  question, or a target's details, the server never sees what was asked. That is a
+  purchasing reason, not a footnote — a campaign, a legal clinic, a union or an
+  advocate has a genuine need not to disclose what it is researching.
+- **Instant comparison of an uploaded document.** The browser chunks and embeds a
+  policy brief, a contract, a case file or a contact list, and the API returns the
+  provisions, debates and news that engage with each chunk. The document never
+  leaves the machine.
+
+**And here is the part that changes the moat.** The encoder is Apache 2.0 and
+ungated, and the corpus is Open Government Licence. So **anyone can compute the
+corpus vectors themselves.** The vectors are not the product.
+
+What the product is:
+
+- which text is **in force** rather than repealed
+- the **exact citation URL** for every provision
+- the **French and English** pairing, section by section
+- the **cross-corpus join** — statute, debate, news, riding, all keyed to each other
+- the **policy regime** — what may lawfully be emitted from each corpus
+- **freshness and versioning**, and the ability to reindex when the model changes
+
+That is a maintained, cited, policy-aware index of Canadian civic text with an open
+encoder bolted on. The encoder is commoditised; the index is not.
+
+**Three constraints, honestly.**
+
+1. **157 MB is a download.** Fine for an installed desktop tool, a browser
+   extension, or the API's own portal, which loads it once and caches it. Not fine
+   for a public web form on a slow connection. So client-side embedding is a
+   power-user path, not the default — the server still has to embed for the common
+   case.
+2. **The prompt contract is load-bearing.** Queries embed with `SearchQuery`,
+   documents with `Document`. Get it wrong and retrieval degrades silently, with no
+   error. The API therefore has to publish the contract precisely and ship a client
+   SDK that honours it — chunking, prompts, dimension, normalisation. A two-kilobyte
+   SDK that removes four ways to get it wrong is a real reason to use the API
+   rather than compute your own vectors.
+3. **Quantisation drift.** The client runs a QAT-quantised build; the server may run
+   something else. Small differences, but they can flip near-ties. **The fix is a
+   decision, not a bug: embed the corpus with the exact artefact you ship to
+   clients**, so client-side and server-side vectors are in one space.
+
+**One segmentation falls out of this.** Client-side embedding helps the *legal
+research* surface — a law-firm tool, a compliance checker, a contract-review
+integration — far more than it helps the brief. The brief's answer is time-sensitive
+(news, sentiment, bills in flight) and a topic string is not really a vector
+query. The statute and debate corpora are where a question is a question, and those
+are the queries a sensitive organisation would not want to send.
+
 
 Ranked, for a Canadian-civic corpus on a Cloudflare-centric stack.
 
