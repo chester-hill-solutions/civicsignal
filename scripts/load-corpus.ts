@@ -73,7 +73,7 @@ interface Args {
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { lang: 'both', dryRun: false, limit: undefined };
+  const args: Args = { lang: 'both', dryRun: false, limit: undefined, skip: 0 };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--lang') {
@@ -117,6 +117,19 @@ async function main(): Promise<void> {
   for (const lang of langs) {
     let rows = rowsFor(lang);
     if (args.limit) rows = rows.slice(0, args.limit);
+
+    // The checkpoint is the last durable record of how far the job got. The
+    // rows are in a fixed order, so "how far" is a number, and the number is
+    // written after every few hundred rows.
+    const checkpoint = join(ROOT, 'dist', `.load-checkpoint-${lang}`);
+    if (args.skip === 0 && existsSync(checkpoint)) {
+      const saved = Number(readFileSync(checkpoint, 'utf8').trim());
+      if (Number.isFinite(saved) && saved > 0) {
+        console.log(`  resuming: ${saved.toLocaleString()} row(s) are already loaded`);
+        args.skip = saved;
+      }
+    }
+    if (args.skip) rows = rows.slice(args.skip);
     const characters = rows.reduce((sum, r) => sum + String(r['text'] ?? '').length, 0);
     console.log(
       `load-corpus: ${rows.length.toLocaleString()} ${lang} row(s), ` +

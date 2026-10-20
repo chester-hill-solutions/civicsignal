@@ -111,8 +111,12 @@ export default defineRailway((ctx) => {
       // The image's own credentials, so the database starts with a password
       // that is written down somewhere other than a Railway variable nobody has
       // read.
-      POSTGRES_USER: 'civicsignal',
-      POSTGRES_DB: 'civicsignal',
+      // The credentials the volume was initialised with. A Postgres volume
+      // keeps its own password — `POSTGRES_PASSWORD` is only read when the
+      // data directory is created — so these have to match what is already
+      // there, and the shared password is the shared password.
+      POSTGRES_USER: 'postgres',
+      POSTGRES_DB: 'railway',
       POSTGRES_PASSWORD: ctx.shared.CORPUS_DATABASE_PASSWORD,
       // **And the connection variables, declared explicitly.**
       //
@@ -123,8 +127,8 @@ export default defineRailway((ctx) => {
       PGHOST: 'corpus.railway.internal',
       PGPORT: '5432',
       PGDATA: '/var/lib/postgresql/data/pgdata',
-      PGDATABASE: 'civicsignal',
-      PGUSER: 'civicsignal',
+      PGDATABASE: 'railway',
+      PGUSER: 'postgres',
       PGPASSWORD: ctx.shared.CORPUS_DATABASE_PASSWORD,
       DATABASE_URL: ctx.shared.CORPUS_DATABASE_URL,
     },
