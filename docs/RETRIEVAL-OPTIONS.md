@@ -445,3 +445,109 @@ corpus.
 with `bge-m3`; the evaluation compares the arms; and the three models worth
 comparing — `embeddinggemma-300m`, `qwen3-embedding-0.6b`, `bge-m3` — cost
 $0.36 each for the whole corpus. That is an afternoon.
+
+## The evaluation result
+
+Run against the corrected corpus — 19,021 provisions (every provision of the six
+Acts the labelled set touches, plus 15,000 sampled distractors), 36 questions, 18
+phrased in the statute's own words and 18 in ordinary language.
+
+```
+  keyword           hits  21/36  R@1 22.2%  R@5 47.2%  R@10 50.0%  MRR 0.310
+    exact                   18/18   R@5 83.3%  MRR 0.586
+    concept                  3/18   R@5 11.1%  MRR 0.034
+
+  keyword-reranked  hits  21/36  R@1 47.2%  R@5 55.6%  R@10 55.6%  MRR 0.508
+    exact                   18/18   R@5 100.0% MRR 0.903
+    concept                  3/18   R@5 11.1%  MRR 0.113
+
+  vector            hits  32/36  R@1 55.6%  R@5 66.7%  R@10 69.4%  MRR 0.617
+    exact                   18/18   R@5 100.0% MRR 0.903
+    concept                 14/18   R@5 33.3%  MRR 0.331
+
+  vector-reranked   hits  32/36  R@1 47.2%  R@5 61.1%  R@10 75.0%  MRR 0.560
+    exact                   18/18   R@5 100.0% MRR 0.903
+    concept                 14/18   R@5 22.2%  MRR 0.217
+
+  hybrid (equal)    hits  30/36  R@1 38.9%  R@5 63.9%  R@10 66.7%  MRR 0.501
+```
+
+### What it says
+
+**The vector arm earns its place.** 14 of 18 concept questions against 3 for the
+keyword baseline, and MRR 0.617 against 0.310. The keyword arm cannot find a
+provision described in ordinary language, and no amount of tuning changes that: it
+found "Motor Vehicle Safety Regulations s.6" for *"I had a couple of drinks at
+dinner and then drove my car home."*
+
+**Fusing the two arms is worse than using the vector arm alone.** Equal-weight
+reciprocal rank fusion gets 12/18 concept questions and MRR 0.501 — it drags the
+strong arm down to meet the weak one. A sweep over the fusion constant and the
+weight finds settings that match pure vector (best MRR 0.619 against 0.617) and
+none that beat it. The architecture is **vector-first**, not a fusion.
+
+**The reranker earns nothing on top of the vector arm.** Vector-then-rerank scores
+MRR 0.560 against vector's 0.617 — reranking *lowers* MRR and R@1 while nudging
+R@10 from 69.4% to 75.0%. It is a precision tool with a hard ceiling: it can only
+reorder what the first stage returned, and the vector stage already returns the
+answer in the top five for every exact question. Its real value is on the
+*keyword* path, where it lifts exact questions from R@5 83.3% to 100% — but the
+vector arm reaches 100% on its own.
+
+**So: build the vector index, drop the reranker, do not fuse.** And the citation
+path stays structural — resolved, not ranked.
+
+### The four questions nobody found
+
+Four concept questions were missed by every arm:
+
+| Question | Gold |
+|---|---|
+| A department gave my name to a private company without asking | Privacy Act s.8 — Disclosure of personal information |
+| Two grocery stores met and agreed not to undercut each other | Competition Act s.45 — Conspiracies between competitors |
+| I moved to Ottawa last year — which riding can I vote in? | Canada Elections Act s.8 — Place of ordinary residence |
+| Who decides who runs the polls in my district? | Canada Elections Act s.24 — Appointment of returning officers |
+
+Three of them are answered by a provision whose text is a **heading and a
+cross-reference rather than a rule** — s.8 of the Privacy Act says the department
+"shall disclose" and then lists the exceptions; the reasoning is in the shape of
+the section, not in a phrase that matches the question. That is a real limit of
+embedding-based retrieval over legal text, and it argues for the citation path and
+for the reranker as a *second stage over the vector candidates* on exactly these
+questions, not as a general arm.
+
+## Where the encoder runs
+
+The verdict makes the encoder a requirement, and the requirement picks the host.
+
+EmbeddingGemma 2 — the 270M text checkpoint, Apache 2.0, ungated — **cannot be
+served by Workers AI**. What Cloudflare hosts is `embeddinggemma-300m`, a different
+checkpoint, and its schema accepts no task prefix, so it cannot be prompted the way
+the model was trained.
+
+The artefact that *is* the model is a single portable file:
+
+```
+litert-community/embeddinggemma-2-text-270m-litert-lm
+  └── embeddinggemma-2-text-270m.litertlm      157.0 MB
+```
+
+`litert-lm` (PyPI, Apache 2.0) serves it behind an OpenAI-compatible
+`POST /v1/embeddings`. **The same file runs in the browser**, through the LiteRT-LM
+WASM build, today.
+
+That is the whole argument for hosting the encoder yourself: the corpus can be
+embedded with the *exact artefact the client embeds with*, so the two are in the
+same space by construction rather than by approximation. A server running fp32
+PyTorch weights and a browser running the QAT bundle would produce vectors that
+differ by quantisation drift, and drift flips near-ties — which is precisely the
+case where a citation either resolves or does not.
+
+| | |
+|---|---|
+| Model | `embeddinggemma-2-text-270m.litertlm` |
+| Licence | Apache 2.0, ungated |
+| Dimensions | 768, with Matryoshka truncation available |
+| Task prefixes | `SearchQuery:` / `SearchDocument:` — supported, because the bundle carries its own preprocessor |
+| Host | Railway, `litert-lm serve` |
+| Client | the browser, same file, LiteRT-LM WASM |
