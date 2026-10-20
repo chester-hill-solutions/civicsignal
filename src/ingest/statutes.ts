@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import { normalizeForSearch } from '../text';
 
 /**
  * Parsing the Justice Laws XML corpus into citable units.
@@ -687,7 +688,33 @@ function chunkSchedule(unit: ParsedUnit, limit: number): string[] {
  */
 export function statusOf(text: string): ProvisionStatus {
   const trimmed = text.trim();
-  if (/^\[Repeal(ed)?\b/i.test(trimmed)) return 'repealed';
+  // A repeal marker.
+  //
+  // The two official languages use different words for the same thing, and the
+  // French ones are exactly the ones a French-only implementation would miss.
+  // The counterparts:
+  //
+  //   English    French                        Meaning
+  //   --------   ---------------------------  --------------------------
+  //   Repealed   Abrogé, Abrogée, Abrogés     the provision was repealed
+  //   Repeal     Abrogation                   the provision is a repeal
+  //   Repeals    Abrogations                  not a repeal of *this* one
+  //
+  // Missing the French ones does not fail loudly. It labels nineteen thousand
+  // repealed provisions as placeholders, and — because `in_force` is derived
+  // from this same call — leaves them with `in_force = 1`, so the corpus
+  // reports repealed law as live law and a citation to it answers with the
+  // wrong thing. The English corpus has 19,011 repealed provisions; the French
+  // has 19,097 under the same rule, which is the number it should have had.
+  //
+  // The boundary is written as a lookahead rather than `\b` because **JavaScript
+  // does not consider "é" a word character**. A `\b` after the French marker
+  // asks for a transition between two word characters, and "é" is not one, so
+  // the boundary is never there and every French repeal reads as a placeholder.
+  // The lookahead says what it means: not followed by another ASCII letter.
+  if (/^\[(?:Repeal(?:ed)?|Abrog[ée]e?s?|Abrogation)(?![A-Za-z0-9_])/i.test(trimmed)) {
+    return 'repealed';
+  }
   if (/^\[[^\]]{0,40}\]$/.test(trimmed)) return 'placeholder';
   return 'in-force';
 }
@@ -706,8 +733,11 @@ function row(input: {
   language: 'en' | 'fr';
   extraText: string | null;
 }): StatuteSectionRow {
-  const searchText = `${input.act} ${input.section} ${input.extraText ?? ''} ${input.heading ?? ''} ${input.text}`
-    .toLowerCase();
+  // The accents come off, so that "reglement" finds "règlement". The query side
+  // folds the same way — see `normalizeForSearch`.
+  const searchText = normalizeForSearch(
+    `${input.act} ${input.section} ${input.extraText ?? ''} ${input.heading ?? ''} ${input.text}`,
+  );
   return {
     id: input.id,
     corpus_id: 'statutes-canada',

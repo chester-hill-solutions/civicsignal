@@ -2,6 +2,8 @@ import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { buildBrief, type BriefRequest } from '../routes/brief';
 import { CORPUSES_BY_ID } from '../corpora/registry';
+import { languageFor } from '../language';
+import { citeProvision } from './cite';
 import { emitCorpusItem } from "@chester-hill-solutions/corpus";
 import { policyFor } from '../corpora/policies';
 import type { CorpusContext, Scope } from '../corpora/types';
@@ -45,7 +47,9 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
           'Situational awareness for Canada. Ask about any topic and you get what is in the news, how tone in coverage is moving, ' +
           'which statutes are in force, what is proposed, and what Parliament has said — each item cited to its official source. ' +
           'Debates are quoted as short excerpts with citations, never republished in full. ' +
-          'News is headline and link only. Statutes are reproduced under the Open Government Licence - Canada.',
+          'News is headline and link only. Statutes are reproduced under the Open Government Licence - Canada. ' +
+          'When a question names a provision, use cite_provision rather than a topic search: a citation is a key, not a similarity, ' +
+          'and a topic search will not reliably find it.',
       },
     );
 
@@ -62,6 +66,14 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
           keywords: z.array(z.string().min(1).max(80)).max(8).optional().describe('Additional terms that must also match.'),
           jurisdiction: z.string().min(2).max(40).optional().describe('Province or territory code, e.g. "ON", "BC", "QC".'),
           riding: z.string().min(2).max(40).optional().describe('Federal or provincial riding code.'),
+          language: z
+            .enum(['en', 'fr'])
+            .optional()
+            .describe(
+              'The language of the statutes wanted. Canada\'s statutes have equal legal force in both official ' +
+                'languages, and the two versions are separate documents, so this chooses which one you are asking about. ' +
+                'Inferred from the question when not given.',
+            ),
           scope_type: z
             .enum(['topic', 'riding', 'municipality', 'jurisdiction', 'region'])
             .optional()
@@ -88,6 +100,7 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
           keywords: args.keywords,
           jurisdiction: args.jurisdiction,
           riding: args.riding,
+          language: args.language,
           since: args.since,
           until: args.until,
           limit: args.limit,
@@ -116,6 +129,13 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
           topic: z.string().min(1).max(200).describe('Topic or keyword to search for.'),
           keywords: z.array(z.string().min(1).max(80)).max(8).optional().describe('Additional terms that must also match.'),
           jurisdiction: z.string().min(2).max(40).optional().describe('Province or territory code.'),
+          language: z
+            .enum(['en', 'fr'])
+            .optional()
+            .describe(
+              'The language of the statutes wanted, "en" or "fr". The two official versions are separate documents, ' +
+                'so this chooses which one you are asking about. Inferred from the question when not given.',
+            ),
           limit: z.number().int().min(1).max(50).optional().describe('Maximum sections to return (default 25).'),
         }),
         outputSchema: z.object({
@@ -132,6 +152,7 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
             topic: args.topic,
             keywords: args.keywords,
             jurisdiction: args.jurisdiction,
+            language: args.language ?? languageFor(undefined, args.topic, args.keywords?.join(' ')),
             limit: args.limit,
           },
           options.ctx,
@@ -189,6 +210,60 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
             result: { items, attribution: policy?.attribution ?? '' },
           },
           ...text({ items, attribution: policy?.attribution ?? '' }),
+        };
+      },
+    );
+
+    /**
+     * A citation, resolved exactly.
+     *
+     * A citation is a key, not a similarity. "Section 210 of the Canada Labour
+     * Code" names one provision, and a text search over the same Act puts the
+     * right answer at rank five — because a bare section number has almost no
+     * IDF across a corpus this size. So this is an exact lookup, and it says
+     * whether the provision is in force.
+     *
+     * It answers the repealed case too. The useful answer to "what does
+     * section 9 say" is sometimes "it was repealed in 2010", and a corpus that
+     * cannot say so has thrown the answer away.
+     *
+     * The instrument title is the instrument's own title in the language asked
+     * for, so a French citation names a French Act.
+     */
+    server.registerTool(
+      'cite_provision',
+      {
+        title: 'Resolve a citation to the law',
+        description:
+          'Resolve one provision exactly, by the instrument it belongs to and its own label — ' +
+          '"section 210 of the Canada Labour Code", "article 210 du Code du travail". ' +
+          'This is an exact lookup, not a search: it returns the provision itself and says whether it ' +
+          'is in force, or that it was repealed and when. ' +
+          'Use this whenever the question names a provision; a topic search will not find it reliably.',
+        inputSchema: z.object({
+          act: z.string().min(2).max(200).describe('The instrument title, as it appears in the corpus.'),
+          section: z.string().min(1).max(60).describe('The provision label, e.g. "210", "1.1", "Schedule 1".'),
+          language: z
+            .enum(['en', 'fr'])
+            .optional()
+            .describe(
+              'The language of the provision, "en" or "fr". The two official versions are separate ' +
+                'provisions with separate identifiers, so this chooses which one you mean. ' +
+                'Inferred from the instrument title when not given.',
+            ),
+          limit: z.number().int().min(1).max(20).optional().describe('Maximum rows to return (default 10).'),
+        }),
+        outputSchema: z.object({
+          summary: z.string(),
+          result: z.record(z.string(), z.unknown()),
+        }),
+        annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      },
+      async (args) => {
+        const result = await citeProvision(args, options.ctx);
+        return {
+          structuredContent: { summary: result.summary, result: { items: result.items, language: result.language } },
+          ...text({ items: result.items, language: result.language }),
         };
       },
     );

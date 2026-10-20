@@ -3,6 +3,7 @@ import { POLICIES_BY_ID } from '../corpora/policies';
 
 import { gdeltCorpus, newsCorpus, statutesCorpus } from '../corpora/adapters';
 import { BRIEF_SECTIONS, CORPUSES } from '../corpora/registry';
+import { languageFor } from '../language';
 import type { Corpus, CorpusContext, CorpusQuery, Scope } from '../corpora/types';
 
 export function policyMap(): Map<string, CorpusPolicy> {
@@ -121,11 +122,27 @@ export async function buildBrief(
   const scopedJurisdiction = request.jurisdiction ?? jurisdictionOf(scope);
   const scopedRiding = request.riding ?? ridingOf(scope);
 
+  // The language, the same way: the caller's framing of the question decides,
+  // and an explicit `language` on the request still wins, because a caller who
+  // set it meant it.
+  //
+  // It matters more than the geography, because the corpus holds both official
+  // languages and the two versions of a provision are different rows. A French
+  // question asked against the English rows is not a translation gap — it is
+  // the wrong rows, and the answer is wrong in a way that is hard to see.
+  const scopedLanguage = languageFor(
+    request.language,
+    request.citation?.act,
+    request.topic,
+    request.keywords?.join(' '),
+  );
+
   const query: CorpusQuery = {
     topic: request.topic,
     keywords: request.keywords,
     jurisdiction: scopedJurisdiction,
     riding: scopedRiding,
+    language: scopedLanguage,
     since: request.since,
     until: request.until,
     limit: request.limit,

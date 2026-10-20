@@ -129,6 +129,7 @@ export function buildCapabilities(env: Env, origin: string): Capabilities {
       tools: [
         { name: 'brief_topic', description: 'One call: everything known about a topic in Canada.' },
         { name: 'statute_lookup', description: 'Statutes and regulations in force.' },
+        { name: 'cite_provision', description: 'Resolve one provision exactly, and say whether it is in force.' },
         { name: 'debate_citations', description: 'Cited passages from the House of Commons.' },
       ],
     },
@@ -184,8 +185,11 @@ French and English source material, refreshed continuously.
 
 ## MCP
 
-Add \`${baseUrl}/mcp\` to your MCP client. Three tools: \`brief_topic\`, \`statute_lookup\`,
-\`debate_citations\`.
+Add \`${baseUrl}/mcp\` to your MCP client. Four tools: \`brief_topic\`, \`statute_lookup\`,
+\`cite_provision\`, \`debate_citations\`.
+
+When a question names a provision, use \`cite_provision\`. A citation is a key, not a
+similarity, and a topic search will not reliably find it.
 
 ## Reproduction
 

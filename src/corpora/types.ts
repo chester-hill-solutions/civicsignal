@@ -3,6 +3,7 @@ import type {
   CorpusContext,
   CorpusQuery as BaseCorpusQuery,
 } from "@chester-hill-solutions/corpus";
+import { normalizeForSearch } from '../text';
 
 export type { Corpus, CorpusContext };
 
@@ -45,7 +46,9 @@ export function likePatterns(query: CorpusQuery): string[] {
   const terms = [query.topic, ...(query.keywords ?? [])].filter(
     (t): t is string => typeof t === "string" && t.trim().length > 0,
   );
-  return terms.map((t) => `%${escapeLike(t.trim().toLowerCase())}%`);
+  // Folded the same way the corpus's `search_text` is folded, so that an
+  // unaccented query finds an accented provision. See `normalizeForSearch`.
+  return terms.map((t) => `%${escapeLike(normalizeForSearch(t.trim()))}%`);
 }
 
 export function escapeLike(value: string): string {

@@ -152,3 +152,84 @@ describe('the citation path', () => {
     expect(calls).toHaveLength(0);
   });
 });
+
+/**
+ * The language lens.
+ *
+ * The corpus holds Canada's statutes in both official languages, and the two
+ * versions of a provision are **different rows with different identifiers**.
+ * So the language is not a presentation detail — it decides which rows are the
+ * answer.
+ *
+ * Without the filter, one provision is two answers and the caller cannot say
+ * which one they meant. And an English question would have its top k filled
+ * with French rows, because the French version of a provision is about as
+ * similar to an English question as the English version is — and there are two
+ * of them competing.
+ */
+describe('the language lens', () => {
+  const FRENCH_PROVISION = {
+    ...PROVISION,
+    id: 'acts-fr-c-34-36',
+    act: 'Loi sur la concurrence',
+    citation: 'C-34',
+    section: '36',
+    heading: 'Recouvrement des dommages-intérêts',
+    text: "(1) Toute personne qui a subi un préjudice par suite d'un comportement contraire…",
+    source_url: 'https://laws-lois.justice.gc.ca/fr/lois/C-34/section-36.html',
+    language: 'fr',
+  };
+
+  it('filters the citation path on the language', async () => {
+    const { db, calls } = fakeDb([PROVISION]);
+    await statutesCorpus.retrieve(
+      { act: 'Competition Act', section: '36', language: 'fr' },
+      ctx(db),
+    );
+    expect(calls[0]!.sql).toContain('language = ?');
+    expect(calls[0]!.binds).toContain('fr');
+  });
+
+  it('filters the text path on the language', async () => {
+    const { db, calls } = fakeDb([PROVISION]);
+    await statutesCorpus.retrieve({ topic: 'housing', language: 'fr' }, ctx(db));
+    expect(calls[0]!.sql).toContain('language = ?');
+    expect(calls[0]!.binds).toContain('fr');
+  });
+
+  it('does not filter when no language was asked for', async () => {
+    const { db, calls } = fakeDb([PROVISION]);
+    await statutesCorpus.retrieve({ act: 'Competition Act', section: '36' }, ctx(db));
+    expect(calls[0]!.sql).not.toContain('language = ?');
+    // The citation and the limit, and nothing else.
+    expect(calls[0]!.binds.slice(0, 2)).toEqual(['Competition Act', '36']);
+    expect(calls[0]!.binds).not.toContain('fr');
+    expect(calls[0]!.binds).not.toContain('en');
+  });
+
+  it('says which language each result is in', async () => {
+    const { db } = fakeDb([FRENCH_PROVISION]);
+    const items = await statutesCorpus.retrieve(
+      { act: 'Loi sur la concurrence', section: '36', language: 'fr' },
+      ctx(db),
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0]!.language).toBe('fr');
+    expect(items[0]!.id).toBe('acts-fr-c-34-36');
+  });
+
+  /**
+   * The caller may ask for the language in a form the corpus does not use.
+   * `fr-CA` is the same language, and a filter that did not recognise it would
+   * silently return nothing — which reads as "the corpus has no such
+   * provision" rather than "the filter did not match".
+   */
+  it('accepts a full language tag', async () => {
+    const { db, calls } = fakeDb([PROVISION]);
+    await statutesCorpus.retrieve(
+      { act: 'Competition Act', section: '36', language: 'fr-CA' },
+      ctx(db),
+    );
+    expect(calls[0]!.binds).toContain('fr-ca');
+  });
+});

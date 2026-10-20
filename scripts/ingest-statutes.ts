@@ -143,18 +143,27 @@ async function main(): Promise<void> {
   }
 
   mkdirSync(args.out, { recursive: true });
-  const sqlPath = join(args.out, 'statutes.sql');
+
+  // The French corpus goes in its own files.
+  //
+  // The two languages are separate documents with separate LIMS id spaces, so
+  // they are separate rows in the corpus — but they are *one corpus*, and the
+  // English output is 281 MB. Writing the French rows over the English ones
+  // would be the kind of mistake that looks like success.
+  const suffix = args.lang === 'fr' ? '-fr' : '';
+
+  const sqlPath = join(args.out, `statutes${suffix}.sql`);
   writeFileSync(sqlPath, toInsertStatements(rows).join('\n'));
   console.log(`wrote ${sqlPath}`);
 
-  const jsonlPath = join(args.out, 'statutes.jsonl');
+  const jsonlPath = join(args.out, `statutes${suffix}.jsonl`);
   writeFileSync(jsonlPath, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
   console.log(`wrote ${jsonlPath}`);
 
   // The instrument titles, for citation parsing. Longest first, so that
   // "Canada Labour Code" wins over a shorter title that is a substring of it.
   const titles = [...new Set(rows.map((r) => r.act))].sort((a, b) => b.length - a.length || a.localeCompare(b));
-  const titlesPath = join(args.out, 'act-titles.json');
+  const titlesPath = join(args.out, `act-titles${suffix}.json`);
   writeFileSync(titlesPath, JSON.stringify(titles));
   console.log(`wrote ${titlesPath} — ${titles.length} instrument titles`);
 }

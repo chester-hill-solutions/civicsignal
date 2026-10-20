@@ -40,8 +40,8 @@ function schemaColumns(table) {
   return columns;
 }
 
-function insertColumns() {
-  const sqlPath = join(ROOT, 'dist', 'statutes.sql');
+function insertColumns(file) {
+  const sqlPath = join(ROOT, 'dist', file);
   if (!existsSync(sqlPath)) return null;
   const first = readFileSync(sqlPath, 'utf8').split('\n')[0] ?? '';
   const open = first.indexOf('(');
@@ -51,7 +51,7 @@ function insertColumns() {
 }
 
 const schema = schemaColumns('statute_sections');
-const inserted = insertColumns();
+const inserted = insertColumns('statutes.sql');
 
 if (!inserted) {
   notes.push('dist/statutes.sql is not present — skipped the schema check (run the ingest)');
@@ -69,22 +69,62 @@ if (!inserted) {
   if (!missing.length && !extra.length) {
     notes.push(`the schema and the insert agree on ${inserted.size} columns`);
   }
+
+  // The French rows go in the same table, so they have to write the same
+  // columns — a French insert with a different shape would load a third of the
+  // columns as null, which looks like data and is not.
+  const frenchInserted = insertColumns('statutes-fr.sql');
+  if (!frenchInserted) {
+    notes.push('dist/statutes-fr.sql is not present — skipped the French schema check (run the ingest)');
+  } else {
+    const frenchMissing = [...frenchInserted].filter((c) => !inserted.has(c));
+    const frenchExtra = [...inserted].filter((c) => !frenchInserted.has(c));
+    if (frenchMissing.length || frenchExtra.length) {
+      failures.push(
+        `the French insert does not have the same columns as the English one` +
+          (frenchMissing.length ? `; it writes ${frenchMissing.join(', ')} that the English does not` : '') +
+          (frenchExtra.length ? `; it omits ${frenchExtra.join(', ')}` : ''),
+      );
+    } else {
+      notes.push('the French insert has the same columns as the English one');
+    }
+  }
 }
 
 /* ── 2. the rows ──────────────────────────────────────────────────────────── */
 
-const corpusPath = join(ROOT, 'dist', 'statutes.jsonl');
-if (!existsSync(corpusPath)) {
-  notes.push('dist/statutes.jsonl is not present — skipped the row checks (run the ingest)');
-} else {
-  const ids = new Set();
-  const duplicates = [];
-  let rows = 0;
-  let placeholders = 0;
-  let repealed = 0;
+/**
+ * The corpus files, in the order they are loaded.
+ *
+ * The two languages are **one corpus**, and the store's primary key is the row
+ * id. So the ids have to be unique across *both* files, not just within each:
+ * an id that appears in the English rows and again in the French rows is not
+ * two rows, it is one row replaced by another, and the corpus silently loses
+ * half its content.
+ */
+const CORPUS_FILES = [
+  { file: 'statutes.jsonl', language: 'en' },
+  { file: 'statutes-fr.jsonl', language: 'fr' },
+];
+
+const ids = new Set();
+const duplicates = [];
+let rows = 0;
+let placeholders = 0;
+let repealed = 0;
+const byLanguage = new Map();
+
+for (const { file, language } of CORPUS_FILES) {
+  const corpusPath = join(ROOT, 'dist', file);
+  if (!existsSync(corpusPath)) {
+    notes.push(`dist/${file} is not present — skipped its rows (run the ingest)`);
+    continue;
+  }
+  let fileRows = 0;
   for (const line of readFileSync(corpusPath, 'utf8').split('\n')) {
     if (!line.trim()) continue;
     rows++;
+    fileRows++;
     const row = JSON.parse(line);
     if (ids.has(row.id)) duplicates.push(row.id);
     ids.add(row.id);
@@ -94,15 +134,28 @@ if (!existsSync(corpusPath)) {
       failures.push(`row ${row.id} has no status`);
       break;
     }
+    // A row in the French file that says it is English is a row that will be
+    // filtered out by the language lens and never found again.
+    if (row.language !== language) {
+      failures.push(
+        `row ${row.id} is in ${file} but its language is "${row.language}" — the language lens would hide it`,
+      );
+      break;
+    }
   }
+  byLanguage.set(language, fileRows);
+}
+
+if (rows > 0) {
   if (duplicates.length) {
     failures.push(
       `${duplicates.length} row id(s) collide — the store would replace one with another: ` +
         duplicates.slice(0, 3).join(', '),
     );
   }
+  const split = [...byLanguage.entries()].map(([l, n]) => `${n.toLocaleString()} ${l}`).join(', ');
   notes.push(
-    `${rows.toLocaleString()} rows, ${ids.size.toLocaleString()} distinct ids, ` +
+    `${rows.toLocaleString()} rows, ${ids.size.toLocaleString()} distinct ids (${split}), ` +
       `${placeholders.toLocaleString()} placeholders, ${repealed.toLocaleString()} repealed`,
   );
 

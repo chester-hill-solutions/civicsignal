@@ -42,6 +42,24 @@ export interface CorpusQuery {
      * meaningless and adapters should ignore it.
      */
     section?: string;
+    /**
+     * The language of the material wanted, as an ISO-639-1 code, e.g. "en", "fr".
+     *
+     * Language is a **lens**, exactly like `jurisdiction`: the corpus holds more
+     * than one language, and the caller chooses which one it is asking about.
+     *
+     * It has to be a lens rather than a detail because Canada's statutes are
+     * enacted in two languages with equal legal force, and the two versions are
+     * **different rows with different identifiers**. So a corpus that holds both
+     * and cannot be asked about one of them does not have a language problem — it
+     * has an ambiguity problem: one provision, two rows, and no way for the
+     * caller to say which one they meant.
+     *
+     * A caller that names a language gets that language. A caller that does not
+     * gets the corpus's default, and the surfaces above the corpus are where the
+     * choice is inferred from the question.
+     */
+    language?: string;
     /** ISO-8601 date, inclusive. */
     since?: string;
     /** ISO-8601 date, inclusive. */

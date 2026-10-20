@@ -86,6 +86,17 @@ export const statutesCorpus: Corpus = {
     const jur = query.jurisdiction
       ? { sql: ' AND jurisdiction = ?', binds: [query.jurisdiction.toUpperCase()] }
       : { sql: '', binds: [] as string[] };
+    // The language is a lens the caller chooses, exactly like the jurisdiction.
+    //
+    // It has to be a filter and not a detail because the corpus holds both
+    // official languages, and the two versions of a provision are *different
+    // rows with different identifiers*. Without the filter, one provision is
+    // two answers and the caller cannot say which one they meant — and a
+    // French row crowds out the English one out of the top k for an English
+    // question.
+    const lang = query.language
+      ? { sql: ' AND language = ?', binds: [query.language.toLowerCase()] }
+      : { sql: '', binds: [] as string[] };
     // An exact instrument filter, used when a citation names the Act.
     const act = query.act ? { sql: ' AND act = ?', binds: [query.act] } : { sql: '', binds: [] as string[] };
 
@@ -97,12 +108,12 @@ export const statutesCorpus: Corpus = {
 
     const rows = await queryRows(
       ctx,
-      `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics
+      `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
          FROM statute_sections
-        WHERE 1 = 1${liveOnly}${tok}${jur.sql}${act.sql}
+        WHERE 1 = 1${liveOnly}${tok}${jur.sql}${lang.sql}${act.sql}
         ORDER BY in_force DESC, act, section
         LIMIT ?`,
-      [...tokBinds, ...jur.binds, ...act.binds, String(resolveLimit(query.limit))],
+      [...tokBinds, ...jur.binds, ...lang.binds, ...act.binds, String(resolveLimit(query.limit))],
     );
 
     return rows.map((row) => ({
@@ -114,6 +125,7 @@ export const statutesCorpus: Corpus = {
       citationUrl: String(row['source_url']),
       source: STATUTES_CANADA.publisher,
       jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
+      language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
       topics: splitTopics(row['topics']),
       extra: {
         act: String(row['act']),
@@ -142,14 +154,27 @@ async function retrieveProvision(
   query: CorpusQuery,
   ctx: CorpusContext,
 ): Promise<RawCorpusItem[]> {
+  // The language filter, for the same reason as in the search path.
+  //
+  // Here it matters most, because this is the path that returns a *definitive*
+  // answer. An exact lookup that matched both official versions of a provision
+  // would hand the caller two rows and let it pick — which is exactly the
+  // ambiguity a citation is supposed to remove. The instrument titles differ
+  // between the languages, so in practice the `act` filter usually separates
+  // them; but "usually" is not a property a citation lookup should rely on,
+  // because some instrument titles are the same in both languages.
+  const lang = query.language
+    ? { sql: ' AND language = ?', binds: [query.language.toLowerCase()] }
+    : { sql: '', binds: [] as string[] };
+
   const rows = await queryRows(
     ctx,
-    `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics
+    `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
        FROM statute_sections
-      WHERE act = ? AND section = ?
+      WHERE act = ? AND section = ?${lang.sql}
       ORDER BY in_force DESC, id
       LIMIT ?`,
-    [query.act!, query.section!, String(resolveLimit(query.limit))],
+    [query.act!, query.section!, ...lang.binds, String(resolveLimit(query.limit))],
   );
 
   return rows.map((row) => ({
@@ -161,6 +186,7 @@ async function retrieveProvision(
     citationUrl: String(row['source_url']),
     source: STATUTES_CANADA.publisher,
     jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
+    language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
     topics: splitTopics(row['topics']),
     extra: {
       act: String(row['act']),

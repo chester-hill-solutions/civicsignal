@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRows, parseStatuteXml, toInsertStatements } from '../src/ingest/statutes';
+import { buildRows, parseStatuteXml, statusOf as statusOfText, toInsertStatements } from '../src/ingest/statutes';
 
 /** A trimmed excerpt of the real shape in `justicecanada/laws-lois-xml`. */
 const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
@@ -310,5 +310,52 @@ describe('statute rows', () => {
     ]) {
       expect(sql).toContain(column);
     }
+  });
+});
+
+/**
+ * The status of a provision, in both official languages.
+ *
+ * Canada's statutes are enacted in two languages with equal legal force, and
+ * the corpus holds both. A rule that only reads the English markers does not
+ * fail loudly on the French corpus — it labels nineteen thousand repealed
+ * provisions as placeholders, and because `in_force` is derived from the same
+ * call, leaves them looking like live law.
+ *
+ * These are the markers as they actually appear in the corpus.
+ */
+describe('the status of a provision', () => {
+  const statusOf = (text: string) => statusOfText(text);
+
+  it('reads an English repeal as repealed', () => {
+    expect(statusOf('[Repealed, SOR/2010-20]')).toBe('repealed');
+    expect(statusOf('[Repealed]')).toBe('repealed');
+    expect(statusOf('[Repealed before coming into force]')).toBe('repealed');
+    expect(statusOf('[Repeal]')).toBe('repealed');
+  });
+
+  it('reads a French repeal as repealed', () => {
+    expect(statusOf('[Abrogé, 2001, ch. 26, art. 332]')).toBe('repealed');
+    expect(statusOf('[Abrogé, DORS/2010-20]')).toBe('repealed');
+    expect(statusOf('[Abrogé avant d’entrer en vigueur]')).toBe('repealed');
+    expect(statusOf("[Abrogé avant d'entrer en vigueur]")).toBe('repealed');
+    // The feminine and the plural forms, which the corpus actually uses.
+    expect(statusOf('[Abrogée]')).toBe('repealed');
+    expect(statusOf('[Abrogés]')).toBe('repealed');
+    expect(statusOf('[Abrogation]')).toBe('repealed');
+  });
+
+  it('reads an editorial marker as a placeholder', () => {
+    expect(statusOf('[Modification]')).toBe('placeholder');
+    expect(statusOf('[Modifications]')).toBe('placeholder');
+    expect(statusOf('[Amendment]')).toBe('placeholder');
+    expect(statusOf('[Disposition transitoire]')).toBe('placeholder');
+    expect(statusOf('[Réservé]')).toBe('placeholder');
+    expect(statusOf('[L.S.]')).toBe('placeholder');
+  });
+
+  it('reads real text as in force', () => {
+    expect(statusOf('(1) Every employee is entitled to leave.')).toBe('in-force');
+    expect(statusOf('Attendu que le Code du travailuxe')).toBe('in-force');
   });
 });

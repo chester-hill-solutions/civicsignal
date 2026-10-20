@@ -7,26 +7,110 @@ Government Licence - Canada, no rate limits and no bot wall. It is the cleanest 
 the most reproducible of the corpora, and the right first ingest.
 
 ```
-bun run ingest:statutes -- --no-fetch     # parse the cached clone
-bun run check:corpus-invariants            # the invariants below
+bun run ingest:statutes -- --lang en --out dist   # parse the cached clone
+bun run ingest:statutes -- --lang fr --out dist   # and the other official language
+bun run check:corpus-invariants                    # the invariants below
 ```
+
+The two languages write their own files — `dist/statutes.sql` and
+`dist/statutes-fr.sql` — because they are separate rows in one table and the
+English output is 281 MB. Writing the French over the English would look like
+success.
 
 ## The numbers
 
-| | |
-|---|---|
-| Instruments | 5,419 (971 Acts, 4,897 regulations, plus orders and proclamations) |
-| Provisions | **138,750** |
-| In force | 108,082 |
-| Repealed | 19,010 |
-| Placeholder | 11,658 — kept in the store, excluded from the index |
-| Indexed (not a placeholder) | 127,092 |
-| Text | 119.4M characters |
+The corpus is bilingual. Canada's statutes are enacted in both official languages
+with equal legal force, and the source publishes both.
 
-The number this document starts from is **138,750**, and it was **191,025** for a
-while. The difference was a modelling error, and it is worth recording because the
-error was invisible in every way that matters: the ingest reported no failures, the
+| | English | French | Total |
+|---|---|---|---|
+| Instruments | 5,198 | 5,206 | 10,404 |
+| Provisions | 138,750 | 139,107 | **277,857** |
+| In force | 108,082 | 108,481 | 216,563 |
+| Repealed | 19,011 | 19,097 | 38,108 |
+| Placeholder | 11,657 | 11,529 | 23,186 |
+| Indexed (not a placeholder) | 127,093 | 127,578 | 254,671 |
+| Text | 119.4M characters | 124.4M characters | 243.8M |
+
+The two languages mirror each other almost exactly, and that is the check: a
+French corpus with 19,097 repealed provisions against an English one with
+19,011 is a corpus whose French half was parsed by the same rules. When the
+French had **one**, it was not.
+
+The number this document starts from is **277,857**, and it was **138,750** for
+a while — the English half alone. It was **191,025** before that. The first
+difference was a modelling error, and it is worth recording because the error
+was invisible in every way that matters: the ingest reported no failures, the
 row count was plausible, the tests passed, and the corpus looked fine.
+
+## The two languages are two corpora in one table
+
+This is the part that has consequences, so it is stated plainly.
+
+**The two official versions of a provision are different rows with different
+identifiers.** The English section 210 of the Labour Code is `acts-en-…`; the
+French article 210 of the Code du travail is `acts-fr-…`. They do not share a
+row id, and they do not share a LIMS id either — the two language trees number
+their provisions from different id spaces, which was measured rather than
+assumed.
+
+That means a corpus holding both is not a corpus with a translation problem. It
+is a corpus with an **ambiguity problem**: one provision, two rows, and no way
+for the caller to say which one they meant. A search that returns both fills
+half its top k with the wrong language, and an exact citation lookup that
+returns both hands the caller a choice where a citation is supposed to remove
+one.
+
+So the language is a **lens the caller chooses**, exactly like the geography:
+`CorpusQuery.language` filters the rows, `cite_provision` and `statute_lookup`
+take it as an argument, and the chat and MCP surfaces infer it from the
+question when they are not told. The inference is a heuristic — French
+function words and accented characters, matched as whole words so that "la"
+inside "legal" is not evidence — and it is asymmetric on purpose: English is
+the default everything falls back to, and French is the language with
+*distinctive* markers, so a single French instrument title among an English
+question is enough to make the answer French.
+
+That last part matters more than it looks. "What does the Code du travail say
+about leave?" is a question about the French Labour Code, and answering it from
+the English rows answers a different question.
+
+### The accents come off, on both sides
+
+The lexical path compares the query against the corpus's `search_text` with
+LIKE. A French provision says `règlement` and the person typing the query
+writes `reglement`, because the keyboard has no accent key or the word was
+copied from an English source. Both sides are therefore folded — the corpus's
+`search_text` and the query's pattern — so that a match means the same thing
+on both sides. Folding one side only would make them disagree in exactly the
+case the fold is for.
+
+The vector path does not have this problem. A model reads `règlement` and
+`reglement` as the same word, which is one of the things a model is for.
+
+### A repeal marker is a repeal marker in both languages
+
+The status of a provision is read from its text, and the marker differs by
+language:
+
+| English | French |
+|---|---|
+| `[Repealed, SOR/2010-20]` | `[Abrogé, DORS/2010-20]` |
+| `[Repealed]` | `[Abrogée]`, `[Abrogés]` |
+| `[Repeal]` | `[Abrogation]` |
+
+Reading only the English ones does not fail loudly. It labels nineteen
+thousand French repealed provisions as *placeholders*, and — because `in_force`
+is derived from the same call — leaves them with `in_force = 1`, so the corpus
+reports repealed law as live law and a citation to it answers with the wrong
+thing.
+
+Two details make this a trap worth recording. The first is that JavaScript does
+not consider `é` a word character, so a `\b` after the French marker asks for a
+boundary that is never there and every French repeal reads as a placeholder
+however carefully the alternation is written. The second is that the corpus
+also contains English provisions whose *text* quotes a French marker, so the
+rule cannot be scoped to the file a row came from.
 
 ## What a row is
 
@@ -61,7 +145,8 @@ They are excluded.
 ### A placeholder is not a provision
 
 `[Amendment]` means the provision exists but its text lives in an amending
-instrument. There are 11,658 of them and every one has the same text, so embedding
+instrument. There are 23,186 of them — 11,657 in English and 11,529 in French — and
+every one in a language has the same text, so embedding
 them puts eleven thousand identical vectors into the index and crowds everything
 else out.
 
