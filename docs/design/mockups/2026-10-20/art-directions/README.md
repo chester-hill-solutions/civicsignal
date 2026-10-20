@@ -34,5 +34,15 @@ Inspiration: A contemporary Scandinavian design studio and a calm premium deskto
 
 ![Minimalist studio](05-minimalist-studio.png)
 
+## Refined direction: OS 9 × Swiss Editorial
+
+![OS 9 × Swiss Editorial](06-os9-swiss-editorial.png)
+
+Uses the actual CHS UI Kit OS 9 preset as a style reference, combined with the Swiss Editorial screen above. Platinum surfaces, restrained bevels and thin pinstriped title bars support a white reading canvas, a disciplined grid and vermilion accents. Chicago-style details stay in small panel labels; the main reading typography stays contemporary.
+
+References: [actual OS 9 kit screenshot](os9-kit-reference.jpg), [Swiss screen](01-swiss-editorial.png), and [exact final prompt](06-os9-swiss-editorial.prompt.json).
+
+The source preset is `apps/ui-kit-docs/packages/ui/src/styles/style-os9.css` in the sibling `chester-hill-solutions` repository. The kit itself was inspected without modifying its source.
+
 These are visual concepts with sample data, not implemented frontend screens.
 

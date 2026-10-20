@@ -29,6 +29,18 @@ export interface Env extends SpineEnv {
   VECTORIZE?: VectorizeBinding;
   /** Workers AI, for embedding a question in the corpus's own vector space. */
   AI?: AiBinding;
+  /** The encoder service: EmbeddingGemma 2, served from the artefact. */
+  ENCODER_URL?: string;
+  /**
+   * The encoder, called directly.
+   *
+   * A service binding rather than an address: a Worker cannot fetch a
+   * `workers.dev` address on this account, and the encoder is the product's own
+   * plumbing rather than something a customer calls.
+   */
+  ENCODER_SERVICE?: { fetch(request: Request): Promise<Response> };
+  /** The shared secret the encoder checks. */
+  ENCODER_TOKEN?: string;
 }
 
 /**

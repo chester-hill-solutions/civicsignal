@@ -29,10 +29,21 @@
     "bindings": [{ "name": "API_KEY_USAGE", "class_name": "ApiKeyUsageDO" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApiKeyUsageDO"] }],
+  // The encoder is a Worker in this account, called through a service binding
+  // rather than by its address.
+  //
+  // A Worker cannot fetch a `workers.dev` address on this account — it answers
+  // `1042` — and the custom domain is for customers, not for the product's own
+  // plumbing. A service binding is the direct call, with no DNS and no
+  // workers.dev.
+  "services": [{ "binding": "ENCODER_SERVICE", "service": "civicsignal-encoder" }],
   "vectorize": [
     {
       "binding": "VECTORIZE",
-      "index_name": "civicsignal-statutes"
+      // EmbeddingGemma 2 is 768 dimensions. The bge-m3 index is 1024, so the
+      // two cannot share a binding: a vector of one length is not a vector of
+      // the other, and an index's dimension is fixed when it is created.
+      "index_name": "civicsignal-statutes-gemma"
     }
   ],
   "ai": { "binding": "AI" },

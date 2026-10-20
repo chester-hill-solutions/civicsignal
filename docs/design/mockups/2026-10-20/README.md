@@ -4,6 +4,8 @@ Image-generated design proposals based on the repository as reviewed on 2026-10-
 
 ## Five art directions for the main screen
 
+Latest refinement: [OS 9 × Swiss Editorial](art-directions/06-os9-swiss-editorial.png), using the user's actual CHS OS 9 kit. Its [prompt and reference roles](art-directions/06-os9-swiss-editorial.prompt.json) are saved alongside the image.
+
 [Open the five-direction gallery](art-directions/README.md): Swiss editorial, financial terminal, civic atlas, paper research desk, and minimalist studio. Each uses the baseline research workspace below as its edit target. The exact final prompts are saved in [art-directions/prompts.json](art-directions/prompts.json).
 
 The delivered screen images are the baseline research workspace, the topic brief, and the five art directions. The connection-console and embed-builder descriptions below record additional proposed flows.

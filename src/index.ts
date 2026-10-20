@@ -278,16 +278,54 @@ function corpusContext(env: Env): CorpusContext {
 /**
  * The embedder for a question, in the corpus's vector space.
  *
- * This deployment's corpus is embedded with **bge-m3**, through Workers AI, and
- * so a question is embedded with bge-m3 through the same binding. bge-m3 takes
- * no task instruction — the `task: search result` prefix belongs to
- * EmbeddingGemma 2, and putting it in front of a bge-m3 query would put the
- * query in a slightly different place from every document in the index.
+ * The corpus is embedded with **EmbeddingGemma 2**, served from the
+ * `.litertlm` artefact — the same file the browser runs — so a question is
+ * embedded by that same service, and the two are in the same space by
+ * construction rather than approximately.
  *
- * So the model and its instruction travel together, and this is the only place
- * that decides.
+ * The model and its instruction travel together, and this is the only place
+ * that decides. A hosted model would be a second decision: bge-m3 takes no task
+ * instruction, and the `task: search result` prefix belongs to EmbeddingGemma,
+ * so putting one in front of the other would put the query in a slightly
+ * different place from every document in the index.
  */
 function queryEmbedderFor(env: Env): ((text: string) => Promise<number[]>) | undefined {
+  const encoderUrl = env.ENCODER_URL;
+  const encoderToken = env.ENCODER_TOKEN;
+  if (encoderToken && (env.ENCODER_SERVICE || encoderUrl)) {
+    return async (text: string) => {
+      const url = encoderUrl ? `${encoderUrl.replace(/\/$/, '')}/embed-query` : 'https://encoder/embed-query';
+      const request = new Request(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${encoderToken}`,
+        },
+        body: JSON.stringify({ texts: [text] }),
+      });
+      // The service binding is the direct call; the address is the fallback for
+      // a deployment that has one and not the other.
+      const response = env.ENCODER_SERVICE
+        ? await env.ENCODER_SERVICE.fetch(request)
+        : await fetch(request);
+      if (!response.ok) {
+        // The URL and the body, because "the encoder refused: 404" is not a
+        // diagnosis. A 404 from the wrong address and a 404 from the wrong path
+        // look identical until the address is in the message.
+        throw new Error(
+          `the encoder refused ${response.status} at ${url}: ${(await response.text()).slice(0, 200)}`,
+        );
+      }
+      const body = (await response.json()) as { vectors?: number[][] };
+      const vector = body.vectors?.[0];
+      if (!vector) throw new Error('the encoder returned no vector');
+      return vector;
+    };
+  }
+
+  // The hosted model, for a deployment that has no encoder service. It is a
+  // different model in a different space, so it is only ever right when the
+  // corpus was embedded with it too.
   const ai = env.AI;
   if (!ai) return undefined;
   return async (text: string) => {
