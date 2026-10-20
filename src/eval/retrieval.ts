@@ -97,18 +97,20 @@ export function reciprocalRankFusion(
   rankings: ScoredDoc[][],
   k = 60,
   topK = 50,
+  weights?: number[],
 ): ScoredDoc[] {
   const scores = new Map<number, number>();
   const best = new Map<number, number>();
-  for (const ranking of rankings) {
+  rankings.forEach((ranking, listIndex) => {
+    const weight = weights?.[listIndex] ?? 1;
     ranking.forEach((entry, index) => {
       const rank = index + 1;
-      scores.set(entry.docId, (scores.get(entry.docId) ?? 0) + 1 / (k + rank));
+      scores.set(entry.docId, (scores.get(entry.docId) ?? 0) + weight / (k + rank));
       if (!best.has(entry.docId) || entry.score > best.get(entry.docId)!) {
         best.set(entry.docId, entry.score);
       }
     });
-  }
+  });
   return [...scores.entries()]
     .map(([docId, score]) => ({ docId, score }))
     .sort((a, b) => b.score - a.score || a.docId - b.docId)

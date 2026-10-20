@@ -112,12 +112,19 @@ describe('label validation', () => {
     expect(issues[0]?.reason).toBe('no matching row in the corpus');
   });
 
-  it('reports an ambiguous label', () => {
-    const { issues } = validateLabels(
+  /**
+   * A label identifies a provision, not a row. A corpus that holds two copies of the
+   * same provision — which is what a schedule's list items look like when they are
+   * mistaken for sections — must not turn a correct retrieval into a miss, so both
+   * rows are accepted and finding either one is finding the answer.
+   */
+  it('accepts every row that matches an ambiguous label', () => {
+    const { valid, issues } = validateLabels(
       [{ id: 'q', question: 'x', act: 'Criminal Code', section: '322', style: 'exact', note: '' }],
       rows,
     );
-    expect(issues[0]?.reason).toBe('label is ambiguous');
+    expect(valid.get('q')).toEqual([0, 1]);
+    expect(issues).toHaveLength(0);
   });
 
   it('accepts a unique label', () => {
@@ -125,7 +132,7 @@ describe('label validation', () => {
       [{ id: 'q', question: 'x', act: 'Privacy Act', section: '4', style: 'exact', note: '' }],
       rows,
     );
-    expect(valid.get('q')).toBe(2);
+    expect(valid.get('q')).toEqual([2]);
     expect(issues).toHaveLength(0);
   });
 });

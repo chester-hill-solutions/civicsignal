@@ -42,15 +42,28 @@ console.log(`  ${keep.length} section(s) from those corpora`);
 
 const pool = all.filter((r) => !included.has(String(r['id'])));
 // A deterministic sample, so a run is reproducible.
+//
+// The sample is drawn *without replacement*. Drawing with replacement put the same
+// row in the corpus two or three times, which made the gold answer ambiguous: the
+// label validation resolved to the first copy, and a retrieval that found the
+// second copy was scored as a miss. Three of the vector arm's apparent misses were
+// this and nothing else — the arm had found the right provision, and the corpus had
+// handed it two of them.
 let seed = 20261020;
 const rand = () => {
   seed = (seed * 1664525 + 1013904223) % 4294967296;
   return seed / 4294967296;
 };
 const take = Math.min(distractors, pool.length);
-for (let i = 0; i < take; i++) {
-  keep.push(pool[Math.floor(rand() * pool.length)]!);
+const chosen: number[] = [];
+const seen = new Set<number>();
+while (chosen.length < take) {
+  const index = Math.floor(rand() * pool.length);
+  if (seen.has(index)) continue;
+  seen.add(index);
+  chosen.push(index);
 }
+for (const index of chosen) keep.push(pool[index]!);
 console.log(`  ${take} distractor section(s) sampled from ${pool.length.toLocaleString()} others`);
 
 writeFileSync(out, keep.map((r) => JSON.stringify(r)).join('\n') + '\n');

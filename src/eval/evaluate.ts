@@ -1,6 +1,11 @@
 import type { EvalQuestion, QuestionStyle } from './questions';
 
-export type RetrievalMode = 'keyword' | 'keyword-reranked' | 'vector' | 'hybrid';
+export type RetrievalMode =
+  | 'keyword'
+  | 'keyword-reranked'
+  | 'vector'
+  | 'vector-reranked'
+  | 'hybrid';
 
 export interface QuestionOutcome {
   id: string;
@@ -89,16 +94,22 @@ export interface LabelIssue {
 }
 
 /**
- * Check that every question's gold answer resolves to exactly one corpus row.
+ * Check that every question's gold answer resolves to at least one corpus row.
  *
  * A question whose label matches nothing would be scored as a miss for every arm,
  * which would quietly bias the comparison against whichever arm the label happened
  * to favour. A label that matches several rows is ambiguous and is reported too.
+ *
+ * The label identifies a *provision*, not a row, so the answer is the set of rows
+ * that match it and finding any of them is finding the answer. A corpus that holds
+ * two copies of the same provision — which is what a schedule's list items look
+ * like when they are mistaken for sections — must not turn a correct retrieval into
+ * a miss.
  */
 export function validateLabels(
   questions: EvalQuestion[],
   rows: { act: string; section: string }[],
-): { valid: Map<string, number>; issues: LabelIssue[] } {
+): { valid: Map<string, number[]>; issues: LabelIssue[] } {
   const byKey = new Map<string, number[]>();
   rows.forEach((row, index) => {
     const key = `${row.act}::${row.section}`;
@@ -107,7 +118,7 @@ export function validateLabels(
     else byKey.set(key, [index]);
   });
 
-  const valid = new Map<string, number>();
+  const valid = new Map<string, number[]>();
   const issues: LabelIssue[] = [];
   for (const question of questions) {
     const matches = byKey.get(`${question.act}::${question.section}`) ?? [];
@@ -115,10 +126,7 @@ export function validateLabels(
       issues.push({ question, reason: 'no matching row in the corpus', matches: 0 });
       continue;
     }
-    if (matches.length > 1) {
-      issues.push({ question, reason: 'label is ambiguous', matches: matches.length });
-    }
-    valid.set(question.id, matches[0]!);
+    valid.set(question.id, matches);
   }
   return { valid, issues };
 }
@@ -126,7 +134,7 @@ export function validateLabels(
 export function formatModeResult(result: ModeResult): string {
   const pct = (n: number) => `${(n * 100).toFixed(1)}%`.padStart(6);
   const rows = [
-    `  ${result.mode.padEnd(8)} hits ${String(result.hits).padStart(3)}/${result.total}` +
+    `  ${result.mode.padEnd(17)} hits ${String(result.hits).padStart(3)}/${result.total}` +
       `  R@1 ${pct(result.recallAt1)}  R@5 ${pct(result.recallAt5)}  R@10 ${pct(result.recallAt10)}  MRR ${result.mrr.toFixed(3)}`,
   ];
   for (const style of ['exact', 'concept'] as const) {

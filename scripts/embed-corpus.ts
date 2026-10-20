@@ -86,6 +86,7 @@ export function prepareText(
 }
 
 interface Row {
+  status?: string;
   id: string;
   act: string;
   section: string;
@@ -105,13 +106,34 @@ async function main(): Promise<void> {
   }
 
   const rows: Row[] = [];
+  let placeholders = 0;
   for (const line of readFileSync(args.input, 'utf8').split('\n')) {
     if (!line.trim()) continue;
     const row = JSON.parse(line) as Row;
+    // A placeholder is a gap in the consolidation: "[Amendment]" means the
+    // provision exists but its text lives in an amending instrument. There are
+    // nearly eleven thousand of them and every one has the same text, so embedding
+    // them puts eleven thousand identical vectors into the index and crowds
+    // everything else out. They stay in the store — a citation still resolves —
+    // and they stay out of the index.
+    if (row.status === 'placeholder') {
+      placeholders++;
+      continue;
+    }
     rows.push(row);
     if (args.limit && rows.length >= args.limit) break;
   }
   console.log(`embedding ${rows.length} section(s) with ${args.model} via ${args.endpoint}`);
+  if (placeholders > 0) {
+    console.log(`  ${placeholders.toLocaleString()} placeholder section(s) excluded from the index`);
+  }
+
+  // The manifest that ties a vector back to its row. Without it, the index and
+  // the corpus would have to be in the same order by accident, and the first row
+  // that moved would silently point every match at the wrong provision.
+  const manifestPath = args.output.replace(/\.emb$/, '') + '.rows.json';
+  writeFileSync(manifestPath, JSON.stringify(rows.map((r) => r.id)));
+  console.log(`  wrote ${manifestPath}`);
 
   const prepared = rows.map(prepareText);
   const texts = prepared.map((p) => p.text);
