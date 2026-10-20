@@ -151,6 +151,15 @@ longest section in the corpus is about 61,000 tokens, roughly seven times the wi
 The embedding job truncates those and reports the count, because a silently truncated
 provision is a section whose tail cannot be retrieved.
 
+**A caveat on Workers AI that is not in the model card.** The limit is on the whole
+*request*, not on each document: a batch totalling more than 60,000 tokens is
+rejected outright, however many documents it contains, and the error reads
+`Max context reached 123700 tokens but model supports only 60000`. A hundred short
+sections fit easily; ten long ones do not. Batches therefore have to be budgeted by
+tokens rather than by count, and the section length distribution is heavy-tailed
+enough that a count-based batch fails constantly. The corpus averages 157 tokens per
+section and runs to 61,000.
+
 **The deployment question.** A 270M-parameter text encoder is small enough to run on
 a CPU: a GGUF build under llama.cpp answers a query embedding in tens of
 milliseconds. That makes a small always-on service the obvious home for it — a few

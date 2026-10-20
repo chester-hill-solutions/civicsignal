@@ -20,7 +20,6 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BATCH = 100;
 /**
  * The embedding model's context window is 8,192 tokens. At roughly four characters
  * per token that is about 32,000 characters, and the corpus contains sections far
@@ -30,6 +29,14 @@ const BATCH = 100;
  * by its tail.
  */
 const MAX_CHARS = 24000;
+
+/**
+ * The model's limit is on the whole request, not on each document: a batch that
+ * totals more than 60,000 tokens is rejected outright, however many documents it
+ * contains. Batches are therefore budgeted by tokens, not by count — a hundred
+ * short sections fit easily, and ten long ones do not.
+ */
+const MAX_BATCH_TOKENS = 45000;
 
 interface Args {
   endpoint: string;
@@ -109,6 +116,22 @@ async function main(): Promise<void> {
 
   let failed = 0;
 
+  // Group the documents into batches that fit the token budget.
+  const batches: { start: number; end: number }[] = [];
+  let start = 0;
+  let tokens = 0;
+  for (let i = 0; i < texts.length; i++) {
+    const estimate = Math.ceil(texts[i]!.length / 4);
+    if (tokens + estimate > MAX_BATCH_TOKENS && i > start) {
+      batches.push({ start, end: i });
+      start = i;
+      tokens = 0;
+    }
+    tokens += estimate;
+  }
+  if (start < texts.length) batches.push({ start, end: texts.length });
+  console.log(`  ${batches.length} batch(es) within a ${MAX_BATCH_TOKENS}-token budget`);
+
   const post = async (chunk: string[]): Promise<number[][]> => {
     const response = await fetch(args.endpoint, {
       method: 'POST',
@@ -141,13 +164,13 @@ async function main(): Promise<void> {
     }
   };
 
-  for (let i = 0; i < texts.length; i += BATCH) {
-    const chunk = texts.slice(i, i + BATCH);
-    const result = await postRobust(chunk, `rows ${i}-${i + chunk.length - 1}`);
+  for (const [index, batch] of batches.entries()) {
+    const chunk = texts.slice(batch.start, batch.end);
+    const result = await postRobust(chunk, `rows ${batch.start}-${batch.end - 1}`);
     vectors.push(...result);
 
-    if ((i / BATCH) % 50 === 0) {
-      const done = Math.min(i + BATCH, texts.length);
+    if (index % 50 === 0) {
+      const done = batch.end;
       const rate = done / ((Date.now() - started) / 1000);
       const eta = Math.round((texts.length - done) / rate);
       console.log(`  ${done}/${texts.length}  ${rate.toFixed(0)}/s  eta ${eta}s`);

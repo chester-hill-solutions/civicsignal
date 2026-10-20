@@ -126,6 +126,15 @@ Still to do in this wave:
 4. Publish the free tier, list the MCP server in the official registry, Anthropic's
    directory, and Apify's pay-per-result store.
 
+**The citation resolver is already written** (`src/citations.ts`). Running the keyword
+baseline against the real corpus showed that "section 210 of the Canada Labour Code"
+put the right answer at rank five, because a bare section number has almost no IDF
+across 191,000 sections. A citation is a key, not a similarity, so it needs a
+structural path ahead of both search arms. The parser reads "section X of the Y Act",
+"s. X of the Y Act", "Y Act s. X" and bracketed subsections; the resolver returns
+nothing rather than a near miss, because a citation naming a section the instrument
+does not have is wrong, and the nearest section would be worse than no answer.
+
 **Kill criterion:** if nobody calls it in sixty days, the gap was a data gap, not a
 demand gap. Stop.
 
