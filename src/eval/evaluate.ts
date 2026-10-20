@@ -1,6 +1,6 @@
 import type { EvalQuestion, QuestionStyle } from './questions';
 
-export type RetrievalMode = 'keyword' | 'vector' | 'hybrid';
+export type RetrievalMode = 'keyword' | 'keyword-reranked' | 'vector' | 'hybrid';
 
 export interface QuestionOutcome {
   id: string;
@@ -18,6 +18,11 @@ export interface ModeResult {
   recallAt1: number;
   recallAt5: number;
   recallAt10: number;
+  /**
+   * The ceiling for a reranker: it can only reorder what the first stage returned,
+   * so recall at the first stage's depth is the most a reranked ranking can reach.
+   */
+  recallAt50: number;
   /** Mean reciprocal rank over all questions, treating a miss as zero. */
   mrr: number;
   byStyle: Record<QuestionStyle, { total: number; hits: number; recallAt5: number; mrr: number }>;
@@ -38,6 +43,7 @@ export function scoreMode(
   let at1 = 0;
   let at5 = 0;
   let at10 = 0;
+  let at50 = 0;
 
   for (const outcome of outcomes) {
     const bucket = byStyle[outcome.style];
@@ -48,6 +54,7 @@ export function scoreMode(
       if (outcome.rank <= 1) at1++;
       if (outcome.rank <= 5) at5++;
       if (outcome.rank <= 10) at10++;
+      if (outcome.rank <= 50) at50++;
       bucket.hits++;
       bucket.mrr += 1 / outcome.rank;
       if (outcome.rank <= 5) bucket.recallAt5++;
@@ -68,6 +75,7 @@ export function scoreMode(
     recallAt1: total ? at1 / total : 0,
     recallAt5: total ? at5 / total : 0,
     recallAt10: total ? at10 / total : 0,
+    recallAt50: total ? at50 / total : 0,
     mrr: total ? reciprocal / total : 0,
     byStyle,
     outcomes,

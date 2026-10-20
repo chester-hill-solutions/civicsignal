@@ -36,7 +36,7 @@ const MAX_CHARS = 24000;
  * contains. Batches are therefore budgeted by tokens, not by count — a hundred
  * short sections fit easily, and ten long ones do not.
  */
-const MAX_BATCH_TOKENS = 45000;
+const MAX_BATCH_TOKENS = 20000;
 
 interface Args {
   endpoint: string;
@@ -129,7 +129,10 @@ async function main(): Promise<void> {
   let start = 0;
   let tokens = 0;
   for (let i = 0; i < texts.length; i++) {
-    const estimate = Math.ceil(texts[i]!.length / 4);
+    // Workers AI counts roughly twice what a four-characters-per-token estimate
+    // gives on this corpus — a 45,000-token budget was reported as 92,820 tokens —
+    // so the estimate is deliberately pessimistic and the budget carries margin.
+    const estimate = Math.ceil(texts[i]!.length / 2.5);
     if (tokens + estimate > MAX_BATCH_TOKENS && i > start) {
       batches.push({ start, end: i });
       start = i;

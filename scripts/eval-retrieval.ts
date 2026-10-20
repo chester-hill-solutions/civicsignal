@@ -27,6 +27,7 @@ interface Args {
   vectors: string;
   queries: string;
   topK: number;
+  rerank: string;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -35,6 +36,7 @@ function parseArgs(argv: string[]): Args {
     vectors: 'dist/statutes.emb',
     queries: 'dist/query-vectors.json',
     topK: 50,
+    rerank: 'http://127.0.0.1:8799/rerank',
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -43,6 +45,7 @@ function parseArgs(argv: string[]): Args {
     else if (arg === '--vectors') args.vectors = argv[++i] ?? args.vectors;
     else if (arg === '--queries') args.queries = argv[++i] ?? args.queries;
     else if (arg === '--topk') args.topK = Number(argv[++i]) || args.topK;
+    else if (arg === '--rerank') args.rerank = argv[++i] ?? '';
   }
   return args;
 }
@@ -104,9 +107,29 @@ function main(): void {
     process.exit(1);
   }
 
-  const modes: RetrievalMode[] = ['keyword', 'vector', 'hybrid'];
+  const modes: RetrievalMode[] = ['keyword', 'keyword-reranked', 'vector', 'hybrid'];
   const results = new Map<RetrievalMode, ModeResult>();
   const perModeRankings = new Map<RetrievalMode, Map<string, ScoredDoc[]>>();
+
+  // The reranker sees the keyword arm's candidates, so the comparison is between
+  // two rankings of the same candidate set, not between two different corpora.
+  const rerankEndpoint = args.rerank;
+  const rerank = async (question: string, candidates: number[]): Promise<ScoredDoc[]> => {
+    if (!rerankEndpoint) return [];
+    const documents = candidates.map((docId) => {
+      const row = rows[docId]!;
+      return [row.act, row.heading ?? '', row.text].filter(Boolean).join(' ').slice(0, 1200);
+    });
+    const response = await fetch(rerankEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: question, documents }),
+    });
+    if (!response.ok) return [];
+    const body = (await response.json()) as { results?: { index: number; score: number }[] };
+    // The worker normalises the model's `response: [{id, score}]` shape.
+    return (body.results ?? []).map((r) => ({ docId: candidates[r.index]!, score: r.score }));
+  };
 
   for (const mode of modes) {
     const rankings = new Map<string, ScoredDoc[]>();
@@ -116,8 +139,14 @@ function main(): void {
       const query = queryVectors[question.id]!;
       const keyword = search(index, question.question, args.topK);
       const vector = searchVectors(store, Float32Array.from(query), args.topK);
+      const reranked = mode === 'keyword-reranked'
+        ? await rerank(question.question, keyword.map((k) => k.docId))
+        : [];
       const ranking =
-        mode === 'keyword' ? keyword : mode === 'vector' ? vector : reciprocalRankFusion([keyword, vector], 60, args.topK);
+        mode === 'keyword' ? keyword
+        : mode === 'keyword-reranked' ? reranked
+        : mode === 'vector' ? vector
+        : reciprocalRankFusion([keyword, vector], 60, args.topK);
       rankings.set(question.id, ranking);
       const rank = ranking.findIndex((entry) => entry.docId === gold);
       outcomes.push({
