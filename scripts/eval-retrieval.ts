@@ -114,8 +114,13 @@ function main(): void {
   // The reranker sees the keyword arm's candidates, so the comparison is between
   // two rankings of the same candidate set, not between two different corpora.
   const rerankEndpoint = args.rerank;
+  // A reranker that fails must not look like a reranker that found nothing: an empty
+  // ranking is a legitimate result only if the call actually succeeded.
+  let rerankCalls = 0;
+  let rerankFailures = 0;
   const rerank = async (question: string, candidates: number[]): Promise<ScoredDoc[]> => {
     if (!rerankEndpoint) return [];
+    rerankCalls++;
     const documents = candidates.map((docId) => {
       const row = rows[docId]!;
       return [row.act, row.heading ?? '', row.text].filter(Boolean).join(' ').slice(0, 1200);
@@ -125,7 +130,11 @@ function main(): void {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: question, documents }),
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      rerankFailures++;
+      console.error(`  rerank failed for "${question.slice(0, 60)}…": ${response.status}`);
+      return [];
+    }
     const body = (await response.json()) as { results?: { index: number; score: number }[] };
     // The worker normalises the model's `response: [{id, score}]` shape.
     return (body.results ?? []).map((r) => ({ docId: candidates[r.index]!, score: r.score }));
@@ -160,7 +169,14 @@ function main(): void {
     results.set(mode, scoreMode(mode, outcomes));
   }
 
-  console.log('\n=== retrieval evaluation — 191,025 federal statute sections ===\n');
+  console.log('\n=== retrieval evaluation ===\n');
+  console.log(`  corpus: ${args.corpus}  (${rows.length.toLocaleString()} sections)`);
+  if (rerankCalls > 0) {
+    console.log(
+      `  reranker: ${rerankCalls - rerankFailures}/${rerankCalls} calls succeeded` +
+        (rerankFailures > 0 ? ` — ${rerankFailures} FAILED, and the reranked arm is not a result` : ''),
+    );
+  }
   for (const mode of modes) {
     console.log(formatModeResult(results.get(mode)!));
     console.log('');
