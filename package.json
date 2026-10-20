@@ -1,0 +1,26 @@
+{
+  "name": "civicsignal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Situational awareness for Canada \u2014 legislation, news, sentiment and geography for any topic.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "validate": "bun run typecheck && bun run test",
+    "check:billing-invariants": "node scripts/check-billing-invariants.mjs"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "@modelcontextprotocol/server": "2.3.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.99.0"
+  }
+}

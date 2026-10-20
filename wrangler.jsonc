@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "civicsignal",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-01-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": {
+    "PRODUCT_NAME": "CivicSignal",
+    "FREE_MONTHLY_ALLOWANCE": "1000"
+  },
+  "kv_namespaces": [{ "binding": "CIVIC_CACHE", "id": "REPLACE_KV_ID" }],
+  "d1_databases": [{ "binding": "CIVIC_DB", "database_name": "civicsignal", "database_id": "REPLACE_D1_ID", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "CORPORA", "bucket_name": "civicsignal-corpora" }],
+  "routes": [
+    { "pattern": "api.civicsignal.ca", "custom_domain": true }
+  ]
+}
