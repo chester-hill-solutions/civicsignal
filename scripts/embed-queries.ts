@@ -13,9 +13,13 @@
 import { writeFileSync } from 'node:fs';
 import { QUESTIONS } from '../src/eval/questions';
 
-const endpoint = process.argv.includes('--endpoint')
-  ? process.argv[process.argv.indexOf('--endpoint') + 1]!
-  : 'http://127.0.0.1:8799/embed';
+const argOf = (name: string, fallback: string) => {
+  const i = process.argv.indexOf(name);
+  return i === -1 ? fallback : process.argv[i + 1] ?? fallback;
+};
+const endpoint = argOf('--endpoint', 'http://127.0.0.1:8799/embed');
+const model = argOf('--model', '@cf/baai/bge-m3');
+const outFile = argOf('--out', 'dist/query-vectors.json');
 
 const texts = QUESTIONS.map((q) => q.question);
 const vectors: number[][] = [];
@@ -25,7 +29,7 @@ for (let i = 0; i < texts.length; i += 50) {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ texts: chunk }),
+    body: JSON.stringify({ texts: chunk, model }),
   });
   if (!response.ok) throw new Error(`${response.status} ${(await response.text()).slice(0, 200)}`);
   const body = (await response.json()) as { vectors: number[][] };
@@ -37,5 +41,5 @@ const out: Record<string, number[]> = {};
 QUESTIONS.forEach((q, i) => {
   out[q.id] = vectors[i]!;
 });
-writeFileSync('dist/query-vectors.json', JSON.stringify(out));
-console.log(`wrote dist/query-vectors.json — ${vectors.length} query vectors, ${vectors[0]?.length} dims`);
+writeFileSync(outFile, JSON.stringify(out));
+console.log(`wrote ${outFile} — ${vectors.length} query vectors, ${vectors[0]?.length} dims, ${model}`);

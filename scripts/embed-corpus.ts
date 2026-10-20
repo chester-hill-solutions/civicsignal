@@ -42,6 +42,7 @@ interface Args {
   endpoint: string;
   input: string;
   output: string;
+  model: string;
   limit: number | undefined;
 }
 
@@ -49,13 +50,16 @@ function parseArgs(argv: string[]): Args {
   const args: Args = {
     endpoint: 'http://127.0.0.1:8799/embed',
     input: 'dist/statutes.jsonl',
-    output: 'dist/statutes.emb',
+    output: '',
+    model: '@cf/baai/bge-m3',
     limit: undefined,
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--') continue;
     if (arg === '--endpoint') args.endpoint = argv[++i] ?? args.endpoint;
+    else if (arg === '--model') args.model = argv[++i] ?? args.model;
+    else if (arg === '--output') args.output = argv[++i] ?? '';
     else if (arg === '--input') args.input = argv[++i] ?? args.input;
     else if (arg === '--output') args.output = argv[++i] ?? args.output;
     else if (arg === '--limit') args.limit = Number(argv[++i]);
@@ -91,6 +95,10 @@ interface Row {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
+  if (!args.output) {
+    const slug = args.model.replace(/^@cf\//, '').replace(/[^a-z0-9]+/gi, '-');
+    args.output = `dist/statutes.${slug}.emb`;
+  }
   if (!existsSync(args.input)) {
     console.error(`missing ${args.input} — run the statute ingest first`);
     process.exit(1);
@@ -103,7 +111,7 @@ async function main(): Promise<void> {
     rows.push(row);
     if (args.limit && rows.length >= args.limit) break;
   }
-  console.log(`embedding ${rows.length} section(s) via ${args.endpoint}`);
+  console.log(`embedding ${rows.length} section(s) with ${args.model} via ${args.endpoint}`);
 
   const prepared = rows.map(prepareText);
   const texts = prepared.map((p) => p.text);
@@ -136,7 +144,7 @@ async function main(): Promise<void> {
     const response = await fetch(args.endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texts: chunk }),
+      body: JSON.stringify({ texts: chunk, model: args.model }),
     });
     if (!response.ok) throw new Error(`${response.status} ${(await response.text()).slice(0, 200)}`);
     const body = (await response.json()) as { vectors: number[][] };
