@@ -114,7 +114,10 @@ into section rows and writes both a `.sql` file for D1 and a `.jsonl` snapshot.
 | | |
 |---|---|
 | Documents parsed | 5,868 (971 Acts, 4,897 regulations) |
-| Sections with text | **191,025** (84,047 Act sections, 106,978 regulation sections) |
+| Provisions with text | **138,750** (sections, order provisions, preamble clauses, and schedule chunks) |
+| Of those, in force | 108,082 |
+| Of those, repealed | 19,010 |
+| Of those, a consolidation placeholder | 11,658 — kept in the store, excluded from the index |
 | Distinct instruments | 5,003 |
 | Languages | English (French is a `--lang fr` run) |
 | Licence | Open Government Licence – Canada |

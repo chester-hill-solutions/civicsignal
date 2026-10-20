@@ -9,9 +9,12 @@ Everything below was measured on 2026-10-19, against the real corpus.
 
 | | |
 |---|---|
-| Sections | **191,025** |
-| Instruments | 5,188 (971 Acts, 4,897 regulations) |
-| Approximate tokens | **30.1M** |
+| Provisions | **138,750** (133,853 sections and provisions, 4,897 schedule chunks) |
+| Instruments | 5,419 (971 Acts, 4,897 regulations, plus orders and proclamations) |
+| Text | **119.4M characters**, about 24M tokens |
+| In force | 108,082 |
+| Repealed | 19,010 |
+| Placeholder (`[Amendment]`) | 11,658 — excluded from the vector index |
 | Longest section | 246,646 characters — about 61K tokens |
 | Licence | Open Government Licence – Canada (commercial use permitted) |
 | Scope | **Federal law only.** "Residential Tenancies Act" and every other provincial statute is absent; provincial law is a separate ingest from e-Laws. |
@@ -26,7 +29,7 @@ one of the 971 Act files carries a 2025 or 2026 consolidation date.
 | Embed the whole corpus, Workers AI BGE-M3 ($0.012/M tokens) | **$0.36** |
 | Embed the whole corpus, Workers AI BGE-Large ($0.204/M tokens) | $6.14 |
 | Embed the whole corpus, self-hosted EmbeddingGemma 2 | free in dollars; hours of a machine |
-| Vectorize storage, 191,025 × 768 dims | **$0.068/month** |
+| Vectorize storage, 127,092 indexed × 768 dims | **$0.045/month** |
 | Vectorize storage at 256 dims (Matryoshka) | $0.019/month |
 | One brief: 4 corpora × top-25 × 768 dims | **$0.00077** |
 
@@ -118,7 +121,7 @@ This is not a tuning problem: PGlite cannot run in a standard Cloudflare Worker,
 cannot run in a Durable Object either, because a Durable Object is a Worker with the
 same 128 MB ceiling. The same applies to a 64 MiB Worker bundle.
 
-My earlier arithmetic — "191,025 × 128 dims is 98 MB, which fits" — was correct about
+My earlier arithmetic — "the whole corpus × 128 dims fits in 98 MB" — was correct about
 the vectors and wrong about the substrate. The vectors were never the problem; the
 Postgres instance is.
 
@@ -331,7 +334,7 @@ is paired with the same gold answer asked exactly.
 ## The evaluation
 
 `bun run eval:retrieval` compares three arms — keyword, vector, and reciprocal rank
-fusion — over the full 191,025-section corpus, and prints a verdict:
+fusion — over the corpus, and prints a verdict:
 
 - the vector arm earns its place, or
 - it helps on concept questions and costs exact ones, in which case the vector arm

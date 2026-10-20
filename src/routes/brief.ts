@@ -66,6 +66,13 @@ export interface BriefResponse {
     section: string;
     resolved: boolean;
     item: CorpusItem | null;
+    /**
+     * The provision's state, when it resolved. "Repealed" is an answer, not a
+     * failure: the useful reply to "what does section 9 say" is sometimes "it was
+     * repealed in 2010", and a corpus that cannot say so is a corpus that has
+     * thrown away the answer.
+     */
+    status?: string;
   } | null;
   sentiment: {
     series: SentimentPoint[];
@@ -167,7 +174,11 @@ export async function buildBrief(
         { act: request.citation.act, limit: 50 },
         ctx,
       );
-      const match = raw.find((r) => r.extra?.['section'] === request.citation!.section);
+      const candidates = raw.filter((r) => r.extra?.['section'] === request.citation!.section);
+      // An amending instrument can hold several provisions with the same label, so
+      // the live one wins over a repealed one when both are present.
+      const match =
+        candidates.find((r) => r.extra?.['inForce'] === true) ?? candidates[0];
       if (match) item = sanitize(statutePolicy, match);
     }
     citation = {
@@ -175,6 +186,7 @@ export async function buildBrief(
       section: request.citation.section,
       resolved: item !== null,
       item,
+      status: item?.extra?.['status'] as string | undefined,
     };
     if (item) {
       sectionItems['legislation'] = [item, ...(sectionItems['legislation'] ?? []).filter((i) => i.id !== item!.id)];

@@ -73,12 +73,18 @@ export const statutesCorpus: Corpus = {
     // An exact instrument filter, used when a citation names the Act.
     const act = query.act ? { sql: ' AND act = ?', binds: [query.act] } : { sql: '', binds: [] as string[] };
 
+    // A citation lookup is not a topic search. It has to find the provision whether
+    // or not it is in force, because the useful answer to "what does section 9
+    // say" is sometimes "it was repealed in 2010" rather than nothing at all. A
+    // topic search still only sees live law.
+    const liveOnly = query.act ? '' : ' AND in_force = 1';
+
     const rows = await queryRows(
       ctx,
-      `SELECT id, corpus_id, act, section, heading, text, source_url, jurisdiction, in_force, topics
+      `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics
          FROM statute_sections
-        WHERE in_force = 1${tok}${jur.sql}${act.sql}
-        ORDER BY act, section
+        WHERE 1 = 1${liveOnly}${tok}${jur.sql}${act.sql}
+        ORDER BY in_force DESC, act, section
         LIMIT ?`,
       [...tokBinds, ...jur.binds, ...act.binds, String(resolveLimit(query.limit))],
     );
@@ -93,7 +99,13 @@ export const statutesCorpus: Corpus = {
       source: STATUTES_CANADA.publisher,
       jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
       topics: splitTopics(row['topics']),
-      extra: { act: String(row['act']), section: String(row['section']), inForce: true },
+      extra: {
+        act: String(row['act']),
+        citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
+        section: String(row['section']),
+        status: row['status'] === null || row['status'] === undefined ? undefined : String(row['status']),
+        inForce: Number(row['in_force']) === 1,
+      },
     }));
   },
 };

@@ -34,13 +34,21 @@ for (const line of readFileSync(corpusPath, 'utf8').split('\n')) {
 }
 
 const keep: Record<string, unknown>[] = [];
+let placeholders = 0;
 for (const row of all) {
+  // A placeholder is a gap in the consolidation, not a provision. It is in the
+  // store so a citation resolves, and out of the index so eleven thousand
+  // identical vectors do not crowd it. It is out of the evaluation corpus too.
+  if (row['status'] === 'placeholder') {
+    placeholders++;
+    continue;
+  }
   if (wanted.has(String(row['act']))) keep.push(row);
 }
 const included = new Set(keep.map((r) => String(r['id'])));
-console.log(`  ${keep.length} section(s) from those corpora`);
+console.log(`  ${keep.length} section(s) from those corpora (${placeholders.toLocaleString()} placeholders excluded)`);
 
-const pool = all.filter((r) => !included.has(String(r['id'])));
+const pool = all.filter((r) => !included.has(String(r['id'])) && r['status'] !== 'placeholder');
 // A deterministic sample, so a run is reproducible.
 //
 // The sample is drawn *without replacement*. Drawing with replacement put the same
