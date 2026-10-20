@@ -9,6 +9,15 @@ import { createCivicSignalMcpHandler } from './mcp/server';
 import { corsHeaders, errorResponse, jsonResponse, newCorrelationId } from './http';
 import type { Env } from './types';
 import { parseScope, ScopeParseError } from './corpora/scope';
+import {
+  BYOK_KEY_HEADER,
+  BYOK_PROVIDER_HEADER,
+  chatErrorResponse,
+  parseChatRequest,
+  parseMatchRequest,
+  runChat,
+} from './routes/chat';
+import { VectorizeIndex, type VectorIndex, type VectorizeBinding } from './vector-index';
 import { loadActTitles } from './corpora/act-titles';
 import { parseCitation } from '@chester-hill-solutions/corpus';
 import type { CorpusContext, CorpusQuery } from './corpora/types';
@@ -61,6 +70,14 @@ export default {
         return await handler.fetch(request);
       }
 
+      if (url.pathname === '/api/chat') {
+        return await handleChat(request, env, ctx, url, correlationId, origin);
+      }
+
+      if (url.pathname === '/api/match') {
+        return await handleMatch(request, env, ctx, url, correlationId, origin);
+      }
+
       if (url.pathname === '/api/brief' || url.pathname === '/api/news' || Object.hasOwn(CORPUS_ROUTES, url.pathname)) {
         return await handleApi(request, env, ctx, url, correlationId, origin);
       }
@@ -72,6 +89,164 @@ export default {
     }
   },
 };
+
+/**
+ * The BYOK chat surface.
+ *
+ * The caller's key arrives in a header, goes to the caller's provider, and is
+ * nowhere else: not logged, not persisted, not in the usage ledger, not in an error.
+ * The CivicSignal key still authorises and bills the *retrieval*.
+ */
+async function handleChat(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  url: URL,
+  correlationId: string,
+  origin: string | null,
+): Promise<Response> {
+  const auth = await authorizeServerKey(env, request);
+  if (!auth.ok) {
+    const status = auth.reason ? httpStatusForKeyDenial(auth.reason) : 401;
+    return errorResponse(
+      auth.reason ?? 'KEY_REQUIRED',
+      auth.message ?? 'A Server API key is required.',
+      env,
+      origin,
+      correlationId,
+      status,
+    );
+  }
+  if (!auth.key || !auth.customer) {
+    return errorResponse('KEY_INVALID', 'The key is not recognised.', env, origin, correlationId, 401);
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse('INVALID_ARGUMENT', 'The body must be JSON.', env, origin, correlationId, 400);
+  }
+
+  const byokKey = request.headers.get(BYOK_KEY_HEADER) ?? '';
+  const byokProvider = request.headers.get(BYOK_PROVIDER_HEADER) ?? 'anthropic';
+
+  try {
+    const result = await runChat(
+      {
+        env,
+        byokKey,
+        byokProvider,
+        retrieve: async (briefRequest) => {
+          const titles = await loadActTitles(env);
+          const citation =
+            briefRequest.topic && titles.length > 0
+              ? parseCitation(briefRequest.topic, titles)?.citation
+              : undefined;
+          return buildBrief({ ...briefRequest, citation }, corpusContext(env));
+        },
+      },
+      parseChatRequest(body),
+    );
+
+    // The retrieval is billable; the generation is the caller's.
+    const billed = await recordSuccessfulBillable(env, { key: auth.key, customer: auth.customer }, {
+      waitUntil: (task) => ctx.waitUntil(task),
+    });
+    if (!billed.allowed) {
+      return billableDenialResponse(billed, correlationId, corsHeaders(env, origin, correlationId));
+    }
+
+    return jsonResponse(
+      {
+        answer: result.answer,
+        provider: result.provider,
+        model: result.model,
+        scope: result.scope,
+        cited: result.cited,
+      },
+      env,
+      origin,
+      correlationId,
+    );
+  } catch (err: unknown) {
+    return chatErrorResponse(err, env, origin, correlationId);
+  }
+}
+
+/**
+ * Bring your own vector.
+ *
+ * The client embeds the query — in a browser, with a public Apache 2.0 model — and
+ * sends the vector. The server never sees the text. What comes back is the cited
+ * rows, passed through the licence gate on the way out.
+ */
+async function handleMatch(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  url: URL,
+  correlationId: string,
+  origin: string | null,
+): Promise<Response> {
+  const auth = await authorizeServerKey(env, request);
+  if (!auth.ok) {
+    const status = auth.reason ? httpStatusForKeyDenial(auth.reason) : 401;
+    return errorResponse(
+      auth.reason ?? 'KEY_REQUIRED',
+      auth.message ?? 'A Server API key is required.',
+      env,
+      origin,
+      correlationId,
+      status,
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse('INVALID_ARGUMENT', 'The body must be JSON.', env, origin, correlationId, 400);
+  }
+  const parsed = parseMatchRequest(body);
+  if (parsed.vector.length === 0) {
+    return errorResponse('INVALID_ARGUMENT', 'A query vector is required.', env, origin, correlationId, 400);
+  }
+
+  const index = vectorIndexFor(env);
+  if (!index) {
+    return errorResponse(
+      'UNSUPPORTED_COVERAGE',
+      'Vector search is not configured for this deployment.',
+      env,
+      origin,
+      correlationId,
+      501,
+    );
+  }
+
+  const topK = Math.min(Math.max(parsed.topK ?? 10, 1), 50);
+  const matches = await index.query(parsed.vector, topK);
+
+  const billed = await recordSuccessfulBillable(env, { key: auth.key!, customer: auth.customer! }, {
+    waitUntil: (task) => ctx.waitUntil(task),
+  });
+  if (!billed.allowed) {
+    return billableDenialResponse(billed, correlationId, corsHeaders(env, origin, correlationId));
+  }
+
+  return jsonResponse(
+    { matches, count: matches.length, corpus: parsed.corpus ?? 'statutes-canada' },
+    env,
+    origin,
+    correlationId,
+  );
+}
+
+function vectorIndexFor(env: Env): VectorIndex | undefined {
+  const binding = (env as { VECTORIZE?: VectorizeBinding }).VECTORIZE;
+  return binding ? new VectorizeIndex(binding) : undefined;
+}
 
 function corpusContext(env: Env): CorpusContext {
   return { db: env.CIVIC_DB, fetch, now: () => new Date() };
