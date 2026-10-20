@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Situational awareness for Canada \u2014 legislation, news, sentiment and geography for any topic.",
+  "description": "Situational awareness for Canada — legislation, news, sentiment and geography for any topic.",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@chester-hill-solutions/api-billing": "file:./vendor/@chester-hill-solutions/api-billing",
     "@chester-hill-solutions/corpus": "file:./vendor/@chester-hill-solutions/corpus",
+    "@cloudflare/containers": "^0.3.7",
     "@cloudflare/workers-types": "^4.20250109.0",
     "@modelcontextprotocol/server": "2.3.1",
     "fast-xml-parser": "^4.5.0",

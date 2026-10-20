@@ -26,6 +26,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fetchWithAuth } from './lib/cloudflare-auth';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
@@ -87,18 +88,6 @@ function parseArgs(argv: string[]): Args {
   return args;
 }
 
-/** The D1 token, from wrangler's own credentials. */
-function d1Token(): string {
-  const config = readFileSync(join(process.env.HOME ?? '.', '.wrangler', 'config', 'default.toml'), 'utf8');
-  const token = /oauth_token\s*=\s*"([^"]+)"/.exec(config)?.[1];
-  if (!token) {
-    throw new Error(
-      'no D1 token found. Run `npx wrangler login` — the load uses the same credentials.',
-    );
-  }
-  return token;
-}
-
 interface Row {
   [key: string]: unknown;
 }
@@ -135,7 +124,6 @@ async function main(): Promise<void> {
     );
     if (args.dryRun) continue;
 
-    const token = d1Token();
     const endpoint = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`;
 
     let sent = 0;
@@ -146,12 +134,9 @@ async function main(): Promise<void> {
     /** One load, with the retry a rate limit needs. */
     const load = async (row: Row): Promise<void> => {
       for (let attempt = 0; attempt < 5; attempt++) {
-        const response = await fetch(endpoint, {
+        const response = await fetchWithAuth(endpoint, {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sql: INSERT_SQL, params: paramsFor(row) }),
         });
 

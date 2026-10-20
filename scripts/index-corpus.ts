@@ -19,12 +19,24 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fetchWithAuth } from './lib/cloudflare-auth';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? 'ad5ec479b9a421faa2ed06c3d1c2b23a';
 const INDEX_NAME = process.env.VECTORIZE_INDEX ?? 'civicsignal-statutes';
 const MODEL = process.env.EMBEDDING_MODEL ?? '@cf/baai/bge-m3';
+
+/**
+ * A local encoder, when the corpus is embedded with the model that ships.
+ *
+ * EmbeddingGemma 2 is served from the `.litertlm` artefact — the same file the
+ * browser runs — and the service applies the model's own document instruction
+ * to the title and the text. So the call is the same shape as the hosted one,
+ * and only the address and the token change.
+ */
+const ENDPOINT = process.env.EMBEDDER_URL ?? '';
+const TOKEN = process.env.ENCODER_TOKEN ?? '';
 
 /**
  * The character window.
@@ -86,15 +98,6 @@ function parseArgs(argv: string[]): Args {
     else if (arg === '--dry-run') args.dryRun = true;
   }
   return args;
-}
-
-function token(): string {
-  const config = readFileSync(join(process.env.HOME ?? '.', '.wrangler', 'config', 'default.toml'), 'utf8');
-  const found = /oauth_token\s*=\s*"([^"]+)"/.exec(config)?.[1];
-  if (!found) {
-    throw new Error('no token found. Run `npx wrangler login` first.');
-  }
-  return found;
 }
 
 interface Row {
@@ -186,35 +189,50 @@ async function fetchWithRetry(url: string, init: RequestInit, what: string): Pro
   throw new Error(`${what} failed after six attempts`);
 }
 
-async function embed(texts: string[], auth: string): Promise<number[][]> {
-  const response = await fetchWithRetry(
-    `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/${MODEL}`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: texts }),
-    },
-  'the embedding call');
+async function embed(texts: string[], titles: string[]): Promise<number[][]> {
+  const response = ENDPOINT
+    ? await fetchWithRetry(
+        ENDPOINT,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
+          },
+          body: JSON.stringify({ texts, titles }),
+        },
+        'the embedding call',
+      )
+    : await fetchWithAuth(
+        `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/${MODEL}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: texts }),
+        },
+      );
   if (!response.ok) {
     throw new Error(`the embedding model refused: ${response.status} ${(await response.text()).slice(0, 200)}`);
   }
-  const body = (await response.json()) as { result?: { data?: number[][] } };
-  const vectors = body.result?.data;
+  const body = (await response.json()) as { result?: { data?: number[][] }; vectors?: number[][] };
+  // The hosted API wraps the vectors in `result`; the local service returns
+  // them directly.
+  const vectors = body.result?.data ?? body.vectors;
   if (!vectors || vectors.length !== texts.length) {
     throw new Error(`the embedding model returned ${vectors?.length ?? 0} of ${texts.length} vectors`);
   }
   return vectors;
 }
 
-async function upsert(vectors: { id: string; values: number[]; metadata: Record<string, string> }[], auth: string): Promise<void> {
-  const response = await fetchWithRetry(
+async function upsert(vectors: { id: string; values: number[]; metadata: Record<string, string> }[]): Promise<void> {
+  const response = await fetchWithAuth(
     `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/vectorize/v2/indexes/${INDEX_NAME}/upsert`,
     {
       method: 'POST',
-      headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vectors }),
     },
-  'the index upsert');
+  );
   if (!response.ok) {
     throw new Error(`the index refused: ${response.status} ${(await response.text()).slice(0, 200)}`);
   }
@@ -222,7 +240,6 @@ async function upsert(vectors: { id: string; values: number[]; metadata: Record<
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const auth = token();
   const langs = args.lang === 'both' ? (['en', 'fr'] as const) : ([args.lang] as const);
 
   for (const lang of langs) {
@@ -259,10 +276,18 @@ async function main(): Promise<void> {
         const index = next++;
         const batch = allBatches[index];
         if (!batch) return;
-        const texts = batch.map(documentText);
+        // The hosted model is given the bare text; the local service is given the
+    // text and the title separately, because the model's own document
+    // instruction puts them together.
+    const texts = ENDPOINT
+      ? batch.map((r) => String(r.text).slice(0, MAX_CHARS))
+      : batch.map(documentText);
         const cost = texts.reduce((sum, t) => sum + Math.ceil(t.length / CHARS_PER_TOKEN), 0);
         try {
-          const vectors = await embed(texts, auth);
+          const vectors = await embed(
+            texts,
+            batch.map((r) => `${r.act} s.${r.section}${r.heading ? ` — ${r.heading}` : ''}`),
+          );
           for (let start = 0; start < vectors.length; start += UPSERT_BATCH) {
             const slice = vectors.slice(start, start + UPSERT_BATCH);
             await upsert(
@@ -274,7 +299,6 @@ async function main(): Promise<void> {
                   metadata: { language: row.language, jurisdiction: row.jurisdiction },
                 };
               }),
-              auth,
             );
           }
           tokens += cost;

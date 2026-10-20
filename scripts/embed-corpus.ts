@@ -65,6 +65,15 @@ interface Args {
   input: string;
   output: string;
   model: string;
+  /**
+   * The task instruction, if the model takes one.
+   *
+   * `none` sends the bare text, which is what bge-m3 wants. `gemma` sends
+   * EmbeddingGemma's document instruction, `title: {title} | text: {content}`,
+   * which is what an instruction-trained model wants — and the title is only
+   * in the text if the instruction is there to put it.
+   */
+  instructions: 'none' | 'gemma';
   limit: number | undefined;
   /**
    * The most documents in one request. A hosted API is bounded by its token
@@ -83,6 +92,7 @@ function parseArgs(argv: string[]): Args {
     input: 'dist/statutes.jsonl',
     output: '',
     model: '@cf/baai/bge-m3',
+    instructions: 'none',
     limit: undefined,
     maxBatch: 250,
     maxChars: MAX_CHARS,
@@ -93,6 +103,13 @@ function parseArgs(argv: string[]): Args {
     if (arg === '--') continue;
     if (arg === '--endpoint') args.endpoint = argv[++i] ?? args.endpoint;
     else if (arg === '--model') args.model = argv[++i] ?? args.model;
+    else if (arg === '--instructions') {
+      const value = argv[++i];
+      if (value !== 'none' && value !== 'gemma') {
+        throw new Error(`--instructions must be none or gemma (got "${value ?? ''}")`);
+      }
+      args.instructions = value;
+    }
     else if (arg === '--output') args.output = argv[++i] ?? '';
     else if (arg === '--input') args.input = argv[++i] ?? args.input;
     else if (arg === '--output') args.output = argv[++i] ?? args.output;
@@ -234,8 +251,15 @@ async function main(): Promise<void> {
         ...(args.token ? { authorization: `Bearer ${args.token}` } : {}),
       },
       body: JSON.stringify({
-        texts: chunk.map((c) => c.text),
-        titles: chunk.map((c) => c.title),
+        // The instruction is applied here rather than by the endpoint, because
+        // the endpoint is a dumb proxy and the instruction belongs to the
+        // model — and two models on the same endpoint want different things.
+        texts: chunk.map((c) =>
+          args.instructions === 'gemma'
+            ? `title: ${c.title} | text: ${c.text}`
+            : c.text,
+        ),
+        titles: args.instructions === 'gemma' ? chunk.map(() => '') : chunk.map((c) => c.title),
         model: args.model,
       }),
     });

@@ -48,6 +48,8 @@ RUN mkdir -p "/models/${MODEL_ID}" \
  && test -s "${LITERT_MODEL_PATH}" \
  && echo "the model is ${MODEL_FILE} in ${MODEL_ID}"
 
+# The service checks a token that arrives in a header of its own, because the
+# Worker's secret is what it forwards.
 COPY services/encoder/server.py /app/server.py
 
 # Railway sets PORT. The service listens on it and nowhere else.

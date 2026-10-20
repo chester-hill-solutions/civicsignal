@@ -1,0 +1,42 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-encoder",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-20",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "containers": [
+    {
+      "name": "ENCODER",
+      "image": "./Dockerfile",
+      // The repository root, so the same Dockerfile works here and on Railway:
+      // it copies `services/encoder/server.py`, which is where the file is.
+      "image_build_context": "../..",
+      "max_instances": 1,
+      // The model is 157 MB and the Python runtime around it needs room, so
+      // the smallest instance type is not enough. `standard-1` is the one with
+      // the memory to hold the artefact and the CPU to run it.
+      "instance_type": "standard-1",
+      "envVars": {
+        "PORT": "8080",
+        "ENCODER_DIMENSIONS": "768",
+        "ENCODER_THREADS": "4"
+      },
+      "image_vars": {
+        "MODEL_REPO": "litert-community/embeddinggemma-2-text-270m-litert-lm",
+        "MODEL_FILE": "embeddinggemma-2-text-270m.litertlm",
+        "MODEL_ID": "embeddinggemma-2-270m"
+      }
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "ENCODER_OBJECT", "class_name": "Encoder" }]
+  },
+  "exports": {
+    "Encoder": {
+      "type": "durable-object",
+      "storage": "sqlite",
+      "container": "ENCODER"
+    }
+  },
+  "observability": { "enabled": true }
+}

@@ -20,6 +20,15 @@ const argOf = (name: string, fallback: string) => {
 const endpoint = argOf('--endpoint', 'http://127.0.0.1:8799/embed');
 const token = argOf('--token', process.env.ENCODER_TOKEN ?? '');
 const model = argOf('--model', '@cf/baai/bge-m3');
+/**
+ * The task instruction, if the model takes one.
+ *
+ * `none` sends the bare query, which is what bge-m3 wants. `gemma` sends
+ * EmbeddingGemma's query instruction, `task: search result | query: {query}`.
+ * A query and a document are not the same kind of input, so an
+ * instruction-trained model wants a different one for each.
+ */
+const instructions = argOf('--instructions', 'none');
 const outFile = argOf('--out', 'dist/query-vectors.json');
 
 const texts = QUESTIONS.map((q) => q.question);
@@ -33,7 +42,13 @@ for (let i = 0; i < texts.length; i += 50) {
       'Content-Type': 'application/json',
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ texts: chunk, model }),
+    body: JSON.stringify({
+      texts:
+        instructions === 'gemma'
+          ? chunk.map((q) => `task: search result | query: ${q}`)
+          : chunk,
+      model,
+    }),
   });
   if (!response.ok) throw new Error(`${response.status} ${(await response.text()).slice(0, 200)}`);
   const body = (await response.json()) as { vectors: number[][] };
