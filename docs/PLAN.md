@@ -39,13 +39,16 @@ brief — not a row.
 
 Wave 0 of this plan is complete and in the repository.
 
-- **The licence boundary, enforced in code.** `src/licensing.ts` strips every item to
-  its corpus policy before it can be emitted. `src/corpora/policies.ts` declares eight
-  corpora with the regime each source actually permits. `test/licensing.test.ts`
-  asserts the boundaries: a cite-only corpus cannot emit a body, a metadata-only
-  corpus cannot emit an excerpt, an unknown corpus is never emitted.
+- **The licence boundary, enforced in code.** It is no longer in this product — it
+  is `@chester-hill-solutions/corpus`, which strips every item to its corpus policy
+  before it can be emitted. `src/corpora/policies.ts` declares eight corpora with the
+  regime each source actually permits. The package's own tests assert the
+  boundaries: a cite-only corpus cannot emit a body, a metadata-only corpus cannot
+  emit an excerpt, an unknown corpus is never emitted.
 - **The corpus layer.** One adapter interface (`src/corpora/types.ts`), five adapters
-  over D1 (`src/corpora/adapters.ts`), one registry (`src/corpora/registry.ts`).
+  (`src/corpora/adapters.ts`), one registry (`src/corpora/registry.ts`). The statute
+  adapter resolves a citation by `act = ? AND section = ?` — an exact lookup, not a
+  search — and reports whether the provision is in force.
 - **The brief.** `src/routes/brief.ts` fans out across corpora, applies each policy,
   and reports which corpora contributed under which regime — so a caller can tell "no
   results" from "not covered".
@@ -59,7 +62,13 @@ Wave 0 of this plan is complete and in the repository.
 - **Discovery.** `/.well-known/civicsignal.json` (capabilities, price, coverage,
   auth, error codes) and `/llms.txt`.
 
-`bun run validate` is green: typecheck, 18 tests, billing invariants.
+Also built since: the BYOK chat surface, the bring-your-own-vector surface, the
+statute corpus (138,750 provisions from 5,419 instruments), the retrieval
+evaluation and its verdict, the stateless ingest, the encoder service, and the
+corpus database schema.
+
+`bun run validate` is green: typecheck, 143 tests, billing invariants, corpus
+invariants.
 
 ## Decisions taken
 
@@ -256,8 +265,11 @@ not a competitor to it.
 
 ## The economics, stated plainly
 
-- Marginal cost per request on Cloudflare Workers is about **$0.0004**. At a $0.005
-  unit price that is roughly 92% gross margin. Infrastructure is not the constraint.
+- Marginal cost per request is about **$0.0004** — a vector search over 127,092
+  provisions, a licence gate, and a response. At a $0.005 unit price that is roughly
+  92% gross margin. Infrastructure is not the constraint, and after the move to a
+  single host it is not even the *shape* of the constraint: the floor is Postgres,
+  the API and the encoder, and it does not scale with traffic.
 - Stripe Canada charges 2.9% **plus CA$0.30** per card transaction, so a $0.01 call
   cannot be sold one card charge at a time. Prepaid credits or Stripe Billing
   pay-as-you-go (0.7% of volume) only. The spine already does prepaid credits.
