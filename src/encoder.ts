@@ -34,13 +34,21 @@ export interface EncoderContract {
   /** The dimension of the vectors. */
   dimensions: number;
   /**
-   * The task prefixes the model was trained with. A query is embedded with the
-   * query prefix and a document with the document prefix; mixing them costs
-   * accuracy, and the hosted EmbeddingGemma on Workers AI accepts no prefix
+   * The task instruction prefixes the model was trained with.
+   *
+   * They are not bare prefixes — they are structured templates, and the document
+   * one has two fields. EmbeddingGemma 2's model card gives, for web and document
+   * search:
+   *
+   *   query     `task: search result | query: {query}`
+   *   document  `title: {title} | text: {content}`
+   *
+   * Mixing them costs accuracy, and omitting them still works but reduces
+   * precision. The hosted EmbeddingGemma on Workers AI accepts no prefix
    * parameter at all, which is one of the reasons it is not used here.
    */
-  queryPrefix: string;
-  documentPrefix: string;
+  queryTemplate: string;
+  documentTemplate: string;
   /** The dimensions Matryoshka training allows the vector to be truncated to. */
   matryoshkaDimensions: number[];
   /** Whether the vectors are L2-normalised. They are. */
@@ -52,27 +60,39 @@ export const ENCODER_CONTRACT: EncoderContract = {
   artefact: 'litert-community/embeddinggemma-2-text-270m-litert-lm',
   file: 'embeddinggemma-2-text-270m.litertlm',
   dimensions: 768,
-  queryPrefix: 'SearchQuery: ',
-  documentPrefix: 'SearchDocument: ',
+  queryTemplate: 'task: search result | query: {query}',
+  documentTemplate: 'title: {title} | text: {content}',
   matryoshkaDimensions: [128, 256, 512, 768],
   normalised: true,
 };
 
 /**
- * The prefix to embed a query with.
+ * The text to embed a query as.
  *
- * EmbeddingGemma 2 was trained with these prefixes and they are not optional
- * decoration: embedding a query with the document prefix, or with neither,
- * measurably degrades the ranking. Measured on this corpus, the prefixed pair
- * scores a higher cosine than the unprefixed one.
+ * EmbeddingGemma 2 was trained with these instructions and they are not optional
+ * decoration: embedding a query with the document instruction, or with neither,
+ * measurably degrades the ranking.
  */
-export function queryPrefix(): string {
-  return ENCODER_CONTRACT.queryPrefix;
+export function queryText(query: string): string {
+  return ENCODER_CONTRACT.queryTemplate.replace('{query}', query);
 }
 
-/** The prefix to embed a document with. */
-export function documentPrefix(): string {
-  return ENCODER_CONTRACT.documentPrefix;
+/**
+ * The text to embed a provision as.
+ *
+ * `title` is the provision's marginal note — "Employee entitled to leave" — and
+ * `content` is the provision itself. The model card's document instruction has
+ * two fields, and a provision has exactly two: a heading and a body.
+ *
+ * The instrument's name goes in the title too, because the title is what
+ * disambiguates. Two provisions called "Application" from two different Acts are
+ * not the same provision, and a retrieval that cannot tell them apart will
+ * return one when the caller asked for the other.
+ */
+export function documentText(input: { title: string; content: string }): string {
+  return ENCODER_CONTRACT.documentTemplate
+    .replace('{title}', input.title)
+    .replace('{content}', input.content);
 }
 
 export interface EmbedRequest {
@@ -145,7 +165,7 @@ export async function embed(request: EmbedRequest): Promise<number[][]> {
 }
 
 /**
- * Embed one query, with the query prefix.
+ * Embed one query, with the query instruction.
  */
 export async function embedQuery(
   endpoint: string,
@@ -154,7 +174,7 @@ export async function embedQuery(
 ): Promise<number[]> {
   const [vector] = await embed({
     endpoint,
-    inputs: [queryPrefix() + text],
+    inputs: [queryText(text)],
     ...options,
   });
   return vector!;

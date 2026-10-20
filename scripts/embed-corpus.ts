@@ -44,6 +44,11 @@ interface Args {
   output: string;
   model: string;
   limit: number | undefined;
+  /**
+   * The most documents in one request. A hosted API is bounded by its token
+   * budget; a local runtime is bounded by memory, and it holds the whole batch.
+   */
+  maxBatch: number;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -53,6 +58,7 @@ function parseArgs(argv: string[]): Args {
     output: '',
     model: '@cf/baai/bge-m3',
     limit: undefined,
+    maxBatch: 250,
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -63,26 +69,50 @@ function parseArgs(argv: string[]): Args {
     else if (arg === '--input') args.input = argv[++i] ?? args.input;
     else if (arg === '--output') args.output = argv[++i] ?? args.output;
     else if (arg === '--limit') args.limit = Number(argv[++i]);
+    else if (arg === '--max-batch') args.maxBatch = Number(argv[++i]) || args.maxBatch;
   }
   return args;
 }
 
-/** The text that represents a section for retrieval: its heading, then its text. */
-export function documentText(section: {
+/**
+ * The title of a provision, for a model that wants one.
+ *
+ * EmbeddingGemma 2's document instruction is `title: {title} | text: {content}`,
+ * and a provision has exactly those two things: a heading and a body. The title
+ * carries the instrument and the section as well as the heading, because that is
+ * what disambiguates — two provisions called "Application" from two different Acts
+ * are not the same provision, and a retrieval that cannot tell them apart returns
+ * one when the caller asked for the other.
+ */
+export function documentTitle(section: {
   act: string;
+  section: string;
   heading: string | null;
-  text: string;
 }): string {
-  return [section.act, section.heading ?? '', section.text].filter(Boolean).join('\n').trim();
+  return [section.act, `s.${section.section}`, section.heading ?? '']
+    .filter(Boolean)
+    .join(' — ')
+    .trim();
 }
 
-/** Truncate to the embedding window, and report whether it happened. */
-export function prepareText(
-  section: { act: string; heading: string | null; text: string },
-): { text: string; truncated: boolean } {
-  const full = documentText(section);
-  if (full.length <= MAX_CHARS) return { text: full, truncated: false };
-  return { text: full.slice(0, MAX_CHARS), truncated: true };
+/**
+ * Truncate to the embedding window, and report whether it happened.
+ *
+ * The title counts against the window, because the model's document instruction
+ * puts them together: `title: {title} | text: {content}`. Truncating the content
+ * to the full window would push the document past it.
+ */
+export function prepareText(section: {
+  act: string;
+  section: string;
+  heading: string | null;
+  text: string;
+}): { text: string; truncated: boolean; title: string } {
+  const title = documentTitle(section);
+  const room = Math.max(1024, MAX_CHARS - title.length - 32);
+  const full = section.text.trim();
+  if (full.length <= room) return { text: full, truncated: false, title };
+  return { text: full.slice(0, room), truncated: true, title };
 }
 
 interface Row {
@@ -155,7 +185,7 @@ async function main(): Promise<void> {
     // gives on this corpus — a 45,000-token budget was reported as 92,820 tokens —
     // so the estimate is deliberately pessimistic and the budget carries margin.
     const estimate = Math.ceil(texts[i]!.length / 2.5);
-    if (tokens + estimate > MAX_BATCH_TOKENS && i > start) {
+    if ((tokens + estimate > MAX_BATCH_TOKENS || i - start >= args.maxBatch) && i > start) {
       batches.push({ start, end: i });
       start = i;
       tokens = 0;
@@ -165,11 +195,15 @@ async function main(): Promise<void> {
   if (start < texts.length) batches.push({ start, end: texts.length });
   console.log(`  ${batches.length} batch(es) within a ${MAX_BATCH_TOKENS}-token budget`);
 
-  const post = async (chunk: string[]): Promise<number[][]> => {
+  const post = async (chunk: { text: string; title: string }[]): Promise<number[][]> => {
     const response = await fetch(args.endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texts: chunk, model: args.model }),
+      body: JSON.stringify({
+        texts: chunk.map((c) => c.text),
+        titles: chunk.map((c) => c.title),
+        model: args.model,
+      }),
     });
     if (!response.ok) throw new Error(`${response.status} ${(await response.text()).slice(0, 200)}`);
     const body = (await response.json()) as { vectors: number[][] };
@@ -181,7 +215,7 @@ async function main(): Promise<void> {
 
   // A batch that the model rejects is split, so one oversized document cannot take
   // the whole job down. A single document that still fails is reported and skipped.
-  const postRobust = async (chunk: string[], label: string): Promise<number[][]> => {
+  const postRobust = async (chunk: { text: string; title: string }[], label: string): Promise<number[][]> => {
     try {
       return await post(chunk);
     } catch (error) {
@@ -198,7 +232,7 @@ async function main(): Promise<void> {
   };
 
   for (const [index, batch] of batches.entries()) {
-    const chunk = texts.slice(batch.start, batch.end);
+    const chunk = prepared.slice(batch.start, batch.end);
     const result = await postRobust(chunk, `rows ${batch.start}-${batch.end - 1}`);
     vectors.push(...result);
 
