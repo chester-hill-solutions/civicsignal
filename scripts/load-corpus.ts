@@ -26,45 +26,9 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fetchWithAuth } from './lib/cloudflare-auth';
+import { writeRows, type Row } from './lib/d1-load';
 
 const ROOT = new URL('..', import.meta.url).pathname;
-
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? 'ad5ec479b9a421faa2ed06c3d1c2b23a';
-const DATABASE_ID = process.env.D1_DATABASE_ID ?? '8056b1a0-f858-4f89-a332-91f7f350eb7b';
-
-/** The columns, in the order the parameters are given. */
-const COLUMNS = [
-  'id',
-  'corpus_id',
-  'act',
-  'citation',
-  'section',
-  'status',
-  'schedule',
-  'part',
-  'heading',
-  'text',
-  'source_url',
-  'jurisdiction',
-  'in_force',
-  'language',
-  'topics',
-  'search_text',
-] as const;
-
-const PLACEHOLDERS = COLUMNS.map(() => '?').join(', ');
-const INSERT_SQL = `INSERT OR REPLACE INTO statute_sections (${COLUMNS.join(', ')}) VALUES (${PLACEHOLDERS})`;
-
-/**
- * How many loads run at once.
- *
- * The D1 REST API has no batch endpoint — `/query` takes one statement — so the
- * throughput comes from having several in flight. The account's own limit is
- * what bounds it, and the answer comes back as a 429 when it is reached, so
- * this is tuned to stay under it rather than to find it.
- */
-const CONCURRENCY = 6;
 
 interface Args {
   lang: 'en' | 'fr' | 'both';
@@ -88,10 +52,6 @@ function parseArgs(argv: string[]): Args {
   return args;
 }
 
-interface Row {
-  [key: string]: unknown;
-}
-
 function rowsFor(lang: 'en' | 'fr'): Row[] {
   const file = join(ROOT, 'dist', lang === 'fr' ? 'statutes-fr.jsonl' : 'statutes.jsonl');
   const text = readFileSync(file, 'utf8');
@@ -99,15 +59,6 @@ function rowsFor(lang: 'en' | 'fr'): Row[] {
     .split('\n')
     .filter(Boolean)
     .map((line) => JSON.parse(line) as Row);
-}
-
-/** The parameters for one row, in the order the placeholders expect them. */
-function paramsFor(row: Row): unknown[] {
-  return COLUMNS.map((column) => {
-    const value = row[column];
-    if (value === undefined || value === null) return null;
-    return value as string | number;
-  });
 }
 
 async function main(): Promise<void> {
@@ -137,70 +88,51 @@ async function main(): Promise<void> {
     );
     if (args.dryRun) continue;
 
-    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`;
-
-    let sent = 0;
-    let failed = 0;
-    const started = Date.now();
-    let next = 0;
-
-    /** One load, with the retry a rate limit needs. */
-    const load = async (row: Row): Promise<void> => {
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const response = await fetchWithAuth(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sql: INSERT_SQL, params: paramsFor(row) }),
-        });
-
-        if (response.status === 429 || response.status >= 500) {
-          // A rate limit or a transient failure: back off and try again. The
-          // row is not lost, because nothing was written.
-          await new Promise((r) => setTimeout(r, 250 * 2 ** attempt));
-          continue;
-        }
-        if (!response.ok) {
-          const body = await response.text();
-          throw new Error(`D1 refused row ${row['id']}: ${response.status} ${body.slice(0, 300)}`);
-        }
-        const result = (await response.json()) as { success: boolean; errors?: { message: string }[] };
-        if (!result.success) {
-          throw new Error(`D1 refused row ${row['id']}: ${result.errors?.[0]?.message ?? 'unknown'}`);
-        }
-        return;
-      }
-      throw new Error(`D1 kept refusing row ${row['id']}`);
+    /**
+     * The rows that are **done**, and the first one that is not.
+     *
+     * The checkpoint says how far the job got, and "how far" has to mean "the
+     * first row that is not loaded" — not "the number of rows we attempted".
+     * An earlier version counted attempts, so a row that failed was counted as
+     * done, the checkpoint walked past it, and the row was never loaded and
+     * never loaded again: 7,741 provisions missing from a corpus that reported
+     * itself complete.
+     *
+     * So the checkpoint is the first gap, and a failure holds it there. The
+     * workers run six at a time, so the first gap is at most six rows behind
+     * the work.
+     */
+    const done = new Set<number>();
+    let firstGap = 0;
+    const advance = (): void => {
+      while (done.has(firstGap)) firstGap++;
     };
 
-    const workers = Array.from({ length: CONCURRENCY }, async () => {
-      for (;;) {
-        const index = next++;
-        if (index >= rows.length) return;
-        try {
-          await load(rows[index]!);
-        } catch (error) {
-          failed++;
-          console.error(`  ${String(error).slice(0, 200)}`);
-        }
-        sent++;
+    const started = Date.now();
+    const result = await writeRows(rows, {
+      onRow: (index, ok) => {
+        if (ok) done.add(index);
+        advance();
+      },
+      onProgress: (sent, total) => {
         // The checkpoint, often: a crash costs a second's work.
         if (sent % 500 === 0) {
-          writeFileSync(checkpoint, String(args.skip + sent));
+          writeFileSync(checkpoint, String(args.skip + firstGap));
         }
-        if (sent % 2_000 === 0 || sent === rows.length) {
+        if (sent % 2_000 === 0 || sent === total) {
           const rate = sent / ((Date.now() - started) / 1000);
-          const left = Math.round((rows.length - sent) / rate);
+          const left = Math.round((total - sent) / rate);
           console.log(
-            `  ${sent.toLocaleString()} / ${rows.length.toLocaleString()} ` +
+            `  ${sent.toLocaleString()} / ${total.toLocaleString()} ` +
               `(${rate.toFixed(0)}/s, about ${Math.round(left / 60)} min left)`,
           );
         }
-      }
+      },
     });
-    await Promise.all(workers);
+    writeFileSync(checkpoint, String(args.skip + firstGap));
 
-    if (failed) {
-      throw new Error(`${failed} row(s) failed to load — the corpus is incomplete.`);
+    if (result.failed) {
+      throw new Error(`${result.failed} row(s) failed to load — the corpus is incomplete.`);
     }
     console.log(`load-corpus: ${lang} loaded`);
   }

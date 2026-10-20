@@ -123,15 +123,93 @@ OPTIONS = None
 # that succeeds in two seconds beats a refused one that succeeds if you retry.
 ENGINE_LOCK = threading.Lock()
 
+# How much text one call may carry.
+#
+# The compiled model's signature carries its own deadline, and a call that
+# exceeds it dies **mid-flight** with `DEADLINE_EXCEEDED`. The corpus embed hit
+# exactly that: the batches are sorted by length, so the last ones hold the
+# longest provisions, and one of them ran past the deadline.
+#
+# The deadline is a property of the *model*, so it cannot be configured from
+# here, and it is a wall-clock: the same batch passes on the GPU and fails on
+# the CPU. So the work per call is bounded by **characters**, and the bound is
+# set where the machine is known. 120,000 characters is about 30,000 tokens,
+# which the GPU does in a few seconds and the CPU in well under a minute.
+#
+# Splitting a batch does not change the total work — it changes how much of it
+# is in flight at once, which is what the deadline is about.
+MAX_BATCH_CHARS = int(os.environ.get("ENCODER_MAX_BATCH_CHARS", "120000"))
+
+
+def split_by_size(contents: list[str]) -> list[list[str]]:
+    """
+    Split a batch so no one call carries more than `MAX_BATCH_CHARS`.
+
+    A text longer than the budget is alone in its batch: it cannot be split
+    without changing what it means, and a caller that sends one enormous
+    provision has already told us it is expensive.
+    """
+    batches: list[list[str]] = []
+    current: list[str] = []
+    current_chars = 0
+    for content in contents:
+        size = len(content)
+        if current and current_chars + size > MAX_BATCH_CHARS:
+            batches.append(current)
+            current = []
+            current_chars = 0
+        current.append(content)
+        current_chars += size
+    if current:
+        batches.append(current)
+    return batches
+
 
 def embed(contents: list[str]) -> list[list[float]]:
+    """
+    Embed a batch, on a rebuilt engine if the call fails.
+
+    **A failed call can leave the engine's tensor buffer locked.** The runtime
+    holds that buffer across the call, and a call that dies mid-flight — a
+    deadline, a cancelled request, a GPU hiccup — does not release it. Every
+    call after that fails with "Tensor buffer is already locked", forever: a
+    dead encoder that answers 500 and looks alive, which is the failure mode
+    that costs a corpus embed its last two hours.
+
+    So a failure **drops the engine**. The buffer belongs to the model, so a
+    fresh model has a fresh buffer, and the call is tried once more. The second
+    failure is the real answer, and it is raised.
+    """
+    global ENGINE, OPTIONS
+    vectors: list[list[float]] = []
+    for batch in split_by_size(contents):
+        vectors.extend(embed_batch(batch))
+    return vectors
+
+
+def embed_batch(contents: list[str]) -> list[list[float]]:
     global ENGINE, OPTIONS
     with ENGINE_LOCK:
-        if ENGINE is None:
-            ENGINE = build_engine()
-            OPTIONS = build_options()
-        responses = ENGINE.compute_embedding_batch(contents, options=OPTIONS)
-        return [list(response.embedding) for response in responses]
+        last_error: Exception | None = None
+        for attempt in (1, 2):
+            if ENGINE is None:
+                ENGINE = build_engine()
+                OPTIONS = build_options()
+            try:
+                responses = ENGINE.compute_embedding_batch(contents, options=OPTIONS)
+                return [list(response.embedding) for response in responses]
+            except Exception as error:  # noqa: BLE001 — the message is the diagnosis
+                last_error = error
+                ENGINE = None
+                OPTIONS = None
+                if attempt == 2:
+                    raise
+                print(
+                    f"the embedding call failed ({error}); the engine is rebuilt and the "
+                    f"batch is tried once more",
+                    flush=True,
+                )
+        raise last_error  # unreachable, and the type checker wants it
 
 
 class Handler(BaseHTTPRequestHandler):

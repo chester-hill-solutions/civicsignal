@@ -291,6 +291,29 @@ async function main(): Promise<void> {
     let next = 0;
     let failed = 0;
 
+    /**
+     * The checkpoint is the **first batch that is not done**.
+     *
+     * The workers take the batches in order and run three at a time, so the
+     * number of batches finished is not the number of rows finished — a count
+     * would walk past a batch that was still in flight, and a crash there would
+     * skip it for good. A corpus with a few thousand provisions missing from
+     * its index is a corpus that answers with less than it has, and nobody
+     * notices, because the missing provisions are simply the ones it never
+     * finds.
+     *
+     * So the checkpoint is the first gap, and a failed batch holds it there.
+     */
+    const completed = new Set<number>();
+    let firstGap = 0;
+    let prefixRows = 0;
+    const advance = (): void => {
+      while (completed.has(firstGap)) {
+        prefixRows += allBatches[firstGap]?.length ?? 0;
+        firstGap++;
+      }
+    };
+
     const worker = async (): Promise<void> => {
       for (;;) {
         const index = next++;
@@ -322,23 +345,27 @@ async function main(): Promise<void> {
             );
           }
           tokens += cost;
+          // A batch that was written is a batch that is done.
+          completed.add(index);
+          advance();
         } catch (error) {
           failed++;
           console.error(`  ${String(error).slice(0, 160)}`);
+          // A failed batch is **not** completed: it holds the checkpoint at the
+          // gap, so the next run tries it again.
         }
         done += batch.length;
         // The checkpoint, after every batch: a crash costs one batch.
-        if (done % 200 < batch.length) {
-          writeFileSync(checkpoint, String(args.skip + done));
-        }
+        writeFileSync(checkpoint, String(args.skip + prefixRows));
         // The boundary is crossed, not hit: a batch can be nine thousand rows
         // long, so `done % 5_000` would never be zero and the progress would
         // never print.
-        if (Math.floor(done / 5_000) > Math.floor((done - batch.length) / 5_000) || done === selected.length) {
+        const absolute = args.skip + done;
+        if (Math.floor(absolute / 5_000) > Math.floor((absolute - batch.length) / 5_000) || done === remaining.length) {
           const rate = done / ((Date.now() - started) / 1000);
-          const left = Math.round((selected.length - done) / rate);
+          const left = Math.round((selected.length - absolute) / rate);
           console.log(
-            `  ${done.toLocaleString()} / ${selected.length.toLocaleString()} ` +
+            `  ${absolute.toLocaleString()} / ${selected.length.toLocaleString()} ` +
               `(${rate.toFixed(0)}/s, about ${Math.round(left / 60)} min left)`,
           );
         }
