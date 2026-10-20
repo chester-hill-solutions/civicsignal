@@ -47,6 +47,34 @@ at all**, so it moves for free.
 **DNS, and Turnstile.** Both are free and host-agnostic, and neither is a hosting
 decision.
 
+## What is actually running today
+
+**The API is on Cloudflare Workers, with the corpus in D1 and the vectors in
+Vectorize.** That is not the decision above; it is what happened while Railway
+was refusing to create a project.
+
+The gap is real and it is worth being honest about. The decision was one host
+because the marginal cost of a request is about $0.0004 and the product's
+infrastructure cost is dominated by *state* — a corpus database and a customer
+database, both of which need backups and both of which are cheaper to keep
+than to rebuild. Cloudflare's D1 is the corpus's rebuildable half, which is
+exactly what it is good for, and the customer half is still KV, which is
+neither.
+
+So the plane today is a **half-port**: the corpus is where it should be for
+the cheap half, the API is where the code already was, and the customer
+database is still in the KV namespace the spine came with.
+
+What is *not* in doubt is that the port is worth doing. Railway's deploys
+were paused, and a product that cannot be deployed is a product that cannot
+be tested, and a product that cannot be tested is a product whose corpus is
+never loaded — which is exactly what happened here for a month.
+
+**The order does not change because the plane did.** The extraction is the same
+either way, and the extraction is what makes the port cheap: once the metering
+is a package and the keys are the house's, the Bun service is a thin shell
+over code that has been tested on two planes already.
+
 ## Scale to zero, honestly
 
 The argument for keeping the API on Workers is that it costs nothing when idle.
