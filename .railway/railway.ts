@@ -61,7 +61,14 @@ export default defineRailway((ctx) => {
    * The corpus database. The pgvector image, declared rather than inherited from
    * a template, so the environment is reproducible from this file.
    */
-  const corpus = database('corpus', 'postgres', {
+  // The engine is `private`, not `postgres`.
+  //
+  // `postgres` is Railway's **managed** Postgres, and its image does not ship
+  // pgvector — the library is not in the image, so the extension cannot be
+  // added afterwards. The corpus holds the vector index, so it has to be a
+  // pgvector image, and `private` is the engine that says "this image, with a
+  // volume, and no managed features".
+  const corpus = database('corpus', 'private', {
     image: 'pgvector/pgvector:pg18',
     output: 'CORPUS_DATABASE_URL',
   });
@@ -85,12 +92,13 @@ export default defineRailway((ctx) => {
    * in the same vector space by construction rather than by approximation.
    */
   const encoder = service('encoder', {
-    source: github('chester-hill-solutions/civicsignal', {
-      rootDirectory: 'services/encoder',
-    }),
+    // The build context is the **repository root**, not the service's
+    // directory: the Dockerfile copies `services/encoder/server.py`, and a
+    // context of `services/encoder` has no `services/encoder` inside it.
+    source: github('chester-hill-solutions/civicsignal'),
     build: {
       builder: 'DOCKERFILE',
-      dockerfilePath: 'Dockerfile',
+      dockerfilePath: 'services/encoder/Dockerfile',
     },
     healthcheck: '/health',
     healthcheckTimeout: 120,
@@ -109,12 +117,13 @@ export default defineRailway((ctx) => {
    * what moved. A typical corpus commit changes 56 provisions.
    */
   const pipeline = service('pipeline', {
-    source: github('chester-hill-solutions/civicsignal', {
-      rootDirectory: 'services/pipeline',
-    }),
+    // The build context is the repository root, for the same reason: the
+    // Dockerfile copies `package.json`, `src`, `services` and `vendor`, all of
+    // which are at the root.
+    source: github('chester-hill-solutions/civicsignal'),
     build: {
       builder: 'DOCKERFILE',
-      dockerfilePath: 'Dockerfile',
+      dockerfilePath: 'services/pipeline/Dockerfile',
     },
     env: {
       // `ref` rather than `corpus.env.…`: the database names its own output, and

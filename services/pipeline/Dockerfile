@@ -18,12 +18,18 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
 # Dependencies first, so a change to the corpus does not reinstall them.
+#
+# **The vendored packages come before the install.** Two of the dependencies are
+# `file:` references into `vendor/`, and bun resolves a `file:` dependency while
+# it installs — so if the vendor directory is not there yet, the install fails
+# with "Failed to install 2 packages" and the build stops. The two packages are
+# the house's own: the corpus and the metering.
 COPY package.json bun.lock ./
+COPY vendor ./vendor
 RUN bun install --frozen-lockfile
 
 COPY src ./src
 COPY scripts ./scripts
 COPY services ./services
-COPY vendor ./vendor
 
 CMD ["bun", "scripts/pipeline-run.ts", "--watch"]
