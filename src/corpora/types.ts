@@ -25,6 +25,8 @@ export interface CorpusQuery {
   jurisdiction?: string;
   /** Federal or provincial riding code, where the corpus is geography-scoped. */
   riding?: string;
+  /** An exact instrument title, where the corpus is instrument-scoped. */
+  act?: string;
   /** ISO-8601 date, inclusive. */
   since?: string;
   /** ISO-8601 date, inclusive. */

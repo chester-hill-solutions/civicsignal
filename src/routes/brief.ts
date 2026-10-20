@@ -1,7 +1,7 @@
 import type { CorpusItem, CorpusPolicy, RawCorpusItem } from '../licensing';
 import { POLICIES_BY_ID } from '../corpora/policies';
 
-import { gdeltCorpus, newsCorpus } from '../corpora/adapters';
+import { gdeltCorpus, newsCorpus, statutesCorpus } from '../corpora/adapters';
 import { BRIEF_SECTIONS, CORPUSES } from '../corpora/registry';
 import type { Corpus, CorpusContext, CorpusQuery, Scope } from '../corpora/types';
 
@@ -16,6 +16,15 @@ export interface BriefRequest extends CorpusQuery {
   exclude?: string[];
   /** How the question is framed geographically. */
   scope?: Scope;
+  /**
+   * A citation resolved from the question, ahead of the search arms.
+   *
+   * A citation is a key, not a similarity. "What does section 210 of the Canada
+   * Labour Code say?" is not a query, and running it through a search index puts the
+   * right answer at rank five, because a bare section number has almost no IDF
+   * across 191,000 sections.
+   */
+  citation?: { act: string; section: string };
 }
 
 export interface SentimentPoint {
@@ -51,6 +60,13 @@ export interface BriefResponse {
   debate: CorpusItem[];
   legislation: CorpusItem[];
   bills: CorpusItem[];
+  /** The provision the question cited, if it named one, resolved structurally. */
+  citation: {
+    act: string;
+    section: string;
+    resolved: boolean;
+    item: CorpusItem | null;
+  } | null;
   sentiment: {
     series: SentimentPoint[];
     mean: number | null;
@@ -71,6 +87,8 @@ export interface BriefResponse {
   }[];
   attribution: string[];
 }
+
+const statutesCorpusId = statutesCorpus.id;
 
 const SENTIMENT_NOTE =
   'Tone is GDELT\'s document-tone metric for the matching window, averaged by day. It is a measure of tone in coverage, not of public opinion.';
@@ -136,6 +154,33 @@ export async function buildBrief(
     sectionItems[section.key] = items;
   }
 
+  // A citation, when the question named one, is placed first in the legislation
+  // section — it is the provision the caller asked for, and a search ranking is the
+  // wrong way to decide it.
+  let citation: BriefResponse['citation'] = null;
+  if (request.citation) {
+    const statutePolicy = policies.get(statutesCorpusId);
+    const statuteCorpus = byId.get(statutesCorpusId);
+    let item: CorpusItem | null = null;
+    if (statuteCorpus && statutePolicy) {
+      const raw = await statuteCorpus.retrieve(
+        { act: request.citation.act, limit: 50 },
+        ctx,
+      );
+      const match = raw.find((r) => r.extra?.['section'] === request.citation!.section);
+      if (match) item = sanitize(statutePolicy, match);
+    }
+    citation = {
+      act: request.citation.act,
+      section: request.citation.section,
+      resolved: item !== null,
+      item,
+    };
+    if (item) {
+      sectionItems['legislation'] = [item, ...(sectionItems['legislation'] ?? []).filter((i) => i.id !== item!.id)];
+    }
+  }
+
   const sentimentRaw = rawByCorpus.get(gdeltCorpus.id) ?? [];
   const series = buildSentimentSeries(sentimentRaw);
   const scores = series.map((p) => p.score);
@@ -173,6 +218,7 @@ export async function buildBrief(
     news: sectionItems['news'] ?? [],
     debate: sectionItems['debate'] ?? [],
     legislation: sectionItems['legislation'] ?? [],
+    citation,
     bills: sectionItems['bills'] ?? [],
     sentiment: { series, mean, volume: sentimentRaw.length, note: SENTIMENT_NOTE },
     spread,

@@ -137,6 +137,57 @@ describe('brief assembly', () => {
     expect(brief.legislation).toHaveLength(1);
   });
 
+  it('places a cited provision first, ahead of the search ranking', async () => {
+    const statute: Corpus = {
+      id: 'statutes-canada',
+      policy: STATUTES_CANADA,
+      supports: () => true,
+      retrieve: async (query) => {
+        const rows: RawCorpusItem[] = [
+          {
+            corpusId: 'statutes-canada',
+            kind: 'statute',
+            id: 's210',
+            title: 'Canada Labour Code s.210',
+            body: 'The cited provision.',
+            citationUrl: 'https://example.invalid/s210',
+            source: 'Government of Canada',
+            extra: { act: 'Canada Labour Code', section: '210' },
+          },
+          {
+            corpusId: 'statutes-canada',
+            kind: 'statute',
+            id: 's246',
+            title: 'Canada Labour Code s.246',
+            body: 'Some other provision.',
+            citationUrl: 'https://example.invalid/s246',
+            source: 'Government of Canada',
+            extra: { act: 'Canada Labour Code', section: '246' },
+          },
+        ];
+        return query.act ? rows.filter((r) => r.extra?.['act'] === query.act) : rows;
+      },
+    };
+    const brief = await buildBrief(
+      { topic: 'Canada Labour Code', citation: { act: 'Canada Labour Code', section: '210' } },
+      ctx,
+      [statute],
+    );
+    expect(brief.citation?.resolved).toBe(true);
+    expect(brief.citation?.item?.id).toBe('s210');
+    expect(brief.legislation[0]?.id).toBe('s210');
+  });
+
+  it('reports a citation that names a section the instrument does not have', async () => {
+    const brief = await buildBrief(
+      { topic: 'Canada Labour Code', citation: { act: 'Canada Labour Code', section: '999' } },
+      ctx,
+      [],
+    );
+    expect(brief.citation?.resolved).toBe(false);
+    expect(brief.citation?.item).toBeNull();
+  });
+
   it('returns an explicit empty brief rather than an error for an unknown corpus', async () => {
     const brief = await buildBrief({ topic: 'housing' }, ctx, []);
     expect(brief.news).toHaveLength(0);

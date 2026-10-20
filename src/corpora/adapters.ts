@@ -70,15 +70,17 @@ export const statutesCorpus: Corpus = {
     const jur = query.jurisdiction
       ? { sql: ' AND jurisdiction = ?', binds: [query.jurisdiction.toUpperCase()] }
       : { sql: '', binds: [] as string[] };
+    // An exact instrument filter, used when a citation names the Act.
+    const act = query.act ? { sql: ' AND act = ?', binds: [query.act] } : { sql: '', binds: [] as string[] };
 
     const rows = await queryRows(
       ctx,
       `SELECT id, corpus_id, act, section, heading, text, source_url, jurisdiction, in_force, topics
          FROM statute_sections
-        WHERE in_force = 1${tok}${jur.sql}
+        WHERE in_force = 1${tok}${jur.sql}${act.sql}
         ORDER BY act, section
         LIMIT ?`,
-      [...tokBinds, ...jur.binds, String(resolveLimit(query.limit))],
+      [...tokBinds, ...jur.binds, ...act.binds, String(resolveLimit(query.limit))],
     );
 
     return rows.map((row) => ({
