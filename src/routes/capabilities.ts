@@ -39,6 +39,12 @@ export interface Capabilities {
     header: string;
   };
   endpoints: { path: string; description: string }[];
+  scopes: {
+    parameter: string;
+    format: string;
+    values: string[];
+    note: string;
+  }[];
   mcp: { url: string; transport: string; tools: { name: string; description: string }[] };
   errors: { code: string; meaning: string }[];
 }
@@ -78,11 +84,33 @@ export function buildCapabilities(env: Env, origin: string): Capabilities {
       header: 'Authorization',
     },
     endpoints: [
-      { path: '/api/brief', description: 'The join: news, tone, statutes, bills and debate for one topic.' },
+      {
+        path: '/api/brief',
+        description:
+          'The join: news, tone, statutes, bills and debate for one topic. Takes an optional `scope`.',
+      },
       { path: '/api/statutes', description: 'Statutes and regulations in force, with section text.' },
       { path: '/api/news', description: 'News items and the tone series for a topic.' },
       { path: '/api/bills', description: 'Bills and their stage.' },
       { path: '/api/debates', description: 'Cited debate passages.' },
+    ],
+    scopes: [
+      {
+        parameter: 'scope',
+        format: '<type>[:<value>]',
+        values: [
+          'topic',
+          'riding:35047',
+          'jurisdiction:ON',
+          'municipality:Burlington,Ontario',
+          'region:goldenhorseshoe',
+        ],
+        note:
+          'Geography is the caller\'s framing of the question, not a mode the product switches on. ' +
+          'Whichever scope you choose, the brief also reports where the topic is live across Canada, ' +
+          'so you can see the distribution before deciding how to narrow it. An unparseable scope is ' +
+          'an error rather than a silent fallback.',
+      },
     ],
     mcp: {
       url: `${baseUrl}/mcp`,

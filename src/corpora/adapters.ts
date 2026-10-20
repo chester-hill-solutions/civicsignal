@@ -160,7 +160,7 @@ export const newsCorpus: Corpus = {
 
     const rows = await queryRows(
       ctx,
-      `SELECT id, corpus_id, title, outlet, published_at, url, jurisdiction, topics
+      `SELECT id, corpus_id, title, outlet, published_at, url, jurisdiction, riding, topics
          FROM news_items
         WHERE 1 = 1${tok}${dates}${jur.sql}
         ORDER BY published_at DESC
@@ -178,6 +178,7 @@ export const newsCorpus: Corpus = {
       source: String(row['outlet']),
       jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
       topics: splitTopics(row['topics']),
+      extra: row['riding'] === null ? undefined : { riding: String(row['riding']) },
     }));
   },
 };

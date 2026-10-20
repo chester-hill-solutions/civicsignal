@@ -1,5 +1,20 @@
 import type { CorpusPolicy, RawCorpusItem } from '../licensing';
 
+/**
+ * How the question is framed geographically.
+ *
+ * Geography is not a mode the product switches on or off — it is a lens the caller
+ * chooses, and it depends on the issue and on how they want to frame it. A
+ * topic-only brief still reports where the topic is live, so the caller can see the
+ * distribution before deciding how to narrow it.
+ */
+export type Scope =
+  | { type: 'topic' }
+  | { type: 'riding'; code: string; name?: string }
+  | { type: 'municipality'; name: string; province?: string }
+  | { type: 'jurisdiction'; code: string; name?: string }
+  | { type: 'region'; name: string };
+
 /** A query, as a caller expresses it. Every corpus decides for itself whether it can answer. */
 export interface CorpusQuery {
   /** Free-text topic, e.g. "housing", "pharmacare", "clean electricity". */
@@ -15,6 +30,8 @@ export interface CorpusQuery {
   /** ISO-8601 date, inclusive. */
   until?: string;
   limit?: number;
+  /** How the question is framed geographically, when the caller set one. */
+  scope?: Scope;
 }
 
 export interface CorpusContext {

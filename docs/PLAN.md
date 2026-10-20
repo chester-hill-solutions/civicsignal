@@ -61,6 +61,23 @@ Wave 0 of this plan is complete and in the repository.
 
 `bun run validate` is green: typecheck, 18 tests, billing invariants.
 
+## Decisions taken
+
+**Geography is a framing choice, not a fixed dimension.** (2026-10-20, owner.) It
+depends on the issue and on how the client wants to frame it. So the brief takes an
+optional `scope` — topic-only, or scoped to a riding, municipality, province or
+region — and every corpus is filtered by it. A topic-only brief additionally reports
+*where the topic is actually live*, so the client can see the distribution before
+choosing how to frame the question. Geography is never switched on or off; it is a
+lens the caller picks, and the answer includes the evidence for picking it.
+
+**The Policorner wire stays a separate product.** (2026-10-20, owner.) The wire is
+reader-facing and keeps its own brand and audience. This product consumes its output
+as a data source — shared pipeline and shared tables where that is useful, but no
+shared brand, no shared account, and no shared surface. The wire's source policy
+governs what may be republished, and this product's licence register is downstream
+of it.
+
 ## The waves
 
 Each wave ends with something observable. The order is chosen so that the cheapest
@@ -159,17 +176,16 @@ not a competitor to it.
 
 ## Open questions
 
-1. **Is the geography a first-class dimension or a filter?** A brief scoped to a riding
-   is a different product from a brief scoped to a topic, and the second layer
-   depends on which.
+1. ~~Is the geography a first-class dimension or a filter?~~ **Decided.** Geography is
+   a framing choice the caller makes; see *Decisions taken*.
 2. **Which is the first province beyond federal?** Ontario is the obvious one — the
    corpus, the wire and the geography all exist — but provincial legislative terms
    vary and each needs its own licence check.
-3. **Does the news wire stay a separate product?** The wire is a reader-facing
-   product with its own audience. This product consumes it. Whether they share a
-   pipeline, a brand, or only a database is a decision that should be made before
-   wave 2, not after.
+3. ~~Does the news wire stay a separate product?~~ **Decided.** It stays separate; see
+   *Decisions taken*.
 4. **What is the name?** The working name in this repository is provisional.
+5. **What is the second layer?** The candidates are listed in wave 4. The choice
+   depends on the answer to the twenty-hour test: who calls, and what they call for.
 
 ## What would change the plan
 

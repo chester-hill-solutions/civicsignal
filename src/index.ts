@@ -8,6 +8,7 @@ import { capabilitiesResponse, llmsTxt } from './routes/capabilities';
 import { createCivicSignalMcpHandler } from './mcp/server';
 import { corsHeaders, errorResponse, jsonResponse, newCorrelationId } from './http';
 import type { Env } from './types';
+import { parseScope, ScopeParseError } from './corpora/scope';
 import type { CorpusContext, CorpusQuery } from './corpora/types';
 
 /**
@@ -100,7 +101,15 @@ async function handleApi(
 
   const billing: BillableAuthContext = { key: auth.key, customer: auth.customer };
   const query = parseQuery(url);
-  const body = await runQuery(url.pathname, query, env);
+  let body: unknown;
+  try {
+    body = await runQuery(url.pathname, query, env);
+  } catch (err: unknown) {
+    if (err instanceof ScopeParseError) {
+      return errorResponse('INVALID_ARGUMENT', err.message, env, origin, correlationId, 400);
+    }
+    throw err;
+  }
 
   const billed = await recordSuccessfulBillable(env, billing, {
     waitUntil: (task) => ctx.waitUntil(task),
@@ -155,5 +164,6 @@ function parseQuery(url: URL): CorpusQuery {
   const until = url.searchParams.get('until') ?? undefined;
   const limitRaw = url.searchParams.get('limit');
   const limit = limitRaw === null ? undefined : Number(limitRaw);
-  return { topic, keywords, jurisdiction, riding, since, until, limit };
+  const scope = parseScope(url.searchParams.get('scope'));
+  return { topic, keywords, jurisdiction, riding, since, until, limit, scope };
 }

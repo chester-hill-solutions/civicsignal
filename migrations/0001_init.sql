@@ -44,11 +44,16 @@ CREATE TABLE IF NOT EXISTS news_items (
   published_at TEXT NOT NULL,
   url          TEXT NOT NULL,
   jurisdiction TEXT,
+  -- Riding code, when the wire can attribute the item geographically. Null until the
+  -- geography join lands; the spread section reports its own coverage.
+  riding       TEXT,
   topics       TEXT,
   search_text  TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_news_search ON news_items (search_text);
 CREATE INDEX IF NOT EXISTS idx_news_published ON news_items (published_at);
+CREATE INDEX IF NOT EXISTS idx_news_riding ON news_items (riding);
+CREATE INDEX IF NOT EXISTS idx_news_jur ON news_items (jurisdiction);
 
 CREATE TABLE IF NOT EXISTS gdelt_events (
   id           TEXT PRIMARY KEY,

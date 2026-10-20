@@ -1,9 +1,9 @@
 import type { CorpusItem, CorpusPolicy, RawCorpusItem } from '../licensing';
 import { POLICIES_BY_ID } from '../corpora/policies';
 
-import { gdeltCorpus } from '../corpora/adapters';
+import { gdeltCorpus, newsCorpus } from '../corpora/adapters';
 import { BRIEF_SECTIONS, CORPUSES } from '../corpora/registry';
-import type { Corpus, CorpusContext, CorpusQuery } from '../corpora/types';
+import type { Corpus, CorpusContext, CorpusQuery, Scope } from '../corpora/types';
 
 export function policyMap(): Map<string, CorpusPolicy> {
   return POLICIES_BY_ID;
@@ -14,6 +14,8 @@ export interface BriefRequest extends CorpusQuery {
   include?: string[];
   /** Sections to omit. */
   exclude?: string[];
+  /** How the question is framed geographically. */
+  scope?: Scope;
 }
 
 export interface SentimentPoint {
@@ -22,9 +24,26 @@ export interface SentimentPoint {
   count: number;
 }
 
+export interface SpreadBucket {
+  code: string;
+  label: string;
+  count: number;
+  /** Share of the geographically-attributed items, 0–1. */
+  share: number;
+}
+
+export interface Spread {
+  byJurisdiction: SpreadBucket[];
+  byRiding: SpreadBucket[];
+  /** How much of the underlying set could be attributed geographically. */
+  coverage: { attributed: number; total: number };
+  note: string;
+}
+
 export interface BriefResponse {
   topic: string;
   generatedAt: string;
+  scope: Scope;
   jurisdiction: string | null;
   riding: string | null;
   window: { since: string | null; until: string | null };
@@ -38,6 +57,11 @@ export interface BriefResponse {
     volume: number;
     note: string;
   };
+  /**
+   * Where the topic is live, across the whole country, independent of the scope the
+   * brief was asked for. This is the evidence for deciding how to frame the question.
+   */
+  spread: Spread;
   coverage: {
     corpusId: string;
     title: string;
@@ -64,11 +88,19 @@ export async function buildBrief(
   /** Corpus set override. Production passes nothing; tests pass fakes. */
   corpora: Corpus[] = CORPUSES,
 ): Promise<BriefResponse> {
+  const scope = request.scope ?? { type: 'topic' as const };
+
+  // The scope is the caller's framing of the question; it narrows the corpora by
+  // whichever geography it names. An explicit `jurisdiction`/`riding` on the request
+  // still wins, because a caller who set it meant it.
+  const scopedJurisdiction = request.jurisdiction ?? jurisdictionOf(scope);
+  const scopedRiding = request.riding ?? ridingOf(scope);
+
   const query: CorpusQuery = {
     topic: request.topic,
     keywords: request.keywords,
-    jurisdiction: request.jurisdiction,
-    riding: request.riding,
+    jurisdiction: scopedJurisdiction,
+    riding: scopedRiding,
     since: request.since,
     until: request.until,
     limit: request.limit,
@@ -129,9 +161,12 @@ export async function buildBrief(
     return policy?.attribution ?? c.corpusId;
   }))];
 
+  const spread = await computeSpread(request, ctx, byId, scope);
+
   return {
     topic: request.topic ?? '',
     generatedAt: ctx.now().toISOString(),
+    scope,
     jurisdiction: request.jurisdiction ?? null,
     riding: request.riding ?? null,
     window: { since: request.since ?? null, until: request.until ?? null },
@@ -140,9 +175,117 @@ export async function buildBrief(
     legislation: sectionItems['legislation'] ?? [],
     bills: sectionItems['bills'] ?? [],
     sentiment: { series, mean, volume: sentimentRaw.length, note: SENTIMENT_NOTE },
+    spread,
     coverage,
     attribution,
   };
+}
+
+/**
+ * Where the topic is live, independent of the scope the brief was asked for.
+ *
+ * A scoped brief answers "what is happening in my riding"; the spread answers "and
+ * where is this actually happening", which is the evidence for choosing the scope
+ * in the first place. It costs one extra query per geography-bearing corpus.
+ */
+async function computeSpread(
+  request: BriefRequest,
+  ctx: CorpusContext,
+  corpora: Map<string, Corpus>,
+  scope: Scope,
+): Promise<Spread> {
+  const geographyCorpora = [newsCorpus.id, gdeltCorpus.id];
+  const items: CorpusItem[] = [];
+
+  for (const corpusId of geographyCorpora) {
+    const corpus = corpora.get(corpusId);
+    if (!corpus) continue;
+    // Deliberately unscoped: the same topic and window, without the geography filter.
+    const raw = await corpus.retrieve(
+      {
+        topic: request.topic,
+        keywords: request.keywords,
+        since: request.since,
+        until: request.until,
+        limit: request.limit,
+      },
+      ctx,
+    );
+    for (const r of raw) {
+      items.push({
+        corpusId: r.corpusId,
+        kind: r.kind,
+        id: r.id,
+        title: r.title,
+        citationUrl: r.citationUrl,
+        publishedAt: r.publishedAt,
+        source: r.source,
+        jurisdiction: r.jurisdiction,
+        extra: r.extra,
+        redistribution: 'metadata-only',
+        attribution: '',
+      });
+    }
+  }
+
+  const ridingOfItem = (item: CorpusItem): string | undefined => {
+    const value = item.extra?.['riding'];
+    return typeof value === 'string' && value.length > 0 ? value : undefined;
+  };
+
+  const attributed = items.filter((i) => i.jurisdiction || ridingOfItem(i));
+  const byJurisdiction = bucket(items.map((i) => i.jurisdiction), (c) => c);
+  const byRiding = bucket(items.map((i) => ridingOfItem(i)), (c) => c);
+
+  return {
+    byJurisdiction,
+    byRiding,
+    coverage: { attributed: attributed.length, total: items.length },
+    note: scope.type === 'topic'
+      ? 'Distribution of the news matching this topic. Where a topic is concentrated in a few places, that is where a scoped brief would be framed.'
+      : `Distribution of the same topic across Canada, independent of the "${scope.type}" scope this brief was asked for.`,
+  };
+}
+
+/** The province or territory a scope names, if it names one. */
+export function jurisdictionOf(scope: Scope): string | undefined {
+  switch (scope.type) {
+    case 'jurisdiction':
+      return scope.code.toUpperCase();
+    case 'municipality':
+      return scope.province?.toUpperCase();
+    case 'riding':
+      // A riding code carries its province in the first two digits (35xxx = Ontario),
+      // but the caller's own jurisdiction parameter is the authority when it has one.
+      return undefined;
+    default:
+      return undefined;
+  }
+}
+
+/** The riding a scope names, if it names one. */
+export function ridingOf(scope: Scope): string | undefined {
+  return scope.type === 'riding' ? scope.code : undefined;
+}
+
+function bucket(
+  values: (string | undefined)[],
+  label: (code: string) => string,
+): SpreadBucket[] {  const counts = new Map<string, number>();
+  for (const value of values) {
+    if (!value) continue;
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  if (total === 0) return [];
+  return [...counts.entries()]
+    .map(([code, count]) => ({
+      code,
+      label: label(code),
+      count,
+      share: Math.round((count / total) * 1000) / 1000,
+    }))
+    .sort((a, b) => b.count - a.count || (a.code < b.code ? -1 : 1));
 }
 
 /**

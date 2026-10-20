@@ -4,7 +4,7 @@ import { buildBrief, type BriefRequest } from '../routes/brief';
 import { CORPUSES_BY_ID } from '../corpora/registry';
 import { emitCorpusItem } from '../licensing';
 import { policyFor } from '../corpora/policies';
-import type { CorpusContext } from '../corpora/types';
+import type { CorpusContext, Scope } from '../corpora/types';
 import type { Env } from '../types';
 
 /**
@@ -62,6 +62,16 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
           keywords: z.array(z.string().min(1).max(80)).max(8).optional().describe('Additional terms that must also match.'),
           jurisdiction: z.string().min(2).max(40).optional().describe('Province or territory code, e.g. "ON", "BC", "QC".'),
           riding: z.string().min(2).max(40).optional().describe('Federal or provincial riding code.'),
+          scope_type: z
+            .enum(['topic', 'riding', 'municipality', 'jurisdiction', 'region'])
+            .optional()
+            .describe(
+              'How to frame the question geographically. Defaults to "topic". Use "riding" with scope_code, ' +
+                '"jurisdiction" with scope_code (e.g. "ON"), "municipality" with scope_name, or "region" with scope_name. ' +
+                'The brief also reports where the topic is live across Canada, whichever scope you choose.',
+            ),
+          scope_code: z.string().min(1).max(40).optional().describe('Riding code or province code for the scope.'),
+          scope_name: z.string().min(1).max(120).optional().describe('Municipality or region name for the scope.'),
           since: z.string().min(4).max(30).optional().describe('ISO date, inclusive.'),
           until: z.string().min(4).max(30).optional().describe('ISO date, inclusive.'),
           limit: z.number().int().min(1).max(100).optional().describe('Maximum items per section (default 25).'),
@@ -81,6 +91,7 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
           since: args.since,
           until: args.until,
           limit: args.limit,
+          scope: scopeFromArgs(args.scope_type, args.scope_code, args.scope_name),
         };
         const brief = await buildBrief(request, options.ctx);
         return {
@@ -186,8 +197,35 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
   });
 }
 
-function summarise(brief: {
-  news: unknown[];
+/**
+ * Build a scope from the flat tool arguments.
+ *
+ * MCP clients get flat parameters rather than a nested object, so the scope is
+ * expressed as a type plus whichever of code or name it needs.
+ */
+function scopeFromArgs(
+  type: 'topic' | 'riding' | 'municipality' | 'jurisdiction' | 'region' | undefined,
+  code: string | undefined,
+  name: string | undefined,
+): Scope | undefined {
+  if (!type) return undefined;
+  switch (type) {
+    case 'topic':
+      return { type: 'topic' };
+    case 'riding':
+      return code ? { type: 'riding', code: code.toUpperCase() } : undefined;
+    case 'jurisdiction':
+      return code ? { type: 'jurisdiction', code: code.toUpperCase() } : undefined;
+    case 'municipality':
+      return name ? { type: 'municipality', name } : undefined;
+    case 'region':
+      return name ? { type: 'region', name } : undefined;
+    default:
+      return undefined;
+  }
+}
+
+function summarise(brief: {  news: unknown[];
   debate: unknown[];
   legislation: unknown[];
   bills: unknown[];
