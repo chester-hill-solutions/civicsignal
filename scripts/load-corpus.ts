@@ -24,7 +24,7 @@
  *     bun scripts/load-corpus.ts --lang fr             # one of them
  *     bun scripts/load-corpus.ts --dry-run             # count only
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fetchWithAuth } from './lib/cloudflare-auth';
 
@@ -64,7 +64,7 @@ const INSERT_SQL = `INSERT OR REPLACE INTO statute_sections (${COLUMNS.join(', '
  * what bounds it, and the answer comes back as a 429 when it is reached, so
  * this is tuned to stay under it rather than to find it.
  */
-const CONCURRENCY = 12;
+const CONCURRENCY = 6;
 
 interface Args {
   lang: 'en' | 'fr' | 'both';
@@ -170,6 +170,10 @@ async function main(): Promise<void> {
           console.error(`  ${String(error).slice(0, 200)}`);
         }
         sent++;
+        // The checkpoint, often: a crash costs a second's work.
+        if (sent % 500 === 0) {
+          writeFileSync(checkpoint, String(args.skip + sent));
+        }
         if (sent % 2_000 === 0 || sent === rows.length) {
           const rate = sent / ((Date.now() - started) / 1000);
           const left = Math.round((rows.length - sent) / rate);

@@ -17,7 +17,7 @@
  *     bun scripts/index-corpus.ts --limit 1000     # a sample
  *     bun scripts/index-corpus.ts --dry-run
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fetchWithAuth } from './lib/cloudflare-auth';
 
@@ -73,7 +73,7 @@ const CHARS_PER_TOKEN = 1.3;
 const TOKEN_BUDGET = 45_000;
 
 /** How many embedding calls run at once. */
-const CONCURRENCY = 4;
+const CONCURRENCY = 3;
 
 /** How many vectors go in one upsert. */
 const UPSERT_BATCH = 500;
@@ -82,10 +82,19 @@ interface Args {
   lang: 'en' | 'fr' | 'both';
   limit: number | undefined;
   dryRun: boolean;
+  /**
+   * How many rows to skip, because they are already in the index.
+   *
+   * A corpus embed takes hours, and a machine that reboots takes the job with
+   * it. The order is deterministic — the rows are sorted by length so that a
+   * batch's texts are of similar size — so "how far did it get" is a number,
+   * and the number is written to a checkpoint file as the job runs.
+   */
+  skip: number;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { lang: 'both', limit: undefined, dryRun: false };
+  const args: Args = { lang: 'both', limit: undefined, dryRun: false, skip: 0 };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--lang') {
@@ -96,6 +105,7 @@ function parseArgs(argv: string[]): Args {
       args.lang = value;
     } else if (arg === '--limit') args.limit = Number(argv[++i]);
     else if (arg === '--dry-run') args.dryRun = true;
+    else if (arg === '--skip') args.skip = Number(argv[++i]) || 0;
   }
   return args;
 }
@@ -255,6 +265,15 @@ async function main(): Promise<void> {
     const rows = all.filter((r) => r.status !== 'placeholder');
     const truncated = rows.filter((r) => r.text.length > MAX_CHARS).length;
     const selected = args.limit ? rows.slice(0, args.limit) : rows;
+    // The checkpoint is the last durable record of how far the job got.
+    const checkpoint = join(ROOT, 'dist', `.index-checkpoint-${lang}`);
+    if (args.skip === 0 && existsSync(checkpoint)) {
+      const saved = Number(readFileSync(checkpoint, 'utf8').trim());
+      if (Number.isFinite(saved) && saved > 0) {
+        console.log(`  resuming: ${saved.toLocaleString()} row(s) are already indexed`);
+        args.skip = saved;
+      }
+    }
 
     console.log(
       `index-corpus: ${selected.length.toLocaleString()} ${lang} row(s) to embed` +
@@ -266,7 +285,8 @@ async function main(): Promise<void> {
     let done = 0;
     let tokens = 0;
 
-    const allBatches = batches(selected);
+    const remaining = args.skip ? selected.slice(args.skip) : selected;
+    const allBatches = batches(remaining);
     console.log(`  ${allBatches.length.toLocaleString()} batch(es)`);
     let next = 0;
     let failed = 0;
@@ -307,6 +327,10 @@ async function main(): Promise<void> {
           console.error(`  ${String(error).slice(0, 160)}`);
         }
         done += batch.length;
+        // The checkpoint, after every batch: a crash costs one batch.
+        if (done % 200 < batch.length) {
+          writeFileSync(checkpoint, String(args.skip + done));
+        }
         // The boundary is crossed, not hit: a batch can be nine thousand rows
         // long, so `done % 5_000` would never be zero and the progress would
         // never print.
