@@ -61,9 +61,25 @@ export const statutesCorpus: Corpus = {
   id: STATUTES_CANADA.id,
   policy: STATUTES_CANADA,
   supports(query) {
+    // A citation is answerable even though it carries no topic and no keywords:
+    // it names the provision exactly.
+    if (query.act && query.section) return true;
     return Boolean(query.topic || (query.keywords && query.keywords.length > 0));
   },
   async retrieve(query: CorpusQuery, ctx: CorpusContext): Promise<RawCorpusItem[]> {
+    // A citation is an exact lookup, and it has to take its own path.
+    //
+    // The text-search path below needs keywords or a topic and returns nothing
+    // without them — which is right for a search and wrong for a citation,
+    // because a citation carries neither. It names one provision, and the query
+    // that resolves it is `act = ? AND section = ?`.
+    //
+    // It also does not filter on in-force. The useful answer to "what does
+    // section 9 say" is sometimes "it was repealed in 2010", and a corpus that
+    // cannot say so has thrown the answer away.
+    if (query.act && query.section) {
+      return retrieveProvision(query, ctx);
+    }
     const patterns = likePatterns(query);
     if (patterns.length === 0) return [];
     const { sql: tok, binds: tokBinds } = tokenClause(patterns);
@@ -113,6 +129,48 @@ export const statutesCorpus: Corpus = {
 /* -------------------------------------------------------------------------- */
 /* Hansard — Crown copyright. Cite-only: excerpt + citation, never the corpus.  */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Resolve one provision by its instrument and its label.
+ *
+ * This is the citation path: an exact lookup, not a search. It deliberately does
+ * not filter on `in_force`, because a repealed provision is still a provision the
+ * caller asked about, and the answer to a repealed citation is "repealed", not
+ * silence.
+ */
+async function retrieveProvision(
+  query: CorpusQuery,
+  ctx: CorpusContext,
+): Promise<RawCorpusItem[]> {
+  const rows = await queryRows(
+    ctx,
+    `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics
+       FROM statute_sections
+      WHERE act = ? AND section = ?
+      ORDER BY in_force DESC, id
+      LIMIT ?`,
+    [query.act!, query.section!, String(resolveLimit(query.limit))],
+  );
+
+  return rows.map((row) => ({
+    corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),
+    kind: 'statute' as const,
+    id: String(row['id']),
+    title: `${String(row['act'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
+    body: row['text'] === null || row['text'] === undefined ? undefined : String(row['text']),
+    citationUrl: String(row['source_url']),
+    source: STATUTES_CANADA.publisher,
+    jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
+    topics: splitTopics(row['topics']),
+    extra: {
+      act: String(row['act']),
+      citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
+      section: String(row['section']),
+      status: row['status'] === null || row['status'] === undefined ? undefined : String(row['status']),
+      inForce: Number(row['in_force']) === 1,
+    },
+  }));
+}
 
 export const hansardCorpus: Corpus = {
   id: HANSARD_FEDERAL.id,

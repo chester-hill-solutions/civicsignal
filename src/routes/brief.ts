@@ -171,7 +171,7 @@ export async function buildBrief(
     let item: CorpusItem | null = null;
     if (statuteCorpus && statutePolicy) {
       const raw = await statuteCorpus.retrieve(
-        { act: request.citation.act, limit: 50 },
+        { act: request.citation.act, section: request.citation.section, limit: 50 },
         ctx,
       );
       const candidates = raw.filter((r) => r.extra?.['section'] === request.citation!.section);

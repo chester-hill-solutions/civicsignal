@@ -5,3 +5,10 @@ dist/
 *.local
 data/corpus/
 dist/
+
+# The vendored shared package carries its build output, because that is what a
+# clean checkout has to resolve. The blanket `dist/` above would swallow it, and
+# the package's exports point at `dist/index.js` — so without this the dependency
+# does not exist for anyone who clones the repository.
+!vendor/@chester-hill-solutions/corpus/dist/
+!vendor/@chester-hill-solutions/corpus/dist/**
