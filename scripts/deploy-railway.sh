@@ -18,7 +18,9 @@
 # command, so nothing changes without being seen.
 set -euo pipefail
 
-WORKSPACE="${RAILWAY_WORKSPACE:-wra-sol's Projects}"
+# The workspace id, not its name: an apostrophe in a name breaks the default
+# value of a parameter expansion, and an exact id is the documented practice.
+WORKSPACE="${RAILWAY_WORKSPACE:-457628da-bacc-4a40-aac3-a7141004534d}"
 PROJECT="${RAILWAY_PROJECT:-civicsignal}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
