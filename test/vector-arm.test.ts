@@ -197,6 +197,23 @@ describe('the vector arm', () => {
     expect(items.length).toBeGreaterThan(0);
   });
 
+  /**
+   * A cold index, or a question nothing is similar to, must not make the
+   * product answer "nothing here" when a keyword search would have found the
+   * provision. "The corpus has nothing about that" is a strong claim, and it
+   * should be a claim about both searches rather than one.
+   */
+  it('falls back to the lexical path when the vector arm finds nothing', async () => {
+    const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([]);
+    const items = await statutesCorpus.retrieve(
+      { topic: 'damages' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1] }),
+    );
+    expect(calls[0]!.sql).toContain('LIKE');
+    expect(items.length).toBeGreaterThan(0);
+  });
+
   it('falls back to the lexical path when there is no embedder', async () => {
     const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
     const index = fakeIndex([]);

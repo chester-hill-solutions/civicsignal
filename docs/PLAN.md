@@ -90,6 +90,32 @@ precision tool with a hard ceiling, and the vector stage already returns the ans
 in the top five for every exact question. So the product searches with vectors, does
 not fuse, and resolves citations structurally rather than ranking them.
 
+**The language is a lens, like the geography.** (2026-10-20, measured.) Canada's
+statutes are enacted in two official languages with equal legal force, and the
+two versions of a provision are **separate rows with separate identifiers** —
+the language trees number their provisions from different LIMS id spaces. So a
+corpus that holds both, and cannot be asked about one of them, does not have a
+translation problem: it has an *ambiguity* problem. One provision, two rows, and
+no way for the caller to say which one they meant. `CorpusQuery.language` is the
+fix, parallel to `jurisdiction`, and the surfaces infer it from the question when
+they are not told.
+
+**The product is deployed and serving.** (2026-10-20.) The corpus is in D1, the
+vectors are in Vectorize, and the Worker answers questions with citations. Two
+things had to be true for that, and neither was: the corpus had never been
+loaded, and the retrieval that was measured — vector-first — had never been
+wired into the product, which searched lexically the whole time. The SQL the
+ingest generated did not run either: the `VALUES` clause was missing its
+opening parenthesis, so every statement was a syntax error, and the corpus had
+never been loaded into a database for anyone to notice.
+
+**Railway is not the host, because Railway could not be reached.** (2026-10-20.)
+The project did not exist and `railway init` is refused with "Deploys have been
+paused temporarily". The Worker, D1 and Vectorize are the plane for now. The
+IaC in `.railway/railway.ts` is written and checked and applies when the pause
+lifts; the port is a cost and architecture improvement, not a prerequisite for a
+product that works.
+
 **The Policorner wire stays a separate product.** (2026-10-20, owner.) The wire is
 reader-facing and keeps its own brand and audience. This product consumes its output
 as a data source — shared pipeline and shared tables where that is useful, but no

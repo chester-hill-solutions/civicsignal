@@ -93,7 +93,11 @@ export const statutesCorpus: Corpus = {
     // is a key, not a similarity, and resolving it structurally is exact where
     // a ranking can only be close.
     const vectorItems = await retrieveByVector(query, ctx);
-    if (vectorItems) return vectorItems;
+    if (vectorItems && vectorItems.length > 0) return vectorItems;
+    // The vector arm ran and found nothing, or could not run. Either way the
+    // lexical path is tried, because a product that answers "nothing here"
+    // when a keyword search would have found the provision is worse than one
+    // that answers with the weaker of two searches.
 
     const patterns = likePatterns(query);
     if (patterns.length === 0) return [];
@@ -161,11 +165,11 @@ export const statutesCorpus: Corpus = {
 /**
  * Search by meaning, when the deployment has an index and a way to embed.
  *
- * Returns `null` when the deployment has neither, which is the signal to fall
- * back to the lexical path. It returns an empty array when the search ran and
- * found nothing, which is an answer — and the difference between the two is
- * the difference between "this corpus cannot search" and "this corpus has
- * nothing about that".
+ * Returns `null` when the deployment has neither an index nor an embedder,
+ * which is the signal to fall back to the lexical path. It returns an empty
+ * array when the search ran and found nothing, and the caller falls back
+ * anyway: "the corpus has nothing about that" is a strong claim, and it
+ * should be a claim about both searches rather than one.
  *
  * The language is a filter on the index, not a filter afterwards. The two
  * official versions of a provision are separate rows, so a French question
