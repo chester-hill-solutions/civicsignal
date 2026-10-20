@@ -87,16 +87,32 @@ corpus commit changes **56 provisions**, which is six seconds.
 
 ## The endpoint
 
-`litert-lm serve` speaks the OpenAI embeddings API, so the client is an ordinary
-HTTP call:
+The service is **the LiteRT-LM runtime driven directly**, not `litert-lm serve`,
+for one reason: the runtime can **chunk an over-long input and average the
+embeddings**, and the OpenAI-compatible server does not expose that option.
+
+That matters because the runtime's compiled signature is **1,024 tokens**, not the
+8,192 the bundle's metadata advertises, and it refuses an input that is longer
+rather than truncating it. Measured on the corpus: the densest provision needs
+1,183 tokens for 5,680 characters.
+
+With `CHUNK_AND_AVERAGE`, a provision of any length is chunked to the signature
+and the chunk embeddings averaged into one vector. **No provision loses its tail**,
+and the corpus stays one row per provision — one vector per provision — rather
+than growing a row per chunk. `TRUNCATE` would be simpler and would throw away
+most of a long provision.
+
+The service keeps the OpenAI-shaped call so the client is ordinary HTTP:
 
 ```bash
-curl -X POST https://<service>/v1/embeddings \
+curl -X POST https://<service>/embed \
+  -H 'Authorization: Bearer $ENCODER_TOKEN' \
   -H 'Content-Type: application/json' \
-  -d '{"model":"embeddinggemma-2-270m","input":["SearchQuery: what does s. 210 say?"]}'
+  -d '{"texts":["what does s. 210 say?"]}'
 ```
 
-`GET /v1/models` is the health check.
+`GET /health` is the health check, and it is unauthenticated — it says nothing
+about the model.
 
 ## Running it
 

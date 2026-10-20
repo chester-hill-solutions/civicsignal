@@ -28,6 +28,28 @@ import { join } from 'node:path';
  * because a silently truncated provision is a section that will not be retrievable
  * by its tail.
  */
+/**
+ * The embedding window, in characters.
+ *
+ * It is a per-model limit, and the difference is not a detail.
+ *
+ * Workers AI's bge-mm has an 8,192-token window and counts tokens generously, so
+ * 24,000 characters fit in one request. EmbeddingGemma 2 through LiteRT-LM has a
+ * **1,024**-token compiled signature — the bundle advertises 8,192, but the
+ * runtime's largest compiled signature is 1,024 — and a hosted API refuses an
+ * input that is longer.
+ *
+ * The LiteRT-LM runtime can be told to **chunk** an over-long input and average
+ * the chunk embeddings instead, which is why the encoder service drives the
+ * runtime directly rather than through the OpenAI-compatible server: the server
+ * does not expose that option. With it, a provision of any length is
+ * represented, and the corpus stays one row per provision.
+ *
+ * So this limit is a safety net for the models that cannot chunk, not the
+ * mechanism. The measurement that set it — the longest prefix of the densest
+ * provision that fits in 1,024 tokens is 4,720 characters of text — is why the
+ * number is not generous.
+ */
 const MAX_CHARS = 24000;
 
 /**
@@ -49,6 +71,10 @@ interface Args {
    * budget; a local runtime is bounded by memory, and it holds the whole batch.
    */
   maxBatch: number;
+  /** The embedding window, in characters. Model-dependent. */
+  maxChars: number;
+  /** A bearer token, when the encoder is behind one. */
+  token: string;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -59,6 +85,8 @@ function parseArgs(argv: string[]): Args {
     model: '@cf/baai/bge-m3',
     limit: undefined,
     maxBatch: 250,
+    maxChars: MAX_CHARS,
+    token: process.env.ENCODER_TOKEN ?? '',
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -70,6 +98,8 @@ function parseArgs(argv: string[]): Args {
     else if (arg === '--output') args.output = argv[++i] ?? args.output;
     else if (arg === '--limit') args.limit = Number(argv[++i]);
     else if (arg === '--max-batch') args.maxBatch = Number(argv[++i]) || args.maxBatch;
+    else if (arg === '--max-chars') args.maxChars = Number(argv[++i]) || args.maxChars;
+    else if (arg === '--token') args.token = argv[++i] ?? args.token;
   }
   return args;
 }
@@ -102,14 +132,12 @@ export function documentTitle(section: {
  * puts them together: `title: {title} | text: {content}`. Truncating the content
  * to the full window would push the document past it.
  */
-export function prepareText(section: {
-  act: string;
-  section: string;
-  heading: string | null;
-  text: string;
-}): { text: string; truncated: boolean; title: string } {
+export function prepareText(
+  section: { act: string; section: string; heading: string | null; text: string },
+  maxChars = MAX_CHARS,
+): { text: string; truncated: boolean; title: string } {
   const title = documentTitle(section);
-  const room = Math.max(1024, MAX_CHARS - title.length - 32);
+  const room = Math.max(512, maxChars - title.length - 32);
   const full = section.text.trim();
   if (full.length <= room) return { text: full, truncated: false, title };
   return { text: full.slice(0, room), truncated: true, title };
@@ -165,11 +193,14 @@ async function main(): Promise<void> {
   writeFileSync(manifestPath, JSON.stringify(rows.map((r) => r.id)));
   console.log(`  wrote ${manifestPath}`);
 
-  const prepared = rows.map(prepareText);
+  const prepared = rows.map((row) => prepareText(row, args.maxChars));
   const texts = prepared.map((p) => p.text);
   const truncated = prepared.filter((p) => p.truncated).length;
   if (truncated > 0) {
-    console.log(`  ${truncated} section(s) exceed the ${MAX_CHARS}-character window and are truncated`);
+    console.log(
+      `  ${truncated} section(s) exceed the ${args.maxChars}-character window and are truncated ` +
+        `(${((truncated / prepared.length) * 100).toFixed(1)}%)`,
+    );
   }
   const vectors: number[][] = [];
   const started = Date.now();
@@ -198,7 +229,10 @@ async function main(): Promise<void> {
   const post = async (chunk: { text: string; title: string }[]): Promise<number[][]> => {
     const response = await fetch(args.endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(args.token ? { authorization: `Bearer ${args.token}` } : {}),
+      },
       body: JSON.stringify({
         texts: chunk.map((c) => c.text),
         titles: chunk.map((c) => c.title),

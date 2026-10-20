@@ -18,6 +18,7 @@ const argOf = (name: string, fallback: string) => {
   return i === -1 ? fallback : process.argv[i + 1] ?? fallback;
 };
 const endpoint = argOf('--endpoint', 'http://127.0.0.1:8799/embed');
+const token = argOf('--token', process.env.ENCODER_TOKEN ?? '');
 const model = argOf('--model', '@cf/baai/bge-m3');
 const outFile = argOf('--out', 'dist/query-vectors.json');
 
@@ -28,7 +29,10 @@ for (let i = 0; i < texts.length; i += 50) {
   const chunk = texts.slice(i, i + 50);
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ texts: chunk, model }),
   });
   if (!response.ok) throw new Error(`${response.status} ${(await response.text()).slice(0, 200)}`);
