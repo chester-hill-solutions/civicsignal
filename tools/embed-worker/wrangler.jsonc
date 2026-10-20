@@ -1,0 +1,7 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-embed",
+  "main": "worker.ts",
+  "compatibility_date": "2026-01-15",
+  "ai": { "binding": "AI" }
+}

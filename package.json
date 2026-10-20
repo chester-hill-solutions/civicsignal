@@ -11,7 +11,9 @@
     "test": "vitest run",
     "validate": "bun run typecheck && bun run test",
     "check:billing-invariants": "node scripts/check-billing-invariants.mjs",
-    "ingest:statutes": "bun scripts/ingest-statutes.ts"
+    "ingest:statutes": "bun scripts/ingest-statutes.ts",
+    "embed:statutes": "bun scripts/embed-corpus.ts",
+    "eval:retrieval": "bun scripts/eval-retrieval.ts"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
@@ -20,9 +22,11 @@
     "fast-xml-parser": "^4.5.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "@electric-sql/pglite-pgvector": "0.0.11",
     "@types/node": "^22.10.5",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8",
-    "wrangler": "^3.99.0"
+    "wrangler": "4.151.3"
   }
 }
