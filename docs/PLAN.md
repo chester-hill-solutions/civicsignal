@@ -89,14 +89,42 @@ test of demand happens before the most expensive work.
 clear that the cheap kill is the expensive lesson: pull the source data, build three
 endpoints, publish a free tier, list the MCP server, then wait sixty days.
 
-1. Ingest the statute corpus into `statute_sections` — the XML dump already exists
-   locally; write `scripts/ingest-statutes.ts` to parse it into rows with a
-   `search_text` token bag.
-2. Ingest a slice of the news corpus into `news_items` from the existing wire.
-3. Seed `hansard_speeches` with a few thousand passages *with excerpts only*.
-4. `GET /api/brief?topic=housing` working end to end against D1.
-5. Publish the free tier, list the MCP server in the official registry, Anthropic's
-   connector directory, and Apify's pay-per-result store.
+**The statute half is done.** `scripts/ingest-statutes.ts` clones
+`justicecanada/laws-lois-xml` (a git clone — no rate limits, no bot wall), parses it
+into section rows and writes both a `.sql` file for D1 and a `.jsonl` snapshot.
+
+| | |
+|---|---|
+| Documents parsed | 5,868 (971 Acts, 4,897 regulations) |
+| Sections with text | **191,025** (84,047 Act sections, 106,978 regulation sections) |
+| Distinct instruments | 5,003 |
+| Languages | English (French is a `--lang fr` run) |
+| Licence | Open Government Licence – Canada |
+
+Two things the parser had to get right, both of which are silent failures otherwise:
+
+- **Mixed content.** A provision that reads "cited as the
+  `<XRefExternal>Act</XRefExternal>`." loses the cross-reference if you read the text
+  from a parsed XML tree — the parser merges the child into the parent's text node. The
+  text is therefore taken from the raw XML block, and every cross-reference survives.
+- **Two instrument shapes.** An Act or regulation is a list of `<Section>` elements;
+  an order is a list of `<Provision>` elements with lettered labels, a `<LongTitle>`
+  instead of a `<ShortTitle>`, and no per-section page on the site. Lettered
+  provisions cite the instrument's index page; numeric ones cite their own page.
+
+**Do not fetch `laws-lois.justice.gc.ca` to verify citations.** The site serves 404s
+to an IP that has been making sustained requests — the same failure the Statistics
+Canada hosts exhibit. Every citation URL is *derived* from the corpus, never checked
+by fetching it. The URL scheme was confirmed once, from the site's own regulation
+index, and that is enough.
+
+Still to do in this wave:
+
+1. Ingest a slice of the news corpus into `news_items` from the existing wire.
+2. Seed `hansard_speeches` with a few thousand passages *with excerpts only*.
+3. `GET /api/brief?topic=housing` working end to end against D1.
+4. Publish the free tier, list the MCP server in the official registry, Anthropic's
+   directory, and Apify's pay-per-result store.
 
 **Kill criterion:** if nobody calls it in sixty days, the gap was a data gap, not a
 demand gap. Stop.

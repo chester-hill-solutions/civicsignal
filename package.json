@@ -10,12 +10,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "validate": "bun run typecheck && bun run test",
-    "check:billing-invariants": "node scripts/check-billing-invariants.mjs"
+    "check:billing-invariants": "node scripts/check-billing-invariants.mjs",
+    "ingest:statutes": "bun scripts/ingest-statutes.ts"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
     "@modelcontextprotocol/server": "2.3.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "fast-xml-parser": "^4.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
