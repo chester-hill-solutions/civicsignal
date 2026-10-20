@@ -27,6 +27,7 @@ import { buildRows, parseStatuteXml, type ProvisionStatus } from '../src/ingest/
 import { runPipeline, type PipelineRow } from '../src/ingest/pipeline';
 import { GitHubCorpusSource, type CorpusSource } from '../src/ingest/source';
 import { PostgresCorpusStore } from '../services/corpus-db/store';
+import { ensureCorpusSchema } from '../services/corpus-db/schema';
 
 const ENCODER_DOMAIN = process.env.ENCODER_DOMAIN ?? '127.0.0.1';
 const ENCODER_PORT = process.env.ENCODER_PORT ?? '8080';
@@ -100,6 +101,20 @@ async function cycle(): Promise<void> {
     log('no DATABASE_URL — the pipeline cannot run');
     return;
   }
+
+  // The schema, before anything else.
+  //
+  // The pipeline owns the corpus database, and a service that cannot reach its
+  // own schema is a service that cannot run. Every statement is
+  // `IF NOT EXISTS`, so this is free on every start and means a deployment that
+  // changed the schema does not need a human to remember to migrate.
+  try {
+    await ensureCorpusSchema(DATABASE_URL);
+  } catch (error) {
+    log(`the schema could not be applied: ${String(error).slice(0, 300)}`);
+    throw error;
+  }
+
   const source = new GitHubCorpusSource({ token: GITHUB_TOKEN || undefined });
   const store = new PostgresCorpusStore(DATABASE_URL);
 

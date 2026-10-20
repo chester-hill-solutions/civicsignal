@@ -1,4 +1,4 @@
-import { database, defineRailway, github, group, postgres, project, ref, service } from 'railway/iac';
+import { database, defineRailway, github, group, image, postgres, project, ref, service, preserve, volume } from 'railway/iac';
 
 /**
  * CivicSignal, on one host.
@@ -68,9 +68,66 @@ export default defineRailway((ctx) => {
   // added afterwards. The corpus holds the vector index, so it has to be a
   // pgvector image, and `private` is the engine that says "this image, with a
   // volume, and no managed features".
-  const corpus = database('corpus', 'private', {
-    image: 'pgvector/pgvector:pg18',
-    output: 'CORPUS_DATABASE_URL',
+  /**
+   * The corpus database is a **service running the pgvector image**, not one of
+   * Railway's managed databases, and that is a deliberate choice rather than an
+   * accident.
+   *
+   * The corpus holds the vector index, and Railway's managed Postgres image
+   * does not ship pgvector — the library is not in the image, so the extension
+   * cannot be added afterwards. The image has to be `pgvector/pgvector`.
+   *
+   * And a managed Postgres with a custom image is something Railway's dashboard
+   * can do and **this file cannot express**: `database(name, 'postgres', {
+   * image })` creates a managed Postgres and ignores the image, and
+   * `database(name, 'private', { image })` is a generic container that Railway
+   * gives none of the managed Postgres variables to. A *service* with an image
+   * source is the shape that matches what is actually running.
+   *
+   * The credentials are declared rather than generated, so the database starts
+   * with a password that is written down somewhere other than a Railway
+   * variable nobody has read. The image reads them on startup.
+   *
+   * The volume is declared here, because a volume is something this file can
+   * say. The corpus is rebuildable — the upstream repository is its backup —
+   * but rebuilding it costs two hours of embedding, which is not nothing.
+   */
+  const corpusVolume = volume('corpus-volume', { mountPath: '/var/lib/postgresql/data' });
+
+  /**
+   * The corpus database.
+   *
+   * A **custom-image** database, because the corpus holds the vector index and
+   * Railway's managed Postgres image does not ship pgvector — the library is not
+   * in the image, so the extension cannot be added afterwards.
+   *
+   * The credentials are declared rather than generated, so the database starts
+   * with a password that is written down somewhere other than a Railway
+   * variable nobody has read. The image reads them on startup.
+   */
+  const corpus = service('corpus', {
+    source: image('pgvector/pgvector:pg18'),
+    variables: {
+      // The image's own credentials, so the database starts with a password
+      // that is written down somewhere other than a Railway variable nobody has
+      // read.
+      POSTGRES_USER: 'civicsignal',
+      POSTGRES_DB: 'civicsignal',
+      POSTGRES_PASSWORD: ctx.shared.CORPUS_DATABASE_PASSWORD,
+      // **And the connection variables, declared explicitly.**
+      //
+      // A service running an image is a generic container: Railway does not
+      // synthesise `DATABASE_URL` for it, because it does not know the image is
+      // Postgres. So the file says what a Postgres would have said, and the
+      // plan stops proposing to delete them.
+      PGHOST: 'corpus.railway.internal',
+      PGPORT: '5432',
+      PGDATA: '/var/lib/postgresql/data/pgdata',
+      PGDATABASE: 'civicsignal',
+      PGUSER: 'civicsignal',
+      PGPASSWORD: ctx.shared.CORPUS_DATABASE_PASSWORD,
+      DATABASE_URL: ctx.shared.CORPUS_DATABASE_URL,
+    },
   });
 
   /**
@@ -128,11 +185,18 @@ export default defineRailway((ctx) => {
     env: {
       // `ref` rather than `corpus.env.…`: the database names its own output, and
       // the SDK's type for a custom output is not modelled yet.
-      CORPUS_DATABASE_URL: ref(corpus, 'CORPUS_DATABASE_URL'),
+      // The corpus database's URL, as a shared variable — see the note on the
+      // corpus service above for why it is not a reference to a resource in
+      // this graph.
+      CORPUS_DATABASE_URL: ctx.shared.CORPUS_DATABASE_URL,
       ENCODER_DOMAIN: encoder.env.RAILWAY_PRIVATE_DOMAIN,
       ENCODER_PORT: '8080',
       ENCODER_TOKEN: ctx.shared.ENCODER_TOKEN,
-      GITHUB_TOKEN: ctx.shared.GITHUB_TOKEN,
+      // The GitHub token is the pipeline's own, set once by hand, and the IaC
+      // leaves it alone. Only the pipeline talks to the corpus repository, so
+      // there is nothing to share it with — and a shared secret is a secret with
+      // two chances to be set differently.
+      GITHUB_TOKEN: preserve(),
       // The corpus repository changes every three to eight days. Six hours is
       // often enough, and the pipeline does nothing when the revision has not
       // moved.
@@ -140,7 +204,7 @@ export default defineRailway((ctx) => {
     },
   });
 
-  const data = group('Data', [corpus, customer]);
+  const data = group("Data", [corpus, customer, corpusVolume]);
   const compute = group('Compute', [encoder, pipeline]);
 
   // The API and the harness join here as their steps land:
