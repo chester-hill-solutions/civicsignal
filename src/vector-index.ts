@@ -44,9 +44,14 @@ export class VectorizeIndex implements VectorIndex {
     topK: number,
     filter?: Record<string, string>,
   ): Promise<VectorMatch[]> {
+    // `indexed` rather than `all`: the metadata that matters for filtering is
+    // the metadata that is indexed, and asking for `all` halves the top-k
+    // ceiling — Vectorize limits it to twenty when every field is returned and
+    // a hundred when only the indexed ones are. The brief asks for twenty-five
+    // by default, so `all` would fail on the ordinary case.
     const result = await this.binding.query(vector, {
-      topK,
-      returnMetadata: 'all',
+      topK: Math.min(topK, 100),
+      returnMetadata: 'indexed',
       ...(filter ? { filter } : {}),
     });
     return result.matches.map((match) => ({

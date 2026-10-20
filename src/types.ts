@@ -25,4 +25,29 @@ export interface Env extends SpineEnv {
   STRIPE_SECRET_KEY?: string;
   /** Stripe Billing Meter event name. */
   STRIPE_METER_EVENT_NAME?: string;
+  /** The similarity index over the corpus. */
+  VECTORIZE?: VectorizeBinding;
+  /** Workers AI, for embedding a question in the corpus's own vector space. */
+  AI?: AiBinding;
+}
+
+/**
+ * The slice of a Vectorize binding the product uses.
+ *
+ * The index holds no text — only vectors and metadata — so the row, its text
+ * and its licence policy still live in the database and the licence gate
+ * still applies to everything the product returns.
+ */
+export interface VectorizeBinding {
+  query(
+    vector: number[],
+    options: { topK: number; returnMetadata?: string | string[]; filter?: Record<string, string> },
+  ): Promise<{
+    matches: { id: string; score: number; metadata?: Record<string, string | number> }[];
+  }>;
+}
+
+/** The slice of the Workers AI binding the product uses. */
+export interface AiBinding {
+  run(model: string, input: unknown): Promise<Response>;
 }

@@ -19,6 +19,7 @@
     "seed:act-titles": "bun scripts/seed-act-titles.ts"
   },
   "dependencies": {
+    "@chester-hill-solutions/api-billing": "file:./vendor/@chester-hill-solutions/api-billing",
     "@chester-hill-solutions/corpus": "file:./vendor/@chester-hill-solutions/corpus",
     "@cloudflare/workers-types": "^4.20250109.0",
     "@modelcontextprotocol/server": "2.3.1",

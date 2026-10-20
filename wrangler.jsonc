@@ -1,18 +1,49 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
+  "$schema": "node_modules/wrangler/config-schema.toml",
   "name": "civicsignal",
   "main": "src/index.ts",
   "compatibility_date": "2026-01-15",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // The account is named rather than inferred, because the token on this machine
+  // can see two of them and wrangler refuses to guess in a non-interactive run.
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
   "vars": {
     "PRODUCT_NAME": "CivicSignal",
-    "FREE_MONTHLY_ALLOWANCE": "1000"
+    "FREE_MONTHLY_ALLOWANCE": "1000",
+    "PUBLIC_API_BASE_URL": "https://api.civicsignal.chesterhillsolutions.ca"
   },
-  "kv_namespaces": [{ "binding": "CIVIC_CACHE", "id": "REPLACE_KV_ID" }],
-  "d1_databases": [{ "binding": "CIVIC_DB", "database_name": "civicsignal", "database_id": "REPLACE_D1_ID", "migrations_dir": "migrations" }],
-  "r2_buckets": [{ "binding": "CORPORA", "bucket_name": "civicsignal-corpora" }],
-  "routes": [
-    { "pattern": "api.civicsignal.ca", "custom_domain": true }
-  ]
+  "kv_namespaces": [
+    { "binding": "CIVIC_CACHE", "id": "45d4754592494e87aa7e2a62e42abbaa" },
+    { "binding": "API_KEYS", "id": "2d0152b0958c48fab4a98b3046e0c08e" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "CIVIC_DB",
+      "database_name": "civicsignal",
+      "database_id": "8056b1a0-f858-4f89-a332-91f7f350eb7b",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "API_KEY_USAGE", "class_name": "ApiKeyUsageDO" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApiKeyUsageDO"] }],
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "civicsignal-statutes"
+    }
+  ],
+  "ai": { "binding": "AI" },
+  // The workers.dev address as well, so there is a working URL whatever the
+  // custom domain's certificate and DNS are doing. The custom domain is the
+  // product's real address; this is the one that works today.
+  "workers_dev": true,
+  // The house's pattern: cancoder, stow and dedupe are all
+  // `<product>.chesterhillsolutions.ca`. The `civicsignal.ca` domain in the
+  // original config is not a zone in this account, so it cannot be routed to
+  // anything; registering it is the owner's decision and a subdomain works
+  // today.
+  "routes": [{ "pattern": "api.civicsignal.chesterhillsolutions.ca", "custom_domain": true }]
 }

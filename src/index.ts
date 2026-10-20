@@ -36,6 +36,21 @@ const CORPUS_ROUTES: Record<string, string> = {
   '/api/bills': 'bills-canada',
 };
 
+/**
+ * The usage counter, as a Durable Object.
+ *
+ * It has to be a Durable Object rather than a key-value store, because the
+ * counter has to be exact. KV is eventually consistent and rate-limits writes
+ * to about one a second per key, so under real traffic a KV counter would both
+ * undercount and throttle.
+ *
+ * The class comes from the house's metering package rather than being written
+ * here, so the fuse's behaviour is the same in every product that uses it. The
+ * spine's client calls `/usage/consume` and `/usage/peek`, and the object's
+ * `POST` and `GET` are exactly those two operations.
+ */
+export { ApiKeyUsageDO } from '@chester-hill-solutions/api-billing/durable-object';
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const correlationId = newCorrelationId();
@@ -249,8 +264,75 @@ function vectorIndexFor(env: Env): VectorIndex | undefined {
 }
 
 function corpusContext(env: Env): CorpusContext {
-  return { db: env.CIVIC_DB, fetch, now: () => new Date() };
+  const vector = vectorIndexFor(env);
+  const embedQuery = queryEmbedderFor(env);
+  return {
+    db: env.CIVIC_DB,
+    fetch,
+    now: () => new Date(),
+    ...(vector ? { vector } : {}),
+    ...(embedQuery ? { embedQuery } : {}),
+  };
 }
+
+/**
+ * The embedder for a question, in the corpus's vector space.
+ *
+ * This deployment's corpus is embedded with **bge-m3**, through Workers AI, and
+ * so a question is embedded with bge-m3 through the same binding. bge-m3 takes
+ * no task instruction — the `task: search result` prefix belongs to
+ * EmbeddingGemma 2, and putting it in front of a bge-m3 query would put the
+ * query in a slightly different place from every document in the index.
+ *
+ * So the model and its instruction travel together, and this is the only place
+ * that decides.
+ */
+function queryEmbedderFor(env: Env): ((text: string) => Promise<number[]>) | undefined {
+  const ai = env.AI;
+  if (!ai) return undefined;
+  return async (text: string) => {
+    const result = await ai.run(QUERY_EMBEDDING_MODEL, { text: [text] });
+    const vector = await firstVector(result);
+    if (!vector) {
+      throw new Error('the embedding model returned no vector');
+    }
+    return vector;
+  };
+}
+
+/**
+ * The vector, whatever shape the model answered in.
+ *
+ * **The Workers AI binding and the REST API do not answer in the same shape,
+ * and neither does every model.** For a text-embedding model the binding
+ * returns the raw result — `{ data: [[…]] }` — rather than a `Response`, so
+ * there is nothing to call `.json()` on. The REST API wraps the same thing in
+ * `{ result: { data: [[…]] } }`, and some models answer with
+ * `{ data: [{ embedding: […] }] }` instead.
+ *
+ * So all three shapes are accepted, and a `Response` is read as JSON first.
+ * The error this prevents is a confusing one: `response.json is not a
+ * function`, in the middle of a search, with nothing in the message to say
+ * which of the shapes was expected.
+ */
+async function firstVector(result: unknown): Promise<number[] | undefined> {
+  let payload: unknown = result;
+  if (result && typeof (result as { json?: unknown }).json === 'function') {
+    payload = await (result as Response).json();
+  }
+  const candidate = payload as { data?: unknown; result?: { data?: unknown } };
+  const data = candidate?.data ?? candidate?.result?.data;
+  if (!Array.isArray(data) || data.length === 0) return undefined;
+  const first = data[0];
+  if (Array.isArray(first)) return first as number[];
+  if (first && typeof first === 'object' && 'embedding' in first) {
+    return (first as { embedding: number[] }).embedding;
+  }
+  return undefined;
+}
+
+/** The model the corpus's vectors were made with. */
+const QUERY_EMBEDDING_MODEL = '@cf/baai/bge-m3';
 
 async function handleApi(
   request: Request,

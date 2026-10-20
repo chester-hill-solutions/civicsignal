@@ -72,6 +72,53 @@ export interface CorpusContext {
     /** Injectable for tests. */
     fetch: typeof fetch;
     now: () => Date;
+    /**
+     * The similarity index, when the corpus has one.
+     *
+     * A corpus that is searched by meaning rather than by keyword needs somewhere
+     * to look for neighbours. The index holds **no text** — only vectors and
+     * metadata — so the canonical row, and the licence policy that governs it,
+     * still live in the database. An index that held the text would be a second
+     * copy of the corpus that bypassed the gate.
+     *
+     * Absent means the corpus falls back to its lexical path, which is right for
+     * a small corpus and wrong for a large one.
+     */
+    vector?: VectorIndex;
+    /**
+     * Turns a question into a vector, in the index's own space.
+     *
+     * It is a function rather than a service so that the caller chooses: a
+     * server-side model, a browser model that produces the same vectors from the
+     * same file, or a test double.
+     */
+    embedQuery?: (text: string) => Promise<number[]>;
+}
+/** One neighbour from the similarity index. */
+export interface VectorMatch {
+    /** The id of the row this vector belongs to. */
+    id: string;
+    /** The similarity, higher is closer. */
+    score: number;
+    /** Whatever the index was told about the row when it was written. */
+    metadata: Record<string, string | number>;
+}
+/**
+ * Where the vectors live.
+ *
+ * The seam between the corpus and whatever stores the embeddings: a Vectorize
+ * index, a Postgres table with pgvector, or a file the evaluation reads.
+ */
+export interface VectorIndex {
+    /**
+     * The nearest neighbours to a vector.
+     *
+     * The filter is a set of metadata equality constraints, which is how the
+     * language lens reaches the index: the language is a column on the row, so
+     * it is a filter on the vector, and a French question never has to compete
+     * with the English rows for a place in the top k.
+     */
+    query(vector: number[], topK: number, filter?: Record<string, string>): Promise<VectorMatch[]>;
 }
 /**
  * A corpus the product can query.

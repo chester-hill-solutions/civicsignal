@@ -5,6 +5,7 @@
     "": {
       "name": "civicsignal",
       "dependencies": {
+        "@chester-hill-solutions/api-billing": "file:./vendor/@chester-hill-solutions/api-billing",
         "@chester-hill-solutions/corpus": "file:./vendor/@chester-hill-solutions/corpus",
         "@cloudflare/workers-types": "^4.20250109.0",
         "@modelcontextprotocol/server": "2.3.1",
@@ -74,6 +75,8 @@
     "@aws-sdk/xml-builder": ["@aws-sdk/xml-builder@3.972.41", "", { "dependencies": { "@smithy/types": "^4.19.0", "tslib": "^2.6.2" } }, "sha512-ctjVSyCMegrWfXlx6VqzSBFI6UqmQ5ZlnfMhdLIiWmhoH8UAQxSCP5N3OpG7X3k4LnS7ou74C4mt20+bfTW2aQ=="],
 
     "@aws/lambda-invoke-store": ["@aws/lambda-invoke-store@0.3.0", "", {}, "sha512-sl4Bm6yiMNYrZKkqqDFWN0UfnWhlS8ivKxrYl+6t0gCLrqr8y3B2IqZZbFRkfaVVp7C/baApyh71P+LeE1A2sQ=="],
+
+    "@chester-hill-solutions/api-billing": ["@chester-hill-solutions/api-billing@file:vendor/@chester-hill-solutions/api-billing", { "devDependencies": { "@cloudflare/workers-types": "^4.20250109.0", "@electric-sql/pglite": "^0.2.0", "bun-types": "^1.3.5", "postgres": "^3.4.7", "typescript": "^5.9.2" } }],
 
     "@chester-hill-solutions/corpus": ["@chester-hill-solutions/corpus@file:vendor/@chester-hill-solutions/corpus", { "devDependencies": { "bun-types": "^1.3.5", "typescript": "^5.9.2" } }],
 
@@ -844,6 +847,8 @@
     "@aws-crypto/sha256-browser/@smithy/util-utf8": ["@smithy/util-utf8@2.3.0", "", { "dependencies": { "@smithy/util-buffer-from": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-R8Rdn8Hy72KKcebgLiv8jQcQkXoLMOGGv5uI1/k0l+snqkOzQ1R0ChUBCxWMlBsFMekWjq0wRudIweFs7sKT5A=="],
 
     "@aws-crypto/util/@smithy/util-utf8": ["@smithy/util-utf8@2.3.0", "", { "dependencies": { "@smithy/util-buffer-from": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-R8Rdn8Hy72KKcebgLiv8jQcQkXoLMOGGv5uI1/k0l+snqkOzQ1R0ChUBCxWMlBsFMekWjq0wRudIweFs7sKT5A=="],
+
+    "@chester-hill-solutions/api-billing/@electric-sql/pglite": ["@electric-sql/pglite@0.2.17", "", {}, "sha512-qEpKRT2oUaWDH6tjRxLHjdzMqRUGYDnGZlKrnL4dJ77JVMcP2Hpo3NYnOSPKdZdeec57B6QPprCUFg0picx5Pw=="],
 
     "@effect/platform-node/undici": ["undici@8.12.3", "", {}, "sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw=="],
 

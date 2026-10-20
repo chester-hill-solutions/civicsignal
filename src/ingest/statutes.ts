@@ -780,7 +780,7 @@ function nullableQuoted(value: string | null): string {
 }
 
 function rowTuple(r: StatuteSectionRow): string {
-  return [
+  return `(${[
     quoted(r.id),
     quoted(r.corpus_id),
     quoted(r.act),
@@ -797,7 +797,7 @@ function rowTuple(r: StatuteSectionRow): string {
     quoted(r.language),
     nullableQuoted(r.topics),
     quoted(r.search_text),
-  ].join(',');
+  ].join(',')})`;
 }
 
 export function sqlEscape(value: string): string {

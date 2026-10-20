@@ -1,0 +1,48 @@
+{
+  "name": "@chester-hill-solutions/api-billing",
+  "version": "0.1.0",
+  "description": "Metering: the usage counter, the fuse, and the meter event",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chester-hill-solutions/chester-hill-solutions.git",
+    "directory": "packages/api-billing"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./durable-object": {
+      "types": "./dist/durable-object.d.ts",
+      "import": "./dist/durable-object.js",
+      "default": "./dist/durable-object.js"
+    },
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "import": "./dist/postgres.js",
+      "default": "./dist/postgres.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test src/",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "@electric-sql/pglite": "^0.2.0",
+    "bun-types": "^1.3.5",
+    "postgres": "^3.4.7",
+    "typescript": "^5.9.2"
+  }
+}
