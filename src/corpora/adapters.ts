@@ -1,4 +1,4 @@
-import type { RawCorpusItem } from '../licensing';
+import type { RawCorpusItem } from "@chester-hill-solutions/corpus";
 import {
   BILLS_CANADA,
   GDELT,

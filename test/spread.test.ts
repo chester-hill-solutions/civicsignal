@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildBrief } from '../src/routes/brief';
 import { GDELT, NEWS_CANADA } from '../src/corpora/policies';
 import type { Corpus, CorpusContext } from '../src/corpora/types';
-import type { RawCorpusItem } from '../src/licensing';
+import type { RawCorpusItem } from '@chester-hill-solutions/corpus';
 
 const ctx: CorpusContext = { fetch: globalThis.fetch, now: () => new Date('2026-10-20T00:00:00Z') };
 

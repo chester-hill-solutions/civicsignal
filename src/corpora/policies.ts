@@ -1,4 +1,4 @@
-import type { CorpusPolicy } from '../licensing';
+import type { CorpusPolicy } from "@chester-hill-solutions/corpus";
 
 /**
  * The corpus policies for this product.

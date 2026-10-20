@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actTitles, parseCitation, resolveCitation } from '../src/citations';
+import { actTitles, parseCitation, resolveCitation } from '@chester-hill-solutions/corpus';
 
 const ACTS = ['Canada Labour Code', 'Criminal Code', 'Privacy Act', 'Competition Act'];
 

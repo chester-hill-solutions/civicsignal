@@ -2,7 +2,7 @@ import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { buildBrief, type BriefRequest } from '../routes/brief';
 import { CORPUSES_BY_ID } from '../corpora/registry';
-import { emitCorpusItem } from '../licensing';
+import { emitCorpusItem } from "@chester-hill-solutions/corpus";
 import { policyFor } from '../corpora/policies';
 import type { CorpusContext, Scope } from '../corpora/types';
 import type { Env } from '../types';

@@ -1,8 +1,8 @@
-import { authorizeServerKey, httpStatusForKeyDenial } from './spine/api-keys';
+import { authorizeServerKey, httpStatusForKeyDenial } from "./spine/api-keys";
 import { billableDenialResponse, recordSuccessfulBillable, type BillableAuthContext } from './spine/billing';
 import { buildBrief, type BriefRequest } from './routes/brief';
 import { CORPUSES_BY_ID } from './corpora/registry';
-import { emitCorpusItem } from './licensing';
+import { emitCorpusItem } from "@chester-hill-solutions/corpus";
 import { policyFor } from './corpora/policies';
 import { capabilitiesResponse, llmsTxt } from './routes/capabilities';
 import { createCivicSignalMcpHandler } from './mcp/server';

@@ -1,4 +1,4 @@
-import type { CorpusItem, CorpusPolicy, RawCorpusItem } from '../licensing';
+import type { CorpusItem, CorpusPolicy, RawCorpusItem } from "@chester-hill-solutions/corpus";
 import { POLICIES_BY_ID } from '../corpora/policies';
 
 import { gdeltCorpus, newsCorpus, statutesCorpus } from '../corpora/adapters';

@@ -78,6 +78,24 @@ shared brand, no shared account, and no shared surface. The wire's source policy
 governs what may be republished, and this product's licence register is downstream
 of it.
 
+## Shared code
+
+The licence regimes, the corpus interface and citation resolution are not this
+product's — they are `@chester-hill-solutions/corpus`, upstreamed to the CHS
+monorepo so every product serving public records declares its corpora the same way and
+enforces the same rules. The enforcement lives in one place, so a new endpoint cannot
+forget the rule.
+
+What stays here is what is specific to this product: which corpora exist, their
+fields, their queries, and the policy for each — because whether a given source is
+open, cite-only or metadata-only is a fact about that source, and the package only
+holds you to the conclusion you reached.
+
+The retrieval machinery (BM25, the vector store, rank fusion) is the other candidate
+for upstreaming, and it is deliberately **not** extracted yet: it has one consumer
+and its API will move as the evaluation teaches us things. It goes upstream when the
+evaluation settles and a second consumer appears.
+
 ## The waves
 
 Each wave ends with something observable. The order is chosen so that the cheapest
