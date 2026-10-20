@@ -34,7 +34,7 @@ const ENCODER_URL = ENCODER_DOMAIN.includes('://')
   ? ENCODER_DOMAIN
   : `http://${ENCODER_DOMAIN}:${ENCODER_PORT}`;
 const ENCODER_TOKEN = process.env.ENCODER_TOKEN ?? '';
-const DATABASE_URL = process.env.DATABASE_URL ?? '';
+const DATABASE_URL = process.env.CORPUS_DATABASE_URL ?? process.env.DATABASE_URL ?? '';
 const CORPUS_ID = 'statutes-canada';
 const WATCH_SECONDS = Number(process.env.PIPELINE_INTERVAL_SECONDS ?? 21_600);
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? '';
