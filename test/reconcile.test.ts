@@ -12,6 +12,7 @@ import { fingerprint, hash128, reconcile, type FingerprintedRow } from '../src/i
 function row(overrides: Partial<FingerprintedRow> = {}): FingerprintedRow {
   return {
     id: 'acts-en-177',
+    instrument: 'Access to Information Act',
     text: 'This Act may be cited as the Access to Information Act.',
     heading: 'Short title',
     section: '1',
@@ -42,6 +43,11 @@ describe('the fingerprint', () => {
 
   it('changes when the provision is repealed', () => {
     expect(fingerprint(row({ status: 'repealed', in_force: 0 }))).not.toBe(fingerprint(row()));
+  });
+
+  it('changes when the instrument is renamed', () => {
+    // A rename changes what the row resolves to, and the citation URL with it.
+    expect(fingerprint(row({ instrument: 'Access to Information Act, 2026' }))).not.toBe(fingerprint(row()));
   });
 
   it('changes when the citation changes', () => {
