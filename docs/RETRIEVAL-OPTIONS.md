@@ -64,8 +64,10 @@ per-corpus indexes.
 ## PGlite with pgvector — measured
 
 `@electric-sql/pglite` 0.5.10 is **PostgreSQL 18.6 compiled to WebAssembly**. The
-pgvector extension is a separate package, `@electric-sql/pglite-pgvector`, and its
-export is named `vector`.
+pgvector extension is a separate package, `@electric-sql/pglite-pgvector`, and it
+ships **pgvector 0.8.7** — the full thing, not a stub: `hnsw` and `ivfflat` access
+methods, `vector_cosine_ops`, `vector_ip_ops`, `vector_l2_ops`, and the planner
+picking an index scan over a sequential one.
 
 | | |
 |---|---|
@@ -73,43 +75,111 @@ export is named `vector`.
 | Distance filters (`WHERE emb <=> $1 < 0.5`) | **works** |
 | **HNSW index** (`USING hnsw (emb vector_cosine_ops)`) | **works** |
 | ivfflat index | works |
-| **FTS5** (`CREATE VIRTUAL TABLE … USING fts5`) | **not available** — "syntax error at or near VIRTUAL" |
-| `ts_rank` | **not available** (core `to_tsvector` exists; the ranking function does not) |
-| `pg_trgm`, `unaccent`, `cube`, `btree_gin`, `uuid-ossp` | **not available** — the contrib bundles ship in the package but the extensions are not built into the WASM binary |
-| `PGliteWorker` (the official Workers build) | exists, takes a `Worker` for persistence |
+| **Standard Postgres FTS** — `to_tsvector`, `to_tsquery`, `ts_rank_cd`, `ts_headline` | **works** |
+| **GIN index on `to_tsvector('english', body)`** | **works** — hybrid search is possible |
+| **FTS5** (`CREATE VIRTUAL TABLE … USING fts5`) | **not available** — the module is not in the build |
+| `pg_trgm`, `unaccent`, `cube`, `btree_gin`, `uuid-ossp` | **not available** — the contrib bundles ship in the package but the extensions are not compiled in |
+| `PGliteWorker` (the official Workers build) | exists, takes a `Worker` for persistence — but see the memory wall |
 
-So PGlite is **a vector store with a SQL front-end, not a hybrid search engine.** The
-lexical arm has to live in the application — which is fine, because it now does: the
-BM25 in `src/eval/bm25.ts` is about two hundred lines and is unit-tested.
+**A correction to an earlier finding of mine:** I reported `ts_rank` as absent. That
+was my bug — the two-argument `ts_rank_cd(tsvector, tsvector)` form does not exist
+(the function takes a `tsquery`), and a failed `CREATE EXTENSION fts5` in the same
+transaction poisoned the follow-up. The function is there, and a GIN index over
+`to_tsvector('english', body)` returns ranked rows. FTS5's *virtual table* is the
+thing that is missing, and it is not needed.
 
-### The memory wall for a Worker
+For true BM25 rather than cover-density ranking, `@electric-sql/pglite-pg_textsearch`
+(Timescale's `pg_textsearch`) provides a `bm25` index access method as a separate
+package.
 
-A Worker has 128 MB. The statute index at full precision is:
+### Performance, measured
+
+| Workload | Insert | HNSW build | Query | Table | HNSW index |
+|---|---|---|---|---|---|
+| 100k × 128d | 12.5 s | 39.3 s | **0.7 ms** | 58 MB | 79 MB |
+| 100k × 128d, no index | 12.5 s | — | 29.4 ms | — | — |
+| 50k × 768d | 37.4 s | 100 s | **2.0 ms** | 201 MB | 195 MB |
+
+HNSW is about **40× faster than brute force**, and it is not optional: brute force
+scales linearly, so 191,000 sections at 768 dimensions would be roughly 150ms a
+query, while HNSW stays flat. Note the index is *larger than the table* at 768
+dimensions.
+
+### The memory wall — PGlite cannot run in a Worker
+
+```
+PGlite WASM heap with an empty database : 197,918,720 bytes = 188.75 MB
+PGlite WASM heap after 60k × 128d        : 226.5 MB
+Cloudflare Worker memory limit          : 128 MB per isolate, including the WASM heap
+```
+
+**PGlite's empty heap exceeds a Worker's entire memory budget by about 60 MB.**
+This is not a tuning problem: PGlite cannot run in a standard Cloudflare Worker, and
+cannot run in a Durable Object either, because a Durable Object is a Worker with the
+same 128 MB ceiling. The same applies to a 64 MiB Worker bundle.
+
+My earlier arithmetic — "191,025 × 128 dims is 98 MB, which fits" — was correct about
+the vectors and wrong about the substrate. The vectors were never the problem; the
+Postgres instance is.
+
+PGlite in a **Container** (up to 12 GiB) or on an ordinary server is the only
+viable deployment. At 12 GiB, roughly 1M vectors at 768 dimensions with HNSW, with
+the data on disk rather than in the in-memory filesystem.
+
+There is no official PGlite + pgvector + Cloudflare Workers example. The one that
+exists is two years stale, in-memory only, and broken against current PGlite.
+
+## The option I had not considered: Cloudflare AI Search
+
+The Cloudflare-native answer, and it is a managed hybrid index:
+
+- **Hybrid BM25 + vector search by default**, fused with RRF or max, with optional
+  reranking via `@cf/baai/bge-reranker-base`
+- **Workers AI embedding and reranking calls are included in AI Search usage and do
+  not appear on the Workers AI bill** — so inference is free
+- 1M files per instance (500K for hybrid); 1,000 semantic and 1,000 full-text queries
+  included monthly, then $0.75 per 1,000 semantic and $0.10 per 1,000 full-text
+- $0.75 per million ingestion tokens → the 30M-token corpus is about **$19 once**
+- Billing starts 2026-11-01; it is a young product and models can be deprecated on a
+  lifecycle schedule
+- The corpus is locked into their chunking and tokenizer, and you cannot run your own
+  embedding model inside it
+
+The binding constraint is the **512-token input cap** on the embedding models it
+hosts, including `embeddinggemma-300m`. That is a chunking constraint, and it is the
+one thing to test before committing.
+
+## Cloudflare Containers, if you need full control
 
 | | |
 |---|---|
-| 191,025 × 768 dims, float32 | **587 MB** — 4.5× the limit |
-| 191,025 × 256 dims, float32 | 196 MB — over the limit |
-| 191,025 × 128 dims, float32 | 98 MB — fits, with no room for PGlite itself |
-| 191,025 × 256 dims, int8 | 49 MB — fits, but `vector` is float4; `halfvec` gives 98 MB at fp16 |
+| Instance sizes | 1/16 vCPU / 256 MiB up to 4 vCPU / 12 GiB, 20 GB disk |
+| **GPU** | **none.** The Containers documentation has no mention of CUDA or accelerators at all |
+| Cold start | 1–3 seconds, plus model load for a GGUF |
+| Disk | **ephemeral by default** — R2 FUSE mount, or immutable snapshots (20 GB, 30-day TTL) |
+| Autoscaling | not built yet; use `getRandom` for stateless routing |
+| Availability | Workers Paid, no allowlist |
+| Cost | standard-1 (0.5 vCPU, 4 GiB) ≈ $1.73/day; standard-4 ≈ $9.50/day |
 
-**A Worker cannot hold the statute vector index at a useful dimensionality.** PGlite
-on an ordinary server can — a 2 GB instance holds the 768-dim index in 587 MB with
-room to spare, HNSW works, and it is one database for both the relational rows and
-the vectors.
+**llama.cpp on a container** is the way to self-host EmbeddingGemma:
+`llama-server --embeddings --pooling mean` with `ggml-org/embeddinggemma-2-GGUF`
+(296 MB Q8_0). It fits in a `basic` container with room to spare. Throughput was not
+benchmarked and the cost case rests on it — measure before committing.
 
-The two shapes are therefore:
+### No model can run inside a Worker or a Durable Object
 
-- **Vectorize** — 768 dimensions, $0.068/month, no memory pressure, but a second
-  service to keep consistent with D1.
-- **PGlite on a small server** — one Postgres for the rows and the vectors, SQL
-  joins between them, HNSW, no dimensional ceiling until the instance fills, but a
-  running service to operate and a lexical arm built by hand.
+| Model | fp32 | fp16 | int8 | q4 |
+|---|---|---|---|---|
+| `embeddinggemma-2` ONNX (text encoder) | 1034 MB | 517 MB | 299 MB | 166 MB |
+| `embeddinggemma-300m` ONNX | 1177 MB | 589 MB | 295 MB | 188 MB |
+| `embeddinggemma-2` GGUF Q8_0 | 296 MB (+529 MB mmproj) | | | |
 
-Either way, **the vector index holds no text.** Only the embedding and metadata
-(row id, jurisdiction, date, corpus) live in it; the canonical row, the text and the
-licence policy stay in the relational store. That is what keeps the index from
-becoming a second copy of the corpus that bypasses the policy gate.
+Every candidate exceeds 128 MB even at q4, and Workers have **no WebGPU** — the
+runtime API does not exist. The largest models people actually run in a Worker are
+the BERT-tiny/MiniLM/distilbert class, 15–70 MB at int8. A Durable Object is a
+Worker with the same ceiling, so a DO is a coordinator and a cache, not a place to
+run inference.
+
 
 ## Where EmbeddingGemma 2 can run
 
@@ -151,6 +221,21 @@ longest section in the corpus is about 61,000 tokens, roughly seven times the wi
 The embedding job truncates those and reports the count, because a silently truncated
 provision is a section whose tail cannot be retrieved.
 
+**The task-prefix problem, which is the biggest unquantified risk in the Cloudflare
+path.** EmbeddingGemma was trained with `SearchQuery` and `Document` prefixes, and
+the model card is explicit that omitting them "may lead to sub-optimal embedding
+quality". The Workers AI schema for `embeddinggemma-300m` accepts only
+`{"text": string | string[≤100]}` — there is **no parameter for a task prefix**. So
+the model Cloudflare hosts cannot be prompted the way it was trained. That is a
+retrieval-quality tax of unknown size, and it is the single thing the evaluation
+should measure before anything is chosen.
+
+`@cf/qwen/qwen3-embedding-0.6b` has an 8,192-token input window, is Cloudflare's
+"Smart Default", and costs the same $0.012/M — and it does not have the prefix
+problem, because it was not trained to need one. **The evaluation should compare
+`embeddinggemma-300m`, `qwen3-embedding-0.6b` and `bge-m3` before anything is
+chosen.** That is an afternoon's work, and the corpus is already embedded once.
+
 **A caveat on Workers AI that is not in the model card.** The limit is on the whole
 *request*, not on each document: a batch totalling more than 60,000 tokens is
 rejected outright, however many documents it contains, and the error reads
@@ -159,6 +244,15 @@ sections fit easily; ten long ones do not. Batches therefore have to be budgeted
 tokens rather than by count, and the section length distribution is heavy-tailed
 enough that a count-based batch fails constantly. The corpus averages 157 tokens per
 section and runs to 61,000.
+
+**A third-party inference API is still reachable through Cloudflare.** AI Gateway
+supports Google AI Studio as a provider, and the provider-native passthrough form
+accepts `embedContent` and `batchEmbedContents`; AI Search natively lists
+`google-ai-studio/gemini-embedding-001` and `-2` as supported embedding models.
+`gemini-embedding-2` is 1,536 dimensions with an 8,192-token window, which removes
+the chunking constraint entirely, and costs about $6 for the whole corpus. It is
+still a third-party inference API, so it is a documented fallback rather than the
+default.
 
 **The deployment question.** A 270M-parameter text encoder is small enough to run on
 a CPU: a GGUF build under llama.cpp answers a query embedding in tens of
@@ -230,3 +324,43 @@ fusion — over the full 191,025-section corpus, and prints a verdict:
 The set is 36 questions. Every gold answer is an Act and a section, both checked
 against the corpus before anything is scored, so a mis-specified question is reported
 rather than quietly counted as a miss.
+
+## Where the vector arm should run
+
+Ranked, for a Canadian-civic corpus on a Cloudflare-centric stack.
+
+**1. Cloudflare AI Search** — the managed answer. Hybrid BM25 + vector with RRF
+fusion, reranking available, and **Workers AI embedding calls are free inside it**.
+The 30M-token corpus is about $19 to ingest. The binding constraint is the
+**512-token input cap** on the models it hosts, which is a chunking constraint, and
+the task-prefix problem on `embeddinggemma-300m`, which is a quality risk. Lowest
+operational burden; a young product; the corpus is locked into its chunking.
+
+**2. Containers, with llama.cpp and PGlite** — the full-control answer. No
+third-party inference, the embedding model can be changed without re-platforming,
+and the 8,192-token window is available. The cost is operational: you own the
+image, the GGUF, the HNSW tuning, the index rebuilds, and R2-FUSE persistence.
+**PGlite goes in the container, never in a Worker.**
+
+**3. Vectorize plus your own lexical arm** — raw vectors with metadata filters, no
+ranking beyond cosine, no BM25. Effectively free ($0.04–0.07 a month for this
+corpus). Right only if there is already a hybrid-search layer to plug into — and
+there now is, in `src/eval/bm25.ts`.
+
+**4. A third-party inference API through AI Gateway** — the escape hatch.
+`gemini-embedding-2` is 1,536 dimensions, 8,192-token window, about $6 for the
+corpus.
+
+**Not viable, and worth recording so nobody tries them again:**
+
+- **PGlite in a Worker or a Durable Object.** The empty WASM heap is 188.75 MB
+  against a 128 MB ceiling. Dead before it stores a row.
+- **Any Gemma-class model inside a Worker.** The smallest is 166 MB at q4; Workers
+  have no WebGPU, only WASM.
+- **A Durable Object as an inference service.** A DO is a Worker. It can hold a hot
+  shard of a few thousand vectors; it cannot be a system of record.
+
+**The decision does not need to be made yet.** The corpus is already embedded once
+with `bge-m3`; the evaluation compares the arms; and the three models worth
+comparing — `embeddinggemma-300m`, `qwen3-embedding-0.6b`, `bge-m3` — cost
+$0.36 each for the whole corpus. That is an afternoon.
