@@ -71,12 +71,46 @@ region — and every corpus is filtered by it. A topic-only brief additionally r
 choosing how to frame the question. Geography is never switched on or off; it is a
 lens the caller picks, and the answer includes the evidence for picking it.
 
+**Retrieval is vector-first, and there is no reranker.** (2026-10-20, measured.)
+The evaluation put 36 questions over 19,021 provisions: the vector arm found 14 of
+18 ordinary-language questions against 3 for the keyword baseline, MRR 0.617 against
+0.310. Equal-weight fusion got 12 and MRR 0.501 — it drags the strong arm down to
+meet the weak one — and a sweep over the constant and the weight found nothing that
+beats pure vector. Reranking the vector candidates *lowers* MRR to 0.560; it is a
+precision tool with a hard ceiling, and the vector stage already returns the answer
+in the top five for every exact question. So the product searches with vectors, does
+not fuse, and resolves citations structurally rather than ranking them.
+
 **The Policorner wire stays a separate product.** (2026-10-20, owner.) The wire is
 reader-facing and keeps its own brand and audience. This product consumes its output
 as a data source — shared pipeline and shared tables where that is useful, but no
 shared brand, no shared account, and no shared surface. The wire's source policy
 governs what may be republished, and this product's licence register is downstream
 of it.
+
+## The platform
+
+**One host: Railway.** (2026-10-20, owner.) A Bun service, one Postgres, the
+encoder, the pipeline and the harness, all on one private network — one bill, one
+deploy, one failure domain.
+
+The split between Cloudflare and Railway was inherited rather than chosen: the
+spine came from `riding-and-address`, a Workers product, and the corpus could not
+live in a Worker. What the code actually depends on is one KV namespace, one
+Durable Object and `waitUntil`. Everything else is web-standard and native in Bun,
+and the licence gate has no runtime imports at all.
+
+The scale-to-zero argument for keeping the API on Workers is real but small: the
+floor is Postgres, the API and the encoder, and the corpus plane pays that floor
+either way. The decisive argument is the harness — it spawns processes, a Durable
+Object cannot host it, and so the harness and the corpus are on the critical path
+together.
+
+The spine is shared with `riding-and-address`, so this is an extraction, not a
+fork: a runtime-neutral core with a Cloudflare adapter and a Postgres adapter, which
+is the shape the house conventions already call for.
+
+`docs/PLATFORM.md` has the shape, the extraction, the order and the risk.
 
 ## Shared code
 
