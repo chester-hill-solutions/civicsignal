@@ -46,7 +46,7 @@ const CORPUS_DIR = join(process.env.HOME ?? '.', '.cache', 'civicsignal', 'laws-
 const PAGE = 1000;
 
 /** How many statements to write at a time. */
-const BATCH = 100;
+const BATCH = 500;
 
 /** How many requests to have in flight. */
 const CONCURRENCY = 8;
@@ -174,6 +174,46 @@ function corpusHashes(): Map<string, string> {
   return hashes;
 }
 
+/** The revision the local clone is at. */
+function cloneRevision(): { commit: string; date: string } | null {
+  const proc = Bun.spawnSync(
+    ['git', '-C', CORPUS_DIR, 'log', '-1', '--format=%H%x00%cI'],
+    { stdout: 'pipe', stderr: 'ignore' },
+  );
+  if (proc.exitCode !== 0) return null;
+  const [commit, date] = proc.stdout.toString().trim().split('\0');
+  if (!commit) return null;
+  return { commit, date: (date ?? '').slice(0, 10) };
+}
+
+/**
+ * Record the revision the store is at.
+ *
+ * The incremental cycle works by comparing the changed files now with the same
+ * files at the revision the store holds — so the store has to *have* a
+ * revision, and it has to be the right one: the revision the fingerprints
+ * were computed from, which is the revision the local clone is at and the
+ * revision the comparison above proved the store matches.
+ */
+async function recordRevision(rowCount: number): Promise<void> {
+  const revision = cloneRevision();
+  if (!revision) {
+    console.log('the local clone has no revision — corpus_state was left alone');
+    return;
+  }
+  await execute(
+    `INSERT INTO corpus_state (corpus_id, commit_sha, commit_date, as_of, row_count, last_run_at)
+     VALUES (${literal(CORPUS_ID)}, ${literal(revision.commit)}, ${literal(revision.date)}, ${literal(revision.date)}, ${rowCount}, ${literal(new Date().toISOString())})
+     ON CONFLICT (corpus_id) DO UPDATE SET
+       commit_sha = excluded.commit_sha,
+       commit_date = excluded.commit_date,
+       as_of = excluded.as_of,
+       row_count = excluded.row_count,
+       last_run_at = excluded.last_run_at;`,
+  );
+  console.log(`corpus_state records ${revision.commit.slice(0, 9)} (${revision.date})`);
+}
+
 async function main(): Promise<void> {
   console.log(`backfilling the fingerprints of ${CORPUS_ID}`);
 
@@ -198,6 +238,12 @@ async function main(): Promise<void> {
   }
   console.log(`${hashes.size} row(s) read and hashed`);
 
+  // Whether the store and the corpus are the same corpus.
+  //
+  // This is what decides whether the revision can be recorded: the revision
+  // says "the store holds this corpus at this revision", and it can only say
+  // that if the comparison agrees.
+  let agrees = false;
   if (compare) {
     const corpus = corpusHashes();
     let same = 0;
@@ -217,6 +263,7 @@ async function main(): Promise<void> {
       }
     }
     const missing = [...corpus.keys()].filter((id) => !hashes.has(id)).length;
+    agrees = different === 0 && only === 0 && missing === 0;
     console.log(
       `  ${same} the same, ${different} different, ${only} only in the store, ${missing} only in the corpus`,
     );
@@ -233,7 +280,7 @@ async function main(): Promise<void> {
       `UPDATE statute_sections SET text_hash = ${literal(hash)} WHERE id = ${literal(id)} AND corpus_id = ${literal(CORPUS_ID)};`,
   );
 
-  let written = 0;
+  let sent = 0;
   let failed = 0;
   let next = 0;
   const workers = Array.from({ length: CONCURRENCY }, async () => {
@@ -243,19 +290,51 @@ async function main(): Promise<void> {
       next++;
       const chunk = statements.slice(start, start + BATCH).join('\n');
       try {
-        written += await execute(chunk);
+        await execute(chunk);
+        sent += Math.min(BATCH, statements.length - start);
       } catch (error) {
         failed += Math.min(BATCH, statements.length - start);
         console.error(`  a batch of ${BATCH} statement(s) failed: ${String(error).slice(0, 200)}`);
       }
-      if ((written + failed) % 5_000 < BATCH) {
-        console.log(`  ${written + failed} row(s) written`);
+      if ((sent + failed) % 5_000 < BATCH) {
+        console.log(`  ${sent + failed} row(s) written`);
       }
     }
   });
   await Promise.all(workers);
 
-  console.log(`${written} row(s) written, ${failed} failed`);
+  console.log(`${sent} row(s) written, ${failed} failed`);
+
+  // **The count is the truth, not the number of statements sent.**
+  //
+  // D1 does not report the rows a multi-statement request changed — the
+  // metadata it returns covers one statement — so a counter that adds up what
+  // the API says reports a fraction of what happened and looks like a partial
+  // failure. The question is whether every row has a fingerprint now, and only
+  // the database can answer it.
+  const counted = await query<{ total: number; hashed: number }>(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN text_hash IS NOT NULL THEN 1 ELSE 0 END) AS hashed
+       FROM statute_sections
+      WHERE corpus_id = ?`,
+    [CORPUS_ID],
+  );
+  const total = counted[0]?.total ?? 0;
+  const hashed = counted[0]?.hashed ?? 0;
+  console.log(`${hashed} of ${total} row(s) in ${CORPUS_ID} have a fingerprint`);
+  if (hashed !== total) {
+    throw new Error(`${total - hashed} row(s) still have no fingerprint`);
+  }
+
+  if (agrees) {
+    await recordRevision(total);
+  } else if (compare) {
+    console.log('the store and the corpus are not the same corpus — corpus_state was left alone');
+  } else {
+    console.log(
+      'the corpus was not compared, so the revision was not recorded — run with --compare',
+    );
+  }
 }
 
 await main();

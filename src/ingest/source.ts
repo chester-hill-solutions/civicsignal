@@ -56,7 +56,37 @@ export interface CorpusSource {
   head(): Promise<CorpusRevision>;
   /** Every instrument file at a revision, streamed. */
   instruments(revision: string, paths?: readonly string[]): AsyncGenerator<InstrumentFile>;
+  /** The files that changed between two revisions. */
+  changedFiles(base: string, head: string): Promise<CorpusChange>;
+  /** One file's content at a revision, or null when it is not there. */
+  fileAt(path: string, revision: string): Promise<string | null>;
 }
+
+/** A file that changed between two revisions. */
+export interface ChangedFile {
+  /** The path in the corpus, e.g. `eng/acts/C-34.xml`. */
+  path: string;
+  /** The path it had before, when the change was a rename. */
+  previousPath?: string;
+  status: 'added' | 'modified' | 'removed' | 'renamed';
+}
+
+/** What changed between two revisions. */
+export interface CorpusChange {
+  files: ChangedFile[];
+  /**
+   * True when the list is cut short.
+   *
+   * GitHub's compare endpoint returns **at most 300 files**, and it does not
+   * say that it has done so — it just returns 300. So a list that is exactly
+   * 300 long is a list that might be longer, and a caller that cannot tell
+   * would silently skip the rest of the corpus's changes.
+   */
+  truncated: boolean;
+}
+
+/** How many files the compare endpoint will name before it stops. */
+const MAX_COMPARE_FILES = 300;
 
 /**
  * The corpus, over HTTPS.
@@ -107,6 +137,65 @@ export class GitHubCorpusSource implements CorpusSource {
     };
     if (!body.sha) throw new Error('the corpus repository did not name a revision');
     return { commit: body.sha, date: body.commit?.committer?.date?.slice(0, 10) ?? '' };
+  }
+
+  /**
+   * The files that changed between two revisions.
+   *
+   * This is what makes an ingest that fits in a Worker possible. The whole
+   * corpus is 878 MB and eighty seconds of parsing, and a Worker has thirty
+   * seconds of CPU — but a commit that moves the corpus moves a few dozen
+   * files, and GitHub will say which ones.
+   *
+   * The **base** is the revision the store is at, and it is what makes the
+   * removals findable: a provision that is no longer in the corpus is a
+   * provision that was in the file *before*.
+   */
+  async changedFiles(base: string, head: string): Promise<CorpusChange> {
+    const response = await fetch(`${this.api}/compare/${base}...${head}`, {
+      headers: this.headers('application/vnd.github+json'),
+    });
+    if (!response.ok) {
+      throw new Error(`the corpus comparison returned ${response.status}`);
+    }
+    const body = (await response.json()) as {
+      files?: { filename?: string; previous_filename?: string; status?: string }[];
+    };
+    const all = body.files ?? [];
+    const files = all
+      .filter((file) => {
+        const path = file.filename ?? '';
+        const previous = file.previous_filename ?? '';
+        return path.endsWith('.xml') || previous.endsWith('.xml');
+      })
+      .map((file) => ({
+        path: file.filename ?? '',
+        previousPath: file.previous_filename,
+        status: (file.status ?? 'modified') as ChangedFile['status'],
+      }));
+    return { files, truncated: all.length >= MAX_COMPARE_FILES };
+  }
+
+  /**
+   * One file's content at a revision.
+   *
+   * From `raw.githubusercontent.com` rather than the API: the API refuses a
+   * file over a megabyte, and the corpus's largest instrument is thirteen of
+   * them, and the API's rate limit is counted against the same sixty requests
+   * an hour that the comparison already spent.
+   */
+  async fileAt(path: string, revision: string): Promise<string | null> {
+    const response = await fetch(`https://raw.githubusercontent.com/${CORPUS_REPO}/${revision}/${path}`, {
+      headers: this.headers('text/plain'),
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      throw new Error(`the corpus file ${path} returned ${response.status}`);
+    }
+    const text = await response.text();
+    // A byte-order mark is a character in the string, and the XML parser does
+    // not want one at the front of the document.
+    return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   }
 
   /**

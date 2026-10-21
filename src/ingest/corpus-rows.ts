@@ -37,6 +37,51 @@ export function classifyInstrument(path: string): {
 }
 
 /**
+ * The rows of one instrument file.
+ *
+ * The same parsing for every file, wherever the file came from: the tarball
+ * of a full revision, or a single file fetched at a revision. That is what
+ * makes the two comparable — the incremental cycle compares a file's rows now
+ * with the same file's rows before, and a difference in the *parser* would
+ * look like a change in the law.
+ */
+export function rowsForFile(options: {
+  /** The path within the corpus, e.g. `eng/acts/C-34.xml`. */
+  path: string;
+  /** The file's content. */
+  content: string;
+  /** The date of the revision, which is what a changed row is stamped with. */
+  date: string;
+  corpusId?: string;
+}): PipelineRow[] {
+  const corpusId = options.corpusId ?? CORPUS_ID;
+  const { kind, language } = classifyInstrument(options.path);
+  // A regulation's citation is its file stem; a statute's is in the document.
+  const stem = options.path.slice(options.path.lastIndexOf('/') + 1).replace(/\.xml$/, '');
+  const parsed = parseStatuteXml(options.content, {
+    citation: kind === 'regulations' ? stem : undefined,
+  });
+  if (!parsed) return [];
+  return buildRows(parsed, { kind, language }).map((row) => ({
+    id: row.id,
+    corpusId,
+    instrument: row.act,
+    citation: row.citation,
+    section: row.section,
+    schedule: row.schedule,
+    part: row.part,
+    status: row.status as ProvisionStatus,
+    heading: row.heading,
+    text: row.text,
+    source_url: row.source_url,
+    in_force: row.in_force,
+    language: row.language,
+    embedText: '',
+    lastChanged: options.date,
+  }));
+}
+
+/**
  * The corpus's rows, one instrument at a time.
  *
  * The generator holds one instrument's rows at a time, which is what makes it
@@ -52,37 +97,16 @@ export async function* instrumentRows(options: {
   /** Called for each instrument file, before its rows are yielded. */
   onFile?: (path: string) => void;
 }): AsyncGenerator<PipelineRow> {
-  const corpusId = options.corpusId ?? CORPUS_ID;
   for await (const file of options.source.instruments(options.revision, [
     ...INSTRUMENT_PATHS,
     ...FRENCH_INSTRUMENT_PATHS,
   ])) {
     options.onFile?.(file.path);
-    const { kind, language } = classifyInstrument(file.path);
-    // A regulation's citation is its file stem; a statute's is in the document.
-    const stem = file.path.slice(file.path.lastIndexOf('/') + 1).replace(/\.xml$/, '');
-    const parsed = parseStatuteXml(file.content, {
-      citation: kind === 'regulations' ? stem : undefined,
+    yield* rowsForFile({
+      path: file.path,
+      content: file.content,
+      date: options.date,
+      corpusId: options.corpusId,
     });
-    if (!parsed) continue;
-    for (const row of buildRows(parsed, { kind, language })) {
-      yield {
-        id: row.id,
-        corpusId,
-        instrument: row.act,
-        citation: row.citation,
-        section: row.section,
-        schedule: row.schedule,
-        part: row.part,
-        status: row.status as ProvisionStatus,
-        heading: row.heading,
-        text: row.text,
-        source_url: row.source_url,
-        in_force: row.in_force,
-        language: row.language,
-        embedText: '',
-        lastChanged: options.date,
-      };
-    }
   }
 }

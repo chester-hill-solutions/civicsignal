@@ -72,6 +72,32 @@ English, 139,107 French) and 254,672 vectors, with the repair script — which
 asks the index what it holds rather than trusting a checkpoint — reporting **0
 missing** in each language.
 
+**The pipeline is here too.** `services/pipeline/` is a second Worker with a
+cron on it, and it is the corpus's own continuous ingest: it asks the corpus
+repository what revision it is at, stops if the store is already there, and
+otherwise ingests what changed. The corpus is the product's content, and a
+pipeline that updates it from somebody else's platform is a second deploy
+pipeline, a second failure domain and a second set of credentials for a loop
+that sleeps most of the day.
+
+Two things about it are worth knowing.
+
+**It is incremental, because the whole corpus does not fit.** The corpus is
+878 MB of tarball and about a hundred and sixty seconds of parsing, and a
+Worker has thirty seconds of CPU — the first version of this cycle died on
+exactly that, with Cloudflare's error 1102. So the cycle asks GitHub which
+files changed between the revision the store holds and the revision the corpus
+is at, and fetches only those — forty-eight files for the corpus's last
+commit, which is two minutes and twenty-five provisions embedded. The changed
+file is fetched **twice**, once at each revision, because that is where the
+removals are: a provision that is no longer in the corpus is a provision that
+*was* in the old copy, and nothing about it arrives with the new one.
+
+**The corpus's rows are read over HTTPS**, not from a clone: there is no
+working tree, no volume and no git binary in the path. And the rows are
+**fingerprinted** — each provision carries a 128-bit hash of itself, so the
+reconciliation can tell what moved without reading the corpus's text twice.
+
 The gap is real and it is worth being honest about. The decision was one host
 because the marginal cost of a request is about $0.0004 and the product's
 infrastructure cost is dominated by *state* — a corpus database and a customer
@@ -226,18 +252,29 @@ the Railway corpus plane and the Railway pipeline.
 |---|---|---|
 | 0 | The API, the corpus and the encoder on Cloudflare | **done** — 277,857 rows, 254,672 vectors, the Worker serving |
 | 1 | The pipeline's store on D1 and Vectorize | **done** — the second `CorpusStore`, verified against the live D1 |
-| 2 | The pipeline as a scheduled Worker | **next** — a Worker-safe tar reader, the checkpoint in D1, and a cron trigger |
+| 2 | The pipeline as a scheduled Worker | **done** — the incremental cycle, the cron trigger, the fingerprints backfilled |
 | 3 | The Railway corpus plane and the Railway pipeline are torn down | waits on a `railway login` |
 | 4 | The Railway project keeps only the harness | with the harness |
 | 5 | `docs/PLATFORM.md` and the handoff record the decision | **done** |
 
-**What step 2 has to get right.** A Worker has a CPU ceiling and a subrequest
-ceiling, and the corpus does not fit in either: 11,736 instrument files and
-254,671 rows. So the pipeline is **chunked** — a cron invocation does a slice,
-the next one resumes — and the checkpoint moves from `dist/` to D1, which is
-where the corpus's own revision already lives. The common case is cheap: the
-corpus repository moves every three to eight days, so almost every invocation
-checks the revision, sees that nothing has moved, and stops.
+**What step 2 got right.** The cycle is **incremental**: GitHub's compare
+endpoint names the files that changed, and only those are fetched and parsed.
+The removals fall out of fetching the changed file at *both* revisions, rather
+than out of diffing the whole corpus. The tarball reader is still there and
+still uses `DecompressionStream` — `node:zlib` is not in the Workers runtime's
+guaranteed surface, so a module that imported it could never be bundled for
+one — and the store's rows go out as **one batch**, because a statement sent
+on its own is one subrequest and a Worker has a ceiling of a thousand.
+
+**What step 2 did not get right, and it is one thing.** GitHub's compare
+endpoint names **at most 300 files**, and it does not say that it has stopped
+early — so a commit that moves more than three hundred files cannot be
+ingested incrementally, and the cycle says so rather than quietly skipping the
+rest of the corpus's changes. The corpus's last commit moved forty-eight
+files; a re-consolidation would move thousands. **That case is not handled**:
+it needs the full tree, chunked across invocations, with the checkpoint in D1.
+The streamed cycle (`src/ingest/streaming-pipeline.ts`) is written and tested
+for it, and it is not wired up.
 
 ## The risks
 

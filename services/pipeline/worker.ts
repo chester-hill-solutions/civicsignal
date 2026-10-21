@@ -27,10 +27,10 @@
  * fingerprints and one batch of changed rows.
  */
 import { D1CorpusStore } from '../../src/corpora/d1-store';
-import { CORPUS_ID, instrumentRows } from '../../src/ingest/corpus-rows';
+import { CORPUS_ID } from '../../src/ingest/corpus-rows';
 import { httpEncoder } from '../../src/ingest/encoder-client';
+import { runIncrementalPipeline } from '../../src/ingest/incremental-pipeline';
 import { GitHubCorpusSource } from '../../src/ingest/source';
-import { runStreamingPipeline } from '../../src/ingest/streaming-pipeline';
 
 interface Env {
   /** The corpus: the rows in D1, the vectors in Vectorize. */
@@ -40,6 +40,14 @@ interface Env {
   ENCODER_SERVICE: { fetch(request: Request): Promise<Response> };
   /** The shared secret the encoder checks. */
   ENCODER_TOKEN: string;
+  /**
+   * The secret that lets a cycle be run by hand.
+   *
+   * `POST /run` runs the ingest on demand, and it is behind this because a
+   * public endpoint that runs the corpus's ingest is a button anybody can
+   * press — and the cycle is not free.
+   */
+  PIPELINE_SECRET: string;
   /**
    * A GitHub token.
    *
@@ -53,41 +61,77 @@ export default {
   /**
    * The cron trigger.
    *
-   * The work is handed to `waitUntil` so the invocation stays alive for the
-   * cycle rather than being cut off when the trigger returns, and the error is
-   * re-thrown so a failed cycle is a failed invocation — quiet failures are
-   * how a corpus goes stale without anyone noticing.
+   * The cycle is **awaited**, not handed to `waitUntil`. A `waitUntil` task is
+   * cancelled thirty seconds after the invocation ends, and the invocation
+   * ends as soon as the handler returns — so a cycle that took two minutes
+   * would be killed a third of the way through, having written some of its
+   * rows and not the rest. Awaiting makes the invocation's lifetime the
+   * cycle's lifetime, which is what a scheduled handler is for.
+   *
+   * The error is re-thrown so a failed cycle is a failed invocation. Quiet
+   * failures are how a corpus goes stale without anyone noticing.
    */
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(
-      cycle(env).catch((error: unknown) => {
-        console.error(`the pipeline cycle failed: ${String(error)}`);
-        throw error;
-      }),
-    );
+  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+    try {
+      await cycle(env);
+    } catch (error) {
+      console.error(`the pipeline cycle failed: ${String(error)}`);
+      throw error;
+    }
   },
 
   /**
-   * The Worker has nothing to serve.
+   * The Worker has nothing to serve, except one thing.
    *
    * It is here so that a request for the health of the pipeline answers, and
-   * so that anything else answers plainly that there is nothing here. Cloudflare
-   * routes its own `__scheduled` request to the scheduled handler, which is
-   * how a cycle is triggered by hand.
+   * so that anything else answers plainly that there is nothing here.
+   *
+   * **Except `POST /run`**, which runs a cycle by hand. The cron is a
+   * schedule, not a button: when the corpus moves you want the ingest now,
+   * not at 11:23 tomorrow — and there is no other way to ask a scheduled
+   * Worker to run outside its schedule. It is behind a secret, because a
+   * public endpoint that runs the corpus's ingest is a button anybody can
+   * press, and the cycle is not free.
    */
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === '/health') {
       return Response.json({ ok: true, service: 'civicsignal-pipeline' });
     }
+    if (url.pathname === '/run' && request.method === 'POST') {
+      const presented = request.headers.get('x-pipeline-secret') ?? '';
+      if (!env.PIPELINE_SECRET || presented !== env.PIPELINE_SECRET) {
+        return Response.json({ error: 'forbidden' }, { status: 403 });
+      }
+      // Awaited, for the same reason the cron awaits: a `waitUntil` task is
+      // cancelled thirty seconds after the response goes out, and the cycle
+      // takes longer than that.
+      const summary = await cycle(env).catch((error: unknown) => {
+        console.error(`the pipeline cycle failed: ${String(error)}`);
+        return { error: String(error).slice(0, 500) };
+      });
+      return Response.json(summary, { status: 'error' in summary ? 500 : 200 });
+    }
     return Response.json(
-      { error: 'not found', hint: 'this Worker runs on a schedule; there is nothing to call' },
+      { error: 'not found', hint: 'this Worker runs on a schedule; POST /run to run a cycle' },
       { status: 404 },
     );
   },
 };
 
-async function cycle(env: Env): Promise<void> {
+/** What a cycle did, for the caller that asked for it by hand. */
+interface CycleSummary {
+  ok: boolean;
+  /** The revision the corpus is at. */
+  at: string;
+  /** True when the store was already at that revision. */
+  nothing?: boolean;
+  counts?: { added: number; changed: number; removed: number; unchanged: number };
+  embedded?: number;
+  durationMs?: number;
+}
+
+async function cycle(env: Env): Promise<CycleSummary> {
   const log = (line: string) => console.log(`${new Date().toISOString()}  ${line}`);
   const source = new GitHubCorpusSource({ token: env.GITHUB_TOKEN || undefined });
   const store = new D1CorpusStore(env.CIVIC_DB, env.VECTORIZE, CORPUS_ID);
@@ -96,22 +140,57 @@ async function cycle(env: Env): Promise<void> {
   const state = await store.currentCommit(CORPUS_ID);
   if (state && state.commit === head.commit) {
     log(`already at ${head.commit.slice(0, 9)} (${head.date}) — nothing to do`);
-    return;
+    return { ok: true, at: head.commit, nothing: true };
   }
   log(`the corpus is at ${head.commit.slice(0, 9)} (${head.date})`);
 
-  let files = 0;
-  const run = await runStreamingPipeline({
+  if (!state) {
+    // **The store has to know what it is at.**
+    //
+    // The incremental cycle works by comparing the changed files at the head
+    // with the same files at the revision the store holds — so without that
+    // revision there is no "before" to compare with, and the removals would
+    // be invisible. A store that has never been through a cycle has to be
+    // brought up to date by hand first.
+    throw new Error(
+      `${CORPUS_ID} has no revision recorded in corpus_state. ` +
+        `Run \`bun scripts/backfill-fingerprints.ts\` to prepare the store before the pipeline writes to it.`,
+    );
+  }
+
+  // **The store has to be prepared.**
+  //
+  // The reconciliation is by fingerprint, and a row without one reads as "this
+  // row has never been seen" — so a store whose fingerprints were never filled
+  // in would say that the whole corpus is new, and the cycle would re-embed
+  // all 277,857 of them. That is an expensive mistake to make by accident, so
+  // it is made on purpose instead: the count is asked for first, and a store
+  // that is not ready stops the cycle with a message that says what to run.
+  const counts = await env.CIVIC_DB.prepare(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN text_hash IS NULL THEN 1 ELSE 0 END) AS unhashed
+       FROM statute_sections
+      WHERE corpus_id = ?`,
+  )
+    .bind(CORPUS_ID)
+    .first<{ total: number; unhashed: number }>();
+  const unhashed = counts?.unhashed ?? 0;
+  if (unhashed > 0) {
+    throw new Error(
+      `${unhashed} of ${counts?.total ?? 0} row(s) in ${CORPUS_ID} have no fingerprint. ` +
+        `Run \`bun scripts/backfill-fingerprints.ts\` before the pipeline writes to this store.`,
+    );
+  }
+
+  const run = await runIncrementalPipeline({
     corpusId: CORPUS_ID,
+    previous: {
+      commit: state?.commit ?? '',
+      date: state?.commitDate ?? '',
+      rowCount: state?.rowCount,
+    },
     next: { commit: head.commit, date: head.date },
-    rows: instrumentRows({
-      source,
-      revision: head.commit,
-      date: head.date,
-      onFile: () => {
-        files++;
-      },
-    }),
+    source,
     store,
     encoder: httpEncoder({
       // The service binding, not an address: a Worker cannot fetch a
@@ -125,5 +204,12 @@ async function cycle(env: Env): Promise<void> {
   });
 
   const provisions = run.counts.added + run.counts.changed + run.counts.unchanged;
-  log(`  ${files} instrument file(s), ${provisions} provision(s)`);
+  log(`  ${provisions} provision(s) in the changed file(s)`);
+  return {
+    ok: true,
+    at: head.commit,
+    counts: run.counts,
+    embedded: run.embedded,
+    durationMs: run.durationMs,
+  };
 }
