@@ -50,21 +50,41 @@ function insertColumns(file) {
   return new Set(first.slice(open + 1, close).split(',').map((c) => c.trim()));
 }
 
+/**
+ * The columns the pipeline's store writes, from its own statement.
+ *
+ * The corpus has two writers: the ingest, which loads the corpus, and the
+ * pipeline, which keeps it up to date. The pipeline writes the fingerprint
+ * and the date of the revision that last changed a row — the two columns the
+ * reconciliation depends on — so an invariant about what the table's columns
+ * are written by has to know about both.
+ */
+function pipelineColumns() {
+  const path = join(ROOT, 'src', 'corpora', 'd1-store.ts');
+  if (!existsSync(path)) return null;
+  const source = readFileSync(path, 'utf8');
+  const match = /INSERT INTO statute_sections\s*\(([\s\S]*?)\)\s*VALUES/.exec(source);
+  if (!match) return null;
+  return new Set(match[1].split(',').map((c) => c.trim()));
+}
+
 const schema = schemaColumns('statute_sections');
 const inserted = insertColumns('statutes.sql');
+const pipeline = pipelineColumns();
 
 if (!inserted) {
   notes.push('dist/statutes.sql is not present — skipped the schema check (run the ingest)');
 } else {
   const missing = [...inserted].filter((c) => !schema.has(c));
-  const extra = [...schema].filter((c) => !inserted.has(c));
+  const written = new Set([...inserted, ...(pipeline ?? [])]);
+  const extra = [...schema].filter((c) => !written.has(c));
   if (missing.length) {
     failures.push(
       `the ingest writes column(s) the table does not have: ${missing.join(', ')} — the load would fail`,
     );
   }
   if (extra.length) {
-    failures.push(`the table has column(s) the ingest never writes: ${extra.join(', ')}`);
+    failures.push(`the table has column(s) nothing writes: ${extra.join(', ')}`);
   }
   if (!missing.length && !extra.length) {
     notes.push(`the schema and the insert agree on ${inserted.size} columns`);
