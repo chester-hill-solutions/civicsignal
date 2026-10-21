@@ -208,17 +208,51 @@ export default defineRailway((ctx) => {
     },
   });
 
-  const data = group("Data", [corpus, customer, corpusVolume]);
-  const compute = group('Compute', [encoder, pipeline]);
+  /**
+   * The API.
+   *
+   * CivicSignal's server, on Bun. The same brief, the same retrieval and the
+   * same language lens as the Cloudflare Worker, over one Postgres with
+   * pgvector instead of D1 and Vectorize.
+   *
+   * It sits **beside** the Worker rather than in front of it: the Worker stays
+   * deployable as the rollback until the cut over, so the two can answer side
+   * by side for as long as it takes to be sure.
+   */
+  const api = service('api', {
+    // The build context is the repository root, for the same reason as the
+    // pipeline's: the Dockerfile copies `package.json`, `src`, `services` and
+    // `vendor`, all of which are at the root.
+    source: github('chester-hill-solutions/civicsignal'),
+    build: {
+      builder: 'DOCKERFILE',
+      dockerfilePath: 'services/api/Dockerfile',
+    },
+    healthcheck: '/health',
+    healthcheckTimeout: 120,
+    env: {
+      // The corpus database, and the customer database, and the encoder — the
+      // three things the API talks to.
+      CORPUS_DATABASE_URL: ctx.shared.CORPUS_DATABASE_URL,
+      CUSTOMER_DATABASE_URL: customer.env.DATABASE_URL,
+      // The encoder's **domain**, not a URL, composed at run time — the private
+      // domain is not known until the service exists.
+      ENCODER_URL: `http://${encoder.env.RAILWAY_PRIVATE_DOMAIN}:8080`,
+      ENCODER_TOKEN: ctx.shared.ENCODER_TOKEN,
+      FREE_FUSE_LIMIT: '1000',
+    },
+  });
 
-  // The API and the harness join here as their steps land:
+  const data = group("Data", [corpus, customer, corpusVolume]);
+  const compute = group('Compute', [encoder, pipeline, api]);
+
+  // The harness joins here as its step lands:
   //
-  //   api       step 3 — the Bun server, beside the Worker until the cut over
   //   harness   step 7 — the embedded OpenCode, one directory per customer
   //
-  // They are not declared yet because their Dockerfiles do not exist, and an
-  // apply that created a service which could not build would break the
-  // environment it was supposed to describe.
+  // It is not declared yet because its Dockerfile does not exist, and an apply
+  // that created a service which could not build would break the environment it
+  // was supposed to describe.
 
   return project('civicsignal', {
     resources: [data, compute],
