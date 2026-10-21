@@ -326,6 +326,16 @@ async function main(): Promise<void> {
       selected = args.limit ? rows.slice(0, args.limit) : rows;
     }
 
+    /**
+     * The order the job embeds in: shortest first.
+     *
+     * The sort is here, before the slice, because the checkpoint counts rows
+     * and the resume skips them — so both must be counting the same rows in the
+     * same order. Sorting inside the batching, after the slice, meant the
+     * checkpoint counted one order and the resume skipped another.
+     */
+    const ordered = [...selected].sort((a, b) => documentText(a).length - documentText(b).length);
+
     // The checkpoint is the last durable record of how far the job got. A
     // repair has no checkpoint: it is driven by the index's own contents, so
     // running it again is both the resume and the verification.
@@ -348,7 +358,18 @@ async function main(): Promise<void> {
     let done = 0;
     let tokens = 0;
 
-    const remaining = args.skip ? selected.slice(args.skip) : selected;
+    /**
+     * The rows to embed, **in the order the job will embed them**.
+     *
+     * The sort by length happens *before* the slice, not inside the batching.
+     * It has to: the checkpoint says how many rows are done, and the next run
+     * resumes by skipping that many — so the two must count the same rows in
+     * the same order. Slicing first and sorting after meant the checkpoint
+     * counted the *sorted* rows of the slice while the resume skipped the
+     * *file-order* rows, so a resume neither continued nor repeated what it
+     * meant to.
+     */
+    const remaining = args.skip ? ordered.slice(args.skip) : ordered;
     const allBatches = batches(remaining);
     console.log(`  ${allBatches.length.toLocaleString()} batch(es)`);
     let next = 0;
