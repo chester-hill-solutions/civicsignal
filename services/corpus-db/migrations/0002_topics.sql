@@ -1,0 +1,13 @@
+-- The topic column.
+--
+-- The D1 schema has had one since the first migration, and the ingest has
+-- always written null into it — there is no topic classifier yet, so a topic is
+-- a promise rather than a value. The column is added here so the two planes'
+-- schemas match, and so the Postgres adapter can read it the day the
+-- classifier lands, rather than the port discovering the difference as a query
+-- error against a column that does not exist.
+--
+-- It is nullable and it has no default, so adding it costs nothing on the
+-- 254,671 rows that are already there, and the statement is safe to run while
+-- the pipeline is writing.
+ALTER TABLE statute_provisions ADD COLUMN IF NOT EXISTS topics TEXT;

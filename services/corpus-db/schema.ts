@@ -16,7 +16,7 @@
  * the schema does not apply — and the failure says so, rather than leaving a
  * half-created table behind.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import postgres from 'postgres';
 
@@ -37,11 +37,19 @@ export async function ensureCorpusSchema(
     await sql.unsafe('CREATE EXTENSION IF NOT EXISTS vector');
 
     const dir = options.migrationsDir ?? join(import.meta.dirname, 'migrations');
-    const file = join(dir, '0001_corpus.sql');
-    const statements = readFileSync(file, 'utf8');
-    // postgres.js can run a whole script with `unsafe` when it has no
-    // parameters, and the schema is a script of `CREATE ... IF NOT EXISTS`.
-    await sql.unsafe(statements);
+    // Every migration, in order.
+    //
+    // The order is the point: `0002` may depend on what `0001` created, so
+    // they are applied by name rather than by whatever the filesystem happens
+    // to return. Each file is idempotent, so applying them all on every start
+    // is free and a deployment that changed the schema does not need a human
+    // to remember to migrate.
+    for (const file of readdirSync(dir).filter((name) => name.endsWith('.sql')).sort()) {
+      const statements = readFileSync(join(dir, file), 'utf8');
+      // postgres.js can run a whole script with `unsafe` when it has no
+      // parameters, and a migration is a script of `IF NOT EXISTS` statements.
+      await sql.unsafe(statements);
+    }
   } finally {
     await sql.end({ timeout: 5 });
   }

@@ -14,7 +14,7 @@
  * | the table | `statute_sections` | `statute_provisions` |
  * | the instrument | `act` | `instrument` |
  * | in force | an integer | a boolean |
- * | topics | a column | **no column** — the pipeline does not write them |
+ * | topics | a column | a column — the corpus has none to write yet |
  *
  * The lexical path is the same shape on both: a `LIKE` over the folded
  * `search_text`, with the query folded the same way. Postgres has a full-text
@@ -25,6 +25,7 @@
  */
 import type { RawCorpusItem } from '@chester-hill-solutions/corpus';
 import { STATUTES_CANADA } from './policies';
+import { splitTopics } from './adapters';
 import { likePatterns, resolveLimit, type Corpus, type CorpusContext, type CorpusQuery } from './types';
 
 /** Runs a LIKE match against a normalised token column. */
@@ -77,7 +78,7 @@ async function retrieveProvision(
 
   const rows = await queryRows<Record<string, unknown>>(
     ctx,
-    `SELECT id, corpus_id, instrument, citation, section, status, heading, text, source_url, jurisdiction, in_force, language
+    `SELECT id, corpus_id, instrument, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
        FROM statute_provisions
       WHERE instrument = ? AND section = ?${lang.sql}
       ORDER BY in_force DESC, id
@@ -95,7 +96,7 @@ async function retrieveProvision(
     source: STATUTES_CANADA.publisher,
     jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
     language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
-    topics: undefined,
+    topics: splitTopics(row['topics']),
     extra: {
       act: String(row['instrument']),
       citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
@@ -142,7 +143,7 @@ export const postgresStatutesCorpus: Corpus = {
 
     const rows = await queryRows<Record<string, unknown>>(
       ctx,
-      `SELECT id, corpus_id, instrument, citation, section, status, heading, text, source_url, jurisdiction, in_force, language
+      `SELECT id, corpus_id, instrument, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
          FROM statute_provisions
         WHERE 1 = 1${liveOnly}${tok}${jur.sql}${lang.sql}${act.sql}
         ORDER BY in_force DESC, instrument, section
@@ -160,11 +161,11 @@ export const postgresStatutesCorpus: Corpus = {
       source: STATUTES_CANADA.publisher,
       jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
       language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
-      // The Postgres schema has no topics column — the pipeline does not write
-      // them — so there are none to split. The brief's distribution over
-      // topics is therefore empty on this plane, which is a gap and not a
-      // behaviour: it is fixed by writing the column.
-      topics: undefined,
+      // The column exists on both planes and holds the same thing on both: the
+      // corpus has no topic classifier yet, so a topic is a promise. The brief's
+      // distribution over topics is therefore empty on both planes, which is a
+      // behaviour and not a port's gap.
+      topics: splitTopics(row['topics']),
       extra: {
         act: String(row['instrument']),
         citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
