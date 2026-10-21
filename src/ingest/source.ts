@@ -1,5 +1,3 @@
-import { createGunzip } from 'node:zlib';
-import { Readable } from 'node:stream';
 
 /**
  * The corpus, as a source rather than a filesystem.
@@ -130,9 +128,17 @@ export class GitHubCorpusSource implements CorpusSource {
     }
     if (!response.body) throw new Error('the corpus tarball had no body');
 
-    const gunzip = createGunzip();
-    const source = Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]);
-    source.pipe(gunzip);
+    // **The web standard, not `node:zlib`.**
+    //
+    // `DecompressionStream` is in every runtime that has a `fetch` — Bun, Node,
+    // and the Workers runtime — and `node:zlib` is in none of the Workers
+    // runtime's guaranteed surface. The pipeline is about to run *as* a Worker,
+    // and a module that imports `node:zlib` cannot be bundled for one.
+    //
+    // The tar reader takes an async iterable of buffers and `Buffer.from`
+    // accepts a `Uint8Array`, so the chunks arrive as they do and are wrapped
+    // where they are used.
+    const gunzip = response.body.pipeThrough(new DecompressionStream('gzip'));
 
     for await (const entry of readTar(gunzip)) {
       if (!entry.path.endsWith('.xml')) continue;
@@ -165,7 +171,9 @@ interface TarHeader {
  * needing none. Git's archive format is what the tarball already is.
  */
 export async function* readTar(
-  source: AsyncIterable<Buffer>,
+  // The chunks arrive as `Uint8Array` — that is what a `ReadableStream`
+  // yields, in every runtime — and are wrapped where they are used.
+  source: AsyncIterable<Uint8Array>,
 ): AsyncGenerator<{ path: string; content: Buffer }> {
   const iterator = source[Symbol.asyncIterator]();
 
