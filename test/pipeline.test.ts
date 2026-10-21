@@ -97,8 +97,8 @@ describe('the pipeline', () => {
     const store = new FakeStore(seed);
     const embedded: string[] = [];
     const encoder = {
-      async embed(documents: string[]) {
-        embedded.push(...documents);
+      async embed(documents: { title: string; text: string }[]) {
+        embedded.push(...documents.map((d) => `${d.title}\n${d.text}`));
         return documents.map(() => new Array(768).fill(0.1));
       },
     };
@@ -127,7 +127,7 @@ describe('the pipeline', () => {
     const store = new FakeStore(seed);
     let calls = 0;
     const encoder = {
-      async embed(documents: string[]) {
+      async embed(documents: { title: string; text: string }[]) {
         calls++;
         return documents.map(() => new Array(768).fill(0.1));
       },
@@ -159,8 +159,8 @@ describe('the pipeline', () => {
     const store = new FakeStore([]);
     const embedded: string[] = [];
     const encoder = {
-      async embed(documents: string[]) {
-        embedded.push(...documents);
+      async embed(documents: { title: string; text: string }[]) {
+        embedded.push(...documents.map((d) => `${d.title}\n${d.text}`));
         return documents.map(() => new Array(768).fill(0.1));
       },
     };
@@ -183,7 +183,7 @@ describe('the pipeline', () => {
 
   it('records what changed in the feed, including what was removed', async () => {
     const store = new FakeStore([row('a-1'), row('a-2')]);
-    const encoder = { async embed(d: string[]) { return d.map(() => new Array(768).fill(0.1)); } };
+    const encoder = { async embed(d: { title: string; text: string }[]) { return d.map(() => new Array(768).fill(0.1)); } };
 
     await runPipeline({
       corpusId: 'statutes-canada',
@@ -206,7 +206,7 @@ describe('the pipeline', () => {
 
   it('records the revision the store is now at', async () => {
     const store = new FakeStore([row('a-1')]);
-    const encoder = { async embed(d: string[]) { return d.map(() => new Array(768).fill(0.1)); } };
+    const encoder = { async embed(d: { title: string; text: string }[]) { return d.map(() => new Array(768).fill(0.1)); } };
 
     await runPipeline({
       corpusId: 'statutes-canada',
@@ -228,7 +228,7 @@ describe('the pipeline', () => {
 
   it('fails loudly when the encoder returns the wrong number of vectors', async () => {
     const store = new FakeStore([]);
-    const encoder = { async embed(_d: string[]) { return []; } };
+    const encoder = { async embed(_d: { title: string; text: string }[]) { return []; } };
 
     await expect(
       runPipeline({
@@ -244,15 +244,31 @@ describe('the pipeline', () => {
   });
 });
 
-describe('the embedded text', () => {
-  it('carries the instrument and the heading with the text', () => {
-    const text = embeddableText({
+describe('the embedded document', () => {
+  /**
+   * The title and the text are separate, because the encoder's own document
+   * instruction is `title: {title} | text: {content}` — the model is told which
+   * is which, and a title glued onto the front of the body is a different
+   * document to the model.
+   */
+  it('puts the instrument and the heading in the title', () => {
+    const document = embeddableText({
       instrument: 'Canada Labour Code',
       heading: 'Employee entitled to leave',
       text: '(1) Every employee is entitled to leave.',
     });
-    expect(text).toContain('Canada Labour Code');
-    expect(text).toContain('Employee entitled to leave');
-    expect(text).toContain('(1) Every employee is entitled to leave.');
+    expect(document.title).toContain('Canada Labour Code');
+    expect(document.title).toContain('Employee entitled to leave');
+    expect(document.text).toContain('(1) Every employee is entitled to leave.');
+    expect(document.text).not.toContain('Canada Labour Code');
+  });
+
+  it('copes with a provision that has no heading', () => {
+    const document = embeddableText({
+      instrument: 'Canada Labour Code',
+      heading: null,
+      text: '(1) Every employee is entitled to leave.',
+    });
+    expect(document.title).toBe('Canada Labour Code');
   });
 });

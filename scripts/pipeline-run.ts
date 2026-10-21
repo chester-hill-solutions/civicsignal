@@ -136,19 +136,33 @@ async function cycle(): Promise<void> {
       rows,
       store,
       encoder: {
-        async embed(documents: string[]) {
-          const response = await fetch(`${ENCODER_URL.replace(/\/$/, '')}/v1/embeddings`, {
+        async embed(documents: { title: string; text: string }[]) {
+          // The encoder's own contract: `/embed`, with the texts and the titles
+          // separately. It is not the OpenAI-compatible `/v1/embeddings` — that
+          // was the *old* encoder, the one that ran `litert-lm serve` and could
+          // not chunk a long provision, and the pipeline was still speaking its
+          // language, so every cycle failed with a 404 that read like a missing
+          // model.
+          const response = await fetch(`${ENCODER_URL.replace(/\/$/, '')}/embed`, {
             method: 'POST',
             headers: {
               'content-type': 'application/json',
               ...(ENCODER_TOKEN ? { authorization: `Bearer ${ENCODER_TOKEN}` } : {}),
             },
-            body: JSON.stringify({ model: 'embeddinggemma-2-270m', input: documents }),
+            body: JSON.stringify({
+              texts: documents.map((document) => document.text),
+              titles: documents.map((document) => document.title),
+            }),
           });
           if (!response.ok) throw new Error(`the encoder returned ${response.status}`);
-          const body = (await response.json()) as { data?: { index: number; embedding: number[] }[] };
-          const ordered = [...(body.data ?? [])].sort((a, b) => a.index - b.index);
-          return ordered.map((item) => item.embedding);
+          const body = (await response.json()) as { vectors?: number[][] };
+          const vectors = body.vectors ?? [];
+          if (vectors.length !== documents.length) {
+            throw new Error(
+              `the encoder returned ${vectors.length} vector(s) for ${documents.length} document(s)`,
+            );
+          }
+          return vectors;
         },
       },
       now: new Date(),

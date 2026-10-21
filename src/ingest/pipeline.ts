@@ -99,8 +99,17 @@ export interface ChangeFeedEntry {
 
 /** The encoder. */
 export interface Encoder {
-  /** Embed documents. The implementation is responsible for the task prefix. */
-  embed(documents: string[]): Promise<number[][]>;
+  /**
+   * Embed documents.
+   *
+   * The title and the text are **separate**, because the encoder's own document
+   * instruction is `title: {title} | text: {content}`: the title goes in the
+   * title slot, and the provision's body goes in the content slot. A document
+   * with the title glued onto the front of the body is a different document to
+   * the model, and the index built here would not match the index built by the
+   * corpus job — which does it the same way.
+   */
+  embed(documents: EmbeddableDocument[]): Promise<number[][]>;
 }
 
 /** A revision of the corpus. */
@@ -119,8 +128,21 @@ export const EMBED_BATCH = 32;
  * "Order in council" means nothing on its own; "Canada Labour Code s.210 —
  * Employee entitled to leave" does.
  */
-export function embeddableText(row: { instrument: string; heading: string | null; text: string }): string {
-  return [row.instrument, row.heading ?? '', row.text].filter(Boolean).join('\n').trim();
+export function embeddableText(row: {
+  instrument: string;
+  heading: string | null;
+  text: string;
+}): EmbeddableDocument {
+  return {
+    title: [row.instrument, row.heading ?? ''].filter(Boolean).join(' — ').trim(),
+    text: row.text.trim(),
+  };
+}
+
+/** A document to embed: the title, and the text. */
+export interface EmbeddableDocument {
+  title: string;
+  text: string;
 }
 
 /**
