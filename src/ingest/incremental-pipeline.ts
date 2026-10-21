@@ -48,6 +48,33 @@ import type { CorpusSource } from './source';
 /** How many rows are embedded at a time. */
 const EMBED_BATCH = 32;
 
+/**
+ * Run `work` over `items`, a few at a time.
+ *
+ * The changed files come from GitHub, and one at a time is two round trips per
+ * file — ninety-six for a commit that moved forty-eight files, which is three
+ * and a half minutes of waiting for something that takes half a minute when
+ * eight are in flight at once. The limit is what keeps the cycle from opening
+ * six hundred connections at once and being refused by the other end.
+ */
+async function mapWithLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  work: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = next++;
+      if (index >= items.length) return;
+      results[index] = await work(items[index]!);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 /** The change feed's entry, built from a row. */
 function feedEntry(
   corpusId: string,
@@ -100,22 +127,43 @@ export async function runIncrementalPipeline(options: {
   log(`${corpusId}: ${change.files.length} file(s) changed between ${previous.commit.slice(0, 9)} and ${next.commit.slice(0, 9)}`);
 
   // What the changed files held before, and what they hold now.
+  //
+  // The files are fetched **concurrently**. One at a time is two round trips
+  // per file — ninety-six of them for a commit that moved forty-eight files,
+  // which is three and a half minutes of waiting for something that takes
+  // half a minute when eight are in flight at once.
   const before = new Map<string, PipelineRow>();
   const after = new Map<string, PipelineRow>();
-  for (const file of change.files) {
+  const oldContents = await mapWithLimit(change.files, 8, (file) =>
+    file.status === 'added'
+      ? Promise.resolve(null)
+      : source.fileAt(file.previousPath ?? file.path, previous.commit),
+  );
+  const newContents = await mapWithLimit(change.files, 8, (file) =>
+    file.status === 'removed'
+      ? Promise.resolve(null)
+      : source.fileAt(file.path, next.commit),
+  );
+  for (const [index, file] of change.files.entries()) {
     const oldPath = file.previousPath ?? file.path;
-    const oldContent =
-      file.status === 'added' ? null : await source.fileAt(oldPath, previous.commit);
-    const newContent =
-      file.status === 'removed' ? null : await source.fileAt(file.path, next.commit);
-    for (const row of oldContent === null
+    for (const row of oldContents[index] === null
       ? []
-      : rowsForFile({ path: oldPath, content: oldContent, date: previous.date, corpusId })) {
+      : rowsForFile({
+          path: oldPath,
+          content: oldContents[index]!,
+          date: previous.date,
+          corpusId,
+        })) {
       before.set(row.id, row);
     }
-    for (const row of newContent === null
+    for (const row of newContents[index] === null
       ? []
-      : rowsForFile({ path: file.path, content: newContent, date: next.date, corpusId })) {
+      : rowsForFile({
+          path: file.path,
+          content: newContents[index]!,
+          date: next.date,
+          corpusId,
+        })) {
       after.set(row.id, row);
     }
   }
