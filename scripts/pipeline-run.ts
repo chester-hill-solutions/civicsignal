@@ -23,14 +23,10 @@
  *   bun scripts/pipeline-run.ts --once        # one cycle, then exit
  *   bun scripts/pipeline-run.ts --watch       # loop, sleeping between cycles
  */
-import { buildRows, parseStatuteXml, type ProvisionStatus } from '../src/ingest/statutes';
 import { runPipeline, type PipelineRow } from '../src/ingest/pipeline';
-import {
-  GitHubCorpusSource,
-  FRENCH_INSTRUMENT_PATHS,
-  INSTRUMENT_PATHS,
-  type CorpusSource,
-} from '../src/ingest/source';
+import { CORPUS_ID, instrumentRows } from '../src/ingest/corpus-rows';
+import { httpEncoder } from '../src/ingest/encoder-client';
+import { GitHubCorpusSource, type CorpusSource } from '../src/ingest/source';
 import { PostgresCorpusStore } from '../services/corpus-db/store';
 import { ensureCorpusSchema } from '../services/corpus-db/schema';
 
@@ -41,7 +37,6 @@ const ENCODER_URL = ENCODER_DOMAIN.includes('://')
   : `http://${ENCODER_DOMAIN}:${ENCODER_PORT}`;
 const ENCODER_TOKEN = process.env.ENCODER_TOKEN ?? '';
 const DATABASE_URL = process.env.CORPUS_DATABASE_URL ?? process.env.DATABASE_URL ?? '';
-const CORPUS_ID = 'statutes-canada';
 const WATCH_SECONDS = Number(process.env.PIPELINE_INTERVAL_SECONDS ?? 21_600);
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? '';
 
@@ -52,15 +47,14 @@ function log(line: string): void {
   console.log(`${new Date().toISOString()}  ${line}`);
 }
 
-/** The kind and language of an instrument, from where it sits in the corpus. */
-function classify(path: string): { kind: 'acts' | 'regulations'; language: 'en' | 'fr' } {
-  if (path.startsWith('fra/lois/')) return { kind: 'acts', language: 'fr' };
-  if (path.startsWith('fra/reglements/')) return { kind: 'regulations', language: 'fr' };
-  if (path.startsWith('eng/regulations/')) return { kind: 'regulations', language: 'en' };
-  return { kind: 'acts', language: 'en' };
-}
-
-/** Parse the instruments at a revision into the rows the store holds. */
+/**
+ * The instruments at a revision, as the rows the store holds.
+ *
+ * The parsing is shared with the Worker (`src/ingest/corpus-rows.ts`), so both
+ * read **both** trees of the corpus — the English one and the French one. The
+ * corpus is bilingual, and an ingest that reads only one of them is not a
+ * corpus, it is half of one.
+ */
 async function parseInstruments(
   source: CorpusSource,
   revision: string,
@@ -68,40 +62,15 @@ async function parseInstruments(
 ): Promise<PipelineRow[]> {
   const rows: PipelineRow[] = [];
   let files = 0;
-  // **Both trees.** The corpus has an English tree and a French tree, and the
-  // two versions of a provision are separate rows with separate identifiers —
-  // so an ingest that reads only one of them is not a corpus, it is half of
-  // one. The French paths were in the source module and never passed here,
-  // which is how the pipeline came to ingest 138,750 provisions and call the
-  // corpus current.
-  for await (const file of source.instruments(revision, [...INSTRUMENT_PATHS, ...FRENCH_INSTRUMENT_PATHS])) {
-    files++;
-    const { kind, language } = classify(file.path);
-    // A regulation's citation is its file stem; a statute's is in the document.
-    const stem = file.path.slice(file.path.lastIndexOf('/') + 1).replace(/\.xml$/, '');
-    const parsed = parseStatuteXml(file.content, {
-      citation: kind === 'regulations' ? stem : undefined,
-    });
-    if (!parsed) continue;
-    for (const row of buildRows(parsed, { kind, language })) {
-      rows.push({
-        id: row.id,
-        corpusId: CORPUS_ID,
-        instrument: row.act,
-        citation: row.citation,
-        section: row.section,
-        schedule: row.schedule,
-        part: row.part,
-        status: row.status as ProvisionStatus,
-        heading: row.heading,
-        text: row.text,
-        source_url: row.source_url,
-        in_force: row.in_force,
-        language: row.language,
-        embedText: '',
-        lastChanged: date,
-      });
-    }
+  for await (const row of instrumentRows({
+    source,
+    revision,
+    date,
+    onFile: () => {
+      files++;
+    },
+  })) {
+    rows.push(row);
   }
   log(`  ${files} instrument file(s) parsed into ${rows.length} provision(s)`);
   return rows;
@@ -146,36 +115,7 @@ async function cycle(): Promise<void> {
       next: { commit: head.commit, date: head.date },
       rows,
       store,
-      encoder: {
-        async embed(documents: { title: string; text: string }[]) {
-          // The encoder's own contract: `/embed`, with the texts and the titles
-          // separately. It is not the OpenAI-compatible `/v1/embeddings` — that
-          // was the *old* encoder, the one that ran `litert-lm serve` and could
-          // not chunk a long provision, and the pipeline was still speaking its
-          // language, so every cycle failed with a 404 that read like a missing
-          // model.
-          const response = await fetch(`${ENCODER_URL.replace(/\/$/, '')}/embed`, {
-            method: 'POST',
-            headers: {
-              'content-type': 'application/json',
-              ...(ENCODER_TOKEN ? { authorization: `Bearer ${ENCODER_TOKEN}` } : {}),
-            },
-            body: JSON.stringify({
-              texts: documents.map((document) => document.text),
-              titles: documents.map((document) => document.title),
-            }),
-          });
-          if (!response.ok) throw new Error(`the encoder returned ${response.status}`);
-          const body = (await response.json()) as { vectors?: number[][] };
-          const vectors = body.vectors ?? [];
-          if (vectors.length !== documents.length) {
-            throw new Error(
-              `the encoder returned ${vectors.length} vector(s) for ${documents.length} document(s)`,
-            );
-          }
-          return vectors;
-        },
-      },
+      encoder: httpEncoder({ url: ENCODER_URL, token: ENCODER_TOKEN }),
       now: new Date(),
       logger: log,
     });

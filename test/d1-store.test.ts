@@ -20,6 +20,8 @@ import type { PipelineRow, UpsertRow } from '../src/ingest/pipeline';
 /** A D1 binding that records what it was asked to do. */
 function recordingD1() {
   const statements: { sql: string; binds: unknown[] }[] = [];
+  /** The batches the store asked for, and how many statements each held. */
+  const batches: number[] = [];
   const db = {
     prepare(sql: string) {
       const record = { sql, binds: [] as unknown[] };
@@ -40,8 +42,13 @@ function recordingD1() {
         },
       };
     },
+    async batch(prepared: { run(): Promise<unknown> }[]) {
+      batches.push(prepared.length);
+      for (const statement of prepared) await statement.run();
+      return [];
+    },
   };
-  return { db: db as unknown as D1Database, statements };
+  return { db: db as unknown as D1Database, statements, batches };
 }
 
 /** A Vectorize binding that records what it was asked to do. */
@@ -153,6 +160,23 @@ describe('the D1 corpus store', () => {
     await store.upsert([upsert(row('a-1'), null)]);
 
     expect(upserts.length).toBe(0);
+  });
+
+  /**
+   * The rows go out as one batch.
+   *
+   * A Worker has a ceiling of a thousand subrequests, and each statement sent
+   * on its own is one of them — so a corpus that changed more rows than that
+   * would die halfway through, having written some of them and not the rest.
+   */
+  it('writes the rows in one batch, not one request per row', async () => {
+    const { db, batches } = recordingD1();
+    const { vector } = recordingVectorize();
+    const store = new D1CorpusStore(db, vector);
+
+    await store.upsert([upsert(row('a-1')), upsert(row('a-2')), upsert(row('a-3'))]);
+
+    expect(batches).toEqual([3]);
   });
 
   it('removes the row and the vector together', async () => {

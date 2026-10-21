@@ -66,10 +66,21 @@ export async function runStreamingPipeline(options: {
   encoder: Encoder;
   now: Date;
   logger?: (line: string) => void;
+  /**
+   * How many rows are written at a time.
+   *
+   * A batch is the unit of work the pipeline can lose: if the invocation dies
+   * mid-batch, that batch is written again next time, and writing it again is
+   * harmless — the writes are upserts. So the batch is a trade, not a
+   * correctness question: bigger batches mean fewer encoder calls, smaller
+   * batches mean less work thrown away when something goes wrong.
+   */
+  batchSize?: number;
 }): Promise<PipelineRun> {
   const started = Date.now();
   const log = options.logger ?? (() => {});
   const { corpusId, next, store, encoder } = options;
+  const writeBatch = options.batchSize ?? WRITE_BATCH;
 
   // The store's fingerprints, keyed by row id. This is the whole of the
   // reconciliation's memory, and it is read once.
@@ -123,7 +134,7 @@ export async function runStreamingPipeline(options: {
       changes.push(feedEntry(corpusId, 'changed', row, next.date));
     }
     batch.push(row);
-    if (batch.length >= WRITE_BATCH) await flush();
+    if (batch.length >= writeBatch) await flush();
   }
   await flush();
 

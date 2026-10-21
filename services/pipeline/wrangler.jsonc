@@ -1,0 +1,42 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-pipeline",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-20",
+  // The corpus is streamed out of a gzipped tarball, and the tar reader uses
+  // `Buffer` — `nodejs_compat` is what puts it there.
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "CIVIC_DB",
+      "database_name": "civicsignal",
+      "database_id": "8056b1a0-f858-4f89-a332-91f7f350eb7b",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      // The same index the product reads. EmbeddingGemma 2 is 768 dimensions,
+      // and the index's dimension is fixed when it is created — so the corpus
+      // and the product have to be in the same one.
+      "index_name": "civicsignal-statutes-gemma"
+    }
+  ],
+  // The encoder, called directly rather than by its address: a Worker cannot
+  // fetch a `workers.dev` address on this account — it answers `1042`.
+  "services": [{ "binding": "ENCODER_SERVICE", "service": "civicsignal-encoder" }],
+  "triggers": {
+    // Once a day, at 11:23 UTC.
+    //
+    // The corpus repository moves every three to eight days, so a daily check
+    // finds a new revision within a day of it landing and costs one request
+    // every other day. The minute is not seventeen past the hour on purpose:
+    // every scheduled task in the world is on the hour, and the ones that share
+    // a minute share the load.
+    "crons": ["23 11 * * *"]
+  },
+  "workers_dev": true
+}

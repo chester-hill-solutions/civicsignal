@@ -83,12 +83,19 @@ export class D1CorpusStore implements CorpusStore {
    * The row first, and the vector second, for the reason in the file's header:
    * a row without a vector is invisible, and a vector without a row is a
    * broken answer.
+   *
+   * The rows go out as **one batch**, and that is not a tidiness question. The
+   * D1 binding's `batch` is a single request that runs its statements in one
+   * transaction, so the rows land together — and the write costs one
+   * subrequest rather than one per row. A Worker has a ceiling of a thousand
+   * subrequests, and a corpus that changed more rows than that would die
+   * halfway through, having written some of them.
    */
   async upsert(rows: UpsertRow[]): Promise<void> {
     if (rows.length === 0) return;
 
-    for (const row of rows) {
-      await this.db
+    const statements = rows.map((row) =>
+      this.db
         .prepare(
           `INSERT INTO statute_sections (
              id, corpus_id, act, citation, section, schedule, part, status, heading,
@@ -131,9 +138,9 @@ export class D1CorpusStore implements CorpusStore {
           searchText(row.row),
           row.hash,
           row.row.lastChanged,
-        )
-        .run();
-    }
+        ),
+    );
+    await this.db.batch(statements);
 
     const vectors = rows
       .filter((row) => row.embedding !== null)
