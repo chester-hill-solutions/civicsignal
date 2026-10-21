@@ -58,6 +58,38 @@ export class Encoder extends Container<Env> {
   /** The path the runtime health-checks while the container starts. */
   pingEndpoint = 'health';
 
+  constructor(ctx: DurableObject['ctx'], env: Env) {
+    super(ctx, env);
+
+    // The container's environment is set **here**, and not in `wrangler.jsonc`.
+    //
+    // Two reasons, and the second one is the one that bit.
+    //
+    // The first is the house rule: a secret in a configuration file is a secret
+    // in a repository. The Durable Object holds the secret as a binding, so it
+    // hands it over at the moment the container needs it, and the container
+    // compares against it exactly as it would against any other token.
+    //
+    // The second is that `wrangler.jsonc` has **no field** for a container's
+    // runtime environment. `containers[].envVars` is not in the config schema —
+    // wrangler rejects it with "Unexpected fields found in containers field" —
+    // so a container started from the configuration alone gets no environment
+    // at all: no token, and no port. The token in the environment was therefore
+    // never reaching the container, and a container with no token refuses
+    // everything, which looks exactly like a wrong password.
+    //
+    // Setting it on the object means every start path carries it: this
+    // object's own restart, and the library's, which starts the container from
+    // `this.envVars` when it is not already running.
+    this.envVars = {
+      ...this.envVars,
+      ENCODER_TOKEN: env.ENCODER_TOKEN ?? '',
+      PORT: String(CONTAINER_PORT),
+      ENCODER_DIMENSIONS: '768',
+      ENCODER_THREADS: '4',
+    };
+  }
+
   async fetch(request: Request): Promise<Response> {
     const token = this.env.ENCODER_TOKEN ?? '';
 
@@ -71,17 +103,31 @@ export class Encoder extends Container<Env> {
     // exactly as it would against any other token.
     const started = await this.ctx.storage.get<string>('token');
     if (started !== token) {
-      // A container started with a different token is holding the old one, and
-      // starting a running instance does nothing. So it is stopped and started
-      // again — which is also what a rotated token wants: the new secret takes
-      // effect immediately rather than at the next inactivity timeout.
-      await this.stop();
-      await this.ctx.storage.put('token', token);
+      // **Destroyed**, not stopped.
+      //
+      // Stopping leaves the instance standing, and starting a standing
+      // instance does nothing — so the container would keep the environment it
+      // was started with, and a rotated token would never reach it. Destroying
+      // takes the instance away, so the next start is a new one, with the
+      // environment the object holds now. That is also what a rotated token
+      // wants: the new secret takes effect immediately rather than at the next
+      // inactivity timeout.
+      await this.destroy();
       await this.startAndWaitForPorts({
         ports: [CONTAINER_PORT],
-        startOptions: token ? { envVars: { ENCODER_TOKEN: token } } : undefined,
+        startOptions: { envVars: this.envVars },
         cancellationOptions: { portReadyTimeoutMS: 180_000 },
       });
+      // The token is recorded **after** the container is up, not before.
+      //
+      // Recording it first means a start that fails leaves the storage
+      // claiming a container is running with this token — so the next request
+      // sees a match, skips the restart, and the container keeps the *old*
+      // token for ever. The symptom is a 401 from the container that no retry
+      // can fix and no new deployment necessarily does: the front door holds
+      // the new secret and the container holds the old one, and the front door
+      // is the only thing that can start the container again.
+      await this.ctx.storage.put('token', token);
     }
 
     return this.containerFetch(request);

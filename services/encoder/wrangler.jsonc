@@ -16,11 +16,17 @@
       // the smallest instance type is not enough. `standard-1` is the one with
       // the memory to hold the artefact and the CPU to run it.
       "instance_type": "standard-1",
-      "envVars": {
-        "PORT": "8080",
-        "ENCODER_DIMENSIONS": "768",
-        "ENCODER_THREADS": "4"
-      },
+      // There is deliberately no `envVars` here.
+      //
+      // The config schema has no field for a container's runtime environment,
+      // and wrangler says so: "Unexpected fields found in containers field:
+      // envVars". A container started from the configuration alone therefore
+      // gets no environment at all — no port, and no token — and a container
+      // with no token refuses every request, which reads like a wrong password.
+      //
+      // The environment is set by the Durable Object instead (see
+      // `worker.ts`), which is where it belongs: the token is a secret, and a
+      // secret in a configuration file is a secret in a repository.
       "image_vars": {
         "MODEL_REPO": "litert-community/embeddinggemma-2-text-270m-litert-lm",
         "MODEL_FILE": "embeddinggemma-2-text-270m.litertlm",
