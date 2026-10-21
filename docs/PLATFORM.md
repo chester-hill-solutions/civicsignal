@@ -4,11 +4,19 @@ The decision, the shape, and the order it happens in.
 
 ## The decision
 
-**CivicSignal runs on one host: Railway.** A Bun service, a Postgres database, the
-encoder, the pipeline and the harness, all on one private network, one bill, one
-deploy.
+**CivicSignal runs on Cloudflare.** The API is a Worker, the corpus rows are in
+D1, the vectors are in Vectorize, the encoder is a container, and the keys and
+the fuse are in KV and a Durable Object.
 
-The API is not on Cloudflare Workers.
+**The harness runs on Railway**, because it spawns processes and a Durable
+Object cannot. That is the only thing on the second host.
+
+This reverses the decision this document used to hold — "one host: Railway" —
+and the reason is simple: **two platforms is two deploy pipelines and two
+failure domains**, and the product is early enough that the complexity is
+bigger than the thing it was buying. The port to Railway is kept, because the
+code is written and the seam it proved is the reason the Cloudflare side was
+quick to change; but the corpus plane it built is not deployed.
 
 ## Why
 
@@ -16,6 +24,13 @@ The split between Cloudflare and Railway was inherited rather than chosen. The
 spine came from `riding-and-address`, a Workers product, and the corpus moved to
 Railway because the encoder and the corpus repository could not live in a Worker.
 Nobody ever asked whether the API had to go with the corpus. It did not.
+
+That turned into a real question, and it was answered by building both: the
+Railway plane was a complete API over a Postgres with pgvector, and the
+Cloudflare plane was the same API over D1 and Vectorize. **Two answers to one
+question is one too many**, and the deciding argument is not the bill and not
+the latency. It is that a product with two hosts has two deploys, two failure
+domains and two sets of credentials, and it has not earned either.
 
 What the code actually depends on:
 
@@ -50,8 +65,12 @@ decision.
 ## What is actually running today
 
 **The API is on Cloudflare Workers, with the corpus in D1 and the vectors in
-Vectorize.** That is not the decision above; it is what happened while Railway
-was refusing to create a project.
+Vectorize** — which is now the decision above rather than a half-port.
+
+What is complete and verified on this plane: 277,857 corpus rows (138,750
+English, 139,107 French) and 254,672 vectors, with the repair script — which
+asks the index what it holds rather than trusting a checkpoint — reporting **0
+missing** in each language.
 
 The gap is real and it is worth being honest about. The decision was one host
 because the marginal cost of a request is about $0.0004 and the product's
@@ -106,26 +125,34 @@ second deploy pipeline and a second bill.
 
 ```
                     ┌─────────────────────────────────────────────────┐
-                    │  RAILWAY — one project, one environment        │
+                    │  CLOUDFLARE — one account, one deploy          │
                     │                                                 │
-  browser ────────► │  api        Bun.serve — the REST API, the MCP   │
+  browser ────────► │  api        Worker — the REST API, the MCP     │
                     │              server, the chat, the match surface │
                     │    │                                            │
-                    │    │  localhost                                  │
-                    │    ├──► encoder   EmbeddingGemma 2, litert-lm,  │
-                    │    │              behind a bearer-token proxy    │
+                    │    ├──► encoder   a container, EmbeddingGemma   │
+                    │    │              2, litert-lm, behind a         │
+                    │    │              bearer-token proxy             │
                     │    │                                            │
-                    │    └──► postgres  one database, one schema      │
-                    │                 statute_provisions (rows +      │
-                    │                 vectors), api_keys, customers,   │
-                    │                 usage_counters, cache,           │
-                    │                 corpus_state, corpus_runs,       │
-                    │                 corpus_changes                   │
+                    │    ├──► D1        statute_sections (the rows)    │
+                    │    │              corpus_state, corpus_runs,      │
+                    │    │              corpus_changes                  │
+                    │    │                                            │
+                    │    ├──► Vectorize 254,672 vectors, with a      │
+                    │    │              language index                 │
+                    │    │                                            │
+                    │    └──► KV + DO    the keys, the customers, the  │
+                    │                 monthly counter                 │
+                    │                                                 │
+                    │  pipeline   a scheduled Worker, on a cron        │
+                    └─────────────────────────────────────────────────┘
+
+                    ┌─────────────────────────────────────────────────┐
+                    │  RAILWAY — the harness, and nothing else      │
                     │                                                 │
                     │  harness    embedded OpenCode, one directory     │
-                    │              per customer                       │
-                    │                                                 │
-                    │  pipeline   one-shot, on a schedule              │
+                    │              per customer. It spawns processes,  │
+                    │              so it cannot be a Durable Object.   │
                     └─────────────────────────────────────────────────┘
 ```
 
@@ -189,23 +216,28 @@ because it is billing behaviour and it is invisible when it is wrong.
 
 ## The order
 
-The corpus plane has to be working first. If Postgres is wrong, the port is
-wrong too — and the port is much easier to verify when there is a working
-reference on both sides.
+**The port to Railway is not deleted; it is stopped.** The Bun server, the
+Postgres adapters and the customer store are written and tested, and they stay
+in the tree — they are the evidence that the seam works, and the second
+implementation is what made the reversal cheap. What goes is the *deployment*:
+the Railway corpus plane and the Railway pipeline.
 
-| # | Step | Risk |
+| # | Step | Where it is |
 |---|---|---|
-| 0 | Railway is up; Postgres, the encoder and the pipeline work | — |
-| 1 | **Extract the spine** into `@chester-hill-solutions/api-billing`, with the Cloudflare adapter only. CivicSignal keeps vendoring it; CanCoder is untouched. | none — a pure extraction |
-| 2 | Add the Postgres adapter to the package, tested against a real Postgres | low |
-| 3 | **CivicSignal's Bun server**, running alongside the Worker, the same tests pointed at it | low — two live implementations |
-| 4 | Move the corpus store from D1 to the same Postgres | medium — the corpus, but it was moving anyway |
-| 5 | Cut over DNS to Railway. Keep the Worker deployable for one release as the rollback | low |
-| 6 | Delete the D1, KV and DO bindings and the wrangler config | none |
-| 7 | The harness joins the same host | low |
-| 8 | CanCoder migrates when it wants to; its Cloudflare adapter stays until then | none |
+| 0 | The API, the corpus and the encoder on Cloudflare | **done** — 277,857 rows, 254,672 vectors, the Worker serving |
+| 1 | The pipeline's store on D1 and Vectorize | **done** — the second `CorpusStore`, verified against the live D1 |
+| 2 | The pipeline as a scheduled Worker | **next** — a Worker-safe tar reader, the checkpoint in D1, and a cron trigger |
+| 3 | The Railway corpus plane and the Railway pipeline are torn down | waits on a `railway login` |
+| 4 | The Railway project keeps only the harness | with the harness |
+| 5 | `docs/PLATFORM.md` and the handoff record the decision | **done** |
 
-Step 1 is the one that makes the rest safe, and it is the one that is pure.
+**What step 2 has to get right.** A Worker has a CPU ceiling and a subrequest
+ceiling, and the corpus does not fit in either: 11,736 instrument files and
+254,671 rows. So the pipeline is **chunked** — a cron invocation does a slice,
+the next one resumes — and the checkpoint moves from `dist/` to D1, which is
+where the corpus's own revision already lives. The common case is cheap: the
+corpus repository moves every three to eight days, so almost every invocation
+checks the revision, sees that nothing has moved, and stops.
 
 ## The risks
 
