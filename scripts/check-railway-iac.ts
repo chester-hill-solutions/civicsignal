@@ -97,13 +97,25 @@ for (const resource of project.resources) {
 for (const resource of project.resources) {
   if (resource['type'] !== 'service') continue;
   const name = String(resource['name'] ?? resource['address']);
-  const source = resource['source'] as { repo?: string; rootDirectory?: string } | undefined;
+  const source = resource['source'] as
+    | { repo?: string; rootDirectory?: string; type?: string; image?: string }
+    | undefined;
   const build = resource['build'] as { builder?: string; dockerfilePath?: string } | undefined;
 
-  if (!source?.repo) {
-    failures.push(`the service "${name}" has no source repository`);
-  } else if (!source.repo.endsWith('/civicsignal')) {
+  // A service either builds from this repository or **is** an image.
+  //
+  // The corpus database is an image — `pgvector/pgvector` — because Railway's
+  // managed Postgres does not ship pgvector, and the corpus holds the vector
+  // index. An image service has no repository and needs no Dockerfile, and
+  // saying so is not a failure: it is the shape the corpus database has to
+  // have.
+  const isImage = source?.type === 'image' || Boolean(source?.image);
+  if (!source?.repo && !isImage) {
+    failures.push(`the service "${name}" has no source repository and is not an image`);
+  } else if (source?.repo && !source.repo.endsWith('/civicsignal')) {
     failures.push(`the service "${name}" builds from ${source.repo}, not from this repository`);
+  } else if (isImage && !source?.image) {
+    failures.push(`the service "${name}" is an image but does not say which one`);
   }
 
   if (build?.builder !== 'DOCKERFILE') continue;
