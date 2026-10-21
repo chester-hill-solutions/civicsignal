@@ -109,12 +109,45 @@ ingest generated did not run either: the `VALUES` clause was missing its
 opening parenthesis, so every statement was a syntax error, and the corpus had
 never been loaded into a database for anyone to notice.
 
-**Railway is not the host, because Railway could not be reached.** (2026-10-20.)
-The project did not exist and `railway init` is refused with "Deploys have been
-paused temporarily". The Worker, D1 and Vectorize are the plane for now. The
-IaC in `.railway/railway.ts` is written and checked and applies when the pause
-lifts; the port is a cost and architecture improvement, not a prerequisite for a
-product that works.
+**The model is EmbeddingGemma 2, and the trade is deliberate.** (2026-10-20,
+measured.) The vector arm's numbers were measured on bge-m3, because bge-m3 is
+what Workers AI hosts. The artefact that matters is EmbeddingGemma 2 — the 270M
+text checkpoint, 157 MB, Apache 2.0, ungated — and it is a *different model*
+from the `embeddinggemma-300m` Cloudflare hosts (cosine 0.06 between their
+vectors). All three, on the same 36 questions:
+
+| | hits | MRR | concept |
+|---|---|---|---|
+| EmbeddingGemma 300m (Workers AI) | **34/36** | 0.586 | **16/18** |
+| bge-m3 (Workers AI) | 32/36 | **0.617** | 14/18 |
+| **EmbeddingGemma 2, 270M (the file)** | 28/36 | 0.570 | 10/18 |
+| keyword | 21/36 | 0.310 | 3/18 |
+
+EmbeddingGemma 2 is the **weakest** of the three, and it still finds more than
+three times the keyword baseline's ordinary-language questions. The trade is
+explicit: **34/36 that the browser cannot join, or 28/36 that it can.** The
+artefact's whole purpose is that a client can embed locally and a server can
+embed the corpus and be in *one* vector space by construction rather than by
+approximation — and the 270M file is the one that can run in a browser-sized
+runtime. The cost is six hits and six concept questions, and it is recorded
+rather than discovered later.
+
+The corpus is embedded on the GPU and the product's queries are embedded by the
+Cloudflare Container, which is a CPU — the two backends agree to a cosine of
+0.99647, where two CPUs agree to 0.9995. **Measured, that is below the noise
+floor of the evaluation**: the GPU-corpus-with-CPU-queries configuration scores
+28/36 at MRR 0.574, against 28/36 at 0.570 for the CPU corpus with CPU queries,
+and all four backend combinations find the same 28 provisions, the same 18
+exact answers and the same 10 concept answers. The corpus can be embedded on
+the GPU and the queries on the container, and nothing is lost.
+
+**Railway is the host, and it is up.** (2026-10-20, later.) The deploy pause
+lifted, the project exists, and all four services are Online — the corpus
+database, the customer database, the encoder and the pipeline. The pipeline
+runs the continuous ingest into a pgvector Postgres and applies its own schema
+on start. The Worker on Cloudflare is what serves today; Railway is where the
+product is going, and the extraction that makes the port cheap is the same work
+either way.
 
 **The Policorner wire stays a separate product.** (2026-10-20, owner.) The wire is
 reader-facing and keeps its own brand and audience. This product consumes its output

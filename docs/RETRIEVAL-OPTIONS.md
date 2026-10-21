@@ -508,6 +508,39 @@ So the choice is **34/36 the browser cannot join, or 28/36 it can**, and the
 product's premise is the second one. The measurement is recorded so that the
 price is known rather than discovered later.
 
+### The two backends are the same space, for the purposes of a ranking
+
+The corpus is embedded on the **GPU** — 6.6× faster, and the difference between a
+two-hour embed and a half-hour one — while the product's *queries* are embedded
+by the Cloudflare Container, which is a CPU. So the corpus and the queries are
+computed by different backends, and the two do not produce identical vectors:
+the same text embedded on the CPU and on the GPU agrees to a cosine of
+**0.99647**, where two CPUs (x86-64 in the container, ARM64 locally) agree to
+0.9995.
+
+**0.996 is close enough.** Measured, on the same 36 questions and the same
+19,021-provision corpus, with the corpus and the queries each embedded on both
+backends:
+
+| corpus | queries | hits | R@1 | R@5 | R@10 | MRR | exact | concept |
+|---|---|---|---|---|---|---|---|---|
+| CPU | CPU | 28/36 | 50.0% | 63.9% | 66.7% | 0.570 | 18/18 | 10/18 |
+| GPU | GPU | 28/36 | 50.0% | 61.1% | 66.7% | 0.564 | 18/18 | 10/18 |
+| **GPU** | **CPU** ← *the product's setup* | 28/36 | 52.8% | 61.1% | 69.4% | **0.574** | 18/18 | 10/18 |
+| CPU | GPU | 28/36 | 47.2% | 63.9% | 69.4% | 0.555 | 18/18 | 10/18 |
+
+Every configuration finds the same 28 provisions, the same 18 exact answers and
+the same 10 concept answers. The MRR spread is 0.555 to 0.574, and one question
+moving in or out of the top rank moves MRR by about 0.02 — so the spread is
+one question, not a trend. **The configuration the product actually runs is the
+one with the best MRR of the four.**
+
+That is a measurement, not an assumption, and it settles the question the
+0.996 was raised to answer: the corpus can be embedded on the GPU and the
+queries on the container, and nothing is lost. The float differences are
+floating-point accumulation order, and a ranking over cosine similarities has
+more slack than 0.004.
+
 ### What it says
 
 **The vector arm earns its place.** 14 of 18 concept questions against 3 for the
