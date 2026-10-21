@@ -18,22 +18,18 @@
  *
  * The metadata equality constraints become equality constraints on the row's
  * columns. The language lens is the one that matters — the two official
- * versions of a provision are separate rows, and a French question must not
- * have to compete with the English rows for a place in the top k.
+ * versions of a provision are separate rows, and a French question must not have
+ * to compete with the English rows for a place in the top k.
  *
- * The filter is built from a fixed set of known columns rather than from the
- * keys as they arrive, because the keys arrive as metadata and metadata is
- * caller-controlled in principle: a key that is not a column is not a
- * predicate.
+ * ## One runner
+ *
+ * The runner is the house's `SqlRunner` — the same one the billing package's
+ * Postgres ledger takes — so one pool serves the rows, the vectors and the
+ * usage counters, and the port does not grow a second shape for the same
+ * database.
  */
+import type { SqlRunner } from '@chester-hill-solutions/api-billing/postgres';
 import type { VectorIndex, VectorMatch } from '@chester-hill-solutions/corpus';
-
-/** The subset of postgres.js this index uses. */
-export interface PostgresVectorQuery {
-  unsafe(query: string, parameters?: unknown[]): {
-    (): Promise<unknown[]>;
-  };
-}
 
 /**
  * The metadata a filter may constrain.
@@ -41,6 +37,10 @@ export interface PostgresVectorQuery {
  * Every one of these is a column on the row, so the filter is an equality
  * constraint on the same row the vector belongs to — which is the point of
  * having the vectors and the rows in one table.
+ *
+ * The set is fixed rather than taken from the caller, because the metadata is
+ * caller-controlled in principle and a key that is not a column is not a
+ * predicate. An unknown key is ignored rather than interpolated into the SQL.
  */
 const FILTERABLE = new Set(['language', 'jurisdiction', 'status']);
 
@@ -57,7 +57,7 @@ export function toVectorLiteral(vector: number[]): string {
 }
 
 export function postgresVectorIndex(
-  sql: PostgresVectorQuery,
+  sql: SqlRunner,
   options: PostgresVectorIndexOptions = {},
 ): VectorIndex {
   const table = options.table ?? 'statute_provisions';
@@ -73,10 +73,6 @@ export function postgresVectorIndex(
       const binds: unknown[] = [toVectorLiteral(vector)];
 
       for (const [key, value] of Object.entries(filter ?? {})) {
-        // A key that is not a column is not a predicate. The metadata is
-        // caller-controlled in principle, and a key that does not exist would
-        // make the query fail — so unknown keys are ignored rather than
-        // interpolated.
         if (!FILTERABLE.has(key)) continue;
         binds.push(value);
         clauses.push(`${key} = $${binds.length}`);
@@ -87,12 +83,13 @@ export function postgresVectorIndex(
       const limit = `$${binds.length}`;
 
       const rows = (await sql.unsafe(
-        `SELECT id, 1 - (${column} <=> $1) AS score${where ? ' ' + where : ''}
+        `SELECT id, 1 - (${column} <=> $1) AS score
            FROM ${table}
+           ${where}
           ORDER BY ${column} <=> $1
           LIMIT ${limit}`,
         binds,
-      )()) as { id: string; score: number }[];
+      )) as { id: string; score: number }[];
 
       return rows.map((row) => ({
         id: String(row.id),

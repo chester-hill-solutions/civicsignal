@@ -48,7 +48,7 @@ describe('the driver', () => {
     const db = postgresCorpusDatabase({
       unsafe(query: string, values?: unknown[]) {
         calls.push({ query, values: values ?? [] });
-        return async () => [{ id: 'acts-en-1' }];
+        return Promise.resolve([{ id: 'acts-en-1' }]);
       },
     });
 

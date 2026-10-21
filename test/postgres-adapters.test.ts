@@ -19,7 +19,7 @@ function contextWith(rows: Record<string, unknown>[]): {
   const db = postgresCorpusDatabase({
     unsafe(query: string, values?: unknown[]) {
       calls.push({ query, values: values ?? [] });
-      return async () => rows;
+      return Promise.resolve(rows);
     },
   });
   return { ctx: { db, fetch, now: () => new Date() }, calls };

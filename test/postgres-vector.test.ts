@@ -17,7 +17,7 @@ function indexWith(rows: { id: string; score: number }[]): {
   const index = postgresVectorIndex({
     unsafe(query: string, values?: unknown[]) {
       calls.push({ query, values: values ?? [] });
-      return async () => rows;
+      return Promise.resolve(rows);
     },
   });
   return { index, calls };
