@@ -25,7 +25,12 @@
  */
 import { buildRows, parseStatuteXml, type ProvisionStatus } from '../src/ingest/statutes';
 import { runPipeline, type PipelineRow } from '../src/ingest/pipeline';
-import { GitHubCorpusSource, type CorpusSource } from '../src/ingest/source';
+import {
+  GitHubCorpusSource,
+  FRENCH_INSTRUMENT_PATHS,
+  INSTRUMENT_PATHS,
+  type CorpusSource,
+} from '../src/ingest/source';
 import { PostgresCorpusStore } from '../services/corpus-db/store';
 import { ensureCorpusSchema } from '../services/corpus-db/schema';
 
@@ -63,7 +68,13 @@ async function parseInstruments(
 ): Promise<PipelineRow[]> {
   const rows: PipelineRow[] = [];
   let files = 0;
-  for await (const file of source.instruments(revision)) {
+  // **Both trees.** The corpus has an English tree and a French tree, and the
+  // two versions of a provision are separate rows with separate identifiers —
+  // so an ingest that reads only one of them is not a corpus, it is half of
+  // one. The French paths were in the source module and never passed here,
+  // which is how the pipeline came to ingest 138,750 provisions and call the
+  // corpus current.
+  for await (const file of source.instruments(revision, [...INSTRUMENT_PATHS, ...FRENCH_INSTRUMENT_PATHS])) {
     files++;
     const { kind, language } = classify(file.path);
     // A regulation's citation is its file stem; a statute's is in the document.
