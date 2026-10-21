@@ -472,6 +472,42 @@ phrased in the statute's own words and 18 in ordinary language.
   hybrid (equal)    hits  30/36  R@1 38.9%  R@5 63.9%  R@10 66.7%  MRR 0.501
 ```
 
+### The three EmbeddingGemma builds, measured on the same 36 questions
+
+The vector arm's number above is bge-m3, because bge-m3 is what Workers AI hosts.
+But the artefact that matters — the one the browser can also run — is
+EmbeddingGemma 2, the 270M text checkpoint, and it is a *different model* from
+the `embeddinggemma-300m` that Cloudflare hosts (cosine 0.06 between their
+vectors). So all three were run on the same labelled set, with the same
+corpus, in the same harness:
+
+| | hits | R@1 | R@5 | R@10 | MRR | exact | concept |
+|---|---|---|---|---|---|---|---|
+| **EmbeddingGemma 300m** (Workers AI) | **34/36** | 52.8% | 61.1% | 69.4% | 0.586 | 18/18 | **16/18** |
+| **bge-m3** (Workers AI) | 32/36 | **55.6%** | **66.7%** | 69.4% | **0.617** | 18/18 | 14/18 |
+| **EmbeddingGemma 2, 270M** (the file) | 28/36 | 50.0% | 63.9% | 66.7% | 0.570 | 18/18 | 10/18 |
+| keyword | 21/36 | 22.2% | 47.2% | 50.0% | 0.310 | 18/18 | 3/18 |
+
+**EmbeddingGemma 2 is the weakest of the three, and it is still worth twice the
+keyword baseline on the questions that matter.** It finds 10 of the 18 concept
+questions against the keyword arm's 3 — a provision described in ordinary
+language is still findable — and it finds all 18 exact questions.
+
+The trade is explicit and it is not close:
+
+- The 300m build is **6 hits better**, and Cloudflare hosts it.
+- But the 270M build is **a file**: 157 MB, Apache 2.0, ungated, and runnable in
+  the browser, in a Worker-sized runtime, on a Cloudflare Container, or on a
+  laptop. A client that embeds locally and a server that embeds the corpus are
+  then in **one vector space by construction** rather than by approximation.
+- The hosted builds are *not* the same model, and the 300m one cannot be
+  prompted with the task prefix it was trained with — Workers AI's schema takes
+  no parameter for it.
+
+So the choice is **34/36 the browser cannot join, or 28/36 it can**, and the
+product's premise is the second one. The measurement is recorded so that the
+price is known rather than discovered later.
+
 ### What it says
 
 **The vector arm earns its place.** 14 of 18 concept questions against 3 for the

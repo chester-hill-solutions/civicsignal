@@ -91,10 +91,20 @@ interface Args {
    * and the number is written to a checkpoint file as the job runs.
    */
   skip: number;
+  /**
+   * Repair the index rather than extend it.
+   *
+   * The index's own API lists what it holds, so the repair asks it and embeds
+   * only what is missing. That makes the repair **self-verifying**: running it
+   * again lists the index again, finds whatever is still missing, and embeds
+   * that — so it needs no checkpoint of its own, and it cannot be fooled by a
+   * stale one.
+   */
+  repair: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { lang: 'both', limit: undefined, dryRun: false, skip: 0 };
+  const args: Args = { lang: 'both', limit: undefined, dryRun: false, skip: 0, repair: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--lang') {
@@ -105,6 +115,7 @@ function parseArgs(argv: string[]): Args {
       args.lang = value;
     } else if (arg === '--limit') args.limit = Number(argv[++i]);
     else if (arg === '--dry-run') args.dryRun = true;
+    else if (arg === '--repair') args.repair = true;
     else if (arg === '--skip') args.skip = Number(argv[++i]) || 0;
   }
   return args;
@@ -248,6 +259,36 @@ async function upsert(vectors: { id: string; values: number[]; metadata: Record<
   }
 }
 
+/**
+ * The ids the index holds.
+ *
+ * The same question the corpus repair asks of the store, asked of the index:
+ * **what is actually there**, rather than what a checkpoint says should be
+ * there. The index's own API lists its vector identifiers, so the answer is a
+ * fact and not a claim.
+ */
+async function listIndexIds(): Promise<{ ids: Set<string>; total: number }> {
+  const ids = new Set<string>();
+  let cursor: string | undefined;
+  let total = 0;
+  do {
+    const url =
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/vectorize/v2/indexes/${INDEX_NAME}/list?count=1000` +
+      (cursor ? `&cursor=${encodeURIComponent(cursor)}` : '');
+    const response = await fetchWithAuth(url, { method: 'GET' });
+    if (!response.ok) {
+      throw new Error(`the index refused to list: ${response.status} ${(await response.text()).slice(0, 200)}`);
+    }
+    const body = (await response.json()) as {
+      result?: { vectors?: { id: string }[]; nextCursor?: string; totalCount?: number };
+    };
+    for (const vector of body.result?.vectors ?? []) ids.add(vector.id);
+    total = body.result?.totalCount ?? ids.size;
+    cursor = body.result?.nextCursor;
+  } while (cursor);
+  return { ids, total };
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const langs = args.lang === 'both' ? (['en', 'fr'] as const) : ([args.lang] as const);
@@ -264,10 +305,32 @@ async function main(): Promise<void> {
     // in the index crowd out everything else.
     const rows = all.filter((r) => r.status !== 'placeholder');
     const truncated = rows.filter((r) => r.text.length > MAX_CHARS).length;
-    const selected = args.limit ? rows.slice(0, args.limit) : rows;
-    // The checkpoint is the last durable record of how far the job got.
-    const checkpoint = join(ROOT, 'dist', `.index-checkpoint-${lang}`);
-    if (args.skip === 0 && existsSync(checkpoint)) {
+
+    /**
+     * The rows to embed.
+     *
+     * In repair mode the index decides: it is asked what it holds, and what it
+     * does not hold is what gets embedded. That is the difference between a
+     * checkpoint and a fact — and the checkpoint had a bug in it, twice, and
+     * the corpus it guarded has rows missing from it.
+     */
+    let selected: Row[];
+    if (args.repair) {
+      const { ids, total } = await listIndexIds();
+      selected = rows.filter((row) => !ids.has(row.id));
+      console.log(
+        `index-corpus: the index holds ${total.toLocaleString()} vector(s); ` +
+          `${selected.length.toLocaleString()} of ${rows.length.toLocaleString()} ${lang} row(s) are missing`,
+      );
+    } else {
+      selected = args.limit ? rows.slice(0, args.limit) : rows;
+    }
+
+    // The checkpoint is the last durable record of how far the job got. A
+    // repair has no checkpoint: it is driven by the index's own contents, so
+    // running it again is both the resume and the verification.
+    const checkpoint = args.repair ? null : join(ROOT, 'dist', `.index-checkpoint-${lang}`);
+    if (checkpoint && args.skip === 0 && existsSync(checkpoint)) {
       const saved = Number(readFileSync(checkpoint, 'utf8').trim());
       if (Number.isFinite(saved) && saved > 0) {
         console.log(`  resuming: ${saved.toLocaleString()} row(s) are already indexed`);
@@ -356,7 +419,7 @@ async function main(): Promise<void> {
         }
         done += batch.length;
         // The checkpoint, after every batch: a crash costs one batch.
-        writeFileSync(checkpoint, String(args.skip + prefixRows));
+        if (checkpoint) writeFileSync(checkpoint, String(args.skip + prefixRows));
         // The boundary is crossed, not hit: a batch can be nine thousand rows
         // long, so `done % 5_000` would never be zero and the progress would
         // never print.
