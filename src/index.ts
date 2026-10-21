@@ -9,6 +9,7 @@ import { createCivicSignalMcpHandler } from './mcp/server';
 import { corsHeaders, errorResponse, jsonResponse, newCorrelationId } from './http';
 import type { Env } from './types';
 import { parseScope, ScopeParseError } from './corpora/scope';
+import { parseQuery } from './routes/query';
 import {
   BYOK_KEY_HEADER,
   BYOK_PROVIDER_HEADER,
@@ -476,15 +477,3 @@ async function runQuery(
   return { items, attribution: policy?.attribution ?? '' };
 }
 
-function parseQuery(url: URL): CorpusQuery {
-  const topic = url.searchParams.get('topic') ?? undefined;
-  const keywords = url.searchParams.getAll('keyword').filter(Boolean);
-  const jurisdiction = url.searchParams.get('jurisdiction') ?? undefined;
-  const riding = url.searchParams.get('riding') ?? undefined;
-  const since = url.searchParams.get('since') ?? undefined;
-  const until = url.searchParams.get('until') ?? undefined;
-  const limitRaw = url.searchParams.get('limit');
-  const limit = limitRaw === null ? undefined : Number(limitRaw);
-  const scope = parseScope(url.searchParams.get('scope'));
-  return { topic, keywords, jurisdiction, riding, since, until, limit, scope };
-}

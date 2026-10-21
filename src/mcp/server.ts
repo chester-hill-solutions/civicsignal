@@ -100,7 +100,11 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
           keywords: args.keywords,
           jurisdiction: args.jurisdiction,
           riding: args.riding,
-          language: args.language,
+          // An explicit language wins; otherwise it is read from the question,
+          // the same way `statute_lookup` reads it. The brief is a brief of
+          // *one* language's law: the two official versions are separate rows,
+          // and a brief that mixed them would answer a question nobody asked.
+          language: args.language ?? languageFor(undefined, args.topic, args.keywords?.join(' ')),
           since: args.since,
           until: args.until,
           limit: args.limit,
