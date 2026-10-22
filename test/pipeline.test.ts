@@ -7,7 +7,7 @@ import {
   type PipelineRow,
   type RemovedRow,
 } from '../src/ingest/pipeline';
-import { fingerprint } from '../src/ingest/reconcile';
+import { fingerprint, fingerprintsOf } from '../src/ingest/reconcile';
 
 /**
  * The pipeline's behaviour.
@@ -53,6 +53,9 @@ class FakeStore implements CorpusStore {
 
   async fingerprints(): Promise<Map<string, string>> {
     return new Map([...this.rows].map(([id, v]) => [id, v.hash]));
+  }
+  async *fingerprintEntries() {
+    yield* fingerprintsOf(new Map([...this.rows].map(([id, v]) => [id, v.hash])));
   }
   async upsert(rows: { row: PipelineRow; hash: string }[]): Promise<void> {
     for (const r of rows) this.rows.set(r.row.id, { row: r.row, hash: r.hash });

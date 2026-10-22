@@ -7,6 +7,7 @@ import type {
   UpsertRow,
 } from '../../src/ingest/pipeline';
 import type { PipelineRun, PipelineState } from '../../src/ingest/reconcile';
+import { fingerprintsOf } from '../../src/ingest/reconcile';
 
 /**
  * The Postgres implementation of the corpus store.
@@ -43,6 +44,17 @@ export class PostgresCorpusStore implements CorpusStore {
       SELECT id, text_hash FROM statute_provisions WHERE corpus_id = 'statutes-canada'
     `;
     return new Map(rows.map((row) => [row.id, row.text_hash]));
+  }
+
+  /**
+   * The same fingerprints, in id order.
+   *
+   * Postgres will page this itself, but this store is the one being retired —
+   * the corpus is on D1 now — so it sorts the map it already reads rather than
+   * growing a cursor it will never be asked for twice.
+   */
+  async *fingerprintEntries() {
+    yield* fingerprintsOf(await this.fingerprints());
   }
 
   async upsert(rows: UpsertRow[]): Promise<void> {

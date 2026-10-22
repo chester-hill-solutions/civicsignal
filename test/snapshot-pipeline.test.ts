@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { runSnapshotPipeline } from '../src/ingest/snapshot-pipeline';
-import type { R2SnapshotSource } from '../src/ingest/snapshot-source';
+import type { SnapshotSource } from '../src/ingest/snapshot-source';
+import type { SnapshotIndexEntry } from '../src/ingest/snapshot-diff';
 import type { PipelineRow } from '../src/ingest/pipeline';
 import { fingerprint } from '../src/ingest/reconcile';
 import { FakeStore, row } from './helpers/corpus-store';
@@ -19,7 +20,9 @@ function rowOf(id: string, text: string): PipelineRow {
 }
 
 /** A snapshot with the given rows, and the fingerprints that go with them. */
-function snapshotOf(rows: PipelineRow[]) {
+type R2Source = SnapshotSource;
+
+function snapshotOf(rows: PipelineRow[]): SnapshotSource {
   const index = new Map<string, { id: string; fp: string; off: number; len: number }>();
   rows.forEach((r, position) => {
     index.set(r.id, {
@@ -32,9 +35,19 @@ function snapshotOf(rows: PipelineRow[]) {
     });
   });
   return {
+    revision: 'new456',
     index: async () => index,
-    rows: async (ids: string[]) => rows.filter((r) => ids.includes(r.id)),
-  } as unknown as R2SnapshotSource;
+    // The merge needs the index in id order, which is the order the file is
+    // written in and the order D1 pages the store's fingerprints in.
+    async *indexEntries() {
+      for (const entry of [...index.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) {
+        yield entry;
+      }
+    },
+    row: async (id: string) => rows.find((r) => r.id === id) ?? null,
+    rows: async (entries: SnapshotIndexEntry[]) =>
+      rows.filter((r) => entries.some((entry) => entry.id === r.id)),
+  } as unknown as SnapshotSource;
 }
 
 const encoder = {
@@ -161,5 +174,91 @@ describe('the snapshot cycle', () => {
       commit: 'new456',
       asOf: '2026-10-15',
     });
+  });
+});
+
+/**
+ * The budget, and what makes a store that is far behind not a special case.
+ *
+ * Two hundred thousand provisions cannot be fetched, embedded and written in
+ * one invocation — the encoder alone would take hours. So a cycle writes what
+ * it can and stops, and nothing has to be remembered for the next one to
+ * continue: **the fingerprints are the progress**. A provision that has been
+ * written no longer differs from the snapshot, so the next diff does not
+ * mention it.
+ *
+ * The other half of that is the state. Until the diff has been exhausted the
+ * store is at *no* revision — it is part of the way from one to another — and
+ * a cycle that claimed one would make the next cycle skip the rest of the gap.
+ */
+describe('a cycle with a budget', () => {
+  const corpus = ['a-1', 'a-2', 'a-3', 'a-4', 'a-5'].map((id) => rowOf(id, `Text ${id}.`));
+
+  function options(store: FakeStore, source: R2Source) {
+    return {
+      corpusId: 'statutes-canada',
+      revision: { commit: 'new456', date: '2026-10-15' },
+      source,
+      store,
+      encoder,
+      now,
+    };
+  }
+
+  it('writes what it can and says there is more', async () => {
+    const store = new FakeStore([]);
+    const run = await runSnapshotPipeline({ ...options(store, snapshotOf(corpus)), maxRows: 2 });
+
+    expect(run.remaining).toBe(true);
+    expect(run.counts.added).toBe(2);
+    expect(store.rows.size).toBe(2);
+  });
+
+  it('claims no revision until it is at one', async () => {
+    const store = new FakeStore([]);
+    await runSnapshotPipeline({ ...options(store, snapshotOf(corpus)), maxRows: 2 });
+
+    expect(store.states).toHaveLength(0);
+  });
+
+  it('continues from the fingerprints, remembering nothing', async () => {
+    const store = new FakeStore([]);
+    const source = snapshotOf(corpus);
+
+    const first = await runSnapshotPipeline({ ...options(store, source), maxRows: 2 });
+    const second = await runSnapshotPipeline({ ...options(store, source), maxRows: 2 });
+    const third = await runSnapshotPipeline({ ...options(store, source), maxRows: 2 });
+
+    expect([first.remaining, second.remaining]).toEqual([true, true]);
+    expect(third.remaining).toBeFalsy();
+    expect(store.rows.size).toBe(5);
+    expect(store.states).toHaveLength(1);
+    expect(store.states[0]).toMatchObject({ commit: 'new456', rowCount: 5 });
+  });
+
+  it('does nothing at all when the store is already at the snapshot', async () => {
+    const store = new FakeStore(corpus);
+    const run = await runSnapshotPipeline({ ...options(store, snapshotOf(corpus)), maxRows: 2 });
+
+    expect(run.counts.added).toBe(0);
+    expect(run.counts.changed).toBe(0);
+    expect(run.counts.unchanged).toBe(5);
+    expect(run.remaining).toBeFalsy();
+    expect(store.rows.size).toBe(5);
+  });
+
+  it('stops loudly when the snapshot has no row for a provision its index names', async () => {
+    const store = new FakeStore([]);
+    const source = snapshotOf(corpus);
+    // An index that names a provision whose row is not in the file.
+    const truncated = {
+      ...source,
+      rows: async (entries: SnapshotIndexEntry[]) =>
+        (await source.rows(entries)).slice(0, entries.length - 1),
+    } as unknown as R2Source;
+
+    await expect(
+      runSnapshotPipeline({ ...options(store, truncated) }),
+    ).rejects.toThrow(/has no row for/);
   });
 });

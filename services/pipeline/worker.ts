@@ -185,9 +185,9 @@ async function cycle(env: Env): Promise<CycleSummary> {
   const run = await runIncrementalPipeline({
     corpusId: CORPUS_ID,
     previous: {
-      commit: state?.commit ?? '',
-      date: state?.commitDate ?? '',
-      rowCount: state?.rowCount,
+      commit: state.commit,
+      date: state.commitDate,
+      rowCount: state.rowCount,
     },
     next: { commit: head.commit, date: head.date },
     source,

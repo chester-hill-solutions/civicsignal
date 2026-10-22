@@ -1,4 +1,11 @@
-import { fingerprint, reconcile, type FingerprintedRow, type PipelineRun, type PipelineState } from './reconcile';
+import {
+  fingerprint,
+  reconcile,
+  type FingerprintedRow,
+  type FingerprintEntry,
+  type PipelineRun,
+  type PipelineState,
+} from './reconcile';
 import { ENCODER_CONTRACT } from '../encoder';
 
 /**
@@ -44,6 +51,20 @@ export type PipelineRow = FingerprintedRow & {
 export interface CorpusStore {
   /** The fingerprints currently held, keyed by row id. */
   fingerprints(): Promise<Map<string, string>>;
+  /**
+   * The fingerprints in **id order**, a page at a time.
+   *
+   * The reconciliation against a snapshot is a merge of two sorted streams,
+   * and this is the store's side of it. It exists because the map does not
+   * fit: a quarter of a million fingerprints held as a `Map` is thirty
+   * megabytes, the snapshot's index is eighty, and a Worker has a hundred and
+   * twenty-eight — before a single row has been read.
+   *
+   * It is not optional. A store that cannot hand its fingerprints over in
+   * order cannot take part in the diff, and a store that quietly fell back to
+   * the map would work everywhere except where it matters.
+   */
+  fingerprintEntries(): AsyncGenerator<FingerprintEntry>;
   /** Write a row and its vector. One transaction, so the two cannot diverge. */
   upsert(rows: UpsertRow[]): Promise<void>;
   /**

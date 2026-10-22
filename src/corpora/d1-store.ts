@@ -26,7 +26,7 @@
  * without a row is a broken answer the product will happily give.
  */
 import type { ChangeFeedEntry, CorpusStore, PipelineRow, RemovedRow, UpsertRow } from '../ingest/pipeline';
-import type { PipelineRun, PipelineState } from '../ingest/reconcile';
+import type { PipelineRun, PipelineState, FingerprintEntry } from '../ingest/reconcile';
 
 /** The text that is embedded, and the title that goes with it. */
 function searchText(row: PipelineRow): string {
@@ -248,6 +248,38 @@ export class D1CorpusStore implements CorpusStore {
           new Date().toISOString(),
         )
         .run();
+    }
+  }
+
+  /**
+   * The fingerprints, in id order, a page at a time.
+   *
+   * Keyset pagination (`WHERE id > ? ORDER BY id`), not `OFFSET`: the offset
+   * form makes D1 walk every row before the offset on every page, and this
+   * walks the primary key once. It is the same query the diff is a merge
+   * against, and it is the difference between thirty megabytes in memory and
+   * a thousand entries.
+   *
+   * The order is the store's own — `ORDER BY id` on a `TEXT` column is
+   * bytewise, and every provision id is ASCII, so it is the same order the
+   * snapshot's index is written in and the same order JavaScript's `<` gives.
+   */
+  async *fingerprintEntries(pageSize = 1000): AsyncGenerator<FingerprintEntry> {
+    let after = '';
+    for (;;) {
+      const result = await this.db
+        .prepare(
+          `SELECT id, text_hash FROM statute_sections
+            WHERE corpus_id = ? AND text_hash IS NOT NULL AND id > ?
+            ORDER BY id
+            LIMIT ?`,
+        )
+        .bind(this.corpusId, after, pageSize)
+        .all<{ id: string; text_hash: string }>();
+      const rows = result.results ?? [];
+      if (rows.length === 0) return;
+      for (const row of rows) yield { id: row.id, fp: row.text_hash };
+      after = rows[rows.length - 1]!.id;
     }
   }
 

@@ -252,7 +252,8 @@ describe('the incremental cycle', () => {
     expect(source.peak).toBeLessThanOrEqual(8);
   });
 
-  it('compares against the revision the store is at', async () => {    const store = new FakeStore([]);
+  it('compares against the revision the store is at', async () => {
+    const store = new FakeStore([]);
     const source = new FakeSource();
 
     await runIncrementalPipeline({
@@ -287,6 +288,40 @@ describe('the incremental cycle', () => {
       commit: 'new456',
       asOf: '2026-10-15',
     });
+  });
+
+  /**
+   * The count in the state is the **corpus's** size, not the commit's.
+   *
+   * The state is what the next cycle reads to know what it is counting from,
+   * so a count that is the size of one commit — three provisions rather than
+   * a quarter of a million — is wrong forever after, and nothing downstream
+   * can tell. It is therefore not guessed from the files that happened to
+   * change: the cycle is told the count it is counting from.
+   */
+  it('counts the corpus, not the commit', async () => {
+    const oldXml = statute('This Act may be cited as the Access to Information Act.');
+    const newXml = statute(
+      'This Act may be cited as the Access to Information Act.',
+      'A provision the corpus did not have.',
+    );
+    const store = new FakeStore(rowsOf(oldXml));
+    const source = new FakeSource();
+    source.changed = [{ path: PATH, status: 'modified' }];
+    source.revisions.set('old123', new Map([[PATH, oldXml]]));
+    source.revisions.set('new456', new Map([[PATH, newXml]]));
+
+    await runIncrementalPipeline({
+      corpusId: 'statutes-canada',
+      previous: { ...previous, rowCount: 277_828 },
+      next,
+      source,
+      store,
+      encoder,
+      now,
+    });
+
+    expect(store.states[0]).toMatchObject({ rowCount: 277_829 });
   });
 });
 

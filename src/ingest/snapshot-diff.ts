@@ -27,7 +27,7 @@
  * - **came** — the snapshot has it and the store does not. The corpus holds
  *   a provision the store has never seen.
  */
-import type { FingerprintedRow } from './reconcile';
+import type { FingerprintedRow, FingerprintEntry } from './reconcile';
 
 /** One line of a snapshot's index. */
 export interface SnapshotIndexEntry {
@@ -110,4 +110,100 @@ export function partitionByNovelty(
 }
 
 /** A row's fingerprint, for the store's own comparison. */
-export type { FingerprintedRow };
+export type { FingerprintedRow, FingerprintEntry };
+
+/** One batch of the merge: the same three outcomes, in pieces. */
+export interface SnapshotDiffBatch {
+  changed: SnapshotIndexEntry[];
+  came: SnapshotIndexEntry[];
+  gone: string[];
+  /**
+   * How many provisions the two sides agree on, counted rather than listed.
+   *
+   * They are the ones the cycle does nothing about, which is almost all of
+   * them, so they are a number — a list of a quarter of a million ids that
+   * were already correct is exactly the memory this exists to avoid.
+   */
+  same: number;
+}
+
+/** A stream with one item of lookahead, so two of them can be merged. */
+function peekable<T>(source: AsyncIterable<T>) {
+  const iterator = source[Symbol.asyncIterator]();
+  let ahead: T | null = null;
+  let exhausted = false;
+  return {
+    async peek(): Promise<T | null> {
+      if (ahead === null && !exhausted) {
+        const next = await iterator.next();
+        if (next.done) exhausted = true;
+        else ahead = next.value;
+      }
+      return ahead;
+    },
+    async take(): Promise<T | null> {
+      const value = await this.peek();
+      if (value !== null) ahead = null;
+      return value;
+    },
+  };
+}
+
+/**
+ * The same diff, as a merge of two sorted streams.
+ *
+ * `diffSnapshot` compares two maps, and a map of a quarter of a million
+ * provisions costs more than a Worker has. The index alone is eighty
+ * megabytes held as objects, and the store's fingerprints are another thirty
+ * — a hundred and thirty-seven before a single row is read, against a ceiling
+ * of a hundred and twenty-eight.
+ *
+ * Neither side has to be held, though, because **both are already in id
+ * order**: the snapshot's index is written in the order the rows are in, and
+ * D1 will page its fingerprints `WHERE id > ? ORDER BY id`. So the diff is a
+ * merge of two cursors, and what is in memory at any moment is one page of
+ * each — kilobytes rather than megabytes.
+ *
+ * The batches are yielded as they fill, which is also what lets the cycle
+ * write as it goes instead of collecting every changed provision in the
+ * corpus before touching the store.
+ */
+export async function* diffSnapshotStream(
+  index: AsyncIterable<SnapshotIndexEntry>,
+  store: AsyncIterable<FingerprintEntry>,
+  options: { batchSize?: number } = {},
+): AsyncGenerator<SnapshotDiffBatch> {
+  const batchSize = options.batchSize ?? 1000;
+  const left = peekable(index);
+  const right = peekable(store);
+
+  let batch: SnapshotDiffBatch = { changed: [], came: [], gone: [], same: 0 };
+  const size = () => batch.changed.length + batch.came.length + batch.gone.length;
+
+  for (;;) {
+    const fromIndex = await left.peek();
+    const fromStore = await right.peek();
+    if (fromIndex === null && fromStore === null) break;
+
+    if (fromStore === null || (fromIndex !== null && fromIndex.id < fromStore.id)) {
+      batch.came.push((await left.take())!);
+    } else if (fromIndex === null || fromStore.id < fromIndex.id) {
+      batch.gone.push((await right.take())!.id);
+    } else {
+      if (fromIndex.fp !== fromStore.fp) batch.changed.push(fromIndex);
+      else batch.same++;
+      await left.take();
+      await right.take();
+    }
+
+    if (size() >= batchSize) {
+      yield batch;
+      batch = { changed: [], came: [], gone: [], same: 0 };
+    }
+  }
+
+  // The last batch goes out even when it holds no work, because the count of
+  // what the two sides *agreed* on is part of what the diff says — and a
+  // cycle that found nothing to do still has to know how big the corpus is.
+  if (size() > 0 || batch.same > 0) yield batch;
+}

@@ -102,8 +102,17 @@ function feedEntry(
  */
 export async function runIncrementalPipeline(options: {
   corpusId: string;
-  /** The revision the store is at, and how many rows it holds. */
-  previous: { commit: string; date: string; rowCount?: number };
+  /**
+   * The revision the store is at, and **how many rows it holds**.
+   *
+   * The count is not optional, because the state this cycle writes is a
+   * *total* — the previous count, plus what this cycle did. A cycle that was
+   * not told the count would have to guess, and the guess it used to make was
+   * the provisions in the files that changed: the size of a commit, written
+   * into the corpus's size. It is wrong by three orders of magnitude, nothing
+   * downstream can tell, and the next cycle would carry it forward.
+   */
+  previous: { commit: string; date: string; rowCount: number };
   /** The revision the corpus is moving to. */
   next: { commit: string; date: string };
   source: CorpusSource;
@@ -258,7 +267,7 @@ export async function runIncrementalPipeline(options: {
     commit: next.commit,
     commitDate: next.date,
     asOf: next.date,
-    rowCount: (previous.rowCount ?? after.size) + added - removedIds.length,
+    rowCount: previous.rowCount + added - removedIds.length,
     lastRunAt: options.now.toISOString(),
   });
   return run;
