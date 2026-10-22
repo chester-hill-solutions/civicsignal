@@ -128,12 +128,16 @@ async function main(): Promise<void> {
     if (!rowsPath || !indexPath) throw new Error('--offsets needs --offsets and --index');
     const index = readIndex(indexPath);
     const fd = openSync(rowsPath, 'r');
-    const buffer = Buffer.alloc(4096);
+    // The buffer is sized to the longest row, not to a guess: the corpus's
+    // longest provisions are megabytes long, and a check that skips the rows
+    // too long for its buffer is a check that skips the ones most likely to
+    // be wrong.
+    const longest = Math.max(...[...index.values()].map((entry) => entry.len));
+    const buffer = Buffer.alloc(longest);
     let checked = 0;
     let wrong = 0;
     const examples: string[] = [];
     for (const [id, entry] of index) {
-      if (entry.len > buffer.length) continue;
       const read = readSync(fd, buffer, 0, entry.len, entry.off);
       const line = buffer.subarray(0, read).toString('utf8').trim();
       let row: { id?: string };
