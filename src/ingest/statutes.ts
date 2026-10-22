@@ -1,5 +1,4 @@
 import { XMLParser } from 'fast-xml-parser';
-import { normalizeForSearch } from '../text';
 
 /**
  * Parsing the Justice Laws XML corpus into citable units.
@@ -548,7 +547,6 @@ export interface StatuteSectionRow {
   in_force: number;
   language: 'en' | 'fr';
   topics: string | null;
-  search_text: string;
 }
 
 const DEFAULT_SCHEDULE_CHUNK_CHARS = 8000;
@@ -733,11 +731,6 @@ function row(input: {
   language: 'en' | 'fr';
   extraText: string | null;
 }): StatuteSectionRow {
-  // The accents come off, so that "reglement" finds "règlement". The query side
-  // folds the same way — see `normalizeForSearch`.
-  const searchText = normalizeForSearch(
-    `${input.act} ${input.section} ${input.extraText ?? ''} ${input.heading ?? ''} ${input.text}`,
-  );
   return {
     id: input.id,
     corpus_id: 'statutes-canada',
@@ -754,7 +747,6 @@ function row(input: {
     in_force: input.inForce && statusOf(input.text) !== 'repealed' ? 1 : 0,
     language: input.language,
     topics: null,
-    search_text: searchText.replace(/\s+/g, ' ').trim(),
   };
 }
 
@@ -765,7 +757,7 @@ export function toInsertStatements(rows: StatuteSectionRow[], batchSize = 200): 
     const batch = rows.slice(i, i + batchSize);
     const values = batch.map((r) => rowTuple(r)).join(',');
     statements.push(
-      `INSERT OR REPLACE INTO statute_sections (id, corpus_id, act, citation, section, status, schedule, part, heading, text, source_url, jurisdiction, in_force, language, topics, search_text) VALUES ${values};`,
+      `INSERT OR REPLACE INTO statute_sections (id, corpus_id, act, citation, section, status, schedule, part, heading, text, source_url, jurisdiction, in_force, language, topics) VALUES ${values};`,
     );
   }
   return statements;
@@ -796,7 +788,6 @@ function rowTuple(r: StatuteSectionRow): string {
     String(r.in_force),
     quoted(r.language),
     nullableQuoted(r.topics),
-    quoted(r.search_text),
   ].join(',')})`;
 }
 

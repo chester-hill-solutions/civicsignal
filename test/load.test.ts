@@ -77,7 +77,6 @@ function aRow(overrides: Partial<StatuteSectionRow> = {}): StatuteSectionRow {
     in_force: 1,
     language: 'en',
     topics: null,
-    search_text: 'competition act s. 36 recovery of damages any person who has suffered',
     ...overrides,
   } as StatuteSectionRow;
 }
@@ -147,7 +146,6 @@ describe('the load path', () => {
     const nasty = aRow({
       id: 'acts-en-nasty-1',
       text: "It's O'Brien's \"law\"; and (1) a newline\nin the middle — with a — dash.",
-      search_text: "it's o'brien's \"law\"; and (1) a newline in the middle — with a — dash.",
     });
     for (const statement of toInsertStatements([nasty])) db.exec(statement);
     const row = db.prepare('SELECT text FROM statute_sections WHERE id = ?').get('acts-en-nasty-1') as

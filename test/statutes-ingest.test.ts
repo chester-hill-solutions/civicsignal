@@ -236,12 +236,22 @@ describe('statute rows', () => {
     expect(regs[0]?.source_url).toContain('/fr/reglements/');
   });
 
-  it('indexes the act name, heading and text together', () => {
+  /**
+   * There is no folded token bag any more, and this is the test that used to
+   * assert one.
+   *
+   * `search_text` existed for the lexical `LIKE ?` path, which ran only when
+   * the vector arm returned nothing — something a vector search cannot do —
+   * and which measured worth one question in thirty-six. The fields it was
+   * built from are the fields a caller can see, and those are what matter: the
+   * act, the heading and the text all reach the row.
+   */
+  it('keeps the act name, the heading and the text on the row', () => {
     const parsed = parseStatuteXml(FIXTURE)!;
     const rows = buildRows(parsed, { kind: 'acts', language: 'en' });
-    expect(rows[0]?.search_text).toContain('access to information act');
-    expect(rows[0]?.search_text).toContain('short title');
-    expect(rows[0]?.search_text).toContain('may be cited as');
+    expect(rows[0]?.act.toLowerCase()).toContain('access to information act');
+    expect(rows[0]?.heading?.toLowerCase()).toContain('short title');
+    expect(rows[0]?.text.toLowerCase()).toContain('may be cited as');
   });
 
   it('gives each row a stable id', () => {
@@ -306,10 +316,12 @@ describe('statute rows', () => {
       'in_force',
       'language',
       'topics',
-      'search_text',
     ]) {
       expect(sql).toContain(column);
     }
+    // `search_text` is no longer one of the table's columns — the migration
+    // drops it — so writing it would be the load path failing on an insert.
+    expect(sql).not.toContain('search_text');
   });
 });
 
