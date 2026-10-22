@@ -472,4 +472,38 @@ describe('the retrieval cache', () => {
     expect(items).toHaveLength(1);
     expect(index.vectors).toHaveLength(1);
   });
+
+  /**
+   * The revision may arrive as a promise, and the search awaits it.
+   *
+   * The Worker supplies a promise, because a background read is cancelled the
+   * moment the response returns. This test pins the fix: the key holds the
+   * **resolved** value, so an entry written for that revision answers the ask.
+   */
+  it('awaits the corpus revision before it builds the key', async () => {
+    const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
+    const { cache } = mapCache();
+    await cache.put(
+      keyFor('the weather in ottawa', 25, 'commitsha'),
+      { decision: 'refuse', anyRelevant: 0.09, order: [] },
+      CACHE_SECONDS,
+    );
+
+    const items = await statutesCorpus.retrieve(
+      { topic: 'the weather in Ottawa' },
+      ctx(db, {
+        vector: index.index,
+        embedQuery: async () => [0.1],
+        cache,
+        corpusRevision: Promise.resolve('commitsha'),
+      }),
+    );
+
+    // The promise resolved in time, so the entry decided the question and the
+    // search did not run.
+    expect(items).toEqual([]);
+    expect(index.vectors).toHaveLength(0);
+    expect(calls).toHaveLength(0);
+  });
 });

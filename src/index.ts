@@ -272,40 +272,33 @@ function vectorIndexFor(env: Env): VectorIndex | undefined {
  * itself. The value comes from `corpus_state`, which the cycle already writes.
  * Nothing new is needed: no binding, and no change to the pipeline.
  *
- * This function is **synchronous**, and the context stays synchronous with it.
- * The reason is that a KV read and a D1 read are both asynchronous, and making
- * the context asynchronous changes its call sites. Instead the value is read in
- * the background and remembered for five minutes.
+ * **The function returns a promise, and the search awaits it.** The first
+ * version read the row in the background and returned a plain string. That never
+ * worked: a Worker drops a pending promise when the response returns, so the
+ * read was cancelled and every cache key said `unknown`. The promise belongs to
+ * the request that awaits it, and then it always completes.
  *
- * The state is module state, which a Worker does not promise to keep. That is
- * acceptable here and only here, because the value is a **cache key**: an
- * isolate that loses it sends `unknown`, the cache misses, and the search runs.
- * Nothing else depends on it.
+ * The promise is remembered for five minutes, so a busy isolate reads the row
+ * once and not once per request. The state is module state, which a Worker does
+ * not promise to keep. That is acceptable here: a lost value costs one more
+ * database read.
  */
-let corpusRevision = 'unknown';
-let revisionFetchedAt = 0;
-let revisionFetching = false;
+let revisionPromise: { at: number; value: Promise<string> } | undefined;
 
-function revisionFor(env: Env): string {
-  const stale = Date.now() - revisionFetchedAt > 5 * 60 * 1000;
-  if (stale && !revisionFetching && env.CIVIC_DB) {
-    revisionFetching = true;
-    env.CIVIC_DB.prepare('SELECT commit_sha FROM corpus_state WHERE corpus_id = ?')
-      .bind(CORPUS_ID)
-      .first<{ commit_sha: string }>()
-      .then((row) => {
-        if (row?.commit_sha) corpusRevision = row.commit_sha;
-      })
-      .catch(() => {
-        // A read that fails leaves the last value in place, which is a cache
-        // key and not a fact.
-      })
-      .finally(() => {
-        revisionFetching = false;
-        revisionFetchedAt = Date.now();
-      });
+function corpusRevisionFor(env: Env): Promise<string> {
+  const now = Date.now();
+  if (revisionPromise && now - revisionPromise.at < 5 * 60 * 1000) {
+    return revisionPromise.value;
   }
-  return corpusRevision;
+  const value = env.CIVIC_DB
+    ? env.CIVIC_DB.prepare('SELECT commit_sha FROM corpus_state WHERE corpus_id = ?')
+        .bind(CORPUS_ID)
+        .first<{ commit_sha: string }>()
+        .then((row) => row?.commit_sha ?? 'unknown')
+        .catch(() => 'unknown')
+    : Promise.resolve('unknown');
+  revisionPromise = { at: now, value };
+  return value;
 }
 
 function corpusContext(env: Env): CorpusContext {
@@ -322,7 +315,7 @@ function corpusContext(env: Env): CorpusContext {
     // this one.
     ...(env.JEV_KEY ? { jev: { key: env.JEV_KEY } } : {}),
     // The revision enters the cache key, so a new revision clears the cache.
-    corpusRevision: revisionFor(env),
+    corpusRevision: corpusRevisionFor(env),
     // The cache, when the namespace is bound. The signature carries no KV, so
     // the retrieval code stays free of Cloudflare and the tests supply a Map.
     // `act-titles.ts` uses the same namespace for the same reason.

@@ -29,10 +29,15 @@ export interface CorpusContext extends BaseCorpusContext {
    * The revision of the corpus that the search reads.
    *
    * The cache key holds it, so a new revision clears the cache by itself. The
-   * pipeline mirrors the current commit for this. When the value is absent, the
-   * lifetime is the only guard.
+   * value comes from the corpus state, which the cycle writes. When the value is
+   * absent, the lifetime is the only guard.
+   *
+   * **It may be a promise, and the search awaits it.** A Worker drops a pending
+   * promise when the response returns, so a revision that is read in the
+   * background never arrives. The search is asynchronous already, so the read
+   * belongs to the request.
    */
-  corpusRevision?: string;
+  corpusRevision?: string | Promise<string>;
 }
 
 /** One cached retrieval. */

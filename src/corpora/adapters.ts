@@ -237,10 +237,23 @@ async function retrieveByVector(
   // itself. The question is normalised by hand: lower case, spaces collapsed,
   // and the closing punctuation removed. No stems and no synonyms, because two
   // questions that differ in law must not share a key.
-  const normalised = question.toLowerCase().replace(/\s+/g, ' ').replace(/[.?!]+$/, '').trim();
-  const cacheKey = `retrieval:${hash128(normalised)}:${ctx.corpusRevision ?? 'unknown'}:${limit}`;
-  const cached = (await ctx.cache?.get(cacheKey)) as CachedRetrieval | null | undefined;
-  if (cached && cached.decision !== 'answer') return [];
+  //
+  // **The revision is awaited here.** A Worker drops a pending promise when the
+  // response returns, so a value that a background task reads never arrives, and
+  // every key says `unknown`. This search is asynchronous already, so the read
+  // belongs to this request, where it always completes.
+  //
+  // The key is built only when a cache is bound, because the read costs a
+  // database round trip and an unbound deployment does not need the key.
+  let cacheKey = '';
+  let cached: CachedRetrieval | null | undefined;
+  if (ctx.cache) {
+    const normalised = question.toLowerCase().replace(/\s+/g, ' ').replace(/[.?!]+$/, '').trim();
+    const revision = (await ctx.corpusRevision) ?? 'unknown';
+    cacheKey = `retrieval:${hash128(normalised)}:${revision}:${limit}`;
+    cached = (await ctx.cache.get(cacheKey)) as CachedRetrieval | null | undefined;
+    if (cached && cached.decision !== 'answer') return [];
+  }
 
   const vector = await ctx.embedQuery(question);
   const filter = query.language ? { language: query.language.toLowerCase() } : undefined;
