@@ -5,6 +5,14 @@ import {
   MAX_GAP_BYTES,
   type SnapshotBucket,
 } from '../src/ingest/snapshot-source';
+import {
+  cutRows,
+  DEFAULT_PART_BYTES,
+  indexKey,
+  manifestKey,
+  partKey,
+  SNAPSHOT_FORMAT,
+} from '../src/ingest/snapshot-format';
 import type { PipelineRow } from '../src/ingest/pipeline';
 
 /**
@@ -84,23 +92,48 @@ function fakeBucket(files: Record<string, string>) {
   return { bucket: bucket as unknown as SnapshotBucket, reads };
 }
 
-/** The rows file and the index that points at it, with the real offsets. */
-function snapshotOf(rows: PipelineRow[]) {
+/**
+ * A snapshot, as it is on disk: a manifest, an index, and the rows in parts.
+ *
+ * The parts are cut by the format's own `cutRows`, so these tests exercise the
+ * cutting the builder uses rather than a second implementation of it.
+ */
+function snapshotOf(rows: PipelineRow[], partBytes?: number) {
+  const lines = rows.map((row) => JSON.stringify(row) + '\n');
   let offset = 0;
-  const lines: string[] = [];
   const index: string[] = [];
-  rows.forEach((r, position) => {
-    const line = JSON.stringify(r) + '\n';
-    lines.push(line);
+  lines.forEach((line, position) => {
+    const len = new TextEncoder().encode(line).length;
     index.push(
-      `{"id":${JSON.stringify(r.id)},"fp":"hash-${position}","off":${offset},"len":${new TextEncoder().encode(line).length}}`,
+      `{"id":${JSON.stringify(rows[position]!.id)},"fp":"hash-${position}","off":${offset},"len":${len}}`,
     );
-    offset += new TextEncoder().encode(line).length;
+    offset += len;
   });
-  return {
-    'abc123.index.jsonl': index.join('\n') + '\n',
-    'abc123.rows.jsonl': lines.join(''),
-  };
+
+  const files: Record<string, string> = { [indexKey('abc123')]: index.join('\n') + '\n' };
+  const parts: { key: string; bytes: number }[] = [];
+  for (const part of cutRows(lines, partBytes)) {
+    const key = partKey('abc123', parts.length);
+    files[key] = part.lines.join('');
+    parts.push({ key, bytes: part.bytes });
+  }
+  files[manifestKey('abc123')] = JSON.stringify({
+    format: SNAPSHOT_FORMAT,
+    commit: 'abc123',
+    date: '2026-10-15',
+    rows: {
+      count: rows.length,
+      bytes: offset,
+      partBytes: partBytes ?? DEFAULT_PART_BYTES,
+      parts,
+    },
+    index: {
+      key: indexKey('abc123'),
+      bytes: new TextEncoder().encode(index.join('\n') + '\n').length,
+      entries: rows.length,
+    },
+  });
+  return files;
 }
 
 describe('the snapshot in a bucket', () => {
@@ -115,11 +148,32 @@ describe('the snapshot in a bucket', () => {
 
     expect(index.size).toBe(2);
     expect(index.get('a-1')?.fp).toBe('hash-0');
-    expect(reads).toEqual([{ key: 'abc123.index.jsonl' }]);
+    // The manifest first — it is what says where the rest is — and then the
+    // index, whole. The manifest is read once and remembered.
+    expect(reads.map((read) => read.key)).toEqual([
+      'abc123.manifest.json',
+      'abc123.index.jsonl',
+    ]);
   });
 
-  it('says so when the snapshot has no index', async () => {
+  it('reads the manifest once, however much is read', async () => {
+    const { bucket, reads } = fakeBucket(files);
+    const source = new SnapshotReader(bucket, 'abc123');
+
+    await source.index();
+    await source.index();
+
+    expect(reads.filter((read) => read.key.endsWith('.manifest.json'))).toHaveLength(1);
+  });
+
+  it('says so when the snapshot has no manifest', async () => {
     const { bucket } = fakeBucket({});
+    const source = new SnapshotReader(bucket, 'abc123');
+    await expect(source.index()).rejects.toThrow(/has no manifest/);
+  });
+
+  it('says so when the manifest names an index that is not there', async () => {
+    const { bucket } = fakeBucket({ 'abc123.manifest.json': files['abc123.manifest.json']! });
     const source = new SnapshotReader(bucket, 'abc123');
     await expect(source.index()).rejects.toThrow(/has no index/);
   });
@@ -152,7 +206,7 @@ describe('the snapshot in a bucket', () => {
     expect(found?.id).toBe('a-2');
     expect(found?.text).toBe('two');
     expect(reads[reads.length - 1]).toMatchObject({
-      key: 'abc123.rows.jsonl',
+      key: 'abc123.rows.000.jsonl',
       offset: new TextEncoder().encode(JSON.stringify(rows[0]) + '\n').length,
     });
   });
@@ -200,7 +254,7 @@ describe('the snapshot in a bucket', () => {
     const found = await source.rows(['a-1', 'a-2', 'a-3'].map((id) => index.get(id)!));
 
     expect(found.map((r) => r.text)).toEqual(['one', 'two', 'three']);
-    const rowReads = reads.filter((read) => read.key.endsWith('.rows.jsonl'));
+    const rowReads = reads.filter((read) => read.key.includes('.rows.'));
     expect(rowReads).toHaveLength(1);
   });
 
@@ -215,7 +269,7 @@ describe('the snapshot in a bucket', () => {
     const found = await source.rows(['a-1', 'a-3'].map((id) => index.get(id)!));
 
     expect(found.map((r) => r.text)).toEqual(['one', 'three']);
-    const rowReads = reads.filter((read) => read.key.endsWith('.rows.jsonl'));
+    const rowReads = reads.filter((read) => read.key.includes('.rows.'));
     expect(rowReads).toHaveLength(2);
   });
 
@@ -234,7 +288,47 @@ describe('the snapshot in a bucket', () => {
       'Éditeur officiel du Québec',
       'Règlement sur les émissions',
     ]);
-    expect(reads.filter((read) => read.key.endsWith('.rows.jsonl'))).toHaveLength(1);
+    expect(reads.filter((read) => read.key.includes('.rows.'))).toHaveLength(1);
+  });
+
+  /**
+   * The parts, which exist because a single object cannot be published.
+   *
+   * The offsets in the index are **global** — they are what the builder wrote
+   * as it streamed the rows — so a reader has to work out which part a row is
+   * in and where it is inside it. Getting that wrong reads a different
+   * provision, quietly, which is the failure mode this whole format is built
+   * to avoid.
+   */
+  it('reads a row out of the part that holds it', async () => {
+    const rows = [row('a-1', 'one'), row('a-2', 'two'), row('a-3', 'three')];
+    // A part size that puts each row in its own part.
+    const files = snapshotOf(rows, 1);
+    const { bucket, reads } = fakeBucket(files);
+    const source = new SnapshotReader(bucket, 'abc123');
+
+    const manifest = await source.manifest();
+    expect(manifest.rows.parts).toHaveLength(3);
+
+    const index = await source.index();
+    const found = await source.rows([index.get('a-3')!]);
+
+    expect(found.map((r) => r.text)).toEqual(['three']);
+    const read = reads[reads.length - 1]!;
+    expect(read.key).toBe('abc123.rows.002.jsonl');
+    // The row is at the start of the third part, not at its global offset.
+    expect(read.offset).toBe(0);
+  });
+
+  it('reads rows from two parts without confusing them', async () => {
+    const rows = [row('a-1', 'one'), row('a-2', 'two'), row('a-3', 'three')];
+    const { bucket } = fakeBucket(snapshotOf(rows, 1));
+    const source = new SnapshotReader(bucket, 'abc123');
+    const index = await source.index();
+
+    const found = await source.rows([index.get('a-1')!, index.get('a-3')!]);
+
+    expect(found.map((r) => r.text)).toEqual(['one', 'three']);
   });
 });
 

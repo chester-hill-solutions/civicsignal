@@ -3,15 +3,21 @@
  * Build a corpus snapshot.
  *
  * A snapshot is the corpus as rows, with a fingerprint per row, in a form that
- * can be read in pieces. Two files per revision:
+ * can be read in pieces:
  *
- *   <commit>.rows.jsonl    the rows, one JSON object per line, sorted by id
- *   <commit>.index.jsonl   id, fingerprint, byte offset and length of each row
+ *   <commit>.manifest.json    what it is: the count, the size, the parts
+ *   <commit>.index.jsonl      id, fingerprint, byte offset and length of each row
+ *   <commit>.rows.NNN.jsonl   the rows, one JSON object per line, sorted by id
  *
  * The **index** is the diff. Two index files, compared, give the changed ids,
  * the gone ids and the new ids — exactly, in about twenty megabytes. The
  * **rows** are read in pieces: the index carries each row's offset and length,
  * so one row is one HTTP range request.
+ *
+ * The rows are **parts** because a single object cannot be published —
+ * neither wrangler nor the Cloudflare API will upload more than 300 MB, and
+ * the rows are three hundred and forty-seven. The offsets stay global, so the
+ * part size is a publishing detail and nothing else.
  *
  *     bun scripts/build-snapshot.ts --revision <sha> --out dist/snapshot
  *     bun scripts/build-snapshot.ts --parent <sha> --out dist/snapshot
@@ -24,16 +30,19 @@
  * they were built by different code, the diff between two snapshots would be a
  * diff of parsers rather than a diff of law.
  */
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { rowsForFile } from '../src/ingest/corpus-rows';
 import { fingerprint } from '../src/ingest/reconcile';
+import { indexKey, indexLine, DEFAULT_PART_BYTES } from '../src/ingest/snapshot-format';
+import { manifestFor, writeManifest, writeParts } from './lib/part-writer';
 
 const CORPUS_DIR = join(process.env.HOME ?? '.', '.cache', 'civicsignal', 'laws-lois-xml');
 const CORPUS_ID = 'statutes-canada';
 
 const args = process.argv.slice(2);
 const revision = arg('--revision');
+const partBytes = Number(arg('--part-bytes') ?? DEFAULT_PART_BYTES);
 const parent = arg('--parent');
 const out = arg('--out') ?? join('dist', 'snapshot');
 
@@ -73,6 +82,29 @@ function tree(rev: string): string {
   return root;
 }
 
+/**
+ * The revision's date.
+ *
+ * It is the commit's own date, and it goes on every row as `lastChanged` —
+ * the date the corpus last changed the provision. This used to be
+ * `rev.slice(0, 10)`, which is the first ten characters of the **sha**: every
+ * row in the snapshot carried a date of `0507465393`. The diff never noticed,
+ * because `lastChanged` is deliberately not part of a fingerprint — it is not
+ * something a provision *is* — but the store persists it, and a provision's
+ * date is a thing the product shows.
+ */
+function dateOf(rev: string): string {
+  const proc = Bun.spawnSync(
+    ['git', '-C', CORPUS_DIR, 'show', '-s', '--format=%cs', rev],
+    { stdout: 'pipe', stderr: 'ignore' },
+  );
+  const date = proc.stdout.toString().trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`the clone does not know the date of ${rev}`);
+  }
+  return date;
+}
+
 /** The instrument files, in a stable order. */
 function instrumentFiles(root: string): { path: string; content: string }[] {
   const dirs = [
@@ -109,9 +141,10 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const date = dateOf(rev);
   const root = tree(rev);
   const files = instrumentFiles(root);
-  console.log(`${files.length} instrument file(s) in ${root}`);
+  console.log(`${files.length} instrument file(s) in ${root}, at ${rev.slice(0, 9)} (${date})`);
 
   // The rows, keyed by id.
   //
@@ -123,7 +156,7 @@ async function main(): Promise<void> {
     for (const row of rowsForFile({
       path: file.path,
       content: file.content,
-      date: rev.slice(0, 10),
+      date,
       corpusId: CORPUS_ID,
     })) {
       rows.set(row.id, row);
@@ -132,33 +165,42 @@ async function main(): Promise<void> {
   console.log(`${rows.size} row(s)`);
 
   // The rows, sorted by id, and the index that points at them.
+  //
+  // The two are written in one pass: the index is what says where each row
+  // is, so the offsets come from the pass that writes them, and there is no
+  // way for the two to disagree about a row's position.
   const ids = [...rows.keys()].sort();
-  const rowsPath = join(out, `${rev}.rows.jsonl`);
-  const indexPath = join(out, `${rev}.index.jsonl`);
-  Bun.spawnSync(['mkdir', '-p', out]);
-
+  const indexPath = join(out, indexKey(rev));
   let offset = 0;
   const index: string[] = [];
-  const chunks: string[] = [];
-  for (const id of ids) {
-    const line = `${JSON.stringify(rows.get(id))}\n`;
-    const bytes = Buffer.byteLength(line);
-    index.push(
-      JSON.stringify({
-        id,
-        fp: fingerprint(rows.get(id) as never),
-        off: offset,
-        len: bytes,
-      }),
-    );
-    chunks.push(line);
-    offset += bytes;
-  }
-  writeFileSync(rowsPath, chunks.join(''));
-  writeFileSync(indexPath, `${index.join('\n')}\n`);
 
-  console.log(`${rowsPath} — ${(offset / 1048576).toFixed(1)} MB`);
-  console.log(`${indexPath} — ${(statSync(indexPath).size / 1048576).toFixed(1)} MB`);
+  function* rowLines(): Generator<string> {
+    for (const id of ids) {
+      const row = rows.get(id);
+      const line = `${JSON.stringify(row)}\n`;
+      const bytes = Buffer.byteLength(line);
+      index.push(indexLine({ id, fp: fingerprint(row as never), off: offset, len: bytes }));
+      offset += bytes;
+      yield line;
+    }
+  }
+
+  const written = writeParts({ out, commit: rev, lines: rowLines(), partBytes });
+  // `indexLine` carries its own newline — it is "the entry's bytes as the file
+  // holds them" — so the lines are joined with nothing. Joining with a newline
+  // is how the index came to have a blank line between every entry: two
+  // hundred and seventy-seven thousand of them, one byte each, invisible to
+  // every reader because a blank line is skipped.
+  writeFileSync(indexPath, index.join(''));
+
+  const manifest = manifestFor({ out, commit: rev, date, rows: written, partBytes });
+  const manifestPath = writeManifest(out, manifest);
+
+  const mb = (bytes: number) => `${(bytes / 1048576).toFixed(1)} MB`;
+  console.log(`${written.count} row(s) in ${written.parts.length} part(s) — ${mb(written.bytes)}`);
+  for (const part of written.parts) console.log(`  ${part.key} — ${mb(part.bytes)}`);
+  console.log(`  ${indexPath} — ${mb(manifest.index.bytes)}`);
+  console.log(`  ${manifestPath}`);
 }
 
 await main();

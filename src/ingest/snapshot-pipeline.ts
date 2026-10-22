@@ -177,7 +177,16 @@ export async function runSnapshotPipeline(options: {
     if (upserts.length > 0) await store.upsert(upserts);
     if (batch.gone.length > 0) {
       const gone = await store.remove(batch.gone);
-      removed += gone.length;
+      // The gone ids came from the store's own fingerprints, so the store has
+      // them — if it does not, it lost a row it said it had, and the feed
+      // would be reporting a removal of nothing.
+      if (gone.length !== batch.gone.length) {
+        throw new Error(
+          `the store held ${batch.gone.length} provision(s) the snapshot does not, ` +
+            `and could only say what ${gone.length} of them were`,
+        );
+      }
+      removed += batch.gone.length;
       for (const row of gone) {
         feed.push({
           corpusId,
@@ -213,7 +222,10 @@ export async function runSnapshotPipeline(options: {
       commit: revision.commit,
       commitDate: revision.date,
       asOf: revision.date,
-      rowCount: unchanged + changed + removed + added - removed,
+      // The store's size after this cycle is the snapshot's size, and the
+      // snapshot is exactly three things: what the two sides agreed on, what
+      // changed, and what came. The provisions that went are not in it.
+      rowCount: unchanged + changed + added,
       lastRunAt: options.now.toISOString(),
     });
   }

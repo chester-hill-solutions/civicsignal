@@ -15,16 +15,22 @@
  *                       will do, and it has to agree with what the cycle
  *                       already did.
  *
- *   --offsets ROWS      that the index's byte offsets point at the rows it
- *                       says they do. The offsets are the part most likely to
- *                       be subtly wrong, and a wrong offset is a wrong
- *                       provision rather than an error.
+ *   --offsets           that the index's byte offsets point at the rows it
+ *                       says they do, **across the parts**. The offsets are
+ *                       the part most likely to be subtly wrong, and a wrong
+ *                       offset is a wrong provision rather than an error.
+ *
+ *   --manifest          that the snapshot is all there: the parts add up to
+ *                       the size the manifest claims, the count matches the
+ *                       index, and every offset is inside the rows.
  *
  *     bun scripts/check-snapshot.ts --vs-store --index dist/snapshot/<sha>.index.jsonl
  *     bun scripts/check-snapshot.ts --diff old.index.jsonl new.index.jsonl
- *     bun scripts/check-snapshot.ts --offsets dist/snapshot/<sha>.rows.jsonl
+ *     bun scripts/check-snapshot.ts --offsets --manifest dist/snapshot/<sha>.manifest.json
  */
-import { openSync, readFileSync, readSync, closeSync } from 'node:fs';
+import { openSync, readFileSync, readSync, closeSync, statSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import { locate, parseManifest, partStarts } from '../src/ingest/snapshot-format';
 import { query } from './lib/d1-load';
 
 const CORPUS_ID = 'statutes-canada';
@@ -122,12 +128,50 @@ async function main(): Promise<void> {
     for (const id of [...changed, ...gone, ...came].slice(0, 10)) console.log(`  ${id}`);
   }
 
+  if (flag('--manifest')) {
+    const path = arg('--manifest');
+    if (!path) throw new Error('--manifest needs a path');
+    const dir = dirname(path);
+    const manifest = parseManifest(readFileSync(path, 'utf8'), basename(path));
+    const index = readIndex(join(dir, manifest.index.key));
+    // A blank line is skipped by every reader, so an index with one between
+    // every entry works — and is a byte larger per entry, which is exactly the
+    // kind of thing that is invisible until somebody counts.
+    const indexLines = readFileSync(join(dir, manifest.index.key), 'utf8').split('\n');
+    const blanks = indexLines.filter((line) => !line.trim()).length - 1;
+    const rowsOnDisk = manifest.rows.parts.reduce(
+      (sum, part) => sum + statSync(join(dir, part.key)).size,
+      0,
+    );
+    const past = [...index.values()].filter((entry) => entry.off + entry.len > manifest.rows.bytes);
+
+    console.log(
+      `${manifest.rows.parts.length} part(s), ${manifest.rows.bytes} bytes of rows; ` +
+        `on disk ${rowsOnDisk} (${rowsOnDisk === manifest.rows.bytes ? 'the same' : 'DIFFERENT'})`,
+    );
+    console.log(
+      `  ${index.size} index entries, the manifest says ${manifest.index.entries} ` +
+        `(${index.size === manifest.index.entries ? 'the same' : 'DIFFERENT'})`,
+    );
+    console.log(`  ${past.length} entry(s) pointing past the end of the rows`);
+    console.log(
+      `  ${blanks === 0 ? 'no' : blanks} blank line(s) in the index` +
+        (blanks > 0 ? ' — the entries are not the only bytes in the file' : ''),
+    );
+    if (manifest.rows.count !== manifest.index.entries) {
+      console.log('  the manifest disagrees with itself about the count');
+    }
+  }
+
   if (flag('--offsets')) {
-    const rowsPath = arg('--offsets');
-    const indexPath = arg('--index');
-    if (!rowsPath || !indexPath) throw new Error('--offsets needs --offsets and --index');
-    const index = readIndex(indexPath);
-    const fd = openSync(rowsPath, 'r');
+    const path = arg('--manifest');
+    if (!path) throw new Error('--offsets needs --manifest');
+    const dir = dirname(path);
+    const manifest = parseManifest(readFileSync(path, 'utf8'), basename(path));
+    const index = readIndex(join(dir, manifest.index.key));
+    const starts = partStarts(manifest);
+    const parts = manifest.rows.parts.map((part) => openSync(join(dir, part.key), 'r'));
+
     // The buffer is sized to the longest row, not to a guess: the corpus's
     // longest provisions are megabytes long, and a check that skips the rows
     // too long for its buffer is a check that skips the ones most likely to
@@ -138,7 +182,8 @@ async function main(): Promise<void> {
     let wrong = 0;
     const examples: string[] = [];
     for (const [id, entry] of index) {
-      const read = readSync(fd, buffer, 0, entry.len, entry.off);
+      const where = locate(manifest, entry.off);
+      const read = readSync(parts[where.part]!, buffer, 0, entry.len, where.local);
       const line = buffer.subarray(0, read).toString('utf8').trim();
       let row: { id?: string };
       try {
@@ -155,8 +200,8 @@ async function main(): Promise<void> {
       }
       checked++;
     }
-    closeSync(fd);
-    console.log(`${checked} offset(s) checked, ${wrong} wrong`);
+    for (const fd of parts) closeSync(fd);
+    console.log(`${checked} offset(s) checked across ${parts.length} part(s), ${wrong} wrong`);
     for (const example of examples) console.log(`  ${example}`);
   }
 }

@@ -1,0 +1,164 @@
+import { describe, expect, it } from 'vitest';
+import {
+  cutRows,
+  indexLine,
+  locate,
+  parseManifest,
+  partStarts,
+  DEFAULT_PART_BYTES,
+  SNAPSHOT_FORMAT,
+  type SnapshotManifest,
+} from '../src/ingest/snapshot-format';
+
+/**
+ * The snapshot's shape.
+ *
+ * The rows are parts because a single object cannot be published: neither
+ * wrangler nor the Cloudflare API will upload more than 300 MB, and the rows
+ * are 347. That turned out to be a limit rather than a detail — the upload
+ * failed, the bucket kept the index it had already taken, and nothing said so
+ * until something tried to read a row.
+ *
+ * So the format has two jobs, and both of them are about that failure: cutting
+ * the rows without ever splitting one (a row that straddles two parts cannot
+ * be read by a range request, and a range request is the only way rows are
+ * read), and describing them well enough that "is it all there?" has an
+ * answer.
+ */
+function manifestWith(parts: { key: string; bytes: number }[], bytes: number): SnapshotManifest {
+  return {
+    format: SNAPSHOT_FORMAT,
+    commit: 'abc123',
+    date: '2026-10-15',
+    rows: { count: 3, bytes, partBytes: DEFAULT_PART_BYTES, parts },
+    index: { key: 'abc123.index.jsonl', bytes: 100, entries: 3 },
+  };
+}
+
+describe('an index entry', () => {
+  /**
+   * Exactly one newline, because the file is the entries and nothing else.
+   *
+   * The builder joins these with nothing — each line already carries its own
+   * newline. Joining them with a newline *as well* is how the index came to
+   * have a blank line between every entry: two hundred and seventy-seven
+   * thousand of them, a byte each, invisible to every reader because a blank
+   * line is skipped. The index was a megabyte larger than it should have been
+   * and the only thing that noticed was a byte count.
+   */
+  it('is the bytes of the entry, and one newline', () => {
+    const line = indexLine({ id: 'acts-en-100', fp: 'a'.repeat(32), off: 1234, len: 567 });
+
+    expect(line.split('\n')).toHaveLength(2);
+    expect(line.endsWith('\n')).toBe(true);
+    expect(JSON.parse(line)).toEqual({
+      id: 'acts-en-100',
+      fp: 'a'.repeat(32),
+      off: 1234,
+      len: 567,
+    });
+  });
+});
+
+describe('cutting the rows into parts', () => {
+  it('never splits a line', () => {
+    const lines = ['a'.repeat(10) + '\n', 'b'.repeat(10) + '\n', 'c'.repeat(10) + '\n'];
+    const parts = [...cutRows(lines, 25)];
+
+    expect(parts.map((part) => part.lines)).toEqual([
+      [lines[0], lines[1]],
+      [lines[2]],
+    ]);
+    expect(parts.map((part) => part.bytes)).toEqual([22, 11]);
+  });
+
+  it('keeps a line longer than a part in one piece', () => {
+    const huge = 'x'.repeat(100) + '\n';
+    const parts = [...cutRows([huge, 'small\n'], 10)];
+
+    expect(parts).toHaveLength(2);
+    expect(parts[0]!.lines).toEqual([huge]);
+    expect(parts[0]!.bytes).toBe(101);
+  });
+
+  it('cuts nothing when there is nothing', () => {
+    expect([...cutRows([], 10)]).toEqual([]);
+  });
+
+  it('counts bytes, not characters', () => {
+    const accented = 'Éditeur officiel\n';
+    const parts = [...cutRows([accented], 10)];
+    expect(parts[0]!.bytes).toBe(new TextEncoder().encode(accented).length);
+    expect(parts[0]!.bytes).toBe(18);
+  });
+});
+
+describe('the manifest', () => {
+  it('is read when its parts add up', () => {
+    const manifest = manifestWith(
+      [
+        { key: 'abc123.rows.000.jsonl', bytes: 100 },
+        { key: 'abc123.rows.001.jsonl', bytes: 50 },
+      ],
+      150,
+    );
+    expect(parseManifest(JSON.stringify(manifest)).rows.parts).toHaveLength(2);
+  });
+
+  /**
+   * The failure that started this.
+   *
+   * A snapshot whose last part never arrived looks exactly like a snapshot —
+   * until a row is asked for and nothing comes back, which looks exactly like
+   * a provision that is not in the corpus.
+   */
+  it('refuses a snapshot whose parts do not add up', () => {
+    const manifest = manifestWith(
+      [
+        { key: 'abc123.rows.000.jsonl', bytes: 100 },
+        { key: 'abc123.rows.001.jsonl', bytes: 50 },
+      ],
+      364_214_039,
+    );
+    expect(() => parseManifest(JSON.stringify(manifest))).toThrow(/incomplete/);
+  });
+
+  it('refuses a format it does not know', () => {
+    const manifest = { ...manifestWith([{ key: 'p', bytes: 1 }], 1), format: 99 };
+    expect(() => parseManifest(JSON.stringify(manifest))).toThrow(/format 99/);
+  });
+
+  it('refuses a manifest that is not one', () => {
+    expect(() => parseManifest('{"hello":true}')).toThrow(/does not describe a snapshot/);
+    expect(() => parseManifest('not json')).toThrow(/not JSON/);
+  });
+
+  it('refuses a snapshot with no parts', () => {
+    expect(() => parseManifest(JSON.stringify(manifestWith([], 0)))).toThrow(/names no parts/);
+  });
+});
+
+describe('finding a row in the parts', () => {
+  const manifest = manifestWith(
+    [
+      { key: 'abc123.rows.000.jsonl', bytes: 100 },
+      { key: 'abc123.rows.001.jsonl', bytes: 50 },
+      { key: 'abc123.rows.002.jsonl', bytes: 25 },
+    ],
+    175,
+  );
+
+  it('knows where each part begins', () => {
+    expect(partStarts(manifest)).toEqual([0, 100, 150]);
+  });
+
+  it('finds the part, and the offset inside it', () => {
+    expect(locate(manifest, 0)).toEqual({ part: 0, local: 0 });
+    expect(locate(manifest, 99)).toEqual({ part: 0, local: 99 });
+    // The boundaries: the first byte of a part belongs to that part.
+    expect(locate(manifest, 100)).toEqual({ part: 1, local: 0 });
+    expect(locate(manifest, 149)).toEqual({ part: 1, local: 49 });
+    expect(locate(manifest, 150)).toEqual({ part: 2, local: 0 });
+    expect(locate(manifest, 174)).toEqual({ part: 2, local: 24 });
+  });
+});

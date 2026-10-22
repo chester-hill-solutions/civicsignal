@@ -283,7 +283,7 @@ reasoning and the arithmetic are in the handoff.
 
 | | | |
 |---|---|---|
-| **The snapshot** — the corpus as rows, with a fingerprint per row | **R2** privately, **Hugging Face** publicly | The diff is two index files, ~20 MB, compared exactly. The rows are read by byte range. R2 is in the same account, so there is no egress and no third-party rate limit; the corpus is public law, so the row-level artefact is worth publishing. |
+| **The snapshot** — the corpus as rows, with a fingerprint per row | **R2** privately, **Hugging Face** publicly | The diff is the store's fingerprints against the snapshot's index, ~25 MB, merged rather than held. The rows are read by byte range, and are **parts** because a single object cannot be published (the 300 MB ceiling on both wrangler and the API). R2 is in the same account, so there is no egress and no third-party rate limit; the corpus is public law, so the row-level artefact is worth publishing. |
 | **The serving rows** — what the API reads, licence-gated | **D1** | The licence gate reads the canonical row and its policy, and the citation path resolves against it. The lexical arm's `LIKE` is going away with `search_text`; what remains is point reads, citations and the gate. |
 | **The vectors** | **Vectorize** | $1.55/month at 1,000 queries, $0.0077 per 1,000 more, free when idle. The crossover with a keep-warm container is ~3.3M queries/month. The snapshot carries the vectors as an *export*, so the rebuild is a copy — ownership without giving up a free-when-idle index. |
 | **The model** | **EmbeddingGemma 2**, in a container | The browser and the server share one vector space, by construction rather than approximately. |

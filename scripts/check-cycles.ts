@@ -265,6 +265,32 @@ async function main(): Promise<void> {
         : `${differing.length} row(s) differ, first: ${differing.slice(0, 3).join(', ')}`,
   });
 
+  // The date is **not** in the fingerprint — deliberately, because it is not
+  // something a provision *is* — so a snapshot built with the wrong date
+  // would pass every check above and still put the wrong date on every row it
+  // wrote. It did: the builder used the first ten characters of the commit
+  // sha, and every provision in the store would have carried a date of
+  // `0507465393`.
+  const wrongDate = fileIds.filter((id) => {
+    const a = fileStore.written.get(id);
+    const b = snapshotStore.written.get(id);
+    return !a || !b || a.lastChanged !== b.lastChanged;
+  });
+  checks.push({
+    name: 'the rows\' dates',
+    ok: wrongDate.length === 0,
+    detail:
+      wrongDate.length === 0
+        ? `every row says ${fileStore.written.get(fileIds[0]!)?.lastChanged ?? '—'}`
+        : `${wrongDate.length} row(s) disagree, first: ${wrongDate
+            .slice(0, 3)
+            .map(
+              (id) =>
+                `${id} (${fileStore.written.get(id)?.lastChanged} / ${snapshotStore.written.get(id)?.lastChanged})`,
+            )
+            .join(', ')}`,
+  });
+
   const fileDocs = [...fileEncoder.documents].sort();
   const snapshotDocs = [...snapshotEncoder.documents].sort();
   checks.push({

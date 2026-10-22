@@ -2,16 +2,27 @@
  * The corpus, as a snapshot in a bucket.
  *
  * The counterpart to `GitHubCorpusSource`: instead of a revision and a
- * tarball, a snapshot is an **index** and a **rows file**, and the index says
- * where every row is.
+ * tarball, a snapshot is a **manifest**, an **index** and the **rows** — and
+ * the index says where every row is.
  *
- * The index is read whole — about twenty-five megabytes, and it is the diff.
- * The rows are read a few at a time, by byte range, using the offsets in the
- * index — so nothing ever reads the whole file.
+ * The manifest is small and is read first: it says how many provisions there
+ * are, how many bytes of rows, and which parts they are in. The index is read
+ * as a stream — about twenty-five megabytes, and it is the diff. The rows are
+ * read a few at a time, by byte range, using the offsets in the index — so
+ * nothing ever reads the whole file.
  *
  * This is what lets the pipeline fill a gap of any size: the store's
  * fingerprints against this index, and then only the provisions that moved
  * are fetched.
+ *
+ * ## Why the rows are parts
+ *
+ * Because a single object cannot be published. Neither wrangler nor the
+ * Cloudflare API will upload more than 300 MB in one object, and the corpus's
+ * rows are three hundred and forty-seven. The offsets in the index stay
+ * **global**, so the parts are a publishing detail: a reader works out which
+ * part holds a row and reads that part, and never knows how the snapshot was
+ * cut up.
  *
  * ## Why the ranges are merged
  *
@@ -38,6 +49,13 @@
  */
 import type { PipelineRow } from './pipeline';
 import type { SnapshotIndexEntry } from './snapshot-diff';
+import {
+  locate,
+  manifestKey,
+  parseManifest,
+  partStarts,
+  type SnapshotManifest,
+} from './snapshot-format';
 
 /** What a bucket's object has to do for this to read it. */
 export interface SnapshotObject {
@@ -59,6 +77,8 @@ export interface SnapshotBucket {
 export interface SnapshotSource {
   /** The revision the snapshot is at. */
   readonly revision: string;
+  /** What the snapshot is, and where all of it is. */
+  manifest(): Promise<SnapshotManifest>;
   /** The index: every provision's fingerprint and where its row is. */
   index(): Promise<Map<string, SnapshotIndexEntry>>;
   /** The index, one entry at a time, in the order the file has them. */
@@ -104,6 +124,10 @@ export interface RowRange {
  * The rows are taken in offset order, and a row joins the current range when
  * the gap before it is small and the range would stay under the ceiling.
  * Everything else starts a new range.
+ *
+ * The entries handed to this are all in the same part, so a range cannot
+ * cross a part boundary — which matters, because a range is read out of one
+ * object.
  */
 export function mergeRanges(entries: readonly SnapshotIndexEntry[]): RowRange[] {
   const sorted = [...entries].sort((a, b) => a.off - b.off);
@@ -144,16 +168,6 @@ async function mapWithLimit<T, R>(
   });
   await Promise.all(workers);
   return results;
-}
-
-/** The rows file's key, for a revision. */
-export function rowsKey(revision: string): string {
-  return `${revision}.rows.jsonl`;
-}
-
-/** The index file's key, for a revision. */
-export function indexKey(revision: string): string {
-  return `${revision}.index.jsonl`;
 }
 
 /** The chunks of a stream, as an async iterable. */
@@ -211,10 +225,23 @@ export async function* linesOf(chunks: AsyncIterable<Uint8Array>): AsyncGenerato
  * the point of the bucket being an interface rather than R2 itself.
  */
 export class SnapshotReader implements SnapshotSource {
+  private cached: Promise<SnapshotManifest> | null = null;
+
   constructor(
     private readonly bucket: SnapshotBucket,
     readonly revision: string,
   ) {}
+
+  /** What the snapshot is, and where all of it is. */
+  async manifest(): Promise<SnapshotManifest> {
+    this.cached ??= (async () => {
+      const object = await this.bucket.get(manifestKey(this.revision));
+      if (!object) throw new Error(`the snapshot at ${this.revision} has no manifest`);
+      const text = new TextDecoder().decode(await object.arrayBuffer());
+      return parseManifest(text, `the manifest of ${this.revision}`);
+    })();
+    return this.cached;
+  }
 
   /** The index: every provision's fingerprint and where its row is. */
   async index(): Promise<Map<string, SnapshotIndexEntry>> {
@@ -236,15 +263,24 @@ export class SnapshotReader implements SnapshotSource {
    * ASCII, so D1's `ORDER BY id` and JavaScript's `<` agree on the order.
    */
   async *indexEntries(): AsyncGenerator<SnapshotIndexEntry> {
-    const object = await this.bucket.get(indexKey(this.revision));
+    const manifest = await this.manifest();
+    const object = await this.bucket.get(manifest.index.key);
     if (!object) throw new Error(`the snapshot at ${this.revision} has no index`);
-    const chunks = object.body
-      ? chunksOf(object.body)
-      : single(await object.arrayBuffer());
+    const chunks = object.body ? chunksOf(object.body) : single(await object.arrayBuffer());
     for await (const line of linesOf(chunks)) {
       if (!line.trim()) continue;
       yield JSON.parse(line) as SnapshotIndexEntry;
     }
+  }
+
+  /** The bytes of one row, out of the part that holds it. */
+  private async bytesOf(manifest: SnapshotManifest, offset: number, length: number) {
+    const { part, local } = locate(manifest, offset);
+    const object = await this.bucket.get(manifest.rows.parts[part]!.key, {
+      range: { offset: local, length },
+    });
+    if (!object) return null;
+    return new Uint8Array(await object.arrayBuffer());
   }
 
   /**
@@ -254,34 +290,46 @@ export class SnapshotReader implements SnapshotSource {
    * the index's, so the bytes it fetches are exactly the bytes it needs.
    */
   async row(_id: string, entry: SnapshotIndexEntry): Promise<PipelineRow | null> {
-    const object = await this.bucket.get(rowsKey(this.revision), {
-      range: { offset: entry.off, length: entry.len },
-    });
-    if (!object) return null;
-    const text = new TextDecoder().decode(await object.arrayBuffer()).trim();
+    const manifest = await this.manifest();
+    const bytes = await this.bytesOf(manifest, entry.off, entry.len);
+    if (!bytes) return null;
+    const text = new TextDecoder().decode(bytes).trim();
     if (!text) return null;
     return JSON.parse(text) as PipelineRow;
   }
 
   /**
-   * Several rows, in the order they are given.
+   * Several rows, in the order their entries are given.
    *
-   * The rows are fetched by merged range and cut out by byte, so a hundred
-   * adjacent provisions are one request rather than a hundred — and an id the
-   * index does not have is skipped rather than failing the whole batch.
-   *
-   * It takes the index **entries** rather than ids, because the caller that
-   * needs this most is the cycle, and the cycle has the entries already: it
-   * is reading the index as a stream and never holds the map they would have
-   * to be looked up in.
+   * The rows are grouped by part and fetched by merged range, so a hundred
+   * adjacent provisions are one request rather than a hundred — and an entry
+   * with no bytes behind it is skipped rather than failing the whole batch.
+   * (The cycle counts what came back against what it asked for, so a skip is
+   * not silent.)
    */
   async rows(entries: readonly SnapshotIndexEntry[]): Promise<PipelineRow[]> {
     if (entries.length === 0) return [];
+    const manifest = await this.manifest();
+    const starts = partStarts(manifest);
+
+    // Grouped by part, because a range is read out of one object and a
+    // request cannot span two.
+    const byPart = new Map<number, SnapshotIndexEntry[]>();
+    for (const entry of entries) {
+      const { part } = locate(manifest, entry.off);
+      const list = byPart.get(part);
+      if (list) list.push(entry);
+      else byPart.set(part, [entry]);
+    }
+
+    const jobs = [...byPart].flatMap(([part, list]) =>
+      mergeRanges(list).map((range) => ({ part, range })),
+    );
 
     const found = new Map<string, PipelineRow>();
-    await mapWithLimit(mergeRanges(entries), READ_CONCURRENCY, async (range) => {
-      const object = await this.bucket.get(rowsKey(this.revision), {
-        range: { offset: range.offset, length: range.length },
+    await mapWithLimit(jobs, READ_CONCURRENCY, async ({ part, range }) => {
+      const object = await this.bucket.get(manifest.rows.parts[part]!.key, {
+        range: { offset: range.offset - starts[part]!, length: range.length },
       });
       if (!object) return;
       // The bytes, not the text: the offsets are byte offsets.

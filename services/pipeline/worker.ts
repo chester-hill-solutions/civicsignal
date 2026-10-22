@@ -12,30 +12,53 @@
  *
  *   1. ask the corpus repository what revision it is at
  *   2. if that is the revision the store is already at, stop
- *   3. stream the instruments at that revision and parse each one
- *   4. reconcile against the store, embed what changed, write it
+ *   3. reconcile the store against that revision, and write what changed
  *
  * The common case is step 2. The corpus repository moves every three to eight
  * days, so almost every invocation finds nothing to do and costs one request.
  *
- * ## Why the streamed cycle
+ * ## Two ways to reconcile, and why there are two
  *
- * The corpus is 277,857 provisions — several hundred megabytes of statute
- * text. `runPipeline` holds all of it at once, which a Railway service can do
- * and a Worker cannot: a Worker has 128 MB. So the cycle here is the streamed
- * one, which reconciles as the rows pass and holds only the store's
- * fingerprints and one batch of changed rows.
+ * **The snapshot**, when one has been published for that revision. The store
+ * holds a fingerprint for every provision it has; the snapshot's index holds
+ * a fingerprint for every provision the corpus has. Comparing them is the
+ * whole reconciliation, and the gap between the store's revision and the head
+ * is not a number of commits — it is not a number of anything. That is the
+ * one to use.
+ *
+ * **The files**, when no snapshot has been published. GitHub says which files
+ * differ between two revisions, and the cycle fetches those. It is cheap and
+ * it has a ceiling: the compare endpoint names at most three hundred files,
+ * and it does not say when it has stopped early — so a store that has fallen
+ * behind cannot catch up, and the cycle refuses rather than pretending.
+ *
+ * The fallback exists because the snapshot is built by a job of its own, and
+ * a pipeline that stops working whenever that job is a revision behind is
+ * worse than one that says which path it took.
  */
 import { D1CorpusStore } from '../../src/corpora/d1-store';
 import { CORPUS_ID } from '../../src/ingest/corpus-rows';
 import { httpEncoder } from '../../src/ingest/encoder-client';
 import { runIncrementalPipeline } from '../../src/ingest/incremental-pipeline';
+import { runSnapshotPipeline } from '../../src/ingest/snapshot-pipeline';
+import { SnapshotReader } from '../../src/ingest/snapshot-source';
+import { manifestKey } from '../../src/ingest/snapshot-format';
 import { GitHubCorpusSource } from '../../src/ingest/source';
 
 interface Env {
   /** The corpus: the rows in D1, the vectors in Vectorize. */
   CIVIC_DB: D1Database;
   VECTORIZE: Vectorize;
+  /**
+   * The corpus's snapshots: the rows and the index, one file per revision,
+   * named for the corpus commit.
+   *
+   * This is what the cycle diffs against when it can. The other cycle asks
+   * GitHub which files changed, and GitHub names at most three hundred of
+   * them — so a store that has fallen behind cannot catch up. A snapshot has
+   * no such ceiling: the comparison is over provisions.
+   */
+  CORPUS: R2Bucket;
   /** The encoder, called directly. */
   ENCODER_SERVICE: { fetch(request: Request): Promise<Response> };
   /** The shared secret the encoder checks. */
@@ -126,15 +149,26 @@ interface CycleSummary {
   at: string;
   /** True when the store was already at that revision. */
   nothing?: boolean;
+  /** Which reconciliation ran, and why it matters which. */
+  cycle?: 'snapshot' | 'files';
   counts?: { added: number; changed: number; removed: number; unchanged: number };
   embedded?: number;
   durationMs?: number;
+  /** True when the cycle stopped on its budget with the store still behind. */
+  remaining?: boolean;
 }
 
 async function cycle(env: Env): Promise<CycleSummary> {
   const log = (line: string) => console.log(`${new Date().toISOString()}  ${line}`);
   const source = new GitHubCorpusSource({ token: env.GITHUB_TOKEN || undefined });
   const store = new D1CorpusStore(env.CIVIC_DB, env.VECTORIZE, CORPUS_ID);
+  const encoder = httpEncoder({
+    // The service binding, not an address: a Worker cannot fetch a
+    // `workers.dev` address on this account — it answers `1042`.
+    url: 'https://encoder',
+    token: env.ENCODER_TOKEN,
+    send: (request) => env.ENCODER_SERVICE.fetch(request),
+  });
 
   const head = await source.head();
   const state = await store.currentCommit(CORPUS_ID);
@@ -144,28 +178,89 @@ async function cycle(env: Env): Promise<CycleSummary> {
   }
   log(`the corpus is at ${head.commit.slice(0, 9)} (${head.date})`);
 
-  if (!state) {
-    // **The store has to know what it is at.**
-    //
-    // The incremental cycle works by comparing the changed files at the head
-    // with the same files at the revision the store holds — so without that
-    // revision there is no "before" to compare with, and the removals would
-    // be invisible. A store that has never been through a cycle has to be
-    // brought up to date by hand first.
-    throw new Error(
-      `${CORPUS_ID} has no revision recorded in corpus_state. ` +
-        `Run \`bun scripts/backfill-fingerprints.ts\` to prepare the store before the pipeline writes to it.`,
-    );
+  await assertFingerprinted(env);
+
+  // **The snapshot, if there is one.**
+  //
+  // It is the path that can fill a gap of any size, and it needs nothing from
+  // the store except its fingerprints — so it also works on a store that has
+  // never been through a cycle, which the file path cannot.
+  const snapshot = await env.CORPUS.head(manifestKey(head.commit));
+  if (snapshot) {
+    log(`the snapshot at ${head.commit.slice(0, 9)} is published — diffing against its index`);
+    const run = await runSnapshotPipeline({
+      corpusId: CORPUS_ID,
+      revision: { commit: head.commit, date: head.date },
+      source: new SnapshotReader(env.CORPUS, head.commit),
+      store,
+      encoder,
+      now: new Date(),
+      logger: log,
+    });
+    return {
+      ok: true,
+      at: head.commit,
+      cycle: 'snapshot',
+      counts: run.counts,
+      embedded: run.embedded,
+      durationMs: run.durationMs,
+      remaining: run.remaining,
+    };
   }
 
-  // **The store has to be prepared.**
+  // **The files, when there is not.**
   //
-  // The reconciliation is by fingerprint, and a row without one reads as "this
-  // row has never been seen" — so a store whose fingerprints were never filled
-  // in would say that the whole corpus is new, and the cycle would re-embed
-  // all 277,857 of them. That is an expensive mistake to make by accident, so
-  // it is made on purpose instead: the count is asked for first, and a store
-  // that is not ready stops the cycle with a message that says what to run.
+  // The file cycle compares two revisions, so it needs to know which one the
+  // store is at — and a store that has never been through a cycle does not
+  // know, which is why that is an error here rather than a guess.
+  if (!state) {
+    throw new Error(
+      `${CORPUS_ID} has no revision recorded in corpus_state, and there is no snapshot ` +
+        `at ${head.commit.slice(0, 9)} to reconcile against. Run ` +
+        `\`bun scripts/backfill-fingerprints.ts\` to prepare the store, or publish a snapshot.`,
+    );
+  }
+  log(`no snapshot at ${head.commit.slice(0, 9)} — the file cycle, which GitHub caps at 300 files`);
+
+  const run = await runIncrementalPipeline({
+    corpusId: CORPUS_ID,
+    previous: {
+      commit: state.commit,
+      date: state.commitDate,
+      rowCount: state.rowCount,
+    },
+    next: { commit: head.commit, date: head.date },
+    source,
+    store,
+    encoder,
+    now: new Date(),
+    logger: log,
+  });
+
+  const provisions = run.counts.added + run.counts.changed + run.counts.unchanged;
+  log(`  ${provisions} provision(s) in the changed file(s)`);
+  return {
+    ok: true,
+    at: head.commit,
+    cycle: 'files',
+    counts: run.counts,
+    embedded: run.embedded,
+    durationMs: run.durationMs,
+  };
+}
+
+/**
+ * The store has to be prepared.
+ *
+ * Both reconciliations are by fingerprint, and a row without one reads as
+ * "this row has never been seen" — so a store whose fingerprints were never
+ * filled in would say that the whole corpus is new, and the cycle would
+ * re-embed all 277,857 of them. That is an expensive mistake to make by
+ * accident, so it is made on purpose instead: the count is asked for first,
+ * and a store that is not ready stops the cycle with a message that says what
+ * to run.
+ */
+async function assertFingerprinted(env: Env): Promise<void> {
   const counts = await env.CIVIC_DB.prepare(
     `SELECT COUNT(*) AS total,
             SUM(CASE WHEN text_hash IS NULL THEN 1 ELSE 0 END) AS unhashed
@@ -181,35 +276,4 @@ async function cycle(env: Env): Promise<CycleSummary> {
         `Run \`bun scripts/backfill-fingerprints.ts\` before the pipeline writes to this store.`,
     );
   }
-
-  const run = await runIncrementalPipeline({
-    corpusId: CORPUS_ID,
-    previous: {
-      commit: state.commit,
-      date: state.commitDate,
-      rowCount: state.rowCount,
-    },
-    next: { commit: head.commit, date: head.date },
-    source,
-    store,
-    encoder: httpEncoder({
-      // The service binding, not an address: a Worker cannot fetch a
-      // `workers.dev` address on this account — it answers `1042`.
-      url: 'https://encoder',
-      token: env.ENCODER_TOKEN,
-      send: (request) => env.ENCODER_SERVICE.fetch(request),
-    }),
-    now: new Date(),
-    logger: log,
-  });
-
-  const provisions = run.counts.added + run.counts.changed + run.counts.unchanged;
-  log(`  ${provisions} provision(s) in the changed file(s)`);
-  return {
-    ok: true,
-    at: head.commit,
-    counts: run.counts,
-    embedded: run.embedded,
-    durationMs: run.durationMs,
-  };
 }

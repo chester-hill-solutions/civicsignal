@@ -21,20 +21,22 @@ is the same artifact whether it is kept private or published.
 
 ## The format
 
-One revision is one pair of files, named for the corpus commit they are at:
+One revision is a set of files, named for the corpus commit they are at:
 
 ```
-<commit>.rows.jsonl     the rows, one JSON object per line, sorted by id
-<commit>.index.jsonl    id, fingerprint, offset and length of each row
+<commit>.manifest.json     what it is: the count, the size, the parts
+<commit>.index.jsonl       id, fingerprint, offset and length of each row
+<commit>.rows.000.jsonl     the rows, one JSON object per line, sorted by id
+<commit>.rows.001.jsonl     ...and so on, cut on line boundaries
 ```
 
 The **index** is the diff. Two index files, compared, give: the ids that
 changed (the fingerprints differ), the ids that went (present in the old one,
-absent from the new) and the ids that came (the reverse). It is about 20 MB
+absent from the new) and the ids that came (the reverse). It is about 25 MB
 for the whole corpus — small enough to read in full on every cycle, which is
 what makes the diff cheap and exact rather than approximate.
 
-The **rows** file is read only in pieces. The index carries each row's byte
+The **rows** are read only in pieces. The index carries each row's byte
 offset and length, so a changed row is one HTTP range request. Nothing ever
 reads the whole file.
 
@@ -42,6 +44,36 @@ The files are plain JSON and plain HTTP. There is no columnar format and no
 compression, because both of those are answered by a question this format does
 not need to answer: the index is what gets read in bulk, and the rows are
 read a few at a time.
+
+### Why the rows are parts
+
+Because a single object cannot be published. Neither wrangler nor the
+Cloudflare API will upload more than **300 MB** in one object, and the rows are
+**347 MB**. That was discovered the way these things are: the rows were
+uploaded by hand, the upload could not work, and the bucket was left holding
+an index with nothing behind it. Nothing said so — a missing object is not an
+error until something reads it, and by then the cycle is failing in production
+with a message about a provision its index names and a row that is not there.
+
+The offsets in the index are **global** — the byte offset of a row in the
+snapshot, as if it were one file — so the part size is a publishing detail and
+nothing else. A reader works out which part holds a row and where it is inside
+it, and never knows how the snapshot was cut up. The cuts are always on line
+boundaries: a row that straddled two parts could not be read by a range
+request, and a range request is the only way rows are read.
+
+### Why there is a manifest
+
+Because "is it all there?" has to be a question with an answer. The manifest
+states the count, the total size of the rows, the part size, and every part's
+size — so a snapshot whose last part never arrived is a snapshot that
+**refuses to be read** rather than one that quietly reports a provision as
+missing.
+
+It is also what makes publishing safe: the parts go up first, then the index,
+and the manifest **last**, because the manifest is what announces a snapshot.
+An announced snapshot that is not complete is the failure the manifest exists
+to prevent.
 
 ## Where it lives
 
@@ -95,18 +127,96 @@ The cycle becomes:
 
 1. read the corpus's head revision (one request);
 2. if the store is at it, stop;
-3. read the new revision's index (about 20 MB) and the old revision's index;
-4. diff them — changed, gone, come;
-5. fetch only the changed rows, by range request;
+3. stream the head's index, and page the store's own fingerprints;
+4. merge the two — changed, gone, come, and how many agreed;
+5. fetch only the rows that moved, by range request;
 6. embed and write them, and remove the ones that went.
 
 No XML parsing, no file-level diff, no 300-file ceiling, and no tarball. The
 CPU cost of a cycle falls from about a hundred and sixty seconds to a few.
 
 The removal detection gets simpler too. Today the changed file is fetched at
-*both* revisions to find the provisions that went; with the index, the gone
-ones are simply the ids in the old index and not in the new one, and the
-store's own rows are not consulted at all.
+*both* revisions to find the provisions that went; with the fingerprints, the
+gone ones are simply the ids the store has and the snapshot does not, and the
+store's own rows are read only to say what the removed provision *was*.
+
+### Neither index is held
+
+Both sides of the diff are in **id order** — the index is written in the order
+the rows are in, and D1 pages its fingerprints `WHERE id > ? ORDER BY id` — so
+the diff is a **merge of two cursors**, not a comparison of two maps. That is
+not an optimisation. Measured on the real corpus:
+
+| | |
+|---|---|
+| the index as a `Map` | 80.6 MB |
+| the store's fingerprints as a `Map` | 32.5 MB |
+| **both, before a row is read** | **137.3 MB** |
+| a Worker's memory | 128 MB |
+
+So the index is read a line at a time through a streaming decoder, the
+fingerprints a thousand at a time, and what is in memory is the batch being
+written.
+
+The byte handling matters for the same reason it does in the rows: half the
+corpus is French. A row is cut out of a merged range by **byte**, and a line
+is split out of a stream with the decoder left in streaming mode — otherwise a
+chunk boundary in the middle of an accent turns it into two replacement
+characters, and an id that was never in the corpus.
+
+### The gap can be larger than one invocation
+
+A store a year behind is two hundred thousand provisions to fetch, embed and
+write, and one cycle cannot do that — the encoder alone would take hours. So a
+cycle writes a bounded number and stops.
+
+Nothing has to be remembered for the next one to continue, and that is the
+part worth stating: **the fingerprints are the progress**. A provision that
+has been written no longer differs from the snapshot, so the next diff does
+not mention it. A cycle that dies half way leaves the store consistent and
+simply resumes.
+
+The state — the revision the store is at — is advanced only when the diff has
+been exhausted. Until then the store is at *no* revision: it is part of the
+way from one to another, which is exactly what its fingerprints say. A cycle
+that claimed a revision it had not reached would make the next one skip the
+rest of the gap.
+
+## Checking a snapshot
+
+A snapshot is only worth what its checks are, because a wrong offset is a
+wrong provision rather than an error. Three of them, and all three are
+independent:
+
+```
+bun scripts/check-snapshot.ts --manifest dist/snapshot/<sha>.manifest.json
+bun scripts/check-snapshot.ts --offsets  --manifest dist/snapshot/<sha>.manifest.json
+bun scripts/check-snapshot.ts --vs-store --index    dist/snapshot/<sha>.index.jsonl
+```
+
+`--manifest` is "is it all there": the parts add up to the size the manifest
+claims, the count matches the index, every offset is inside the rows, and the
+index is the entries and nothing else. `--offsets` reads every entry's bytes
+out of the part that holds it and checks that the row it gets back is the row
+the index named — 277,857 of them, across six parts. `--vs-store` compares the
+index's fingerprints against the store's, row for row, because if those differ
+then the diff is comparing two different corpora and nothing downstream means
+anything.
+
+And a fourth, which checks the thing the first three cannot:
+
+```
+bun scripts/check-cycles.ts --from <parent> --to <head>
+```
+
+Both reconciliations — the file cycle and the snapshot cycle — run against the
+same real corpus change, and what they did is compared: the counts, the ids
+written, each written row's fingerprint, **the rows' dates**, the documents
+handed to the encoder, the removals, and the state left behind. The date is
+compared separately because it is deliberately not part of a fingerprint, so a
+snapshot built with the wrong date passes every other check and still puts the
+wrong date on every row it writes. It did: the builder used the first ten
+characters of the commit sha.
 
 ## The invariant that matters
 
