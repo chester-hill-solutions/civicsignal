@@ -82,6 +82,9 @@ function tree(rev: string): string {
   return root;
 }
 
+/** Bytes, as megabytes. */
+const mb = (bytes: number) => `${(bytes / 1048576).toFixed(1)} MB`;
+
 /**
  * The revision's date.
  *
@@ -105,15 +108,22 @@ function dateOf(rev: string): string {
   return date;
 }
 
-/** The instrument files, in a stable order. */
-function instrumentFiles(root: string): { path: string; content: string }[] {
+/**
+ * The instrument files, one at a time, in a stable order.
+ *
+ * A generator, not an array: the corpus is 878 MB of XML across eleven
+ * thousand files, and reading them all before parsing any of them is how this
+ * script held more memory than it needed to and more than a Worker has. The
+ * listing is read first — twelve thousand names is nothing — and each file is
+ * read as it is yielded.
+ */
+function* instrumentFiles(root: string): Generator<{ path: string; content: string }> {
   const dirs = [
     ['eng/acts', 'acts'],
     ['eng/regulations', 'regulations'],
     ['fra/lois', 'acts'],
     ['fra/reglements', 'regulations'],
   ] as const;
-  const out: { path: string; content: string }[] = [];
   for (const [dir] of dirs) {
     const path = join(root, dir);
     let names: string[];
@@ -125,13 +135,9 @@ function instrumentFiles(root: string): { path: string; content: string }[] {
     for (const name of names.sort()) {
       if (!name.endsWith('.xml')) continue;
       const file = join(path, name);
-      out.push({
-        path: `${dir}/${name}`,
-        content: readFileSync(file, 'utf8'),
-      });
+      yield { path: `${dir}/${name}`, content: readFileSync(file, 'utf8') };
     }
   }
-  return out;
 }
 
 async function main(): Promise<void> {
@@ -143,64 +149,95 @@ async function main(): Promise<void> {
 
   const date = dateOf(rev);
   const root = tree(rev);
-  const files = instrumentFiles(root);
-  console.log(`${files.length} instrument file(s) in ${root}, at ${rev.slice(0, 9)} (${date})`);
+  const names = [...instrumentFiles(root)].length;
+  console.log(`${names} instrument file(s) in ${root}, at ${rev.slice(0, 9)} (${date})`);
 
-  // The rows, keyed by id.
+  // **The rows are written in file order, and only the index is sorted.**
   //
-  // A row can appear in more than one file — a schedule's items carry the
-  // instrument's rows too — and the id is the corpus's own identifier for a
-  // provision, so the last one wins and the count tells us if that happened.
-  const rows = new Map<string, unknown>();
-  for (const file of files) {
-    for (const row of rowsForFile({
-      path: file.path,
-      content: file.content,
-      date,
-      corpusId: CORPUS_ID,
-    })) {
-      rows.set(row.id, row);
-    }
-  }
-  console.log(`${rows.size} row(s)`);
-
-  // The rows, sorted by id, and the index that points at them.
+  // The rows used to be collected into a Map, sorted by id, and written — 360
+  // MB of rows held at once, plus the 347 MB string they were joined into.
+  // That is not an optimisation to be tidier about; it is the difference
+  // between a job that can run in a Worker and one that cannot, and it is why
+  // the snapshot builder was a script with a clone.
   //
-  // The two are written in one pass: the index is what says where each row
-  // is, so the offsets come from the pass that writes them, and there is no
-  // way for the two to disagree about a row's position.
-  const ids = [...rows.keys()].sort();
+  // It works because **the reader finds a row by its byte offset** and does
+  // not care what order the rows are in: `mergeRanges` sorts the ranges it is
+  // given. The order that matters is the *index's*, because the diff is a
+  // merge of the index against the store's fingerprints, which D1 pages
+  // `ORDER BY id`.
+  //
+  // So the index lines are held (26 MB, not 347), and sorting them is a plain
+  // lexicographic sort: every line begins `{"id":"`, so comparing the lines
+  // compares the ids — a shorter id that is a prefix of a longer one ends in
+  // `"` (0x22) where the longer one has a letter, and sorts first, exactly as
+  // the ids themselves do.
+  //
+  // The one thing the sort has to handle is **duplicates**: a provision can
+  // appear in more than one file (a schedule's items carry the instrument's
+  // rows too), and the rule is that the last one wins. The sort is stable, so
+  // duplicates land adjacent in file order and the last of each run is the one
+  // kept — which is what the Map used to do, without the Map. The rows file
+  // keeps the duplicates as unreachable bytes: the index points at one of
+  // them, and the other is read by nothing.
   const indexPath = join(out, indexKey(rev));
+  const indexLines: string[] = [];
+  const indexIds: string[] = [];
   let offset = 0;
-  const index: string[] = [];
 
   function* rowLines(): Generator<string> {
-    for (const id of ids) {
-      const row = rows.get(id);
-      const line = `${JSON.stringify(row)}\n`;
-      const bytes = Buffer.byteLength(line);
-      index.push(indexLine({ id, fp: fingerprint(row as never), off: offset, len: bytes }));
-      offset += bytes;
-      yield line;
+    for (const file of instrumentFiles(root)) {
+      for (const row of rowsForFile({
+        path: file.path,
+        content: file.content,
+        date,
+        corpusId: CORPUS_ID,
+      })) {
+        const line = `${JSON.stringify(row)}\n`;
+        const bytes = Buffer.byteLength(line);
+        indexIds.push(row.id);
+        indexLines.push(indexLine({ id: row.id, fp: fingerprint(row), off: offset, len: bytes }));
+        offset += bytes;
+        yield line;
+      }
     }
   }
 
   const written = writeParts({ out, commit: rev, lines: rowLines(), partBytes });
-  // `indexLine` carries its own newline — it is "the entry's bytes as the file
-  // holds them" — so the lines are joined with nothing. Joining with a newline
-  // is how the index came to have a blank line between every entry: two
-  // hundred and seventy-seven thousand of them, one byte each, invisible to
-  // every reader because a blank line is skipped.
-  writeFileSync(indexPath, index.join(''));
+  console.log(`${written.count} row(s) in ${written.parts.length} part(s) — ${mb(written.bytes)}`);
+
+  // The sort, and the dedup it makes adjacent.
+  const order = Int32Array.from(indexIds.keys());
+  const sorted = [...order].sort((a, b) => {
+    const left = indexIds[a]!;
+    const right = indexIds[b]!;
+    if (left < right) return -1;
+    if (left > right) return 1;
+    return a - b;
+  });
+  const kept: string[] = [];
+  let dropped = 0;
+  for (let at = 0; at < sorted.length; at++) {
+    const next = sorted[at + 1];
+    if (next !== undefined && indexIds[next] === indexIds[sorted[at]!]) {
+      dropped++;
+      continue;
+    }
+    kept.push(indexLines[sorted[at]!]!);
+  }
+  writeFileSync(indexPath, kept.join(''));
 
   const manifest = manifestFor({ out, commit: rev, date, rows: written, partBytes });
   const manifestPath = writeManifest(out, manifest);
 
-  const mb = (bytes: number) => `${(bytes / 1048576).toFixed(1)} MB`;
-  console.log(`${written.count} row(s) in ${written.parts.length} part(s) — ${mb(written.bytes)}`);
   for (const part of written.parts) console.log(`  ${part.key} — ${mb(part.bytes)}`);
-  console.log(`  ${indexPath} — ${mb(manifest.index.bytes)}`);
+  console.log(`  ${indexPath} — ${mb(manifest.index.bytes)}, ${kept.length} entries`);
   console.log(`  ${manifestPath}`);
+  if (dropped > 0) {
+    console.log(
+      `  ${dropped} duplicate row(s) — a provision that appears in more than one file, ` +
+        `where the last one wins, as it always has`,
+    );
+  }
 }
 
 await main();
