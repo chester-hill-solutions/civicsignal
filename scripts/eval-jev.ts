@@ -29,7 +29,17 @@ if (!KEY) {
 }
 const ENDPOINT = 'https://opencode.ai/inference/systemone/v1/systemone';
 const MODEL = 'jev-1.13';
-const TOPK = Number(process.argv[2] ?? 20);
+const TOPK = Number(process.argv[2] ?? 50);
+/**
+ * How many times each question is asked.
+ *
+ * Jev is not deterministic: the same question, and the same candidates, came
+ * back with the gold answer at ranks 1, 4 and 3 across three runs. So a single
+ * sample cannot set a threshold when the run-to-run movement is a large
+ * fraction of the margin being measured. Repeats give a range per question,
+ * and the decision is made on the worst case rather than the average.
+ */
+const REPEATS = Number(process.argv[3] ?? 3);
 
 interface Row {
   id: string;
@@ -77,14 +87,16 @@ async function ask(
   candidates.forEach((_, at) => {
     questions[`c${at}`] = {
       type: 'noul',
-      instructions:
-        `Does provision c${at} answer the question? Score high if it states the rule the ` +
-        `question asks about, low if it is about a different subject.`,
+      // One factor, phrased as a statement to test. The docs are explicit that
+      // a question weighing two things should be decomposed, and the previous
+      // version of this line was two: "does it answer" and "is it about
+      // something else".
+      instructions: `Provision c${at} states the rule the question asks about.`,
     };
   });
   questions['any_relevant'] = {
     type: 'noul',
-    instructions: 'Does any provision below answer the question?',
+    instructions: 'At least one provision below states the rule the question asks about.',
   };
   const state = [
     ...candidates.map((row, at) => `c${at}: ${excerpt(row)}`),
@@ -111,6 +123,26 @@ async function ask(
 }
 
 const hit = (rank: number | null, k: number) => rank !== null && rank <= k;
+
+/** The same question, several times: a mean to rank by and a range to judge by. */
+async function askRepeated(
+  query: string,
+  candidates: Row[],
+  times: number,
+): Promise<{ relevance: number[]; anyRelevant: number[]; tokens: number }> {
+  const relevance = new Array<number>(candidates.length).fill(0);
+  const anyRelevant: number[] = [];
+  let tokens = 0;
+  for (let run = 0; run < times; run++) {
+    const one = await ask(query, candidates);
+    one.relevance.forEach((value, at) => {
+      relevance[at] += value / times;
+    });
+    anyRelevant.push(one.anyRelevant);
+    tokens += one.tokens;
+  }
+  return { relevance, anyRelevant, tokens };
+}
 
 let vectorAt1 = 0;
 let vectorAt5 = 0;
@@ -141,9 +173,11 @@ for (const question of usable) {
   reachable++;
 
   const vectorRank = Math.min(...goldPositions) + 1;
-  const { relevance, anyRelevant, tokens: used } = await ask(question.question, candidates);
+  const repeated = await askRepeated(question.question, candidates, REPEATS);
+  const { relevance } = repeated;
+  const used = repeated.tokens;
   tokens += used;
-  answerableAnyRelevant.push(anyRelevant);
+  answerableAnyRelevant.push(...repeated.anyRelevant);
 
   const order = candidates
     .map((_, at) => at)
@@ -164,7 +198,8 @@ for (const question of usable) {
   console.log(
     `  ${question.id.padEnd(34)} ${question.style.padEnd(8)} ` +
       `vector ${String(vectorRank).padStart(2)} to jev ${String(jevRank).padStart(2)}` +
-      `   any_relevant ${anyRelevant.toFixed(2)}`,
+      `   any_relevant ${Math.min(...repeated.anyRelevant).toFixed(2)}` +
+      `-${Math.max(...repeated.anyRelevant).toFixed(2)}`,
   );
 }
 
@@ -224,12 +259,15 @@ for (const [at, question] of UNANSWERABLE_QUESTIONS.entries()) {
     (match) => vectorToRow[match.docId] ?? match.docId,
   );
   const candidates = matches.map((rowAt) => rows[rowAt]!);
-  const { relevance, anyRelevant, tokens: used } = await ask(question.question, candidates);
-  tokens += used;
+  const repeated = await askRepeated(question.question, candidates, REPEATS);
+  const { relevance } = repeated;
+  tokens += repeated.tokens;
+  const anyRelevant = Math.max(...repeated.anyRelevant);
+  const anyLow = Math.min(...repeated.anyRelevant);
   const best = Math.max(...relevance);
   highestUnanswered = Math.max(highestUnanswered, anyRelevant);
   console.log(
-    `  ${question.id.padEnd(24)} any_relevant ${anyRelevant.toFixed(2)}  ` +
+    `  ${question.id.padEnd(24)} any_relevant ${anyLow.toFixed(2)}-${anyRelevant.toFixed(2)}  ` +
       `best candidate ${best.toFixed(2)}  (${question.why})`,
   );
 }
@@ -242,7 +280,12 @@ console.log(
     `max ${sorted[sorted.length - 1]!.toFixed(2)}`,
 );
 console.log(
-  `the ${UNANSWERABLE_QUESTIONS.length} unanswerable: at most ${highestUnanswered.toFixed(2)}`,
+  `the ${UNANSWERABLE_QUESTIONS.length} unanswerable: at most ${highestUnanswered.toFixed(2)} ` +
+    `(worst of ${REPEATS} run(s) each)`,
+);
+console.log(
+  `  the answerable floor is the worst single value over ${answerableAnyRelevant.length} ` +
+    `sample(s); the unanswerable ceiling is the best of each question's runs`,
 );
 if (lowestAnswered > highestUnanswered) {
   console.log(
