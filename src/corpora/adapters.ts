@@ -7,7 +7,16 @@ import {
   STATUTES_CANADA,
   STATUTES_ONTARIO,
 } from './policies';
-import { escapeLike, likePatterns, resolveLimit, type Corpus, type CorpusContext, type CorpusQuery } from './types';
+import { normalizeForSearch } from '../text';
+import {
+  escapeLike,
+  likePatterns,
+  resolveLimit,
+  MAX_LIMIT,
+  type Corpus,
+  type CorpusContext,
+  type CorpusQuery,
+} from './types';
 
 /**
  * Corpus adapters.
@@ -175,6 +184,23 @@ export const statutesCorpus: Corpus = {
  * official versions of a provision are separate rows, so a French question
  * that competes with the English rows for a place in the top k gets half the
  * top k back in the wrong language.
+ *
+ * ## The keywords are a constraint, not a question
+ *
+ * A topic and keywords are two different things a caller can say, and they
+ * used to be glued together into the text that gets embedded. That makes the
+ * model rank by *both* at once, and the keywords — which are usually the
+ * caller's own words rather than the statute's — dominate: the question
+ * becomes the words the caller happened to type.
+ *
+ * So the **topic** is embedded, and the keywords **filter the result**: every
+ * keyword has to appear in the provision, folded the way the corpus's own
+ * text is folded (so an unaccented `reglement` finds `règlement`). A few
+ * dozen rows are filtered in memory, with no index and no second search.
+ *
+ * When there is no topic, the keywords *are* the question — there is nothing
+ * else to embed — and they are not also a filter, because filtering a search
+ * by the words it searches for is a no-op that costs a scan.
  */
 async function retrieveByVector(
   query: CorpusQuery,
@@ -182,12 +208,25 @@ async function retrieveByVector(
 ): Promise<RawCorpusItem[] | null> {
   if (!ctx.vector || !ctx.embedQuery) return null;
 
-  const question = [query.topic, ...(query.keywords ?? [])].filter(Boolean).join(' ');
-  if (!question.trim()) return null;
+  const topic = (query.topic ?? '').trim();
+  const keywords = (query.keywords ?? []).map((k) => k.trim()).filter(Boolean);
+  const question = topic || keywords.join(' ');
+  if (!question) return null;
+
+  const limit = resolveLimit(query.limit);
+  const constrained = topic !== '' && keywords.length > 0;
 
   const vector = await ctx.embedQuery(question);
   const filter = query.language ? { language: query.language.toLowerCase() } : undefined;
-  const matches = await ctx.vector.query(vector, resolveLimit(query.limit), filter);
+  // Over-fetch when the result is going to be filtered: the provisions that
+  // match the keywords may not be the ones the embedding ranked first, and a
+  // filter applied to exactly `limit` rows can empty a result the corpus can
+  // answer.
+  const matches = await ctx.vector.query(
+    vector,
+    constrained ? Math.min(limit * 4, MAX_LIMIT) : limit,
+    filter,
+  );
   if (matches.length === 0) return [];
 
   // The index holds no text. The rows come from the database, in the order the
@@ -198,28 +237,43 @@ async function retrieveByVector(
     matches.map((m) => m.id),
   );
   const byId = new Map(rows.map((row) => [String(row['id']), row]));
-  return matches
+  let ordered = matches
     .map((match) => byId.get(match.id))
-    .filter((row): row is Record<string, unknown> => row !== undefined)
-    .map((row) => ({
-      corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),
-      kind: 'statute' as const,
-      id: String(row['id']),
-      title: `${String(row['act'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
-      body: row['text'] === null || row['text'] === undefined ? undefined : String(row['text']),
-      citationUrl: String(row['source_url']),
-      source: STATUTES_CANADA.publisher,
-      jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
-      language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
-      topics: splitTopics(row['topics']),
-      extra: {
-        act: String(row['act']),
-        citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
-        section: String(row['section']),
-        status: row['status'] === null || row['status'] === undefined ? undefined : String(row['status']),
-        inForce: Number(row['in_force']) === 1,
-      },
-    }));
+    .filter((row): row is Record<string, unknown> => row !== undefined);
+
+  if (constrained) {
+    const wanted = keywords.map((keyword) => normalizeForSearch(keyword));
+    ordered = ordered
+      .filter((row) => {
+        const folded = normalizeForSearch(
+          [row['act'], row['section'], row['heading'], row['text']]
+            .filter((part) => part !== null && part !== undefined)
+            .join(' '),
+        );
+        return wanted.every((keyword) => folded.includes(keyword));
+      })
+      .slice(0, limit);
+  }
+
+  return ordered.map((row) => ({
+    corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),
+    kind: 'statute' as const,
+    id: String(row['id']),
+    title: `${String(row['act'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
+    body: row['text'] === null || row['text'] === undefined ? undefined : String(row['text']),
+    citationUrl: String(row['source_url']),
+    source: STATUTES_CANADA.publisher,
+    jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
+    language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
+    topics: splitTopics(row['topics']),
+    extra: {
+      act: String(row['act']),
+      citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
+      section: String(row['section']),
+      status: row['status'] === null || row['status'] === undefined ? undefined : String(row['status']),
+      inForce: Number(row['in_force']) === 1,
+    },
+  }));
 }
 
 /**

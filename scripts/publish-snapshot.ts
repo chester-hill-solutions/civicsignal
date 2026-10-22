@@ -27,11 +27,16 @@
  *
  *     bun scripts/publish-snapshot.ts --commit 0507465
  *     bun scripts/publish-snapshot.ts --commit 0507465 --dir dist/snapshot
+ *     bun scripts/publish-snapshot.ts --commit 0507465 --vectors
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseManifest } from '../src/ingest/snapshot-format';
+import {
+  parseManifest,
+  parseVectorsManifest,
+  vectorsManifestKey,
+} from '../src/ingest/snapshot-format';
 import { token } from './lib/cloudflare-auth';
 
 const BUCKET = 'civicsignal-corpus';
@@ -41,6 +46,9 @@ const args = process.argv.slice(2);
 function arg(flag: string): string | undefined {
   const index = args.indexOf(flag);
   return index === -1 ? undefined : args[index + 1];
+}
+function flag(name: string): boolean {
+  return args.includes(name);
 }
 
 const commit = arg('--commit');
@@ -76,6 +84,29 @@ async function head(key: string): Promise<{ size: number } | null> {
   if (!body.success) throw new Error(`the bucket could not be asked about ${key}`);
   const found = body.result?.find((object) => object.key === key);
   return found ? { size: found.size } : null;
+}
+
+/** Every object under a prefix, with its size. */
+async function listing(prefix: string): Promise<Map<string, number>> {
+  const sizes = new Map<string, number>();
+  let cursor = '';
+  for (;;) {
+    const url =
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/r2/buckets/${BUCKET}/objects` +
+      `?prefix=${encodeURIComponent(prefix)}&per_page=1000` +
+      (cursor ? `&cursor=${encodeURIComponent(cursor)}` : '');
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${token()}` } });
+    if (!response.ok) throw new Error(`the bucket could not be listed: HTTP ${response.status}`);
+    const body = (await response.json()) as {
+      success: boolean;
+      result?: { key: string; size: number }[];
+      result_info?: { is_truncated: boolean; cursor: string };
+    };
+    if (!body.success) throw new Error('the bucket could not be listed');
+    for (const object of body.result ?? []) sizes.set(object.key, object.size);
+    if (!body.result_info?.is_truncated) return sizes;
+    cursor = body.result_info.cursor;
+  }
 }
 
 /**
@@ -192,6 +223,34 @@ async function main(): Promise<void> {
   for (const part of manifest.rows.parts) await put(part.key, join(dir, part.key), true);
   await put(manifest.index.key, join(dir, manifest.index.key), false);
   await put(`${commit}.manifest.json`, manifestPath, false);
+
+  // The vectors, when they have been exported. Their *parts* are written
+  // straight to the bucket by the export Worker — a 853 MB file is not
+  // something a script should be moving twice — so what is left to publish is
+  // the manifest that says what they are, and what is left to check is that
+  // the parts are all there at the sizes it claims.
+  if (flag('--vectors')) {
+    const vectorsPath = join(dir, vectorsManifestKey(commit));
+    if (!existsSync(vectorsPath)) {
+      throw new Error(
+        `--vectors was asked for and there is no ${vectorsPath} — ` +
+          `run \`bun scripts/export-vectors.ts --revision ${commit.slice(0, 9)}\` first`,
+      );
+    }
+    const vectors = parseVectorsManifest(readFileSync(vectorsPath, 'utf8'), vectorsPath);
+    const inBucket = await listing(`${commit}.vectors.`);
+    const wrong = vectors.parts.filter((part) => inBucket.get(part.key) !== part.bytes);
+    if (wrong.length > 0) {
+      throw new Error(
+        `${wrong.length} of ${vectors.parts.length} vectors part(s) are not in the bucket at ` +
+          `the size the manifest claims — the export did not finish. First: ${wrong[0]!.key}`,
+      );
+    }
+    console.log(
+      `  ${vectors.parts.length} vectors part(s) already in the bucket, ${mb(vectors.bytes)} total`,
+    );
+    await put(vectorsManifestKey(commit), vectorsPath, false);
+  }
 
   console.log(
     `\n${commit.slice(0, 9)} is published: ${manifest.rows.count} provision(s) in ` +

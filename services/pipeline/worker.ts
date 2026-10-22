@@ -42,7 +42,8 @@ import { httpEncoder } from '../../src/ingest/encoder-client';
 import { runIncrementalPipeline } from '../../src/ingest/incremental-pipeline';
 import { runSnapshotPipeline } from '../../src/ingest/snapshot-pipeline';
 import { SnapshotReader } from '../../src/ingest/snapshot-source';
-import { manifestKey } from '../../src/ingest/snapshot-format';
+import { manifestKey, vectorsPartKey } from '../../src/ingest/snapshot-format';
+import { ENCODER_CONTRACT } from '../../src/encoder';
 import { GitHubCorpusSource } from '../../src/ingest/source';
 
 interface Env {
@@ -135,8 +136,32 @@ export default {
       });
       return Response.json(summary, { status: 'error' in summary ? 500 : 200 });
     }
+
+    // **The vectors, out of the index and into the snapshot.**
+    //
+    // This is here rather than in a script because it cannot be a script: the
+    // Vectorize **REST** list endpoint returns ids and no values, and no
+    // combination of `include_values`, `return_values` or `include=values`
+    // changes that. The *binding* returns them, and a binding only exists
+    // inside a Worker. So the export runs here, one part at a time, and writes
+    // to R2 — which is where the snapshot is going anyway.
+    if (url.pathname === '/vectors' && request.method === 'POST') {
+      const presented = request.headers.get('x-pipeline-secret') ?? '';
+      if (!env.PIPELINE_SECRET || presented !== env.PIPELINE_SECRET) {
+        return Response.json({ error: 'forbidden' }, { status: 403 });
+      }
+      const result = await exportVectors(request, env).catch((error: unknown) => {
+        console.error(`the vectors export failed: ${String(error)}`);
+        return { error: String(error).slice(0, 500) };
+      });
+      return Response.json(result, { status: 'error' in result ? 500 : 200 });
+    }
+
     return Response.json(
-      { error: 'not found', hint: 'this Worker runs on a schedule; POST /run to run a cycle' },
+      {
+        error: 'not found',
+        hint: 'this Worker runs on a schedule; POST /run to run a cycle, POST /vectors to export vectors',
+      },
       { status: 404 },
     );
   },
@@ -276,4 +301,104 @@ async function assertFingerprinted(env: Env): Promise<void> {
         `Run \`bun scripts/backfill-fingerprints.ts\` before the pipeline writes to this store.`,
     );
   }
+}
+
+/**
+ * How many ids are asked for at once.
+ *
+ * The binding takes a list, and a hundred vectors is six hundred kilobytes of
+ * JSON to parse — small next to the part being packed. What this bounds is the
+ * *response*, not the request: a part is ten thousand provisions, and asking
+ * for them one at a time would be ten thousand subrequests against a ceiling
+ * of a thousand.
+ */
+/**
+ * How many ids are asked for at once.
+ *
+ * **Twenty**, which is the binding's own limit: ask for fifty and it answers
+ * `VECTOR_GET_ERROR (code = 40007): too many ids in payload; max id count is
+ * 20, got 50`. A part is ten thousand provisions, so this is five hundred
+ * subrequests against a ceiling of a thousand — which is why the parts are
+ * this size and why they are fetched a few at a time.
+ */
+const GET_BY_IDS = 20;
+
+/** How many of those are in flight at once. */
+const GET_CONCURRENCY = 8;
+
+/** The dimensions, from the encoder contract rather than from a literal. */
+const DIMENSIONS = ENCODER_CONTRACT.dimensions;
+
+/** Run `work` over `items`, a few at a time. */
+async function mapWithLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  work: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = next++;
+      if (index >= items.length) return;
+      results[index] = await work(items[index]!);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+/**
+ * Export one part of the vectors.
+ *
+ * The caller — `scripts/export-vectors.ts` — sends the ids in **snapshot
+ * order**, and they are packed in the order they arrive: vector *i* is at
+ * `i × dims × 4` bytes, so the file needs no second id list and a rebuild is a
+ * copy rather than four hours of embedding.
+ *
+ * A provision the index has no vector for is left as zeroes, and it is
+ * **reported** rather than assumed: the caller checks that every missing id
+ * belongs to a row that is a placeholder, which is the only kind of provision
+ * that is deliberately not embedded. That check is the whole reason this
+ * returns `missing` — an export that silently wrote zeroes for provisions that
+ * should have vectors would look exactly like a successful one, which is what
+ * an earlier version of this did when it pre-allocated the file.
+ */
+async function exportVectors(request: Request, env: Env): Promise<Record<string, unknown>> {
+  const body = (await request.json()) as { commit?: string; part?: number; ids?: string[] };
+  const { commit, part, ids } = body;
+  if (!commit || part === undefined || !Array.isArray(ids) || ids.length === 0) {
+    throw new Error('a vectors request needs { commit, part, ids }');
+  }
+
+  const found = new Map<string, number[]>();
+  const chunks: string[][] = [];
+  for (let at = 0; at < ids.length; at += GET_BY_IDS) chunks.push(ids.slice(at, at + GET_BY_IDS));
+  await mapWithLimit(chunks, GET_CONCURRENCY, async (chunk) => {
+    for (const vector of await env.VECTORIZE.getByIds(chunk)) {
+      found.set(vector.id, vector.values as number[]);
+    }
+  });
+
+  const packed = new Float32Array(ids.length * DIMENSIONS);
+  const missing: string[] = [];
+  ids.forEach((id, position) => {
+    const values = found.get(id);
+    if (!values || values.length !== DIMENSIONS) {
+      missing.push(id);
+      return;
+    }
+    packed.set(values, position * DIMENSIONS);
+  });
+
+  const key = vectorsPartKey(commit, part);
+  await env.CORPUS.put(key, packed.buffer);
+  return {
+    key,
+    count: ids.length,
+    bytes: packed.byteLength,
+    dims: DIMENSIONS,
+    embedded: ids.length - missing.length,
+    missing,
+  };
 }

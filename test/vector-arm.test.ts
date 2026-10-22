@@ -106,11 +106,25 @@ describe('the vector arm', () => {
     expect(calls[0]!.sql).not.toContain('LIKE');
   });
 
-  it('embeds the question and asks the index', async () => {
-    const { db } = fakeDb([row('acts-en-c-34-36')]);
-    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
+  /**
+   * The keywords are a **constraint**, not part of the question.
+   *
+   * A topic and keywords are two different things a caller can say, and they
+   * used to be glued together into the text that gets embedded — which makes
+   * the model rank by both at once, with the caller's own words dominating the
+   * statute's. Now the topic is embedded and the keywords filter the result.
+   */
+  it('embeds the topic, and the keywords filter the result', async () => {
+    const { db } = fakeDb([
+      row('acts-en-c-34-36', { text: 'the recovery of damages as compensation' }),
+      row('acts-en-c-34-37', { text: '(1) Any person who has suffered loss or damage…' }),
+    ]);
+    const index = fakeIndex([
+      { id: 'acts-en-c-34-36', score: 0.9, metadata: {} },
+      { id: 'acts-en-c-34-37', score: 0.8, metadata: {} },
+    ]);
     const asked: string[] = [];
-    await statutesCorpus.retrieve(
+    const items = await statutesCorpus.retrieve(
       { topic: 'recovery of damages', keywords: ['compensation'] },
       ctx(db, {
         vector: index.index,
@@ -120,8 +134,90 @@ describe('the vector arm', () => {
         },
       }),
     );
+
+    expect(asked[0]).toBe('recovery of damages');
+    // Only the provision that actually contains the word.
+    expect(items.map((item) => item.id)).toEqual(['acts-en-c-34-36']);
+  });
+
+  /**
+   * The keywords are folded the way the corpus's own text is folded.
+   *
+   * Half the corpus is French, and the person typing the query has no accent
+   * key: `reglement` has to find `règlement`, or the constraint drops the
+   * provision the caller was looking for.
+   */
+  it('folds the keywords, so an unaccented one still matches', async () => {
+    const { db } = fakeDb([row('acts-fr-x-1', { text: 'Le présent règlement s’applique' })]);
+    const index = fakeIndex([{ id: 'acts-fr-x-1', score: 0.9, metadata: {} }]);
+    const items = await statutesCorpus.retrieve(
+      { topic: 'application du reglement', keywords: ['reglement'], language: 'fr' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1] }),
+    );
+
+    expect(items.map((item) => item.id)).toEqual(['acts-fr-x-1']);
+  });
+
+  /**
+   * A filter applied to exactly `limit` rows can empty a result the corpus can
+   * answer, so the index is asked for more than it needs.
+   */
+  it('asks the index for more than it needs when it will filter', async () => {
+    const { db } = fakeDb([row('acts-en-c-34-36', { text: 'compensation' })]);
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
+    const asked: number[] = [];
+    const askedIndex = {
+      async query(_vector: number[], topK: number) {
+        asked.push(topK);
+        return [{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }];
+      },
+    };
+    await statutesCorpus.retrieve(
+      { topic: 'recovery of damages', keywords: ['compensation'], limit: 5 },
+      ctx(db, { vector: askedIndex, embedQuery: async () => [0.1] }),
+    );
+    expect(asked[0]).toBe(20);
+  });
+
+  /**
+   * With no topic, the keywords **are** the question — there is nothing else to
+   * embed — and they are not also a filter, because filtering a search by the
+   * words it searched for is a no-op that costs a scan.
+   */
+  it('embeds the keywords when there is no topic', async () => {
+    const { db } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
+    const asked: string[] = [];
+    const items = await statutesCorpus.retrieve(
+      { keywords: ['compensation'] },
+      ctx(db, {
+        vector: index.index,
+        embedQuery: async (text: string) => {
+          asked.push(text);
+          return [0.1];
+        },
+      }),
+    );
+
+    expect(asked[0]).toBe('compensation');
+    expect(items).toHaveLength(1);
+  });
+
+  it('embeds the question and asks the index', async () => {
+    const { db } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
+    const asked: string[] = [];
+    await statutesCorpus.retrieve(
+      { topic: 'recovery of damages' },
+      ctx(db, {
+        vector: index.index,
+        embedQuery: async (text: string) => {
+          asked.push(text);
+          return [0.1, 0.2];
+        },
+      }),
+    );
     expect(asked[0]).toContain('recovery of damages');
-    expect(asked[0]).toContain('compensation');
     expect(index.vectors).toHaveLength(1);
   });
 

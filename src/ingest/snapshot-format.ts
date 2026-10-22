@@ -181,3 +181,96 @@ export function* cutRows(
 export function indexLine(entry: SnapshotIndexEntry): string {
   return `${JSON.stringify(entry)}\n`;
 }
+
+/**
+ * The vectors, as a file beside the rows.
+ *
+ * The vectors are the one part of the corpus that cannot be re-derived by
+ * copying: they need the model, and a quarter of a million embeddings is about
+ * four hours of GPU. So a snapshot that does not carry them leaves a rebuild
+ * costing four hours, and one that carries them makes it a file copy.
+ *
+ * They are **fixed width and in the snapshot's order**: vector *i* belongs to
+ * the *i*-th id in the snapshot's index, so a row's vector is at
+ * `position × dims × 4` bytes and no second id list is needed.
+ *
+ * And they are **parts**, for the same reason the rows are: 853 MB cannot be
+ * published in one object.
+ */
+export interface VectorsManifest {
+  format: number;
+  commit: string;
+  /** How many floats per vector. Fixed by the model, not by the export. */
+  dims: number;
+  /** How many vectors the file holds — one per provision, placeholders included. */
+  count: number;
+  /** The total size, in bytes. */
+  bytes: number;
+  parts: {
+    key: string;
+    bytes: number;
+    /** How many vectors this part holds. */
+    count: number;
+    /** The position of its first vector, in the snapshot's order. */
+    from: number;
+  }[];
+  /** How many provisions the index actually holds a vector for. */
+  embedded: number;
+  /**
+   * How many it does not — the placeholders, which are written to the store
+   * and deliberately not embedded. Their vectors are zeroes, and that is the
+   * only position at which a zero vector is correct.
+   */
+  notEmbedded: number;
+}
+
+/** The vectors manifest's key. */
+export function vectorsManifestKey(commit: string): string {
+  return `${commit}.vectors.manifest.json`;
+}
+
+/** A vectors part's key. */
+export function vectorsPartKey(commit: string, part: number): string {
+  return `${commit}.vectors.${String(part).padStart(3, '0')}.f32`;
+}
+
+/**
+ * A vectors manifest, checked.
+ *
+ * The check is the same one the rows get, and it is the one that matters: the
+ * parts add up to the size the manifest claims, and the size is what the
+ * *count* says it is. A vectors file that is short by a part is a file whose
+ * last provisions have no vector, and a rebuild from it would produce an index
+ * with holes in it that nothing would report.
+ */
+export function parseVectorsManifest(text: string, where = 'the vectors manifest'): VectorsManifest {
+  let manifest: VectorsManifest;
+  try {
+    manifest = JSON.parse(text) as VectorsManifest;
+  } catch {
+    throw new Error(`${where} is not JSON`);
+  }
+  if (!manifest.commit || !Array.isArray(manifest.parts)) {
+    throw new Error(`${where} does not describe a vectors file`);
+  }
+  if (manifest.format !== SNAPSHOT_FORMAT) {
+    throw new Error(
+      `${where} is format ${manifest.format}; this reader knows format ${SNAPSHOT_FORMAT}`,
+    );
+  }
+  const expected = manifest.count * manifest.dims * 4;
+  if (manifest.bytes !== expected) {
+    throw new Error(
+      `${where} says ${manifest.count} vector(s) of ${manifest.dims} floats are ` +
+        `${manifest.bytes} bytes, and that is ${expected}`,
+    );
+  }
+  const total = manifest.parts.reduce((sum, part) => sum + part.bytes, 0);
+  if (total !== manifest.bytes) {
+    throw new Error(
+      `${where} says the vectors are ${manifest.bytes} bytes, and its ` +
+        `${manifest.parts.length} part(s) add up to ${total} — the export is incomplete`,
+    );
+  }
+  return manifest;
+}
