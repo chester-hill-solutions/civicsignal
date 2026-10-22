@@ -131,8 +131,18 @@ function candidates(vector: number[]): { entries: SnapshotIndexEntry[]; rows: Ro
   return { entries, rows: entries.map(rowAt) };
 }
 
+/**
+ * How much of a provision Jev sees.
+ *
+ * The limits force the choice: at most 250 candidates and about 120K characters
+ * in a single call, so a deeper candidate set means a shorter excerpt. Whether
+ * that is a good trade is not obvious — a heading and a first sentence may carry
+ * the whole decision, or may not — so it is measured rather than assumed.
+ */
+const EXCERPT = Number(arg('--excerpt', '1200'));
+
 function excerpt(row: Row): string {
-  return `${row.act}, section ${row.section}${row.heading ? ` (${row.heading})` : ''}\n${row.text.slice(0, 1200)}`;
+  return `${row.act}, section ${row.section}${row.heading ? ` (${row.heading})` : ''}\n${row.text.slice(0, EXCERPT)}`;
 }
 
 interface Flags {
