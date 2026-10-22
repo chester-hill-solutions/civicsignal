@@ -354,6 +354,49 @@ describe('the vector arm', () => {
   });
 
   /**
+   * The floor lives in the **live index's** score scale.
+   *
+   * The two numbers below are measurements, not choices. `0.6079` is the highest
+   * live score of the twelve questions the corpus cannot answer — Quebec tenancy
+   * — and `0.6293` is the lowest live score of an answerable question, for the
+   * record a department must keep. A threshold between them is the whole
+   * requirement: it refuses every unanswerable question the twelve know about,
+   * and it costs the least of the answerable half.
+   *
+   * **The first value of the floor, 0.81, was above both.** It was measured as a
+   * cosine on the evaluation corpus, and the live index does not return cosines.
+   * It refused every answerable question, and this test is what would have said
+   * so.
+   */
+  it('sits between the highest unanswerable score and the lowest answerable one', async () => {
+    const unanswerableCeiling = 0.6079;
+    const answerableLow = 0.6293;
+
+    const kept = await statutesCorpus.retrieve(
+      { topic: 'recovery of damages' },
+      ctx(fakeDb([row('acts-en-c-34-36')]).db, {
+        vector: fakeIndex([{ id: 'acts-en-c-34-36', score: answerableLow, metadata: {} }]).index,
+        embedQuery: async () => [0.1],
+      }),
+    );
+    expect(kept).toHaveLength(1);
+
+    const refused = await statutesCorpus.retrieve(
+      { topic: 'recovery of damages' },
+      ctx(fakeDb([row('acts-en-c-34-36')]).db, {
+        vector: fakeIndex([{ id: 'acts-en-c-34-36', score: unanswerableCeiling, metadata: {} }]).index,
+        embedQuery: async () => [0.1],
+      }),
+    );
+    expect(refused).toEqual([]);
+
+    // The requirement, stated once: above every score the unanswerable twelve
+    // reach, and no higher than the answerable half requires.
+    expect(VECTOR_FLOOR).toBeGreaterThan(unanswerableCeiling);
+    expect(VECTOR_FLOOR).toBeLessThanOrEqual(answerableLow);
+  });
+
+  /**
    * A citation is a key, not a similarity. Resolving it structurally is exact
    * where a ranking can only be close, so the vector arm never sees one.
    */

@@ -75,54 +75,66 @@ async function queryRows(
  * A vector search over a quarter of a million provisions never returns
  * *nothing*: ask for fifty and it returns fifty, ranked. So the honest way to
  * say "I don't have information on that" is not an empty result — it is a
- * floor on the score, below which the product says so.
+ * threshold on the score, below which the product says so.
  *
- * **The floor is set by what the corpus cannot answer, not by what it can.**
- * The first version of this was 0.84, chosen as the knee in the labelled eval
- * set — where every question has an answer, so the measurement priced the
- * floor's cost and said nothing about its benefit. `scripts/eval-floor.ts`
- * now measures both sides over a 19,021-section corpus: 36 labelled questions
- * and 12 the corpus genuinely cannot answer.
+ * ## The threshold is a number in the index's own scale
  *
- * The twelve, and their best match:
+ * **The score Vectorize returns is not a cosine.** It is near one for a good
+ * match and it orders the results correctly, so it is easy to treat as a cosine
+ * and to calibrate as one. It is not:
  *
- * | | best score | the nearest provision it would have answered with |
- * |---|---|---|
- * | tenancy in Quebec | 0.7830 | Squamish Nation Residential Tenancy Regulations s.44.1 |
- * | a US patent deadline | 0.7738 | Patent Rules s.81 |
- * | the Bank of Canada rate | 0.7429 | Exchange Rate (Authorized Foreign Banks) Regulations s.1 |
- * | R v Jordan | 0.7428 | CJFTA Tariff Preference Regulations s.1 |
- * | the child benefit rate | 0.7419 | Portions of the RCMP Divestiture Regulations s.6 |
- * | R v Gladue | 0.7395 | Criminal Code s.455 |
- * | speeding in Ontario | 0.7327 | Corrections and Conditional Release Regulations s.37 |
- * | an Australian work visa | 0.7087 | Immigration and Refugee Protection Act s.87.301 |
- * | the weather in Ottawa | 0.6782 | Canadian Aviation Regulations s.602.72 |
- * | the 2026 World Cup | 0.6644 | FIFA Men's U-20 World Cup Canada 2007 Remission Order s.1 |
- * | the capital of Australia | 0.6576 | Proclamation … Canada-Australia Convention s.11 |
- * | sourdough | 0.6308 | Toys Regulations s.32 |
+ * - scaling the query vector leaves the score unchanged, so the index normalises
+ *   the query;
+ * - the **negative** of a vector the index holds scores −0.229, where a cosine
+ *   gives −0.83;
+ * - a vector the index holds scores **0.826** against itself, and not 1.
  *
- * **Nothing unanswerable reaches 0.79.** So the floor sits just above that
- * ceiling, and the margin over it is what guards against a question the twelve
- * did not think of — not a preference for precision over recall:
+ * Over the labelled questions the live score is about **0.79 of the cosine** the
+ * same vectors have locally — 0.8840 local against 0.7287 live, 0.8196 against
+ * 0.6278, 0.8643 against 0.7088, and so on.
  *
- * | floor | kept | right | wrong | refused but answerable | unanswerable let through |
- * |---|---|---|---|---|---|
- * | 0.81 | 21 | 19 | 2 | 3 | **0 of 12** |
- * | 0.84 | 15 | 14 | 1 | 8 | **0 of 12** |
- * | 0.86 | 12 | 12 | 0 | 10 | **0 of 12** |
+ * ## What that did to the first threshold
  *
- * Three thresholds, the same benefit, and very different costs. 0.84 was
- * refusing **eight** questions the corpus could answer for nothing at all.
- * 0.81 keeps six more of them and refuses three, at the price of one more
- * wrong answer — and the twelve are not a tight bound, so the margin is
- * deliberate rather than tuned.
+ * The first threshold was **0.81**, and it was measured as a cosine on the
+ * evaluation corpus. Every number in that measurement was a cosine. On the live
+ * index 0.81 is above *every* answerable question — the maximum is 0.7390 — so a
+ * deployment with no key for the rerank refused the whole corpus. Not because
+ * the corpus was empty: because the threshold was written in a scale the index
+ * does not use.
  *
- * What would move it: an unanswerable question that scores high, which is a
- * question whose nearest provision is genuinely close — "what does the
- * Criminal Code say about assault" asked of a corpus that *has* the Criminal
- * Code is not unanswerable, and nothing here separates that from its opposite.
+ * ## The two sides, measured on the live index
+ *
+ * `scripts/production-floor.ts` embeds each labelled question with the
+ * production encoder and reads the live score back:
+ *
+ * | | live score |
+ * |---|---|
+ * | 36 questions the corpus can answer | 0.4730 to 0.7390 |
+ * | 12 it cannot answer | 0.4249 to **0.6079** |
+ *
+ * The two sides keep the same shape they had on the evaluation corpus: the
+ * unanswerable twelve sit in a block below the answerable half, and none of them
+ * reaches the top of it.
+ *
+ * ## The value
+ *
+ * **0.62** translates 0.81 into the live scale, and it keeps the same trade: 20
+ * of the 36 answerable questions, and **0 of the 12 unanswerable**. 0.81 did
+ * exactly that on the evaluation corpus.
+ *
+ * The margin over the unanswerable ceiling is 0.012, which is thin, and it is
+ * the honest number. The twelve are not a tight bound, and a question whose
+ * nearest provision is genuinely close sits nearer to the line than they do.
+ *
+ * ## What would move it
+ *
+ * A question the corpus cannot answer that scores above 0.62 is the failure to
+ * watch for. The deeper fix is to make the two sides comparable at all: the
+ * index's score and a cosine disagree by a fifth, and the rerank does not care —
+ * it reads the provisions — but every threshold and every measurement in this
+ * repository does.
  */
-export const VECTOR_FLOOR = 0.81;
+export const VECTOR_FLOOR = 0.62;
 
 /** How long a cached retrieval lives. The corpus moves every three to eight days. */
 export const CACHE_SECONDS = 6 * 60 * 60;
