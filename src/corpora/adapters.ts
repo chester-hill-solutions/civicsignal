@@ -126,13 +126,27 @@ async function queryRows(
  * the honest number. The twelve are not a tight bound, and a question whose
  * nearest provision is genuinely close sits nearer to the line than they do.
  *
+ * ## The index is not the fault, and it must not be rebuilt
+ *
+ * The obvious reading of a compressed score is "the index holds the wrong
+ * vectors, so rebuild it". It does not, and a rebuild would be wasted work.
+ * `get_by_ids` returns the stored vector itself, and
+ * `scripts/diagnose-stored-vectors.ts` compares it with the export:
+ *
+ *     the stored vector and the exported one agree at 1.000000
+ *
+ * So the index holds exactly the vectors the corpus produced, and the export to
+ * R2 is a faithful copy of it. The measured 0.826 is the score of a vector
+ * against **itself**. The compression is in how the index scores a comparison,
+ * and that is not something this repository can change.
+ *
  * ## What would move it
  *
  * A question the corpus cannot answer that scores above 0.62 is the failure to
- * watch for. The deeper fix is to make the two sides comparable at all: the
- * index's score and a cosine disagree by a fifth, and the rerank does not care —
- * it reads the provisions — but every threshold and every measurement in this
- * repository does.
+ * watch for, and the twelve above are the whole of what is known about it. Every
+ * measurement in this repository that compares a live score with a local cosine
+ * is wrong by about a fifth. That is worth remembering before the next
+ * threshold is chosen.
  */
 export const VECTOR_FLOOR = 0.62;
 
