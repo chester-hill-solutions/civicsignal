@@ -258,14 +258,12 @@ The answer is that **only the index needs to be sorted, not the rows.**
   parsed, which needs no memory at all;
 - and the **index** is sorted, which is 26 MB of lines and not 347 MB of rows.
 
-26 MB is still more than a Worker wants to sort at once — held as strings with
-their overhead it is around fifty — so the index is sorted in **partitions**:
-the corpus's four trees are named in the file path (`eng/acts`,
-`eng/regulations`, `fra/lois`, `fra/reglements`), the ids carry that tree as
-their prefix (`acts-en-100`, `regulations-fr-dors-2002-423-34-2-24`), and the
-prefixes sort in the same order the trees do. So each tree's index lines sort
-independently — a few megabytes at a time — and concatenating them in tree
-order gives the global id order.
+The sort is a plain lexicographic sort of 26 MB, which
+a Worker holds comfortably — an earlier draft of this section had it
+partitioned by tree, on the theory that 277,857 index objects would not fit.
+They would not, as *objects*: a `Map<string, SnapshotIndexEntry>` is eighty
+megabytes. As an array of the lines themselves it is 26, and the partitioning
+was solving a problem the sort dissolves.
 
 That is the whole design of the Workflow: **one step per group of corpus
 files** (parse, append rows to a part, emit index lines), one step per tree to
@@ -273,6 +271,37 @@ sort and write its slice of the index, and a final step for the manifest. Each
 step is bounded, retried by the runtime, and can be resumed from the step
 before it — which is the property the local script has by accident, because it
 runs to completion or not at all.
+
+### Reaching the ninth group without reading the first eight
+
+A tar is not seekable. So the first thing to get right is how a step reaches
+*its* files, and the obvious answer — stream the corpus tarball and skip ahead
+— is the one that quietly ruins the job: reaching group 40 means downloading
+and gunzipping all 800 MB that precede it, and sixty steps would move 48 GB and
+decompress it sixty times over.
+
+None of that is egress. The corpus is fetched *into* Cloudflare, which is
+ingress and free, and R2 does not charge for egress at all. What it costs is
+**CPU** — gunzip is CPU, and the thirty-second limit per invocation is the
+constraint that actually binds — and wall-clock spent re-doing what earlier
+steps already did.
+
+So the corpus is decomposed **once**:
+
+1. a first step streams the tarball, and writes the instrument files into R2 —
+   one object per file, or one per group;
+2. every later step reads its own files from R2, which is in the same account,
+   which does not leave Cloudflare, and which costs nothing to read.
+
+That beats fetching twelve thousand files individually from GitHub (twelve
+thousand round trips, and a rate limit to be polite about) as well as beating
+the repeated tarball. The staging costs storage for the length of the job and
+is deleted at the end — which is the one place R2's pricing does apply:
+storage, not egress.
+
+With that, the Workflow is: **stage the corpus**, **one step per group**
+(parse, append rows in file order, hold that group's index lines), **one step
+to sort the index lines** globally, and **one step for the manifest**.
 
 ## What it does not change
 
