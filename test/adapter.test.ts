@@ -131,11 +131,20 @@ describe('the citation path', () => {
     expect(calls[0]!.sql).not.toContain('search_text LIKE');
   });
 
-  it('still searches on the text path when there is a topic', async () => {
+  /**
+   * The topic path is the **vector arm**, and with no index there is no topic
+   * search at all.
+   *
+   * It used to be a `search_text LIKE ?` scan — dead code in production, where
+   * the deployment has an index and a vector search always returns the k it
+   * was asked for — and measured not worth resurrecting. So this asserts the
+   * thing that actually matters about the old path: it is not taken.
+   */
+  it('does not search on a text path when there is a topic', async () => {
     const { db, calls } = fakeDb([PROVISION]);
-    await statutesCorpus.retrieve({ topic: 'housing' }, ctx(db));
-    expect(calls[0]!.sql).toContain('search_text LIKE');
-    expect(calls[0]!.sql).toContain('in_force = 1');
+    const items = await statutesCorpus.retrieve({ topic: 'housing' }, ctx(db));
+    expect(calls).toHaveLength(0);
+    expect(items).toHaveLength(0);
   });
 
   it('returns nothing when there is neither a topic nor a citation', async () => {
@@ -190,11 +199,20 @@ describe('the language lens', () => {
     expect(calls[0]!.binds).toContain('fr');
   });
 
-  it('filters the text path on the language', async () => {
+  /**
+   * The language is a lens on the **index**, not a filter on a query.
+   *
+   * The two official versions of a provision are separate rows with different
+   * identifiers, so a French question competing with the English rows for a
+   * place in the top k gets half the top k back in the wrong language. That
+   * filter is applied by the vector arm (see `vector-arm.test.ts`), and this
+   * only asserts that a text path is not silently doing it instead.
+   */
+  it('does not filter a text path on the language, because there is no text path', async () => {
     const { db, calls } = fakeDb([PROVISION]);
-    await statutesCorpus.retrieve({ topic: 'housing', language: 'fr' }, ctx(db));
-    expect(calls[0]!.sql).toContain('language = ?');
-    expect(calls[0]!.binds).toContain('fr');
+    const items = await statutesCorpus.retrieve({ topic: 'housing', language: 'fr' }, ctx(db));
+    expect(calls).toHaveLength(0);
+    expect(items).toHaveLength(0);
   });
 
   it('does not filter when no language was asked for', async () => {

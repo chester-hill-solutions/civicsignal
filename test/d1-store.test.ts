@@ -122,16 +122,21 @@ describe('the D1 corpus store', () => {
       'in_force',
       'language',
       'topics',
-      'search_text',
       'text_hash',
       'last_changed',
     ]) {
       expect(insert.sql).toContain(column);
     }
+    // **And `search_text` is not one of them.** It was 250.9 MB of folded text
+    // on a 232.5 MB corpus — a second copy of everything the product serves —
+    // and it existed for one query, the lexical path, which was dead code and
+    // measured worth one question in thirty-six. Writing it again would put
+    // the column back.
+    expect(insert.sql).not.toContain('search_text');
     // One placeholder per column, and one bind per placeholder.
     const placeholders = (insert.sql.match(/\?/g) ?? []).length;
-    expect(placeholders).toBe(18);
-    expect(insert.binds.length).toBe(18);
+    expect(placeholders).toBe(17);
+    expect(insert.binds.length).toBe(17);
     expect(insert.binds[0]).toBe('a-1');
     expect(insert.binds[13]).toBe('en');
   });

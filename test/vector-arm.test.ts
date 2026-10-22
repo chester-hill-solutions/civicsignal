@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { statutesCorpus } from '../src/corpora/adapters';
+import { statutesCorpus, VECTOR_FLOOR } from '../src/corpora/adapters';
 import type { CorpusContext } from '../src/corpora/types';
 import type { VectorMatch } from '@chester-hill-solutions/corpus';
 
@@ -283,41 +283,73 @@ describe('the vector arm', () => {
    * "The index has nothing" and "this deployment cannot search" are different
    * answers, and only one of them is a fallback.
    */
-  it('falls back to the lexical path when there is no index', async () => {
-    const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
-    const items = await statutesCorpus.retrieve(
-      { topic: 'damages' },
-      ctx(db),
-    );
-    expect(calls[0]!.sql).toContain('LIKE');
-    expect(items.length).toBeGreaterThan(0);
-  });
-
   /**
-   * A cold index, or a question nothing is similar to, must not make the
-   * product answer "nothing here" when a keyword search would have found the
-   * provision. "The corpus has nothing about that" is a strong claim, and it
-   * should be a claim about both searches rather than one.
+   * **The lexical path is gone, and these are the three cases that used to
+   * reach it.**
+   *
+   * It ran when the vector arm returned nothing — a condition a vector search
+   * cannot produce, because it returns the k it was asked for however little
+   * those k have to do with the question. Measured, it was not worth
+   * resurrecting: of the fourteen questions the vector arm misses at rank 5,
+   * the keyword arm finds one in its top 5, and on the concept half — the half
+   * the vector arm exists for — it finds none.
+   *
+   * So a deployment with no index and no embedder cannot answer a text search
+   * at all, and says so by returning nothing rather than by scanning a quarter
+   * of a million provisions one `LIKE` at a time.
    */
-  it('falls back to the lexical path when the vector arm finds nothing', async () => {
+  it('answers nothing at all when there is no index and no embedder', async () => {
     const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
-    const index = fakeIndex([]);
-    const items = await statutesCorpus.retrieve(
-      { topic: 'damages' },
-      ctx(db, { vector: index.index, embedQuery: async () => [0.1] }),
-    );
-    expect(calls[0]!.sql).toContain('LIKE');
-    expect(items.length).toBeGreaterThan(0);
+    const items = await statutesCorpus.retrieve({ topic: 'damages' }, ctx(db));
+
+    expect(items).toEqual([]);
+    // Not one statement: there is no query to run.
+    expect(calls).toHaveLength(0);
   });
 
-  it('falls back to the lexical path when there is no embedder', async () => {
+  it('answers nothing at all when there is no embedder', async () => {
     const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
-    const index = fakeIndex([]);
-    await statutesCorpus.retrieve(
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
+    const items = await statutesCorpus.retrieve(
       { topic: 'damages' },
       ctx(db, { vector: index.index }),
     );
-    expect(calls[0]!.sql).toContain('LIKE');
+
+    expect(items).toEqual([]);
+    expect(calls).toHaveLength(0);
+  });
+
+  /**
+   * **The floor.** A vector search always returns the k it was asked for, so
+   * "nothing found" is something it cannot say — and the product's answer to a
+   * question the corpus cannot answer used to be fifty provisions about
+   * something else. What it can say is that the best match is not close enough
+   * to answer with, and that is the refusal the caller turns into "I don't
+   * have information on that".
+   */
+  it('answers nothing when the best match is below the floor', async () => {
+    const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: VECTOR_FLOOR - 0.01, metadata: {} }]);
+    const items = await statutesCorpus.retrieve(
+      { topic: 'the weather in Ottawa' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1] }),
+    );
+
+    expect(items).toEqual([]);
+    // Before the rows are fetched: a question the corpus cannot answer costs
+    // one index query and no database reads.
+    expect(calls).toHaveLength(0);
+  });
+
+  it('answers when the best match is at the floor', async () => {
+    const { db } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: VECTOR_FLOOR, metadata: {} }]);
+    const items = await statutesCorpus.retrieve(
+      { topic: 'recovery of damages' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1] }),
+    );
+
+    expect(items).toHaveLength(1);
   });
 
   /**

@@ -25,13 +25,20 @@
  * row without a vector is invisible to the index and harmless; a vector
  * without a row is a broken answer the product will happily give.
  */
+/**
+ * `search_text` is **gone from this table**, and its absence is deliberate.
+ *
+ * It was 250.9 MB of folded text on a 232.5 MB corpus — a second copy of
+ * everything the product serves — plus an index on it, and it existed for one
+ * query: the lexical `LIKE ?` path. That path ran only when the vector arm
+ * returned nothing, which a vector search cannot do, and measured it rescued
+ * one of the fourteen questions the vector arm misses at rank 5 — on the
+ * concept half of the eval set, where the vector arm is the only arm that
+ * works, it rescued none. The refusal it was standing in for is a floor on the
+ * score now (`VECTOR_FLOOR`), which is a thing the product can actually say.
+ */
 import type { ChangeFeedEntry, CorpusStore, PipelineRow, RemovedRow, UpsertRow } from '../ingest/pipeline';
 import type { PipelineRun, PipelineState, FingerprintEntry } from '../ingest/reconcile';
-
-/** The text that is embedded, and the title that goes with it. */
-function searchText(row: PipelineRow): string {
-  return [row.instrument, row.heading ?? '', row.text].filter(Boolean).join(' ').toLowerCase();
-}
 
 /**
  * The store.
@@ -99,9 +106,9 @@ export class D1CorpusStore implements CorpusStore {
         .prepare(
           `INSERT INTO statute_sections (
              id, corpus_id, act, citation, section, schedule, part, status, heading,
-             text, source_url, jurisdiction, in_force, language, topics, search_text,
+             text, source_url, jurisdiction, in_force, language, topics,
              text_hash, last_changed
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT (id) DO UPDATE SET
              act = excluded.act,
              citation = excluded.citation,
@@ -115,7 +122,6 @@ export class D1CorpusStore implements CorpusStore {
              in_force = excluded.in_force,
              language = excluded.language,
              topics = excluded.topics,
-             search_text = excluded.search_text,
              text_hash = excluded.text_hash,
              last_changed = excluded.last_changed`,
         )
@@ -135,7 +141,6 @@ export class D1CorpusStore implements CorpusStore {
           row.row.in_force,
           row.row.language,
           null,
-          searchText(row.row),
           row.hash,
           row.row.lastChanged,
         ),

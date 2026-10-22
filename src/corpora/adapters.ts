@@ -66,6 +66,34 @@ async function queryRows(
 /* Statutes — Open Government Licence Canada. Full text may be emitted.        */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * How similar the best match has to be before the product answers.
+ *
+ * A vector search over a quarter of a million provisions never returns
+ * *nothing*: ask for fifty and it returns fifty, ranked. So the honest way to
+ * say "I don't have information on that" is not an empty result — it is a
+ * floor on the score, below which the product says so.
+ *
+ * The number comes from `scripts/eval-floor.ts`, measured over the 36 labelled
+ * questions on a 19,021-section corpus. It is a **trade**, and the measurement
+ * states both sides:
+ *
+ * | floor | kept | kept and right | kept and **wrong** | refused but answerable |
+ * |---|---|---|---|---|
+ * | 0.8102 | 21 | 19 | 2 | 3 |
+ * | 0.8318 | 18 | 17 | 1 | 5 |
+ * | 0.8421 | 15 | 14 | 1 | 8 |
+ * | 0.8561 | 12 | 12 | **0** | 10 |
+ *
+ * 0.84 is the knee. It refuses a fair number of questions the corpus *could*
+ * answer — which is the price, and it is a product decision rather than a
+ * fact. What the measurement cannot say is where the true optimum is, because
+ * every question in the eval set has an answer: it measures the cost of the
+ * floor and not the benefit. Calibrating it properly needs a set of questions
+ * the corpus *cannot* answer, and the scores they get.
+ */
+export const VECTOR_FLOOR = 0.84;
+
 export const statutesCorpus: Corpus = {
   id: STATUTES_CANADA.id,
   policy: STATUTES_CANADA,
@@ -90,79 +118,28 @@ export const statutesCorpus: Corpus = {
       return retrieveProvision(query, ctx);
     }
 
-    // The vector arm, when the deployment has one.
+    // **The vector arm, and nothing after it.**
     //
-    // This is the arm the product was measured on and the one it should use:
-    // over 36 questions, vector search found 14 of 18 ordinary-language
-    // questions against the keyword baseline's 3, and its MRR was 0.617 against
-    // 0.310. The lexical path below is the fallback — right for a small
-    // corpus, and a poor answer for a quarter of a million provisions.
+    // This used to fall back to a lexical `search_text LIKE ?` scan when the
+    // vector arm returned *nothing* — and that condition is unreachable: a
+    // vector search over a quarter of a million provisions returns the k it
+    // was asked for, however little they have to do with the question. The
+    // fallback was dead code, and the product's answer to a question the
+    // corpus cannot answer was fifty provisions about something else.
     //
-    // A citation never comes through here, and that is deliberate: a citation
-    // is a key, not a similarity, and resolving it structurally is exact where
-    // a ranking can only be close.
-    const vectorItems = await retrieveByVector(query, ctx);
-    if (vectorItems && vectorItems.length > 0) return vectorItems;
-    // The vector arm ran and found nothing, or could not run. Either way the
-    // lexical path is tried, because a product that answers "nothing here"
-    // when a keyword search would have found the provision is worse than one
-    // that answers with the weaker of two searches.
-
-    const patterns = likePatterns(query);
-    if (patterns.length === 0) return [];
-    const { sql: tok, binds: tokBinds } = tokenClause(patterns);
-    const jur = query.jurisdiction
-      ? { sql: ' AND jurisdiction = ?', binds: [query.jurisdiction.toUpperCase()] }
-      : { sql: '', binds: [] as string[] };
-    // The language is a lens the caller chooses, exactly like the jurisdiction.
+    // Measured, it was not worth resurrecting either: of the fourteen
+    // questions the vector arm misses at rank 5, the keyword arm finds one in
+    // its top 5 — and that one is an *exact* question the vector arm already
+    // does at 94%. On the concept half, where the vector arm is the only arm
+    // that works at all, the keyword arm rescues none of them.
     //
-    // It has to be a filter and not a detail because the corpus holds both
-    // official languages, and the two versions of a provision are *different
-    // rows with different identifiers*. Without the filter, one provision is
-    // two answers and the caller cannot say which one they meant — and a
-    // French row crowds out the English one out of the top k for an English
-    // question.
-    const lang = query.language
-      ? { sql: ' AND language = ?', binds: [query.language.toLowerCase()] }
-      : { sql: '', binds: [] as string[] };
-    // An exact instrument filter, used when a citation names the Act.
-    const act = query.act ? { sql: ' AND act = ?', binds: [query.act] } : { sql: '', binds: [] as string[] };
-
-    // A citation lookup is not a topic search. It has to find the provision whether
-    // or not it is in force, because the useful answer to "what does section 9
-    // say" is sometimes "it was repealed in 2010" rather than nothing at all. A
-    // topic search still only sees live law.
-    const liveOnly = query.act ? '' : ' AND in_force = 1';
-
-    const rows = await queryRows(
-      ctx,
-      `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
-         FROM statute_sections
-        WHERE 1 = 1${liveOnly}${tok}${jur.sql}${lang.sql}${act.sql}
-        ORDER BY in_force DESC, act, section
-        LIMIT ?`,
-      [...tokBinds, ...jur.binds, ...lang.binds, ...act.binds, String(resolveLimit(query.limit))],
-    );
-
-    return rows.map((row) => ({
-      corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),
-      kind: 'statute' as const,
-      id: String(row['id']),
-      title: `${String(row['act'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
-      body: row['text'] === null || row['text'] === undefined ? undefined : String(row['text']),
-      citationUrl: String(row['source_url']),
-      source: STATUTES_CANADA.publisher,
-      jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
-      language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
-      topics: splitTopics(row['topics']),
-      extra: {
-        act: String(row['act']),
-        citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
-        section: String(row['section']),
-        status: row['status'] === null || row['status'] === undefined ? undefined : String(row['status']),
-        inForce: Number(row['in_force']) === 1,
-      },
-    }));
+    // So the lexical path is gone with the column it searched, and the honest
+    // refusal is the floor inside the vector arm.
+    //
+    // A deployment with no index and no embedder cannot answer a text search
+    // at all, and says so by returning nothing rather than by scanning a
+    // quarter of a million provisions one LIKE at a time.
+    return (await retrieveByVector(query, ctx)) ?? [];
   },
 };
 
@@ -228,6 +205,19 @@ async function retrieveByVector(
     filter,
   );
   if (matches.length === 0) return [];
+
+  // **The floor.** A vector search always returns the k it was asked for, so
+  // "nothing found" is not something it can say — the product's answer to a
+  // question the corpus cannot answer used to be fifty provisions about
+  // something else. What it *can* say is that the best match is not close
+  // enough to answer with.
+  //
+  // This is the refusal, and the caller turns it into "I don't have
+  // information on that". It is deliberately before the rows are fetched: a
+  // question the corpus cannot answer should cost one index query and no
+  // database reads.
+  const best = matches[0]!.score;
+  if (best < VECTOR_FLOOR) return [];
 
   // The index holds no text. The rows come from the database, in the order the
   // index ranked them, and a row the index names but the database does not have

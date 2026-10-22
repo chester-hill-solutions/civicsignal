@@ -1,0 +1,46 @@
+-- The lexical column, dropped.
+--
+-- **This migration cannot be applied at the table's current size.** It was
+-- tried, and D1 answered `out of memory: SQLITE_NOMEM`: SQLite cannot drop a
+-- column in place for a table this shape, so it rewrites the whole 1.14 GB
+-- table, and the rewrite does not fit. The database was left exactly as it
+-- was — the failure is clean and retryable — and it is not a surprise worth
+-- having twice.
+--
+-- Which makes the ordering a fact rather than a preference: **dropping the
+-- column belongs with moving the corpus's text out of D1**, the next step in
+-- `docs/SNAPSHOT.md`'s plan. That step rebuilds the table from the snapshot
+-- (1.14 GB physical for 327 MB of payload), and the column should simply not
+-- be in the new one. Dropping it first is the expensive way round.
+--
+-- What it is for, and why it goes:
+--
+--   * it ran only when the **vector arm returned nothing**, which a vector
+--     search cannot do: ask for fifty and it returns fifty, ranked, however
+--     little they have to do with the question. The fallback was unreachable,
+--     so the product's answer to a question the corpus cannot answer was fifty
+--     provisions about something else;
+--
+--   * and measured (`scripts/eval-floor.ts`, 36 labelled questions over a
+--     19,021-section corpus), triggering it deliberately would have been worth
+--     **one** of the fourteen questions the vector arm misses at rank 5 — and
+--     that one is an *exact* question, the kind the vector arm already answers
+--     at 94%. On the concept half, where the vector arm is the only arm that
+--     works at all, the keyword arm rescued none of them.
+--
+-- What stands in its place is a **floor on the score** (`VECTOR_FLOOR` in
+-- `src/corpora/adapters.ts`), which is a refusal the product can actually
+-- deliver: a search over a quarter of a million provisions always has a best
+-- match, and "I don't have information on that" is a statement about how good
+-- that match is.
+--
+-- The column is already out of the **write path** (`D1CorpusStore` no longer
+-- writes it) and out of the **read path** (the lexical arm is gone), so it is
+-- dead weight from here on: nothing reads it and nothing writes it.
+--
+-- The index goes first: SQLite refuses to drop a column that is indexed, and
+-- for the same reason it would have to rewrite the table around it.
+
+DROP INDEX IF EXISTS idx_statute_sections_search;
+
+ALTER TABLE statute_sections DROP COLUMN search_text;
