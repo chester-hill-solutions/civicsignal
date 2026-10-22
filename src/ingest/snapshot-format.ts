@@ -24,6 +24,7 @@
  * publishing detail — the index does not know or care how the rows are cut
  * up, and a row can be read without reading the ones before it.
  */
+import { hash128 } from './reconcile';
 import type { SnapshotIndexEntry } from './snapshot-diff';
 
 /** The manifest's format number. A reader refuses one it does not know. */
@@ -214,6 +215,17 @@ export interface VectorsManifest {
     /** The position of its first vector, in the snapshot's order. */
     from: number;
   }[];
+  /**
+   * The index this file belongs to.
+   *
+   * The positions are meaningless without it — see `indexDigest` — so it is
+   * required, and a consumer that cannot match it must not use the file.
+   */
+  index: {
+    entries: number;
+    /** A hash of the (id, fingerprint) sequence, in order. */
+    digest: string;
+  };
   /** How many provisions the index actually holds a vector for. */
   embedded: number;
   /**
@@ -222,6 +234,43 @@ export interface VectorsManifest {
    * only position at which a zero vector is correct.
    */
   notEmbedded: number;
+}
+
+/**
+ * The identity of an index: a hash of its provisions, in order.
+ *
+ * The vectors are **positional** — vector *i* belongs to the *i*-th id in the
+ * index — so a vectors file is only correct against the *exact* index it was
+ * exported from. A new revision adds and removes provisions, which shifts
+ * every position after the first change, so yesterday's vectors against
+ * today's index are vectors of *different provisions*. That is not an error
+ * anywhere: the search returns provisions, ranked by somebody else's meaning,
+ * and reads as a working search.
+ *
+ * So the vectors manifest carries this, and a consumer compares it against the
+ * index it holds. It is a hash of the ids **and their fingerprints**, in
+ * order, because the fingerprints are what say the corpus's text — a revision
+ * that changed a provision without moving anything still makes the vectors
+ * wrong for it.
+ *
+ * It is computed in megabyte chunks so that nothing has to hold the index: a
+ * hash of the chunk hashes, over the count, which is the same value however
+ * the work is divided.
+ */
+export function indexDigest(entries: Iterable<{ id: string; fp: string }>): string {
+  const chunks: string[] = [];
+  let buffer = '';
+  let count = 0;
+  for (const entry of entries) {
+    buffer += `${entry.id}\u0000${entry.fp}\n`;
+    count++;
+    if (buffer.length >= 1_000_000) {
+      chunks.push(hash128(buffer));
+      buffer = '';
+    }
+  }
+  if (buffer) chunks.push(hash128(buffer));
+  return hash128(`${count}\n${chunks.join('\n')}`);
 }
 
 /** The vectors manifest's key. */
@@ -256,6 +305,18 @@ export function parseVectorsManifest(text: string, where = 'the vectors manifest
   if (manifest.format !== SNAPSHOT_FORMAT) {
     throw new Error(
       `${where} is format ${manifest.format}; this reader knows format ${SNAPSHOT_FORMAT}`,
+    );
+  }
+  if (!manifest.index?.digest || !manifest.index.entries) {
+    throw new Error(
+      `${where} does not say which index it belongs to. The vectors are positional, so a ` +
+        `file without that is a file that can only be trusted by accident.`,
+    );
+  }
+  if (manifest.index.entries !== manifest.count) {
+    throw new Error(
+      `${where} belongs to an index of ${manifest.index.entries} provision(s) and holds ` +
+        `${manifest.count} vector(s) — one of the two is not what it says it is`,
     );
   }
   const expected = manifest.count * manifest.dims * 4;

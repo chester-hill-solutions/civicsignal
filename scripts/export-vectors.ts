@@ -41,6 +41,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ENCODER_CONTRACT } from '../src/encoder';
 import {
+  indexDigest,
   indexKey,
   parseManifest,
   vectorsManifestKey,
@@ -48,6 +49,7 @@ import {
   type VectorsManifest,
 } from '../src/ingest/snapshot-format';
 import { SnapshotReader, type SnapshotBucket } from '../src/ingest/snapshot-source';
+import type { SnapshotIndexEntry } from '../src/ingest/snapshot-diff';
 import { FileSnapshotBucket } from './lib/file-snapshot';
 import { token } from './lib/cloudflare-auth';
 
@@ -74,14 +76,20 @@ if (!revision) {
 
 const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
-/** The snapshot's ids, in the order the index has them. */
-function indexIds(): string[] {
-  const ids: string[] = [];
+/**
+ * The snapshot's index, in the order it has it.
+ *
+ * The ids are the export's work list and the **fingerprints** are what say
+ * which corpus the file belongs to: `indexDigest` hashes both, so a vectors
+ * file cannot be mistaken for one exported from a different revision.
+ */
+function indexEntries(): SnapshotIndexEntry[] {
+  const entries: SnapshotIndexEntry[] = [];
   for (const line of readFileSync(join(dir, indexKey(revision!)), 'utf8').split('\n')) {
     if (!line.trim()) continue;
-    ids.push((JSON.parse(line) as { id: string }).id);
+    entries.push(JSON.parse(line) as SnapshotIndexEntry);
   }
-  return ids;
+  return entries;
 }
 
 /** The parts as the bucket has them. */
@@ -135,11 +143,14 @@ async function exportPart(
 }
 
 async function main(): Promise<void> {
-  const ids = indexIds();
+  const index = indexEntries();
+  const ids = index.map((entry) => entry.id);
+  const digest = indexDigest(index);
   const expected = ids.length * DIMENSIONS * 4;
   console.log(
     `${ids.length} provision(s), ${DIMENSIONS} dimensions — ${mb(expected)} of vectors in ` +
-      `${Math.ceil(ids.length / perPart)} part(s)`,
+      `${Math.ceil(ids.length / perPart)} part(s)\n` +
+      `  the index they belong to is ${digest.slice(0, 16)}…`,
   );
 
   // The snapshot's own rows, for the one check that makes zero vectors honest.
@@ -151,7 +162,7 @@ async function main(): Promise<void> {
     readFileSync(join(dir, `${revision}.manifest.json`), 'utf8'),
     `${revision}.manifest.json`,
   );
-  const index = await snapshot.index();
+  const byId = await snapshot.index();
 
   const parts: VectorsManifest['parts'] = [];
   let embedded = 0;
@@ -185,7 +196,7 @@ async function main(): Promise<void> {
   if (missing.length > 0) {
     const rows = await snapshot.rows(
       missing.map((id) => {
-        const entry = index.get(id);
+        const entry = byId.get(id);
         if (!entry) throw new Error(`${id} has no vector and is not in the snapshot's index`);
         return entry;
       }),
@@ -208,6 +219,7 @@ async function main(): Promise<void> {
     count: ids.length,
     bytes: expected,
     parts,
+    index: { entries: index.length, digest },
     embedded,
     notEmbedded: ids.length - embedded,
   };

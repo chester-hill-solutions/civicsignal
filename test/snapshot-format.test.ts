@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   cutRows,
+  indexDigest,
   indexLine,
   locate,
   parseManifest,
@@ -57,6 +58,55 @@ describe('an index entry', () => {
       off: 1234,
       len: 567,
     });
+  });
+});
+
+/**
+ * The identity of an index.
+ *
+ * The vectors are **positional**: vector *i* belongs to the *i*-th id in the
+ * index. So a vectors file is only correct against the exact index it was
+ * exported from, and a new revision — which adds and removes provisions and
+ * shifts every position after the first change — makes yesterday's vectors
+ * vectors of *different provisions*. Nothing about that is an error anywhere:
+ * the search returns provisions, ranked by somebody else's meaning, and reads
+ * as a working search. This digest is what makes it refusable.
+ */
+describe('the identity of an index', () => {
+  const entries = [
+    { id: 'acts-en-100', fp: 'aaa' },
+    { id: 'acts-en-101', fp: 'bbb' },
+    { id: 'regulations-en-1', fp: 'ccc' },
+  ];
+
+  it('is the same for the same index', () => {
+    expect(indexDigest(entries)).toBe(indexDigest([...entries]));
+  });
+
+  it('changes when two provisions swap places', () => {
+    const swapped = [entries[1]!, entries[0]!, entries[2]!];
+    expect(indexDigest(swapped)).not.toBe(indexDigest(entries));
+  });
+
+  it('changes when a provision\'s text changes, even if nothing moved', () => {
+    const edited = [entries[0]!, { ...entries[1]!, fp: 'different' }, entries[2]!];
+    expect(indexDigest(edited)).not.toBe(indexDigest(entries));
+  });
+
+  it('changes when a provision is dropped', () => {
+    expect(indexDigest(entries.slice(0, 2))).not.toBe(indexDigest(entries));
+  });
+
+  it('does not care how the work is divided', () => {
+    // A megabyte of entries crosses the chunk boundary many times over, and
+    // the digest is a hash of the chunk hashes over the count — so the same
+    // index always gives the same value.
+    const many = Array.from({ length: 40_000 }, (_, at) => ({
+      id: `acts-en-${at}`,
+      fp: at.toString(16).padStart(32, '0'),
+    }));
+    expect(indexDigest(many)).toBe(indexDigest(many));
+    expect(indexDigest(many)).not.toBe(indexDigest(many.slice(1)));
   });
 });
 

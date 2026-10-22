@@ -27,6 +27,7 @@ import { join } from 'node:path';
 import { ENCODER_CONTRACT } from '../src/encoder';
 import { embeddableText } from '../src/ingest/pipeline';
 import {
+  indexDigest,
   indexKey,
   parseVectorsManifest,
   vectorsManifestKey,
@@ -51,14 +52,14 @@ if (!revision) {
 
 const DIMS = ENCODER_CONTRACT.dimensions;
 
-/** Every id, in the index's order — the order the vectors are in. */
-function indexIds(): string[] {
-  const ids: string[] = [];
+/** The index, in its order — the order the vectors are in. */
+function indexEntries() {
+  const entries: { id: string; fp: string; off: number; len: number }[] = [];
   for (const line of readFileSync(join(dir, indexKey(revision)), 'utf8').split('\n')) {
     if (!line.trim()) continue;
-    ids.push((JSON.parse(line) as { id: string }).id);
+    entries.push(JSON.parse(line) as { id: string; fp: string; off: number; len: number });
   }
-  return ids;
+  return entries;
 }
 
 /** The bytes of a position's vector, out of the part that holds it. */
@@ -84,7 +85,8 @@ function cosine(a: Float32Array, b: number[]): number {
 }
 
 async function main(): Promise<void> {
-  const ids = indexIds();
+  const entries = indexEntries();
+  const ids = entries.map((entry) => entry.id);
   const manifest = parseVectorsManifest(
     readFileSync(join(dir, vectorsManifestKey(revision)), 'utf8'),
     vectorsManifestKey(revision),
@@ -95,6 +97,23 @@ async function main(): Promise<void> {
         `provision(s) — they are not the same file`,
     );
   }
+
+  // **The cheapest check, and the one that catches the failure that matters.**
+  //
+  // The vectors are positional, so a file exported from a different revision
+  // is vectors of *different provisions* — and it reads as a working search,
+  // returning provisions ranked by somebody else's meaning. The digest is the
+  // index's identity, and this is where a file that does not match it stops.
+  const digest = indexDigest(entries);
+  if (manifest.index.digest !== digest) {
+    throw new Error(
+      `the vectors were exported from a different index: the manifest says ` +
+        `${manifest.index.digest.slice(0, 16)}… and this index is ${digest.slice(0, 16)}…. ` +
+        `Positional vectors against the wrong index are silent wrong answers, so this ` +
+        `file must not be used — re-export it.`,
+    );
+  }
+  console.log(`${ids.length} provision(s), index ${digest.slice(0, 16)}… — the manifest agrees`);
 
   const snapshot = new SnapshotReader(new FileSnapshotBucket(dir), revision);
   const index = await snapshot.index();
