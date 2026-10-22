@@ -28,6 +28,20 @@
   // The encoder, called directly rather than by its address: a Worker cannot
   // fetch a `workers.dev` address on this account — it answers `1042`.
   "services": [{ "binding": "ENCODER_SERVICE", "service": "civicsignal-encoder" }],
+  "r2_buckets": [
+    {
+      "binding": "CORPUS",
+      // The corpus's snapshots: the rows, the index and the vectors, one file
+      // per revision, named for the corpus commit.
+      //
+      // The cycle reads the **index** whole — about twenty-five megabytes,
+      // and it is the diff — and the **rows** a few at a time by byte range.
+      // The diff is between that index and the store's own fingerprints, so
+      // the gap between the store's revision and the head is not a number of
+      // commits: it is not a number of anything.
+      "bucket_name": "civicsignal-corpus"
+    }
+  ],
   "triggers": {
     // Once a day, at 11:23 UTC.
     //
