@@ -19,6 +19,13 @@ export interface Env extends SpineEnv {
   CORPORA?: R2Bucket;
   /** Response cache for corpus queries. */
   CIVIC_CACHE?: KVNamespace;
+  /**
+   * The key for the inference gateway that serves Jev.
+   *
+   * Without it the search uses the cosine order and the floor, and the product
+   * behaves as it did before. See `src/jev.ts`.
+   */
+  JEV_KEY?: string;
   /** Corridators for ingest jobs. */
   INGEST_QUEUE?: Queue;
   /** Stripe secret for Billing Meter events. */

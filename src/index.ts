@@ -273,6 +273,22 @@ function corpusContext(env: Env): CorpusContext {
     now: () => new Date(),
     ...(vector ? { vector } : {}),
     ...(embedQuery ? { embedQuery } : {}),
+    // The key for the inference gateway. Without it the search keeps the cosine
+    // order and the floor, which is the behaviour of every deployment before
+    // this one.
+    ...(env.JEV_KEY ? { jev: { key: env.JEV_KEY } } : {}),
+    // The cache, when the namespace is bound. The signature carries no KV, so
+    // the retrieval code stays free of Cloudflare and the tests supply a Map.
+    // `act-titles.ts` uses the same namespace for the same reason.
+    ...(env.CIVIC_CACHE
+      ? {
+          cache: {
+            get: (key: string) => env.CIVIC_CACHE!.get(key, 'json'),
+            put: (key: string, value: unknown, ttlSeconds: number) =>
+              env.CIVIC_CACHE!.put(key, JSON.stringify(value), { expirationTtl: ttlSeconds }),
+          },
+        }
+      : {}),
   };
 }
 
