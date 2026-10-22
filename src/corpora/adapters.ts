@@ -74,25 +74,52 @@ async function queryRows(
  * say "I don't have information on that" is not an empty result — it is a
  * floor on the score, below which the product says so.
  *
- * The number comes from `scripts/eval-floor.ts`, measured over the 36 labelled
- * questions on a 19,021-section corpus. It is a **trade**, and the measurement
- * states both sides:
+ * **The floor is set by what the corpus cannot answer, not by what it can.**
+ * The first version of this was 0.84, chosen as the knee in the labelled eval
+ * set — where every question has an answer, so the measurement priced the
+ * floor's cost and said nothing about its benefit. `scripts/eval-floor.ts`
+ * now measures both sides over a 19,021-section corpus: 36 labelled questions
+ * and 12 the corpus genuinely cannot answer.
  *
- * | floor | kept | kept and right | kept and **wrong** | refused but answerable |
- * |---|---|---|---|---|
- * | 0.8102 | 21 | 19 | 2 | 3 |
- * | 0.8318 | 18 | 17 | 1 | 5 |
- * | 0.8421 | 15 | 14 | 1 | 8 |
- * | 0.8561 | 12 | 12 | **0** | 10 |
+ * The twelve, and their best match:
  *
- * 0.84 is the knee. It refuses a fair number of questions the corpus *could*
- * answer — which is the price, and it is a product decision rather than a
- * fact. What the measurement cannot say is where the true optimum is, because
- * every question in the eval set has an answer: it measures the cost of the
- * floor and not the benefit. Calibrating it properly needs a set of questions
- * the corpus *cannot* answer, and the scores they get.
+ * | | best score | the nearest provision it would have answered with |
+ * |---|---|---|
+ * | tenancy in Quebec | 0.7830 | Squamish Nation Residential Tenancy Regulations s.44.1 |
+ * | a US patent deadline | 0.7738 | Patent Rules s.81 |
+ * | the Bank of Canada rate | 0.7429 | Exchange Rate (Authorized Foreign Banks) Regulations s.1 |
+ * | R v Jordan | 0.7428 | CJFTA Tariff Preference Regulations s.1 |
+ * | the child benefit rate | 0.7419 | Portions of the RCMP Divestiture Regulations s.6 |
+ * | R v Gladue | 0.7395 | Criminal Code s.455 |
+ * | speeding in Ontario | 0.7327 | Corrections and Conditional Release Regulations s.37 |
+ * | an Australian work visa | 0.7087 | Immigration and Refugee Protection Act s.87.301 |
+ * | the weather in Ottawa | 0.6782 | Canadian Aviation Regulations s.602.72 |
+ * | the 2026 World Cup | 0.6644 | FIFA Men's U-20 World Cup Canada 2007 Remission Order s.1 |
+ * | the capital of Australia | 0.6576 | Proclamation … Canada-Australia Convention s.11 |
+ * | sourdough | 0.6308 | Toys Regulations s.32 |
+ *
+ * **Nothing unanswerable reaches 0.79.** So the floor sits just above that
+ * ceiling, and the margin over it is what guards against a question the twelve
+ * did not think of — not a preference for precision over recall:
+ *
+ * | floor | kept | right | wrong | refused but answerable | unanswerable let through |
+ * |---|---|---|---|---|---|
+ * | 0.81 | 21 | 19 | 2 | 3 | **0 of 12** |
+ * | 0.84 | 15 | 14 | 1 | 8 | **0 of 12** |
+ * | 0.86 | 12 | 12 | 0 | 10 | **0 of 12** |
+ *
+ * Three thresholds, the same benefit, and very different costs. 0.84 was
+ * refusing **eight** questions the corpus could answer for nothing at all.
+ * 0.81 keeps six more of them and refuses three, at the price of one more
+ * wrong answer — and the twelve are not a tight bound, so the margin is
+ * deliberate rather than tuned.
+ *
+ * What would move it: an unanswerable question that scores high, which is a
+ * question whose nearest provision is genuinely close — "what does the
+ * Criminal Code say about assault" asked of a corpus that *has* the Criminal
+ * Code is not unanswerable, and nothing here separates that from its opposite.
  */
-export const VECTOR_FLOOR = 0.84;
+export const VECTOR_FLOOR = 0.81;
 
 export const statutesCorpus: Corpus = {
   id: STATUTES_CANADA.id,

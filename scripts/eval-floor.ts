@@ -26,6 +26,8 @@
  *          --queries dist/eval-query-vectors.matched.json
  */
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { ENCODER_CONTRACT, queryText } from '../src/encoder';
 import { buildIndex, search } from '../src/eval/bm25';
 import { validateLabels } from '../src/eval/evaluate';
 import { QUESTIONS } from '../src/eval/questions';
@@ -41,6 +43,10 @@ const corpusPath = arg('--corpus', 'dist/eval-corpus.jsonl');
 const vectorsPath = arg('--vectors', 'dist/eval-corpus.matched.emb');
 const queriesPath = arg('--queries', 'dist/eval-query-vectors.matched.json');
 const topK = Number(arg('--topk', '50'));
+const endpoint = arg('--endpoint', 'https://civicsignal-encoder.chester-hill-solutions.workers.dev/embed');
+const token =
+  process.env.ENCODER_TOKEN ??
+  readFileSync(join(process.env.HOME ?? '.', '.civicsignal', 'encoder-token'), 'utf8').trim();
 
 for (const path of [corpusPath, vectorsPath, queriesPath]) {
   if (!existsSync(path)) {
@@ -83,6 +89,70 @@ console.log(`  ${store.count} vector(s) of ${store.dims} dimensions, ${usable.le
 
 const queryVectors = JSON.parse(readFileSync(queriesPath, 'utf8')) as Record<string, number[]>;
 
+/**
+ * Questions the corpus **cannot** answer.
+ *
+ * Every question in the labelled set has an answer, so the sweep above prices
+ * the floor's **cost** — the questions it refuses that the corpus could have
+ * answered — and says nothing about its **benefit**. This is the other side.
+ *
+ * Three kinds, and the difference matters when reading the scores:
+ *
+ *   **not law at all** — the weather, a sports result. Nothing answers these,
+ *   and the product should refuse them. The web arm must not rescue them
+ *   either: an authoritative source does not exist, so the answer is the
+ *   refusal, and a floor that lets them through is the product inventing an
+ *   answer about the Criminal Code for a question about the weather.
+ *
+ *   **law the corpus does not hold** — a provincial penalty, a Supreme Court
+ *   holding. These are exactly what the web arm is for, and the *corpus*
+ *   should still refuse them rather than return the nearest federal provision
+ *   about something else. A high score here is the failure the floor exists
+ *   to prevent, and it is also the handoff to the web arm.
+ *
+ *   **adjacent but absent** — a benefit rate, a policy that is not in a
+ *   consolidation. Same as above: the nearest provision is not the answer.
+ */
+const UNANSWERABLE: { id: string; question: string; why: string }[] = [
+  { id: 'un-not-law-weather', question: 'What is the weather in Ottawa tomorrow?', why: 'not law at all' },
+  { id: 'un-not-law-sports', question: 'Who won the 2026 World Cup?', why: 'not law at all' },
+  { id: 'un-not-law-capital', question: 'What is the capital of Australia?', why: 'not law at all' },
+  { id: 'un-not-law-recipe', question: 'How do I bake sourdough bread?', why: 'not law at all' },
+  { id: 'un-prov-speeding', question: 'What is the fine for speeding in Ontario?', why: 'provincial, not federal' },
+  { id: 'un-prov-tenancy', question: 'How much notice must a landlord in Quebec give to end a lease?', why: 'provincial, not federal' },
+  { id: 'un-case-jordan', question: 'What did the Supreme Court of Canada decide in R v Jordan?', why: 'case law, not a statute' },
+  { id: 'un-case-gladue', question: 'What did the Supreme Court hold in R v Gladue about sentencing?', why: 'case law, not a statute' },
+  { id: 'un-benefit-ccb', question: 'How much is the Canada Child Benefit for a two-year-old in 2026?', why: 'a rate, not in a consolidation' },
+  { id: 'un-rate-boc', question: 'What is the Bank of Canada interest rate today?', why: 'a rate, not in a consolidation' },
+  { id: 'un-foreign-patent', question: 'What is the deadline to file a patent application in the United States?', why: 'foreign law' },
+  { id: 'un-foreign-visa', question: 'How do I apply for a work visa for Australia?', why: 'foreign law' },
+];
+
+/** The encoder, a few documents at a time, retried — it is one container. */
+async function embed(texts: string[], endpoint: string, token: string): Promise<number[][]> {
+  const out: number[][] = [];
+  for (let at = 0; at < texts.length; at += 20) {
+    const chunk = texts.slice(at, at + 20);
+    let last = '';
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ texts: chunk, model: ENCODER_CONTRACT.model }),
+      });
+      if (response.ok) {
+        out.push(...((await response.json()) as { vectors: number[][] }).vectors);
+        last = '';
+        break;
+      }
+      last = `${response.status} ${(await response.text()).slice(0, 120)}`;
+      await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+    }
+    if (last) throw new Error(`the encoder refused: ${last}`);
+  }
+  return out;
+}
+
 /** One question, measured. */
 interface Measured {
   id: string;
@@ -121,6 +191,27 @@ for (const question of usable) {
   });
 }
 
+/**
+ * What the corpus does with a question it cannot answer.
+ *
+ * The query instruction is the one the product embeds with — `queryText`, from
+ * the encoder contract — because a score measured with a different prompt is a
+ * score in a different space, and the floor is a number in *this* one.
+ */
+const unanswerable: { id: string; why: string; topScore: number; topRow: string }[] = [];
+{
+  const fresh = await embed(UNANSWERABLE.map((q) => queryText(q.question)), endpoint, token);
+  UNANSWERABLE.forEach((question, at) => {
+    const best = searchVectors(store, Float32Array.from(fresh[at]!), 1)[0];
+    unanswerable.push({
+      id: question.id,
+      why: question.why,
+      topScore: best?.score ?? 0,
+      topRow: best ? `${rows[vectorToRow[best.docId] ?? best.docId]!.act} s.${rows[vectorToRow[best.docId] ?? best.docId]!.section}` : '—',
+    });
+  });
+}
+
 const hit = (rank: number | null, at: number) => rank !== null && rank <= at;
 const pct = (n: number, of: number) => `${((n / Math.max(1, of)) * 100).toFixed(0)}%`;
 
@@ -144,7 +235,10 @@ for (const style of ['exact', 'concept'] as const) {
  * product answering confidently about something else.
  */
 console.log('\nthe floor: what each threshold would do');
-console.log('  threshold   kept   kept-and-right   kept-and-wrong   refused-but-answerable');
+console.log(
+  '  threshold   kept   kept-and-right   kept-and-wrong   refused-but-answerable' +
+    '   unanswerable-let-through',
+);
 const scores = measured.map((m) => m.topScore).sort((a, b) => a - b);
 const thresholds = [
   ...new Set([
@@ -167,10 +261,15 @@ for (const threshold of thresholds) {
   const refusedAnswerableHere = measured.filter(
     (m) => m.topScore < threshold && hit(m.vectorRank, 5),
   );
+  // **The other side of the trade.** The questions the corpus cannot answer
+  // that this threshold would let through — the product answering confidently
+  // about a provision that is not the answer.
+  const through = unanswerable.filter((question) => question.topScore >= threshold).length;
   console.log(
     `  ${threshold.toFixed(4)}   ${String(kept.length).padStart(4)}   ` +
       `${String(right.length).padStart(14)}   ${String(wrong.length).padStart(15)}   ` +
-      `${String(refusedAnswerableHere.length).padStart(23)}`,
+      `${String(refusedAnswerableHere.length).padStart(23)}   ` +
+      `${String(through).padStart(26)} of ${unanswerable.length}`,
   );
 }
 
@@ -212,6 +311,20 @@ for (const miss of vectorMisses) {
     }  top score ${miss.topScore.toFixed(4)}`,
   );
 }
+
+console.log('\nquestions the corpus cannot answer, and what it scores for them');
+for (const question of [...unanswerable].sort((a, b) => b.topScore - a.topScore)) {
+  const verdict = question.topScore >= 0.84 ? 'would be answered' : 'refused';
+  console.log(
+    `  ${question.topScore.toFixed(4)}  ${verdict.padEnd(16)} ${question.id.padEnd(24)} ` +
+      `(${question.why}) — nearest: ${question.topRow}`,
+  );
+}
+const letThrough = unanswerable.filter((question) => question.topScore >= 0.84).length;
+console.log(
+  `\nof ${unanswerable.length} question(s) the corpus cannot answer, ${letThrough} score at or ` +
+    `above the floor and would be answered with the nearest provision instead of refused`,
+);
 
 const answerable = measured.filter((m) => hit(m.vectorRank, 5)).length;
 console.log(
