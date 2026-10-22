@@ -335,11 +335,16 @@ async function retrieveByVector(
         };
         await ctx.cache.put(cacheKey, answer, CACHE_SECONDS);
       }
-    } else if (matches[0]!.score < VECTOR_FLOOR) {
-      // The gateway did not answer. Use the cosine order and the floor: a
-      // search that returns nothing when the network has a fault is worse than
-      // a search that returns the second-best order.
-      return [];
+    } else {
+      // **The rerank did not answer.** The fallback keeps the search alive, and
+      // it must keep the failure visible as well: an empty result from the
+      // floor and an empty result from the authority decision look identical to
+      // a caller, and they are not the same thing at all. Without this line the
+      // product can serve the fallback for weeks and nobody knows.
+      console.error(
+        `the rerank did not answer; the cosine order and the floor stand (best score ${matches[0]!.score.toFixed(3)})`,
+      );
+      if (matches[0]!.score < VECTOR_FLOOR) return [];
     }
   }
 
