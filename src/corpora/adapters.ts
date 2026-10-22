@@ -7,6 +7,7 @@ import {
   STATUTES_CANADA,
   STATUTES_ONTARIO,
 } from './policies';
+import { CANDIDATE_COUNT, decide, rankWithJev, reorder } from '../jev';
 import { normalizeForSearch } from '../text';
 import {
   escapeLike,
@@ -222,29 +223,34 @@ async function retrieveByVector(
 
   const vector = await ctx.embedQuery(question);
   const filter = query.language ? { language: query.language.toLowerCase() } : undefined;
-  // Over-fetch when the result is going to be filtered: the provisions that
-  // match the keywords may not be the ones the embedding ranked first, and a
-  // filter applied to exactly `limit` rows can empty a result the corpus can
-  // answer.
-  const matches = await ctx.vector.query(
-    vector,
-    constrained ? Math.min(limit * 4, MAX_LIMIT) : limit,
-    filter,
-  );
+
+  // How deep to look.
+  //
+  // With Jev the candidate set is deep. The measurement showed why: the answers
+  // that a cosine sorts badly arrive between rank 50 and rank 250, and Jev
+  // lifts them — five provisions came from below rank 60 and went into the top
+  // 5, decided from a heading and 250 characters. Without Jev, the over-fetch
+  // is only for the keyword filter.
+  const depth = ctx.jev?.key
+    ? CANDIDATE_COUNT
+    : constrained
+      ? Math.min(limit * 4, MAX_LIMIT)
+      : limit;
+  const matches = await ctx.vector.query(vector, depth, filter);
   if (matches.length === 0) return [];
 
-  // **The floor.** A vector search always returns the k it was asked for, so
-  // "nothing found" is not something it can say — the product's answer to a
-  // question the corpus cannot answer used to be fifty provisions about
-  // something else. What it *can* say is that the best match is not close
-  // enough to answer with.
+  // **The floor, without Jev.**
   //
-  // This is the refusal, and the caller turns it into "I don't have
-  // information on that". It is deliberately before the rows are fetched: a
-  // question the corpus cannot answer should cost one index query and no
-  // database reads.
-  const best = matches[0]!.score;
-  if (best < VECTOR_FLOOR) return [];
+  // A vector search always returns the k it was asked for, so "nothing found"
+  // is not something it can say. The floor is the cheaper refusal for a
+  // deployment with no key, and it is less accurate: it refuses eight of the
+  // twenty-two questions that the corpus can answer, where the atomic questions
+  // refuse none of them.
+  //
+  // It stays **before the rows are fetched**, so a question the corpus cannot
+  // answer costs one index query and no database reads. Moving it after the
+  // fetch is easy to do by accident and a test now catches it.
+  if (!ctx.jev?.key && matches[0]!.score < VECTOR_FLOOR) return [];
 
   // The index holds no text. The rows come from the database, in the order the
   // index ranked them, and a row the index names but the database does not have
@@ -258,6 +264,37 @@ async function retrieveByVector(
     .map((match) => byId.get(match.id))
     .filter((row): row is Record<string, unknown> => row !== undefined);
 
+  if (ctx.jev?.key) {
+    // **The decision, from the atomic answers.**
+    //
+    // One relevance score cannot make this decision. For a question about
+    // Quebec tenancy the relevance is high and correct, because the corpus does
+    // hold a federal tenancy regulation, and the answer the product needs is
+    // "not here, this is provincial". The six questions in `src/jev.ts` answer
+    // the parts of that decision, and `decide` combines them.
+    const ranked = await rankWithJev(
+      question,
+      ordered.map((row) => ({
+        id: String(row['id']),
+        title: `${String(row['act'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
+        text: String(row['text'] ?? ''),
+      })),
+      { key: ctx.jev.key },
+    );
+
+    if (ranked) {
+      // A question that belongs to the web arm, or to nothing, does not come
+      // back from this corpus.
+      if (decide(ranked.flags, ranked.anyRelevant) !== 'answer') return [];
+      ordered = reorder(ordered, ranked.relevance);
+    } else if (matches[0]!.score < VECTOR_FLOOR) {
+      // The gateway did not answer. Use the cosine order and the floor: a
+      // search that returns nothing when the network has a fault is worse than
+      // a search that returns the second-best order.
+      return [];
+    }
+  }
+
   if (constrained) {
     const wanted = keywords.map((keyword) => normalizeForSearch(keyword));
     ordered = ordered
@@ -269,8 +306,8 @@ async function retrieveByVector(
         );
         return wanted.every((keyword) => folded.includes(keyword));
       })
-      .slice(0, limit);
   }
+  ordered = ordered.slice(0, limit);
 
   return ordered.map((row) => ({
     corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),

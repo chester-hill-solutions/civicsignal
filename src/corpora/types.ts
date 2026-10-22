@@ -1,11 +1,21 @@
 import type {
   Corpus,
-  CorpusContext,
+  CorpusContext as BaseCorpusContext,
   CorpusQuery as BaseCorpusQuery,
 } from "@chester-hill-solutions/corpus";
 import { normalizeForSearch } from '../text';
 
-export type { Corpus, CorpusContext };
+export type { Corpus };
+
+/**
+ * The shared context, plus what this product's search needs.
+ *
+ * `jev` holds the key for the inference gateway. A deployment without a key
+ * uses the cosine order and the floor, and nothing else changes.
+ */
+export interface CorpusContext extends BaseCorpusContext {
+  jev?: { key: string };
+}
 
 /**
  * How the question is framed geographically.
