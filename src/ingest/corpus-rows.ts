@@ -32,7 +32,7 @@ export function classifyInstrument(path: string): {
 } {
   if (path.startsWith('fra/lois/')) return { kind: 'acts', language: 'fr' };
   if (path.startsWith('fra/reglements/')) return { kind: 'regulations', language: 'fr' };
-  if (path.startsWith('eng/reglements/')) return { kind: 'regulations', language: 'en' };
+  if (path.startsWith('eng/regulations/')) return { kind: 'regulations', language: 'en' };
   return { kind: 'acts', language: 'en' };
 }
 
