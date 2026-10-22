@@ -15,6 +15,32 @@ export type { Corpus };
  */
 export interface CorpusContext extends BaseCorpusContext {
   jev?: { key: string };
+  /**
+   * The cache, when the deployment has one.
+   *
+   * Two methods, and nothing about KV in the signature, so a test supplies a
+   * Map and the retrieval code stays free of Cloudflare.
+   */
+  cache?: {
+    get(key: string): Promise<unknown | null>;
+    put(key: string, value: unknown, ttlSeconds: number): Promise<void>;
+  };
+  /**
+   * The revision of the corpus that the search reads.
+   *
+   * The cache key holds it, so a new revision clears the cache by itself. The
+   * pipeline mirrors the current commit for this. When the value is absent, the
+   * lifetime is the only guard.
+   */
+  corpusRevision?: string;
+}
+
+/** One cached retrieval. */
+export interface CachedRetrieval {
+  decision: 'answer' | 'web' | 'refuse';
+  anyRelevant: number;
+  /** The provision ids, in the order that the rerank put them. */
+  order: string[];
 }
 
 /**

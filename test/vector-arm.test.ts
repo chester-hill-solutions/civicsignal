@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { statutesCorpus, VECTOR_FLOOR } from '../src/corpora/adapters';
+import { CACHE_SECONDS, statutesCorpus, VECTOR_FLOOR } from '../src/corpora/adapters';
+import { hash128 } from '../src/ingest/reconcile';
 import type { CorpusContext } from '../src/corpora/types';
 import type { VectorMatch } from '@chester-hill-solutions/corpus';
 
@@ -364,5 +365,111 @@ describe('the vector arm', () => {
       ctx(db, { vector: index.index, embedQuery: async () => [0.1] }),
     );
     expect(index.vectors).toHaveLength(0);
+  });
+});
+
+/**
+ * The cache.
+ *
+ * The decision is a property of the question, not of the candidates. So a
+ * question the product refuses costs nothing on the second ask: no embedding,
+ * no index query, no rerank, no tokens. That is the property these tests hold,
+ * and it is the one a careless change breaks, because the natural place for a
+ * cache read is after the work instead of before it.
+ */
+describe('the retrieval cache', () => {
+  function mapCache() {
+    const store = new Map<string, unknown>();
+    return {
+      store,
+      cache: {
+        async get(key: string) {
+          return store.get(key) ?? null;
+        },
+        async put(key: string, value: unknown, _ttl: number) {
+          store.set(key, value);
+        },
+      },
+    };
+  }
+
+  /** The key the retrieval builds, so the test primes the same one. */
+  function keyFor(question: string, limit = 25, revision = 'unknown') {
+    const normalised = question.toLowerCase().replace(/\s+/g, ' ').replace(/[.?!]+$/, '').trim();
+    return `retrieval:${hash128(normalised)}:${revision}:${limit}`;
+  }
+
+  it('returns a cached refusal without a database read or a rerank', async () => {
+    const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
+    const { store, cache } = mapCache();
+    let embedded = 0;
+
+    await cache.put(
+      keyFor('the weather in Ottawa?'),
+      { decision: 'refuse', anyRelevant: 0.09, order: [] },
+      CACHE_SECONDS,
+    );
+
+    const items = await statutesCorpus.retrieve(
+      { topic: 'The weather in Ottawa?' },
+      ctx(db, {
+        vector: index.index,
+        embedQuery: async () => {
+          embedded++;
+          return [0.1];
+        },
+        cache,
+      }),
+    );
+
+    expect(items).toEqual([]);
+    // Nothing expensive ran: not the embedding, not the index, not the store.
+    expect(embedded).toBe(0);
+    expect(index.vectors).toHaveLength(0);
+    expect(calls).toHaveLength(0);
+    expect(store.size).toBe(1);
+  });
+
+  it('routes a cached provincial question to the web arm without a search', async () => {
+    const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([]);
+    const { cache } = mapCache();
+    await cache.put(
+      keyFor('what is the fine for speeding in ontario'),
+      { decision: 'web', anyRelevant: 0.21, order: [] },
+      CACHE_SECONDS,
+    );
+
+    const items = await statutesCorpus.retrieve(
+      { topic: 'What is the fine for speeding in Ontario' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1], cache }),
+    );
+
+    expect(items).toEqual([]);
+    expect(index.vectors).toHaveLength(0);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('does not answer from a cached refusal in another corpus revision', async () => {
+    const { db } = fakeDb([row('acts-en-c-34-36')]);
+    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
+    const { cache } = mapCache();
+    // The refusal was written for the revision that is now stale.
+    await cache.put(
+      keyFor('the weather in ottawa', 25, 'oldcommitsha'),
+      { decision: 'refuse', anyRelevant: 0.09, order: [] },
+      CACHE_SECONDS,
+    );
+
+    const items = await statutesCorpus.retrieve(
+      { topic: 'the weather in Ottawa' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1], cache, corpusRevision: 'newcommitsha' }),
+    );
+
+    // The stale entry does not decide this question. The search runs, and the
+    // score decides it: above the floor, so the corpus answers.
+    expect(items).toHaveLength(1);
+    expect(index.vectors).toHaveLength(1);
   });
 });

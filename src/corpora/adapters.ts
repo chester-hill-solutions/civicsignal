@@ -7,6 +7,7 @@ import {
   STATUTES_CANADA,
   STATUTES_ONTARIO,
 } from './policies';
+import { hash128 } from '../ingest/reconcile';
 import { CANDIDATE_COUNT, decide, rankWithJev, reorder } from '../jev';
 import { normalizeForSearch } from '../text';
 import {
@@ -15,6 +16,7 @@ import {
   resolveLimit,
   MAX_LIMIT,
   type Corpus,
+  type CachedRetrieval,
   type CorpusContext,
   type CorpusQuery,
 } from './types';
@@ -122,6 +124,9 @@ async function queryRows(
  */
 export const VECTOR_FLOOR = 0.81;
 
+/** How long a cached retrieval lives. The corpus moves every three to eight days. */
+export const CACHE_SECONDS = 6 * 60 * 60;
+
 export const statutesCorpus: Corpus = {
   id: STATUTES_CANADA.id,
   policy: STATUTES_CANADA,
@@ -221,6 +226,22 @@ async function retrieveByVector(
   const limit = resolveLimit(query.limit);
   const constrained = topic !== '' && keywords.length > 0;
 
+  // **The cache, before anything expensive.**
+  //
+  // The decision is a property of the question, not of the candidates, so a
+  // question the product refuses costs nothing on the second ask: no embedding,
+  // no index query, no rerank. That matters, because the questions a legal
+  // product cannot answer are the ones users repeat.
+  //
+  // The key holds the corpus revision, so a new revision clears the cache by
+  // itself. The question is normalised by hand: lower case, spaces collapsed,
+  // and the closing punctuation removed. No stems and no synonyms, because two
+  // questions that differ in law must not share a key.
+  const normalised = question.toLowerCase().replace(/\s+/g, ' ').replace(/[.?!]+$/, '').trim();
+  const cacheKey = `retrieval:${hash128(normalised)}:${ctx.corpusRevision ?? 'unknown'}:${limit}`;
+  const cached = (await ctx.cache?.get(cacheKey)) as CachedRetrieval | null | undefined;
+  if (cached && cached.decision !== 'answer') return [];
+
   const vector = await ctx.embedQuery(question);
   const filter = query.language ? { language: query.language.toLowerCase() } : undefined;
 
@@ -282,11 +303,38 @@ async function retrieveByVector(
       { key: ctx.jev.key },
     );
 
-    if (ranked) {
-      // A question that belongs to the web arm, or to nothing, does not come
-      // back from this corpus.
-      if (decide(ranked.flags, ranked.anyRelevant) !== 'answer') return [];
+    if (cached?.order && cached.order.length > 0) {
+      // The order is cached, so the rerank does not run again. This is the
+      // saving that the second entry exists for. A provision the cache names
+      // and the search no longer returns goes to the end, which is the right
+      // answer for a row that has gone.
+      const position = new Map(cached.order.map((id, at) => [id, at]));
+      ordered = [...ordered].sort(
+        (left, right) =>
+          (position.get(String(left['id'])) ?? Number.MAX_SAFE_INTEGER) -
+          (position.get(String(right['id'])) ?? Number.MAX_SAFE_INTEGER),
+      );
+    } else if (ranked) {
+      const decision = decide(ranked.flags, ranked.anyRelevant);
+
+      // Cache the decision whether the product answers or refuses. The refusal
+      // is the cheaper half to store and the more valuable one to reuse.
+      if (decision !== 'answer') {
+        if (ctx.cache) {
+          const refusal: CachedRetrieval = { decision, anyRelevant: ranked.anyRelevant, order: [] };
+          await ctx.cache.put(cacheKey, refusal, CACHE_SECONDS);
+        }
+        return [];
+      }
       ordered = reorder(ordered, ranked.relevance);
+      if (ctx.cache) {
+        const answer: CachedRetrieval = {
+          decision,
+          anyRelevant: ranked.anyRelevant,
+          order: ordered.map((row) => String(row['id'])).slice(0, CANDIDATE_COUNT),
+        };
+        await ctx.cache.put(cacheKey, answer, CACHE_SECONDS);
+      }
     } else if (matches[0]!.score < VECTOR_FLOOR) {
       // The gateway did not answer. Use the cosine order and the floor: a
       // search that returns nothing when the network has a fault is worse than
