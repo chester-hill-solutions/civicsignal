@@ -135,10 +135,19 @@ function excerpt(row: Row): string {
   return `${row.act}, section ${row.section}${row.heading ? ` (${row.heading})` : ''}\n${row.text.slice(0, 1200)}`;
 }
 
+interface Flags {
+  needs_federal_statute: number;
+  needs_provincial: number;
+  needs_court_decision: number;
+  needs_foreign_law: number;
+  is_not_law: number;
+  asks_published_figure: number;
+}
+
 async function ask(
   query: string,
   rows: Row[],
-): Promise<{ relevance: number[]; anyRelevant: number; tokens: number }> {
+): Promise<{ relevance: number[]; anyRelevant: number; flags: Flags; tokens: number }> {
   const questions: Record<string, unknown> = {};
   rows.forEach((_, at) => {
     questions[`c${at}`] = {
@@ -150,6 +159,29 @@ async function ask(
     type: 'noul',
     instructions: 'At least one provision below states the rule the question asks about.',
   };
+
+  // **The decomposition.** One compound judgment is what failed: "does any
+  // provision state the rule" was answered *yes* for Quebec tenancy, correctly,
+  // because the corpus does hold a federal tenancy regulation. Relevance is not
+  // the decision. These ask the separate things that decision is made of, each
+  // narrow enough to be a single gut-check, and the combination happens in code
+  // below where it can be read and changed.
+  const atomic: Record<string, string> = {
+    needs_federal_statute:
+      'The rule this question asks about is stated in a Canadian federal statute or regulation.',
+    needs_provincial:
+      'The rule this question asks about is stated in provincial or territorial law rather than federal law.',
+    needs_court_decision:
+      'The answer to this question is a decision of a court rather than the text of a statute.',
+    needs_foreign_law:
+      'The rule this question asks about comes from a jurisdiction outside Canada.',
+    is_not_law: 'This question is not about law at all.',
+    asks_published_figure:
+      'This question asks for an amount or a rate, of the kind published as a policy figure, that the text of a statute does not state.',
+  };
+  for (const [id, instructions] of Object.entries(atomic)) {
+    questions[id] = { type: 'noul', instructions };
+  }
   const state = [
     ...rows.map((row, at) => `c${at}: ${excerpt(row)}`),
     `question: ${query}`,
@@ -169,6 +201,14 @@ async function ask(
   return {
     relevance: rows.map((_, at) => body.answers[`c${at}`]?.noul ?? 0),
     anyRelevant: body.answers['any_relevant']?.noul ?? 0,
+    flags: {
+      needs_federal_statute: body.answers['needs_federal_statute']?.noul ?? 0,
+      needs_provincial: body.answers['needs_provincial']?.noul ?? 0,
+      needs_court_decision: body.answers['needs_court_decision']?.noul ?? 0,
+      needs_foreign_law: body.answers['needs_foreign_law']?.noul ?? 0,
+      is_not_law: body.answers['is_not_law']?.noul ?? 0,
+      asks_published_figure: body.answers['asks_published_figure']?.noul ?? 0,
+    },
     tokens: body.usage?.input_tokens ?? 0,
   };
 }
@@ -176,6 +216,14 @@ async function ask(
 async function repeated(query: string, rows: Row[]) {
   const relevance = new Array<number>(rows.length).fill(0);
   const anys: number[] = [];
+  const flags = {
+    needs_federal_statute: 0,
+    needs_provincial: 0,
+    needs_court_decision: 0,
+    needs_foreign_law: 0,
+    is_not_law: 0,
+    asks_published_figure: 0,
+  } as Flags;
   let tokens = 0;
   for (let run = 0; run < REPEATS; run++) {
     const one = await ask(query, rows);
@@ -183,9 +231,30 @@ async function repeated(query: string, rows: Row[]) {
       relevance[at] += value / REPEATS;
     });
     anys.push(one.anyRelevant);
+    for (const key of Object.keys(flags) as (keyof Flags)[]) {
+      flags[key] += one.flags[key] / REPEATS;
+    }
     tokens += one.tokens;
   }
-  return { relevance, anys, tokens };
+  return { relevance, anys, flags, tokens };
+}
+
+/**
+ * The decision, in code, from the atomic answers.
+ *
+ * This is the part the docs say to own rather than ask for: each answer is one
+ * narrow judgment, and what to *do* with them is a rule that can be read here
+ * and changed when priorities change. Corpus answers only a question that needs
+ * a federal statute, has a relevant provision, and does not want a published
+ * figure. Provincial and case-law questions are the web arm's. The rest are
+ * refused.
+ */
+function verdict(flags: Flags, anyRelevant: number, threshold: number) {
+  if (flags.needs_foreign_law >= 0.5 || flags.is_not_law >= 0.5) return 'refuse';
+  if (flags.needs_provincial >= 0.5 || flags.needs_court_decision >= 0.5) return 'web';
+  if (flags.asks_published_figure >= 0.5) return 'refuse';
+  if (flags.needs_federal_statute < 0.5) return 'refuse';
+  return anyRelevant >= threshold ? 'answer' : 'refuse';
 }
 
 const hit = (rank: number | null, k: number) => rank !== null && rank <= k;
@@ -199,6 +268,7 @@ let jevAt5 = 0;
 let vectorMrr = 0;
 let jevMrr = 0;
 const answerable: number[] = [];
+const answerableVerdicts: string[] = [];
 
 console.log('\nthe labelled questions, on the full corpus');
 for (const question of QUESTIONS) {
@@ -215,6 +285,7 @@ for (const question of QUESTIONS) {
   const result = await repeated(question.question, rows);
   tokens += result.tokens;
   answerable.push(...result.anys);
+  answerableVerdicts.push(verdict(result.flags, Math.min(...result.anys), 0.5));
 
   const order = rows
     .map((_, at) => at)
@@ -240,7 +311,7 @@ console.log(`\nwithin the top ${TOPK}: ${reachable} of ${QUESTIONS.length} quest
 console.log(`  vector   R@1 ${vectorAt1}/${reachable}   R@5 ${vectorAt5}/${reachable}   MRR ${(vectorMrr / reachable).toFixed(3)}`);
 console.log(`  jev      R@1 ${jevAt1}/${reachable}   R@5 ${jevAt5}/${reachable}   MRR ${(jevMrr / reachable).toFixed(3)}`);
 
-const unanswerable: { id: string; low: number; high: number }[] = [];
+const unanswerable: { id: string; low: number; high: number; verdict: string }[] = [];
 console.log('\nthe unanswerable questions, on the full corpus');
 for (const [at, question] of UNANSWERABLE_QUESTIONS.entries()) {
   const { rows } = candidates(fresh[at]!);
@@ -248,9 +319,13 @@ for (const [at, question] of UNANSWERABLE_QUESTIONS.entries()) {
   tokens += result.tokens;
   const low = Math.min(...result.anys);
   const high = Math.max(...result.anys);
-  unanswerable.push({ id: question.id, low, high });
+  const v = verdict(result.flags, high, 0.5);
+  unanswerable.push({ id: question.id, low, high, verdict: v });
   console.log(
-    `  ${question.id.padEnd(24)} any_relevant ${low.toFixed(2)}-${high.toFixed(2)}   (${question.why})`,
+    `  ${question.id.padEnd(24)} any ${low.toFixed(2)}-${high.toFixed(2)}  ` +
+      `fed ${result.flags.needs_federal_statute.toFixed(2)}  prov ${result.flags.needs_provincial.toFixed(2)}  ` +
+      `court ${result.flags.needs_court_decision.toFixed(2)}  fig ${result.flags.asks_published_figure.toFixed(2)}  ` +
+      `-> ${v.padEnd(6)} (${question.why})`,
   );
 }
 
@@ -262,16 +337,25 @@ console.log(
     `median ${sorted[Math.floor(sorted.length / 2)]!.toFixed(2)}, max ${sorted[sorted.length - 1]!.toFixed(2)}`,
 );
 console.log(`the ${unanswerable.length} unanswerable: at most ${ceiling.toFixed(2)} (best of ${REPEATS} run(s))`);
-if (floor > ceiling) {
-  console.log(
-    `  **separated on the full corpus**: a threshold in (${ceiling.toFixed(2)}, ${floor.toFixed(2)}] ` +
-      `refuses every unanswerable question and keeps every answerable one`,
-  );
-} else {
-  console.log(
-    `  **not separated on the full corpus**: the worst answerable (${floor.toFixed(2)}) is at or below ` +
-      `the best unanswerable (${ceiling.toFixed(2)}), so the window measured on the small corpus ` +
-      `does not survive the real one`,
-  );
+const answeredFromCorpus = answerableVerdicts.filter((v) => v === 'answer').length;
+const answeredFromUnanswerable = unanswerable.filter((question) => question.verdict === 'answer').length;
+console.log(
+  `\nthe decomposition, combined in code:\n` +
+    `  of ${answerableVerdicts.length} answerable question(s), ` +
+    `${answeredFromCorpus} are answered from the corpus ` +
+    `(${answerableVerdicts.filter((v) => v === 'web').length} sent to the web, ` +
+    `${answerableVerdicts.filter((v) => v === 'refuse').length} refused)\n` +
+    `  of ${unanswerable.length} unanswerable question(s), ` +
+    `${answeredFromUnanswerable} are answered from the corpus ` +
+    `(${unanswerable.filter((q) => q.verdict === 'web').length} sent to the web, ` +
+    `${unanswerable.filter((q) => q.verdict === 'refuse').length} refused)`,
+);
+if (answeredFromUnanswerable === 0) {
+  console.log('  **the decomposition separates them, where one relevance score did not**');
 }
+
+console.log(
+  `  for the record, a threshold on the single relevance score does not work here: ` +
+    `the worst answerable is ${floor.toFixed(2)} and the best unanswerable is ${ceiling.toFixed(2)}`,
+);
 console.log(`  ${tokens} input tokens`);
