@@ -347,7 +347,7 @@ export interface UnanswerableQuestion {
   why: string;
 }
 
-export const UNANSWERABLE_QUESTIONS: UnanswerableQuestion[] = [] = [
+export const UNANSWERABLE_QUESTIONS: UnanswerableQuestion[] = [
   { id: 'un-not-law-weather', question: 'What is the weather in Ottawa tomorrow?', why: 'not law at all' },
   { id: 'un-not-law-sports', question: 'Who won the 2026 World Cup?', why: 'not law at all' },
   { id: 'un-not-law-capital', question: 'What is the capital of Australia?', why: 'not law at all' },
@@ -360,5 +360,33 @@ export const UNANSWERABLE_QUESTIONS: UnanswerableQuestion[] = [] = [
   { id: 'un-rate-boc', question: 'What is the Bank of Canada interest rate today?', why: 'a rate, not in a consolidation' },
   { id: 'un-foreign-patent', question: 'What is the deadline to file a patent application in the United States?', why: 'foreign law' },
   { id: 'un-foreign-visa', question: 'How do I apply for a work visa for Australia?', why: 'foreign law' },
+
+  /*
+   * The second block.
+   *
+   * The floor sits 0.012 above the highest score of the twelve above, so those
+   * twelve **are** the margin. A margin that thin rests on a small sample, and
+   * the honest way to test it is to add the kind of question most likely to
+   * break it: one whose nearest provision is genuinely close.
+   *
+   * `un-federal-minimum-wage` is the sharpest of them. The Canada Labour Code
+   * **states the rule** — the federal minimum wage follows the provincial one —
+   * and it does not state the **amount**, because the amount is a figure that is
+   * published separately. The nearest provision is therefore topically identical
+   * to the question, which is exactly the case a threshold cannot separate.
+   */
+  { id: 'un-federal-minimum-wage', question: 'What is the federal minimum wage in Canada right now?', why: 'the rule is in a statute; the amount is not' },
+  { id: 'un-municipal-parking', question: 'What is the fine for parking on a snow route in Ottawa?', why: 'municipal, not federal' },
+  { id: 'un-prov-limitations', question: 'How long do I have to sue someone in Ontario after a car accident?', why: 'provincial, not federal' },
+  { id: 'un-prov-hst', question: 'What is the HST rate in Ontario?', why: 'provincial, a rate' },
+  { id: 'un-prov-licence', question: 'How many hours of continuing education does an Ontario lawyer need each year?', why: 'provincial, professional regulation' },
+  { id: 'un-prov-zoning', question: 'Can my neighbour build a two metre fence in Toronto?', why: 'municipal, not federal' },
+  { id: 'un-case-oakes', question: 'What test did the Supreme Court set out in R v Oakes?', why: 'case law, not a statute' },
+  { id: 'un-foreign-gdpr', question: 'What is the maximum fine under the GDPR for a data breach?', why: 'foreign law' },
+  { id: 'un-foreign-state-tax', question: 'What is the sales tax rate in California?', why: 'foreign law, a rate' },
+  { id: 'un-stat-homicides', question: 'How many firearm-related homicides were there in Canada last year?', why: 'a published figure, not a statute' },
+  { id: 'un-benefit-oas', question: 'How much is Old Age Security per month in 2026?', why: 'a rate, not in a consolidation' },
+  { id: 'un-treaty-jay', question: 'What rights does the Jay Treaty give to First Nations people crossing the border?', why: 'a treaty, not a consolidation' },
+  { id: 'un-not-law-flight', question: 'How long is the flight from Toronto to Vancouver?', why: 'not law at all' },
 ];
 
