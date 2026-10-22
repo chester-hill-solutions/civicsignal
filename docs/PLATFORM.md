@@ -276,6 +276,24 @@ it needs the full tree, chunked across invocations, with the checkpoint in D1.
 The streamed cycle (`src/ingest/streaming-pipeline.ts`) is written and tested
 for it, and it is not wired up.
 
+## The corpus stack, decided
+
+Where each piece of the corpus lives, and why. Decided 2026-10-22; the
+reasoning and the arithmetic are in the handoff.
+
+| | | |
+|---|---|---|
+| **The snapshot** — the corpus as rows, with a fingerprint per row | **R2** privately, **Hugging Face** publicly | The diff is two index files, ~20 MB, compared exactly. The rows are read by byte range. R2 is in the same account, so there is no egress and no third-party rate limit; the corpus is public law, so the row-level artefact is worth publishing. |
+| **The serving rows** — what the API reads, licence-gated | **D1** | The licence gate reads the canonical row and its policy, and the citation path resolves against it. The lexical arm's `LIKE` is going away with `search_text`; what remains is point reads, citations and the gate. |
+| **The vectors** | **Vectorize** | $1.55/month at 1,000 queries, $0.0077 per 1,000 more, free when idle. The crossover with a keep-warm container is ~3.3M queries/month. The snapshot carries the vectors as an *export*, so the rebuild is a copy — ownership without giving up a free-when-idle index. |
+| **The model** | **EmbeddingGemma 2**, in a container | The browser and the server share one vector space, by construction rather than approximately. |
+
+The corpus's text is stored **once**. `search_text` — a 250.9 MB folded copy
+of the corpus's 232.5 MB of text, searched with a full table scan per query,
+and the one column no fingerprint covers — is being deleted rather than
+indexed. The keyword input becomes a filter over the semantic hits instead of
+a filter over the whole corpus.
+
 ## The risks
 
 **Billing correctness is the whole risk.** The ledger's fail-closed and fail-open
