@@ -325,3 +325,40 @@ export const QUESTIONS: EvalQuestion[] = [
     note: 'A story, not a heading.',
   },
 ];
+
+/**
+ * Questions the corpus **cannot** answer.
+ *
+ * Every question in `QUESTIONS` has a gold answer, so measuring a threshold
+ * against that set prices only its cost: the questions it refuses that the
+ * corpus could have answered. These are the other side, and they are what the
+ * threshold is for.
+ *
+ * Three kinds, and the difference matters when reading the scores. Some are
+ * not law at all, and the correct answer is the refusal. Some are law the
+ * corpus does not hold, which is a matter for the web arm rather than for a
+ * nearest-neighbour search. Some are adjacent but absent, where the nearest
+ * provision is not the answer.
+ */
+export interface UnanswerableQuestion {
+  id: string;
+  question: string;
+  /** What kind of unanswerable it is, for reading the scores. */
+  why: string;
+}
+
+export const UNANSWERABLE_QUESTIONS: UnanswerableQuestion[] = [] = [
+  { id: 'un-not-law-weather', question: 'What is the weather in Ottawa tomorrow?', why: 'not law at all' },
+  { id: 'un-not-law-sports', question: 'Who won the 2026 World Cup?', why: 'not law at all' },
+  { id: 'un-not-law-capital', question: 'What is the capital of Australia?', why: 'not law at all' },
+  { id: 'un-not-law-recipe', question: 'How do I bake sourdough bread?', why: 'not law at all' },
+  { id: 'un-prov-speeding', question: 'What is the fine for speeding in Ontario?', why: 'provincial, not federal' },
+  { id: 'un-prov-tenancy', question: 'How much notice must a landlord in Quebec give to end a lease?', why: 'provincial, not federal' },
+  { id: 'un-case-jordan', question: 'What did the Supreme Court of Canada decide in R v Jordan?', why: 'case law, not a statute' },
+  { id: 'un-case-gladue', question: 'What did the Supreme Court hold in R v Gladue about sentencing?', why: 'case law, not a statute' },
+  { id: 'un-benefit-ccb', question: 'How much is the Canada Child Benefit for a two-year-old in 2026?', why: 'a rate, not in a consolidation' },
+  { id: 'un-rate-boc', question: 'What is the Bank of Canada interest rate today?', why: 'a rate, not in a consolidation' },
+  { id: 'un-foreign-patent', question: 'What is the deadline to file a patent application in the United States?', why: 'foreign law' },
+  { id: 'un-foreign-visa', question: 'How do I apply for a work visa for Australia?', why: 'foreign law' },
+];
+

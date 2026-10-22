@@ -18,8 +18,9 @@
  */
 import { readFileSync } from 'node:fs';
 import { validateLabels } from '../src/eval/evaluate';
-import { QUESTIONS } from '../src/eval/questions';
+import { QUESTIONS, UNANSWERABLE_QUESTIONS } from '../src/eval/questions';
 import { loadVectorStore, searchVectors } from '../src/eval/retrieval';
+import { ENCODER_CONTRACT, queryText } from '../src/encoder';
 
 const KEY = process.env.JEV_KEY ?? '';
 if (!KEY) {
@@ -119,6 +120,8 @@ let vectorReciprocal = 0;
 let jevReciprocal = 0;
 let reachable = 0;
 let tokens = 0;
+/** The answerable set's own `any_relevant`, for the comparison below. */
+const answerableAnyRelevant: number[] = [];
 const recovered: string[] = [];
 const lost: string[] = [];
 
@@ -140,6 +143,7 @@ for (const question of usable) {
   const vectorRank = Math.min(...goldPositions) + 1;
   const { relevance, anyRelevant, tokens: used } = await ask(question.question, candidates);
   tokens += used;
+  answerableAnyRelevant.push(anyRelevant);
 
   const order = candidates
     .map((_, at) => at)
@@ -174,3 +178,82 @@ console.log(
 console.log(`  recovered by jev: ${recovered.length ? recovered.join(', ') : 'none'}`);
 console.log(`  lost by jev:      ${lost.length ? lost.join(', ') : 'none'}`);
 console.log(`  ${tokens} input tokens`);
+
+/* -------------------------------------------------------------------------- */
+/* The refusal, which is what the floor cannot decide well                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The twelve questions the corpus cannot answer, through Jev.
+ *
+ * The product decides "I don't have information on that" by thresholding a raw
+ * cosine at `VECTOR_FLOOR`. That number is global, and a cosine is not
+ * calibrated: the same value means different things for different questions.
+ * `any_relevant` is a calibrated answer to the question the threshold
+ * approximates, so the test is whether it separates these twelve from the
+ * answerable ones on its own.
+ *
+ * The same candidate set the product would use: the vector arm's top twenty.
+ */
+const encoder = process.env.ENCODER_URL ?? 'https://civicsignal-encoder.chester-hill-solutions.workers.dev/embed';
+const encoderToken =
+  process.env.ENCODER_TOKEN ??
+  readFileSync(`${process.env.HOME}/.civicsignal/encoder-token`, 'utf8').trim();
+
+async function embedQueries(texts: string[]): Promise<number[][]> {
+  const response = await fetch(encoder, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(encoderToken ? { authorization: `Bearer ${encoderToken}` } : {}),
+    },
+    body: JSON.stringify({ texts: texts.map((text) => queryText(text)), titles: texts.map(() => '') }),
+  });
+  if (!response.ok) throw new Error(`the encoder refused: ${response.status}`);
+  const body = (await response.json()) as { vectors: number[][] };
+  if (body.vectors.length !== texts.length) throw new Error('the encoder returned the wrong count');
+  return body.vectors;
+}
+
+const vectors = await embedQueries(UNANSWERABLE_QUESTIONS.map((question) => question.question));
+let highestUnanswered = 0;
+
+console.log('\nquestions the corpus cannot answer, through Jev');
+for (const [at, question] of UNANSWERABLE_QUESTIONS.entries()) {
+  const matches = searchVectors(store, Float32Array.from(vectors[at]!), TOPK).map(
+    (match) => vectorToRow[match.docId] ?? match.docId,
+  );
+  const candidates = matches.map((rowAt) => rows[rowAt]!);
+  const { relevance, anyRelevant, tokens: used } = await ask(question.question, candidates);
+  tokens += used;
+  const best = Math.max(...relevance);
+  highestUnanswered = Math.max(highestUnanswered, anyRelevant);
+  console.log(
+    `  ${question.id.padEnd(24)} any_relevant ${anyRelevant.toFixed(2)}  ` +
+      `best candidate ${best.toFixed(2)}  (${question.why})`,
+  );
+}
+
+const lowestAnswered = Math.min(...answerableAnyRelevant);
+const sorted = [...answerableAnyRelevant].sort((a, b) => a - b);
+console.log(
+  `\nthe ${answerableAnyRelevant.length} answerable question(s): any_relevant ` +
+    `min ${lowestAnswered.toFixed(2)}, median ${sorted[Math.floor(sorted.length / 2)]!.toFixed(2)}, ` +
+    `max ${sorted[sorted.length - 1]!.toFixed(2)}`,
+);
+console.log(
+  `the ${UNANSWERABLE_QUESTIONS.length} unanswerable: at most ${highestUnanswered.toFixed(2)}`,
+);
+if (lowestAnswered > highestUnanswered) {
+  console.log(
+    `  **separated.** A threshold anywhere in (${highestUnanswered.toFixed(2)}, ` +
+      `${lowestAnswered.toFixed(2)}] refuses every unanswerable question and keeps every answerable one, ` +
+      `and unlike the cosine floor it is a calibrated probability rather than a number chosen by hand`,
+  );
+} else {
+  console.log(
+    `  **not separated**: the worst answerable (${lowestAnswered.toFixed(2)}) is at or below the best ` +
+      `unanswerable (${highestUnanswered.toFixed(2)}), so any threshold trades one against the other`,
+  );
+}
+console.log(`  ${tokens} input tokens in total`);

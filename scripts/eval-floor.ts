@@ -113,20 +113,7 @@ const queryVectors = JSON.parse(readFileSync(queriesPath, 'utf8')) as Record<str
  *   **adjacent but absent** — a benefit rate, a policy that is not in a
  *   consolidation. Same as above: the nearest provision is not the answer.
  */
-const UNANSWERABLE: { id: string; question: string; why: string }[] = [
-  { id: 'un-not-law-weather', question: 'What is the weather in Ottawa tomorrow?', why: 'not law at all' },
-  { id: 'un-not-law-sports', question: 'Who won the 2026 World Cup?', why: 'not law at all' },
-  { id: 'un-not-law-capital', question: 'What is the capital of Australia?', why: 'not law at all' },
-  { id: 'un-not-law-recipe', question: 'How do I bake sourdough bread?', why: 'not law at all' },
-  { id: 'un-prov-speeding', question: 'What is the fine for speeding in Ontario?', why: 'provincial, not federal' },
-  { id: 'un-prov-tenancy', question: 'How much notice must a landlord in Quebec give to end a lease?', why: 'provincial, not federal' },
-  { id: 'un-case-jordan', question: 'What did the Supreme Court of Canada decide in R v Jordan?', why: 'case law, not a statute' },
-  { id: 'un-case-gladue', question: 'What did the Supreme Court hold in R v Gladue about sentencing?', why: 'case law, not a statute' },
-  { id: 'un-benefit-ccb', question: 'How much is the Canada Child Benefit for a two-year-old in 2026?', why: 'a rate, not in a consolidation' },
-  { id: 'un-rate-boc', question: 'What is the Bank of Canada interest rate today?', why: 'a rate, not in a consolidation' },
-  { id: 'un-foreign-patent', question: 'What is the deadline to file a patent application in the United States?', why: 'foreign law' },
-  { id: 'un-foreign-visa', question: 'How do I apply for a work visa for Australia?', why: 'foreign law' },
-];
+import { UNANSWERABLE_QUESTIONS as UNANSWERABLE } from '../src/eval/questions';
 
 /** The encoder, a few documents at a time, retried — it is one container. */
 async function embed(texts: string[], endpoint: string, token: string): Promise<number[][]> {
