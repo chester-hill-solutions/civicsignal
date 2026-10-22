@@ -95,50 +95,52 @@ serve: every fetched document becomes a corpus with its own policy, and the
 policy is applied before anything is returned. A source without a policy
 returns nothing — not "everything, probably fine".
 
-## The search: an independent index, and links rather than content
+## The search belongs to the harness, not the product
 
-Something has to find the candidate documents. The corpus's semantic arm
-cannot, because it only knows what is already indexed — and the decisions and
-the gazette are published continuously, so a pre-built corpus would be stale
-by definition.
+Something has to find the candidate documents, and the first instinct — pick a
+search API and wire it into CivicSignal — was wrong, for a reason that is about
+architecture rather than about price.
 
-This is the one place the product leaves its own platform, so the field has
-narrowed on its own, and the first two names anybody reaches for are gone:
-**Microsoft retired the Bing Search APIs**, and **Google closed the Custom
-Search API to new customers**. Two things follow from that, and they point the
-same way — a provider with its own index, and one that returns *links* rather
-than bundled page text.
+**The product never talks to a search provider.** The API answers from the
+corpus, and its refusal is the floor on the score (`VECTOR_FLOOR`). When it
+refuses, the *harness* searches the web: OpenCode has a built-in `websearch`
+tool with five providers (Exa, Firecrawl, Parallel, Tavily, TinyFish) behind a
+`websearch` permission, configured once by whoever runs it. The agent finds the
+source, reads the publisher's page, and quotes it with the url and the date.
 
-**Links, not content.** The whole point of the web arm is that the product
-cites the publisher's own page — `decisions.scc-csc.ca`, `canada.ca`, the
-province's own site. A provider that hands back extracted page text is
-offering a *republisher's copy of the source that is authoritative*, which is
-the opposite of what this arm is for, and it puts a third party's extraction
-between the product and the thing it cites. The product fetches the page from
-the publisher itself and the licence gate sees *that*.
+Three things fall out of that, and all three are the ones this doc wanted:
 
-**Brave Search API**, at $5 per 1,000 requests with $5 of credit every month —
-which covers a thousand queries a month before it costs anything, and this arm
-only runs when the corpus has nothing. It crawls its own index, so it cannot be
-switched off by somebody else's decision; it scores first in independent
-agentic-search testing and leads on **citation precision**, which is the
-property this product cares about (it cites provisions, not facts); and its
-median latency is ~650 ms, which matters because this arm runs *after* a
-corpus search has already failed and the caller is waiting.
+- **The product stays on its own platform.** No third-party key in the API, no
+  second failure domain in the answer path, and nothing to build against.
+- **The bundled-content objection disappears.** It was a *product* objection:
+  Exa and Tavily return extracted page text, which is a problem when the
+  product republishes a third party's copy of a source that is authoritative.
+  An agent reading a page and citing it is a different act — and the agent
+  fetches the publisher's own URL regardless.
+- **The provider becomes a preference.** Which of the five is a harness
+  setting, changeable without touching the product, and the two that were
+  wrong for the product (Exa, Tavily) are the obvious ones here.
 
-The alternatives, and why not:
+What this costs is the thing worth stating plainly: **the web arm is only
+available when there is an agent in the loop.** A bare API call that the corpus
+cannot answer gets the refusal and nothing else. That is the right default —
+a refusal that is true is worth more than a confident citation of a search
+result — and the sources below are what the agent should be looking for.
 
-| | why not |
-|---|---|
-| **Exa**, $7/1,000 | Its price includes the page text — the thing this arm must not take. Its strength is entity and code retrieval; the product needs the publisher's page. |
-| **Tavily**, $8/1,000 | Bundles extraction and hides the index it searches. Two properties this arm cannot accept: the passage must come from the publisher, and the discovery must be explainable. |
-| **Serper**, ~$1/1,000 | A scraper of a search engine's results page. Brittle, and a licence question in itself. |
+### The sources, and the test for authority
 
-### Fetch and cite on demand, rather than index
+The list does not change: the Court and the Federal Court's own decision sites,
+the Canada Gazette, Hansard, each provincial legislature's own site — and
+**CanLII is not one of them**, because it republishes the consolidations and
+carries its own terms. Authority is still a property of the *domain* rather
+than of the page: the publisher's own site, the document identifying itself,
+and the publisher saying what it is.
+
+### Fetch and cite, rather than index
 
 The other half of the question: does the web arm build a corpus, or fetch and
-cite? **Fetch and cite**, for the first version, and the reason is that it is
-the only shape in which the answer can be *true*:
+cite? **Fetch and cite**, and the reason is that it is the only shape in which
+the answer can be *true*:
 
 - the sources are published continuously, so anything indexed is stale by
   definition — the gazette issue is not a revision of a corpus, it is a
@@ -149,8 +151,7 @@ the only shape in which the answer can be *true*:
   page at the moment it is read.
 
 So the answer carries the retrieved-at date, and a page that has changed since
-is a page the answer says it read on a date. That is honest about what the arm
-is: a search that found a document and quoted it, not a corpus that knows it.
+is a page the answer says it read on a date.
 
 ## The last fallback
 

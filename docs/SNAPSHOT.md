@@ -229,6 +229,51 @@ change would look like every other change. This is the same reason the
 fingerprint is computed from the row rather than from the XML: the thing being
 compared has to be the thing being stored.
 
+## The builder, as a Cloudflare job
+
+A snapshot has to exist for the head revision, and the corpus moves every three
+to eight days — so building one is a job, not an afternoon. It is a Workflow:
+a minutes-long job that must survive being interrupted, and whose progress is
+a cursor rather than a place.
+
+It was a local script for one reason, and the reason was **not** memory or CPU.
+Both of those are answerable, and the ingest cycle already answers them: the
+corpus tarball is streamed over HTTPS, one file is parsed at a time, and the
+parts are written to R2 as they fill.
+
+**The obstacle was the sort.** A snapshot's rows are in id order, because the
+diff is a merge of two sorted streams — the index against the store's own
+fingerprints, which D1 pages `ORDER BY id`. The corpus arrives in *file* order,
+and the two are not the same: a file holds many provisions and their ids are
+not in the file's order, nor is a file's id range a thing anyone can name in
+advance. So the builder held all 277,857 rows in memory and sorted them, which
+needs 360 MB and is exactly what a Worker cannot do.
+
+The answer is that **only the index needs to be sorted, not the rows.**
+
+- the reader already finds a row by its **byte offset**, so it does not care
+  what order the rows are in — `mergeRanges` sorts the ranges it is given, and
+  a range is a range;
+- so the rows are written in **file order**, appended to parts as each file is
+  parsed, which needs no memory at all;
+- and the **index** is sorted, which is 26 MB of lines and not 347 MB of rows.
+
+26 MB is still more than a Worker wants to sort at once — held as strings with
+their overhead it is around fifty — so the index is sorted in **partitions**:
+the corpus's four trees are named in the file path (`eng/acts`,
+`eng/regulations`, `fra/lois`, `fra/reglements`), the ids carry that tree as
+their prefix (`acts-en-100`, `regulations-fr-dors-2002-423-34-2-24`), and the
+prefixes sort in the same order the trees do. So each tree's index lines sort
+independently — a few megabytes at a time — and concatenating them in tree
+order gives the global id order.
+
+That is the whole design of the Workflow: **one step per group of corpus
+files** (parse, append rows to a part, emit index lines), one step per tree to
+sort and write its slice of the index, and a final step for the manifest. Each
+step is bounded, retried by the runtime, and can be resumed from the step
+before it — which is the property the local script has by accident, because it
+runs to completion or not at all.
+
 ## What it does not change
 
 The licence gate. The rows leave the API only through it, and the snapshot is
