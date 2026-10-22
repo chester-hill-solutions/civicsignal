@@ -61,6 +61,34 @@ the lexical arm's `search_text LIKE ?` over the folded column. A snapshot is
 not a substitute for that: it is a key-value read with no query engine, and
 the write path needs the row and its fingerprint to land in one transaction.
 
+## Filling the gap
+
+The pipeline's reconciliation used to compare two **revisions** — the store's
+against the corpus's head — with GitHub naming the files that differed in
+between. That has a ceiling: the compare endpoint names at most 300 files, so
+a store that has fallen behind cannot catch up in one step, however big the
+gap is.
+
+A snapshot has no such ceiling, because the comparison is not over files. It
+is over **provisions**, and both sides of it are index files:
+
+- the store holds a fingerprint for every provision it has;
+- the snapshot's index holds a fingerprint for every provision the corpus has.
+
+So the diff is those two lists compared — `src/ingest/snapshot-diff.ts` — and
+the gap is not a number of commits. It is not a number of anything. A store
+that is a week behind and a store that is a year behind are the same amount of
+work.
+
+That is what makes catching up possible. The pipeline does not need the
+intermediate revisions, does not need to walk the commit history, and does not
+need a tarball of the whole corpus: it needs the store's fingerprints, the
+head's index, and the rows of the provisions that moved.
+
+**The store is a snapshot of its own revision.** That is the part that makes
+it work — the store's fingerprints are not a cache of the diff, they are the
+"before" side of it.
+
 ## What it changes in the pipeline
 
 The cycle becomes:
