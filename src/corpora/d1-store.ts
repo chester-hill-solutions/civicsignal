@@ -106,9 +106,9 @@ export class D1CorpusStore implements CorpusStore {
         .prepare(
           `INSERT INTO statute_sections (
              id, corpus_id, act, citation, section, schedule, part, status, heading,
-             text, source_url, jurisdiction, in_force, language, topics,
+             text, source_url, jurisdiction, in_force, language, topics, search_text,
              text_hash, last_changed
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT (id) DO UPDATE SET
              act = excluded.act,
              citation = excluded.citation,
@@ -141,6 +141,21 @@ export class D1CorpusStore implements CorpusStore {
           row.row.in_force,
           row.row.language,
           null,
+          // **Empty, and it has to be here.**
+          //
+          // `search_text` is `NOT NULL` with no default on the live table, and
+          // the migration that drops it needs a table rewrite the database
+          // does not have the memory for (`SQLITE_NOMEM`). So the column stays
+          // — required, and read by nothing — and an insert has to hand it
+          // *something* or the whole batch fails with `NOT NULL constraint
+          // failed`, taking the cycle with it.
+          //
+          // An empty string is the honest value: the column is not written for
+          // any reader, and the folded text it used to hold was 250.9 MB of a
+          // copy of everything the product serves. It is deliberately **not**
+          // in the `ON CONFLICT` clause, so an update leaves whatever is there
+          // alone rather than rewriting a value nobody reads.
+          '',
           row.hash,
           row.row.lastChanged,
         ),

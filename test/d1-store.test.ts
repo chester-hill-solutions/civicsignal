@@ -127,16 +127,23 @@ describe('the D1 corpus store', () => {
     ]) {
       expect(insert.sql).toContain(column);
     }
-    // **And `search_text` is not one of them.** It was 250.9 MB of folded text
-    // on a 232.5 MB corpus — a second copy of everything the product serves —
-    // and it existed for one query, the lexical path, which was dead code and
-    // measured worth one question in thirty-six. Writing it again would put
-    // the column back.
-    expect(insert.sql).not.toContain('search_text');
+    // **And `search_text` is in the insert, empty, for one reason.**
+    //
+    // It is `NOT NULL` with no default on the live table, and the migration
+    // that drops it needs a table rewrite D1 answers `out of memory:
+    // SQLITE_NOMEM` to. So the column stays — required, and read by nobody —
+    // and an insert that omitted it would fail the whole batch and take the
+    // cycle with it. That is not hypothetical: it was the state of this code
+    // for one commit, and it would have fired on the next corpus revision.
+    expect(insert.sql).toContain('search_text');
+    expect(insert.binds[15]).toBe('');
+    // It is **not** in the update, so an existing value is left alone rather
+    // than rewritten with a value nothing reads.
+    expect(insert.sql.split('ON CONFLICT')[1]).not.toContain('search_text');
     // One placeholder per column, and one bind per placeholder.
     const placeholders = (insert.sql.match(/\?/g) ?? []).length;
-    expect(placeholders).toBe(17);
-    expect(insert.binds.length).toBe(17);
+    expect(placeholders).toBe(18);
+    expect(insert.binds.length).toBe(18);
     expect(insert.binds[0]).toBe('a-1');
     expect(insert.binds[13]).toBe('en');
   });
