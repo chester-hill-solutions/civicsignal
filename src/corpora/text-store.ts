@@ -179,7 +179,9 @@ export function createR2ProvisionTextStore(db: CorpusDatabase, bucket: TextObjec
           }
         }
       }
-      await Promise.all(Array.from({ length: Math.min(8, rows.length) }, () => worker()));
+      const outcomes = await Promise.allSettled(Array.from({ length: Math.min(8, rows.length) }, () => worker()));
+      const failed = outcomes.find((outcome) => outcome.status === 'rejected');
+      if (failed?.status === 'rejected') throw failed.reason;
       return output;
     },
   };

@@ -136,6 +136,46 @@ The hosted restore and full strict audit are not yet complete.
 
 The physical-size comparison above covers the serving-compatible compact corpus and page journal. The staging upload journal and future protected-state copy add metadata; hosted D1 size must be measured after the approved complete restore.
 
+## Bounded metadata and audit transport
+
+The optional metadata protocol accepts at most four source pages, 128 KiB of JSON
+and 16 MiB of referenced text per request. It validates every page hash and source
+cursor before writes, reads every referenced full R2 object with a four-reader
+pool, and waits for all readers after failure. It then calls the original atomic
+page apply function in source order. The complete acknowledgement set binds page,
+hash, cursors, row count and pinned plan before the client advances. Lost replies
+or partially committed ranges replay from the durable local cursor. Large ranges
+split; an oversized single page uses the original path.
+
+Audit requests can execute 16 existing eight-row checkpoints. Each checkpoint
+keeps its before/after publication checks, complete row fingerprint/text checks
+and separate compare-and-swap. The shared strict hydration path now waits for
+all sibling readers before returning a failure. Publication-chain verification
+is unchanged. Enable these paths only after the stage service advertises them:
+`--metadata-batch-pages 4 --audit-checkpoints 16`. Client defaults remain one
+metadata page and four audit checkpoints.
+
+For the pinned full bundle, metadata HTTP calls decrease from 17,367 to 4,342;
+audit calls decrease from 8,684 to 2,171. This is a calculated 75% reduction in
+round trips, not a hosted throughput measurement. All 277,857 metadata object
+reads, 34,733 strict audit checkpoints and 250,978,206 audited text bytes remain.
+The largest actual four-page request is 98,797 JSON bytes with 782,950 referenced
+text bytes. Maximum metadata operations are 64 R2 reads and 20 D1 binding calls;
+the first range can contain 149 SQL statements. Audit permits 128 R2 reads and
+85 D1 binding calls, with one eight-row hydrated set retained at a time.
+
+The seven-file focused suite passes 69 tests, including 18 real workerd cases.
+It covers full prevalidation, partial SQL commit, lost replies, mismatched
+acknowledgements, remote-prefix restart, concurrent page/audit requests, bounds,
+fallback and delayed sibling failure. The full gate passes 766 tests in 73 files,
+four compiler projects, both runtime probes, invariants and five Worker builds.
+An actual local workerd probe at the 16 MiB reference budget sampled at most
+54,802,949 combined JS/backing/embedder bytes across metadata, publication and
+audit. Sampling can miss peaks; it does not establish hosted memory safety.
+The [validation receipt](evidence/2026-10-22/stage-metadata-audit-validation.json)
+pins the code, runner, source sizing, memory samples and check logs. The hosted
+handoff and full restore/audit remain incomplete at this validation point.
+
 ## Production boundary
 
 The local proof shows a concrete storage reduction and complete corpus parity.

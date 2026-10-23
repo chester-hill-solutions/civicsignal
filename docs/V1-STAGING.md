@@ -11,9 +11,13 @@ Full baseline audits remain incomplete. See the
 [transfer stop receipt](evidence/2026-10-22/stage-transfer-stop-state.json).
 The two observed calendar windows produced no snapshot event or Workflow instance;
 both triggers were removed and checked. Hosted publication remains an unmet gate.
-A stage-only diagnostic wrapper passes 19 focused checks and the full release
-gate (755 tests in 72 files). Its isolated config and local dry-run build are
-verified. It has not yet been deployed or scheduled.
+A stage-only diagnostic wrapper is deployed. One read-only health request returned
+the exact marker, and live logs captured its successful fetch event. The proposed
+05:00 UTC calendar was never armed: its deadline preflight made zero provider
+requests. Both guards then confirmed empty schedules and stopped. A 06:00 UTC
+candidate is prepared locally, pending real credential renewal and guard review.
+Hosted scheduled publication remains unverified. See the
+[diagnostic state receipt](evidence/2026-10-22/stage-snapshot-probe-state.json).
 
 The goal is to close hosted snapshot, restore, ingestion, inference and retrieval
 checks with an isolated candidate. Use the detailed snapshot commands and stop
@@ -352,8 +356,8 @@ client's target JSON using the actual deployed restore origin and exact generate
 mode makes no request:
 
 ```sh
-bun build scripts/restore-text-staging.ts --target=node --packages=external --outfile=dist/release/staging/restore-text-staging.mjs
-node dist/release/staging/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json
+bun build scripts/restore-text-staging.ts --target=node --packages=external --outfile=dist/release/staging/page-batch-candidate/restore-text-staging.mjs
+node dist/release/staging/page-batch-candidate/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json
 ```
 
 Only after the bundle path, target identities, schema, token and write budget are
@@ -361,7 +365,7 @@ reviewed, execute the remote restore with `RESTORE_TOKEN` supplied privately in
 the environment:
 
 ```sh
-node dist/release/staging/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json --execute --checkpoint dist/release/staging/legacy-text-restore.json --concurrency 4 --upload-batch-size 16
+node dist/release/staging/page-batch-candidate/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json --execute --checkpoint dist/release/staging/legacy-text-restore.json --concurrency 4 --upload-batch-size 16 --metadata-batch-pages 4 --audit-checkpoints 16
 ```
 
 The opt-in transport requires the deployed restore service to advertise binary
@@ -372,9 +376,18 @@ its source-ordinal/SHA/byte acknowledgement is accepted. Source ordinals bind
 the pinned client index; the existing journal retains its arrival-counter ordinals.
 All acknowledgements in a wave must verify before the local checkpoint advances.
 Replay the same checkpoint after uncertainty, including any previously committed
-objects beyond it. Near-limit individual objects retain the single-object path;
-metadata pages and the full strict audit remain unchanged.
-The single-object transport remains the default when the flag is omitted.
+objects beyond it. Near-limit individual objects retain the single-object path.
+The opt-in metadata transport permits four pages, 128 KiB of JSON and 16 MiB of
+referenced text per request. It verifies every full text object with at most four
+readers, then applies the original atomic page transactions in source order.
+The client requires the complete exact acknowledgement set before advancing its
+durable cursor. An uncertain committed prefix is replayed. Oversized ranges split;
+an oversized single page uses the original path. Audit requests can run 16 existing
+eight-row checkpoints; every checkpoint retains its own publication checks and CAS.
+The complete ordered publication-chain check and full strict audit remain required.
+The deployed service must advertise both protocols before these flags are used.
+Single-object uploads, single metadata pages and four audit checkpoints remain
+the client defaults when the opt-in flags are omitted.
 See [transport validation and resource evidence](TEXT-CUTOVER-VALIDATION.md#concrete-staging-restore-protocol).
 
 Confirm all metadata/text pairs, non-null old fingerprints, vector IDs/counts,

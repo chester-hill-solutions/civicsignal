@@ -7,6 +7,7 @@ import { checkedRestorePlan, checkedTarget, digestPattern, hashJson, nextPageCha
 import { isFreshRestoreDatabase } from './fresh-schema';
 import { decodeUploadBatch, MAX_UPLOAD_BATCH_BYTES, UPLOAD_BATCH_CAPABILITIES, UPLOAD_BATCH_PARALLELISM,
   type UploadBatchAcknowledgement } from './upload-batch';
+import { applyMetadataBatch,checkedMetadataBatch,METADATA_BATCH_CAPABILITIES,AUDIT_CAPABILITIES } from './metadata-batch';
 
 /** This contract is exercised against actual local D1/R2 bindings. The disabled
  * checked-in config has no bindings; generated staging config supplies them. */
@@ -53,7 +54,7 @@ function checkSession(session: Session | null, target: StagingRestoreTarget, pla
 async function status(db: D1Database, target: StagingRestoreTarget, planHash: string) {
   const session = await currentSession(db);
   if (!session) {
-    return { target, initialized: false, fresh: await isFreshRestoreDatabase(db),uploadBatch:UPLOAD_BATCH_CAPABILITIES };
+    return { target, initialized: false, fresh: await isFreshRestoreDatabase(db),uploadBatch:UPLOAD_BATCH_CAPABILITIES,metadataBatch:METADATA_BATCH_CAPABILITIES,auditProtocol:AUDIT_CAPABILITIES };
   }
   checkSession(session, target, planHash);
   const plan=checkedRestorePlan(JSON.parse(session.plan_json));
@@ -63,7 +64,7 @@ async function status(db: D1Database, target: StagingRestoreTarget, planHash: st
     (SELECT count(*) FROM statute_text_refs) AS refs,(SELECT count(*) FROM corpus_compact_pages) AS pages`).first():
     {rows:plan.rowCount,refs:plan.rowCount,pages:plan.pageCount};
   const counts={...metadata,...journal};
-  return { target, initialized: true, planHash, phase: session.phase, counts, checkedPages: session.page_check_after,uploadBatch:UPLOAD_BATCH_CAPABILITIES,
+  return { target, initialized: true, planHash, phase: session.phase, counts, checkedPages: session.page_check_after,uploadBatch:UPLOAD_BATCH_CAPABILITIES,metadataBatch:METADATA_BATCH_CAPABILITIES,auditProtocol:AUDIT_CAPABILITIES,
     countsVerifiedAtPublication:session.phase!=='loading',
     audit: session.audit_checkpoint ? JSON.parse(session.audit_checkpoint) as TextParityCheckpoint : null };
 }
@@ -180,6 +181,11 @@ export async function handleRestoreRequest(request: Request, env: RestoreEnv): P
       if(failed)throw failure;
       return json({verified:true,objects:acknowledgements});
     }
+    if(request.method==='POST'&&path==='/v1/restore/pages'){
+      if(session.phase!=='loading')throw new RestoreInputError('Metadata loading is closed.',409);
+      const pages=await checkedMetadataBatch(await readJsonBody(request,METADATA_BATCH_CAPABILITIES.maxBytes),plan.pageCount);
+      return json({verified:true,planHash,pages:await applyMetadataBatch(db,bucket,plan,pages)});
+    }
     if (request.method === 'POST' && path === '/v1/restore/page') {
       if (session.phase !== 'loading') throw new RestoreInputError('Metadata loading is closed.',409);
       const page = await readJsonBody(request) as CompactRestorePage;
@@ -198,7 +204,7 @@ export async function handleRestoreRequest(request: Request, env: RestoreEnv): P
     if (request.method === 'POST' && path === '/v1/restore/audit') {
       const body = await readJsonBody(request,1024) as {pages?:unknown};
       const pages = body?.pages ?? 1;
-      if (!Number.isSafeInteger(pages) || Number(pages)<1 || Number(pages)>4) throw new RestoreInputError('An audit request contains between one and four bounded pages.');
+      if (!Number.isSafeInteger(pages) || Number(pages)<1 || Number(pages)>AUDIT_CAPABILITIES.maxCheckpoints) throw new RestoreInputError('An audit request contains between one and sixteen bounded checkpoints.');
       if (session.phase === 'complete') return json(await status(db,target,planHash));
       if (session.phase !== 'published') throw new RestoreInputError('Publish the fully checked metadata before its text audit.',409);
       let stored = session.audit_checkpoint;

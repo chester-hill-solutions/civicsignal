@@ -220,6 +220,25 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   No further calendar trigger, serving request or document embedding has run.
   Linux release CI passes for `3fc097a8056c90058e8dc3a524e97fde78e54715`, run `39896055623`.
 
+
+- Diagnostic deployment: The isolated snapshot wrapper returned the exact health
+  marker and a matching successful live fetch trace. The 05:00 UTC calendar was
+  never armed: deadline preflight sent zero provider requests. Both original
+  guards confirmed empty schedules and stopped. A 06:00 UTC candidate is local
+  preparation only, pending real renewal and guard review. Hosted scheduled
+  publication remains unverified. The [diagnostic state receipt](evidence/2026-10-22/stage-snapshot-probe-state.json)
+  records these distinct outcomes. Linux CI passes for `c25dcc197a5272b825fad84d2befbc316b8d5eec`, run `39898743213`.
+- Restore transport follow-up: Optional four-page metadata requests retain full
+  prevalidation/readback and the original sequential atomic page transactions.
+  Sixteen-checkpoint audit requests retain every existing eight-row check and CAS.
+  A partial remote prefix replays from the local durable cursor before exact
+  acknowledgements advance it. Calculated metadata/audit HTTP calls decrease
+  from 26,051 to 6,513; row/text checks are unchanged. The full local gate passes
+  766 tests in 73 files, all compiler projects, runtime probes, invariants and five
+  Worker builds. The [validation receipt](evidence/2026-10-22/stage-metadata-audit-validation.json)
+  records source hashes, full-bundle verification and sampled local memory.
+  The current hosted copy is unchanged; protocol handoff remains pending.
+
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 

@@ -10,6 +10,7 @@ import { checkedTarget, hashJson, type StagingRestoreTarget } from '../services/
 import { compactPageDigest, type CompactRestorePage } from '../src/corpora/compact-restore';
 import { provisionTextKey,rowFingerprintWithText,textSha256 } from '../src/corpora/text-store';
 import { encodeUploadBatch,MAX_UPLOAD_BATCH_BYTES,uploadBatchBytes,type UploadBatchObject } from '../services/restore/upload-batch';
+import { metadataBatchBytes,METADATA_BATCH_CAPABILITIES,verifiedMetadataAcknowledgements } from '../services/restore/metadata-batch';
 import { testD1 } from './helpers/d1';
 
 const close:(()=>Promise<unknown>|void)[]=[];
@@ -18,27 +19,29 @@ let script='';
 beforeAll(async()=>{const output=await build({entryPoints:['services/restore/worker.ts'],bundle:true,format:'esm',platform:'browser',target:'es2022',write:false});script=output.outputFiles[0]!.text;});
 
 async function first(path:string){for await(const value of jsonLines(path))return value;throw new Error('Empty fixture.');}
-async function fixture(largeFirst=false){
+async function fixture(largeFirst=false,sectionsPerLanguage=9,headingPadding=0,textBytes=0){
   const directory=await mkdtemp(join(tmpdir(),'civicsignal-stage-restore-'));close.push(()=>rm(directory,{recursive:true,force:true}));
   const original=testD1();close.push(original.close);
   const rows:Record<string,unknown>[]=[];
-  for(const language of ['en','fr'])for(let section=1;section<=9;section++){
+  for(const language of ['en','fr'])for(let section=1;section<=sectionsPerLanguage;section++){
+    const baseText=language==='en'?`Original rule ${section}.`:`Règle originale ${section}.`;
+    const paddedCharacters=textBytes-(new TextEncoder().encode(baseText).byteLength-baseText.length);
     const row={id:`acts-${language}-${section}`,corpus_id:'statutes-canada',act:language==='en'?'Test Act':'Loi de test',citation:'T-1',section:String(section),
-      status:'in-force',schedule:null,part:null,heading:null,text:largeFirst&&language==='en'&&section===1?'X'.repeat(MAX_UPLOAD_BATCH_BYTES-20):language==='en'?`Original rule ${section}.`:`Règle originale ${section}.`,
+      status:'in-force',schedule:null,part:null,heading:headingPadding?'Heading '.padEnd(headingPadding,'H'):null,text:largeFirst&&language==='en'&&section===1?'X'.repeat(MAX_UPLOAD_BATCH_BYTES-20):baseText.padEnd(paddedCharacters,language==='en'?'E':'F'),
       source_url:`https://laws-lois.justice.gc.ca/${language}/acts/T-1/section-${section}.html`,jurisdiction:'CA',in_force:1,topics:null,language,last_changed:'2026-10-15'};
     rows.push({...row,text_hash:rowFingerprintWithText(row,row.text)});
   }
   rows.sort((a,b)=>String(a['id'])<String(b['id'])?-1:1);
-  for(const row of rows)original.sqlite.prepare(`INSERT INTO statute_sections(id,corpus_id,act,citation,section,status,text,source_url,language,text_hash) VALUES(?,?,?,?,?,?,?,?,?,?)`)
-    .run(...['id','corpus_id','act','citation','section','status','text','source_url','language','text_hash'].map((name)=>row[name]) as (string|number|null)[]);
+  for(const row of rows)original.sqlite.prepare(`INSERT INTO statute_sections(id,corpus_id,act,citation,section,status,heading,text,source_url,language,text_hash) VALUES(?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(...['id','corpus_id','act','citation','section','status','heading','text','source_url','language','text_hash'].map((name)=>row[name]) as (string|number|null)[]);
   const input=join(directory,'rows.jsonl');await writeFile(input,rows.map((row)=>JSON.stringify(row)).join('\n')+'\n');
   const receipt=join(directory,'receipt.json');const commit='a'.repeat(40);
-  await writeFile(receipt,JSON.stringify({format:1,source:{commit,date:'2026-10-15',parser:'legacy',indexDigest:'b'.repeat(32),rows:18,embedded:18,placeholders:0,dimensions:768},
+  await writeFile(receipt,JSON.stringify({format:1,source:{commit,date:'2026-10-15',parser:'legacy',indexDigest:'b'.repeat(32),rows:rows.length,embedded:rows.length,placeholders:0,dimensions:768},
     files:Object.fromEntries(['manifest.json','vectors.manifest.json','index.jsonl','store.emb'].map((name)=>[`${commit}.${name}`,{bytes:1,sha256:'c'.repeat(64)}])),
-    verification:{allRows:true,rows:18,allVectorPositions:true,finite:true,placeholderZeros:true}}));
+    verification:{allRows:true,rows:rows.length,allVectorPositions:true,finite:true,placeholderZeros:true}}));
   const bundle=join(directory,'bundle');
   const manifest=await prepareTextCutover({input,output:bundle,revision:`${commit}:legacy`,objectStorage:'pack',sourceReceipt:receipt,
-    createdAt:'2026-10-22T00:00:00Z',publication:{commit,parser:null,date:'2026-10-15',asOf:'2026-10-15',lastRunAt:'2026-10-22T00:00:00Z',rows:18}});
+    createdAt:'2026-10-22T00:00:00Z',publication:{commit,parser:null,date:'2026-10-15',asOf:'2026-10-15',lastRunAt:'2026-10-22T00:00:00Z',rows:rows.length}});
   const target:StagingRestoreTarget={format:1,stageOnly:true,stageId:'stage-fixture',accountId:'a'.repeat(32),d1Id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',r2Bucket:'fixture-stage-texts',adminUrl:'http://localhost'};
   const token='fixture-only-token-'.repeat(3);
   const mf=new Miniflare({telemetry:{enabled:false},unsafeDevRegistryPath:resolve('dist/miniflare-restore-tests'),workers:[{config:{
@@ -74,6 +77,9 @@ async function sourceObjects(f:Awaited<ReturnType<typeof fixture>>,count=18){
   }
   return objects;
 }
+
+async function sourcePages(f:Awaited<ReturnType<typeof fixture>>){const pages:CompactRestorePage[]=[];
+  for await(const value of jsonLines(join(f.bundle,'fresh-pages.jsonl')))pages.push(value as unknown as CompactRestorePage);return pages;}
 
 describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('isolated staging restore using real local workerd D1 and R2 bindings',()=>{
   it('restores through the actual client, preserves legacy NULL publication and all original rows, and resumes completed audit',async()=>{
@@ -217,6 +223,94 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('isolated stagin
     await db.exec('DROP TRIGGER fail_reference');
     expect((await f.call('page',page)).status).toBe(200);expect(await(await f.call('page',page)).json()).toMatchObject({skipped:true});
   },30_000);
+
+  it('prevalidates a complete metadata range before writes and replays a partially committed SQL prefix',async()=>{
+    const f=await fixture(false,32);expect((await f.call('init',f.plan.plan)).status).toBe(200);await f.upload();const pages=await sourcePages(f);
+    const db=await f.mf.getD1Database('RESTORE_DB');const bucket=await f.mf.getR2Bucket('RESTORE_TEXTS');
+    const invalid=structuredClone(pages);invalid[3]!.sha256='f'.repeat(64);
+    expect((await f.call('pages',{pages:invalid})).status).toBe(422);
+    expect((await f.call('pages',{pages:[pages[1],pages[0]]})).status).toBe(422);
+    const lastParams=pages[3]!.statements.at(-1)!.params;const key=String(lastParams[4]);const held=await bucket.get(key);const bytes=new Uint8Array(await held!.arrayBuffer());
+    await bucket.delete(key);expect((await f.call('pages',{pages})).status).toBe(503);
+    expect(await db.prepare('SELECT count(*) AS count FROM statute_sections').first()).toEqual({count:0});
+    expect(await db.prepare('SELECT count(*) AS count FROM corpus_compact_pages').first()).toEqual({count:0});await bucket.put(key,bytes);
+    const blocked=String(pages[1]!.statements[1]!.params[0]);
+    await db.exec(`CREATE TRIGGER fail_second_page BEFORE INSERT ON statute_text_refs WHEN NEW.row_id='${blocked}' BEGIN SELECT RAISE(ABORT,'injected second-page failure'); END;`);
+    const failed=await f.call('pages',{pages});expect(failed.status).toBe(503);expect(await failed.text()).not.toContain('injected');
+    expect(await db.prepare('SELECT count(*) AS rows FROM statute_sections').first()).toEqual({rows:16});
+    expect(await db.prepare('SELECT count(*) AS pages FROM corpus_compact_pages').first()).toEqual({pages:1});
+    await db.exec('DROP TRIGGER fail_second_page');const replay=await f.call('pages',{pages});expect(replay.status).toBe(200);const ack=await replay.json();
+    expect(verifiedMetadataAcknowledgements(ack,pages,f.plan.planHash)).toBe(true);
+    expect((ack as {pages:{skipped:boolean}[]}).pages.map((item)=>item.skipped)).toEqual([true,false,false,false]);
+    expect((await f.call('pages',{pages})).status).toBe(200);
+    expect(await db.prepare('SELECT count(*) AS rows FROM statute_sections').first()).toEqual({rows:64});
+  },30_000);
+
+  it('replays a lost metadata reply without duplicating pages or rows',async()=>{
+    const f=await fixture(false,32);let lost=false;let pageRequests=0;
+    const uncertain:typeof fetch=async(input,init)=>{const response=await f.send(input,init);if(String(input).endsWith('/pages')){pageRequests++;if(!lost){lost=true;await response.body?.cancel();return new Response('uncertain reply',{status:503});}}return response;};
+    expect(await restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint:join(f.directory,'pages.json'),uploadBatchSize:16,metadataBatchPages:4,auditCheckpoints:16,fetch:uncertain}))
+      .toMatchObject({audit:{complete:true,rowsVerified:64,bytesVerified:f.manifest.textBytes}});
+    expect(pageRequests).toBe(2);const db=await f.mf.getD1Database('RESTORE_DB');
+    expect(await db.prepare('SELECT count(*) AS pages,sum(row_count) AS rows FROM corpus_compact_pages').first()).toEqual({pages:4,rows:64});
+  },30_000);
+
+  it('refuses a mismatched metadata acknowledgement before checkpoint advance and replays the server prefix',async()=>{
+    const f=await fixture(false,32);const checkpoint=join(f.directory,'metadata-bad-ack.json');let changed=false;
+    const badAck:typeof fetch=async(input,init)=>{const response=await f.send(input,init);if(!changed&&String(input).endsWith('/pages')){changed=true;const value=await response.json() as {pages:{through:string}[]};value.pages[0]!.through='wrong';return Response.json(value);}return response;};
+    await expect(restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint,uploadBatchSize:16,metadataBatchPages:4,auditCheckpoints:16,fetch:badAck})).rejects.toThrow('exact complete metadata range');
+    expect(JSON.parse(await readFile(checkpoint,'utf8'))).toMatchObject({uploadedObjects:64,appliedPages:0});
+    expect(await restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint,uploadBatchSize:16,metadataBatchPages:4,auditCheckpoints:16,fetch:f.send}))
+      .toMatchObject({audit:{complete:true,rowsVerified:64}});
+  },30_000);
+
+  it('restarts with a committed two-page remote prefix and replays the complete original four-page range',async()=>{
+    const f=await fixture(false,32);expect((await f.call('init',f.plan.plan)).status).toBe(200);await f.upload();const pages=await sourcePages(f);
+    for(const page of pages.slice(0,2))expect((await f.call('page',page)).status).toBe(200);
+    const checkpoint=join(f.directory,'partial-page-restart.json');await writeFile(checkpoint,JSON.stringify({format:1,planHash:f.plan.planHash,targetHash:await hashJson(f.target),uploadedObjects:64,appliedPages:0}));
+    const ranges:number[][]=[];const skipped:boolean[][]=[];const advances:number[]=[];
+    const inspect:typeof fetch=async(input,init)=>{const response=await f.send(input,init);if(String(input).endsWith('/pages')){
+      ranges.push((JSON.parse(String(init?.body)) as {pages:CompactRestorePage[]}).pages.map((page)=>page.page));
+      const body=await response.json() as {pages:{skipped:boolean}[]};skipped.push(body.pages.map((page)=>page.skipped));return Response.json(body);}return response;};
+    expect(await restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint,uploadBatchSize:16,metadataBatchPages:4,auditCheckpoints:16,fetch:inspect,
+      onProgress(value){if(value&&typeof value==='object'&&'appliedPages' in value)advances.push(Number(value.appliedPages));}})).toMatchObject({audit:{complete:true,rowsVerified:64}});
+    expect(ranges).toEqual([[1,2,3,4]]);expect(skipped).toEqual([[true,true,false,false]]);expect(advances).toEqual([4]);
+    expect(JSON.parse(await readFile(checkpoint,'utf8'))).toMatchObject({appliedPages:4});
+  },30_000);
+
+  it('keeps concurrent page replay and stale audit CAS requests from double-applying source ranges',async()=>{
+    const f=await fixture(false,32,0,16*1024);expect((await f.call('init',f.plan.plan)).status).toBe(200);await f.upload();const pages=await sourcePages(f);
+    const replies=await Promise.all([f.call('pages',{pages}),f.call('pages',{pages})]);expect(replies.some((reply)=>reply.status===200)).toBe(true);
+    expect(replies.every((reply)=>[200,409,503].includes(reply.status))).toBe(true);for(const reply of replies)await reply.body?.cancel();
+    expect((await f.call('pages',{pages})).status).toBe(200);expect((await f.call('publish')).status).toBe(200);
+    const audits=await Promise.all(Array.from({length:4},()=>f.call('audit',{pages:1})));expect(audits.some((reply)=>reply.status===409)).toBe(true);
+    expect(audits.every((reply)=>[200,409].includes(reply.status))).toBe(true);const successes=audits.filter((reply)=>reply.status===200).length;for(const reply of audits)await reply.body?.cancel();
+    const db=await f.mf.getD1Database('RESTORE_DB');const state=await db.prepare('SELECT audit_checkpoint FROM stage_restore_session').first<{audit_checkpoint:string}>();
+    expect(JSON.parse(state!.audit_checkpoint).rowsVerified).toBe(successes*8);
+    expect(await(await f.call('audit',{pages:16})).json()).toMatchObject({phase:'complete',audit:{complete:true,rowsVerified:64}});
+    expect(await db.prepare('SELECT count(*) AS pages,sum(row_count) AS rows FROM corpus_compact_pages').first()).toEqual({pages:4,rows:64});
+  },30_000);
+
+  it('handles full four-page reference budgets and sixteen strict checkpoints with one metadata request in flight',async()=>{
+    const f=await fixture(false,64,0,256*1024);let active=0;let maximum=0;let metadataCalls=0;const auditSizes:number[]=[];
+    const inspect:typeof fetch=async(input,init)=>{const path=String(input);if(path.endsWith('/audit'))auditSizes.push(JSON.parse(String(init?.body)).pages);
+      if(path.endsWith('/pages')){active++;maximum=Math.max(maximum,active);metadataCalls++;const body=JSON.parse(String(init?.body)) as {pages:CompactRestorePage[]};
+        expect(body.pages).toHaveLength(4);expect(new TextEncoder().encode(String(init?.body)).byteLength).toBeLessThanOrEqual(128*1024);
+        try{return await f.send(input,init);}finally{active--;}}return f.send(input,init);};
+    expect(await restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint:join(f.directory,'resource.json'),uploadBatchSize:16,metadataBatchPages:4,auditCheckpoints:16,fetch:inspect}))
+      .toMatchObject({audit:{complete:true,rowsVerified:128,bytesVerified:32*1024*1024}});
+    expect(maximum).toBe(1);expect(metadataCalls).toBe(2);expect(auditSizes).toEqual([16]);
+  },90_000);
+
+  it('splits near-limit JSON ranges and falls back to the original page path for excessive reference bytes',async()=>{
+    const headed=await fixture(false,32,2500);const pages=await sourcePages(headed);expect(metadataBatchBytes(pages)).toBeGreaterThan(METADATA_BATCH_CAPABILITIES.maxBytes);let frames=0;
+    const inspect:typeof fetch=async(input,init)=>{if(String(input).endsWith('/pages')){frames++;expect(new TextEncoder().encode(String(init?.body)).byteLength).toBeLessThanOrEqual(128*1024);}return headed.send(input,init);};
+    expect(await restoreTextStaging({bundle:headed.bundle,target:headed.target,execute:true,token:headed.token,checkpoint:join(headed.directory,'json-bound.json'),uploadBatchSize:16,metadataBatchPages:4,auditCheckpoints:16,fetch:inspect})).toMatchObject({audit:{complete:true,rowsVerified:64}});expect(frames).toBeGreaterThan(1);
+    const large=await fixture(false,8,0,1024*1024+1);let singles=0;let batches=0;
+    const inspectLarge:typeof fetch=async(input,init)=>{if(String(input).endsWith('/page'))singles++;if(String(input).endsWith('/pages'))batches++;return large.send(input,init);};
+    expect(await restoreTextStaging({bundle:large.bundle,target:large.target,execute:true,token:large.token,checkpoint:join(large.directory,'reference-bound.json'),uploadBatchSize:16,metadataBatchPages:4,auditCheckpoints:16,fetch:inspectLarge})).toMatchObject({audit:{complete:true,rowsVerified:16}});
+    expect(singles).toBe(1);expect(batches).toBe(0);
+  },90_000);
 
   it('does not complete publication without a matching page chain or a complete valid text audit',async()=>{
     const f=await fixture();expect((await f.call('init',f.plan.plan)).status).toBe(200);await f.upload();

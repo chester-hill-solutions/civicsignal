@@ -36,6 +36,19 @@ function createTextFixture(text = '\uFEFFLe règlement exige une décision motiv
 }
 
 describe('immutable provision text', () => {
+  it('waits for a delayed sibling read to settle before returning a strict failure',async()=>{
+    const fixture=createTextFixture();const first=await fixture.stage();
+    const text='A delayed sibling provision.';const row={...fixture.row,id:'acts-en-sibling',text,text_hash:''};row.text_hash=rowFingerprintWithText(row,text);
+    const second=await prepareProvisionText({rowId:row.id,corpusId:'statutes-canada',rowFingerprint:row.text_hash,text});
+    await writeImmutableProvisionText(fixture.bucket,second);await fixture.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings(second.reference)).run();
+    fixture.objects.delete(first.reference.objectKey);
+    let release!:()=>void;let entered!:()=>void;const waiting=new Promise<void>((yes)=>{release=yes;});const started=new Promise<void>((yes)=>{entered=yes;});
+    const bucket={async get(key:string){if(key===second.reference.objectKey){entered();await waiting;}return fixture.bucket.get(key);}};
+    let settled=false;const outcome=createR2ProvisionTextStore(fixture.db,bucket,'r2').hydrate([fixture.row,row]).then(()=>{settled=true;return null;},(error:unknown)=>{settled=true;return error;});
+    await started;await new Promise<void>((yes)=>setImmediate(yes));expect(settled).toBe(false);
+    release();expect(await outcome).toBeInstanceOf(ProvisionTextError);expect(settled).toBe(true);
+  });
+
   it('bounds the complete retained candidate set before issuing any object reads', async () => {
     const fixture = createTextFixture();
     const count = MAX_HYDRATED_TEXT_BYTES / MAX_PROVISION_TEXT_BYTES + 1;

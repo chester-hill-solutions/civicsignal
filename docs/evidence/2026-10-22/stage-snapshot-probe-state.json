@@ -1,0 +1,159 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T04:32:38.836283+00:00",
+  "status": "Hosted diagnostic health/trace passed; scheduled publication remains unverified; no schedule enabled",
+  "hostedProbe": {
+    "format": 1,
+    "recordedAt": "2026-10-23T04:14:12.440Z",
+    "status": "probe_health_and_trace_passed_calendar_not_armed",
+    "sourceCommit": "c25dcc197a5272b825fad84d2befbc316b8d5eec",
+    "configSha256": "70c964847ed91a852a01987c02746e7df06f0a4612809e06889c51e6d6fa5c14",
+    "deployment": {
+      "mode": "after",
+      "observedAt": "2026-10-23T04:11:12.664Z",
+      "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+      "worker": "civicsignal-v1-stage-snapshot-20261022",
+      "version": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+      "etag": "af019cdc08abf1cc03d9931829f23b59fed4c38e2792ba25d712f76b7db99a1d",
+      "handlers": [
+        "fetch",
+        "scheduled"
+      ],
+      "workflowId": "f69bdbef-2554-44e1-b683-52eed805acc6",
+      "schedules": [],
+      "instances": 0,
+      "instanceHttpStatus": 404,
+      "source": {
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "observedAt": "2026-10-23T04:11:12.664Z"
+      },
+      "controlsPassed": true
+    },
+    "health": {
+      "url": "https://civicsignal-v1-stage-snapshot-20261022.chester-hill-solutions.workers.dev/health",
+      "startedAt": "2026-10-23T04:12:20.829Z",
+      "completedAt": "2026-10-23T04:12:21.020Z",
+      "attempts": 1,
+      "status": 200,
+      "cfRay": "a4ede726fcf1375a-YYZ",
+      "date": "Fri, 23 Oct 2026 04:12:21 GMT",
+      "bytes": 184,
+      "truncated": false,
+      "sha256": "177903309c6a41fc749f6fe73817ba1c5b86ef840d6b60f89d9dea65fd17d84d",
+      "marker": {
+        "marker": "snapshot-staging-probe-v1",
+        "stageId": "civicsignal-v1-stage-snapshot-20261022",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2"
+      },
+      "exactExpectedMarker": true
+    },
+    "trace": {
+      "observedAt": "2026-10-23T04:14:12.440Z",
+      "source": "actual unfiltered Wrangler 4.151.3 tail",
+      "scriptName": "civicsignal-v1-stage-snapshot-20261022",
+      "scriptVersion": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+      "outcome": "ok",
+      "eventTimestamp": 1792728741017,
+      "event": {
+        "method": "GET",
+        "pathname": "/health",
+        "responseStatus": 200
+      },
+      "marker": {
+        "marker": "snapshot-staging-probe-v1",
+        "phase": "health"
+      },
+      "exceptions": [],
+      "truncated": false,
+      "wallTimeMs": 1,
+      "cpuTimeMs": 0,
+      "headersRetained": false
+    },
+    "schedules": {
+      "observedAt": "2026-10-23T04:13:04.692Z",
+      "httpStatus": 200,
+      "schedules": []
+    },
+    "remoteManifestBefore": "specified key does not exist",
+    "remoteManifestAfter": "specified key does not exist",
+    "noCalendarOrManualTrigger": true,
+    "noProviderRootCauseClaim": true
+  },
+  "calendarArmingAborted": {
+    "recordedAt": "2026-10-23T04:25:25.473Z",
+    "status": "calendar_not_armed_preflight_deadline_refusal",
+    "cron": "0 5 23 10 *",
+    "scheduledAt": "2026-10-23T05:00:00Z",
+    "armDeadline": "2026-10-23T04:25:00Z",
+    "armingCommandMinimumReadbackBudgetMs": 20000,
+    "armingCommandSpawned": false,
+    "armingCommandProviderRequests": 0,
+    "reason": "Arming preflight reached the command with less than20seconds remaining for confirmed control-plane readback",
+    "subsequentIndependentReadback": {
+      "observedAt": "2026-10-23T04:25:08.107Z",
+      "httpStatus": 200,
+      "schedules": []
+    },
+    "guardSessions": {
+      "primaryV2": 24081,
+      "backup": 96419
+    },
+    "alternateCalendarOrRetry": false
+  },
+  "originalGuardsCleanup": {
+    "observedAt": "2026-10-23T04:29:57.475Z",
+    "httpStatus": 200,
+    "schedules": [],
+    "ownedStatusSockets": [
+      {
+        "port": 51871,
+        "closed": true
+      },
+      {
+        "port": 51872,
+        "closed": true
+      }
+    ],
+    "guards": [
+      {
+        "pid": 22682,
+        "session": 24081,
+        "exitCode": 0,
+        "removal": {
+          "reason": "operator-signal",
+          "observedAt": "2026-10-23T04:28:10.100Z",
+          "commandExitCode": 0,
+          "getStatus": 200,
+          "schedules": []
+        }
+      },
+      {
+        "pid": 77507,
+        "session": 96419,
+        "exitCode": 0,
+        "removal": {
+          "reason": "operator-signal",
+          "observedAt": "2026-10-23T04:28:07.370Z",
+          "putStatus": 200,
+          "getStatus": 200,
+          "schedules": []
+        }
+      }
+    ],
+    "calendarNeverArmed": true
+  },
+  "nextCandidate": {
+    "cron": "0 6 23 10 *",
+    "dueAt": "2026-10-23T06:00:00Z",
+    "armBy": "2026-10-23T05:25:00Z",
+    "watchdogAt": "2026-10-23T06:05:00Z",
+    "status": "Prepared locally only; no guard startup or schedule arm; real renewal receipt and parent review required"
+  },
+  "servingRequests": 0,
+  "documentEmbeddingSubmissions": 0,
+  "productionChanges": false,
+  "railwayServiceChanges": false
+}

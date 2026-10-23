@@ -8,8 +8,10 @@ import { jsonLines, readCutoverObject, sha256File, verifyTextCutover, type Cutov
 import { parseLegacyReceipt } from './lib/legacy-receipt';
 import { encodeUploadBatch, MAX_UPLOAD_BATCH_BYTES, MAX_UPLOAD_BATCH_OBJECTS, UPLOAD_BATCH_CAPABILITIES,
   uploadBatchBytes, verifiedUploadBatchAcknowledgements, type UploadBatchObject } from '../services/restore/upload-batch';
+import { AUDIT_CAPABILITIES,METADATA_BATCH_CAPABILITIES,metadataBatchBytes,metadataReferenceBytes,verifiedMetadataAcknowledgements } from '../services/restore/metadata-batch';
+import type { CompactRestorePage } from '../src/corpora/compact-restore';
 
-interface RemoteStatus { initialized: boolean; fresh?:boolean; planHash?:string; phase?:string; counts?:{pages:number}; audit?:{complete:boolean;rowsVerified:number;bytesVerified:number};uploadBatch?:typeof UPLOAD_BATCH_CAPABILITIES }
+interface RemoteStatus { initialized: boolean; fresh?:boolean; planHash?:string; phase?:string; counts?:{pages:number}; audit?:{complete:boolean;rowsVerified:number;bytesVerified:number};uploadBatch?:typeof UPLOAD_BATCH_CAPABILITIES;metadataBatch?:typeof METADATA_BATCH_CAPABILITIES;auditProtocol?:typeof AUDIT_CAPABILITIES }
 interface Checkpoint { format:1; planHash:string; targetHash:string; uploadedObjects:number; appliedPages:number }
 
 export async function stagingPlan(bundle: string) {
@@ -66,7 +68,7 @@ async function saveCheckpoint(path:string,value:Checkpoint) {
 
 /** The caller must explicitly authorize execute and supply an isolated target.
  * fetch injection makes the entire driver testable through local workerd. */
-export async function restoreTextStaging(options:{bundle:string;target:unknown;execute?:boolean;token?:string;checkpoint?:string;concurrency?:number;uploadBatchSize?:number;
+export async function restoreTextStaging(options:{bundle:string;target:unknown;execute?:boolean;token?:string;checkpoint?:string;concurrency?:number;uploadBatchSize?:number;metadataBatchPages?:number;auditCheckpoints?:number;
   fetch?:typeof fetch;onProgress?:(value:unknown)=>void}) {
   const target=checkedTarget(options.target);
   const {manifest,plan,planHash}=await stagingPlan(resolve(options.bundle));
@@ -78,6 +80,9 @@ export async function restoreTextStaging(options:{bundle:string;target:unknown;e
   const uploadBatchSize=options.uploadBatchSize??1;
   if(!Number.isSafeInteger(uploadBatchSize)||uploadBatchSize<1||uploadBatchSize>MAX_UPLOAD_BATCH_OBJECTS)throw new Error('Upload batch size must be between one and sixteen.');
   if(uploadBatchSize>1&&concurrency>4)throw new Error('Batched uploads allow at most four concurrent network requests.');
+  const metadataBatchPages=options.metadataBatchPages??1;const auditCheckpoints=options.auditCheckpoints??4;
+  if(!Number.isSafeInteger(metadataBatchPages)||metadataBatchPages<1||metadataBatchPages>METADATA_BATCH_CAPABILITIES.maxPages)throw new Error('Metadata batch size must be between one and four pages.');
+  if(!Number.isSafeInteger(auditCheckpoints)||auditCheckpoints<1||auditCheckpoints>AUDIT_CAPABILITIES.maxCheckpoints)throw new Error('Audit requests contain between one and sixteen checkpoints.');
   const request=transport(target,planHash,options.token??'',options.fetch??fetch);
   let checkpoint:Checkpoint={format:1,planHash,targetHash,uploadedObjects:0,appliedPages:0};
   const exists=await lstat(options.checkpoint).catch((e:NodeJS.ErrnoException)=>{if(e.code==='ENOENT')return null;throw e;});
@@ -89,6 +94,9 @@ export async function restoreTextStaging(options:{bundle:string;target:unknown;e
   let status=await request('/v1/restore/status') as RemoteStatus;
   if(!status.initialized){if(!status.fresh)throw new Error('The staging database is populated; no initialization was attempted.');status=await request('/v1/restore/init','POST',plan) as RemoteStatus;}
   if(status.planHash!==planHash)throw new Error('The staging service returned a different plan identity.');
+  if(metadataBatchPages>1&&status.phase==='loading'&&(status.metadataBatch?.version!==1||status.metadataBatch.maxPages!==4||
+    status.metadataBatch.maxBytes!==METADATA_BATCH_CAPABILITIES.maxBytes||status.metadataBatch.maxReferenceBytes!==METADATA_BATCH_CAPABILITIES.maxReferenceBytes))throw new Error('The staging service does not advertise the bounded metadata-batch protocol.');
+  if(auditCheckpoints>4&&status.phase!=='complete'&&(status.auditProtocol?.version!==1||status.auditProtocol.pageRows!==8||status.auditProtocol.maxCheckpoints!==16))throw new Error('The staging service does not advertise the extended bounded audit protocol.');
   if(status.phase==='loading'){
     if(uploadBatchSize>1&&(status.uploadBatch?.version!==UPLOAD_BATCH_CAPABILITIES.version||
       status.uploadBatch.maxObjects!==MAX_UPLOAD_BATCH_OBJECTS||status.uploadBatch.maxBytes!==MAX_UPLOAD_BATCH_BYTES))throw new Error('The staging service does not advertise the bounded upload-batch protocol.');
@@ -133,27 +141,47 @@ export async function restoreTextStaging(options:{bundle:string;target:unknown;e
       }
     }
     finally {await pack?.close();}
-    checkpoint.appliedPages=Number(status.counts?.pages??0);
-    for await(const page of jsonLines(join(options.bundle,'fresh-pages.jsonl'))){if(Number(page['page'])<=checkpoint.appliedPages)continue;
-      await request('/v1/restore/page','POST',page);checkpoint.appliedPages=Number(page['page']);await saveCheckpoint(options.checkpoint,checkpoint);
-      options.onProgress?.({appliedPages:checkpoint.appliedPages});}
+    const remotePages=Number(status.counts?.pages??0);
+    if(!Number.isSafeInteger(remotePages)||remotePages<0||remotePages>plan.pageCount)throw new Error('The staging service returned an invalid metadata checkpoint.');
+    if(metadataBatchPages===1)checkpoint.appliedPages=remotePages;
+    else if(!status.counts||remotePages<checkpoint.appliedPages)throw new Error('The staging metadata journal is behind the durable local checkpoint.');
+    // Opt-in batches replay from the durable cursor. A remote prefix without an
+    // exact acknowledgement never advances this client's source checkpoint.
+    async function recordPage(through:number){checkpoint.appliedPages=through;await saveCheckpoint(options.checkpoint!,checkpoint);options.onProgress?.({appliedPages:checkpoint.appliedPages});}
+    async function singlePage(page:CompactRestorePage){const response=await request('/v1/restore/page','POST',page) as {through?:unknown;rows?:unknown;skipped?:unknown};
+      if(response.through!==page.through||response.rows!==page.rows||typeof response.skipped!=='boolean')throw new Error('The staging service did not acknowledge the exact metadata page.');await recordPage(page.page);}
+    let pendingPages:CompactRestorePage[]=[];
+    async function flushPages(){if(!pendingPages.length)return;const response=await request('/v1/restore/pages','POST',{pages:pendingPages});
+      if(!verifiedMetadataAcknowledgements(response,pendingPages,planHash))throw new Error('The staging service did not acknowledge the exact complete metadata range.');
+      await recordPage(pendingPages.at(-1)!.page);pendingPages=[];}
+    for await(const value of jsonLines(join(options.bundle,'fresh-pages.jsonl'))){const page=value as unknown as CompactRestorePage;if(page.page<=checkpoint.appliedPages)continue;
+      if(metadataBatchPages===1){await singlePage(page);continue;}
+      if(metadataReferenceBytes(page)>METADATA_BATCH_CAPABILITIES.maxReferenceBytes||metadataBatchBytes([page])>METADATA_BATCH_CAPABILITIES.maxBytes){await flushPages();await singlePage(page);continue;}
+      const candidate=[...pendingPages,page];
+      if(pendingPages.length&&(pendingPages.length===metadataBatchPages||metadataBatchBytes(candidate)>METADATA_BATCH_CAPABILITIES.maxBytes||
+        candidate.reduce((sum,item)=>sum+metadataReferenceBytes(item),0)>METADATA_BATCH_CAPABILITIES.maxReferenceBytes))await flushPages();
+      pendingPages.push(page);
+    }
+    await flushPages();
     status=await request('/v1/restore/status') as RemoteStatus;
   }
   while(status.phase==='loading'||status.phase==='checking'){status=await request('/v1/restore/publish','POST',{}) as RemoteStatus;options.onProgress?.(status);}
-  while(status.phase==='published'){status=await request('/v1/restore/audit','POST',{pages:4}) as RemoteStatus;options.onProgress?.(status.audit);}
+  while(status.phase==='published'){status=await request('/v1/restore/audit','POST',{pages:auditCheckpoints}) as RemoteStatus;options.onProgress?.(status.audit);}
   if(status.phase!=='complete'||!status.audit?.complete||status.audit.rowsVerified!==plan.rowCount||status.audit.bytesVerified!==plan.textBytes)throw new Error('The staging service did not complete the full strict text audit.');
   return {execute:true,target,planHash,audit:status.audit};
 }
 
 async function main(){const args=process.argv.slice(2);const values=new Map<string,string>();let execute=false;
   for(let at=0;at<args.length;at++){const key=args[at]!;if(key==='--execute'){if(execute)throw new Error('Duplicate --execute.');execute=true;continue;}
-    const value=args[++at];if(!['--bundle','--target','--checkpoint','--concurrency','--upload-batch-size'].includes(key)||!value||value.startsWith('--')||values.has(key))throw new Error('Use --bundle <verified bundle> --target <isolated target.json> [--execute --checkpoint <local progress.json>] [--concurrency 1..8] [--upload-batch-size 1..16].');values.set(key,value);}
+    const value=args[++at];if(!['--bundle','--target','--checkpoint','--concurrency','--upload-batch-size','--metadata-batch-pages','--audit-checkpoints'].includes(key)||!value||value.startsWith('--')||values.has(key))throw new Error('Use --bundle <verified bundle> --target <isolated target.json> [--execute --checkpoint <local progress.json>] [--concurrency 1..8] [--upload-batch-size 1..16] [--metadata-batch-pages 1..4] [--audit-checkpoints 1..16].');values.set(key,value);}
   if(!values.get('--bundle')||!values.get('--target'))throw new Error('Both --bundle and --target are required.');
   const targetPath=values.get('--target')!;if((await stat(targetPath)).size>16*1024)throw new Error('The staging target file is too large.');
   const result=await restoreTextStaging({bundle:values.get('--bundle')!,target:JSON.parse(await readFile(targetPath,'utf8')),execute,
     ...(execute?{token:process.env['RESTORE_TOKEN']??'',checkpoint:values.get('--checkpoint')}:{}),
     ...(values.has('--concurrency')?{concurrency:Number(values.get('--concurrency'))}:{}),
-    ...(values.has('--upload-batch-size')?{uploadBatchSize:Number(values.get('--upload-batch-size'))}:{}),onProgress:(value)=>console.error(JSON.stringify(value))});
+    ...(values.has('--upload-batch-size')?{uploadBatchSize:Number(values.get('--upload-batch-size'))}:{}),
+    ...(values.has('--metadata-batch-pages')?{metadataBatchPages:Number(values.get('--metadata-batch-pages'))}:{}),
+    ...(values.has('--audit-checkpoints')?{auditCheckpoints:Number(values.get('--audit-checkpoints'))}:{}),onProgress:(value)=>console.error(JSON.stringify(value))});
   console.log(JSON.stringify(result,null,2));}
 if(process.argv[1]&&/(?:^|[/\\])restore-text-staging\.(?:ts|mjs)$/.test(process.argv[1])&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   main().catch((error)=>{console.error(error instanceof Error?error.message:'Staging restore failed.');process.exitCode=1;});}
