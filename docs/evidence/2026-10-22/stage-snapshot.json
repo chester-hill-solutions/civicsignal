@@ -1,0 +1,115 @@
+{
+  "status": "hosted_snapshot_acceptance_unmet",
+  "recordedAt": "2026-10-23T03:35:50.078Z",
+  "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "source": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2",
+    "parserSourceDigest": "89408196d74cf05331562ed80676adf84675e153dec98cb9f8065c9e3fb24cb8"
+  },
+  "worker": {
+    "name": "civicsignal-v1-stage-snapshot-20261022",
+    "url": "https://civicsignal-v1-stage-snapshot-20261022.chester-hill-solutions.workers.dev",
+    "deployedFromGitCommit": "878ec8698ab8d07383b1c7b7fe57c619a5115612",
+    "versionId": "46f05037-a125-4fcb-a7be-4400dbdacb25",
+    "trafficPercent": 100
+  },
+  "workflow": {
+    "name": "civicsignal-v1-stage-snapshot-20261022",
+    "id": "f69bdbef-2554-44e1-b683-52eed805acc6",
+    "className": "CorpusSnapshot",
+    "latestMetadataVersionId": "1e198818-84d8-419f-b02d-a0ec606721cf",
+    "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+    "instanceCount": 0,
+    "triggeredOn": null
+  },
+  "r2Bucket": "civicsignal-v1-stage-corpus-20261022",
+  "calendarAttempts": [
+    {
+      "cron": "45 2 23 10 *",
+      "dueAt": "2026-10-23T02:45:00.000Z",
+      "armedAt": "2026-10-23T02:17:17.223698Z",
+      "sourceRecheckedAt": "2026-10-23T02:43:30.389Z",
+      "eventObserved": false,
+      "instanceObserved": false,
+      "emptySchedulesConfirmedAt": "2026-10-23T02:50:11.224Z"
+    },
+    {
+      "cron": "25 3 23 10 *",
+      "dueAt": "2026-10-23T03:25:00.000Z",
+      "armedAt": "2026-10-23T02:57:31.638931Z",
+      "sourceRecheckedAt": "2026-10-23T03:23:30.495Z",
+      "eventObserved": false,
+      "instanceObserved": false,
+      "emptySchedulesConfirmedAt": "2026-10-23T03:30:11.974Z",
+      "independentMemoryGuard": {
+        "confirmedAt": "2026-10-23T03:30:09.912Z",
+        "putHttpStatus": 200,
+        "getHttpStatus": 200,
+        "schedules": [],
+        "localWriteDependency": false
+      }
+    }
+  ],
+  "finalScheduleCheck": {
+    "observedAt": "2026-10-23T03:34:19.633Z",
+    "httpStatus": 200,
+    "schedules": []
+  },
+  "instanceEvidence": {
+    "observedAt": "2026-10-23T03:31:34.081Z",
+    "listHttpStatus": 200,
+    "totalCount": 0,
+    "exactInstanceGetHttpStatus": 404,
+    "errorCode": 10400,
+    "errorMessage": "workflows.api.error.instance.not_found"
+  },
+  "scheduledAnalytics": {
+    "observedAt": "2026-10-23T03:31:34.572Z",
+    "httpStatus": 200,
+    "exactWorkerFilter": "civicsignal-v1-stage-snapshot-20261022",
+    "firstWindow": [
+      "2026-10-23T02:44:00Z",
+      "2026-10-23T02:51:00Z"
+    ],
+    "firstResults": [],
+    "retryWindow": [
+      "2026-10-23T03:24:00Z",
+      "2026-10-23T03:31:30Z"
+    ],
+    "retryResults": [],
+    "errors": null
+  },
+  "negativeControl": {
+    "requestedAt": "2026-10-23T03:31:00.234Z",
+    "url": "https://civicsignal-v1-stage-snapshot-20261022.chester-hill-solutions.workers.dev",
+    "method": "GET",
+    "httpStatus": 500,
+    "redirects": "error",
+    "timeoutMs": 15000,
+    "retries": 0,
+    "bodyBytesObserved": 4820,
+    "tailObservedAt": "2026-10-23T03:32:05.463Z",
+    "tailEvents": 0,
+    "traceDeliveryEstablished": false
+  },
+  "limitations": [
+    "Neither calendar attempt produced observed invocation or Workflow evidence; provider root cause is undetermined.",
+    "Workers Logs dry query returned OAuth HTTP 403; a transient instance-poll authentication error recovered on independent HTTP 200 reads.",
+    "No hosted snapshot artifacts were downloaded or compared; hosted CPU/memory and publication gates remain unverified."
+  ],
+  "cleanup": {
+    "allOwnedLocalObserversStoppedAt": "2026-10-23T03:35:17Z",
+    "firstWatcherExitCode": 0,
+    "retryWatcherExitCode": 0,
+    "memoryGuardExitCode": 0,
+    "noWorkflowInterrupted": true
+  },
+  "manualBuilderInvocations": 0,
+  "productionChanges": false,
+  "servingApiRequests": 0,
+  "documentEmbeddings": 0,
+  "dataDownloadsPausedUntil": "Stable >=5 GiB free space and parent direction",
+  "receipts": "dist/release/staging/"
+}

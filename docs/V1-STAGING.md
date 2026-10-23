@@ -4,6 +4,11 @@ The user approved full bounded staging on 2026-10-22, Toronto time.
 Execution is in progress. The [setup receipt](evidence/2026-10-22/stage-setup.json) records observed identities, versions and current limits.
 Hosted acceptance remains incomplete until each phase has its required evidence.
 The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
+The copy jobs are currently stopped by their local disk guards. Their checkpoints
+and pending receipts are preserved. Resume requires at least 5 GiB of stable free
+space. The two observed calendar windows produced no snapshot event or Workflow
+instance; both triggers were removed and checked. Hosted publication remains an
+unmet gate. See the [transfer stop receipt](evidence/2026-10-22/stage-transfer-stop-state.json).
 
 The goal is to close hosted snapshot, restore, ingestion, inference and retrieval
 checks with an isolated candidate. Use the detailed snapshot commands and stop

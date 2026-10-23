@@ -14,7 +14,7 @@ Existing Railway services are outside this release. Preserve unrelated work and 
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
 | V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local checks pass; hosted cycle pending |
-| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local parity passes; hosted Workflow pending |
+| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local parity passes; hosted scheduled execution remains unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Local proof complete; live cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local route checks pass; hosted checks pending |
@@ -183,6 +183,26 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   Bun/Postgres portability remains available independently of Railway hosting.
   Existing Railway services have not been decommissioned; no Railway API apply occurred.
   Linux release CI passes for the copy-fix candidate `06f4c062cef6be0f9e95946005c2cef92f210678`, run `39892412999`.
+- Hosted execution stop: Both copy monitors stopped their owned processes when
+  local free space crossed the 1 GiB floor. Text has 21,332 verified objects and
+  zero metadata pages; at most 64 objects in the last wave may need identical replay.
+  Vectors have 79,200 verified source positions and 65,383 verified nonzero vectors.
+  The vector journal retains 46 acknowledged batches and one uncertain batch.
+  Checkpoints, source identities and pending receipts remain unchanged.
+  Resume requires at least 5 GiB of stable local headroom and the existing guards.
+  The user said they will free space; that reply does not establish available space.
+  The snapshot calendar attempts at 02:45 and 03:25 UTC on 2026-10-23 produced no
+  observed event or Workflow instance. This is not a completed hosted publication.
+  Both schedules were removed and independently checked. The second cleanup also
+  ran in memory so local disk failure could not prevent removal.
+  The cause of the missing scheduled execution remains under investigation.
+  No serving request or document embedding submission has been made.
+  Linux release CI passes for the Cloudflare-only candidate
+  `9cdcd745c0506eb1ad2f1bbc1a9cdd689406d05c`, run `39893197952`.
+  The [stopped transfer receipt](evidence/2026-10-22/stage-transfer-stop-state.json)
+  records exact checkpoints and remaining limits.
+  The [snapshot receipt](evidence/2026-10-22/stage-snapshot.json) records both calendar
+  windows, independent cleanup, empty instance reads and the trace-delivery limitation.
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
