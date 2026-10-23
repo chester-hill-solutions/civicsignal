@@ -15,17 +15,20 @@ batches. See the [completion receipt](evidence/2026-10-22/stage-vector-restore-c
 Full text baseline publication and audit remain incomplete. See the
 [resume receipt](evidence/2026-10-22/stage-transfer-resume-state.json) and earlier
 [transfer stop receipt](evidence/2026-10-22/stage-transfer-stop-state.json).
-The two observed calendar windows produced no snapshot event or Workflow instance;
+The two earlier calendar windows produced no snapshot event or Workflow instance;
 both triggers were removed and checked. Hosted publication remains an unmet gate.
 A stage-only diagnostic wrapper is deployed. One read-only health request returned
 the exact marker, and live logs captured its successful fetch event. The proposed
 05:00 UTC calendar was never armed: its deadline preflight made zero provider
 requests. Both guards then confirmed empty schedules and stopped. The 06:00 UTC
-calendar is now armed after actual credential renewal, fresh scoped deployment
+calendar was armed after actual credential renewal, fresh scoped deployment
 and source checks, and independent reads of both live cleanup guards. Cloudflare
-confirmed the exact singleton schedule at 05:12:16 UTC. The guards remove it on
-observed execution or by 06:05 UTC. See the
-[arming receipt](evidence/2026-10-22/stage-snapshot-0600-arming.json).
+confirmed the exact singleton schedule at 05:12:16 UTC. No scheduled trace,
+diagnostic receipt or Workflow instance was observed through the 06:05 UTC
+watchdog. Both guards removed the schedule and independently checked an empty
+calendar. A later read confirmed no instance or diagnostic receipt. See the
+[arming receipt](evidence/2026-10-22/stage-snapshot-0600-arming.json) and
+[outcome receipt](evidence/2026-10-22/stage-snapshot-0600-outcome.json).
 Hosted scheduled publication remains unverified. See the
 [diagnostic state receipt](evidence/2026-10-22/stage-snapshot-probe-state.json).
 
@@ -146,8 +149,9 @@ reviewable; they do not establish a hosted result:
    metadata, skip only independently verified all-zero placeholders, and check
    readback before journal checkpoints. Twelve fixture tests cover corruption,
    wrong targets, acknowledgement loss, bounded resume and stale journals.
-   The complete real local preflight passed. The approved hosted copy is in progress;
-   acknowledgements and fully verified checkpoints remain separate.
+   The complete real local preflight and hosted baseline copy passed. All 277,857
+   positions and 254,671 substantive vectors have exact readback, with no pending
+   batches. Reconciliation and retrieval quality remain separate checks.
 2. The isolated `services/restore/worker.ts` and `restore-text-staging.ts` client
    implement a fresh compact-D1/R2 restore protocol with exact resource identity
    headers, binary text uploads with hash readback, ordered checked pages, source

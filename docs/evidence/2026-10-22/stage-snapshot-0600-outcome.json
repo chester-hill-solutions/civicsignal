@@ -1,0 +1,230 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T06:07:35.820555+00:00",
+  "status": "calendar_observation_window_closed_without_observed_dispatch",
+  "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "worker": "civicsignal-v1-stage-snapshot-20261022",
+  "workflow": {
+    "name": "civicsignal-v1-stage-snapshot-20261022",
+    "id": "f69bdbef-2554-44e1-b683-52eed805acc6",
+    "className": "CorpusSnapshot",
+    "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656"
+  },
+  "r2Bucket": "civicsignal-v1-stage-corpus-20261022",
+  "source": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2"
+  },
+  "activeWorkerVersion": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+  "cron": "0 6 23 10 *",
+  "scheduledAt": "2026-10-23T06:00:00.000Z",
+  "armingReceipt": "stage-snapshot-0600-arming.json",
+  "confirmedArmedAt": "2026-10-23T05:12:16.712Z",
+  "sourceChecks": [
+    {
+      "guard": "primary",
+      "commit": "0507465393c224c0491fc8c17c88340217acc656",
+      "date": "2026-10-15",
+      "observedAt": "2026-10-23T05:58:30.468Z"
+    },
+    {
+      "guard": "backup",
+      "commit": "0507465393c224c0491fc8c17c88340217acc656",
+      "date": "2026-10-15",
+      "observedAt": "2026-10-23T05:58:30.468Z"
+    }
+  ],
+  "watchdogRemovals": [
+    {
+      "guard": "backup",
+      "reason": "five-minute-watchdog",
+      "observedAt": "2026-10-23T06:05:00.776Z",
+      "putStatus": 200,
+      "getStatus": 200,
+      "schedules": []
+    },
+    {
+      "guard": "primary",
+      "reason": "five-minute-watchdog",
+      "observedAt": "2026-10-23T06:05:05.757Z",
+      "commandExitCode": 0,
+      "getStatus": 200,
+      "schedules": []
+    }
+  ],
+  "postCalendarReadback": {
+    "format": 1,
+    "observedAt": "2026-10-23T06:06:08.656Z",
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-snapshot-20261022",
+    "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+    "cron": "0 6 23 10 *",
+    "scheduledAt": "2026-10-23T06:00:00.000Z",
+    "readOnly": true,
+    "noOriginRequest": true,
+    "results": [
+      {
+        "label": "schedules",
+        "beganAt": "2026-10-23T06:06:07.353Z",
+        "observedAt": "2026-10-23T06:06:07.731Z",
+        "path": "workers/scripts/civicsignal-v1-stage-snapshot-20261022/schedules",
+        "httpStatus": 200,
+        "bytes": 95,
+        "cfRay": "a4ee8dd11802b5e5-YYZ",
+        "date": "Fri, 23 Oct 2026 06:06:07 GMT",
+        "lastModified": null,
+        "etag": null,
+        "schedules": []
+      },
+      {
+        "label": "instance",
+        "beganAt": "2026-10-23T06:06:07.353Z",
+        "observedAt": "2026-10-23T06:06:07.699Z",
+        "path": "workflows/civicsignal-v1-stage-snapshot-20261022/instances/statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+        "httpStatus": 404,
+        "bytes": 122,
+        "cfRay": "a4ee8dd11abfebb6-YYZ",
+        "date": "Fri, 23 Oct 2026 06:06:07 GMT",
+        "lastModified": null,
+        "etag": null,
+        "errorCodes": [
+          10400
+        ]
+      },
+      {
+        "label": "entered",
+        "beganAt": "2026-10-23T06:06:07.353Z",
+        "observedAt": "2026-10-23T06:06:08.656Z",
+        "path": "r2/buckets/civicsignal-v1-stage-corpus-20261022/objects/diagnostics/stage-2026-10-23/1792735200000-a78ac3510a63c8271a68ec81bd1f93c16ed954e33cae4ac67e7d1714af96dabf/entered.json",
+        "httpStatus": 404,
+        "bytes": 117,
+        "cfRay": "a4ee8dd11c69f4cc-YYZ",
+        "date": "Fri, 23 Oct 2026 06:06:08 GMT",
+        "lastModified": null,
+        "etag": null,
+        "errorCodes": [
+          10007
+        ]
+      },
+      {
+        "label": "completed",
+        "beganAt": "2026-10-23T06:06:07.353Z",
+        "observedAt": "2026-10-23T06:06:07.932Z",
+        "path": "r2/buckets/civicsignal-v1-stage-corpus-20261022/objects/diagnostics/stage-2026-10-23/1792735200000-a78ac3510a63c8271a68ec81bd1f93c16ed954e33cae4ac67e7d1714af96dabf/completed.json",
+        "httpStatus": 404,
+        "bytes": 117,
+        "cfRay": "a4ee8dd11cfc076d-YYZ",
+        "date": "Fri, 23 Oct 2026 06:06:07 GMT",
+        "lastModified": null,
+        "etag": null,
+        "errorCodes": [
+          10007
+        ]
+      },
+      {
+        "label": "failed",
+        "beganAt": "2026-10-23T06:06:07.353Z",
+        "observedAt": "2026-10-23T06:06:07.982Z",
+        "path": "r2/buckets/civicsignal-v1-stage-corpus-20261022/objects/diagnostics/stage-2026-10-23/1792735200000-a78ac3510a63c8271a68ec81bd1f93c16ed954e33cae4ac67e7d1714af96dabf/failed.json",
+        "httpStatus": 404,
+        "bytes": 117,
+        "cfRay": "a4ee8dd10ea664a6-YYZ",
+        "date": "Fri, 23 Oct 2026 06:06:08 GMT",
+        "lastModified": null,
+        "etag": null,
+        "errorCodes": [
+          10007
+        ]
+      }
+    ]
+  },
+  "scheduledTraceObserved": false,
+  "scheduledTraceObservation": "Actual unfiltered Wrangler tail remained ready through the five-minute watchdog; no matching scheduled trace was retained.",
+  "localObserverFinal": {
+    "observedAt": "2026-10-23T06:05:12.394Z",
+    "observerPid": 57883,
+    "states": [
+      {
+        "guard": "primary",
+        "pid": 52404,
+        "phase": "removed",
+        "ready": false,
+        "removed": true,
+        "observedAt": "2026-10-23T06:05:12.393Z",
+        "lastObservationAt": "2026-10-23T06:05:05.757Z",
+        "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-snapshot-20261022",
+        "cron": "0 6 23 10 *",
+        "scheduledAt": "2026-10-23T06:00:00.000Z",
+        "tokenExpiresAt": "2026-10-23T06:08:42.390Z"
+      },
+      {
+        "guard": "backup",
+        "pid": 52407,
+        "phase": "removed",
+        "ready": false,
+        "removed": true,
+        "observedAt": "2026-10-23T06:05:12.393Z",
+        "lastObservationAt": "2026-10-23T06:05:00.775Z",
+        "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-snapshot-20261022",
+        "cron": "0 6 23 10 *",
+        "scheduledAt": "2026-10-23T06:00:00.000Z",
+        "tokenExpiresAt": "2026-10-23T06:08:42.390Z"
+      }
+    ],
+    "sourceChecks": [
+      {
+        "observedAt": "2026-10-23T05:58:30.468Z",
+        "commitMatches": true,
+        "dateMatches": true
+      },
+      {
+        "observedAt": "2026-10-23T05:58:30.468Z",
+        "commitMatches": true,
+        "dateMatches": true
+      }
+    ]
+  },
+  "ownedGuardsShutdown": {
+    "observedAt": "2026-10-23T06:06:54.226675+00:00",
+    "guards": [
+      {
+        "pid": 52404,
+        "stillAlive": false
+      },
+      {
+        "pid": 52407,
+        "stillAlive": false
+      }
+    ],
+    "observerSession": 74359,
+    "observerExitCode": 0,
+    "priorRemovalConfirmed": true,
+    "signal": "SIGINT",
+    "newCloudRequestRequired": false
+  },
+  "ownedStatusPorts": [
+    {
+      "port": 51871,
+      "closed": true
+    },
+    {
+      "port": 51872,
+      "closed": true
+    }
+  ],
+  "guardSessionExitCodes": {
+    "29573": 0,
+    "68982": 0,
+    "74359": 0
+  },
+  "calendarGateMet": false,
+  "fullHostedParityVerified": false,
+  "noProviderRootCauseClaim": true,
+  "noNewRetryOrManualBuilder": true,
+  "servingRequests": 0,
+  "documentEmbeddingSubmissions": 0,
+  "productionChanges": false
+}

@@ -273,7 +273,11 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
 - Snapshot calendar: Actual OAuth renewal and fresh scoped deployment/source
   checks passed. The reviewed driver armed the single 06:00 UTC calendar and
   confirmed it at 05:12:16 UTC, with both same live guards still ready after the
-  mutation. The guards remove it on observed execution or by 06:05 UTC. The
+  mutation. No scheduled trace, diagnostic receipt or Workflow instance appeared
+  before the 06:05 UTC watchdog. Both guards removed the schedule and checked an
+  empty calendar. A separate read confirmed the absent instance and receipts.
+  The [outcome receipt](evidence/2026-10-22/stage-snapshot-0600-outcome.json)
+  retains these observations without a provider root-cause claim. The
   [arming receipt](evidence/2026-10-22/stage-snapshot-0600-arming.json) does not
   establish dispatch, Workflow completion or hosted artifact parity.
 

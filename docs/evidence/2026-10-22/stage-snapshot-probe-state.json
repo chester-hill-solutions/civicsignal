@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "recordedAt": "2026-10-23T05:14:18.535Z",
-  "status": "One isolated06:00UTC calendar armed and confirmed; both guards ready afterCLI; publication remains pending",
+  "recordedAt": "2026-10-23T06:07:35.820555+00:00",
+  "status": "The 06:00 UTC calendar produced no observed scheduled trace, diagnostic receipt or Workflow instance during the guarded window; watchdog cleanup and independent schedules[] readback passed. Hosted calendar publication remains unverified.",
   "hostedProbe": {
     "format": 1,
     "recordedAt": "2026-10-23T04:14:12.440Z",
@@ -150,7 +150,7 @@
     "dueAt": "2026-10-23T06:00:00Z",
     "armBy": "2026-10-23T05:25:00Z",
     "watchdogAt": "2026-10-23T06:05:00Z",
-    "status": "Armed once at05:12:13.533Z; singleton confirmed05:12:16.712Z; no manual builder",
+    "status": "Armed once at 05:12:13.533Z and singleton confirmed at 05:12:16.712Z; no dispatch observed before 06:05 watchdog removal; no automatic retry.",
     "preparedStatus": "Prepared locally only; no guard startup or schedule arm; real renewal receipt and parent review required"
   },
   "servingRequests": 0,
@@ -161,6 +161,10 @@
     {
       "recordedAt": "2026-10-23T04:32:38.836283+00:00",
       "status": "Hosted diagnostic health/trace passed; scheduled publication remains unverified; no schedule enabled"
+    },
+    {
+      "recordedAt": "2026-10-23T05:14:18.535Z",
+      "status": "One isolated06:00UTC calendar armed and confirmed; both guards ready afterCLI; publication remains pending"
     }
   ],
   "calendar0600ArmingReceipt": "stage-snapshot-0600-arming.json",
@@ -240,5 +244,26 @@
     "scheduledHandlerCompletionIsWorkflowCompletion": false,
     "fullHostedParityVerified": false,
     "productionChanges": false
+  },
+  "calendar0600OutcomeReceipt": "stage-snapshot-0600-outcome.json",
+  "calendar0600Outcome": {
+    "recordedAt": "2026-10-23T06:07:35.820555+00:00",
+    "status": "calendar_observation_window_closed_without_observed_dispatch",
+    "sourceChecksPassedAt": "2026-10-23T05:58:30.468Z",
+    "backupRemovalConfirmedAt": "2026-10-23T06:05:00.776Z",
+    "primaryRemovalConfirmedAt": "2026-10-23T06:05:05.757Z",
+    "independentSchedulesEmptyAt": "2026-10-23T06:06:07.731Z",
+    "instanceHttpStatus": 404,
+    "instanceErrorCodes": [
+      10400
+    ],
+    "diagnosticReceiptHttpStatuses": {
+      "entered": 404,
+      "completed": 404,
+      "failed": 404
+    },
+    "ownedGuardsStopped": true,
+    "noProviderRootCauseClaim": true,
+    "calendarGateMet": false
   }
 }

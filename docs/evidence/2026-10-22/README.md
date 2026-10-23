@@ -21,6 +21,7 @@ or production data change.
 | `linux-ci.json` | Linux Node 24 frozen install, 693 tests and five builds | Historical candidate evidence; Railway was later removed from the v1 release gate |
 | `stage-restore-protocol-handoff.json` | Isolated Worker binding readback, stopped prior owner, preserved checkpoint and replay of 63 uncertain objects | Full metadata publication and strict hosted audit remain incomplete |
 | `stage-snapshot-0600-arming.json` | Actual renewal, checked deployment and live guards, confirmed singleton 06:00 UTC calendar | Arming does not prove scheduled dispatch, Workflow completion or artifact parity |
+| `stage-snapshot-0600-outcome.json` | Exact source checks, both watchdog removals, independent empty-calendar and absent-instance/receipt reads | No scheduled dispatch was observed; hosted publication remains unverified |
 | `stage-oauth-renewal-050842.json` | One bounded read-only account check renewed OAuth through 06:08:42 UTC | No forced login, expiry edit or production probe |
 | `exact-citation-section-preference.json` | Real bilingual source rows, SQLite/PostgreSQL regressions and 787-test full gate | Retrieval-only local proof; unknown URL formats keep fallback ambiguity |
 | `stage-setup.json` | Approved limits, created resource identities and deployed stage versions | In-progress setup evidence; no completed hosted acceptance or production migration |
