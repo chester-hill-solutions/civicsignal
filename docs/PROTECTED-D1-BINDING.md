@@ -2,8 +2,8 @@
 
 The fixed-table binding helper and its staging-only HTTP adapter are implemented
 and tested against synthetic local workerd D1/R2. The checked-in restore config
-remains disabled with no bindings. The initial-admission client below is locally
-verified. There is no acquisition code or production target configuration. `checkedTarget` remains staging-only. Local
+remains disabled with no bindings. Both initial and full-phase clients below are
+locally verified. There is no acquisition code or production target configuration. `checkedTarget` remains staging-only. Local
 transport tests do not authorize or establish an actual hosted restore.
 
 ## Inputs and interface
@@ -152,8 +152,12 @@ target and page prefixes before any credential callback or network request.
 selects `RESTORE_TOKEN`. Inspection does not create a journal or select a token.
 
 One explicit window performs status, begin when needed, then compact corpus
-admission pages. It stops at `checking-text`; text auditing, protected-row loading,
-verification and final corpus checks are not implemented in this client yet.
+admission pages. Its default initial mode stops at `checking-text`. Adding
+`--full-phases` selects the separately sealed `full-copy-v1` plan and journal.
+Full mode continues through eight-row text audits, protected-page loading and
+verification, a second complete compact scan, and finalization. It derives exact
+row/byte/page/chain/version prefixes from the sealed input before credentials.
+Initial and full journals cannot be substituted or promoted into one another.
 Each window permits at most 64 attempts and 300 seconds, including input sealing.
 Requests have a 15-second total deadline, 16 KiB response cap and one in flight.
 Those limits can be reduced, never raised, by CLI options.
@@ -195,9 +199,16 @@ interruption, pending cancellation, lost replies, deadline overruns, journal
 corruption and pre-read input bounds. See the
 [client validation](evidence/2026-10-23/protected-state-client-root-validation.json).
 
+The full-phase client brings the focused suite to **171 tests** (119 D1/client,
+35 copier and 17 format). Independent review passes all **39 new full-flow
+cases**, including lost text/load/verify/final acknowledgements, final compact
+reset, sequence facts, exact byte prefixes and durable-ack deadline overruns.
+All three relevant compiler projects pass. See the
+[full-client validation](evidence/2026-10-23/protected-state-full-client-root-validation.json).
+
 Production still requires a consistent authenticated D1/KV backup under a common
-writer/auth freeze, verified private acquisition receipts, a separately reviewed
-completion of the execution client and its owned operator, actual hosted staging
+writer/auth freeze, verified private acquisition receipts, the separately reviewed
+owned operator, actual hosted staging
 copy evidence, production-specific exact-target transport/resource review, and the
 `AUTH_DB` rollback/usage-namespace gate. None is
 closed or approved by these local tests. Existing frozen recovery, backup

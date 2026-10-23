@@ -6,6 +6,7 @@ import {loadProtectedStatePlan,privatePath} from './protected-state';
 import {jsonLines,sha256File} from '../prepare-text-cutover';
 import {stagingPlan} from '../restore-text-staging';
 import {checkedTarget,hashJson,nextPageChain} from '../../services/restore/protocol';
+import {verifyCompactRestorePage,type CompactRestorePage} from '../../src/corpora/compact-restore';
 import {checkedProtectedPage,checkedProtectedRow,PROTECTED_TABLE_ORDER,type ProtectedScalar} from '../../src/corpora/protected-state-format';
 import {checkedProtectedD1Admission,compareProtectedD1Keys,protectedD1Assert as demand,ZERO_PROTECTED_CHAIN,type ProtectedD1Admission} from '../../src/corpora/protected-state-d1-admission';
 export interface ProtectedD1SourceOptions {directory:string;manifestSha256:string;cutoverBundle:string;target:unknown}
@@ -34,19 +35,42 @@ export async function prepareProtectedD1Admission(options:ProtectedD1SourceOptio
  const parent=openSync(dirname(output),'r');try{fsyncSync(parent);}finally{closeSync(parent);}
  return {admissionSha256,fileSha256:await sha256File(output),pages:manifest.pages,protectedChainSha256:admission.protectedChainSha256};
 }
-/** Full read-only sealing for the initial-admission client, before credentials.
- * Recompute the sidecar using the same strict source checks as preparation. */
-export async function loadProtectedD1ClientPlan(options:ProtectedD1SourceOptions&{admissionPath:string;admissionSha256:string;admissionFileSha256:string}){
+/** Read-only source sealing before credentials. Full mode also derives the
+ * exact text-byte and protected-page prefixes used by every later phase. */
+export async function loadProtectedD1ClientPlan(options:ProtectedD1SourceOptions&{admissionPath:string;admissionSha256:string;admissionFileSha256:string},full=false){
  const source=await validatedSources(options),path=await privatePath(options.admissionPath);
  demand((await stat(path)).size<=16*1024&&await sha256File(path)===options.admissionFileSha256,'PROTECTED_D1_ADMISSION_FILE');
  const admission=JSON.parse(await readFile(path,'utf8')) as ProtectedD1Admission;
  demand(await hashJson(admission)===options.admissionSha256&&source.admissionSha256===options.admissionSha256,'PROTECTED_D1_ADMISSION_IDENTITY');
  const identity={manifestSha256:options.manifestSha256,admissionSha256:options.admissionSha256,target:source.target};
  await checkedProtectedD1Admission(admission,source.manifest,identity);
- const compactPagesPath=resolve(options.cutoverBundle,'fresh-pages.jsonl'),prefixes=[{page:0,rows:0,chain:ZERO_PROTECTED_CHAIN,bodySha256:''}];
- for await(const raw of jsonLines(compactPagesPath)){demand(Buffer.byteLength(JSON.stringify(raw))<=64*1024,'PROTECTED_D1_COMPACT_BOUNDS');const prior=prefixes.at(-1)!;prefixes.push({page:Number(raw['page']),rows:prior.rows+Number(raw['rows']),chain:await nextPageChain(prior.chain,String(raw['sha256'])),bodySha256:await hashJson({page:raw})});}
+ const compactPagesPath=resolve(options.cutoverBundle,'fresh-pages.jsonl');
+ const prefixes=[{page:0,rows:0,chain:ZERO_PROTECTED_CHAIN,bodySha256:''}],textPrefixes=[{rows:0,bytes:0}];let textRows=0,textBytes=0;
+ for await(const raw of jsonLines(compactPagesPath)){
+  demand(Buffer.byteLength(JSON.stringify(raw))<=64*1024,'PROTECTED_D1_COMPACT_BOUNDS');
+  if(full){
+   const page=raw as unknown as CompactRestorePage;await verifyCompactRestorePage(page);
+   for(let at=0;at<page.rows;at++){
+    textRows++;textBytes+=Number(page.statements[at*2+1]!.params[5]);demand(Number.isSafeInteger(textBytes),'PROTECTED_D1_TEXT_BYTES');
+    if(textRows%8===0)textPrefixes.push({rows:textRows,bytes:textBytes});
+   }
+  }
+  const prior=prefixes.at(-1)!;prefixes.push({page:Number(raw['page']),rows:prior.rows+Number(raw['rows']),chain:await nextPageChain(prior.chain,String(raw['sha256'])),bodySha256:await hashJson({page:raw})});
+ }
  demand(await sha256File(path)===options.admissionFileSha256&&await sha256File(compactPagesPath)===admission.compactPlan.pagesSha256&&await sha256File(resolve(options.cutoverBundle,'manifest.json'))===admission.compactPlan.bundleManifestSha256&&prefixes.length===admission.compactPlan.pageCount+1&&prefixes.at(-1)?.chain===admission.compactPlan.pagesChainSha256,'INPUT_CHANGED');
- const pins={format:1,slice:'initial-admission-v1',manifestSha256:identity.manifestSha256,admissionSha256:identity.admissionSha256,admissionFileSha256:options.admissionFileSha256,targetSha256:admission.targetSha256,compactPlanSha256:admission.compactPlanSha256,protectedPagesSha256:source.manifest.pagesSha256,compactPagesSha256:admission.compactPlan.pagesSha256};
+ if(full&&textRows%8!==0)textPrefixes.push({rows:textRows,bytes:textBytes});
+ const protectedPrefixes=[{page:0,rows:0,chain:ZERO_PROTECTED_CHAIN,bodySha256:'',counts:Object.fromEntries(PROTECTED_TABLE_ORDER.map(table=>[table,0]))}];
+ if(full){
+  for await(const raw of jsonLines(source.pagesPath)){
+   const page=await checkedProtectedPage(raw),prior=protectedPrefixes.at(-1)!;
+   protectedPrefixes.push({page:page.page,rows:prior.rows+page.rows.length,chain:await nextPageChain(prior.chain,page.sha256),bodySha256:await hashJson({page:raw}),counts:{...prior.counts,[page.table]:prior.counts[page.table]!+page.rows.length}});
+  }
+  demand(textRows===source.manifest.corpusRows&&textBytes===admission.compactPlan.textBytes&&textPrefixes.length===Math.ceil(textRows/8)+1&&protectedPrefixes.length===source.manifest.pages+1&&protectedPrefixes.at(-1)?.chain===admission.protectedChainSha256&&PROTECTED_TABLE_ORDER.every(table=>protectedPrefixes.at(-1)!.counts[table]===source.manifest.tables[table].rows),'PROTECTED_D1_FULL_PREFIX');
+  demand(await sha256File(source.pagesPath)===source.manifest.pagesSha256&&await sha256File(compactPagesPath)===admission.compactPlan.pagesSha256&&await sha256File(path)===options.admissionFileSha256&&await sha256File(resolve(options.directory,'manifest.json'))===options.manifestSha256&&await sha256File(resolve(options.cutoverBundle,'manifest.json'))===admission.compactPlan.bundleManifestSha256,'INPUT_CHANGED');
+ }
+ const finalVersion=2*admission.compactPlan.pageCount+textPrefixes.length-1+2*source.manifest.pages+1;
+ if(full)demand(Number.isSafeInteger(finalVersion)&&Number.isSafeInteger(finalVersion+1),'PROTECTED_D1_FULL_PREFIX');
+ const pins={format:1,slice:full?'full-copy-v1':'initial-admission-v1',manifestSha256:identity.manifestSha256,admissionSha256:identity.admissionSha256,admissionFileSha256:options.admissionFileSha256,targetSha256:admission.targetSha256,compactPlanSha256:admission.compactPlanSha256,protectedPagesSha256:source.manifest.pagesSha256,compactPagesSha256:admission.compactPlan.pagesSha256};
  const beginBody=JSON.stringify({manifest:source.manifest,admission});demand(Buffer.byteLength(beginBody)<=16*1024,'PROTECTED_D1_BEGIN_BOUND');
- return {...source,admission,identity,compactPagesPath,prefixes,pins,beginBodySha256:await hashJson({manifest:source.manifest,admission}),planSha256:await hashJson(pins)};
+ return {...source,admission,identity,compactPagesPath,prefixes,pins,full:full?{textPrefixes,protectedPrefixes,finalVersion}:undefined,beginBodySha256:await hashJson({manifest:source.manifest,admission}),planSha256:await hashJson(pins)};
 }
