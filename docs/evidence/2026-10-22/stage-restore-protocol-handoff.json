@@ -329,7 +329,6 @@
     "metadataMaxIndividualSqlStatements": 149,
     "metadataMaxBindingCalls": 20,
     "auditMaxBindingCalls": 85,
-    "requiredD1QueriesPerInvocation": 1000,
     "acceptedDeployedUsageModel": "standard",
     "entitlementAssessment": "Inference from the accepted paid-only Standard usage model and deployed paid-only Container application; not a direct billing-plan receipt. Hosted metadata and strict audit must still complete.",
     "subscriptionRead": {
@@ -342,6 +341,7 @@
       "https://developers.cloudflare.com/d1/platform/limits/",
       "https://developers.cloudflare.com/workers/platform/pricing/",
       "https://developers.cloudflare.com/containers/platform/pricing/"
-    ]
+    ],
+    "paidD1QueryLimitPerInvocation": 1000
   }
 }

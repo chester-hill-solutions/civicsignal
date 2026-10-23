@@ -9,6 +9,7 @@ import { STATUTES_CANADA } from './policies';
 import { retrieveStatutesByVector, statuteItems } from './adapters';
 import { resolveLimit, type Corpus, type CorpusContext, type CorpusQuery } from './types';
 import { retrievalTrace } from './retrieval-observation';
+import { loadExactProvisionRows } from './provision-lookup';
 
 /** Historical local-cosine calibration; fresh held-out calibration is still required. */
 export const POSTGRES_VECTOR_FLOOR = 0.81;
@@ -32,9 +33,9 @@ async function rowsById(ctx: CorpusContext, ids: string[]): Promise<Record<strin
 
 async function retrieveProvision(query: CorpusQuery, ctx: CorpusContext): Promise<RawCorpusItem[]> {
   const language = query.language ? ' AND language = ?' : '';
-  const rows = await queryRows(ctx, `SELECT ${COLUMNS} FROM statute_provisions
-    WHERE instrument = ? AND section = ?${language} ORDER BY in_force DESC, id LIMIT ?`,
-    [query.act!, query.section!, ...(query.language ? [query.language.toLowerCase()] : []), resolveLimit(query.limit)]);
+  const rows = await loadExactProvisionRows(query.section!, (canonical) => queryRows(ctx, `SELECT ${COLUMNS} FROM statute_provisions
+    WHERE instrument = ? AND section = ?${language}${canonical} ORDER BY in_force DESC, id LIMIT ?`,
+    [query.act!, query.section!, ...(query.language ? [query.language.toLowerCase()] : []), resolveLimit(query.limit)]));
   return statuteItems(rows, { limit: query.limit });
 }
 

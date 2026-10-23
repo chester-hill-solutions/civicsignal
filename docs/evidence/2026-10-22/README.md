@@ -1,8 +1,8 @@
-# Local v1 evidence
+# V1 preparation and staging evidence
 
-These files record checks from the v1 preparation on 2026-10-22 in Toronto.
-Some observation timestamps use the next UTC date.
-They do not confirm a release or a production data change.
+This run began on 2026-10-22 in Toronto and continued on 2026-10-23.
+Observation timestamps use UTC. These files do not confirm a production release
+or production data change.
 
 | File | Evidence | Limit |
 | --- | --- | --- |
@@ -20,6 +20,9 @@ They do not confirm a release or a production data change.
 | `clean-checkout.json` | Frozen install, four compiler checks, 693 tests, runtime probes and five dry-run builds | Local macOS evidence; hosted acceptance remains pending |
 | `linux-ci.json` | Linux Node 24 frozen install, 693 tests and five builds | Historical candidate evidence; Railway was later removed from the v1 release gate |
 | `stage-restore-protocol-handoff.json` | Isolated Worker binding readback, stopped prior owner, preserved checkpoint and replay of 63 uncertain objects | Full metadata publication and strict hosted audit remain incomplete |
+| `stage-snapshot-0600-arming.json` | Actual renewal, checked deployment and live guards, confirmed singleton 06:00 UTC calendar | Arming does not prove scheduled dispatch, Workflow completion or artifact parity |
+| `stage-oauth-renewal-050842.json` | One bounded read-only account check renewed OAuth through 06:08:42 UTC | No forced login, expiry edit or production probe |
+| `exact-citation-section-preference.json` | Real bilingual source rows, SQLite/PostgreSQL regressions and 787-test full gate | Retrieval-only local proof; unknown URL formats keep fallback ambiguity |
 | `stage-setup.json` | Approved limits, created resource identities and deployed stage versions | In-progress setup evidence; no completed hosted acceptance or production migration |
 | `stage-fixes-validation.json` | 715 local tests, four compiler checks and five builds after reproduced staging fixes | Linux rerun follows the candidate update |
 | `stage-vector-restore-complete.json` | All 277,857 source positions, exact readback of 254,671 vectors and independent final count; preserved visibility failure and readback-only recovery | Pinned legacy backup equality; hosted reconciliation and quality remain incomplete |

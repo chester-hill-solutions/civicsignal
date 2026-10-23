@@ -20,8 +20,12 @@ both triggers were removed and checked. Hosted publication remains an unmet gate
 A stage-only diagnostic wrapper is deployed. One read-only health request returned
 the exact marker, and live logs captured its successful fetch event. The proposed
 05:00 UTC calendar was never armed: its deadline preflight made zero provider
-requests. Both guards then confirmed empty schedules and stopped. A 06:00 UTC
-candidate is prepared locally, pending real credential renewal and guard review.
+requests. Both guards then confirmed empty schedules and stopped. The 06:00 UTC
+calendar is now armed after actual credential renewal, fresh scoped deployment
+and source checks, and independent reads of both live cleanup guards. Cloudflare
+confirmed the exact singleton schedule at 05:12:16 UTC. The guards remove it on
+observed execution or by 06:05 UTC. See the
+[arming receipt](evidence/2026-10-22/stage-snapshot-0600-arming.json).
 Hosted scheduled publication remains unverified. See the
 [diagnostic state receipt](evidence/2026-10-22/stage-snapshot-probe-state.json).
 

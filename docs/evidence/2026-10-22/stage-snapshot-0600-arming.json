@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T05:14:18.535Z",
+  "status": "one_calendar_armed_publication_pending",
+  "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "worker": "civicsignal-v1-stage-snapshot-20261022",
+  "workflow": {
+    "name": "civicsignal-v1-stage-snapshot-20261022",
+    "id": "f69bdbef-2554-44e1-b683-52eed805acc6",
+    "className": "CorpusSnapshot",
+    "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656"
+  },
+  "r2Bucket": "civicsignal-v1-stage-corpus-20261022",
+  "source": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2"
+  },
+  "activeWorkerVersion": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+  "configSha256": "9a1afc401642884fd01fa2358fd596268e38405457a981751d38618e7382743a",
+  "driverSha256": "89920a311c479362919979b756b31c66e904be4b07ffae9e650381da0addcbc2",
+  "arming": {
+    "armedAt": "2026-10-23T05:12:13.533Z",
+    "confirmedAt": "2026-10-23T05:12:16.712Z",
+    "configSha": "9a1afc401642884fd01fa2358fd596268e38405457a981751d38618e7382743a",
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-snapshot-20261022",
+    "commandExitCode": 0,
+    "schedules": [
+      {
+        "cron": "0 6 23 10 *",
+        "created_on": "2026-10-23T05:12:15.18495Z",
+        "modified_on": "2026-10-23T05:12:15.18495Z"
+      }
+    ],
+    "due": "2026-10-23T06:00:00.000Z",
+    "afterStates": [
+      {
+        "guard": "primary",
+        "pid": 52404,
+        "phase": "ready",
+        "ready": true,
+        "removed": false,
+        "observedAt": "2026-10-23T05:12:16.713Z",
+        "lastObservationAt": "2026-10-23T05:11:48.680Z",
+        "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-snapshot-20261022",
+        "cron": "0 6 23 10 *",
+        "scheduledAt": "2026-10-23T06:00:00.000Z",
+        "tokenExpiresAt": "2026-10-23T06:08:42.390Z"
+      },
+      {
+        "guard": "backup",
+        "pid": 52407,
+        "phase": "ready",
+        "ready": true,
+        "removed": false,
+        "observedAt": "2026-10-23T05:12:16.713Z",
+        "lastObservationAt": "2026-10-23T05:12:07.585Z",
+        "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-snapshot-20261022",
+        "cron": "0 6 23 10 *",
+        "scheduledAt": "2026-10-23T06:00:00.000Z",
+        "tokenExpiresAt": "2026-10-23T06:08:42.390Z"
+      }
+    ]
+  },
+  "guardSessions": {
+    "primary": 29573,
+    "backup": 68982
+  },
+  "watchdogAt": "2026-10-23T06:05:00.000Z",
+  "sourceCheckAt": "2026-10-23T05:58:30.000Z",
+  "scheduledHandlerCompletionIsWorkflowCompletion": false,
+  "fullHostedParityVerified": false,
+  "productionChanges": false
+}

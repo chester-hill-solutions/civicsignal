@@ -257,6 +257,26 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   This proves equality with the pinned backup; it does not attest the legacy
   embedding model or replace the separate hosted quality and reconciliation gates.
 
+
+- V1-08 exact-citation correction: A lower-ID preamble can share the real
+  section's numeric label and win the old `LIMIT 1` lookup. Both storage adapters
+  now prefer rows with the numbered-section URL that `buildRows` generates for
+  actual sections. Selection occurs before the limit and text hydration. The
+  real bilingual Canada Health Act section 8 rows pass regression checks on
+  SQLite and PostgreSQL. Repealed sections, multiple canonical matches and
+  noncanonical, amending, lettered or schedule fallbacks remain available.
+  Unknown URL formats retain fallback ambiguity; numeric fallback may use one
+  additional bounded query. No parser, corpus artifact, vector or semantic policy
+  changed. The [validation receipt](evidence/2026-10-22/exact-citation-section-preference.json)
+  records 21 new behavior checks and the complete passing gate: 787 tests in
+  74 files, four compiler projects, runtime probes, invariants and five builds.
+- Snapshot calendar: Actual OAuth renewal and fresh scoped deployment/source
+  checks passed. The reviewed driver armed the single 06:00 UTC calendar and
+  confirmed it at 05:12:16 UTC, with both same live guards still ready after the
+  mutation. The guards remove it on observed execution or by 06:05 UTC. The
+  [arming receipt](evidence/2026-10-22/stage-snapshot-0600-arming.json) does not
+  establish dispatch, Workflow completion or hosted artifact parity.
+
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 

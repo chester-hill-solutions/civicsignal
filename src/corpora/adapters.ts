@@ -12,6 +12,7 @@ import { ATOMIC_QUESTIONS, CANDIDATE_COUNT, decide, EXCERPT_CHARS, JEV_MODEL, ra
 import { ENCODER_CONTRACT } from '../encoder';
 import { normalizeForSearch } from '../text';
 import { RETRIEVAL_POLICY_VERSION, retrievalTrace, type RetrievalBackend } from './retrieval-observation';
+import { loadExactProvisionRows } from './provision-lookup';
 import {
   escapeLike,
   likePatterns,
@@ -463,15 +464,15 @@ async function retrieveProvision(
     ? { sql: ' AND language = ?', binds: [query.language.toLowerCase()] }
     : { sql: '', binds: [] as string[] };
 
-  const stored = await queryRows(
+  const stored = await loadExactProvisionRows(query.section!, (canonical) => queryRows(
     ctx,
     `SELECT id, corpus_id, act, citation, section, status, schedule, part, heading, text, text_hash, source_url, jurisdiction, in_force, topics, language
        FROM statute_sections
-      WHERE act = ? AND section = ?${lang.sql}
+      WHERE act = ? AND section = ?${lang.sql}${canonical}
       ORDER BY in_force DESC, id
       LIMIT ?`,
     [query.act!, query.section!, ...lang.binds, String(resolveLimit(query.limit))],
-  );
+  ));
   const rows = ctx.provisionTexts ? await ctx.provisionTexts.hydrate(stored) : stored;
 
   return rows.map((row) => ({
