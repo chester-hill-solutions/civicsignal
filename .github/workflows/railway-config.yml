@@ -42,9 +42,14 @@ jobs:
       # authoring file is TypeScript and the CLI evaluates it natively.
       - name: Install the authoring SDK
         run: bun install --frozen-lockfile
-      - uses: railwayapp/config@v1
+      # The v1 tag reinstalls with npm, which cannot consume this Bun workspace.
+      # Use the checked upstream package-manager input and the frozen install above.
+      - uses: railwayapp/config@f1f0c715716fe035319b0a716b95c6e83e0f6595
         with:
           command: plan
+          package-manager: none
+          cli-version: 5.71.0
+          comment: "false"
           railway-token: ${{ secrets.RAILWAY_TOKEN }}
 
   apply:
@@ -62,7 +67,8 @@ jobs:
           bun-version: 1.3.5
       - name: Install the authoring SDK
         run: bun install --frozen-lockfile
-      - uses: railwayapp/config@v1
+      - uses: railwayapp/config@f1f0c715716fe035319b0a716b95c6e83e0f6595
         with:
           command: apply
+          cli-version: 5.71.0
           railway-token: ${{ secrets.RAILWAY_TOKEN }}

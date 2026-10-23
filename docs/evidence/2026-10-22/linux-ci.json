@@ -1,0 +1,39 @@
+{
+  "recordedAt": "2026-10-23T01:52:08.281Z",
+  "pullRequest": "https://github.com/chester-hill-solutions/civicsignal/pull/1",
+  "testedHead": "deeec4fbc0d50f2fce41c4ce117c900e9fc1d94f",
+  "workflowRun": 39886013143,
+  "jobId": 120194238014,
+  "url": "https://github.com/chester-hill-solutions/civicsignal/actions/runs/39886013143",
+  "conclusion": "success",
+  "runner": "Ubuntu 24.04",
+  "node": "24.21.0",
+  "bun": "1.3.5",
+  "frozenInstall": true,
+  "compilerProjects": 4,
+  "testsPassed": 693,
+  "testFilesPassed": 68,
+  "workerDryRunBuilds": 5,
+  "localWorkerdProbes": [
+    "SQLite Durable Object concurrency and receipts",
+    "R2 immutable creates"
+  ],
+  "limitations": [
+    "CI uses local workerd, not hosted production services",
+    "Hosted acceptance and protected production migration remain pending"
+  ],
+  "railwayPlan": {
+    "initialRun": 39886013115,
+    "initialConclusion": "failure",
+    "cause": "railwayapp/config@v1 unconditionally runs npm install in a Bun workspace before planning",
+    "fix": {
+      "actionCommit": "f1f0c715716fe035319b0a716b95c6e83e0f6595",
+      "actionBlob": "55f14d2db74ee593ae42c0149edc3c8e201de648",
+      "packageManager": "none (uses prior frozen Bun install)",
+      "cliVersion": "5.71.0",
+      "automaticComments": false
+    },
+    "fixedRun": "pending",
+    "apply": "not run"
+  }
+}
