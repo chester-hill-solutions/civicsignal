@@ -18,7 +18,7 @@ Keep Railway running. Preserve unrelated work and the Postgres portability code.
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Local proof complete; live cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local route checks pass; hosted checks pending |
-| V1-09 | Complete engineering gates | Worker, Bun, scripts and IaC type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass; Railway plan rerun pending |
+| V1-09 | Complete engineering gates | Worker, Bun, scripts and IaC type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass; Railway plan needs CI credential |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Candidate prepared; hosted acceptance pending |
 
 ## Work order
@@ -133,6 +133,9 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   The separate Railway plan action failed before planning because its v1 tag reinstalled dependencies with npm.
   A checked upstream commit supports reuse of the frozen Bun install. Its CLI version is pinned too.
   Automatic plan comments are disabled. The saved plan remains a review artifact; no apply occurred.
+  The corrected action reaches planning, but CI supplies an empty `RAILWAY_TOKEN`.
+  Railway refuses the plan. Configure an authorized repository Actions secret before a future merge or apply decision.
+  Never commit or print the token. This credential dependency does not change any Railway service.
 - Encoder: The local amd64 image builds from a pinned base and model artifact.
   Network-disabled smoke checks pass for artifact identity, health, authentication, invalid JSON, and empty batches.
   These checks do not measure inference quality or latency.
@@ -156,7 +159,8 @@ The large local artifacts remain outside Git. The commands can reproduce them fr
 
 1. Check the full Workflow in isolated hosted staging after approval.
 2. Check the approved live text migration and protected-table copy against a consistent production backup.
-3. Confirm the Railway plan rerun after the action fix; local and Linux release gates pass.
+3. Configure the missing Railway CI project credential and check its read-only plan before any merge/apply decision.
+   Local and Linux release gates pass. Keep Railway unchanged.
 4. Run fresh calibration, held-out retrieval, and bounded performance checks against a verified serving target.
 5. Check one non-empty automated publication and ingestion cycle with observed freshness.
 6. Review the prepared migration and release candidate before any required deployment approval.

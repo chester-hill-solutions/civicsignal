@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-10-23T01:52:08.281Z",
+  "recordedAt": "2026-10-23T01:55:05.060865+00:00",
   "pullRequest": "https://github.com/chester-hill-solutions/civicsignal/pull/1",
   "testedHead": "deeec4fbc0d50f2fce41c4ce117c900e9fc1d94f",
   "workflowRun": 39886013143,
@@ -33,7 +33,16 @@
       "cliVersion": "5.71.0",
       "automaticComments": false
     },
-    "fixedRun": "pending",
-    "apply": "not run"
+    "fixedRun": 39886455882,
+    "apply": "not run",
+    "fixedInstaller": "success: action selected none and reused the prior frozen Bun install",
+    "fixedConclusion": "failure: CI supplied an empty RAILWAY_TOKEN; Railway rejected planning before a plan was created",
+    "nextStep": "Configure an authorized project token in the repository Actions secret RAILWAY_TOKEN, then rerun the read-only plan before any merge/apply decision. Never commit or print its value."
+  },
+  "repeatReleaseValidation": {
+    "testedHead": "0320b304bf6e291c08f0f69a13c2f73a9e7d0a3b",
+    "workflowRun": 39886455890,
+    "conclusion": "success",
+    "url": "https://github.com/chester-hill-solutions/civicsignal/actions/runs/39886455890"
   }
 }
