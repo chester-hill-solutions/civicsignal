@@ -14,10 +14,17 @@ reconciliation failed its bound. The approved same-coordinator recovery has spen
 and 14 calls remain. Its saved failure matches a GitHub source-head HTTP 403.
 The earlier refusal reason remains unproved. A separate one-shot probe at
 19:16 UTC returned HTTP 403 with anonymous GitHub quota 0/60. The current
-stop-only version `40110049-9cf5-44c3-b23f-ed39e06da7b7` was independently checked
-after a local disk failure interrupted its first verification. It retains the
-suspended revision, no alarm and unchanged counters. The probe is consumed; the
-prepared continuation refused qualification and was never deployed or resumed.
+previous stop-only version `40110049-9cf5-44c3-b23f-ed39e06da7b7` was independently
+checked after a local disk failure interrupted its first verification. A dedicated
+expiring public-read-only GitHub token was subsequently created and one binding
+PUT returned an uncertain result. No second PUT occurred. At 21:41:51 UTC on
+October 23, a separate five-GET readback verified its binding on active version
+`f42a444b-1ff7-42bb-9ccb-bb46d6e1a743`, exact runtime/resources, empty schedules and
+the same paused checkpoint. The old write remains unacknowledged. The anonymous
+probe is consumed; the authenticated probe has not run. New evidence qualifiers
+are being prepared before any authenticated deployment or explicit continuation.
+See the [binding recovery plan](V1-STAGING-BINDING-RECOVERY.md) and
+[readback validation](evidence/2026-10-23/staging-binding-readback-root-validation.json).
 See the [progress proof](evidence/2026-10-22/stage-recovery-progress-1.json),
 [earlier failure identification](evidence/2026-10-22/stage-recovery-source-403.json)
 and [current quota observation](evidence/2026-10-22/stage-source-head-quota-exhausted.json).
