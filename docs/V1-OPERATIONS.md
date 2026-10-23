@@ -78,9 +78,16 @@ compact markers or text objects. Those remain separate cutover checks.
 
 The separate [D1 binding helper](PROTECTED-D1-BINDING.md) now verifies those
 actual metadata/reference/marker inputs and performs a fresh full R2 audit before
-copying protected rows. All 81 focused tests pass, including 29 cases using
-synthetic local D1/R2. This is local binding implementation evidence; consistent
-production acquisition and authenticated hosted transport remain pending.
+copying protected rows. A staging-only HTTP adapter now requires the existing
+restore bearer, fixed resource/plan identity, a completed compact session and
+server-pinned protected manifest/admission hashes. Its status response omits
+private row values and cursor keys. Text steps require the expected session
+version before R2 reads and preserve the atomic guard after those reads.
+All 119 focused tests pass, including 49 protected-D1 checks. This is local
+implementation evidence. The default configuration leaves the routes disabled;
+consistent production acquisition, a durable staging client, hosted application
+and a separately reviewed production target adapter remain pending. See the
+[transport validation](evidence/2026-10-23/protected-state-http-root-validation.json).
 
 Before a corpus backup, use the deployed coordinator's
 [suspend/drain protocol](../services/snapshot/OPERATIONS.md#suspend-the-corpus-writer-before-backup)

@@ -10,8 +10,15 @@ export const PROTECTED_D1_JOURNAL_SCHEMA = `CREATE TABLE protected_state_restore
 CREATE TABLE protected_state_pages(page INTEGER PRIMARY KEY,sha256 TEXT NOT NULL);
 CREATE TABLE protected_state_d1_session(id INTEGER PRIMARY KEY CHECK(id=1),admission_sha256 TEXT NOT NULL,manifest_sha256 TEXT NOT NULL,target_sha256 TEXT NOT NULL,manifest_json TEXT NOT NULL,admission_json TEXT NOT NULL,state_json TEXT NOT NULL,version INTEGER NOT NULL);`;
 export function fixedSchemaStatements(schema:string){return schema.split(';').map(sql=>sql.trim()).filter(Boolean);}
-/** Whitespace/comments outside literals do not alter a schema; literal values do. */
-function normalized(sql:string){let out='',quote='';for(let n=0;n<sql.length;n++){const c=sql[n]!,next=sql[n+1];if(quote){out+=c;if(c===quote){if(next===quote){out+=next;n++;}else quote='';}continue;}if(c==="'"||c==='"'||c==='`'){quote=c;out+=c;continue;}if(c==='-'&&next==='-'){while(n<sql.length&&sql[n]!=='\n')n++;continue;}if(c==='/'&&next==='*'){n+=2;while(n<sql.length&&!(sql[n]==='*'&&sql[n+1]==='/'))n++;n++;continue;}if(!/\s/.test(c)&&c!==';')out+=c.toLowerCase();}return out.replace(/^createtableifnotexists/,'createtable').replace(/^createindexifnotexists/,'createindex');}
+/** Ignore separators without joining SQL tokens or changing quoted values. */
+function normalized(sql:string){
+ const tokens=(sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|\x60(?:\x60\x60|[^\x60])*\x60|\[[^\]]*\]|--[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|(?:0x[\da-f]+|\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|[a-z_$\u0080-\uffff][\w$\u0080-\uffff]*|->>|->|\|\||<<|>>|<=|>=|==|!=|<>|[^\s;]/gi)??[])
+  .filter(token=>!token.startsWith('--')&&!token.startsWith('/*'))
+  .map(token=>["'",'"','\x60','['].includes(token[0]!)?token:token.toLowerCase());
+ const optional=tokens[1]==='unique'&&tokens[2]==='index'?3:2;
+ if(tokens[0]==='create'&&['table','index'].includes(tokens[optional-1]!)&&tokens.slice(optional,optional+3).join(' ')==='if not exists')tokens.splice(optional,3);
+ return JSON.stringify(tokens);
+}
 function schemas(){const map=new Map<string,string>();for(const sql of fixedSchemaStatements(COMPACT_CORPUS_SCHEMA+RESTORE_SUPPORT_SCHEMA+PROTECTED_D1_AUTH_SCHEMA+PROTECTED_D1_JOURNAL_SCHEMA)){const name=/CREATE\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_][a-z0-9_]*)/i.exec(sql.replace(/--[^\n]*/g,''))?.[1];protectedD1Assert(name,'PROTECTED_FIXED_SCHEMA');map.set(name,normalized(sql));}return map;}
 export async function checkProtectedD1Schema(db:D1Database,initialized:boolean){
  const expected=schemas(),rows=(await db.prepare("SELECT name,type,sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*' ORDER BY name LIMIT 64").all<{name:string;type:string;sql:string|null}>()).results;

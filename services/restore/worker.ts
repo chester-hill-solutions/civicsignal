@@ -8,10 +8,11 @@ import { isFreshRestoreDatabase } from './fresh-schema';
 import { decodeUploadBatch, MAX_UPLOAD_BATCH_BYTES, UPLOAD_BATCH_CAPABILITIES, UPLOAD_BATCH_PARALLELISM,
   type UploadBatchAcknowledgement } from './upload-batch';
 import { applyMetadataBatch,checkedMetadataBatch,METADATA_BATCH_CAPABILITIES,AUDIT_CAPABILITIES } from './metadata-batch';
+import {handleProtectedRestoreRequest,type ProtectedRestorePins} from './protected';
 
 /** This contract is exercised against actual local D1/R2 bindings. The disabled
  * checked-in config has no bindings; generated staging config supplies them. */
-export interface RestoreEnv {
+export interface RestoreEnv extends ProtectedRestorePins {
   RESTORE_ENABLED?: string; RESTORE_STAGE_ID?: string; RESTORE_ACCOUNT_ID?: string; RESTORE_D1_ID?: string; RESTORE_R2_NAME?: string;
   RESTORE_TOKEN?: string; RESTORE_DB?: D1Database; RESTORE_TEXTS?: R2Bucket;
 }
@@ -151,6 +152,7 @@ async function publish(db: D1Database, session: Session, plan: RestorePlan) {
 }
 
 export async function handleRestoreRequest(request: Request, env: RestoreEnv): Promise<Response> {
+  const protectedRequest=new URL(request.url).pathname.startsWith('/v1/restore/protected/');
   try {
     const {db,bucket,target,planHash} = await authorize(request,env);
     const path = new URL(request.url).pathname;
@@ -158,6 +160,10 @@ export async function handleRestoreRequest(request: Request, env: RestoreEnv): P
     if (request.method === 'POST' && path === '/v1/restore/init') { await initialize(request,db,target,planHash); return json(await status(db,target,planHash)); }
     const session = await currentSession(db); checkSession(session,target,planHash);
     const plan = checkedRestorePlan(JSON.parse(session.plan_json));
+    if(protectedRequest){
+      if(session.phase!=='complete')throw new RestoreInputError('Complete the checked compact restore first.',409);
+      return handleProtectedRestoreRequest(request,{db,bucket,target,planHash,pins:env});
+    }
     const object = /^\/v1\/restore\/object\/([a-f0-9]{64})$/.exec(path);
     if (request.method === 'PUT' && object) {
       if (session.phase === 'complete') throw new RestoreInputError('The completed restore is read-only.',409);
@@ -224,6 +230,7 @@ export async function handleRestoreRequest(request: Request, env: RestoreEnv): P
     throw new RestoreInputError('No such staging restore endpoint.',404);
   } catch (error) {
     if (error instanceof RestoreInputError || error instanceof RequestInputError) return json({error:'restore_rejected',message:error.message},error.status);
+    if(protectedRequest)return json({error:'protected_restore_failed',code:'PROTECTED_HTTP_FAILURE'},503);
     return json({error:'restore_failed',message:'The staging restore step failed. Its committed checkpoint is safe to retry.'},503);
   }
 }

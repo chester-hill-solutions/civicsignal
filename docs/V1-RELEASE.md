@@ -36,7 +36,7 @@ Completed ingestion, retrieval evaluation and production migration remain pendin
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local route checks pass; hosted checks pending |
 | V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass |
-| V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Candidate prepared; hosted acceptance pending |
+| V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; migration tooling, hosted acceptance and final audit pending |
 
 ## Work order
 
@@ -388,6 +388,15 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   [binding interface and limits](PROTECTED-D1-BINDING.md) and
   [validation receipt](evidence/2026-10-23/protected-state-d1-root-validation.json).
 
+- Protected-copy staging transport: fixed HTTP routes now require the original
+  restore bearer/resource/plan/session guards plus server-pinned protected
+  manifest and admission hashes. Bounded request parsing, safe status output,
+  lost-response replay and text-version checks pass 119 focused tests, including
+  49 protected-D1 checks. The default configuration keeps these routes disabled.
+  A durable staging client, actual hosted copy and consistent production
+  acquisition remain pending; this does not enable a production target. See the
+  [transport validation](evidence/2026-10-23/protected-state-http-root-validation.json).
+
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
@@ -396,7 +405,7 @@ The large local artifacts remain outside Git. The commands can reproduce them fr
 1. Finish the authenticated source-access remedy, complete ingestion within the approved cumulative limits, then verify text bytes, vector visibility and the resulting backup.
 2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
 3. Run post-reconciliation flows, fresh calibration, held-out retrieval, and bounded performance checks against the coherent serving target; verify positive BYOK generation with an approved provider key.
-4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper is locally verified, including actual target metadata/references, compact markers and fresh R2 bytes. Production acquisition and authenticated hosted application remain pending.
+4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper and staging-only HTTP adapter are locally verified. A durable staging client, consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending.
 5. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
 
 See [V1-OPERATIONS.md](V1-OPERATIONS.md) and [V1-EVALUATION.md](V1-EVALUATION.md) for procedures.

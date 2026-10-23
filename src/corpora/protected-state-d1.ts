@@ -1,5 +1,5 @@
 /** Fixed-table local D1 adapter. No HTTP handler, caller SQL, credentials or target creation. */
-import {hashJson,nextPageChain} from '../../services/restore/protocol';
+import {checkedTarget,hashJson,nextPageChain} from '../../services/restore/protocol';
 import {COMPACT_STATUTE_COLUMNS,verifyCompactRestorePage,type CompactRestorePage} from './compact-restore';
 import {auditProvisionTextPage,type TextObjectReader,type TextParityCheckpoint} from './text-store';
 import {PROTECTED_TABLE_COLUMNS as columns,PROTECTED_TABLE_ORDER as tables,PROTECTED_HISTORY_TABLES as history,
@@ -20,11 +20,15 @@ interface Loaded {session:Session;manifest:ProtectedManifest;admission:Protected
 const zeros=()=>Object.fromEntries(tables.map(t=>[t,0])) as Counts;
 const cursor=():Cursor=>({page:0,table:-1,key:null,chain:ZERO_PROTECTED_CHAIN,counts:zeros()});
 const compact=():CompactCursor=>({page:0,after:'',rows:0,chain:ZERO_PROTECTED_CHAIN});
-const result=(s:State)=>({phase:s.phase,compactPages:s.compact.page,compactRows:s.compact.rows,loadedPages:s.load.page,verifiedPages:s.verify.page,complete:s.phase==='complete'});
+// Deliberately omit cursor keys, publication values and all protected rows.
+const result=(s:State,version:number)=>({phase:s.phase,version,compactPages:s.compact.page,compactRows:s.compact.rows,compactChain:s.compact.chain,
+ loadedPages:s.load.page,loadedChain:s.load.chain,verifiedPages:s.verify.page,verifiedChain:s.verify.chain,
+ textRows:s.audit?.rowsVerified??0,textBytes:s.audit?.bytesVerified??0,textComplete:s.audit?.complete??false,complete:s.phase==='complete'});
 async function safe<T>(work:()=>Promise<T>):Promise<T>{try{return await work();}catch(error){throw error instanceof ProtectedStateError?error:new ProtectedStateError('PROTECTED_D1_FAILURE');}}
 async function session(db:D1Database){const exists=await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='protected_state_d1_session'").first();return exists?db.prepare('SELECT * FROM protected_state_d1_session WHERE id=1').first<Session>():null;}
 async function load(db:D1Database,identity:ProtectedD1Identity):Promise<Loaded>{
  identity=structuredClone(identity);
+ identity.target=checkedTarget(identity.target);
  const record=await session(db);demand(record,'PROTECTED_D1_NOT_STARTED');
  demand(record.admission_sha256===identity.admissionSha256&&record.manifest_sha256===identity.manifestSha256&&record.target_sha256===await hashJson(identity.target)&&Number.isSafeInteger(record.version)&&record.version>=0,'PROTECTED_D1_IDENTITY');
  const manifest=JSON.parse(record.manifest_json) as ProtectedManifest,admission=await checkedProtectedD1Admission(JSON.parse(record.admission_json),manifest,identity),state=JSON.parse(record.state_json) as State;
@@ -65,12 +69,17 @@ function guard(db:D1Database,l:Loaded,s:State,version:number,complete=0):D1Prepa
 async function advance(db:D1Database,l:Loaded,next:State,statements:D1PreparedStatement[]=[],finish=false){
  const update=db.prepare('UPDATE protected_state_d1_session SET state_json=?,version=version+1 WHERE id=1 AND version=? AND state_json=?').bind(JSON.stringify(next),l.session.version,l.session.state_json);
  await db.batch([guard(db,l,l.state,l.session.version),...statements,update,...(finish?[db.prepare('UPDATE protected_state_restore SET complete=1 WHERE id=1 AND complete=0')]:[]),guard(db,l,next,l.session.version+1,finish?1:0)]);
- return result(next);
+ return result(next,l.session.version+1);
 }
+/** Read-only reconciliation. No raw row IDs, key cursors or protected values. */
+export async function getProtectedD1Status(db:D1Database,identity:ProtectedD1Identity){return safe(async()=>{
+ if(!await session(db))return {initialized:false as const};
+ const l=await load(db,identity);await preimage(db,l);return {initialized:true as const,...result(l.state,l.session.version)};
+ });}
 export async function beginProtectedD1(db:D1Database,options:{manifest:ProtectedManifest;admission:ProtectedD1Admission;identity:ProtectedD1Identity}){return safe(async()=>{
  options=structuredClone(options);
  const {manifest,identity}=options,admission=await checkedProtectedD1Admission(options.admission,manifest,identity),old=await session(db);
- if(old){await checkProtectedD1Schema(db,true);const l=await load(db,identity);await preimage(db,l);return result(l.state);}
+ if(old){await checkProtectedD1Schema(db,true);const l=await load(db,identity);await preimage(db,l);return result(l.state,l.session.version);}
  const schema=await checkProtectedD1Schema(db,false),publication=await currentPublication(db),seq=await sequences(db);
  demand(same(publication,manifest.initialPublication[0])&&same(seq,{corpus_runs:null,corpus_changes:null}),'PROTECTED_D1_INITIAL_PUBLICATION');
  const counts=await currentCounts(db).catch(()=>null);
@@ -82,7 +91,7 @@ export async function beginProtectedD1(db:D1Database,options:{manifest:Protected
  const setup=[...(!schema.authPresent?fixedSchemaStatements(PROTECTED_D1_AUTH_SCHEMA):[]),...fixedSchemaStatements(PROTECTED_D1_JOURNAL_SCHEMA)].map(sql=>db.prepare(sql));
  setup.push(db.prepare('INSERT INTO protected_state_restore(id,manifest_sha256,complete) VALUES(1,?,0)').bind(identity.manifestSha256),db.prepare('INSERT INTO protected_state_d1_session VALUES(1,?,?,?,?,?,?,0)').bind(identity.admissionSha256,identity.manifestSha256,admission.targetSha256,JSON.stringify(manifest),JSON.stringify(admission),JSON.stringify(state)));
  const l:Loaded={session:{admission_sha256:identity.admissionSha256,manifest_sha256:identity.manifestSha256,target_sha256:admission.targetSha256,manifest_json:JSON.stringify(manifest),admission_json:JSON.stringify(admission),state_json:JSON.stringify(state),version:0},manifest,admission,state,identity};
- setup.push(guard(db,l,state,0));await db.batch(setup);await compactMarker(db,l);return result(state);
+ setup.push(guard(db,l,state,0));await db.batch(setup);await compactMarker(db,l);return result(state,0);
  });}
 const refColumns=['row_id','corpus_id','row_fingerprint','content_sha256','object_key','bytes','created_at'] as const;
 export async function checkProtectedD1CorpusPage(db:D1Database,page:CompactRestorePage,identity:ProtectedD1Identity){return safe(async()=>{
@@ -106,8 +115,12 @@ export async function checkProtectedD1CorpusPage(db:D1Database,page:CompactResto
  }
  return advance(db,l,next);
  });}
-export async function checkProtectedD1Text(db:D1Database,bucket:TextObjectReader,identity:ProtectedD1Identity){return safe(async()=>{
- const l=await load(db,identity);demand(l.state.phase==='checking-text'&&l.state.audit?.complete!==true,'PROTECTED_D1_PHASE');await preimage(db,l);
+export async function checkProtectedD1Text(db:D1Database,bucket:TextObjectReader,identity:ProtectedD1Identity,expectedSessionVersion:number){return safe(async()=>{
+ const l=await load(db,identity);
+ // Check before any R2 read. The existing in-batch version/state CAS also fences
+ // a concurrent step after these reads; a stale acknowledgement cannot advance.
+ demand(Number.isSafeInteger(expectedSessionVersion)&&expectedSessionVersion>=0&&expectedSessionVersion===l.session.version,'PROTECTED_D1_VERSION');
+ demand(l.state.phase==='checking-text'&&l.state.audit?.complete!==true,'PROTECTED_D1_PHASE');await preimage(db,l);
  const checkpoint=await auditProvisionTextPage(db,bucket,{expectedRevision:l.admission.compactPlan.revision,mode:'r2',pageSize:8,...(l.state.audit?{checkpoint:l.state.audit}:{})});
  const next=structuredClone(l.state);next.audit=checkpoint;
  if(checkpoint.complete){demand(checkpoint.rowsVerified===l.manifest.corpusRows&&checkpoint.bytesVerified===l.admission.compactPlan.textBytes,'PROTECTED_D1_TEXT_COMPLETE');next.phase='loading';}
@@ -123,7 +136,7 @@ async function boundedPage(raw:unknown){demand(new TextEncoder().encode(JSON.str
 function allExpected(cursor:Cursor,m:ProtectedManifest){return tables.every(t=>cursor.counts[t]===m.tables[t].rows);}
 export async function applyProtectedD1Page(db:D1Database,raw:unknown,identity:ProtectedD1Identity){return safe(async()=>{
  const page=await boundedPage(raw),l=await load(db,identity);await preimage(db,l);
- if(page.page<=l.state.load.page){await receipt(db,page);await verifyPageRows(db,page);return {...result(l.state),skipped:true};}
+ if(page.page<=l.state.load.page){await receipt(db,page);await verifyPageRows(db,page);return {...result(l.state,l.session.version),skipped:true};}
  demand(l.state.phase==='loading','PROTECTED_D1_PHASE');const next=structuredClone(l.state);next.load=nextCursor(l.state.load,page);next.load.chain=await nextPageChain(l.state.load.chain,page.sha256);
  demand(next.load.counts[page.table]<=l.manifest.tables[page.table].rows,'PROTECTED_D1_TABLE_COUNT');const statements:D1PreparedStatement[]=[];
  if(page.table==='corpus_state'){demand(page.rows.length===1&&l.state.load.counts.corpus_state===0,'PROTECTED_D1_PUBLICATION_PAGE');statements.push(db.prepare("DELETE FROM corpus_state WHERE corpus_id='statutes-canada'"));next.publication=checkedProtectedRow('corpus_state',page.rows[0]);}
@@ -138,13 +151,13 @@ export async function applyProtectedD1Page(db:D1Database,raw:unknown,identity:Pr
  });}
 export async function verifyProtectedD1Page(db:D1Database,raw:unknown,identity:ProtectedD1Identity){return safe(async()=>{
  const page=await boundedPage(raw),l=await load(db,identity);await preimage(db,l);await receipt(db,page);await verifyPageRows(db,page);
- if(page.page<=l.state.verify.page)return {...result(l.state),skipped:true};demand(l.state.phase==='checking-protected','PROTECTED_D1_PHASE');
+ if(page.page<=l.state.verify.page)return {...result(l.state,l.session.version),skipped:true};demand(l.state.phase==='checking-protected','PROTECTED_D1_PHASE');
  const next=structuredClone(l.state);next.verify=nextCursor(l.state.verify,page);next.verify.chain=await nextPageChain(l.state.verify.chain,page.sha256);
  if(page.page===l.manifest.pages){demand(next.verify.chain===l.admission.protectedChainSha256&&allExpected(next.verify,l.manifest),'PROTECTED_D1_VERIFY_COMPLETE');next.phase='checking-corpus-final';next.compact=compact();}
  return advance(db,l,next);
  });}
 export async function finishProtectedD1(db:D1Database,identity:ProtectedD1Identity){return safe(async()=>{
- const l=await load(db,identity);await preimage(db,l);if(l.state.phase==='complete')return result(l.state);
+ const l=await load(db,identity);await preimage(db,l);if(l.state.phase==='complete')return result(l.state,l.session.version);
  const p=l.admission.compactPlan;demand(l.state.phase==='checking-corpus-final'&&l.state.compact.page===p.pageCount&&l.state.compact.chain===p.pagesChainSha256&&l.state.compact.rows===p.rowCount&&l.state.audit?.complete===true&&l.state.load.chain===l.admission.protectedChainSha256&&l.state.verify.chain===l.admission.protectedChainSha256&&allExpected(l.state.load,l.manifest)&&allExpected(l.state.verify,l.manifest)&&same(l.state.sequences,l.admission.sequences),'PROTECTED_D1_NOT_COMPLETE');
  await checkProtectedD1Schema(db,true);demand((await db.prepare('SELECT * FROM pragma_foreign_key_check LIMIT 1').all()).results.length===0,'PROTECTED_D1_FOREIGN_KEYS');
  const pending=await db.prepare('SELECT count(*) AS n FROM corpus_mutations WHERE payload IS NOT NULL OR completed_at IS NULL').first<{n:number}>();demand(pending?.n===0,'PROTECTED_D1_PENDING');

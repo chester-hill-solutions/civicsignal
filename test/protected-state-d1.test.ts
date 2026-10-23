@@ -1,4 +1,4 @@
-import {afterEach,beforeAll,describe,expect,it} from 'vitest';
+import {afterEach,beforeAll,describe,expect,it,vi} from 'vitest';
 import {build} from 'esbuild';
 import {Miniflare} from 'miniflare';
 import {createRequire} from 'node:module';
@@ -18,6 +18,7 @@ import {PROTECTED_TABLE_COLUMNS,PROTECTED_TABLE_ORDER,protectedPageDigest,protec
 import {PROTECTED_D1_AUTH_SCHEMA} from '../src/corpora/protected-state-d1-schema';
 import {compareProtectedD1Keys,type ProtectedD1Admission,type ProtectedD1Identity} from '../src/corpora/protected-state-d1-admission';
 import {localD1} from '../scripts/lib/local-d1';
+import {readProtectedRestoreBody,PROTECTED_BODY_TIMEOUT_MS} from '../services/restore/protected';
 const {DatabaseSync}=createRequire(import.meta.url)('node:sqlite') as {DatabaseSync:typeof Sqlite};
 const cleanup:(()=>Promise<unknown>|void)[]=[];
 afterEach(async()=>{for(const close of cleanup.splice(0).reverse())await close();});
@@ -29,9 +30,13 @@ beforeAll(async()=>{
  import {readJsonBody} from './src/http';
  import * as protectedD1 from './src/corpora/protected-state-d1';
  import {ProtectedStateError} from './src/corpora/protected-state-format';
- type Env=RestoreEnv&{RESTORE_DB:D1Database;RESTORE_TEXTS:R2Bucket};
+ type Env=RestoreEnv&{RESTORE_DB:D1Database;RESTORE_TEXTS:R2Bucket;PROTECTED_FIXTURE_ENV:string};
  export default {async fetch(request:Request,env:Env){
-  if(new URL(request.url).pathname.startsWith('/v1/restore/'))return handleRestoreRequest(request,env);
+  if(new URL(request.url).pathname.startsWith('/v1/restore/')){
+   let reads=0;const bucket=new Proxy(env.RESTORE_TEXTS,{get(target,key){if(key==='get')return (...args:Parameters<R2Bucket['get']>)=>{reads++;return target.get(...args);};const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;}});
+   const overrides=new URL(request.url).pathname.startsWith('/v1/restore/protected/')?JSON.parse(env.PROTECTED_FIXTURE_ENV):{};
+   const response=await handleRestoreRequest(request,{...env,...overrides,RESTORE_TEXTS:bucket});response.headers.set('x-fixture-r2-reads',String(reads));return response;
+  }
   let reads=0;try{const b=await readJsonBody(request,128*1024) as any;let fault=b.fault;
    const db=new Proxy(env.RESTORE_DB,{get(target,key){if(key==='batch')return async(statements:D1PreparedStatement[])=>{
     const once=fault;fault=null;
@@ -42,9 +47,10 @@ beforeAll(async()=>{
     return target.batch(statements);
    };const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;}});let value;
    switch(new URL(request.url).pathname){
+    case '/status':value=await protectedD1.getProtectedD1Status(db,b.identity);break;
     case '/begin':value=await protectedD1.beginProtectedD1(db,b);break;
     case '/corpus':value=await protectedD1.checkProtectedD1CorpusPage(db,b.page,b.identity);break;
-    case '/text':value=await protectedD1.checkProtectedD1Text(db,{get:async(key:string)=>{reads++;return env.RESTORE_TEXTS.get(key);}},b.identity);break;
+    case '/text':{const status=await protectedD1.getProtectedD1Status(db,b.identity);value=await protectedD1.checkProtectedD1Text(db,{get:async(key:string)=>{reads++;return env.RESTORE_TEXTS.get(key);}},b.identity,b.expectedSessionVersion??(status.initialized?status.version:-1));break;}
     case '/apply':value=await protectedD1.applyProtectedD1Page(db,b.page,b.identity);break;
     case '/verify':value=await protectedD1.verifyProtectedD1Page(db,b.page,b.identity);break;
     case '/finish':value=await protectedD1.finishProtectedD1(db,b.identity);break;
@@ -53,7 +59,7 @@ beforeAll(async()=>{
   }catch(e){return Response.json({code:e instanceof ProtectedStateError?e.code:'FIXTURE_FAILURE',reads},{status:409});}
  }};`},bundle:true,format:'esm',platform:'browser',target:'es2022',write:false});script=result.outputFiles[0]!.text;
 });
-async function fixture(historyMode:'highwater'|'zero'|'absent'='highwater'){
+async function fixture(historyMode:'highwater'|'zero'|'absent'='highwater',envOverrides:Record<string,string|undefined>={}){
  const root=await realpath(await mkdtemp(join(tmpdir(),'protected-d1-')));await chmod(root,0o700);cleanup.push(()=>rm(root,{recursive:true,force:true}));
  const source=join(root,'source.sqlite'),targetFile=join(root,'target.sqlite'),auth=join(root,'auth.json'),bundle=join(root,'cutover'),output=join(root,'protected');
  const sourceDb=new DatabaseSync(source);for(const name of(await readdir('migrations')).filter(n=>n.endsWith('.sql')).sort())sourceDb.exec(await readFile(join('migrations',name),'utf8'));
@@ -82,25 +88,169 @@ async function fixture(historyMode:'highwater'|'zero'|'absent'='highwater'){
  const admitted=await prepareProtectedD1Admission({directory:output,manifestSha256:prepared.manifestSha256,cutoverBundle:bundle,target,outputPath:sidecar});
  const manifest=JSON.parse(await readFile(join(output,'manifest.json'),'utf8')) as ProtectedManifest,admission=JSON.parse(await readFile(sidecar,'utf8')) as ProtectedD1Admission,identity:ProtectedD1Identity={admissionSha256:admitted.admissionSha256,manifestSha256:prepared.manifestSha256,target};
  const pages:ProtectedPage[]=[];for await(const p of jsonLines(join(output,'pages.jsonl')))pages.push(p as unknown as ProtectedPage);
- const token='synthetic-restore-token-'.repeat(3),mf=new Miniflare({telemetry:{enabled:false},unsafeDevRegistryPath:join(root,'registry'),resourcePersistencePath:join(root,'persistence'),workers:[{config:{name:'protected-d1-local',compatibilityDate:'2026-10-22',compatibilityFlags:['nodejs_compat'],env:{RESTORE_DB:{type:'d1',id:target.d1Id,dev:{remote:false}},RESTORE_TEXTS:{type:'r2',name:target.r2Bucket,dev:{remote:false}},...Object.fromEntries(Object.entries({RESTORE_ENABLED:'staging-only',RESTORE_STAGE_ID:target.stageId,RESTORE_ACCOUNT_ID:target.accountId,RESTORE_D1_ID:target.d1Id,RESTORE_R2_NAME:target.r2Bucket,RESTORE_TOKEN:token}).map(([key,value])=>[key,{type:'text' as const,value}]))},manifest:{mainModule:'worker.js',modules:{'worker.js':{type:'esm',contents:script}}}},dev:{outboundService:{type:'fetcher',handler:async()=>{throw Error('External networking forbidden.');}}}}]});cleanup.push(()=>mf.dispose());
+ const token='synthetic-restore-token-'.repeat(3),mf=new Miniflare({telemetry:{enabled:false},unsafeDevRegistryPath:join(root,'registry'),resourcePersistencePath:join(root,'persistence'),workers:[{config:{name:'protected-d1-local',compatibilityDate:'2026-10-22',compatibilityFlags:['nodejs_compat'],env:{RESTORE_DB:{type:'d1',id:target.d1Id,dev:{remote:false}},RESTORE_TEXTS:{type:'r2',name:target.r2Bucket,dev:{remote:false}},...Object.fromEntries(Object.entries({RESTORE_ENABLED:'staging-only',RESTORE_STAGE_ID:target.stageId,RESTORE_ACCOUNT_ID:target.accountId,RESTORE_D1_ID:target.d1Id,RESTORE_R2_NAME:target.r2Bucket,RESTORE_TOKEN:token,RESTORE_PROTECTED_ENABLED:'staging-only',RESTORE_PROTECTED_MANIFEST_SHA256:identity.manifestSha256,RESTORE_PROTECTED_ADMISSION_SHA256:identity.admissionSha256,PROTECTED_FIXTURE_ENV:JSON.stringify(envOverrides)}).map(([key,value])=>[key,{type:'text' as const,value}]))},manifest:{mainModule:'worker.js',modules:{'worker.js':{type:'esm',contents:script}}}},dev:{outboundService:{type:'fetcher',handler:async()=>{throw Error('External networking forbidden.');}}}}]});cleanup.push(()=>mf.dispose());
  const send:typeof fetch=async(url,init)=>{const r=new Request(url,init),body=['GET','HEAD'].includes(r.method)?undefined:new Uint8Array(await r.arrayBuffer());const response=await mf.dispatchFetch(r.url,{method:r.method,headers:[...r.headers],...(body?{body}:{})});return new Response(await response.arrayBuffer(),{status:response.status,headers:[...response.headers]});};
  await restoreTextStaging({bundle,target,execute:true,token,checkpoint:join(root,'restore.json'),fetch:send});
  const db=await mf.getD1Database('RESTORE_DB');
  async function call(operation:string,extra:Record<string,unknown>={}){const r=await send('http://localhost/'+operation,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({identity,...extra})});const body=await r.json() as {code?:string;value?:{phase:string;complete:boolean;loadedPages:number;verifiedPages:number;compactPages:number;skipped?:boolean};reads?:number};return {status:r.status,...body};}
  const begin=()=>call('begin',{manifest,admission});
+ const protectedHeaders={'authorization':'Bearer '+token,'content-type':'application/json','x-restore-stage':target.stageId,'x-restore-account':target.accountId,'x-restore-d1':envOverrides.RESTORE_D1_ID??target.d1Id,'x-restore-r2':envOverrides.RESTORE_R2_NAME??target.r2Bucket,'x-restore-plan':admission.compactPlanSha256,'x-protected-manifest':identity.manifestSha256,'x-protected-admission':identity.admissionSha256};
+ async function protectedCall(operation:string,body:unknown={},headers:Record<string,string>={},method=operation==='status'?'GET':'POST'):Promise<Record<string,unknown>&{status:number;reads:number;phase?:string;version?:number}>{
+  const response=await send('http://localhost/v1/restore/protected/'+operation,{method,headers:{...protectedHeaders,...headers},...(method==='GET'?{}:{body:body instanceof Uint8Array?body:JSON.stringify(body)})});
+  const value=await response.json() as Record<string,unknown>;return {status:response.status,reads:Number(response.headers.get('x-fixture-r2-reads')),...value};
+ }
  async function corpus(){for(const page of compactPages){const r=await call('corpus',{page});expect(r.status,r.code).toBe(200);}}
  async function text(){let reads=0;for(let n=0;n<3;n++){const r=await call('text');expect(r.status,r.code).toBe(200);reads+=r.reads??0;}expect(reads).toBe(18);}
  async function ready(){expect((await begin()).status).toBe(200);await corpus();await text();}
  async function apply(){for(const page of pages){const r=await call('apply',{page});expect(r.status,r.code).toBe(200);}}
  async function verify(){for(const page of pages){const r=await call('verify',{page});expect(r.status,r.code).toBe(200);}}
- return {root,source,targetFile,bundle,output,manifest,admission,identity,pages,compactPages,mf,db,call,begin,corpus,text,ready,apply,verify,sealedPagesSha,sealedManifestSha};
+ return {root,source,targetFile,bundle,output,manifest,admission,identity,pages,compactPages,mf,db,call,begin,corpus,text,ready,apply,verify,sealedPagesSha,sealedManifestSha,protectedCall,protectedHeaders,send};
 }
 
 describe('protected D1 fixed assets',()=>{
  it('keeps the only optional auth DDL byte-identical to the checked-in migration',async()=>expect(PROTECTED_D1_AUTH_SCHEMA).toBe(await readFile('migrations/0005_workspace_auth.sql','utf8')));
  it('orders string primary keys using SQLite UTF8 BINARY order',()=>{expect(compareProtectedD1Keys('\u{10000}','\ue000')).toBeGreaterThan(0);expect(compareProtectedD1Keys(1001,120)).toBeGreaterThan(0);});
 });
+describe('protected HTTP bounded input',()=>{
+ it('rejects an oversized declared length before reading the stream',async()=>{
+  const request=new Request('http://localhost',{method:'POST',headers:{'content-type':'application/json','content-length':'999999'},body:'{}'});
+  await expect(readProtectedRestoreBody(request,1024)).rejects.toMatchObject({code:'PROTECTED_HTTP_BODY_BOUND',status:413});
+ });
+ it('cancels a stalled stream at the total body deadline',async()=>{
+  vi.useFakeTimers();let cancelled=false;
+  try{const stream=new ReadableStream<Uint8Array>({cancel(){cancelled=true;}}),init:RequestInit&{duplex:'half'}={method:'POST',headers:{'content-type':'application/json'},body:stream,duplex:'half'};
+   const pending=readProtectedRestoreBody(new Request('http://localhost',init),1024);
+   const rejected=expect(pending).rejects.toMatchObject({code:'PROTECTED_HTTP_BODY_TIMEOUT',status:408});
+   await vi.advanceTimersByTimeAsync(PROTECTED_BODY_TIMEOUT_MS);await rejected;expect(cancelled).toBe(true);
+  }finally{vi.useRealTimers();}
+ });
+ it('rejects immediately fulfilled chunks that starve the deadline timer',async()=>{
+  vi.useFakeTimers({toFake:['setTimeout','clearTimeout']});let elapsed=0,pulls=0,cancelled=false;
+  vi.spyOn(performance,'now').mockImplementation(()=>elapsed);
+  try{const stream=new ReadableStream<Uint8Array>({pull(controller){
+    elapsed+=110;pulls++;controller.enqueue(new TextEncoder().encode(pulls===1?'{}':' '));if(pulls===51)controller.close();
+   },cancel(){cancelled=true;}},{highWaterMark:0}),init:RequestInit&{duplex:'half'}={method:'POST',headers:{'content-type':'application/json'},body:stream,duplex:'half'};
+   await expect(readProtectedRestoreBody(new Request('http://localhost',init),1024)).rejects.toMatchObject({code:'PROTECTED_HTTP_BODY_TIMEOUT',status:408});
+   expect(pulls).toBe(Math.ceil(PROTECTED_BODY_TIMEOUT_MS/110));expect(cancelled).toBe(true);
+  }finally{vi.restoreAllMocks();vi.useRealTimers();}
+ });
+ it.each([PROTECTED_BODY_TIMEOUT_MS-1,PROTECTED_BODY_TIMEOUT_MS])('checks the absolute deadline when EOF arrives at %i ms',async(eofAt)=>{
+  vi.useFakeTimers({toFake:['setTimeout','clearTimeout']});let elapsed=0,pulls=0;
+  vi.spyOn(performance,'now').mockImplementation(()=>elapsed);
+  try{const stream=new ReadableStream<Uint8Array>({pull(controller){
+    if(++pulls===1)controller.enqueue(new TextEncoder().encode('{}'));else{elapsed=eofAt;controller.close();}
+   }},{highWaterMark:0}),init:RequestInit&{duplex:'half'}={method:'POST',headers:{'content-type':'application/json'},body:stream,duplex:'half'};
+   const body=readProtectedRestoreBody(new Request('http://localhost',init),1024);
+   if(eofAt<PROTECTED_BODY_TIMEOUT_MS)await expect(body).resolves.toEqual({});
+   else await expect(body).rejects.toMatchObject({code:'PROTECTED_HTTP_BODY_TIMEOUT',status:408});
+   expect(pulls).toBe(2);
+  }finally{vi.restoreAllMocks();vi.useRealTimers();}
+ });
+});
+describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('protected HTTP in actual local D1/R2',()=>{
+ it.each([
+  ['default disabled',{RESTORE_PROTECTED_ENABLED:''}],
+  ['missing manifest pin',{RESTORE_PROTECTED_MANIFEST_SHA256:''}],
+  ['missing admission pin',{RESTORE_PROTECTED_ADMISSION_SHA256:''}],
+ ] as const)('refuses %s before a protected session exists',async(_name,env)=>{
+  const f=await fixture('highwater',env);expect(await f.protectedCall('status')).toMatchObject({status:403,code:'PROTECTED_HTTP_DISABLED',reads:0});
+  expect(await f.db.prepare("SELECT name FROM sqlite_master WHERE name='protected_state_d1_session'").first()).toBeNull();
+ },30_000);
+ it('requires authentication, all resource identities and both exact pins',async()=>{
+  const f=await fixture();
+  for(const [header,value,status] of [['authorization','Bearer invalid',401],['x-restore-stage','stage-wrong',403],['x-restore-account','f'.repeat(32),403],['x-restore-d1','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',403],['x-restore-r2','other-stage-texts',403],['x-restore-plan','f'.repeat(64),409],['x-protected-manifest','f'.repeat(64),403],['x-protected-admission','',403]] as const){
+   expect(await f.protectedCall('status',{}, {[header]:value})).toMatchObject({status,reads:0});
+  }
+  expect(await f.protectedCall('status')).toMatchObject({status:200,initialized:false,reads:0});
+  expect(await f.db.prepare("SELECT name FROM sqlite_master WHERE name='protected_state_d1_session'").first()).toBeNull();
+ },30_000);
+ it.each([
+  {RESTORE_D1_ID:'8056b1a0-f858-4f89-a332-91f7f350eb7b'},
+  {RESTORE_R2_NAME:'civicsignal-corpus'},
+ ])('preserves the production target refusal %j',async(env)=>{
+  const f=await fixture('highwater',env);expect(await f.protectedCall('begin',{manifest:f.manifest,admission:f.admission})).toMatchObject({status:400,reads:0});
+  expect(await f.db.prepare("SELECT name FROM sqlite_master WHERE name='protected_state_d1_session'").first()).toBeNull();
+ },30_000);
+ it('requires the completed compact session and exact admission/plan before protected rows',async()=>{
+  const f=await fixture();await f.db.prepare("UPDATE stage_restore_session SET phase='published'").run();
+  expect(await f.protectedCall('begin',{manifest:f.manifest,admission:f.admission})).toMatchObject({status:409,reads:0});
+  await f.db.prepare("UPDATE stage_restore_session SET phase='complete'").run();
+  expect(await f.protectedCall('begin',{manifest:f.manifest,admission:{...f.admission,compactPlanSha256:'f'.repeat(64)}})).toMatchObject({status:409,code:'PROTECTED_HTTP_PLAN'});
+  expect(await f.protectedCall('begin',{manifest:f.manifest,admission:{...f.admission,protectedChainSha256:'f'.repeat(64)}})).toMatchObject({status:409,code:'PROTECTED_ADMISSION_IDENTITY'});
+  expect(await f.protectedCall('begin',{manifest:f.manifest,admission:f.admission,identity:f.identity})).toMatchObject({status:400,code:'PROTECTED_HTTP_FIELDS'});
+  expect(await f.db.prepare("SELECT name FROM sqlite_master WHERE name='protected_state_d1_session'").first()).toBeNull();
+ },30_000);
+ it('bounds and validates raw HTTP input and never returns its protected payload',async()=>{
+  const f=await fixture(),before=await f.protectedCall('status');
+  const examples:[unknown,Record<string,string>,number,string][]=[
+   [new Uint8Array([0xff]),{},400,'PROTECTED_HTTP_JSON'],
+   [new Uint8Array(66561),{},413,'PROTECTED_HTTP_BODY_BOUND'],
+   [{page:{sql:'SECRET SQL CUSTOMER'}},{'content-type':'text/plain'},415,'PROTECTED_HTTP_CONTENT_TYPE'],
+  ];
+  for(const [body,headers,status,code]of examples){const response=await f.protectedCall('page',body,headers);expect(response).toMatchObject({status,code,reads:0});expect(JSON.stringify(response)).not.toContain('SECRET');}
+  expect(await f.protectedCall('status?unexpected=1')).toMatchObject({status:400,code:'PROTECTED_HTTP_QUERY'});
+  expect(await f.protectedCall('status',{}, {},'POST')).toMatchObject({status:404,code:'PROTECTED_HTTP_ENDPOINT'});
+  expect(await f.protectedCall('finish',{sql:'SECRET SQL CUSTOMER'})).toMatchObject({status:400,code:'PROTECTED_HTTP_FIELDS'});
+  expect(await f.protectedCall('status')).toEqual(before);
+ },30_000);
+ it('roundtrips every phase, reconciles a lost text reply, and keeps safe status and completed replay read-only',async()=>{
+  const f=await fixture();expect(await f.protectedCall('status')).toMatchObject({status:200,initialized:false});
+  expect(await f.protectedCall('begin',{manifest:f.manifest,admission:f.admission})).toMatchObject({status:200,phase:'checking-corpus',version:0});
+  for(const page of f.compactPages)expect((await f.protectedCall('corpus',{page})).status).toBe(200);
+  const before=await f.protectedCall('status');expect(before.phase).toBe('checking-text');
+  // The first successful response is discarded, as if its acknowledgement was lost.
+  const lost=await f.send('http://localhost/v1/restore/protected/text',{method:'POST',headers:f.protectedHeaders,body:JSON.stringify({expectedSessionVersion:before.version})});expect(lost.status).toBe(200);await lost.body?.cancel();
+  const observed=await f.protectedCall('status');expect(observed).toMatchObject({version:Number(before.version)+1,textRows:8});
+  expect(await f.protectedCall('text',{expectedSessionVersion:before.version})).toMatchObject({status:409,code:'PROTECTED_D1_VERSION',reads:0});
+  expect(await f.protectedCall('text',{})).toMatchObject({status:400,code:'PROTECTED_HTTP_FIELDS',reads:0});
+  expect(await f.protectedCall('text',{expectedSessionVersion:-1})).toMatchObject({status:400,code:'PROTECTED_HTTP_VERSION',reads:0});
+  let current=observed;while(current.phase==='checking-text'){const response=await f.protectedCall('text',{expectedSessionVersion:current.version});expect(response.status).toBe(200);current=await f.protectedCall('status');}
+  expect(current).toMatchObject({phase:'loading',textRows:18,textComplete:true});
+  for(const page of f.pages)expect((await f.protectedCall('page',{page})).status).toBe(200);
+  const loaded=await f.protectedCall('status');expect(loaded.phase).toBe('checking-protected');
+  expect(await f.protectedCall('page',{page:f.pages[0]})).toMatchObject({status:200,skipped:true,version:loaded.version});
+  for(const page of f.pages)expect((await f.protectedCall('verify',{page})).status).toBe(200);
+  expect(await f.protectedCall('status')).toMatchObject({phase:'checking-corpus-final'});
+  for(const page of f.compactPages)expect((await f.protectedCall('corpus',{page})).status).toBe(200);
+  expect(await f.protectedCall('finish')).toMatchObject({status:200,phase:'complete',complete:true});
+  const completed=await f.protectedCall('status'),state=await f.db.prepare('SELECT state_json,version FROM protected_state_d1_session').first();
+  const allowed=['status','reads','initialized','phase','version','compactPages','compactRows','compactChain','loadedPages','loadedChain','verifiedPages','verifiedChain','textRows','textBytes','textComplete','complete'];
+  expect(Object.keys(completed).sort()).toEqual(allowed.sort());expect(JSON.stringify(completed)).not.toMatch(/workspace|customer|publication|after|row_id|cursor|key/);
+  expect(await f.protectedCall('begin',{manifest:f.manifest,admission:f.admission})).toMatchObject({status:200,version:completed.version,complete:true});
+  expect(await f.protectedCall('finish')).toMatchObject({status:200,version:completed.version,complete:true});
+  expect(await f.protectedCall('verify',{page:f.pages[0]})).toMatchObject({status:200,skipped:true,version:completed.version});
+  expect(await f.protectedCall('page',{page:f.pages[0]})).toMatchObject({status:200,skipped:true,version:completed.version});
+  expect(await f.db.prepare('SELECT state_json,version FROM protected_state_d1_session').first()).toEqual(state);
+  expect(await sha256File(join(f.output,'pages.jsonl'))).toBe(f.sealedPagesSha);expect(await sha256File(join(f.output,'manifest.json'))).toBe(f.sealedManifestSha);
+ },30_000);
+ it('reconciles committed page replay exactly and refuses changed rows through HTTP',async()=>{
+  const f=await fixture();await f.ready();expect(await f.protectedCall('page',{page:f.pages[0]})).toMatchObject({status:200,skipped:false});
+  const before=await f.protectedCall('status');expect(await f.protectedCall('page',{page:f.pages[0]})).toMatchObject({status:200,skipped:true,version:before.version});
+  await f.db.prepare("UPDATE workspace SET name='altered protected value'").run();
+  const rejected=await f.protectedCall('page',{page:f.pages[0]});expect(rejected).toMatchObject({status:409,code:'PROTECTED_D1_REPLAY_ROW'});expect(JSON.stringify(rejected)).not.toContain('altered');
+ },30_000);
+});
 describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('protected pages in actual local D1/R2',()=>{
+ it('keeps reordered target identity keys usable after begin',async()=>{
+  const f=await fixture(),t=f.identity.target,target:StagingRestoreTarget={adminUrl:t.adminUrl,r2Bucket:t.r2Bucket,d1Id:t.d1Id,accountId:t.accountId,stageId:t.stageId,stageOnly:true,format:1},identity={...f.identity,target};
+  expect(Object.keys(target)).not.toEqual(Object.keys(t));
+  expect(await f.call('begin',{manifest:f.manifest,admission:f.admission,identity})).toMatchObject({status:200,value:{phase:'checking-corpus'}});
+  const status=await f.call('status',{identity});expect(status).toMatchObject({status:200,value:{initialized:true,phase:'checking-corpus'}});
+  expect(await f.call('status')).toEqual(status);
+  expect(await f.call('begin',{manifest:f.manifest,admission:f.admission,identity})).toMatchObject({status:200,value:{phase:'checking-corpus'}});
+  expect(await f.call('corpus',{page:f.compactPages[0],identity})).toMatchObject({status:200});
+ },30_000);
+ it.each(['T EXT','T/**/EXT'])('rejects altered-affinity type %s before session admission',async(type)=>{
+  const f=await fixture(),sql=PROTECTED_D1_AUTH_SCHEMA.replace('id TEXT PRIMARY KEY',`id ${type} PRIMARY KEY`);
+  await f.db.batch(sql.split(';').map(s=>s.trim()).filter(Boolean).map(statement=>f.db.prepare(statement)));
+  expect(await f.begin()).toMatchObject({status:409,code:'PROTECTED_D1_SCHEMA_OBJECT'});
+  expect(await f.db.prepare("SELECT name FROM sqlite_master WHERE name='protected_state_d1_session'").first()).toBeNull();
+ },30_000);
+ it('accepts harmless token spacing and comments in the exact auth schema',async()=>{
+  const f=await fixture(),sql=PROTECTED_D1_AUTH_SCHEMA.replace('id TEXT PRIMARY KEY','id /* separator */ TEXT PRIMARY KEY').replace("status = 'active'","status /* separator */ = 'active'");
+  await f.db.batch(sql.split(';').map(s=>s.trim()).filter(Boolean).map(statement=>f.db.prepare(statement)));
+  expect(await f.begin()).toMatchObject({status:200,value:{phase:'checking-corpus'}});
+ },30_000);
  it('admits actual metadata/refs, freshly reads R2, copies all tables and preserves original highwaters',async()=>{
   const f=await fixture();await f.ready();await f.apply();await f.verify();await f.corpus();const finished=await f.call('finish');expect(finished.status,finished.code).toBe(200);expect(finished.value?.complete).toBe(true);
   const source=new DatabaseSync(f.source,{readOnly:true});try{for(const table of PROTECTED_TABLE_ORDER){const projection=PROTECTED_TABLE_COLUMNS[table].join(','),where=table==='sqlite_sequence'?" WHERE name IN ('corpus_runs','corpus_changes')":'';
@@ -183,6 +333,15 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('protected pages
   expect(outcomes.some(r=>r.status===200)).toBe(true);expect(outcomes.every(r=>r.status===200||r.status===409)).toBe(true);
   expect(await f.db.prepare('SELECT (SELECT count(*) FROM workspace) AS rows,(SELECT count(*) FROM protected_state_pages) AS pages').first()).toEqual({rows:1,pages:1});
   expect(await f.call('apply',{page:f.pages[0]})).toMatchObject({status:200,value:{skipped:true,loadedPages:1}});
+ },30_000);
+ it('fences a text-specific session change after R2 reads inside its audit batch',async()=>{
+  const f=await fixture();await f.begin();await f.corpus();
+  const before=await f.db.prepare('SELECT state_json,version FROM protected_state_d1_session').first<{state_json:string;version:number}>();
+  expect(await f.call('text',{fault:'session',expectedSessionVersion:before!.version})).toMatchObject({status:409,code:'PROTECTED_D1_FAILURE',reads:8});
+  const after=await f.db.prepare('SELECT state_json,version FROM protected_state_d1_session').first<{state_json:string;version:number}>();
+  expect(after).toEqual({state_json:before!.state_json,version:before!.version+1});
+  expect(JSON.parse(after!.state_json).audit).toBeNull();
+  expect(await f.db.prepare('SELECT count(*) AS n FROM workspace').first()).toEqual({n:0});
  },30_000);
  it('rejects foreign and gapped receipts, extra rows and stale identities',async()=>{
   const f=await fixture();await f.ready();await f.call('apply',{page:f.pages[0]});
