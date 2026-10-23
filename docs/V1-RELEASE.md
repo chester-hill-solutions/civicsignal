@@ -7,28 +7,28 @@ Cloudflare is the only v1 deployment target. Keep the existing Vectorize index a
 Existing Railway services are outside this release. Preserve unrelated work and the Bun/Postgres portability code.
 
 Current hosted status: baseline restore, snapshot Workflow artifact parity and
-14 serving smokes pass. Independent paused reads now confirm 792 of 1,112 target
-changes and an empty pending outbox; 320 changes remain. The original 1,112-attempt
-reconciliation failed its bound. The approved same-coordinator recovery has spent
-1,304 cumulative document attempts and six extension calls; 448 document slots
-and 14 calls remain. Its saved failure matches a GitHub source-head HTTP 403.
-The earlier refusal reason remains unproved. A separate one-shot probe at
-19:16 UTC returned HTTP 403 with anonymous GitHub quota 0/60. The current
-previous stop-only version `40110049-9cf5-44c3-b23f-ed39e06da7b7` was independently
-checked after a local disk failure interrupted its first verification. A dedicated
-expiring public-read-only GitHub token was subsequently created and one binding
-PUT returned an uncertain result. No second PUT occurred. At 21:41:51 UTC on
-October 23, a separate five-GET readback verified its binding on active version
-`f42a444b-1ff7-42bb-9ccb-bb46d6e1a743`, exact runtime/resources, empty schedules and
-the same paused checkpoint. The old write remains unacknowledged. The anonymous
-probe is consumed; the authenticated probe has not run. New evidence qualifiers
-are being prepared before any authenticated deployment or explicit continuation.
-See the [binding recovery plan](V1-STAGING-BINDING-RECOVERY.md) and
-[readback validation](evidence/2026-10-23/staging-binding-readback-root-validation.json).
-See the [progress proof](evidence/2026-10-22/stage-recovery-progress-1.json),
-[earlier failure identification](evidence/2026-10-22/stage-recovery-source-403.json)
-and [current quota observation](evidence/2026-10-22/stage-source-head-quota-exhausted.json).
-Completed ingestion, retrieval evaluation and production migration remain pending.
+14 serving smokes pass. The dedicated, expiring public-read-only GitHub token was
+created through the browser. Its sole binding PUT remains unacknowledged; an
+independent five-GET readback established its name/type and deployment identity.
+The authenticated source probe then passed at 22:28:24 UTC on October 23:
+HTTP 200, the approved source commit/date and reported quota 4,999/5,000.
+No second secret PUT occurred.
+
+The approved recovery resumed once and completed its monitor at 22:34:18 UTC.
+The original coordinator is suspended and drained at revision 5, with no pending
+work or recorded failures. It reports 1,624 cumulative document attempts and
+16 extension calls, leaving 128 attempts and four calls under the approved
+1,752/20 ceilings. This is a successful monitor result; independent all-row
+metadata, changed-text and vector proofs remain required before claiming complete
+ingestion. The previous independent metadata read verified 792/1,112 changes.
+The prepared verifier's five-minute admission window elapsed during handover,
+before any metadata attempt. A new verifier will admit the original historical
+monitor and verify the current deployment and exact paused coordinator before
+its first data query. No source claim, resume or allowance is reset.
+See the [source/recovery validation](evidence/2026-10-23/staging-source-recovery-root-validation.json)
+and [binding recovery record](V1-STAGING-BINDING-RECOVERY.md).
+Retrieval evaluation and production migration remain pending. Production and
+Railway are unchanged.
 
 ## Release requirements
 
@@ -37,7 +37,7 @@ Completed ingestion, retrieval evaluation and production migration remain pendin
 | V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
-| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local recovery fixes pass; 792/1,112 hosted changes verified; fresh source probe confirms exhausted anonymous quota |
+| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local fixes pass; one authenticated recovery monitor completed; independent final metadata/text/vector proofs pending |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
