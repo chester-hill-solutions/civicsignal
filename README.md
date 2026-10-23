@@ -1,96 +1,89 @@
 # CivicSignal
 
-> Situational awareness for Canada. One call returns what is in the news about a
-> topic, how coverage tone is moving, which statutes are in force, what bills are
-> moving, and what Parliament has said — every item cited to its official source.
+CivicSignal retrieves cited Canadian federal statutes and regulations in English and French.
+The production API uses Cloudflare Workers, D1, Vectorize, and an encoder container.
+The Bun/Postgres code remains an undeployed portability implementation. Railway services remain in place.
 
-A new product, reusing the code and harvested data that already exist across the
-estate: the commercial spine from `riding-and-address`, the Canadian news pipeline
-from the Policorner wire, the global press pipeline from `gdelt-feed`, the statute
-corpus from the sovereign-corpus project, and the electoral geography from
-`riding-and-address` and `electoral-atlas`.
+The v1 candidate adds workspace keys, shared usage limits, exact citations, semantic search, BYOK chat, and an observed change feed.
+News, debates, bills, provincial law, tone, geographic filters, OAuth, and a portal are outside v1.
+The API reports these limits explicitly. It does not claim that an empty result proves no applicable law exists.
 
-**This is not a portal.** Six funded Canada-specific products already own the portal
-(MediaIQ, HillPulse, Hill Monitor, Gnowit, Dominion Dossier, PoliticalData). The
-thing nobody owns is the *join* — statute, bill, debate and story in one answer, each
-cited, scoped to a riding or a province, on a fifteen-minute refresh. So the product is
-a metered API with an embeddable widget and an MCP server, and the portal is wave 6,
-if it is still wanted.
+## Current release state
 
-## Status
+Read [the release checklist](docs/V1-RELEASE.md) for acceptance evidence and open requirements.
+Read [the operations procedure](docs/V1-OPERATIONS.md) before any remote migration or deployment.
+Local tests do not establish production accuracy or performance.
 
-Wave 0 is complete: the licence boundary, the corpus layer, the brief, the commercial
-spine, the worker, the MCP surface and machine-readable discovery.
+## Check the candidate
 
-```
-bun run validate      # typecheck + tests + billing invariants
-bun run test          # 18 tests
-bun run check:billing-invariants
-bun run dev           # wrangler dev
+Use Bun 1.3.5 and Node 24 or later.
+
+```sh
+bun install --frozen-lockfile
+bun run validate
+bun run build
 ```
 
-## The one thing to read first
+CI runs these commands without production credentials.
+Vendored CHS packages include their runtime files and a pinned [file manifest](vendor/chs-manifest.json).
+Run `bun run check:vendor` to check their fingerprints.
 
-**`docs/LICENCE-REGISTER.md`.** Every corpus sits under a different reproduction
-regime, and the differences are not academic. Statutes are Open Government Licence
-and may be reproduced commercially. Debates are Crown copyright and may only be cited
-— short excerpt, speaker, date, link — never republished. News is headline and link
-only.
+The manifest pins the CHS revision and complete source tree. The billing fix is
+also retained as a hash-verified [source patch](vendor/patches/api-billing-0.1.1.patch)
+over its recorded base, so refresh works from the original CHS checkout before
+that isolated commit is available upstream:
 
-That boundary is not a convention. It is enforced in code:
-
-```ts
-// src/licensing.ts — an item is stripped to its policy before it can be emitted.
-export function emitCorpusItem(policy: CorpusPolicy, raw: RawCorpusItem): CorpusItem
+```sh
+CHS_REPO=/path/to/chs-corpus bun scripts/vendor-corpus.ts --verify-source
+CHS_REPO=/path/to/chs-corpus bun scripts/vendor-corpus.ts
 ```
 
-`src/corpora/policies.ts` declares the regime for each corpus; `test/licensing.test.ts`
-fails if a cite-only corpus can emit a body, or a metadata-only corpus can emit an
-excerpt.
+Source verification reconstructs the exact pinned Git tree without changing the
+source checkout or vendored files. Refresh installs frozen build dependencies for
+the five selected packages in a temporary checkout, builds all five, then replaces
+the vendored output and records revision, source tree, base and patch fingerprints.
+The local source patch is not a published upstream release.
 
-## Surfaces
+## HTTP and MCP
 
-| | |
-|---|---|
-| `GET /api/brief?topic=housing&jurisdiction=ON` | The join: news, tone, statutes, bills, debate |
-| `GET /api/statutes?topic=housing` | Statutes and regulations in force, with section text |
-| `GET /api/news?topic=housing` | News items and the tone series |
-| `GET /api/bills?topic=housing` | Bills and their stage |
-| `GET /api/debates?topic=housing` | Cited debate passages |
-| `GET /mcp` | Remote MCP server — `brief_topic`, `statute_lookup`, `debate_citations` |
-| `GET /.well-known/civicsignal.json` | Capabilities, price, coverage, auth, error codes |
-| `GET /llms.txt` | Agent-facing summary |
+Every search route requires `Authorization: Bearer <workspace API key>` with capability `civicsignal.retrieve`.
+A successful search consumes one workspace unit. Validation and retrieval failures, plus MCP protocol messages, consume none.
+A lost usage acknowledgement can return `503/USAGE_UNAVAILABLE` with `uncertain:true` after a unit was committed.
+Retain `operationId` and `month` for [reconciliation](docs/V1-OPERATIONS.md#uncertain-usage-acknowledgements); a new request starts a new operation.
+Keep API keys in server code. Public `pk_` keys cannot authorize v1 calls.
 
-Authentication is a Server API key: `Authorization: Bearer sk_…`. Errors never count
-against the allowance; failed lookups become account credit.
+| Route | Behavior |
+| --- | --- |
+| `GET /health` | Process health; no corpus readiness claim |
+| `GET /.well-known/civicsignal.json` | Live population, revision, configured routes, tools and limits |
+| `GET /llms.txt` | Agent instructions |
+| `GET /api/statutes?topic=...&language=fr` | Semantic search over the current federal corpus |
+| `GET /api/statutes?act=Canada%20Health%20Act&section=8&language=en` | Exact provision; no encoder required |
+| `GET /api/brief?act=Canada%20Health%20Act&section=8` | Federal statute brief with explicit coverage states |
+| `GET /api/changes?after=0&limit=50` | Observed additions, changes and removals; metadata and citations |
+| `POST /api/chat` | Cited answers with the caller's generation key |
+| `POST /api/match` | Nearest vectors under the published encoder contract; no answerability claim |
+| `/mcp` | Streamable HTTP; authenticated tool calls |
 
-## Layout
+Search parameters accept `topic`, repeated `keyword`, `language`, `limit`, `act`, and `section`.
+Supply `act` and `section` together. The HTTP limit is 1–50.
+The only supported jurisdiction is `CA`. Use `/api/changes` for dated source changes.
+The change feed accepts `after`, `limit` (1–100), `since`, `until`, and `change`.
+Its dates describe source revisions, not legal commencement dates.
 
-```
-src/
-  licensing.ts          the boundary: policies, emission, truncation
-  corpora/
-    policies.ts         the eight corpora and their regimes
-    types.ts            the adapter interface
-    adapters.ts         five adapters over D1
-    registry.ts         which corpora answer which section
-  routes/
-    brief.ts            the join
-    capabilities.ts     discovery
-  mcp/server.ts         three tools
-  spine/                vendored from riding-and-address (see docs/PLAN.md, wave 1)
-  index.ts              the worker
-docs/
-  PLAN.md               the plan, the waves, the economics, the kill criteria
-  LICENCE-REGISTER.md   what may be reproduced, and why
-```
+MCP lists tools only when their corpus and backends are available:
+`cite_provision`, `statute_changes`, `statute_lookup`, and `brief_topic`.
 
-## The plan
+BYOK chat also requires `X-CivicSignal-BYOK-Provider` and `X-CivicSignal-BYOK-Key`.
+Supported providers are Anthropic, OpenAI, and Google. The generation key goes only to the selected provider.
+The CivicSignal key authorizes corpus access separately.
 
-`docs/PLAN.md`. It starts with the twenty-hour test, because the cheapest thing to
-learn is whether anyone wants this.
+## Corpus and search checks
 
-## Licence
+[The evaluation procedure](docs/V1-EVALUATION.md) describes held-out bilingual labels and measured serving-path checks.
+[The snapshot procedure](docs/SNAPSHOT.md) describes immutable row parts, fingerprints, and recovery.
+The current [release checklist](docs/V1-RELEASE.md) takes precedence over historical plans and measurements.
 
-The product's own licence is not set. The corpora it serves are reproduced under
-their own terms, each of which is recorded in the register and enforced in code.
+The product applies each corpus policy through `@chester-hill-solutions/corpus` before it emits content.
+Read [the licence register](docs/LICENCE-REGISTER.md) for source terms.
+Results are not an official version of the law. Consult their linked official sources.

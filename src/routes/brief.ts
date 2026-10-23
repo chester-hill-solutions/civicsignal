@@ -2,7 +2,7 @@ import type { CorpusItem, CorpusPolicy, RawCorpusItem } from "@chester-hill-solu
 import { POLICIES_BY_ID } from '../corpora/policies';
 
 import { gdeltCorpus, newsCorpus, statutesCorpus } from '../corpora/adapters';
-import { BRIEF_SECTIONS, CORPUSES } from '../corpora/registry';
+import { assertV1StatuteQuery, BRIEF_SECTIONS, CORPUSES, loadCorpusAvailability } from '../corpora/registry';
 import { languageFor } from '../language';
 import type { Corpus, CorpusContext, CorpusQuery, Scope } from '../corpora/types';
 
@@ -92,6 +92,8 @@ export interface BriefResponse {
     count: number;
     redistribution: CorpusPolicy['redistribution'];
     licence: string;
+    status: 'supported' | 'no-results' | 'unavailable' | 'excluded';
+    reason: string;
   }[];
   attribution: string[];
 }
@@ -114,6 +116,9 @@ export async function buildBrief(
   /** Corpus set override. Production passes nothing; tests pass fakes. */
   corpora: Corpus[] = CORPUSES,
 ): Promise<BriefResponse> {
+  const production = corpora === CORPUSES;
+  if (production) assertV1StatuteQuery(request);
+  const availability = production ? await loadCorpusAvailability(ctx) : undefined;
   const scope = request.scope ?? { type: 'topic' as const };
 
   // The scope is the caller's framing of the question; it narrows the corpora by
@@ -155,22 +160,45 @@ export async function buildBrief(
 
   const sectionItems: Record<string, CorpusItem[]> = {};
   const rawByCorpus = new Map<string, RawCorpusItem[]>();
+  const coverageByCorpus = new Map<string, BriefResponse['coverage'][number]>();
 
   for (const section of BRIEF_SECTIONS) {
-    if (excluded.has(section.key)) {
-      sectionItems[section.key] = [];
-      continue;
-    }
     const items: CorpusItem[] = [];
     for (const corpusId of section.corpusIds) {
-      if (wanted.size > 0 && !wanted.has(corpusId)) continue;
-      const corpus = byId.get(corpusId);
-      if (!corpus) continue;
-      if (!corpus.supports(query)) continue;
-      const raw = await corpus.retrieve(query, ctx);
-      rawByCorpus.set(corpusId, raw);
       const policy = policies.get(corpusId);
-      if (!policy) continue;
+      const coverage: BriefResponse['coverage'][number] = {
+        corpusId, title: policy?.title ?? corpusId, count: 0,
+        redistribution: policy?.redistribution ?? 'metadata-only', licence: policy?.licence ?? 'unknown',
+        status: 'unavailable', reason: 'No retrieval adapter is enabled for this corpus.',
+      };
+      coverageByCorpus.set(corpusId, coverage);
+      if (excluded.has(section.key) || (wanted.size > 0 && !wanted.has(corpusId))) {
+        coverage.status = 'excluded';
+        coverage.reason = 'Excluded by this request.';
+        continue;
+      }
+      const corpus = byId.get(corpusId);
+      if (production && !availability?.[corpusId]?.available) {
+        coverage.reason = availability?.[corpusId]?.reason ?? coverage.reason;
+        continue;
+      }
+      if (!corpus || !policy) continue;
+      const corpusQuery = corpusId === statutesCorpusId && request.citation
+        ? { ...query, act: request.citation.act, section: request.citation.section }
+        : query;
+      if (!corpus.supports(corpusQuery)) {
+        coverage.reason = 'This query is not supported by the corpus; supply a topic, keywords or exact citation.';
+        continue;
+      }
+      if (production && corpusId === statutesCorpusId && !request.citation && (!ctx.vector || !ctx.embedQuery)) {
+        coverage.reason = 'Semantic retrieval is not configured; exact citation lookup remains available.';
+        continue;
+      }
+      const raw = await corpus.retrieve(corpusQuery, ctx);
+      rawByCorpus.set(corpusId, raw);
+      coverage.count = raw.length;
+      coverage.status = raw.length ? 'supported' : 'no-results';
+      coverage.reason = raw.length ? 'Retrieved from the published corpus.' : 'The configured corpus returned no accepted matches.';
       for (const item of raw) {
         items.push(sanitize(policy, item));
       }
@@ -186,11 +214,8 @@ export async function buildBrief(
     const statutePolicy = policies.get(statutesCorpusId);
     const statuteCorpus = byId.get(statutesCorpusId);
     let item: CorpusItem | null = null;
-    if (statuteCorpus && statutePolicy) {
-      const raw = await statuteCorpus.retrieve(
-        { act: request.citation.act, section: request.citation.section, limit: 50 },
-        ctx,
-      );
+    if (statuteCorpus && statutePolicy && rawByCorpus.has(statutesCorpusId)) {
+      const raw = rawByCorpus.get(statutesCorpusId)!;
       const candidates = raw.filter((r) => r.extra?.['section'] === request.citation!.section);
       // An amending instrument can hold several provisions with the same label, so
       // the live one wins over a repealed one when both are present.
@@ -217,25 +242,16 @@ export async function buildBrief(
     ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 1000) / 1000
     : null;
 
-  const coverage = [...rawByCorpus.entries()]
-    .map(([corpusId, raw]) => {
-      const policy = policies.get(corpusId);
-      return {
-        corpusId,
-        title: policy?.title ?? corpusId,
-        count: raw.length,
-        redistribution: policy?.redistribution ?? 'metadata-only',
-        licence: policy?.licence ?? 'unknown',
-      };
-    })
-    .filter((c) => c.count > 0);
+  const coverage = [...coverageByCorpus.values()];
 
-  const attribution = [...new Set(coverage.map((c) => {
+  const attribution = [...new Set(coverage.filter((c) => c.count > 0).map((c) => {
     const policy = policies.get(c.corpusId);
     return policy?.attribution ?? c.corpusId;
   }))];
 
-  const spread = await computeSpread(request, ctx, byId, scope);
+  const spread = production
+    ? { byJurisdiction: [], byRiding: [], coverage: { attributed: 0, total: 0 }, note: 'Geographic distribution is unavailable in v1; no news corpus is ingested.' }
+    : await computeSpread(request, ctx, byId, scope);
 
   return {
     topic: request.topic ?? '',
@@ -249,7 +265,7 @@ export async function buildBrief(
     legislation: sectionItems['legislation'] ?? [],
     citation,
     bills: sectionItems['bills'] ?? [],
-    sentiment: { series, mean, volume: sentimentRaw.length, note: SENTIMENT_NOTE },
+    sentiment: { series, mean, volume: sentimentRaw.length, note: production ? 'Coverage tone is unavailable in v1; no news or GDELT corpus is ingested.' : SENTIMENT_NOTE },
     spread,
     coverage,
     attribution,

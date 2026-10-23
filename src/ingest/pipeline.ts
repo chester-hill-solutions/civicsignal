@@ -6,6 +6,7 @@ import {
   type PipelineRun,
   type PipelineState,
 } from './reconcile';
+import { SNAPSHOT_PARSER_VERSION } from './snapshot-format';
 import { ENCODER_CONTRACT } from '../encoder';
 
 /**
@@ -49,6 +50,10 @@ export type PipelineRow = FingerprintedRow & {
 
 /** The store the pipeline writes to. */
 export interface CorpusStore {
+  /** Complete durable writes before using fingerprints as reconciliation progress. */
+  recoverPendingWrites(): Promise<void>;
+  /** Atomically commit rows, removals and feed; retry external writes durably. */
+  applyBatch(batch: CorpusBatch): Promise<void>;
   /** The fingerprints currently held, keyed by row id. */
   fingerprints(): Promise<Map<string, string>>;
   /**
@@ -75,12 +80,26 @@ export interface CorpusStore {
    * feed also says which provision it was.
    */
   remove(ids: string[]): Promise<RemovedRow[]>;
+  /** Publish the run log and optional completed revision in one transaction. */
+  finishRun(run: PipelineRun, state?: PipelineState): Promise<void>;
   /** Record the run in the run log. */
   recordRun(run: PipelineRun): Promise<void>;
   /** Record the changes in the change feed. */
   recordChanges(changes: ChangeFeedEntry[]): Promise<void>;
   /** Record the corpus revision the store is now at. */
   setState(state: PipelineState): Promise<void>;
+}
+
+/** A bounded, retry-safe unit of corpus work. Feed entries cover the upserts;
+ * stores capture removal metadata before deleting the rows. Identity is per
+ * revision and row, so changing batch boundaries during a retry is harmless. */
+export interface CorpusBatch {
+  corpusId: string;
+  revision: string;
+  occurredAt: string;
+  upserts: UpsertRow[];
+  removedIds: string[];
+  changes: ChangeFeedEntry[];
 }
 
 /** A row on its way into the store. */
@@ -194,6 +213,7 @@ export async function runPipeline(options: {
   const log = options.logger ?? (() => {});
   const { corpusId, previous, next, rows, store, encoder, now } = options;
 
+  await store.recoverPendingWrites();
   const stored = await store.fingerprints();
   const nextFingerprints = new Map<string, string>();
   for (const row of rows) {
@@ -231,11 +251,6 @@ export async function runPipeline(options: {
     embedding: embeddings.get(row.id) ?? null,
   }));
 
-  // One transaction: the rows and their vectors, the removals, the feed, the run
-  // log and the state. Either the store is at the new revision or it is not.
-  await store.upsert(upserts);
-  const removed = await store.remove(diff.removed.map((change) => change.id));
-
   const occurredAt = next.date;
   const changes: ChangeFeedEntry[] = [];
   for (const change of diff.added) {
@@ -244,24 +259,13 @@ export async function runPipeline(options: {
   for (const change of diff.changed) {
     changes.push(feedEntry(corpusId, 'changed', byId.get(change.id)!, occurredAt));
   }
-  for (const row of removed) {
-    changes.push({
-      corpusId,
-      change: 'removed',
-      rowId: row.id,
-      instrument: row.instrument,
-      citation: row.citation,
-      section: row.section,
-      heading: row.heading,
-      status: row.status,
-      summary: row.heading,
-      sourceUrl: row.sourceUrl,
-      occurredAt,
-    });
-  }
-  await store.recordChanges(changes);
+  await store.applyBatch({
+    corpusId, revision: next.commit, occurredAt,
+    upserts, removedIds: diff.removed.map((change) => change.id), changes,
+  });
 
   const run: PipelineRun = {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: next.commit,
     commitDate: next.date,
@@ -276,8 +280,8 @@ export async function runPipeline(options: {
     durationMs: Date.now() - started,
     ok: true,
   };
-  await store.recordRun(run);
-  await store.setState({
+  await store.finishRun(run, {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: next.commit,
     commitDate: next.date,
@@ -309,7 +313,7 @@ function feedEntry(
     heading: row.heading,
     status: row.status,
     summary: row.heading ?? null,
-    sourceUrl: null,
+    sourceUrl: row.source_url,
     occurredAt,
   };
 }

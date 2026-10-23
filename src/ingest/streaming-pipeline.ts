@@ -1,3 +1,4 @@
+import { SNAPSHOT_PARSER_VERSION } from './snapshot-format';
 /**
  * The pipeline, streamed.
  *
@@ -84,6 +85,7 @@ export async function runStreamingPipeline(options: {
 
   // The store's fingerprints, keyed by row id. This is the whole of the
   // reconciliation's memory, and it is read once.
+  await store.recoverPendingWrites();
   const stored = await store.fingerprints();
 
   let added = 0;
@@ -113,7 +115,10 @@ export async function runStreamingPipeline(options: {
       hash: fingerprint(row),
       embedding: embeddings.get(row.id) ?? null,
     }));
-    await store.upsert(upserts);
+    await store.applyBatch({
+      corpusId, revision: next.commit, occurredAt: next.date,
+      upserts, removedIds: [], changes: changes.splice(0),
+    });
     batch.length = 0;
   }
 
@@ -140,41 +145,29 @@ export async function runStreamingPipeline(options: {
 
   // What is left in the store is what the corpus no longer holds.
   const removedIds = [...stored.keys()];
-  const removed = await store.remove(removedIds);
-  for (const row of removed) {
-    changes.push({
-      corpusId,
-      change: 'removed',
-      rowId: row.id,
-      instrument: row.instrument,
-      citation: row.citation,
-      section: row.section,
-      heading: row.heading,
-      status: row.status,
-      summary: null,
-      sourceUrl: row.sourceUrl,
-      occurredAt: next.date,
-    });
-  }
+  await store.applyBatch({
+    corpusId, revision: next.commit, occurredAt: next.date,
+    upserts: [], removedIds, changes: [],
+  });
 
   log(
-    `${corpusId}: ${added} added, ${changed} changed, ${removed.length} removed, ${unchanged} unchanged`,
+    `${corpusId}: ${added} added, ${changed} changed, ${removedIds.length} removed, ${unchanged} unchanged`,
   );
 
-  await store.recordChanges(changes);
 
   const run: PipelineRun = {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: next.commit,
     commitDate: next.date,
     ranAt: options.now.toISOString(),
-    counts: { added, changed, removed: removed.length, unchanged },
+    counts: { added, changed, removed: removedIds.length, unchanged },
     embedded,
     durationMs: Date.now() - started,
     ok: true,
   };
-  await store.recordRun(run);
-  await store.setState({
+  await store.finishRun(run, {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: next.commit,
     commitDate: next.date,

@@ -36,19 +36,24 @@
  * a pipeline that stops working whenever that job is a revision behind is
  * worse than one that says which path it took.
  */
+import { DurableObject } from 'cloudflare:workers';
+import { DurableSingleFlight } from './single-flight';
 import { D1CorpusStore } from '../../src/corpora/d1-store';
 import { CORPUS_ID } from '../../src/ingest/corpus-rows';
 import { httpEncoder } from '../../src/ingest/encoder-client';
 import { runIncrementalPipeline } from '../../src/ingest/incremental-pipeline';
 import { runSnapshotPipeline } from '../../src/ingest/snapshot-pipeline';
 import { SnapshotReader } from '../../src/ingest/snapshot-source';
-import { manifestKey, vectorsPartKey } from '../../src/ingest/snapshot-format';
-import { ENCODER_CONTRACT } from '../../src/encoder';
+import { manifestKey, SNAPSHOT_PARSER_VERSION } from '../../src/ingest/snapshot-format';
+import { assertCorpusVectorExportCurrent, exportSnapshotVectors, parseVectorExportRequest, type VectorExportRequest } from './vector-export';
+import { retainD1Text } from './options';
+import { DurableAttemptBudget, pipelineControl, type PipelineControlEnv } from './attempt-budget';
 import { GitHubCorpusSource } from '../../src/ingest/source';
 
-interface Env {
+interface Env extends PipelineControlEnv {
   /** The corpus: the rows in D1, the vectors in Vectorize. */
   CIVIC_DB: D1Database;
+  PIPELINE_COORDINATOR: DurableObjectNamespace<PipelineCoordinator>;
   VECTORIZE: Vectorize;
   /**
    * The corpus's snapshots: the rows and the index, one file per revision,
@@ -60,6 +65,8 @@ interface Env {
    * no such ceiling: the comparison is over provisions.
    */
   CORPUS: R2Bucket;
+  /** Keep true until the approved fresh-D1/strict-R2 cutover. */
+  CORPUS_RETAIN_D1_TEXT?: string;
   /** The encoder, called directly. */
   ENCODER_SERVICE: { fetch(request: Request): Promise<Response> };
   /** The shared secret the encoder checks. */
@@ -97,7 +104,7 @@ export default {
    */
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     try {
-      await cycle(env);
+      await coordinator(env).run();
     } catch (error) {
       console.error(`the pipeline cycle failed: ${String(error)}`);
       throw error;
@@ -122,6 +129,10 @@ export default {
     if (url.pathname === '/health') {
       return Response.json({ ok: true, service: 'civicsignal-pipeline' });
     }
+    if (url.pathname === '/control' && request.method === 'GET') {
+      if (!env.PIPELINE_SECRET || request.headers.get('x-pipeline-secret') !== env.PIPELINE_SECRET) return Response.json({ error: 'forbidden' }, { status: 403 });
+      return Response.json(await coordinator(env).controlStatus());
+    }
     if (url.pathname === '/run' && request.method === 'POST') {
       const presented = request.headers.get('x-pipeline-secret') ?? '';
       if (!env.PIPELINE_SECRET || presented !== env.PIPELINE_SECRET) {
@@ -130,7 +141,7 @@ export default {
       // Awaited, for the same reason the cron awaits: a `waitUntil` task is
       // cancelled thirty seconds after the response goes out, and the cycle
       // takes longer than that.
-      const summary = await cycle(env).catch((error: unknown) => {
+      const summary = await coordinator(env).run().catch((error: unknown) => {
         console.error(`the pipeline cycle failed: ${String(error)}`);
         return { error: String(error).slice(0, 500) };
       });
@@ -150,7 +161,10 @@ export default {
       if (!env.PIPELINE_SECRET || presented !== env.PIPELINE_SECRET) {
         return Response.json({ error: 'forbidden' }, { status: 403 });
       }
-      const result = await exportVectors(request, env).catch((error: unknown) => {
+      const result = await (async () => {
+        const body = parseVectorExportRequest(await request.json());
+        return coordinator(env).exportVectors(body);
+      })().catch((error: unknown) => {
         console.error(`the vectors export failed: ${String(error)}`);
         return { error: String(error).slice(0, 500) };
       });
@@ -166,6 +180,33 @@ export default {
     );
   },
 };
+
+/** One corpus has one durable writer, across cron and manual requests. */
+export class PipelineCoordinator extends DurableObject<Env> {
+  private readonly runner: DurableSingleFlight<CycleSummary>;
+  private readonly budget: DurableAttemptBudget;
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    this.budget = new DurableAttemptBudget(ctx.storage, pipelineControl(env));
+    this.runner = new DurableSingleFlight(ctx.storage, () => cycle(this.env, this.budget));
+    // Only checkpoint initialization is blocked; a corpus cycle can run for
+    // minutes and must not sit in blockConcurrencyWhile's 30-second window.
+    this.ctx.blockConcurrencyWhile(async () => { await this.budget.initialize(); await this.runner.initialize(); });
+  }
+  async run(): Promise<CycleSummary> { return this.runner.run(); }
+  async controlStatus() { return this.budget.status(); }
+  async alarm(): Promise<void> { await this.runner.alarm(); }
+  async exportVectors(body: VectorExportRequest) {
+    return this.runner.exclusive(() => exportSnapshotVectors(body, {
+      bucket: this.env.CORPUS, vector: this.env.VECTORIZE,
+      assertCurrent: (entries, total) => assertCorpusVectorExportCurrent(this.env.CIVIC_DB, CORPUS_ID, body, entries, total),
+    }));
+  }
+}
+
+function coordinator(env: Env): DurableObjectStub<PipelineCoordinator> {
+  return env.PIPELINE_COORDINATOR.get(env.PIPELINE_COORDINATOR.idFromName(CORPUS_ID));
+}
 
 /** What a cycle did, for the caller that asked for it by hand. */
 interface CycleSummary {
@@ -183,21 +224,28 @@ interface CycleSummary {
   remaining?: boolean;
 }
 
-async function cycle(env: Env): Promise<CycleSummary> {
+async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSummary> {
   const log = (line: string) => console.log(`${new Date().toISOString()}  ${line}`);
   const source = new GitHubCorpusSource({ token: env.GITHUB_TOKEN || undefined });
-  const store = new D1CorpusStore(env.CIVIC_DB, env.VECTORIZE, CORPUS_ID);
+  const store = new D1CorpusStore(env.CIVIC_DB, env.VECTORIZE, CORPUS_ID, { textBucket: env.CORPUS,
+    retainD1Text: retainD1Text(env.CORPUS_RETAIN_D1_TEXT, !!env.CORPUS) });
+  await budget.initialize();
+  const head = await source.head();
+  budget.assertHead(head);
+  const reader = new SnapshotReader(env.CORPUS, head.commit, { parser: SNAPSHOT_PARSER_VERSION });
+  if (budget.control) budget.assertSnapshot(await reader.manifest());
   const encoder = httpEncoder({
-    // The service binding, not an address: a Worker cannot fetch a
-    // `workers.dev` address on this account — it answers `1042`.
-    url: 'https://encoder',
-    token: env.ENCODER_TOKEN,
-    send: (request) => env.ENCODER_SERVICE.fetch(request),
+    // Budget reservations are durable before the actual binding HTTP call.
+    url: 'https://encoder', token: env.ENCODER_TOKEN,
+    send: (request) => budget.sendEncoder(request, {
+      head: () => source.head(), snapshot: () => reader.manifest(),
+      send: (message) => env.ENCODER_SERVICE.fetch(message),
+    }),
   });
 
-  const head = await source.head();
+  await store.recoverPendingWrites();
   const state = await store.currentCommit(CORPUS_ID);
-  if (state && state.commit === head.commit) {
+  if (state && state.commit === head.commit && state.parserVersion === SNAPSHOT_PARSER_VERSION) {
     log(`already at ${head.commit.slice(0, 9)} (${head.date}) — nothing to do`);
     return { ok: true, at: head.commit, nothing: true };
   }
@@ -210,13 +258,13 @@ async function cycle(env: Env): Promise<CycleSummary> {
   // It is the path that can fill a gap of any size, and it needs nothing from
   // the store except its fingerprints — so it also works on a store that has
   // never been through a cycle, which the file path cannot.
-  const snapshot = await env.CORPUS.head(manifestKey(head.commit));
+  const snapshot = await env.CORPUS.head(manifestKey(head.commit, SNAPSHOT_PARSER_VERSION));
   if (snapshot) {
     log(`the snapshot at ${head.commit.slice(0, 9)} is published — diffing against its index`);
     const run = await runSnapshotPipeline({
       corpusId: CORPUS_ID,
       revision: { commit: head.commit, date: head.date },
-      source: new SnapshotReader(env.CORPUS, head.commit),
+      source: reader,
       store,
       encoder,
       now: new Date(),
@@ -231,6 +279,13 @@ async function cycle(env: Env): Promise<CycleSummary> {
       durationMs: run.durationMs,
       remaining: run.remaining,
     };
+  }
+
+  if (budget.control) throw new Error('controlled pipeline cannot fall back without its matching parser-versioned snapshot');
+
+  if (state && state.parserVersion !== SNAPSHOT_PARSER_VERSION) {
+    throw new Error(`corpus parser ${state.parserVersion ?? 'legacy'} differs from ${SNAPSHOT_PARSER_VERSION}; ` +
+      `publish the parser-versioned snapshot before reconciling this store`);
   }
 
   // **The files, when there is not.**
@@ -301,104 +356,4 @@ async function assertFingerprinted(env: Env): Promise<void> {
         `Run \`bun scripts/backfill-fingerprints.ts\` before the pipeline writes to this store.`,
     );
   }
-}
-
-/**
- * How many ids are asked for at once.
- *
- * The binding takes a list, and a hundred vectors is six hundred kilobytes of
- * JSON to parse — small next to the part being packed. What this bounds is the
- * *response*, not the request: a part is ten thousand provisions, and asking
- * for them one at a time would be ten thousand subrequests against a ceiling
- * of a thousand.
- */
-/**
- * How many ids are asked for at once.
- *
- * **Twenty**, which is the binding's own limit: ask for fifty and it answers
- * `VECTOR_GET_ERROR (code = 40007): too many ids in payload; max id count is
- * 20, got 50`. A part is ten thousand provisions, so this is five hundred
- * subrequests against a ceiling of a thousand — which is why the parts are
- * this size and why they are fetched a few at a time.
- */
-const GET_BY_IDS = 20;
-
-/** How many of those are in flight at once. */
-const GET_CONCURRENCY = 8;
-
-/** The dimensions, from the encoder contract rather than from a literal. */
-const DIMENSIONS = ENCODER_CONTRACT.dimensions;
-
-/** Run `work` over `items`, a few at a time. */
-async function mapWithLimit<T, R>(
-  items: readonly T[],
-  limit: number,
-  work: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    for (;;) {
-      const index = next++;
-      if (index >= items.length) return;
-      results[index] = await work(items[index]!);
-    }
-  });
-  await Promise.all(workers);
-  return results;
-}
-
-/**
- * Export one part of the vectors.
- *
- * The caller — `scripts/export-vectors.ts` — sends the ids in **snapshot
- * order**, and they are packed in the order they arrive: vector *i* is at
- * `i × dims × 4` bytes, so the file needs no second id list and a rebuild is a
- * copy rather than four hours of embedding.
- *
- * A provision the index has no vector for is left as zeroes, and it is
- * **reported** rather than assumed: the caller checks that every missing id
- * belongs to a row that is a placeholder, which is the only kind of provision
- * that is deliberately not embedded. That check is the whole reason this
- * returns `missing` — an export that silently wrote zeroes for provisions that
- * should have vectors would look exactly like a successful one, which is what
- * an earlier version of this did when it pre-allocated the file.
- */
-async function exportVectors(request: Request, env: Env): Promise<Record<string, unknown>> {
-  const body = (await request.json()) as { commit?: string; part?: number; ids?: string[] };
-  const { commit, part, ids } = body;
-  if (!commit || part === undefined || !Array.isArray(ids) || ids.length === 0) {
-    throw new Error('a vectors request needs { commit, part, ids }');
-  }
-
-  const found = new Map<string, number[]>();
-  const chunks: string[][] = [];
-  for (let at = 0; at < ids.length; at += GET_BY_IDS) chunks.push(ids.slice(at, at + GET_BY_IDS));
-  await mapWithLimit(chunks, GET_CONCURRENCY, async (chunk) => {
-    for (const vector of await env.VECTORIZE.getByIds(chunk)) {
-      found.set(vector.id, vector.values as number[]);
-    }
-  });
-
-  const packed = new Float32Array(ids.length * DIMENSIONS);
-  const missing: string[] = [];
-  ids.forEach((id, position) => {
-    const values = found.get(id);
-    if (!values || values.length !== DIMENSIONS) {
-      missing.push(id);
-      return;
-    }
-    packed.set(values, position * DIMENSIONS);
-  });
-
-  const key = vectorsPartKey(commit, part);
-  await env.CORPUS.put(key, packed.buffer);
-  return {
-    key,
-    count: ids.length,
-    bytes: packed.byteLength,
-    dims: DIMENSIONS,
-    embedded: ids.length - missing.length,
-    missing,
-  };
 }

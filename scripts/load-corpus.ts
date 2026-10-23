@@ -34,6 +34,7 @@ interface Args {
   lang: 'en' | 'fr' | 'both';
   dryRun: boolean;
   limit: number | undefined;
+  skip: number;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -47,7 +48,17 @@ function parseArgs(argv: string[]): Args {
       }
       args.lang = value;
     } else if (arg === '--dry-run') args.dryRun = true;
-    else if (arg === '--limit') args.limit = Number(argv[++i]);
+    else if (arg === '--limit') {
+      args.limit = Number(argv[++i]);
+      if (!Number.isSafeInteger(args.limit) || args.limit < 1) {
+        throw new Error('--limit must be a positive integer');
+      }
+    } else if (arg === '--skip') {
+      args.skip = Number(argv[++i]);
+      if (!Number.isSafeInteger(args.skip) || args.skip < 0) {
+        throw new Error('--skip must be a non-negative integer');
+      }
+    } else throw new Error(`unknown argument: ${arg}`);
   }
   return args;
 }
@@ -73,14 +84,15 @@ async function main(): Promise<void> {
     // rows are in a fixed order, so "how far" is a number, and the number is
     // written after every few hundred rows.
     const checkpoint = join(ROOT, 'dist', `.load-checkpoint-${lang}`);
-    if (args.skip === 0 && existsSync(checkpoint)) {
+    let skip = args.skip;
+    if (skip === 0 && existsSync(checkpoint)) {
       const saved = Number(readFileSync(checkpoint, 'utf8').trim());
       if (Number.isFinite(saved) && saved > 0) {
         console.log(`  resuming: ${saved.toLocaleString()} row(s) are already loaded`);
-        args.skip = saved;
+        skip = saved;
       }
     }
-    if (args.skip) rows = rows.slice(args.skip);
+    if (skip) rows = rows.slice(skip);
     const characters = rows.reduce((sum, r) => sum + String(r['text'] ?? '').length, 0);
     console.log(
       `load-corpus: ${rows.length.toLocaleString()} ${lang} row(s), ` +
@@ -117,7 +129,7 @@ async function main(): Promise<void> {
       onProgress: (sent, total) => {
         // The checkpoint, often: a crash costs a second's work.
         if (sent % 500 === 0) {
-          writeFileSync(checkpoint, String(args.skip + firstGap));
+          writeFileSync(checkpoint, String(skip + firstGap));
         }
         if (sent % 2_000 === 0 || sent === total) {
           const rate = sent / ((Date.now() - started) / 1000);
@@ -129,7 +141,7 @@ async function main(): Promise<void> {
         }
       },
     });
-    writeFileSync(checkpoint, String(args.skip + firstGap));
+    writeFileSync(checkpoint, String(skip + firstGap));
 
     if (result.failed) {
       throw new Error(`${result.failed} row(s) failed to load — the corpus is incomplete.`);

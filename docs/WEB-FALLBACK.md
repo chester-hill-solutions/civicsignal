@@ -1,5 +1,10 @@
 # The web fallback
 
+## Current v1 authority
+
+Future external-source design. v1 reports a refusal or route decision; it does not fetch web answers.
+[The v1 release checklist](V1-RELEASE.md) takes precedence over the historical claims below.
+
 When the corpus has nothing, the product looks further afield, and when that
 comes up empty it says so.
 

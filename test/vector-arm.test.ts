@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { CACHE_SECONDS, statutesCorpus, VECTOR_FLOOR } from '../src/corpora/adapters';
-import { hash128 } from '../src/ingest/reconcile';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CACHE_SECONDS, retrievalCacheKey, statutesCorpus, VECTOR_FLOOR } from '../src/corpora/adapters';
 import type { CorpusContext } from '../src/corpora/types';
 import type { VectorMatch } from '@chester-hill-solutions/corpus';
 
@@ -421,6 +420,7 @@ describe('the vector arm', () => {
  * cache read is after the work instead of before it.
  */
 describe('the retrieval cache', () => {
+  afterEach(() => vi.unstubAllGlobals());
   function mapCache() {
     const store = new Map<string, unknown>();
     return {
@@ -437,9 +437,8 @@ describe('the retrieval cache', () => {
   }
 
   /** The key the retrieval builds, so the test primes the same one. */
-  function keyFor(question: string, limit = 25, revision = 'unknown') {
-    const normalised = question.toLowerCase().replace(/\s+/g, ' ').replace(/[.?!]+$/, '').trim();
-    return `retrieval:${hash128(normalised)}:${revision}:${limit}`;
+  function keyFor(question: string, limit = 25, revision = 'r1') {
+    return retrievalCacheKey({ topic: question, limit }, revision, false);
   }
 
   it('returns a cached refusal without a database read or a rerank', async () => {
@@ -449,7 +448,7 @@ describe('the retrieval cache', () => {
     let embedded = 0;
 
     await cache.put(
-      keyFor('the weather in Ottawa?'),
+      keyFor('The weather in Ottawa?'),
       { decision: 'refuse', anyRelevant: 0.09, order: [] },
       CACHE_SECONDS,
     );
@@ -463,6 +462,7 @@ describe('the retrieval cache', () => {
           return [0.1];
         },
         cache,
+        corpusRevision: 'r1',
       }),
     );
 
@@ -479,14 +479,14 @@ describe('the retrieval cache', () => {
     const index = fakeIndex([]);
     const { cache } = mapCache();
     await cache.put(
-      keyFor('what is the fine for speeding in ontario'),
+      keyFor('What is the fine for speeding in Ontario'),
       { decision: 'web', anyRelevant: 0.21, order: [] },
       CACHE_SECONDS,
     );
 
     const items = await statutesCorpus.retrieve(
       { topic: 'What is the fine for speeding in Ontario' },
-      ctx(db, { vector: index.index, embedQuery: async () => [0.1], cache }),
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1], cache, corpusRevision: 'r1' }),
     );
 
     expect(items).toEqual([]);
@@ -528,7 +528,7 @@ describe('the retrieval cache', () => {
     const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
     const { cache } = mapCache();
     await cache.put(
-      keyFor('the weather in ottawa', 25, 'commitsha'),
+      keyFor('the weather in Ottawa', 25, 'commitsha'),
       { decision: 'refuse', anyRelevant: 0.09, order: [] },
       CACHE_SECONDS,
     );
@@ -548,5 +548,63 @@ describe('the retrieval cache', () => {
     expect(items).toEqual([]);
     expect(index.vectors).toHaveLength(0);
     expect(calls).toHaveLength(0);
+  });
+
+  it('keeps a refusal in English from suppressing a French request', async () => {
+    const { db } = fakeDb([row('fr-1', { language: 'fr' })]);
+    const index = fakeIndex([{ id: 'fr-1', score: 0.9, metadata: {} }]);
+    const { cache } = mapCache();
+    await cache.put(retrievalCacheKey({ topic: 'Competition', language: 'en' }, 'r1', false),
+      { decision: 'refuse', anyRelevant: 0, order: [] }, CACHE_SECONDS);
+
+    const items = await statutesCorpus.retrieve({ topic: 'Competition', language: 'fr' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1], cache, corpusRevision: 'r1' }));
+
+    expect(items.map((item) => item.id)).toEqual(['fr-1']);
+    expect(index.filters).toEqual([{ language: 'fr' }]);
+  });
+
+  it('does not reuse a refusal across constraints or retrieval policies', () => {
+    const base = { topic: 'Competition', language: 'en', keywords: ['damages'] };
+    const key = retrievalCacheKey(base, 'r1', true);
+    expect(retrievalCacheKey({ ...base, keywords: ['merger'] }, 'r1', true)).not.toBe(key);
+    expect(retrievalCacheKey({ ...base, jurisdiction: 'ON' }, 'r1', true)).not.toBe(key);
+    expect(retrievalCacheKey({ ...base, since: '2026-01-01' }, 'r1', true)).not.toBe(key);
+    expect(retrievalCacheKey(base, 'r1', false)).not.toBe(key);
+    expect(retrievalCacheKey(base, 'r2', true)).not.toBe(key);
+    expect(retrievalCacheKey({ ...base, topic: 'competition?' }, 'r1', true)).not.toBe(key);
+  });
+
+  it('serves a warm answer in its cached order without embedding, index search or Jev', async () => {
+    const { db } = fakeDb([row('first'), row('second')]);
+    const index = fakeIndex([{ id: 'first', score: 0.9, metadata: {} }, { id: 'second', score: 0.8, metadata: {} }]);
+    const { cache } = mapCache();
+    const send = vi.fn(async () => new Response(JSON.stringify({ answers: {
+      c0: { noul: 0.6 }, c1: { noul: 0.9 },
+      needs_federal_statute: { noul: 1 }, any_relevant: { noul: 1 },
+    } })));
+    vi.stubGlobal('fetch', send);
+    const embed = vi.fn(async () => [0.1]);
+    const context = ctx(db, { vector: index.index, embedQuery: embed, cache, corpusRevision: 'r1', jev: { key: 'test-key' } });
+
+    const cold = await statutesCorpus.retrieve({ topic: 'Competition' }, context);
+    const warm = await statutesCorpus.retrieve({ topic: 'Competition' }, context);
+
+    expect(cold.map((item) => item.id)).toEqual(['second', 'first']);
+    expect(warm).toEqual(cold);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(embed).toHaveBeenCalledTimes(1);
+    expect(index.vectors).toHaveLength(1);
+  });
+
+  it.each([() => undefined, () => 'unknown', () => Promise.reject(new Error('revision unavailable'))])('does not reuse cache when the revision is unavailable', async (revision) => {
+    const { db } = fakeDb([row('first')]);
+    const index = fakeIndex([{ id: 'first', score: 0.9, metadata: {} }]);
+    const get = vi.fn(async () => ({ decision: 'refuse', anyRelevant: 0, order: [] }));
+    const put = vi.fn(async () => undefined);
+    const context = ctx(db, { vector: index.index, embedQuery: async () => [0.1], cache: { get, put }, corpusRevision: revision() });
+    expect(await statutesCorpus.retrieve({ topic: 'Competition' }, context)).toHaveLength(1);
+    expect(get).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
   });
 });

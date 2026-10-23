@@ -1,0 +1,2015 @@
+{
+  "version": "v1-2026-10-22",
+  "revision": "0507465393c224c0491fc8c17c88340217acc656",
+  "sourceRepository": "https://github.com/justicecanada/laws-lois-xml",
+  "questions": [
+    {
+      "id": "A-1-4-en",
+      "pairId": "A-1-4",
+      "group": "act:A-1",
+      "split": "holdout",
+      "language": "en",
+      "question": "Who has the statutory right to request access to federal government records under the Access to Information Act?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-229"
+        ],
+        "act": "Access to Information Act",
+        "section": "4"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/A-1.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/A-1.xml",
+        "sourceSha256": "d780ccedf7bc8e22fdead1e42d0378f4c9f11479b67a0ccdeb423bae975bb0d9",
+        "rowSha256": "35b1a509fb6a17f6212f87715b154a02e54702e03357565901406cc11b2508d4",
+        "evidence": "(1) Subject to this Part, but notwithstanding any other Act of Parliament, every person who is(a) a Canadian citizen, or(b) a permanent resident within the meaning of subsection 2(1) of the Immigration and Refugee Protection Act,has a right to and shall, on request, be given access to any record under the control of a government institution.(2) The Governor in Council may, by order, extend the rig",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "A-1-4-fr",
+      "pairId": "A-1-4",
+      "group": "act:A-1",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Qui a le droit de demander accès aux documents fédéraux selon la Loi sur l’accès à l’information?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-229"
+        ],
+        "act": "Loi sur l’accès à l’information",
+        "section": "4"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/A-1.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/A-1.xml",
+        "sourceSha256": "fe13c59379bef59c0e9edcc3a826deac2cccf214dd8077d83b3b42d9e1228cb3",
+        "rowSha256": "1ebd9c6e2b0ba2d722227df29f45a46506d2f584b803d7dd272c5fb95902570b",
+        "evidence": "(1) Sous réserve des autres dispositions de la présente partie mais nonobstant toute autre loi fédérale, ont droit à l’accès aux documents relevant d’une institution fédérale et peuvent se les faire communiquer sur demande :a) les citoyens canadiens;b) les résidents permanents au sens du paragraphe 2(1) de la Loi sur l’immigration et la protection des réfugiés.(2) Le gouverneur en conseil peut, pa",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "A-1-6-en",
+      "pairId": "A-1-6",
+      "group": "act:A-1",
+      "split": "holdout",
+      "language": "en",
+      "question": "How detailed must my written request for federal records be under the Access to Information Act?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-1171658"
+        ],
+        "act": "Access to Information Act",
+        "section": "6"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/A-1.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/A-1.xml",
+        "sourceSha256": "d780ccedf7bc8e22fdead1e42d0378f4c9f11479b67a0ccdeb423bae975bb0d9",
+        "rowSha256": "4516be5a02a56ce5b371c7c34835a0e846eb4dd44b6a25d7eba0ad2faac9ea30",
+        "evidence": "A request for access to a record under this Part shall be made in writing to the government institution that has control of the record and shall provide sufficient detail to enable an experienced employee of the institution to identify the record with a reasonable effort.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "A-1-6-fr",
+      "pairId": "A-1-6",
+      "group": "act:A-1",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quel degré de précision ma demande écrite de documents fédéraux doit-elle avoir selon la Loi sur l’accès à l’information?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-259"
+        ],
+        "act": "Loi sur l’accès à l’information",
+        "section": "6"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/A-1.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/A-1.xml",
+        "sourceSha256": "fe13c59379bef59c0e9edcc3a826deac2cccf214dd8077d83b3b42d9e1228cb3",
+        "rowSha256": "5656fd083b020e8aad8a5cc032f2bcc91ca2afdac5333b07d6d8912c8f509b3d",
+        "evidence": "La demande de communication d’un document se fait par écrit auprès de l’institution fédérale dont relève le document; elle doit être rédigée en des termes suffisamment précis pour permettre à un fonctionnaire expérimenté de l’institution de trouver le document sans problèmes sérieux.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-6-7-en",
+      "pairId": "C-6-7",
+      "group": "act:C-6",
+      "split": "holdout",
+      "language": "en",
+      "question": "Which five criteria must a provincial health insurance plan satisfy for the full federal cash contribution?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-151501"
+        ],
+        "act": "Canada Health Act",
+        "section": "7"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-6.xml",
+        "sourceSha256": "aefbbb400c524d6452537268f6f030203e19fac5cbd3958c871d5cb45cbc7954",
+        "rowSha256": "e876eb5242ca9aedc745d956cb2bea9261173389070cdd81e1c339906fc1eecc",
+        "evidence": "In order that a province may qualify for a full cash contribution referred to in section 5 for a fiscal year, the health care insurance plan of the province must, throughout the fiscal year, satisfy the criteria described in sections 8 to 12 respecting the following matters:(a) public administration;(b) comprehensiveness;(c) universality;(d) portability; and(e) accessibility.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-6-7-fr",
+      "pairId": "C-6-7",
+      "group": "act:C-6",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles sont les cinq conditions auxquelles un régime provincial d’assurance-santé doit satisfaire pour recevoir la pleine contribution fédérale?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-147891"
+        ],
+        "act": "Loi canadienne sur la santé",
+        "section": "7"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-6.xml",
+        "sourceSha256": "29956466eb16d52bf159cf1c92d9c2b343a1352279e16c16bb78ed96f02640b6",
+        "rowSha256": "56a74ca50f69340d8c8d35a045b64846f5547e8f514afc214a746b7d6d97955c",
+        "evidence": "Le versement à une province, pour un exercice, de la pleine contribution pécuniaire visée à l’article 5 est assujetti à l’obligation pour le régime d’assurance-santé de satisfaire, pendant tout cet exercice, aux conditions d’octroi énumérées aux articles 8 à 12 quant à :a) la gestion publique;b) l’intégralité;c) l’universalité;d) la transférabilité;e) l’accessibilité.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-6-8-en",
+      "pairId": "C-6-8",
+      "group": "act:C-6",
+      "split": "holdout",
+      "language": "en",
+      "question": "What public administration requirements does the Canada Health Act set for a provincial insurance plan?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-151510"
+        ],
+        "act": "Canada Health Act",
+        "section": "8"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-6.xml",
+        "sourceSha256": "aefbbb400c524d6452537268f6f030203e19fac5cbd3958c871d5cb45cbc7954",
+        "rowSha256": "48657c01d37c6188992e706cdb76af67dd02e96a1e4e88fcb598a1ff5cacf57b",
+        "evidence": "(1) In order to satisfy the criterion respecting public administration,(a) the health care insurance plan of a province must be administered and operated on a non-profit basis by a public authority appointed or designated by the government of the province;(b) the public authority must be responsible to the provincial government for that administration and operation; and(c) the public authority mus",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-6-8-fr",
+      "pairId": "C-6-8",
+      "group": "act:C-6",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles exigences de gestion publique la Loi canadienne sur la santé impose-t-elle à un régime provincial d’assurance-santé?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-147900"
+        ],
+        "act": "Loi canadienne sur la santé",
+        "section": "8"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-6.xml",
+        "sourceSha256": "29956466eb16d52bf159cf1c92d9c2b343a1352279e16c16bb78ed96f02640b6",
+        "rowSha256": "2318b5a09ea17c866309fb6c782703e17434d16c58c97f14dfd11870db147508",
+        "evidence": "(1) La condition de gestion publique suppose que :a) le régime provincial d’assurance-santé soit géré sans but lucratif par une autorité publique nommée ou désignée par le gouvernement de la province;b) l’autorité publique soit responsable devant le gouvernement provincial de cette gestion;c) l’autorité publique soit assujettie à la vérification de ses comptes et de ses opérations financières par ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "H-6-3-en",
+      "pairId": "H-6-3",
+      "group": "act:H-6",
+      "split": "holdout",
+      "language": "en",
+      "question": "Does the Canadian Human Rights Act list genetic characteristics and gender identity as prohibited grounds of discrimination?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-256802"
+        ],
+        "act": "Canadian Human Rights Act",
+        "section": "3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/H-6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/H-6.xml",
+        "sourceSha256": "db77d5fab7b90d824e8126ffb3edfe8765f3e10827bd43b4fe86fa7997ab93e4",
+        "rowSha256": "b26780549c20415bdbf48c9b0be31de77ba55d7791f43885279c023651d518ba",
+        "evidence": "(1) For all purposes of this Act, the prohibited grounds of discrimination are race, national or ethnic origin, colour, religion, age, sex, sexual orientation, gender identity or expression, marital status, family status, genetic characteristics, disability and conviction for an offence for which a pardon has been granted or in respect of which a record suspension has been ordered.(2) Where the gr",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "H-6-3-fr",
+      "pairId": "H-6-3",
+      "group": "act:H-6",
+      "split": "holdout",
+      "language": "fr",
+      "question": "La Loi canadienne sur les droits de la personne interdit-elle la discrimination fondée sur les caractéristiques génétiques et l’identité de genre?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-250637"
+        ],
+        "act": "Loi canadienne sur les droits de la personne",
+        "section": "3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/H-6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/H-6.xml",
+        "sourceSha256": "8f008e397b30c7149967eb57eb600cf3aacfb57faa0894a9670343d6eccb4a1f",
+        "rowSha256": "abed3eae541e6e4f13b3e7799b59ba3d930d551f060397021a7ab8f2de2141fe",
+        "evidence": "(1) Pour l’application de la présente loi, les motifs de distinction illicite sont ceux qui sont fondés sur la race, l’origine nationale ou ethnique, la couleur, la religion, l’âge, le sexe, l’orientation sexuelle, l’identité ou l’expression de genre, l’état matrimonial, la situation de famille, les caractéristiques génétiques, l’état de personne graciée ou la déficience.(2) Une distinction fondée",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "H-6-10-en",
+      "pairId": "H-6-10",
+      "group": "act:H-6",
+      "split": "holdout",
+      "language": "en",
+      "question": "Under the Canadian Human Rights Act, what rule addresses hiring policies that exclude a class of people on a prohibited ground?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-256858"
+        ],
+        "act": "Canadian Human Rights Act",
+        "section": "10"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/H-6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/H-6.xml",
+        "sourceSha256": "db77d5fab7b90d824e8126ffb3edfe8765f3e10827bd43b4fe86fa7997ab93e4",
+        "rowSha256": "293e201bcfbf8d53144e52187d6fecc241ff8a7c31092786a6bb83f0edd2ac06",
+        "evidence": "It is a discriminatory practice for an employer, employee organization or employer organization(a) to establish or pursue a policy or practice, or(b) to enter into an agreement affecting recruitment, referral, hiring, promotion, training, apprenticeship, transfer or any other matter relating to employment or prospective employment,that deprives or tends to deprive an individual or class of individ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "H-6-10-fr",
+      "pairId": "H-6-10",
+      "group": "act:H-6",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Selon la Loi canadienne sur les droits de la personne, quelle règle vise les politiques d’embauche qui excluent une catégorie de personnes pour un motif illicite?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-250689"
+        ],
+        "act": "Loi canadienne sur les droits de la personne",
+        "section": "10"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/H-6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/H-6.xml",
+        "sourceSha256": "8f008e397b30c7149967eb57eb600cf3aacfb57faa0894a9670343d6eccb4a1f",
+        "rowSha256": "fbf38e1bc5d7ea9e26367afe26f785485629d40fed42e9692de3bed140e772a1",
+        "evidence": "Constitue un acte discriminatoire, s’il est fondé sur un motif de distinction illicite et s’il est susceptible d’annihiler les chances d’emploi ou d’avancement d’un individu ou d’une catégorie d’individus, le fait, pour l’employeur, l’association patronale ou l’organisation syndicale :a) de fixer ou d’appliquer des lignes de conduite;b) de conclure des ententes touchant le recrutement, les mises e",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-29-3-en",
+      "pairId": "C-29-3",
+      "group": "act:C-29",
+      "split": "holdout",
+      "language": "en",
+      "question": "Which provision of the Citizenship Act describes the persons who are Canadian citizens?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-81637"
+        ],
+        "act": "Citizenship Act",
+        "section": "3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-29.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-29.xml",
+        "sourceSha256": "83230da83727f2e04552f3722740a1291e21a18133251b2535c35df096d0329e",
+        "rowSha256": "dd0c5312c2a21e95fee6d8e7c0dcd6e7e907aae2e4d7d04744d07d6237baa109",
+        "evidence": "(1) Subject to this Act, a person is a citizen if(a) the person was born in Canada after February 14, 1977;(b) the person was born outside Canada after February 14, 1977 and at the time of his birth one of his parents, other than a parent who adopted him, was a citizen;(c) the person has been granted or acquired citizenship pursuant to section 5 or 11 and, in the case of a person who is fourteen y",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-29-3-fr",
+      "pairId": "C-29-3",
+      "group": "act:C-29",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelle disposition de la Loi sur la citoyenneté décrit les personnes qui ont la qualité de citoyen canadien?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-79624"
+        ],
+        "act": "Loi sur la citoyenneté",
+        "section": "3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-29.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-29.xml",
+        "sourceSha256": "b47b9f3f300f154393199c2c1fd9aa1ac6ef70a7a27b0fb57d57d44ff98f5486",
+        "rowSha256": "63dd705a4d327026270858ad1a413dcea55592a3adb9140f4e13946ecd3ffe7f",
+        "evidence": "(1) Sous réserve des autres dispositions de la présente loi, a qualité de citoyen toute personne :a) née au Canada après le 14 février 1977;b) née à l’étranger après le 14 février 1977 d’un père ou d’une mère ayant qualité de citoyen au moment de la naissance;c) ayant obtenu la citoyenneté — par attribution ou acquisition — sous le régime des articles 5 ou 11 et ayant, si elle était âgée d’au moin",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-29-5-en",
+      "pairId": "C-29-5",
+      "group": "act:C-29",
+      "split": "holdout",
+      "language": "en",
+      "question": "What physical presence and official language conditions does the Citizenship Act impose for a grant of citizenship?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-81786"
+        ],
+        "act": "Citizenship Act",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-29.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-29.xml",
+        "sourceSha256": "83230da83727f2e04552f3722740a1291e21a18133251b2535c35df096d0329e",
+        "rowSha256": "284054c97046775a45b4bebe93fc1e80c2dd35b50cd458ab04f472dfbabf1c61",
+        "evidence": "(1) The Minister shall grant citizenship to any person who(a) makes application for citizenship;(b) [Repealed, 2017, c. 14, s. 1](c) is a permanent resident within the meaning of subsection 2(1) of the Immigration and Refugee Protection Act, has, subject to the regulations, no unfulfilled conditions under that Act relating to his or her status as a permanent resident and has(i) been physically pre",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-29-5-fr",
+      "pairId": "C-29-5",
+      "group": "act:C-29",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles conditions de présence effective et de connaissance d’une langue officielle la Loi sur la citoyenneté impose-t-elle pour l’attribution de la citoyenneté?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-79773"
+        ],
+        "act": "Loi sur la citoyenneté",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-29.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-29.xml",
+        "sourceSha256": "b47b9f3f300f154393199c2c1fd9aa1ac6ef70a7a27b0fb57d57d44ff98f5486",
+        "rowSha256": "f430df77991dbfa2dfadf88973c23b3fed4355d1f25f41f0312341b549337b86",
+        "evidence": "(1) Le ministre attribue la citoyenneté à toute personne qui, à la fois :a) en fait la demande;b) [Abrogé, 2017, ch. 14, art. 1]c) est un résident permanent au sens du paragraphe 2(1) de la Loi sur l’immigration et la protection des réfugiés, a, sous réserve des règlements, satisfait à toute condition rattachée à son statut de résident permanent en vertu de cette loi et :(i) a été effectivement pr",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-42-3-en",
+      "pairId": "C-42-3",
+      "group": "act:C-42",
+      "split": "holdout",
+      "language": "en",
+      "question": "Which exclusive rights does the Copyright Act give the owner of copyright in a work?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-102727"
+        ],
+        "act": "Copyright Act",
+        "section": "3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-42.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-42.xml",
+        "sourceSha256": "f11ed71225384799274abc5ce84fa7fe3d55dbdc8fbf218d054cb7efa3ecc701",
+        "rowSha256": "4ed61c24acbcdaffaacecbabe4a48e9f4a8df304391a47a504877fab2f1fac20",
+        "evidence": "(1) For the purposes of this Act, copyright, in relation to a work, means the sole right to produce or reproduce the work or any substantial part thereof in any material form whatever, to perform the work or any substantial part thereof in public or, if the work is unpublished, to publish the work or any substantial part thereof, and includes the sole right(a) to produce, reproduce, perform or pub",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-42-3-fr",
+      "pairId": "C-42-3",
+      "group": "act:C-42",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quels droits exclusifs la Loi sur le droit d’auteur confère-t-elle au titulaire du droit d’auteur sur une œuvre?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-100190"
+        ],
+        "act": "Loi sur le droit d’auteur",
+        "section": "3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-42.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-42.xml",
+        "sourceSha256": "ccd1d8c05d635c30fa19334afc65dc3fb38467e65080f060d0f46604f9ab7f65",
+        "rowSha256": "75ab0212c7d3d770332443c0e1d11d23523826fbe17b4ad2b291b29ebc36e122",
+        "evidence": "(1) Le droit d’auteur sur l’oeuvre comporte le droit exclusif de produire ou reproduire la totalité ou une partie importante de l’oeuvre, sous une forme matérielle quelconque, d’en exécuter ou d’en représenter la totalité ou une partie importante en public et, si l’oeuvre n’est pas publiée, d’en publier la totalité ou une partie importante; ce droit comporte, en outre, le droit exclusif :a) de pro",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-42-29-en",
+      "pairId": "C-42-29",
+      "group": "act:C-42",
+      "split": "holdout",
+      "language": "en",
+      "question": "Which fair dealing purposes are listed together with research and private study in the Copyright Act?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-103271"
+        ],
+        "act": "Copyright Act",
+        "section": "29"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-42.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-42.xml",
+        "sourceSha256": "f11ed71225384799274abc5ce84fa7fe3d55dbdc8fbf218d054cb7efa3ecc701",
+        "rowSha256": "ec7504030b4b3553ca5b2b2550c37567031482f22084ca863498537252805df9",
+        "evidence": "Fair dealing for the purpose of research, private study, education, parody or satire does not infringe copyright.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-42-29-fr",
+      "pairId": "C-42-29",
+      "group": "act:C-42",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles fins d’utilisation équitable sont énumérées avec la recherche et l’étude privée dans la Loi sur le droit d’auteur?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-100680"
+        ],
+        "act": "Loi sur le droit d’auteur",
+        "section": "29"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-42.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-42.xml",
+        "sourceSha256": "ccd1d8c05d635c30fa19334afc65dc3fb38467e65080f060d0f46604f9ab7f65",
+        "rowSha256": "e8a31e2c372ffc709a0fa43e4a0e01418bb3f9e53f69574ef00ab46181c0f857",
+        "evidence": "L’utilisation équitable d’une oeuvre ou de tout autre objet du droit d’auteur aux fins d’étude privée, de recherche, d’éducation, de parodie ou de satire ne constitue pas une violation du droit d’auteur.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "D-3.4-8-en",
+      "pairId": "D-3.4-8",
+      "group": "act:D-3.4",
+      "split": "holdout",
+      "language": "en",
+      "question": "What grounds establish a breakdown of marriage under the federal Divorce Act?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-173078"
+        ],
+        "act": "Divorce Act",
+        "section": "8"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/D-3.4.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/D-3.4.xml",
+        "sourceSha256": "12f1d9a1654d608cdb34aa2e12d2a55d858910dd5d020c11bcd8e3e5f9231a67",
+        "rowSha256": "17df3c827349a06735edeb63f8f9acde7c3c08e8b4b56bbf4156487245f27675",
+        "evidence": "(1) A court of competent jurisdiction may, on application by either or both spouses, grant a divorce to the spouse or spouses on the ground that there has been a breakdown of their marriage.(2) Breakdown of a marriage is established only if(a) the spouses have lived separate and apart for at least one year immediately preceding the determination of the divorce proceeding and were living separate a",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "D-3.4-8-fr",
+      "pairId": "D-3.4-8",
+      "group": "act:D-3.4",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quels motifs établissent l’échec du mariage selon la Loi fédérale sur le divorce?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-168682"
+        ],
+        "act": "Loi sur le divorce",
+        "section": "8"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/D-3.4.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/D-3.4.xml",
+        "sourceSha256": "8b739c59fe7ff1825e5e22bd1f19d611ccd96e72fd39a9be11843f06501dcdc8",
+        "rowSha256": "cfbb01a303a4404cd05f28a28a2c41487b6423cecd2d534d01372a48ad07a348",
+        "evidence": "(1) Le tribunal compétent peut, sur demande de l’un des époux ou des deux, lui ou leur accorder le divorce pour cause d’échec du mariage.(2) L’échec du mariage n’est établi que dans les cas suivants :a) les époux ont vécu séparément pendant au moins un an avant le prononcé de la décision sur l’action en divorce et vivaient séparément à la date d’introduction de l’instance;b) depuis la célébration ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "D-3.4-16-en",
+      "pairId": "D-3.4-16",
+      "group": "act:D-3.4",
+      "split": "holdout",
+      "language": "en",
+      "question": "In making a parenting order under the Divorce Act, what consideration must the court put first?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-1285612"
+        ],
+        "act": "Divorce Act",
+        "section": "16"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/D-3.4.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/D-3.4.xml",
+        "sourceSha256": "12f1d9a1654d608cdb34aa2e12d2a55d858910dd5d020c11bcd8e3e5f9231a67",
+        "rowSha256": "b26a0b80a182e81e4b05e6e87bbef0c4018f691daf6cab137bd38d0839474f69",
+        "evidence": "(1) The court shall take into consideration only the best interests of the child of the marriage in making a parenting order or a contact order.(2) When considering the factors referred to in subsection (3), the court shall give primary consideration to the child’s physical, emotional and psychological safety, security and well-being.(3) In determining the best interests of the child, the court sh",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "D-3.4-16-fr",
+      "pairId": "D-3.4-16",
+      "group": "act:D-3.4",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Lorsqu’il rend une ordonnance parentale selon la Loi sur le divorce, de quoi le tribunal doit-il tenir compte en priorité?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-1274391"
+        ],
+        "act": "Loi sur le divorce",
+        "section": "16"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/D-3.4.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/D-3.4.xml",
+        "sourceSha256": "8b739c59fe7ff1825e5e22bd1f19d611ccd96e72fd39a9be11843f06501dcdc8",
+        "rowSha256": "75276eafd983edaaa4e150440914ae90a1172df72663e1adb8ed08ddcf213b67",
+        "evidence": "(1) Le tribunal tient uniquement compte de l’intérêt de l’enfant à charge lorsqu’il rend une ordonnance parentale ou une ordonnance de contact.(2) Lorsqu’il tient compte des facteurs prévus au paragraphe (3), le tribunal accorde une attention particulière au bien-être et à la sécurité physiques, psychologiques et affectifs de l’enfant.(3) Pour déterminer l’intérêt de l’enfant, le tribunal tient co",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "E-5.6-5-en",
+      "pairId": "E-5.6-5",
+      "group": "act:E-5.6",
+      "split": "holdout",
+      "language": "en",
+      "question": "What kinds of employment are insurable under the Employment Insurance Act?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-215762"
+        ],
+        "act": "Employment Insurance Act",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/E-5.6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/E-5.6.xml",
+        "sourceSha256": "21335cfa7e2ffbbced2e84a092d59b59dd4b78bd80c0a8c831caaf81091f15e0",
+        "rowSha256": "a88ffe5ca19a298b503136f9a69c90f10db9b559e9c97f3783d5eaa57c1190ce",
+        "evidence": "(1) Subject to subsection (2), insurable employment is(a) employment in Canada by one or more employers, under any express or implied contract of service or apprenticeship, written or oral, whether the earnings of the employed person are received from the employer or some other person and whether the earnings are calculated by time or by the piece, or partly by time and partly by the piece, or oth",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "E-5.6-5-fr",
+      "pairId": "E-5.6-5",
+      "group": "act:E-5.6",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quels types d’emploi sont assurables selon la Loi sur l’assurance-emploi?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-210317"
+        ],
+        "act": "Loi sur l’assurance-emploi",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/E-5.6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/E-5.6.xml",
+        "sourceSha256": "3e725dea0a2f5a36a2cf49c593fe63372c12089ff9884fa13009ddd64ee0e3f6",
+        "rowSha256": "5d3005b8a14c3e1644a37cbcdfc6423fb690a74765ec8c3aa0b4539185d51230",
+        "evidence": "(1) Sous réserve du paragraphe (2), est un emploi assurable :a) l’emploi exercé au Canada pour un ou plusieurs employeurs, aux termes d’un contrat de louage de services ou d’apprentissage exprès ou tacite, écrit ou verbal, que l’employé reçoive sa rémunération de l’employeur ou d’une autre personne et que la rémunération soit calculée soit au temps ou aux pièces, soit en partie au temps et en part",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "E-5.6-6-en",
+      "pairId": "E-5.6-6",
+      "group": "act:E-5.6",
+      "split": "holdout",
+      "language": "en",
+      "question": "How does the Employment Insurance Act distinguish major attachment and minor attachment claimants?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-215808"
+        ],
+        "act": "Employment Insurance Act",
+        "section": "6"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/E-5.6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/E-5.6.xml",
+        "sourceSha256": "21335cfa7e2ffbbced2e84a092d59b59dd4b78bd80c0a8c831caaf81091f15e0",
+        "rowSha256": "080f5e6ffcf99f109ed6821b0ba1dd8fd92fdf8f05cdaa3afdb88609c57f7d73",
+        "evidence": "(1) In this Part,disentitled means not entitled under section 13, 18, 21, 31, 32, 33, 36, 37, 49 or 50 or under the regulations; (inadmissible)disqualified means disqualified under section 27 or 30; (exclu du bénéfice des prestations)initial claim for benefits means a claim made for the purpose of establishing a claimant’s benefit period; (demande initiale de prestations)major attachment claimant ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "E-5.6-6-fr",
+      "pairId": "E-5.6-6",
+      "group": "act:E-5.6",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Comment la Loi sur l’assurance-emploi distingue-t-elle les prestataires de la première et de la deuxième catégorie?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-210363"
+        ],
+        "act": "Loi sur l’assurance-emploi",
+        "section": "6"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/E-5.6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/E-5.6.xml",
+        "sourceSha256": "3e725dea0a2f5a36a2cf49c593fe63372c12089ff9884fa13009ddd64ee0e3f6",
+        "rowSha256": "9f6239b221cf19bb494e1fed976e8d8c214286151b4d49363bb9fd0239bd0092",
+        "evidence": "(1) Les définitions qui suivent s’appliquent à la présente partie.délai de carence La semaine de la période de prestations que vise l’article 13. (waiting period)demande initiale de prestations Demande formulée aux fins d’établir une période de prestations au profit du prestataire. (initial claim for benefits)exclu du bénéfice des prestations Exclu du bénéfice des prestations en vertu des articles",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "F-27-4-en",
+      "pairId": "F-27-4",
+      "group": "act:F-27",
+      "split": "holdout",
+      "language": "en",
+      "question": "Which food sales does the Food and Drugs Act prohibit because food is unsafe or prepared in unsanitary conditions?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-234068"
+        ],
+        "act": "Food and Drugs Act",
+        "section": "4"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/F-27.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/F-27.xml",
+        "sourceSha256": "a8d4f5f28b767201a6d0192b65d2aca63fecda46f0b55dbfa7017913ca655cc7",
+        "rowSha256": "f5f5251ba6567ee9704fc22e268fff6931ab2e2df43c95d88915c9e781de2147",
+        "evidence": "(1) No person shall sell an article of food that(a) has in or on it any poisonous or harmful substance;(b) is unfit for human consumption;(c) consists in whole or in part of any filthy, putrid, disgusting, rotten, decomposed or diseased animal or vegetable substance;(d) is adulterated; or(e) was manufactured, prepared, preserved, packaged or stored under unsanitary conditions.(2) A food does not h",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "F-27-4-fr",
+      "pairId": "F-27-4",
+      "group": "act:F-27",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles ventes d’aliments la Loi sur les aliments et drogues interdit-elle pour des raisons de salubrité ou de préparation non hygiénique?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-228207"
+        ],
+        "act": "Loi sur les aliments et drogues",
+        "section": "4"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/F-27.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/F-27.xml",
+        "sourceSha256": "05f143da1acf161457b9883d7c7e6270fd02e1d8c69b59cff8d705636fb2d8ae",
+        "rowSha256": "199c1faac52eb879bec01a79e5fbf93cf1c7f59746f9e731292feb20e281d067",
+        "evidence": "(1) Il est interdit de vendre un aliment qui, selon le cas :a) contient une substance toxique ou délétère, ou en est recouvert;b) est impropre à la consommation humaine;c) est composé, en tout ou en partie, d’une substance malpropre, putride, dégoûtante, pourrie, décomposée ou provenant d’animaux malades ou de végétaux malsains;d) est falsifié;e) a été fabriqué, préparé, conservé, emballé ou emmag",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "F-27-5-en",
+      "pairId": "F-27-5",
+      "group": "act:F-27",
+      "split": "holdout",
+      "language": "en",
+      "question": "What federal rule forbids misleading labels and advertisements about the composition or safety of food?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-234080"
+        ],
+        "act": "Food and Drugs Act",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/F-27.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/F-27.xml",
+        "sourceSha256": "a8d4f5f28b767201a6d0192b65d2aca63fecda46f0b55dbfa7017913ca655cc7",
+        "rowSha256": "4fc4348643467a4ca0cbe497c93a4abbd0f67644cf3b2154d3a99b578e75fe38",
+        "evidence": "(1) No person shall label, package, treat, process, sell or advertise any food in a manner that is false, misleading or deceptive or is likely to create an erroneous impression regarding its character, value, quantity, composition, merit or safety.(2) An article of food that is not labelled or packaged as required by, or is labelled or packaged contrary to, the regulations shall be deemed to be la",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "F-27-5-fr",
+      "pairId": "F-27-5",
+      "group": "act:F-27",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelle règle fédérale interdit les étiquettes et les publicités trompeuses sur la composition ou la sûreté des aliments?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-228219"
+        ],
+        "act": "Loi sur les aliments et drogues",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/F-27.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/F-27.xml",
+        "sourceSha256": "05f143da1acf161457b9883d7c7e6270fd02e1d8c69b59cff8d705636fb2d8ae",
+        "rowSha256": "c44898cd9e9894f8eb06884a8e9f581b26ed002db79e45e3e98517e5b142c6b8",
+        "evidence": "(1) Il est interdit d’étiqueter, d’emballer, de traiter, de préparer ou de vendre un aliment — ou d’en faire la publicité — de manière fausse, trompeuse ou mensongère ou susceptible de créer une fausse impression quant à sa nature, sa valeur, sa quantité, sa composition, ses avantages ou sa sûreté.(2) L’aliment qui n’est pas étiqueté ou emballé ainsi que l’exigent les règlements ou dont l’étiqueta",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "O-3.01-16-en",
+      "pairId": "O-3.01-16",
+      "group": "act:O-3.01",
+      "split": "holdout",
+      "language": "en",
+      "question": "Must a federal judge understand the official language chosen for a hearing without an interpreter?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-384240"
+        ],
+        "act": "Official Languages Act",
+        "section": "16"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/O-3.01.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/O-3.01.xml",
+        "sourceSha256": "ea6589d1d7b2f6fc0398c45dba56fc1a378e801b17b851b2d92196ddb0b5adee",
+        "rowSha256": "9f2dc4556a67354be3c52191834799995f55bbd5b2afa833ed4015083a7ef1cf",
+        "evidence": "(1) Every federal court has the duty to ensure that(a) if English is the language chosen by the parties for proceedings conducted before it in any particular case, every judge or other officer who hears those proceedings is able to understand English without the assistance of an interpreter;(b) if French is the language chosen by the parties for proceedings conducted before it in any particular ca",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "O-3.01-16-fr",
+      "pairId": "O-3.01-16",
+      "group": "act:O-3.01",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Un juge fédéral doit-il comprendre sans interprète la langue officielle choisie pour l’audience?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-375023"
+        ],
+        "act": "Loi sur les langues officielles",
+        "section": "16"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/O-3.01.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/O-3.01.xml",
+        "sourceSha256": "e8e26579dc5b228e26f5b007fa16e16ffa6dcf1c83794b7be1ec5e8fe495a764",
+        "rowSha256": "19ffc23367257fedf311e8d8560da744928640c3bfcf45938100f6f4d8f7d52c",
+        "evidence": "(1) Il incombe aux tribunaux fédéraux de veiller à ce que celui qui entend l’affaire :a) comprenne l’anglais sans l’aide d’un interprète lorsque les parties ont opté pour que l’affaire ait lieu en anglais;b) comprenne le français sans l’aide d’un interprète lorsque les parties ont opté pour que l’affaire ait lieu en français;c) comprenne l’anglais et le français sans l’aide d’un interprète lorsque",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "O-3.01-20-en",
+      "pairId": "O-3.01-20",
+      "group": "act:O-3.01",
+      "split": "holdout",
+      "language": "en",
+      "question": "When must a federal court make a final judgment available simultaneously in both official languages?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-384268"
+        ],
+        "act": "Official Languages Act",
+        "section": "20"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/O-3.01.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/O-3.01.xml",
+        "sourceSha256": "ea6589d1d7b2f6fc0398c45dba56fc1a378e801b17b851b2d92196ddb0b5adee",
+        "rowSha256": "2dc18e53a82e9b4514ab055ff38df17a2a0ae2dbd361bdec8e16e17b31962688",
+        "evidence": "(1) Any final decision, order or judgment, including any reasons given therefor, issued by any federal court shall be made available simultaneously in both official languages where(a) the decision, order or judgment determines a question of law of general public interest or importance;(a.1) the decision, order or judgment has precedential value; or(b) the proceedings leading to its issuance were c",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "O-3.01-20-fr",
+      "pairId": "O-3.01-20",
+      "group": "act:O-3.01",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quand un tribunal fédéral doit-il rendre un jugement définitif simultanément dans les deux langues officielles?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-375049"
+        ],
+        "act": "Loi sur les langues officielles",
+        "section": "20"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/O-3.01.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/O-3.01.xml",
+        "sourceSha256": "e8e26579dc5b228e26f5b007fa16e16ffa6dcf1c83794b7be1ec5e8fe495a764",
+        "rowSha256": "1dec1eacced8a84fb7a4c1408981354c4192c5d342ef78a2e125580632dfce65",
+        "evidence": "(1) Les décisions définitives — exposé des motifs compris — des tribunaux fédéraux sont simultanément mises à la disposition du public dans les deux langues officielles :a) si le point de droit en litige présente de l’intérêt ou de l’importance pour celui-ci;a.1) si elles ont valeur de précédent;b) lorsque les débats se sont déroulés, en tout ou en partie, dans les deux langues officielles, ou que",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "T-13-6-en",
+      "pairId": "T-13-6",
+      "group": "act:T-13",
+      "split": "holdout",
+      "language": "en",
+      "question": "How does the Trademarks Act determine whether use of two trademarks would cause confusion?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-450196"
+        ],
+        "act": "Trademarks Act",
+        "section": "6"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/T-13.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/T-13.xml",
+        "sourceSha256": "2cbdb44e272b3531bed39eba395a419bab05de017fe0b9df8677d168c300ff30",
+        "rowSha256": "d2663aafc9755c21d3af75c6d4c7960a1a745860633b6492dad280df8f581884",
+        "evidence": "(1) For the purposes of this Act, a trademark or trade name is confusing with another trademark or trade name if the use of the first mentioned trademark or trade name would cause confusion with the last mentioned trademark or trade name in the manner and circumstances described in this section.(2) The use of a trademark causes confusion with another trademark if the use of both trademarks in the ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "T-13-6-fr",
+      "pairId": "T-13-6",
+      "group": "act:T-13",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Comment la Loi sur les marques de commerce détermine-t-elle si l’emploi de deux marques crée de la confusion?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-439637"
+        ],
+        "act": "Loi sur les marques de commerce",
+        "section": "6"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/T-13.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/T-13.xml",
+        "sourceSha256": "11087852ae006fc044e3bdf28256b72044a2cb2fed0e66af985e64bd6e72d5bc",
+        "rowSha256": "631bd71044e1f156a807f52ab5a82a5bacec0b0deee007fb30b40586f09fd775",
+        "evidence": "(1) Pour l’application de la présente loi, une marque de commerce ou un nom commercial crée de la confusion avec une autre marque de commerce ou un autre nom commercial si l’emploi de la marque de commerce ou du nom commercial en premier lieu mentionnés cause de la confusion avec la marque de commerce ou le nom commercial en dernier lieu mentionnés, de la manière et dans les circonstances décrites",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "T-13-19-en",
+      "pairId": "T-13-19",
+      "group": "act:T-13",
+      "split": "holdout",
+      "language": "en",
+      "question": "What exclusive nationwide right does registration of a trademark confer for its goods or services?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-1145191"
+        ],
+        "act": "Trademarks Act",
+        "section": "19"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/T-13.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/T-13.xml",
+        "sourceSha256": "2cbdb44e272b3531bed39eba395a419bab05de017fe0b9df8677d168c300ff30",
+        "rowSha256": "2273851f05ae49fa176a0095109f89fe4cc6dc5486aafa6a8b3933a0486bebbc",
+        "evidence": "Subject to sections 21, 32 and 67, the registration of a trademark in respect of any goods or services, unless shown to be invalid, gives to the owner of the trademark the exclusive right to the use throughout Canada of the trademark in respect of those goods or services.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "T-13-19-fr",
+      "pairId": "T-13-19",
+      "group": "act:T-13",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quel droit exclusif dans tout le Canada l’enregistrement d’une marque confère-t-il à l’égard de ses produits ou services?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-440133"
+        ],
+        "act": "Loi sur les marques de commerce",
+        "section": "19"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/T-13.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/T-13.xml",
+        "sourceSha256": "11087852ae006fc044e3bdf28256b72044a2cb2fed0e66af985e64bd6e72d5bc",
+        "rowSha256": "d5cf2276c1e484e676f2560410af1dce04a35dd9e438420f37e3dcde549b08b5",
+        "evidence": "Sous réserve des articles 21, 32 et 67, l’enregistrement d’une marque de commerce à l’égard de produits ou services, sauf si son invalidité est démontrée, donne au propriétaire le droit exclusif à l’emploi de celle-ci, dans tout le Canada, en ce qui concerne ces produits ou services.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "Y-1.5-3-en",
+      "pairId": "Y-1.5-3",
+      "group": "act:Y-1.5",
+      "split": "holdout",
+      "language": "en",
+      "question": "What principles require the youth criminal justice system to be separate from the adult system?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-470163"
+        ],
+        "act": "Youth Criminal Justice Act",
+        "section": "3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/Y-1.5.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/Y-1.5.xml",
+        "sourceSha256": "1316b66c4de3b0417e043506b2e1e1c4f522e437389591b7d505cad69981f3e4",
+        "rowSha256": "44198d936159b359cdbb9adfd53b31ec531d8b6a461be41dc49cb96df09ca217",
+        "evidence": "(1) The following principles apply in this Act:(a) the youth criminal justice system is intended to protect the public by(i) holding young persons accountable through measures that are proportionate to the seriousness of the offence and the degree of responsibility of the young person,(ii) promoting the rehabilitation and reintegration of young persons who have committed offences, and(iii) support",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "Y-1.5-3-fr",
+      "pairId": "Y-1.5-3",
+      "group": "act:Y-1.5",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quels principes exigent que le système de justice pénale pour adolescents soit distinct du système pour adultes?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-459038"
+        ],
+        "act": "Loi sur le système de justice pénale pour les adolescents",
+        "section": "3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/Y-1.5.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/Y-1.5.xml",
+        "sourceSha256": "20e2f333bd1038d458f79248c0a5c47130be8f53edeaa9a66a3867e2bd9caf3d",
+        "rowSha256": "f064095fa2a9edcaaadb62449805f43abbc7c2178acd9022b2bf0ed423644618",
+        "evidence": "(1) Les principes suivants s’appliquent à la présente loi :a) le système de justice pénale pour adolescents vise à protéger le public de la façon suivante :(i) obliger les adolescents à répondre de leurs actes au moyen de mesures proportionnées à la gravité de l’infraction et au degré de responsabilité,(ii) favoriser la réadaptation et la réinsertion sociale des adolescents ayant commis des infrac",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "Y-1.5-146-en",
+      "pairId": "Y-1.5-146",
+      "group": "act:Y-1.5",
+      "split": "holdout",
+      "language": "en",
+      "question": "Before a detained person under eighteen gives a statement, what explanations and access to counsel are required for admissibility?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-472033"
+        ],
+        "act": "Youth Criminal Justice Act",
+        "section": "146"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/Y-1.5.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/Y-1.5.xml",
+        "sourceSha256": "1316b66c4de3b0417e043506b2e1e1c4f522e437389591b7d505cad69981f3e4",
+        "rowSha256": "7a807463d18ce31d302cae390527f755e4312be3175ab39e0f4e8f3f188a7ccb",
+        "evidence": "(1) Subject to this section, the law relating to the admissibility of statements made by persons accused of committing offences applies in respect of young persons.(2) No oral or written statement made by a young person who is less than eighteen years old, to a peace officer or to any other person who is, in law, a person in authority, on the arrest or detention of the young person or in circumsta",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "Y-1.5-146-fr",
+      "pairId": "Y-1.5-146",
+      "group": "act:Y-1.5",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Avant qu’un adolescent détenu de moins de dix-huit ans fasse une déclaration, quelles explications et quel accès à un avocat sont exigés pour son admissibilité?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-460852"
+        ],
+        "act": "Loi sur le système de justice pénale pour les adolescents",
+        "section": "146"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/Y-1.5.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/Y-1.5.xml",
+        "sourceSha256": "20e2f333bd1038d458f79248c0a5c47130be8f53edeaa9a66a3867e2bd9caf3d",
+        "rowSha256": "f8aaf3dac4cfc9762dd203dbd9a777cf07acdcaae9b1e1427d0f5774f165afad",
+        "evidence": "(1) Sous réserve des autres dispositions du présent article, les règles de droit concernant l’admissibilité des déclarations faites par des personnes inculpées s’appliquent aux adolescents.(2) La déclaration orale ou écrite faite par l’adolescent de moins de dix-huit ans à un agent de la paix, ou à toute autre personne en autorité d’après la loi, au moment de son arrestation ou de sa détention ou ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "S-15.3-32-en",
+      "pairId": "S-15.3-32",
+      "group": "act:S-15.3",
+      "split": "holdout",
+      "language": "en",
+      "question": "What federal prohibition applies to killing, harming or trading individuals of listed threatened wildlife species?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-434770"
+        ],
+        "act": "Species at Risk Act",
+        "section": "32"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/S-15.3.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/S-15.3.xml",
+        "sourceSha256": "8e1c6b88732ef147000a854543f9327b57c2976b0482924bf15de983b16a11e1",
+        "rowSha256": "5dd012457620ce530512431086bbdd32345ce9265304adebe231b39a995880a5",
+        "evidence": "(1) No person shall kill, harm, harass, capture or take an individual of a wildlife species that is listed as an extirpated species, an endangered species or a threatened species.(2) No person shall possess, collect, buy, sell or trade an individual of a wildlife species that is listed as an extirpated species, an endangered species or a threatened species, or any part or derivative of such an ind",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "S-15.3-32-fr",
+      "pairId": "S-15.3-32",
+      "group": "act:S-15.3",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelle interdiction fédérale vise le fait de tuer, de blesser ou de vendre des individus d’espèces sauvages inscrites comme menacées?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-424549"
+        ],
+        "act": "Loi sur les espèces en péril",
+        "section": "32"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/S-15.3.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/S-15.3.xml",
+        "sourceSha256": "d2cb7458514f711f5ff0ff64687ca8f69d7692beda8c9ec626a49a0cbb580d6e",
+        "rowSha256": "c462765306c8061471de3e09032acbfa2329a28e5228f8dedfe180f2f3ec2e67",
+        "evidence": "(1) Il est interdit de tuer un individu d’une espèce sauvage inscrite comme espèce disparue du pays, en voie de disparition ou menacée, de lui nuire, de le harceler, de le capturer ou de le prendre.(2) Il est interdit de posséder, de collectionner, d’acheter, de vendre ou d’échanger un individu — notamment partie d’un individu ou produit qui en provient — d’une espèce sauvage inscrite comme espèce",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "S-15.3-33-en",
+      "pairId": "S-15.3-33",
+      "group": "act:S-15.3",
+      "split": "holdout",
+      "language": "en",
+      "question": "What does the Species at Risk Act prohibit concerning the residence of an endangered or threatened species?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-434777"
+        ],
+        "act": "Species at Risk Act",
+        "section": "33"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/S-15.3.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/S-15.3.xml",
+        "sourceSha256": "8e1c6b88732ef147000a854543f9327b57c2976b0482924bf15de983b16a11e1",
+        "rowSha256": "29ad9045b59b7c2a9acecb04157273f182110cce81655051004ffdf392c1a755",
+        "evidence": "No person shall damage or destroy the residence of one or more individuals of a wildlife species that is listed as an endangered species or a threatened species, or that is listed as an extirpated species if a recovery strategy has recommended the reintroduction of the species into the wild in Canada.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "S-15.3-33-fr",
+      "pairId": "S-15.3-33",
+      "group": "act:S-15.3",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Qu’interdit la Loi sur les espèces en péril à l’égard de la résidence d’une espèce en voie de disparition ou menacée?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-424556"
+        ],
+        "act": "Loi sur les espèces en péril",
+        "section": "33"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/S-15.3.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/S-15.3.xml",
+        "sourceSha256": "d2cb7458514f711f5ff0ff64687ca8f69d7692beda8c9ec626a49a0cbb580d6e",
+        "rowSha256": "fbb721cd995bddafe13f569eded499d006e72f3f73cbc1ecff2c76bb0335cddc",
+        "evidence": "Il est interdit d’endommager ou de détruire la résidence d’un ou de plusieurs individus soit d’une espèce sauvage inscrite comme espèce en voie de disparition ou menacée, soit d’une espèce sauvage inscrite comme espèce disparue du pays dont un programme de rétablissement a recommandé la réinsertion à l’état sauvage au Canada.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "P-21-4-en",
+      "pairId": "P-21-4",
+      "group": "act:P-21",
+      "split": "calibration",
+      "language": "en",
+      "question": "Under the Privacy Act, when may a federal institution collect personal information?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-397236"
+        ],
+        "act": "Privacy Act",
+        "section": "4"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/P-21.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/P-21.xml",
+        "sourceSha256": "0907294f18c87ff288b46612fe9640f394442414f588f32ed45bc2d499ee6b75",
+        "rowSha256": "a8e5bb00ce70e815d6786044b0d4e2e978accdb253d3c5522b6335be21dbc586",
+        "evidence": "No personal information shall be collected by a government institution unless it relates directly to an operating program or activity of the institution.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "P-21-4-fr",
+      "pairId": "P-21-4",
+      "group": "act:P-21",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Selon la Loi sur la protection des renseignements personnels, quand une institution fédérale peut-elle recueillir des renseignements personnels?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-387743"
+        ],
+        "act": "Loi sur la protection des renseignements personnels",
+        "section": "4"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/P-21.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/P-21.xml",
+        "sourceSha256": "6462df2d97591ab16502c3556ed1ac2f8947d1fa1b1deba02cb40ac53f4d9f94",
+        "rowSha256": "5f195d10816430c5a7b64fed5e7a29849818cd10518ba4a68028c9d7a0f9b7f6",
+        "evidence": "Les seuls renseignements personnels que peut recueillir une institution fédérale sont ceux qui ont un lien direct avec ses programmes ou ses activités.",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "P-21-8-en",
+      "pairId": "P-21-8",
+      "group": "act:P-21",
+      "split": "calibration",
+      "language": "en",
+      "question": "Under the Privacy Act, when may a federal institution disclose personal information without consent?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-397267"
+        ],
+        "act": "Privacy Act",
+        "section": "8"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/P-21.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/P-21.xml",
+        "sourceSha256": "0907294f18c87ff288b46612fe9640f394442414f588f32ed45bc2d499ee6b75",
+        "rowSha256": "6a575a64d6302014ed4c5d7529bcd8ae2f175b761adbae3d995952d15462393c",
+        "evidence": "(1) Personal information under the control of a government institution shall not, without the consent of the individual to whom it relates, be disclosed by the institution except in accordance with this section.(2) Subject to any other Act of Parliament, personal information under the control of a government institution may be disclosed(a) for the purpose for which the information was obtained or ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "P-21-8-fr",
+      "pairId": "P-21-8",
+      "group": "act:P-21",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Selon la Loi sur la protection des renseignements personnels, quand une institution fédérale peut-elle communiquer des renseignements personnels sans consentement?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-387774"
+        ],
+        "act": "Loi sur la protection des renseignements personnels",
+        "section": "8"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/P-21.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/P-21.xml",
+        "sourceSha256": "6462df2d97591ab16502c3556ed1ac2f8947d1fa1b1deba02cb40ac53f4d9f94",
+        "rowSha256": "4c29d0018ae23e86d23e1d4d0abe1598adf961e5de0aba28b8518b56c21b90b1",
+        "evidence": "(1) Les renseignements personnels qui relèvent d’une institution fédérale ne peuvent être communiqués, à défaut du consentement de l’individu qu’ils concernent, que conformément au présent article.(2) Sous réserve d’autres lois fédérales, la communication des renseignements personnels qui relèvent d’une institution fédérale est autorisée dans les cas suivants :a) communication aux fins auxquelles ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-46-322-en",
+      "pairId": "C-46-322",
+      "group": "act:C-46",
+      "split": "calibration",
+      "language": "en",
+      "question": "Which Criminal Code provision defines theft?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-121704"
+        ],
+        "act": "Criminal Code",
+        "section": "322"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-46.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-46.xml",
+        "sourceSha256": "acfbc183b0281f0e2817193a002a4a1893bb15abf8ebef5e761d3657b794e518",
+        "rowSha256": "e3a1157ee7092c704586cd39a50f45f3c01086fbb7cb66f9e6f0d48150a78d59",
+        "evidence": "(1) Every one commits theft who fraudulently and without colour of right takes, or fraudulently and without colour of right converts to his use or to the use of another person, anything, whether animate or inanimate, with intent(a) to deprive, temporarily or absolutely, the owner of it, or a person who has a special property or interest in it, of the thing or of his property or interest in it;(b) ",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-46-322-fr",
+      "pairId": "C-46-322",
+      "group": "act:C-46",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Quelle disposition du Code criminel définit le vol?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-118490"
+        ],
+        "act": "Code criminel",
+        "section": "322"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-46.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-46.xml",
+        "sourceSha256": "b55a7f16c667b5fbe3c6ba37d79570391e8e50f2bdde1f5c5dcf66c91831a679",
+        "rowSha256": "5504859997a5cd367d14d75071bdd7c42508ccf1474a430950279dd2f550ef95",
+        "evidence": "(1) Commet un vol quiconque prend frauduleusement et sans apparence de droit, ou détourne à son propre usage ou à l’usage d’une autre personne, frauduleusement et sans apparence de droit, une chose quelconque, animée ou inanimée, avec l’intention :a) soit de priver, temporairement ou absolument, son propriétaire, ou une personne y ayant un droit de propriété spécial ou un intérêt spécial, de cette",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-46-334-en",
+      "pairId": "C-46-334",
+      "group": "act:C-46",
+      "split": "calibration",
+      "language": "en",
+      "question": "What punishments does the Criminal Code prescribe for theft above and below five thousand dollars?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-121802"
+        ],
+        "act": "Criminal Code",
+        "section": "334"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-46.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-46.xml",
+        "sourceSha256": "acfbc183b0281f0e2817193a002a4a1893bb15abf8ebef5e761d3657b794e518",
+        "rowSha256": "631056cd6900d1c04b53c6c0f0711804b6e16d74a024bef284840e1699b8943c",
+        "evidence": "Except where otherwise provided by law, every one who commits theft(a) if the property stolen is a testamentary instrument or the value of what is stolen is more than $5,000, is guilty of(i) an indictable offence and liable to imprisonment for a term of not more than 10 years, or(ii) an offence punishable on summary conviction; or(b) if the value of what is stolen is not more than $5,000, is guilt",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "C-46-334-fr",
+      "pairId": "C-46-334",
+      "group": "act:C-46",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Quelles peines le Code criminel prévoit-il pour le vol selon que la valeur dépasse ou non cinq mille dollars?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-118588"
+        ],
+        "act": "Code criminel",
+        "section": "334"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-46.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-46.xml",
+        "sourceSha256": "b55a7f16c667b5fbe3c6ba37d79570391e8e50f2bdde1f5c5dcf66c91831a679",
+        "rowSha256": "6dd85cf3c7b539d3fb70231fc707961b55dbaa51db44ce90ac94145abe277fe6",
+        "evidence": "Sauf disposition contraire des lois, quiconque commet un vol :a) si le bien volé est un acte testamentaire ou si la valeur de ce qui est volé dépasse cinq mille dollars, est coupable :(i) soit d’un acte criminel passible d’un emprisonnement maximal de dix ans,(ii) soit d’une infraction punissable sur déclaration de culpabilité par procédure sommaire;b) si la valeur de ce qui est volé ne dépasse pa",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "E-2.01-8-en",
+      "pairId": "E-2.01-8",
+      "group": "act:E-2.01",
+      "split": "calibration",
+      "language": "en",
+      "question": "Under the Canada Elections Act, what is the place of ordinary residence?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-203599"
+        ],
+        "act": "Canada Elections Act",
+        "section": "8"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/E-2.01.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/E-2.01.xml",
+        "sourceSha256": "4dfc0f1cbe0a06a0f4cbbe5c86da733e73a4c4c054dca309635fc59601c73846",
+        "rowSha256": "ec2f9d4e845d83455d9e0fa6d5954d3bfa0cf297c602df876ed0feb4ef0ad6ef",
+        "evidence": "(1) The place of ordinary residence of a person is the place that has always been, or that has been adopted as, his or her dwelling place, and to which the person intends to return when away from it.(2) A person can have only one place of ordinary residence and it cannot be lost until another is gained.(2.1) The place of ordinary residence of a person who resides outside Canada is their last place",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "E-2.01-8-fr",
+      "pairId": "E-2.01-8",
+      "group": "act:E-2.01",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Selon la Loi électorale du Canada, quel est le lieu de résidence habituelle?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-198356"
+        ],
+        "act": "Loi électorale du Canada",
+        "section": "8"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/E-2.01.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/E-2.01.xml",
+        "sourceSha256": "70d2723984ca00edce745a9954417cfddb13b26b1ab16594c4c75797991d8322",
+        "rowSha256": "2260870f710128b75b18f4cfdcdf70fc40ec1e8878b7bc010a9640bbccd8e85c",
+        "evidence": "(1) Le lieu de résidence habituelle d’une personne est l’endroit qui a toujours été, ou qu’elle a adopté comme étant, son lieu d’habitation ou sa demeure, où elle entend revenir après une absence.(2) Une personne ne peut avoir qu’un seul lieu de résidence habituelle; elle ne peut le perdre que si elle en acquiert un autre.(2.1) Le lieu de résidence habituelle de la personne qui réside à l’étranger",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "E-2.01-24-en",
+      "pairId": "E-2.01-24",
+      "group": "act:E-2.01",
+      "split": "calibration",
+      "language": "en",
+      "question": "Who appoints the returning officer for each electoral district under the Canada Elections Act?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-203894"
+        ],
+        "act": "Canada Elections Act",
+        "section": "24"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/E-2.01.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/E-2.01.xml",
+        "sourceSha256": "4dfc0f1cbe0a06a0f4cbbe5c86da733e73a4c4c054dca309635fc59601c73846",
+        "rowSha256": "b6e704cdc59ac7cf6fd8fda3f7781d79ec87334be2903f0479f3afb33db2aab7",
+        "evidence": "(1) The Chief Electoral Officer shall appoint a returning officer for each electoral district in accordance with the process established under subsection (1.1) and may only remove him or her in accordance with the procedure established under that subsection.(1.1) The Chief Electoral Officer shall prescribe the qualifications for the appointment of persons as returning officers, and shall establish",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "E-2.01-24-fr",
+      "pairId": "E-2.01-24",
+      "group": "act:E-2.01",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Qui nomme le directeur du scrutin de chaque circonscription selon la Loi électorale du Canada?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-198647"
+        ],
+        "act": "Loi électorale du Canada",
+        "section": "24"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/E-2.01.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/E-2.01.xml",
+        "sourceSha256": "70d2723984ca00edce745a9954417cfddb13b26b1ab16594c4c75797991d8322",
+        "rowSha256": "fb157a4ae9b49154f42d0379fe9d3bfd44171edbb9656a4e16873de51f83b5b3",
+        "evidence": "(1) Le directeur général des élections nomme un directeur du scrutin pour chaque circonscription conformément au processus établi au titre du paragraphe (1.1); il ne peut le révoquer que conformément à la procédure établie au titre de ce paragraphe.(1.1) Le directeur général des élections précise les qualifications requises pour le poste de directeur du scrutin et établit un processus de nominatio",
+        "annotation": "Both language texts inspected; row identifier and evidence verified using the serving ingestion parser. Target corpus presence is checked separately at run time."
+      }
+    },
+    {
+      "id": "unsupported-weather-en",
+      "pairId": "unsupported-weather",
+      "group": "authority:weather",
+      "split": "calibration",
+      "language": "en",
+      "question": "What will the weather in Ottawa be tomorrow?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "weather forecast",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-weather-fr",
+      "pairId": "unsupported-weather",
+      "group": "authority:weather",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Quel temps fera-t-il à Ottawa demain?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "weather forecast",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-ontario-tenancy-en",
+      "pairId": "unsupported-ontario-tenancy",
+      "group": "authority:ontario-tenancy",
+      "split": "calibration",
+      "language": "en",
+      "question": "Under Ontario’s Residential Tenancies Act, how much notice must a landlord give to terminate my lease?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "provincial statute explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-ontario-tenancy-fr",
+      "pairId": "unsupported-ontario-tenancy",
+      "group": "authority:ontario-tenancy",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Selon la Loi ontarienne sur la location à usage d’habitation, quel préavis mon propriétaire doit-il donner pour résilier mon bail?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "provincial statute explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-jordan-holding-en",
+      "pairId": "unsupported-jordan-holding",
+      "group": "authority:jordan-holding",
+      "split": "calibration",
+      "language": "en",
+      "question": "What did the Supreme Court of Canada decide in R v Jordan about delay ceilings?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "court reasons explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-jordan-holding-fr",
+      "pairId": "unsupported-jordan-holding",
+      "group": "authority:jordan-holding",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Qu’a décidé la Cour suprême du Canada dans R c Jordan au sujet des plafonds de délai?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "court reasons explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-us-patent-en",
+      "pairId": "unsupported-us-patent",
+      "group": "authority:us-patent",
+      "split": "calibration",
+      "language": "en",
+      "question": "Under United States patent law, when must I file a patent application?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "foreign law explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-us-patent-fr",
+      "pairId": "unsupported-us-patent",
+      "group": "authority:us-patent",
+      "split": "calibration",
+      "language": "fr",
+      "question": "Selon le droit des brevets des États-Unis, quand dois-je déposer une demande de brevet?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "foreign law explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-bc-tenancy-fee-en",
+      "pairId": "unsupported-bc-tenancy-fee",
+      "group": "authority:bc-tenancy-fee",
+      "split": "holdout",
+      "language": "en",
+      "question": "What filing fee does British Columbia’s Residential Tenancy Branch currently publish on its website?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current provincial administrative webpage amount",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-bc-tenancy-fee-fr",
+      "pairId": "unsupported-bc-tenancy-fee",
+      "group": "authority:bc-tenancy-fee",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quels frais de dépôt la Residential Tenancy Branch de la Colombie-Britannique affiche-t-elle actuellement sur son site?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current provincial administrative webpage amount",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-toronto-parking-en",
+      "pairId": "unsupported-toronto-parking",
+      "group": "authority:toronto-parking",
+      "split": "holdout",
+      "language": "en",
+      "question": "What fine does the City of Toronto currently publish for parking on a snow route?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current municipal amount",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-toronto-parking-fr",
+      "pairId": "unsupported-toronto-parking",
+      "group": "authority:toronto-parking",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelle amende la Ville de Toronto affiche-t-elle actuellement pour le stationnement sur une route de déneigement?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current municipal amount",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-quebec-civil-code-en",
+      "pairId": "unsupported-quebec-civil-code",
+      "group": "authority:quebec-civil-code",
+      "split": "holdout",
+      "language": "en",
+      "question": "Under the Civil Code of Québec, what notice must a landlord give for a rent increase?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "provincial code explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-quebec-civil-code-fr",
+      "pairId": "unsupported-quebec-civil-code",
+      "group": "authority:quebec-civil-code",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Selon le Code civil du Québec, quel avis un locateur doit-il donner pour augmenter le loyer?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "provincial code explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-uk-wage-en",
+      "pairId": "unsupported-uk-wage",
+      "group": "authority:uk-wage",
+      "split": "holdout",
+      "language": "en",
+      "question": "What hourly minimum wage does the United Kingdom government currently display on its website?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "foreign administrative amount",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-uk-wage-fr",
+      "pairId": "unsupported-uk-wage",
+      "group": "authority:uk-wage",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quel salaire minimum horaire le gouvernement du Royaume-Uni affiche-t-il actuellement sur son site?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "foreign administrative amount",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-boc-announcement-en",
+      "pairId": "unsupported-boc-announcement",
+      "group": "authority:boc-announcement",
+      "split": "holdout",
+      "language": "en",
+      "question": "What target for the overnight interest rate did the Bank of Canada announce most recently?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current monetary policy announcement",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-boc-announcement-fr",
+      "pairId": "unsupported-boc-announcement",
+      "group": "authority:boc-announcement",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelle cible du taux du financement à un jour la Banque du Canada a-t-elle annoncée le plus récemment?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current monetary policy announcement",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-vavilov-holding-en",
+      "pairId": "unsupported-vavilov-holding",
+      "group": "authority:vavilov-holding",
+      "split": "holdout",
+      "language": "en",
+      "question": "What standard of review did the Supreme Court establish in Canada v Vavilov?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "court reasons explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-vavilov-holding-fr",
+      "pairId": "unsupported-vavilov-holding",
+      "group": "authority:vavilov-holding",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelle norme de contrôle la Cour suprême a-t-elle établie dans Canada c Vavilov?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "court reasons explicitly requested",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-federal-wage-page-en",
+      "pairId": "unsupported-federal-wage-page",
+      "group": "authority:federal-wage-page",
+      "split": "holdout",
+      "language": "en",
+      "question": "What hourly federal minimum wage amount is displayed on Employment and Social Development Canada’s webpage today?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current webpage amount, not the statutory rule or indexing formula",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-federal-wage-page-fr",
+      "pairId": "unsupported-federal-wage-page",
+      "group": "authority:federal-wage-page",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quel montant du salaire minimum fédéral horaire est affiché aujourd’hui sur la page d’Emploi et Développement social Canada?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current webpage amount, not the statutory rule or indexing formula",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-statscan-population-en",
+      "pairId": "unsupported-statscan-population",
+      "group": "authority:statscan-population",
+      "split": "holdout",
+      "language": "en",
+      "question": "What is the latest population estimate published by Statistics Canada for Ottawa?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current statistical publication",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "unsupported-statscan-population-fr",
+      "pairId": "unsupported-statscan-population",
+      "group": "authority:statscan-population",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelle est la plus récente estimation de la population d’Ottawa publiée par Statistique Canada?",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "current statistical publication",
+        "annotation": "The question expressly asks for a non-statutory source, foreign/provincial/municipal authority or a current publication. This is a retrieval scope label, not a claim about the content of that external source."
+      }
+    },
+    {
+      "id": "ambiguous-hst-en",
+      "pairId": "ambiguous-hst",
+      "group": "authority:ambiguous-hst",
+      "split": "holdout",
+      "language": "en",
+      "question": "What is the HST rate in Ontario?",
+      "answerable": false,
+      "status": "unverified",
+      "provenance": {
+        "kind": "pending-review",
+        "evidence": "Do not assume that a rate is absent from federal statutes. Verify the relevant Excise Tax Act schedules before admitting this label."
+      }
+    },
+    {
+      "id": "ambiguous-hst-fr",
+      "pairId": "ambiguous-hst",
+      "group": "authority:ambiguous-hst",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quel est le taux de TVH en Ontario?",
+      "answerable": false,
+      "status": "unverified",
+      "provenance": {
+        "kind": "pending-review",
+        "evidence": "Do not assume that a rate is absent from federal statutes. Verify the relevant Excise Tax Act schedules before admitting this label."
+      }
+    }
+  ]
+}

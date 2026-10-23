@@ -47,10 +47,13 @@
  * So a range is decoded to bytes, each row is cut out by its byte offset, and
  * only then is that row decoded to text.
  */
+import { createHash } from 'node:crypto';
+import { fingerprint } from './reconcile';
 import type { PipelineRow } from './pipeline';
 import type { SnapshotIndexEntry } from './snapshot-diff';
 import {
   locate,
+  IndexDigester,
   manifestKey,
   parseManifest,
   partStarts,
@@ -226,19 +229,23 @@ export async function* linesOf(chunks: AsyncIterable<Uint8Array>): AsyncGenerato
  */
 export class SnapshotReader implements SnapshotSource {
   private cached: Promise<SnapshotManifest> | null = null;
+  private verified: Promise<void> | null = null;
 
   constructor(
     private readonly bucket: SnapshotBucket,
     readonly revision: string,
+    private readonly options: { parser?: string } = {},
   ) {}
 
   /** What the snapshot is, and where all of it is. */
   async manifest(): Promise<SnapshotManifest> {
     this.cached ??= (async () => {
-      const object = await this.bucket.get(manifestKey(this.revision));
+      const object = await this.bucket.get(manifestKey(this.revision, this.options.parser));
       if (!object) throw new Error(`the snapshot at ${this.revision} has no manifest`);
       const text = new TextDecoder().decode(await object.arrayBuffer());
-      return parseManifest(text, `the manifest of ${this.revision}`);
+      const manifest = parseManifest(text, `the manifest of ${this.revision}`);
+      if (manifest.commit !== this.revision || manifest.parser !== this.options.parser) throw new Error('snapshot manifest revision or parser mismatch');
+      return manifest;
     })();
     return this.cached;
   }
@@ -262,20 +269,70 @@ export class SnapshotReader implements SnapshotSource {
    * builder both write and verify the file sorted by id, and every id is
    * ASCII, so D1's `ORDER BY id` and JavaScript's `<` agree on the order.
    */
-  async *indexEntries(): AsyncGenerator<SnapshotIndexEntry> {
+  private async *rawIndexEntries(): AsyncGenerator<SnapshotIndexEntry> {
     const manifest = await this.manifest();
     const object = await this.bucket.get(manifest.index.key);
     if (!object) throw new Error(`the snapshot at ${this.revision} has no index`);
     const chunks = object.body ? chunksOf(object.body) : single(await object.arrayBuffer());
-    for await (const line of linesOf(chunks)) {
-      if (!line.trim()) continue;
-      yield JSON.parse(line) as SnapshotIndexEntry;
+    let bytes = 0;
+    const sha = createHash('sha256');
+    async function* checkedChunks() {
+      for await (const chunk of chunks) { bytes += chunk.byteLength; sha.update(chunk); yield chunk; }
     }
+    for await (const line of linesOf(checkedChunks())) {
+      if (line.trim()) yield JSON.parse(line) as SnapshotIndexEntry;
+    }
+    if (bytes !== manifest.index.bytes) throw new Error('snapshot index byte count mismatch');
+    if (manifest.index.sha256 && sha.digest('hex') !== manifest.index.sha256) throw new Error('snapshot index SHA-256 mismatch');
+  }
+
+  /** Verify the entire sorted index before any diff can delete or replace rows.
+   * The second pass streams the same immutable revision, never a held map. */
+  private verifyIndex(): Promise<void> {
+    this.verified ??= (async () => {
+      const manifest = await this.manifest();
+      const digest = new IndexDigester();
+      let count = 0;
+      let previous = '';
+      for await (const entry of this.rawIndexEntries()) {
+        if (!entry.id || entry.id <= previous || !entry.fp ||
+          !Number.isSafeInteger(entry.off) || !Number.isSafeInteger(entry.len) || entry.off < 0 || entry.len <= 0 ||
+          entry.off + entry.len > manifest.rows.bytes) throw new Error('snapshot index order, fingerprint or offset is invalid');
+        const { part, local } = locate(manifest, entry.off);
+        if (local + entry.len > manifest.rows.parts[part]!.bytes) throw new Error(`snapshot row crosses a part boundary: ${entry.id}`);
+        previous = entry.id;
+        count++;
+        if (manifest.index.digest) digest.add(entry);
+      }
+      if (count !== manifest.index.entries || count !== manifest.rows.count) throw new Error('snapshot index count mismatch');
+      if (manifest.index.digest && digest.digest() !== manifest.index.digest) throw new Error('snapshot index fingerprint digest mismatch');
+    })();
+    return this.verified;
+  }
+
+  async *indexEntries(): AsyncGenerator<SnapshotIndexEntry> {
+    await this.verifyIndex();
+    yield* this.rawIndexEntries();
+  }
+
+  private checkedRow(bytes: Uint8Array, entry: SnapshotIndexEntry, expectedDate: string): PipelineRow | null {
+    if (bytes.length !== entry.len) throw new Error(`truncated snapshot row: ${entry.id}`);
+    const text = new TextDecoder().decode(bytes).trim();
+    if (!text) return null;
+    const row = JSON.parse(text) as PipelineRow;
+    if (row.id !== entry.id || fingerprint(row) !== entry.fp) throw new Error(`snapshot row identity or fingerprint mismatch: ${entry.id}`);
+    if (row.lastChanged !== expectedDate || !row.corpusId || !['en', 'fr'].includes(row.language) ||
+      /^(acts|regulations)-/.test(row.id) && !new RegExp(`^(acts|regulations)-${row.language}-`).test(row.id)) {
+      throw new Error(`snapshot row date, corpus or language mismatch: ${entry.id}`);
+    }
+    return row;
   }
 
   /** The bytes of one row, out of the part that holds it. */
   private async bytesOf(manifest: SnapshotManifest, offset: number, length: number) {
     const { part, local } = locate(manifest, offset);
+    if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(length) || offset < 0 || length <= 0 ||
+      local + length > manifest.rows.parts[part]!.bytes) throw new Error('snapshot row range crosses its part');
     const object = await this.bucket.get(manifest.rows.parts[part]!.key, {
       range: { offset: local, length },
     });
@@ -289,13 +346,12 @@ export class SnapshotReader implements SnapshotSource {
    * A range request for the row's bytes and nothing else — the offsets are
    * the index's, so the bytes it fetches are exactly the bytes it needs.
    */
-  async row(_id: string, entry: SnapshotIndexEntry): Promise<PipelineRow | null> {
+  async row(id: string, entry: SnapshotIndexEntry): Promise<PipelineRow | null> {
     const manifest = await this.manifest();
     const bytes = await this.bytesOf(manifest, entry.off, entry.len);
     if (!bytes) return null;
-    const text = new TextDecoder().decode(bytes).trim();
-    if (!text) return null;
-    return JSON.parse(text) as PipelineRow;
+    if (id !== entry.id) throw new Error('snapshot row requested with wrong id');
+    return this.checkedRow(bytes, entry, manifest.date);
   }
 
   /**
@@ -334,13 +390,11 @@ export class SnapshotReader implements SnapshotSource {
       if (!object) return;
       // The bytes, not the text: the offsets are byte offsets.
       const bytes = new Uint8Array(await object.arrayBuffer());
-      const decoder = new TextDecoder();
       for (const entry of range.entries) {
         const at = entry.off - range.offset;
         const slice = bytes.subarray(at, at + entry.len);
-        const text = decoder.decode(slice).trim();
-        if (!text) continue;
-        found.set(entry.id, JSON.parse(text) as PipelineRow);
+        const row = this.checkedRow(slice, entry, manifest.date);
+        if (row) found.set(entry.id, row);
       }
     });
 

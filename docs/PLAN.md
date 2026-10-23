@@ -1,5 +1,10 @@
 # CivicSignal — plan
 
+## Current v1 authority
+
+Historical product waves. Current v1 scope and item dispositions appear in V1-RELEASE.md.
+[The v1 release checklist](V1-RELEASE.md) takes precedence over the historical claims below.
+
 > Situational awareness for Canada. One call returns what is in the news about a
 > topic, how coverage tone is moving, which statutes are in force, what bills are
 > moving, and what Parliament has said — every item cited to its official source.

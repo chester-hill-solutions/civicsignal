@@ -1,5 +1,10 @@
 # Retrieval: the vector arm, and where the pieces actually run
 
+## Current v1 authority
+
+Historical comparisons. Current acceptance evidence appears in V1-EVALUATION.md and V1-RELEASE.md.
+[The v1 release checklist](V1-RELEASE.md) takes precedence over the historical claims below.
+
 This is the investigation behind one decision: **does a semantic retrieval arm earn
 its running cost on top of the keyword search the product already has?**
 

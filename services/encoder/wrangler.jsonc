@@ -30,7 +30,9 @@
       "image_vars": {
         "MODEL_REPO": "litert-community/embeddinggemma-2-text-270m-litert-lm",
         "MODEL_FILE": "embeddinggemma-2-text-270m.litertlm",
-        "MODEL_ID": "embeddinggemma-2-270m"
+        "MODEL_ID": "embeddinggemma-2-270m",
+        "MODEL_REVISION": "9be6e8b90982095dc05c2bd162e4b954ee4dbac7",
+        "MODEL_SHA256": "2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb"
       }
     }
   ],

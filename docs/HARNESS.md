@@ -1,5 +1,10 @@
 # The harness
 
+## Current v1 authority
+
+Future harness design. v1 exposes authenticated HTTP and MCP retrieval with BYOK chat; it does not ship this harness.
+[The v1 release checklist](V1-RELEASE.md) takes precedence over the historical claims below.
+
 Why the product embeds OpenCode rather than building a chat interface.
 
 ## The short version

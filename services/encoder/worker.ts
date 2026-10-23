@@ -58,7 +58,7 @@ export class Encoder extends Container<Env> {
   /** The path the runtime health-checks while the container starts. */
   pingEndpoint = 'health';
 
-  constructor(ctx: DurableObject['ctx'], env: Env) {
+  constructor(ctx: ConstructorParameters<typeof Container<Env>>[0], env: Env) {
     super(ctx, env);
 
     // The container's environment is set **here**, and not in `wrangler.jsonc`.

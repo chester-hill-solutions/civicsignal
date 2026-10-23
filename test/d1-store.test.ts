@@ -101,7 +101,7 @@ describe('the D1 corpus store', () => {
 
     await store.upsert([upsert(row('a-1'))]);
 
-    const insert = statements[0]!;
+    const insert = statements.find((statement) => statement.sql.includes("INSERT INTO statute_sections"))!;
     expect(insert.sql).toContain('INSERT INTO statute_sections');
     // The columns the migration creates. A name that is not there is an error
     // the pipeline logs and moves past, and the provision is simply never
@@ -158,7 +158,7 @@ describe('the D1 corpus store', () => {
     // The row's statement was prepared first, and the vector was written after
     // it — a row without a vector is invisible, and a vector without a row is
     // a broken answer.
-    expect(statements.length).toBe(1);
+    expect(statements.filter((statement) => statement.sql.includes("INSERT INTO statute_sections")).length).toBe(1);
     expect(upserts.length).toBe(1);
     expect(upserts[0]!.ids).toEqual(['a-1']);
     expect(upserts[0]!.namespace).toBe('statutes');

@@ -10,5 +10,5 @@ dist/
 # clean checkout has to resolve. The blanket `dist/` above would swallow it, and
 # the package's exports point at `dist/index.js` — so without this the dependency
 # does not exist for anyone who clones the repository.
-!vendor/@chester-hill-solutions/corpus/dist/
-!vendor/@chester-hill-solutions/corpus/dist/**
+!vendor/@chester-hill-solutions/*/dist/
+!vendor/@chester-hill-solutions/*/dist/**

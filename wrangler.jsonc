@@ -11,6 +11,7 @@
   "vars": {
     "PRODUCT_NAME": "CivicSignal",
     "FREE_MONTHLY_ALLOWANCE": "1000",
+    "CORPUS_TEXT_MODE": "d1",
     "PUBLIC_API_BASE_URL": "https://api.civicsignal.chesterhillsolutions.ca"
   },
   "kv_namespaces": [
@@ -25,6 +26,7 @@
       "migrations_dir": "migrations"
     }
   ],
+  "r2_buckets": [{ "binding": "CORPORA", "bucket_name": "civicsignal-corpus" }],
   "durable_objects": {
     "bindings": [{ "name": "API_KEY_USAGE", "class_name": "ApiKeyUsageDO" }]
   },

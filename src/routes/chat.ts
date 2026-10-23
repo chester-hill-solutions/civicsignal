@@ -6,10 +6,11 @@ import {
   type ByokProvider,
   type CitedItem,
 } from '../byok';
-import { buildBrief, type BriefRequest, type BriefResponse } from './brief';
+import { type BriefRequest, type BriefResponse } from './brief';
+import { ENCODER_CONTRACT } from '../encoder';
 import { loadActTitles } from '../corpora/act-titles';
 import { parseCitation } from '@chester-hill-solutions/corpus';
-import { errorResponse, jsonResponse } from '../http';
+import { errorResponse, RequestInputError } from '../http';
 import type { CorpusItem } from '@chester-hill-solutions/corpus';
 import type { Env } from '../types';
 
@@ -28,6 +29,39 @@ import type { Env } from '../types';
 export const BYOK_PROVIDER_HEADER = 'x-civicsignal-byok-provider';
 export const BYOK_KEY_HEADER = 'x-civicsignal-byok-key';
 
+export const CHAT_LIMITS = {
+  messages: 32,
+  messageChars: 8_000,
+  totalChars: 32_000,
+  topicChars: 4_000,
+  maxTokens: 4_096,
+} as const;
+
+function objectBody(body: unknown): Record<string, unknown> {
+  if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+    throw new ChatInputError('The JSON body must be an object.');
+  }
+  return body as Record<string, unknown>;
+}
+
+function optionalText(record: Record<string, unknown>, name: string, maxChars: number): string | undefined {
+  const value = record[name];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || !value.trim() || value.length > maxChars) {
+    throw new ChatInputError(`${name} must be a non-empty string of at most ${maxChars} characters.`);
+  }
+  return value.trim();
+}
+
+function optionalInteger(record: Record<string, unknown>, name: string, maximum: number): number | undefined {
+  const value = record[name];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1 || value > maximum) {
+    throw new ChatInputError(`${name} must be an integer between 1 and ${maximum}.`);
+  }
+  return value;
+}
+
 export interface ChatRequest {
   messages: { role: string; content: string }[];
   topic?: string;
@@ -39,23 +73,45 @@ export interface ChatRequest {
 }
 
 export function parseChatRequest(body: unknown): ChatRequest {
-  const record = (body ?? {}) as Record<string, unknown>;
-  const messages = Array.isArray(record['messages'])
-    ? (record['messages'] as { role?: unknown; content?: unknown }[])
-        .filter((m) => typeof m?.content === 'string' && m.content.length > 0)
-        .map((m) => ({
-          role: m.role === 'assistant' ? 'assistant' : 'user',
-          content: String(m.content),
-        }))
-    : [];
+  const record = objectBody(body);
+  if (!Array.isArray(record['messages']) || record['messages'].length < 1 || record['messages'].length > CHAT_LIMITS.messages) {
+    throw new ChatInputError(`messages must contain between 1 and ${CHAT_LIMITS.messages} messages.`);
+  }
+  let totalChars = 0;
+  const messages = record['messages'].map((message: unknown) => {
+    const item = objectBody(message);
+    if (item['role'] !== 'user' && item['role'] !== 'assistant') {
+      throw new ChatInputError('Each message role must be user or assistant.');
+    }
+    const content = item['content'];
+    if (typeof content !== 'string' || !content.trim() || content.length > CHAT_LIMITS.messageChars) {
+      throw new ChatInputError(`Each message must contain between 1 and ${CHAT_LIMITS.messageChars} characters.`);
+    }
+    totalChars += content.length;
+    return { role: item['role'], content };
+  });
+  if (totalChars > CHAT_LIMITS.totalChars) {
+    throw new ChatInputError(`The conversation must not exceed ${CHAT_LIMITS.totalChars} characters.`);
+  }
+  if (messages.at(-1)?.role !== 'user') {
+    throw new ChatInputError('The last message must be from the user.');
+  }
+  const provider = optionalText(record, 'provider', 32);
+  if (provider && !isByokProvider(provider)) {
+    throw new ChatInputError('Supported providers: anthropic, openai, google.');
+  }
+  const model = optionalText(record, 'model', 200);
+  if (model && !/^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/.test(model)) {
+    throw new ChatInputError('model must be a provider model identifier.');
+  }
   return {
     messages,
-    topic: typeof record['topic'] === 'string' ? record['topic'] : undefined,
-    jurisdiction: typeof record['jurisdiction'] === 'string' ? record['jurisdiction'] : undefined,
-    riding: typeof record['riding'] === 'string' ? record['riding'] : undefined,
-    provider: typeof record['provider'] === 'string' ? record['provider'] : undefined,
-    model: typeof record['model'] === 'string' ? record['model'] : undefined,
-    maxTokens: typeof record['maxTokens'] === 'number' ? record['maxTokens'] : undefined,
+    topic: optionalText(record, 'topic', CHAT_LIMITS.topicChars),
+    jurisdiction: optionalText(record, 'jurisdiction', 128),
+    riding: optionalText(record, 'riding', 128),
+    provider,
+    model,
+    maxTokens: optionalInteger(record, 'maxTokens', CHAT_LIMITS.maxTokens),
   };
 }
 
@@ -130,19 +186,22 @@ export interface ChatDeps {
  * The key is used for exactly one upstream call and goes nowhere else.
  */
 export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<ChatResult> {
+  request = parseChatRequest(request);
   if (!isByokProvider(deps.byokProvider)) {
     throw new ChatInputError(
-      `Unknown provider "${deps.byokProvider}". Supported: anthropic, openai, google.`,
+      'Supported providers: anthropic, openai, google.',
     );
   }
-  if (!deps.byokKey) {
+  if (request.provider && request.provider !== deps.byokProvider) {
+    throw new ChatInputError('The provider in the body must match the BYOK provider header.');
+  }
+  if (!deps.byokKey.trim() || deps.byokKey.length > 4096) {
     throw new ChatInputError('A generation key is required. Send it in the ' + BYOK_KEY_HEADER + ' header.');
   }
-  if (request.messages.length === 0) {
-    throw new ChatInputError('At least one message is required.');
+  const topic = request.topic ?? request.messages.at(-1)!.content;
+  if (topic.length > CHAT_LIMITS.topicChars) {
+    throw new ChatInputError(`The retrieval question must not exceed ${CHAT_LIMITS.topicChars} characters. Supply a shorter topic.`);
   }
-
-  const topic = request.topic ?? request.messages.at(-1)?.content ?? '';
   const brief = await deps.retrieve({
     topic,
     jurisdiction: request.jurisdiction,
@@ -169,7 +228,7 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
 }
 
 /** A problem with the caller's request, as opposed to a failure. */
-export class ChatInputError extends Error {
+export class ChatInputError extends RequestInputError {
   constructor(message: string) {
     super(message);
     this.name = 'ChatInputError';
@@ -185,12 +244,26 @@ export interface MatchRequest {
 }
 
 export function parseMatchRequest(body: unknown): MatchRequest {
-  const record = (body ?? {}) as Record<string, unknown>;
-  const vector = Array.isArray(record['vector']) ? (record['vector'] as unknown[]).map(Number) : [];
+  const record = objectBody(body);
+  const vector = record['vector'];
+  if (!Array.isArray(vector) || vector.length !== ENCODER_CONTRACT.dimensions) {
+    throw new ChatInputError(`vector must contain exactly ${ENCODER_CONTRACT.dimensions} numbers from the published encoder.`);
+  }
+  if (!vector.every((value: unknown) => typeof value === 'number' && Number.isFinite(value))) {
+    throw new ChatInputError('Every vector coordinate must be a finite number.');
+  }
+  const norm = Math.hypot(...vector);
+  if (!Number.isFinite(norm) || norm === 0) {
+    throw new ChatInputError('vector must have a finite non-zero magnitude.');
+  }
+  const corpus = optionalText(record, 'corpus', 64);
+  if (corpus && corpus !== 'statutes-canada') {
+    throw new ChatInputError('Vector matching supports only statutes-canada.');
+  }
   return {
     vector,
-    corpus: typeof record['corpus'] === 'string' ? record['corpus'] : undefined,
-    topK: typeof record['topK'] === 'number' ? record['topK'] : undefined,
+    corpus,
+    topK: optionalInteger(record, 'topK', 50),
   };
 }
 
@@ -200,8 +273,8 @@ export function chatErrorResponse(
   origin: string | null,
   correlationId: string,
 ): Response {
-  if (err instanceof ChatInputError) {
-    return errorResponse('INVALID_ARGUMENT', err.message, env, origin, correlationId, 400);
+  if (err instanceof RequestInputError) {
+    return errorResponse('INVALID_ARGUMENT', err.message, env, origin, correlationId, err.status);
   }
   return errorResponse('CHAT_FAILED', 'The generation call failed.', env, origin, correlationId, 502);
 }

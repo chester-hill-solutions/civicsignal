@@ -1,3 +1,4 @@
+import { SNAPSHOT_PARSER_VERSION } from './snapshot-format';
 /**
  * The cycle, over a snapshot.
  *
@@ -103,6 +104,7 @@ export async function runSnapshotPipeline(options: {
   const { corpusId, revision, source, store, encoder } = options;
   const maxRows = options.maxRows ?? DEFAULT_MAX_ROWS;
 
+  await store.recoverPendingWrites();
   let added = 0;
   let changed = 0;
   let removed = 0;
@@ -172,65 +174,24 @@ export async function runSnapshotPipeline(options: {
       }
     }
 
-    // The rows first, then the removals: a row that is written and then
-    // removed would be a provision the corpus holds and the store does not.
-    if (upserts.length > 0) await store.upsert(upserts);
-    if (batch.gone.length > 0) {
-      const gone = await store.remove(batch.gone);
-      // The gone ids came from the store's own fingerprints, so the store has
-      // them — if it does not, it lost a row it said it had, and the feed
-      // would be reporting a removal of nothing.
-      if (gone.length !== batch.gone.length) {
-        throw new Error(
-          `the store held ${batch.gone.length} provision(s) the snapshot does not, ` +
-            `and could only say what ${gone.length} of them were`,
-        );
-      }
-      removed += batch.gone.length;
-      for (const row of gone) {
-        feed.push({
-          corpusId,
-          change: 'removed',
-          rowId: row.id,
-          instrument: row.instrument,
-          citation: row.citation,
-          section: row.section,
-          heading: row.heading,
-          status: row.status,
-          summary: null,
-          sourceUrl: row.sourceUrl,
-          occurredAt: revision.date,
-        });
-      }
-    }
-    if (feed.length > 0) await store.recordChanges(feed);
+    const removals = batch.gone.slice(0, Math.max(0, maxRows - written - rows.length));
+    if (removals.length < batch.gone.length) exhausted = false;
+    await store.applyBatch({
+      corpusId, revision: revision.commit, occurredAt: revision.date,
+      upserts, removedIds: removals, changes: feed,
+    });
+    removed += removals.length;
 
     unchanged += batch.same;
-    written += rows.length;
+    written += rows.length + removals.length;
     log(
       `${corpusId}: ${added} added, ${changed} changed, ${removed} removed ` +
         `(${written} of this cycle's budget)`,
     );
   }
 
-  // The state is only advanced when the store is actually at the snapshot's
-  // revision. Part of the way there is not a revision, and a state that said
-  // otherwise would make the next cycle skip the rest of the gap.
-  if (exhausted) {
-    await store.setState({
-      corpusId,
-      commit: revision.commit,
-      commitDate: revision.date,
-      asOf: revision.date,
-      // The store's size after this cycle is the snapshot's size, and the
-      // snapshot is exactly three things: what the two sides agreed on, what
-      // changed, and what came. The provisions that went are not in it.
-      rowCount: unchanged + changed + added,
-      lastRunAt: options.now.toISOString(),
-    });
-  }
-
   const run: PipelineRun = {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: revision.commit,
     commitDate: revision.date,
@@ -241,7 +202,23 @@ export async function runSnapshotPipeline(options: {
     ok: true,
     remaining: !exhausted,
   };
-  await store.recordRun(run);
+  // The state is only advanced when the store is actually at the snapshot's
+  // revision. Part of the way there is not a revision, and a state that said
+  // otherwise would make the next cycle skip the rest of the gap.
+  await store.finishRun(run, exhausted ? {
+      parserVersion: SNAPSHOT_PARSER_VERSION,
+      corpusId,
+      commit: revision.commit,
+      commitDate: revision.date,
+      asOf: revision.date,
+      // The store's size after this cycle is the snapshot's size, and the
+      // snapshot is exactly three things: what the two sides agreed on, what
+      // changed, and what came. The provisions that went are not in it.
+      rowCount: unchanged + changed + added,
+      lastRunAt: options.now.toISOString(),
+    } : undefined);
+
+
 
   if (exhausted) {
     log(

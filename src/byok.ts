@@ -77,16 +77,15 @@ export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
     label: "Google",
     defaultModel: "gemini-2.5-flash",
     endpoint: (model) =>
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    headers: (apiKey) => ({ "content-type": "application/json" }),
-    body: ({ system, messages, model, maxTokens }) => ({
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    headers: (apiKey) => ({ "content-type": "application/json", "x-goog-api-key": apiKey }),
+    body: ({ system, messages, maxTokens }) => ({
       systemInstruction: { parts: [{ text: system }] },
       generationConfig: { maxOutputTokens: maxTokens },
       contents: messages.map((m) => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],
       })),
-      ...(model ? {} : {}),
     }),
     parse: (body) => {
       const candidates = (body as { candidates?: { content?: { parts?: { text?: string }[] } }[] })?.candidates ?? [];
@@ -100,7 +99,7 @@ export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
 };
 
 export function isByokProvider(value: string): value is ByokProvider {
-  return value in PROVIDERS;
+  return Object.hasOwn(PROVIDERS, value);
 }
 
 /** One retrieved item, ready to be put in front of a model. */
