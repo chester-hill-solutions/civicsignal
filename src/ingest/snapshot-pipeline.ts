@@ -62,8 +62,9 @@ import { fingerprint, type PipelineRun } from './reconcile';
  */
 const DEFAULT_MAX_ROWS = 2000;
 
-/** How many provisions are decided at a time before they are written. */
-const BATCH_SIZE = 200;
+/** Commit a successful provider batch before submitting another. An interrupted
+ * or uncertain provider call can still spend attempts without a durable row. */
+const BATCH_SIZE = EMBED_BATCH;
 
 /** The change feed's entry, built from a row. */
 function feedEntry(

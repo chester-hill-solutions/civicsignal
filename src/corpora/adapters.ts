@@ -73,90 +73,19 @@ async function queryRows(
 /* -------------------------------------------------------------------------- */
 
 /**
- * How similar the best match has to be before the product answers.
+ * Existing Vectorize acceptance floor for vector-only retrieval and reranker
+ * failure fallback. Successful reranking uses its own authority decision.
  *
- * A vector search over a quarter of a million provisions never returns
- * *nothing*: ask for fifty and it returns fifty, ranked. So the honest way to
- * say "I don't have information on that" is not an empty result — it is a
- * threshold on the score, below which the product says so.
- *
- * ## The threshold is a number in the index's own scale
- *
- * **The score Vectorize returns is not a cosine.** It is near one for a good
- * match and it orders the results correctly, so it is easy to treat as a cosine
- * and to calibrate as one. It is not:
- *
- * - scaling the query vector leaves the score unchanged, so the index normalises
- *   the query;
- * - the **negative** of a vector the index holds scores −0.229, where a cosine
- *   gives −0.83;
- * - a vector the index holds scores **0.826** against itself, and not 1.
- *
- * Over the labelled questions the live score is about **0.79 of the cosine** the
- * same vectors have locally — 0.8840 local against 0.7287 live, 0.8196 against
- * 0.6278, 0.8643 against 0.7088, and so on.
- *
- * ## What that did to the first threshold
- *
- * The first threshold was **0.81**, and it was measured as a cosine on the
- * evaluation corpus. Every number in that measurement was a cosine. On the live
- * index 0.81 is above *every* answerable question — the maximum is 0.7390 — so a
- * deployment with no key for the rerank refused the whole corpus. Not because
- * the corpus was empty: because the threshold was written in a scale the index
- * does not use.
- *
- * ## The two sides, measured on the live index
- *
- * `scripts/production-floor.ts` embeds each labelled question with the
- * production encoder and reads the live score back:
- *
- * | | live score |
- * |---|---|
- * | 36 questions the corpus can answer | 0.4730 to 0.7390 |
- * | 12 it cannot answer | 0.4249 to **0.6079** |
- *
- * The two sides keep the same shape they had on the evaluation corpus: the
- * unanswerable twelve sit in a block below the answerable half, and none of them
- * reaches the top of it.
- *
- * ## The value
- *
- * **0.62** translates 0.81 into the live scale, and it keeps the same trade: 20
- * of the 36 answerable questions, and **0 of the 12 unanswerable**. 0.81 did
- * exactly that on the evaluation corpus.
- *
- * The margin over the unanswerable ceiling is 0.012, which is thin, and it is
- * the honest number. The twelve are not a tight bound, and a question whose
- * nearest provision is genuinely close sits nearer to the line than they do.
- *
- * ## The index is not the fault, and it must not be rebuilt
- *
- * The obvious reading of a compressed score is "the index holds the wrong
- * vectors, so rebuild it". It does not, and a rebuild would be wasted work.
- * `get_by_ids` returns the stored vector itself, and
- * `scripts/diagnose-stored-vectors.ts` compares it with the export:
- *
- *     the stored vector and the exported one agree at 1.000000
- *
- * So the index holds exactly the vectors the corpus produced, and the export to
- * R2 is a faithful copy of it. The measured 0.826 is the score of a vector
- * against **itself**. The compression is in how the index scores a comparison,
- * and that is not something this repository can change.
- *
- * ## What would move it
- *
- * A question the corpus cannot answer that scores above 0.62 is the failure to
- * watch for, and the twelve above are the whole of what is known about it. Every
- * measurement in this repository that compares a live score with a local cosine
- * is wrong by about a fifth. That is worth remembering before the next
- * threshold is chosen.
+ * Historical probes selected this value; they do not validate it for a new
+ * encoder, corpus revision or held-out question set. Do not rescale this value
+ * into a Postgres cosine threshold. Measure each backend through the serving
+ * route and retain the calibration/holdout evidence in docs/V1-EVALUATION.md.
+ * Changing the floor also changes the retrieval cache identity below.
  */
 export const VECTOR_FLOOR = 0.62;
 
 /** How long a cached retrieval lives. The corpus moves every three to eight days. */
 export const CACHE_SECONDS = 6 * 60 * 60;
-
-/** Bump when candidate prompts, authority decision rules or backend score policy change. */
 
 /** Every input that can change either the authority decision or the returned rows. */
 export function retrievalCacheKey(query: CorpusQuery, revision: string, useJev: boolean,

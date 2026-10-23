@@ -6,6 +6,13 @@ the code audit, the CHS package review, `docs/PLAN.md`, and section 9 of
 Cloudflare is the only v1 deployment target. Keep the existing Vectorize index and vectors.
 Existing Railway services are outside this release. Preserve unrelated work and the Bun/Postgres portability code.
 
+Current hosted status: the full baseline restore, snapshot Workflow artifact
+parity and 14 serving smokes pass. Non-empty ingestion remains incomplete:
+600 of 1,112 expected changes are durable, and all 1,112 approved embedding
+submissions are spent. Staging recovery is suspended on its original coordinator;
+no additional allowance is approved. Retrieval evaluation and production migration
+remain pending. See the [stop receipt](evidence/2026-10-22/stage-pipeline-budget-stop.json).
+
 ## Release requirements
 
 | ID | Outcome | Acceptance evidence | Status |
@@ -13,7 +20,7 @@ Existing Railway services are outside this release. Preserve unrelated work and 
 | V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
-| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local checks pass; hosted cycle pending |
+| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local recovery fixes pass; hosted cycle paused at exhausted allowance |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
@@ -300,15 +307,38 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   Reconciliation and measured retrieval quality remain incomplete. See the
   [baseline receipt](evidence/2026-10-22/stage-serving-baseline.json).
 
+- Hosted reconciliation failure and safe stop: The noon scheduled invocation
+  saved changes, then reported a Durable Object code-update reset. The exact
+  triggering management operation is unproved. Recovery spent the entire
+  1,112-document allowance while saving 600 expected changes. The remaining
+  512 fingerprints do not match the target parser revision. The original
+  coordinator is now durably suspended at revision 1 with no alarm, preserving
+  its spent count, checkpoint, publication and completed outbox. No new run is
+  published. See the [stop receipt](evidence/2026-10-22/stage-pipeline-budget-stop.json).
+- Local recovery and backup preparation: Snapshot ingestion now commits each
+  successful provider batch before submitting the next. A real SQLite failure
+  regression proves committed rows survive a later provider failure and are
+  skipped on restart. Coordinator controls validate persisted state, drain
+  admitted work, preserve failure diagnostics and recover uncertain pause/resume
+  acknowledgements. Actual workerd tests cover due alarms and reconstruction.
+  The offline protected-state copier preserves covered identity/history rows and
+  sequence high-water marks; remote acquisition/apply and text parity remain
+  separate gates. The [complete local gate](evidence/2026-10-22/recovery-candidate-local-validation.json)
+  passes 944 tests in 79 files, four compiler projects, runtime probes,
+  invariants, 117 vendored files and five builds.
+- Snapshot follow-up: The 13:00 candidate missed its arming margin and was never
+  armed. Both guard sessions exited successfully after confirming schedules
+  empty. No alternate calendar or second full publication was started.
+
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
 ## Remaining release gates
 
-1. Complete the approved hosted Workflow and compare every published artifact with the checked local source.
-2. Check the approved live text migration and protected-table copy against a consistent production backup.
-3. Run fresh calibration, held-out retrieval, and bounded performance checks against a verified serving target.
-4. Check one non-empty automated publication and ingestion cycle with observed freshness.
-5. Review the prepared migration and release candidate before any required deployment approval.
+1. Complete non-empty hosted ingestion after a separately approved bounded recovery, then verify vector visibility and the resulting backup.
+2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
+3. Run post-reconciliation flows, fresh calibration, held-out retrieval, and bounded performance checks against the coherent serving target; verify positive BYOK generation with an approved provider key.
+4. Check text migration and the protected-table copy against a consistent production backup. The new protected-state copier is locally verified and does not verify target text references or compact markers.
+5. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
 
 See [V1-OPERATIONS.md](V1-OPERATIONS.md) and [V1-EVALUATION.md](V1-EVALUATION.md) for procedures.

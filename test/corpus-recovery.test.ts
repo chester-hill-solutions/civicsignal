@@ -2,7 +2,9 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { D1CorpusStore } from '../src/corpora/d1-store';
-import { runPipeline, type CorpusBatch, type UpsertRow } from '../src/ingest/pipeline';
+import { EMBED_BATCH, runPipeline, type CorpusBatch, type Encoder, type UpsertRow } from '../src/ingest/pipeline';
+import { runSnapshotPipeline } from '../src/ingest/snapshot-pipeline';
+import type { SnapshotSource } from '../src/ingest/snapshot-source';
 import { fingerprint } from '../src/ingest/reconcile';
 import type { TextObjectBucket } from '../src/corpora/text-store';
 import { row } from './helpers/corpus-store';
@@ -159,6 +161,71 @@ describe('corpus transaction and outbox recovery', () => {
     expect(count(h, 'corpus_changes')).toBe(1);
     expect((await h.store.currentCommit())?.commit).toBe(next.commit);
     expect(h.sqlite.prepare('SELECT payload FROM corpus_mutations').get().payload).toBeNull();
+  });
+
+  it('commits each successful snapshot provider batch before the next call, then re-diffs after a later call fails', async () => {
+    const h = harness();
+    const rows = Array.from({ length: EMBED_BATCH * 2 + 1 }, (_, i) =>
+      row(`a-${String(i).padStart(3, '0')}`, { text: `Provision ${i}.` }));
+    const same = row('s-same'), gone = row('z-gone');
+    await h.store.applyBatch({ ...batch([rows[0]!, same, gone].map(value => ({
+      row: value.id === rows[0]!.id ? { ...value, text: 'The earlier text.' } : value,
+      hash: fingerprint(value.id === rows[0]!.id ? { ...value, text: 'The earlier text.' } : value),
+      embedding: [0.1, 0.2],
+    }))), revision: 'baseline' });
+    const baselineChanges = count(h, 'corpus_changes');
+    const placeholder = row('p-placeholder', { status: 'placeholder', text: '[Reserved]' });
+    const snapshotRows = [...rows, placeholder, same];
+    const entries = snapshotRows.map((value, off) => ({ id: value.id, fp: fingerprint(value), off, len: 1 }));
+    const source: SnapshotSource = {
+      revision: next.commit,
+      async manifest() { throw new Error('The in-memory source has no serialized manifest.'); },
+      async index() { return new Map(entries.map(entry => [entry.id, entry])); },
+      async *indexEntries() { yield* entries; },
+      async row(id) { return snapshotRows.find(value => value.id === id) ?? null; },
+      async rows(requested) { return requested.map(entry => snapshotRows.find(value => value.id === entry.id)!); },
+    };
+    let enterSecond!: () => void, failSecond!: (error: Error) => void;
+    const secondEntered = new Promise<void>(resolve => { enterSecond = resolve; });
+    const laterCall = new Promise<never>((_, reject) => { failSecond = reject; });
+    const firstCalls: string[][] = [];
+    const failing: Encoder = { async embed(documents) {
+      firstCalls.push(documents.map(document => document.text));
+      if (firstCalls.length === 2) { enterSecond(); await laterCall; }
+      return documents.map(() => [0.1, 0.2]);
+    } };
+    const options = { corpusId: 'statutes-canada', revision: next, source, store: h.store,
+      now: new Date('2026-10-22T00:00:00Z') };
+    const interrupted = runSnapshotPipeline({ ...options, encoder: failing });
+    const failed = expect(interrupted).rejects.toThrow('later provider call interrupted');
+    await secondEntered;
+    // Observe the real SQL transaction/outbox while the later provider call is
+    // still blocked, before allowing it to fail.
+    const during = { fingerprints: await h.store.fingerprints(), events: count(h, 'corpus_changes'),
+      pending: h.sqlite.prepare('SELECT count(*) AS n FROM corpus_mutations WHERE payload IS NOT NULL').get().n,
+      state: await h.store.currentCommit(), runs: count(h, 'corpus_runs') };
+    failSecond(new Error('later provider call interrupted')); await failed;
+    expect(firstCalls.map(call => call.length)).toEqual([EMBED_BATCH, EMBED_BATCH]);
+    for (const value of rows.slice(0, EMBED_BATCH)) expect(during.fingerprints.get(value.id)).toBe(fingerprint(value));
+    expect(during.events).toBe(baselineChanges + EMBED_BATCH);
+    expect(during.pending).toBe(0); expect(during.state).toBeNull(); expect(during.runs).toBe(0);
+
+    const resumedTexts: string[] = [];
+    const resumed: Encoder = { async embed(documents) {
+      resumedTexts.push(...documents.map(document => document.text));
+      return documents.map(() => [0.1, 0.2]);
+    } };
+    const completed = await runSnapshotPipeline({ ...options, encoder: resumed });
+    expect(resumedTexts).toEqual(rows.slice(EMBED_BATCH).map(value => value.text));
+    expect(completed).toMatchObject({ remaining: false, embedded: EMBED_BATCH + 1,
+      counts: { added: EMBED_BATCH + 2, changed: 0, removed: 1, unchanged: EMBED_BATCH + 1 } });
+    expect((await h.store.currentCommit())?.rowCount).toBe(snapshotRows.length);
+    expect(count(h, 'corpus_changes')).toBe(baselineChanges + rows.length + 2);
+    expect(h.values.has(placeholder.id)).toBe(false); expect(h.values.has(gone.id)).toBe(false);
+    const events = count(h, 'corpus_changes');
+    const replayed = await runSnapshotPipeline({ ...options, encoder: resumed });
+    expect(replayed).toMatchObject({ embedded: 0, remaining: false, counts: { added: 0, changed: 0, removed: 0 } });
+    expect(resumedTexts).toHaveLength(EMBED_BATCH + 1); expect(count(h, 'corpus_changes')).toBe(events);
   });
 
   it('does not duplicate events when a revision is replayed with different batch boundaries', async () => {

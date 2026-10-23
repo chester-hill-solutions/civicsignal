@@ -64,6 +64,20 @@ The full local checks include a SQLite Durable Object test in workerd.
 It checks concurrent allowance enforcement, legacy counters, and accepted/refused receipt replay.
 It also checks immutable R2 creation in workerd.
 
+The [protected-state copier](PROTECTED-STATE-COPY.md) prepares and checks local
+SQLite copies of auth, billing, publication and completed history. It preserves
+explicit IDs and sequence high-water marks. It does not acquire a consistent
+production backup, apply to remote D1, or verify the target's text references,
+compact markers or text objects. Those remain separate cutover checks.
+
+Before a corpus backup, use the deployed coordinator's
+[suspend/drain protocol](../services/snapshot/OPERATIONS.md#suspend-the-corpus-writer-before-backup)
+and verify the same original namespace and suspension revision afterward.
+Removing Cron schedules alone leaves Durable Object recovery alarms active.
+Use exact schedules PUT/GET for temporary calendar changes: the locked Wrangler
+`triggers deploy` also updates subdomain settings. See the
+[CLI inspection](evidence/2026-10-22/wrangler-trigger-mutation-code-review.json).
+
 ## Read-only production preflight
 
 Check the selected account before any remote command.

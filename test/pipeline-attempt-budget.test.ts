@@ -96,6 +96,32 @@ describe('durable controlled pipeline attempts', () => {
     await expect(resumed.run()).rejects.toThrow('budget exhausted');
     expect(h.submitted.length + restarted.submitted.length).toBe(3);
   });
+  it('preserves spent attempts across suspension, pending recovery and resume without admission-control refunds', async () => {
+    const h = fixture(storage(), 3);
+    let release!: () => void, entered!: () => void;
+    const blocked = new Promise<void>(resolve => { release = resolve; });
+    const accepted = new Promise<void>(resolve => { entered = resolve; });
+    const runner = new DurableSingleFlight(h.storage.value, async () => {
+      await h.encoder.embed(documents(2)); entered(); await blocked; return { remaining: true };
+    });
+    const active = runner.run(); await accepted;
+    const before = structuredClone(h.storage.data.get(ATTEMPT_BUDGET_KEY));
+    expect(await runner.suspend(0)).toMatchObject({ suspended: true, quiescent: false });
+    await expect(runner.run()).rejects.toMatchObject({ code: 'suspended' });
+    expect(h.storage.data.get(ATTEMPT_BUDGET_KEY)).toEqual(before);
+    release(); await active;
+    const restarted = fixture(h.storage, 3);
+    const recovery = new DurableSingleFlight(h.storage.value, async () => {
+      await restarted.encoder.embed(documents(1)); return { remaining: false };
+    });
+    await recovery.initialize(); await recovery.alarm();
+    expect(restarted.submitted).toEqual([]);
+    expect(await restarted.budget.status()).toMatchObject({ cap: 3, submitted: 2, remaining: 1 });
+    await recovery.resume(1); await recovery.alarm();
+    expect(await restarted.budget.status()).toMatchObject({ cap: 3, submitted: 3, remaining: 0 });
+    expect(restarted.submitted).toEqual([1]);
+    await expect(restarted.encoder.embed(documents(1))).rejects.toThrow('budget exhausted');
+  });
   it('rechecks source head immediately before every HTTP call and never submits after a changed pin', async () => {
     const h = fixture();
     await h.encoder.embed(documents(1));

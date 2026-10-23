@@ -1,11 +1,11 @@
 # CivicSignal v1 isolated hosted validation plan
 
 The user approved full bounded staging on 2026-10-22, Toronto time.
-Execution is in progress. The [setup receipt](evidence/2026-10-22/stage-setup.json) records observed identities, versions and current limits.
+Execution has reached the original embedding limit and is paused. The [setup receipt](evidence/2026-10-22/stage-setup.json) records the isolated resources.
 Hosted acceptance remains incomplete until each phase has its required evidence.
 The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
-The copy jobs resumed from their preserved checkpoints after five disk samples
-over two minutes all exceeded 5 GiB. The same 1 GiB stop guards remain active.
+The completed copy jobs resumed from their preserved checkpoints after five disk samples
+over two minutes all exceeded 5 GiB. Their 1 GiB stop guards have since exited.
 The text client completed a reviewed protocol handoff after its prior owner
 stopped. It replayed 63 uncertain objects and resumed the same checkpoint. The
 [handoff receipt](evidence/2026-10-22/stage-restore-protocol-handoff.json) records the
@@ -50,11 +50,28 @@ vector search, reranker and row hydration all reported success. The ledger has
 applied. A successful management read proved the fresh usage namespace empty
 before the first serving call. See the
 [baseline receipt](evidence/2026-10-22/stage-serving-baseline.json).
-The pipeline is deployed with its exact source pin and a durable cap of 1,112,
-zero submissions and 1,112 remaining. Its single noon UTC calendar was confirmed
-at 11:33:09 UTC with both independent guards ready. They remove the schedule on
-observed activity or by 12:05 UTC. Reconciliation remains unverified.
-See the [arming receipt](evidence/2026-10-22/stage-pipeline-1200-arming.json).
+The noon pipeline schedule did execute. It saved 400 changes before a dashboard
+exception reported a Durable Object code-update reset. Recovery eventually saved
+600 changes and exhausted all 1,112 embedding submissions. The publication still
+has parser NULL and no completed new run. A stop-only deployment now suspends the
+same coordinator, with no alarm and resume disabled. Independent reads confirm
+600 target fingerprints, 512 remaining, valid text references and an empty pending
+outbox. The cap and spent count were neither reset nor increased. See the
+[reset evidence](evidence/2026-10-22/stage-pipeline-1200-dashboard-reset.json) and
+[stop receipt](evidence/2026-10-22/stage-pipeline-budget-stop.json).
+
+The original bounded reconciliation acceptance failed. Local recovery now commits
+each successful 32-document provider batch before making the next call. This
+reduces repeated work after interruption; uncertain accepted requests still spend
+allowance. No additional embeddings are approved. A concrete cumulative recovery
+proposal must receive explicit approval before execution.
+The [recovery candidate](V1-STAGING-RECOVERY.md) proposes one preserved-counter
+extension with independent document and provider-call limits; it is not approval.
+
+Both noon cleanup guards exited. The proposed 13:00 Snapshot discovery probe
+missed its reviewed arming margin and was never armed. Its guards removed and
+checked empty schedules, then exited. No alternate calendar is active. See the
+[skipped probe receipt](evidence/2026-10-22/stage-snapshot-1300-skipped.json).
 
 The goal is to close hosted snapshot, restore, ingestion, inference and retrieval
 checks with an isolated candidate. Use the detailed snapshot commands and stop

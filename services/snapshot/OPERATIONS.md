@@ -82,6 +82,85 @@ checkpoint and watchdog alarm survive restarts, retry failed work with bounded
 backoff, and continue catch-up slices until complete. Inspect Worker errors and
 Durable Object status when progress stops; do not bypass the coordinator.
 
+### Suspend the corpus writer before backup
+
+The admission-control API below requires the reviewed coordinator version to
+be deployed. Preparing this contract locally does not change an existing
+deployment. Verify a 100% deployment of the reviewed Worker version and the original coordinator namespace
+before using it; a new namespace cannot attest the original writer's state.
+
+All three control routes require the existing `x-pipeline-secret` header.
+Keep that secret in the operator's environment and out of command arguments
+and evidence. `GET /control` retains the budget fields and adds `corpusId`,
+`coordinatorId`, and `coordinator`. The latter reports `revision`, `suspended`,
+`active`, `queued`, `alarmHandlersActive`, `alarmAt`, `pending`, `failures`,
+and `quiescent`. `lastFailure` is null when `failures=0`; otherwise it contains
+only an allowlisted `classification` and, for recognized encoder HTTP failures,
+`encoderHttpStatus`. Categories are `encoder-http`, `encoder-deadline`,
+`attempt-budget-exhausted`, `source-snapshot-mismatch`, `storage`, and `unknown`.
+Only the encoder's known JSON failure wrapper with `DEADLINE_EXCEEDED` supports
+the deadline category; a 504 or unrelated timeout alone does not. Unrecognized
+or truncated bodies cannot establish that cause. Reading this diagnostic does
+not clear failures or change recovery. Exception text, addresses, response
+bodies, headers, SQL and credentials are never returned.
+Starting a retry retains the previous failure diagnostic; a successful cycle
+clears it with the failure count. The classification is evidence from the last
+recognized failure signature, not a conclusion about an unobserved incident.
+The legacy checkpoint is validated before use: `pending` must be boolean,
+`failures` a non-negative safe integer, and optional `lastError` a string of at
+most 500 characters. Malformed persisted state fails closed with a fixed error;
+it is neither returned nor repaired or overwritten. A failure count already at
+the safe-integer maximum stays there on another failure.
+
+| Operation | Request | Result |
+| --- | --- | --- |
+| Observe | `GET /control` | Current budget and coordinator observations. |
+| Suspend | `POST /control/suspend`, JSON `{"expectedRevision":0}` using the observed revision | Persists suspension and removes the alarm. HTTP 200 means quiescent; 202 means admitted work is still draining. |
+| Resume | `POST /control/resume`, JSON containing the current suspended revision | Requires a drained coordinator. Arms pending recovery while still suspended, then opens the next admission revision. |
+
+Control bodies are limited to 1 KiB and accept only `expectedRevision`, a
+non-negative safe integer. Stale revisions or a busy resume return 409.
+Invalid bodies return 400, oversized bodies 413, and missing/wrong secrets 403.
+After an uncertain acknowledgement, read status; never reset the coordinator,
+budget, pending checkpoint, or outbox. Repeating suspend with the current paused
+revision repairs a failed alarm deletion without changing that revision.
+Resume keeps alarm and admission writes inside the same short control lock;
+external I/O never holds it. If either write fails or loses its acknowledgement,
+read status before acting. A still-suspended revision may have an uncertain
+recovery alarm: repeat suspend with that exact revision to remove it, wait for
+quiescence, then retry resume. If status is already open at the next revision,
+the resume committed; do not replay or overwrite it using the older revision.
+A delivered alarm waits for the control lock and checks the persisted gate.
+This ordering does not assume a transaction across alarm and key-value writes.
+
+Suspension closes new manual and scheduled cycle admission. It does not cancel
+an accepted encoder request: an already admitted cycle drains normally and may
+make further requests before finishing. Its spent attempts remain charged.
+Pending work and failures survive suspension and reconstruction, while alarm
+callbacks delivered during suspension cannot start a cycle or rearm recovery.
+Removing Cron triggers alone does not stop these callbacks.
+An alarm observation is a point-in-time value; a later delivered callback is
+safe because admission remains durably closed, not because delivery was cancelled.
+
+Wait for the same suspended revision to report `quiescent=true`, `active=null`,
+`queued=0`, `alarmHandlersActive=0`, and `alarmAt=null`. Then independently
+verify the completed publication identity and empty D1 mutation outbox. A
+quiescent coordinator may still have pending recovery; quiescence alone is not
+a completed-revision or backup-parity claim. Preserve incomplete state and
+resume normal recovery when required; do not clear it to pass the backup gate.
+Keep other CLI, migration, and protected-identity writers stopped separately.
+
+Normal `POST /vectors` exports keep their existing JSON and receipt formats
+while admission is open. During suspension, backup exports require the header
+`X-Pipeline-Suspension-Revision` with the current revision and a drained queue.
+The admitted export echoes that header. It still verifies the matching
+publication, fingerprints and empty vector outbox and uses the original
+serialized queue. Missing/stale revision or a busy coordinator returns 409.
+An export response attests admission for that operation, not an entire backup.
+Verify the same suspended revision and corpus identity again after every
+backup component is complete; reject the consistency claim if admission
+changed. Resume only after the backup has passed its own verification.
+
 D1 commits each bounded group of rows, change events, optional text references
 and Vectorize outbox entries together. Recovery replays idempotent vector
 operations before reconciliation reads fingerprints. PostgreSQL includes row,

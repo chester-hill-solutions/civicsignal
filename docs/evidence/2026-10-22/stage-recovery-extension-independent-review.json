@@ -1,0 +1,141 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T13:28:21.424Z",
+  "kind": "independent-local-stage-recovery-review",
+  "passed": true,
+  "executionApproved": false,
+  "candidate": {
+    "path": "dist/release/staging/recovery-extension-proposal/candidate.json",
+    "sha256": "7c97a18b2f1f60e247821ae5daf6840211f9a80bd4e679e44f01f2ec292ed269"
+  },
+  "operations": {
+    "path": "dist/release/staging/recovery-extension-operations/candidate-manifest.json",
+    "sha256": "9d3d0fab4b685587ed0f9dbc0108794e54e1bd86c2aa6f27e6c2c768d1234367",
+    "sourceFiles": {
+      "dist/release/staging/recovery-extension-operations/control.ts": {
+        "bytes": 4351,
+        "sha256": "4e51f89c851c95fa134c77b286db85a772a97dcd54c2554a810e1976941034ad"
+      },
+      "dist/release/staging/recovery-extension-operations/monitor-core.ts": {
+        "bytes": 4195,
+        "sha256": "2a01fb4db49d22a1cedf99a80cc3413c14288cb6d492b9bec81a8a483cf562e8"
+      },
+      "dist/release/staging/recovery-extension-operations/run-monitor.ts": {
+        "bytes": 3764,
+        "sha256": "d59d9f73709c5e1d6054308a4c0082339e10f1d078ef363e2b1c5c49d307384f"
+      },
+      "dist/release/staging/recovery-extension-operations/verify-grant.ts": {
+        "bytes": 8487,
+        "sha256": "22fb2e7b2a1e15b8f0df23b6a394925a7d63bbf0bb76f850a35c8a69065a790c"
+      },
+      "dist/release/staging/recovery-extension-operations/pre-recovery.ts": {
+        "bytes": 8287,
+        "sha256": "d9dbf0145827940efacde1321ffe3c730151f5a4647138be5873d3309ae3925c"
+      },
+      "dist/release/staging/recovery-extension-operations/deploy-approved.py": {
+        "bytes": 6199,
+        "sha256": "1521f7ed3dbd5e44b297205690ebeadd5bb973e23f816ecc037bdf2b0a356162"
+      }
+    }
+  },
+  "runtimeSourceFiles": {
+    "services/pipeline/attempt-budget.ts": {
+      "bytes": 10025,
+      "sha256": "8349802530c782f4c66748da48c9aa9068e581755330ab34a85d62039d199f48"
+    },
+    "services/pipeline/single-flight.ts": {
+      "bytes": 17123,
+      "sha256": "8c5261ed4d78eca2e90452f68fc5f6b9cfc05e97a7823b05cae74b2dde3501f1"
+    },
+    "services/pipeline/worker.ts": {
+      "bytes": 20093,
+      "sha256": "0df83d7d9f42daa1996a16a16ac90595ea3bf5226abed3080f08a04cd353c62f"
+    },
+    "services/pipeline/staging-recovery-plan.ts": {
+      "bytes": 2479,
+      "sha256": "cc9485b1dbcd35f5d99fcd3e3fb837c5f6062b7cad75700d646c7c28a46ef8b9"
+    },
+    "services/pipeline/staging-recovery.ts": {
+      "bytes": 2541,
+      "sha256": "026a2e183d58d70067b95d75d580d9b6368b61b29df9ef870a1f53f98573972a"
+    },
+    "test/pipeline-recovery-extension.test.ts": {
+      "bytes": 12190,
+      "sha256": "cca18e312ebca3e7d507b3052d09876fd5642e79dce03992b5dcef6dbfa48682"
+    },
+    "test/pipeline-recovery-workerd.test.ts": {
+      "bytes": 15127,
+      "sha256": "1cc9eaa8adf59020fff220dcbef20a5c621f3b317a8866d7c7a7be59062cb412"
+    }
+  },
+  "independentChecks": {
+    "candidateSourceArtifactHashes": 17,
+    "bundleInputHashes": 73,
+    "operatorSourceArtifactHashes": 67,
+    "savedRemainingProofHash": true,
+    "sameStageConfigsExceptEntryAndCap": true,
+    "operatorPureScenarios": 26,
+    "compiledMonitorPostPauseFailure": "failure-paused with pending=true and failures=1",
+    "pythonAssertNodes": 0,
+    "pythonOptimizedCompile": true
+  },
+  "providedVerification": {
+    "path": "dist/release/staging/recovery-extension-proposal/candidate-validation.json",
+    "sha256": "139cda7ec073164766f4637b1f95a1b8944821f4f92536294c5cdc25bc5ee89d",
+    "focusedTests": 181,
+    "files": 10,
+    "newUnitCases": 33,
+    "newWorkerdCases": 8,
+    "compilerProjectsPassed": 3,
+    "independentReviewDidNotRepeatTheseTests": true,
+    "optimizedDeployNegativeRuns": {
+      "path": "dist/release/staging/recovery-extension-operations/optimized-deployment-guard-check.json",
+      "cases": 4,
+      "reviewedResult": "Wrong-account recovery/stop launches under -O and PYTHONOPTIMIZE=1 refused before approval read, intent or CLI."
+    }
+  },
+  "findingsResolved": [
+    {
+      "finding": "Execution setup failures were outside failure-stop handling.",
+      "resolution": "Setup is covered for recovery mode; pause precedes diagnostic writes. The prepared guard retains ordinary non-recovery setup-failure behavior."
+    },
+    {
+      "finding": "An uncommitted failure-pause write lost its in-memory guard after reconstruction and could automatically retry.",
+      "resolution": "The actual recovery constructor joins initialization inside its storage-only barrier and conservatively suspends granted open pending work before external events. Initial grant remains paused and does not replenish spent attempts."
+    },
+    {
+      "finding": "Python assert-based deployment checks disappeared in optimized mode.",
+      "resolution": "All authorization/context/hash/config/preflight checks now use explicit fixed-error branches; no assert nodes remain."
+    },
+    {
+      "finding": "Monitor completion classification could survive a final pending/failed observation during pause or drain.",
+      "resolution": "Completion now rechecks final pending=false and failures=0 after quiescent suspension; otherwise it reports failure-paused or uncertain-stop. The compiled Node monitor was independently exercised."
+    },
+    {
+      "finding": "Legacy Node monitor bundle initially retained the older completion branch.",
+      "resolution": "All five legacy mjs bundles were rebuilt; corrected compiled branch and final 67-file manifest were verified."
+    }
+  ],
+  "remainingActionableFindings": [],
+  "reviewedClaims": [
+    "One exact original-key grant from cap1112 to1752 preserves1112 submitted; wrong or absent object/state refuses initialization.",
+    "Receipt and document/call counters normalize and reserve together before each send; cumulative ceilings remain640 new document reservations,20 call reservations and32 documents per call.",
+    "Reconstruction and lost acknowledgements do not replenish allowance; verify-only stop accepts an existing grant and cannot create one.",
+    "Operator monitor makes one resume attempt, resolves uncertainty with bounded reads/suspension, and never resumes contingency automatically.",
+    "Normalized outputs omit secrets and untrusted private fields; completed-monitor outcome still requires independent publication/text/vector proof."
+  ],
+  "actualEntryPositiveProofLimit": "Positive local workerd fixtures inject the fixed authorization object ID into the real storage/budget/single-flight policies because a local namespace has a different ID. The unmodified actual candidate entry is tested for wrong-object refusal, not successful hosted-identity execution. Constructor policy was independently read, but no positive hosted identity, grant, provider call or completion is attested by this review.",
+  "boundaries": {
+    "cloudRequests": 0,
+    "secretReads": 0,
+    "deployments": 0,
+    "allowanceTransitions": 0,
+    "sourceOrOperatorEdits": 0,
+    "receiptWritten": true
+  },
+  "limitations": [
+    "No user execution approval exists in these frozen manifests; this review does not authorize deployment, first initialization or additional submissions.",
+    "Repeated durable-storage failure can prevent proving a stop; accepted provider work cannot be cancelled or refunded.",
+    "No actual production/staging resource state, costs, model completion or rollback behavior was verified by this local review."
+  ]
+}

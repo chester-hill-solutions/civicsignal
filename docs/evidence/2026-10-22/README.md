@@ -3,6 +3,8 @@
 This run began on 2026-10-22 in Toronto and continued on 2026-10-23.
 Observation timestamps use UTC. These files do not confirm a production release
 or production data change.
+Individual receipts retain the result and limits at their observation time.
+Later completion receipts supersede earlier progress observations without erasing failures.
 
 | File | Evidence | Limit |
 | --- | --- | --- |
@@ -27,6 +29,16 @@ or production data change.
 | `stage-serving-baseline.json` | Verified synthetic auth, deployed stage bindings, empty initial usage namespace and 14 passing HTTP/MCP/inference smokes | Baseline protocol proof; reconciliation and quality/performance measurements remain pending |
 | `stage-dependencies-ready.json` | Pinned stage encoder/image/one-instance limit and exact Vectorize identity, count and language filter | Management identity proof; serving inference is recorded separately |
 | `stage-pipeline-1200-arming.json` | Verified deployment, exact persisted source/cap, successful baseline encoder and both live cleanup guards; actual singleton calendar readback | Arming does not prove dispatch, reconciliation or final vector visibility |
+| `stage-pipeline-1200-dashboard-reset.json` | Dashboard proves scheduled dispatch, 400 saved changes and a code-update reset exception | Specific management cause and subsequent failures are unproved |
+| `stage-pipeline-1200-guard-shutdown.json` | Both cleanup guards and observer exited; schedules independently empty | Cron removal did not stop pending Durable Object recovery |
+| `stage-pipeline-budget-stop.json` | Same coordinator durably paused, no alarm; 1,112 spent attempts, 600 target fingerprints and 512 remaining | Original bounded reconciliation failed; no extra allowance or completion claim |
+| `stage-snapshot-1300-skipped.json` | Deadline refusal before arming; both guards exited after empty-calendar checks | No new scheduled event, Workflow or publication |
+| `wrangler-trigger-mutation-code-review.json` | Locked CLI also POSTs subdomain settings during `triggers deploy` | Static code evidence does not prove reset causality |
+| `snapshot-provider-batch-validation.json` | Red/green real-SQLite proof of committing each provider batch before the next call | An accepted uncertain call can still spend without a row |
+| `protected-state-local-validation.json` | Private offline identity/history copy, sequence preservation, atomic replay and restricted SQL fixtures | No production acquisition, remote apply, text-reference/compact-marker parity or usage-object migration |
+| `recovery-candidate-local-validation.json` | Complete local gate: 944 tests, four compiler projects, runtime checks and five builds | Candidate at recorded source hashes; later fixes require fresh checks |
+| `stage-recovery-extension-candidate.json` | Exact compiled same-object allowance, recovery/verify-only stop bundles and bounded operator packet | Local preparation only; extra usage requires explicit approval before deployment/initialization |
+| `stage-recovery-extension-independent-review.json` | Frozen runtime/operator/input hashes, corrected failure/reconstruction and operator findings, independent scenario check | No hosted grant, identity or completion claim; execution remains unapproved |
 | `stage-oauth-renewal-050842.json` | One bounded read-only account check renewed OAuth through 06:08:42 UTC | No forced login, expiry edit or production probe |
 | `exact-citation-section-preference.json` | Real bilingual source rows, SQLite/PostgreSQL regressions and 787-test full gate | Retrieval-only local proof; unknown URL formats keep fallback ambiguity |
 | `stage-setup.json` | Approved limits, created resource identities and deployed stage versions | In-progress setup evidence; no completed hosted acceptance or production migration |

@@ -37,7 +37,8 @@
  * worse than one that says which path it took.
  */
 import { DurableObject } from 'cloudflare:workers';
-import { DurableSingleFlight } from './single-flight';
+import { CoordinatorAdmissionError, DurableSingleFlight, type CoordinatorObservation } from './single-flight';
+import { readJsonBody, RequestInputError } from '../../src/http';
 import { D1CorpusStore } from '../../src/corpora/d1-store';
 import { CORPUS_ID } from '../../src/ingest/corpus-rows';
 import { httpEncoder } from '../../src/ingest/encoder-client';
@@ -48,6 +49,7 @@ import { manifestKey, SNAPSHOT_PARSER_VERSION } from '../../src/ingest/snapshot-
 import { assertCorpusVectorExportCurrent, exportSnapshotVectors, parseVectorExportRequest, type VectorExportRequest } from './vector-export';
 import { retainD1Text } from './options';
 import { DurableAttemptBudget, pipelineControl, type PipelineControlEnv } from './attempt-budget';
+import type { StageRecoveryAuthorization } from './staging-recovery-plan';
 import { GitHubCorpusSource } from '../../src/ingest/source';
 
 interface Env extends PipelineControlEnv {
@@ -104,7 +106,8 @@ export default {
    */
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     try {
-      await coordinator(env).run();
+      const result = await coordinator(env).run();
+      if (isCoordinatorRejection(result) && result.code !== 'suspended') throw new Error('The coordinator refused the scheduled invocation.');
     } catch (error) {
       console.error(`the pipeline cycle failed: ${String(error)}`);
       throw error;
@@ -129,9 +132,21 @@ export default {
     if (url.pathname === '/health') {
       return Response.json({ ok: true, service: 'civicsignal-pipeline' });
     }
-    if (url.pathname === '/control' && request.method === 'GET') {
+    if (['/control', '/control/suspend', '/control/resume'].includes(url.pathname)) {
       if (!env.PIPELINE_SECRET || request.headers.get('x-pipeline-secret') !== env.PIPELINE_SECRET) return Response.json({ error: 'forbidden' }, { status: 403 });
-      return Response.json(await coordinator(env).controlStatus());
+      try {
+        if (url.pathname === '/control' && request.method === 'GET') {
+          return Response.json(await coordinator(env).controlStatus(), { headers: { 'cache-control': 'no-store' } });
+        }
+        if (url.pathname !== '/control' && request.method === 'POST') {
+          const revision = parseControlRevision(await readJsonBody(request, 1024));
+          const value = url.pathname.endsWith('/suspend') ? await coordinator(env).suspend(revision) : await coordinator(env).resume(revision);
+          if (isCoordinatorRejection(value)) return rejectionResponse(value);
+          return Response.json(value, { status: url.pathname.endsWith('/suspend') && !value.coordinator.quiescent ? 202 : 200,
+            headers: { 'cache-control': 'no-store' } });
+        }
+        return Response.json({ error: 'method not allowed' }, { status: 405, headers: { allow: url.pathname === '/control' ? 'GET' : 'POST' } });
+      } catch (error) { return administrativeError(error); }
     }
     if (url.pathname === '/run' && request.method === 'POST') {
       const presented = request.headers.get('x-pipeline-secret') ?? '';
@@ -141,11 +156,10 @@ export default {
       // Awaited, for the same reason the cron awaits: a `waitUntil` task is
       // cancelled thirty seconds after the response goes out, and the cycle
       // takes longer than that.
-      const summary = await coordinator(env).run().catch((error: unknown) => {
-        console.error(`the pipeline cycle failed: ${String(error)}`);
-        return { error: String(error).slice(0, 500) };
-      });
-      return Response.json(summary, { status: 'error' in summary ? 500 : 200 });
+      try {
+        const summary = await coordinator(env).run();
+        return isCoordinatorRejection(summary) ? rejectionResponse(summary) : Response.json(summary);
+      } catch (error) { return administrativeError(error); }
     }
 
     // **The vectors, out of the index and into the snapshot.**
@@ -161,14 +175,19 @@ export default {
       if (!env.PIPELINE_SECRET || presented !== env.PIPELINE_SECRET) {
         return Response.json({ error: 'forbidden' }, { status: 403 });
       }
-      const result = await (async () => {
-        const body = parseVectorExportRequest(await request.json());
-        return coordinator(env).exportVectors(body);
-      })().catch((error: unknown) => {
-        console.error(`the vectors export failed: ${String(error)}`);
-        return { error: String(error).slice(0, 500) };
-      });
-      return Response.json(result, { status: 'error' in result ? 500 : 200 });
+      try {
+        const suspensionRevision = parseSuspensionHeader(request.headers.get('x-pipeline-suspension-revision'));
+        const json = await readJsonBody(request, 1024);
+        let body: VectorExportRequest;
+        try { body = parseVectorExportRequest(json); }
+        catch { throw new RequestInputError('Invalid vector export request.'); }
+        const result = await coordinator(env).exportVectors(body, suspensionRevision);
+        if (isCoordinatorRejection(result)) return rejectionResponse(result);
+        // This records admission for this one export, not a complete backup's
+        // consistency. The caller still verifies the same pause after all parts.
+        return Response.json(result, { headers: suspensionRevision === undefined ? {} :
+          { 'x-pipeline-suspension-revision': String(suspensionRevision) } });
+      } catch (error) { return administrativeError(error); }
     }
 
     return Response.json(
@@ -181,26 +200,66 @@ export default {
   },
 };
 
+interface CoordinatorRejection { coordinatorRejected: true; code: string; error: string; status: 400 | 409 }
+function isCoordinatorRejection(value: unknown): value is CoordinatorRejection {
+  return value !== null && typeof value === 'object' && 'coordinatorRejected' in value && value.coordinatorRejected === true;
+}
+/** Plain refusals survive the DO RPC boundary without relying on custom Error prototypes. */
+async function admitted<R>(work: () => Promise<R>): Promise<R | CoordinatorRejection> {
+  try { return await work(); }
+  catch (error) {
+    if (error instanceof CoordinatorAdmissionError) return { coordinatorRejected: true, code: error.code, error: error.message, status: error.status };
+    throw error;
+  }
+}
+function rejectionResponse(value: CoordinatorRejection): Response {
+  return Response.json({ error: value.error, code: value.code }, { status: value.status, headers: { 'cache-control': 'no-store' } });
+}
+function administrativeError(error: unknown): Response {
+  return error instanceof RequestInputError
+    ? Response.json({ error: error.message }, { status: error.status })
+    : Response.json({ error: 'The pipeline operation is unavailable.' }, { status: 500 });
+}
+function parseControlRevision(value: unknown): number {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== 1 ||
+      !('expectedRevision' in value) || !Number.isSafeInteger(value.expectedRevision) || Number(value.expectedRevision) < 0) {
+    throw new RequestInputError('Only a non-negative safe integer expectedRevision is accepted.');
+  }
+  return Number(value.expectedRevision);
+}
+function parseSuspensionHeader(value: string | null): number | undefined {
+  if (value === null) return undefined;
+  if (!/^(0|[1-9]\d*)$/.test(value) || !Number.isSafeInteger(Number(value))) throw new RequestInputError('Invalid pipeline suspension revision header.');
+  return Number(value);
+}
+
 /** One corpus has one durable writer, across cron and manual requests. */
 export class PipelineCoordinator extends DurableObject<Env> {
   private readonly runner: DurableSingleFlight<CycleSummary>;
   private readonly budget: DurableAttemptBudget;
-  constructor(ctx: DurableObjectState, env: Env) {
+  constructor(ctx: DurableObjectState, env: Env, recovery?: StageRecoveryAuthorization) {
     super(ctx, env);
-    this.budget = new DurableAttemptBudget(ctx.storage, pipelineControl(env));
-    this.runner = new DurableSingleFlight(ctx.storage, () => cycle(this.env, this.budget));
+    this.budget = new DurableAttemptBudget(ctx.storage, pipelineControl(env), recovery);
+    this.runner = new DurableSingleFlight(ctx.storage, () => cycle(this.env, this.budget), Date.now,
+      { suspendOnFailure: recovery !== undefined });
     // Only checkpoint initialization is blocked; a corpus cycle can run for
     // minutes and must not sit in blockConcurrencyWhile's 30-second window.
     this.ctx.blockConcurrencyWhile(async () => { await this.budget.initialize(); await this.runner.initialize(); });
   }
-  async run(): Promise<CycleSummary> { return this.runner.run(); }
-  async controlStatus() { return this.budget.status(); }
+  async run() { return admitted(() => this.runner.run()); }
+  private async withBudget(observation: Promise<CoordinatorObservation>) {
+    const [budget, status] = await Promise.all([this.budget.status(), observation]);
+    return { ...budget, corpusId: CORPUS_ID, coordinatorId: this.ctx.id.toString(), coordinator: status };
+  }
+  async controlStatus() { return this.withBudget(this.runner.status()); }
+  async suspend(revision: number) { return admitted(() => this.withBudget(this.runner.suspend(revision))); }
+  async resume(revision: number) { return admitted(() => this.withBudget(this.runner.resume(revision))); }
   async alarm(): Promise<void> { await this.runner.alarm(); }
-  async exportVectors(body: VectorExportRequest) {
-    return this.runner.exclusive(() => exportSnapshotVectors(body, {
+  async exportVectors(body: VectorExportRequest, suspensionRevision?: number) {
+    return admitted(() => this.runner.exclusive(() => exportSnapshotVectors(body, {
       bucket: this.env.CORPUS, vector: this.env.VECTORIZE,
       assertCurrent: (entries, total) => assertCorpusVectorExportCurrent(this.env.CIVIC_DB, CORPUS_ID, body, entries, total),
-    }));
+    }), suspensionRevision));
   }
 }
 
