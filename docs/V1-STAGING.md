@@ -4,11 +4,16 @@ The user approved full bounded staging on 2026-10-22, Toronto time.
 Execution is in progress. The [setup receipt](evidence/2026-10-22/stage-setup.json) records observed identities, versions and current limits.
 Hosted acceptance remains incomplete until each phase has its required evidence.
 The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
-The copy jobs are currently stopped by their local disk guards. Their checkpoints
-and pending receipts are preserved. Resume requires at least 5 GiB of stable free
-space. The two observed calendar windows produced no snapshot event or Workflow
-instance; both triggers were removed and checked. Hosted publication remains an
-unmet gate. See the [transfer stop receipt](evidence/2026-10-22/stage-transfer-stop-state.json).
+The copy jobs resumed from their preserved checkpoints after five disk samples
+over two minutes all exceeded 5 GiB. The same 1 GiB stop guards remain active.
+Full baseline audits remain incomplete. See the
+[resume receipt](evidence/2026-10-22/stage-transfer-resume-state.json) and earlier
+[transfer stop receipt](evidence/2026-10-22/stage-transfer-stop-state.json).
+The two observed calendar windows produced no snapshot event or Workflow instance;
+both triggers were removed and checked. Hosted publication remains an unmet gate.
+A stage-only diagnostic wrapper passes 19 focused checks and the full release
+gate (755 tests in 72 files). Its isolated config and local dry-run build are
+verified. It has not yet been deployed or scheduled.
 
 The goal is to close hosted snapshot, restore, ingestion, inference and retrieval
 checks with an isolated candidate. Use the detailed snapshot commands and stop
@@ -127,14 +132,15 @@ reviewable; they do not establish a hosted result:
    metadata, skip only independently verified all-zero placeholders, and check
    readback before journal checkpoints. Twelve fixture tests cover corruption,
    wrong targets, acknowledgement loss, bounded resume and stale journals.
-   The complete real local preflight passed; no stage copy has run.
+   The complete real local preflight passed. The approved hosted copy is in progress;
+   acknowledgements and fully verified checkpoints remain separate.
 2. The isolated `services/restore/worker.ts` and `restore-text-staging.ts` client
    implement a fresh compact-D1/R2 restore protocol with exact resource identity
    headers, binary text uploads with hash readback, ordered checked pages, source
    publication state and a full strict-text audit. The disabled source config has
    no resource bindings. A full legacy compact bundle has been prepared and
-   verified locally using the pinned source receipt; hosted deployment and audit
-   remain pending. Review the final focused runtime test evidence before approval.
+   verified locally using the pinned source receipt. The isolated restore service
+   is deployed; its full hosted restore and audit remain incomplete.
 3. Snapshot configs pin `SNAPSHOT_PINNED_COMMIT` and `SNAPSHOT_PINNED_DATE`.
    Pipeline configs set all three values together:
    `PIPELINE_PINNED_COMMIT=0507465393c224c0491fc8c17c88340217acc656`,
@@ -273,7 +279,8 @@ manifests, ordered index, all six row parts and store. Its SHA-256 is
 A separate fresh live stored-value sample matched 329/329 substantive positions
 among 356 selected positions, with 27 placeholders; this is sampled live equality,
 not a check of every live stored value. Retain that sample's separate evidence.
-No stage baseline copy, hosted compact restore or stage pipeline run is claimed.
+The approved stage baseline copies are in progress. Full hosted audits and the
+stage pipeline run remain incomplete.
 
 Read the original legacy R2 manifest, complete ordered ID/fingerprint index, all
 row parts and all positional vector parts. Retain original bytes, record fresh

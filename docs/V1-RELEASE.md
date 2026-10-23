@@ -203,6 +203,22 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   records exact checkpoints and remaining limits.
   The [snapshot receipt](evidence/2026-10-22/stage-snapshot.json) records both calendar
   windows, independent cleanup, empty instance reads and the trace-delivery limitation.
+- Guarded resume: Five disk samples over two minutes all exceeded 5 GiB.
+  The one permitted automatic resume used the same pinned inputs, targets and journals.
+  Both copies continue with their 1 GiB stop guards. The text restore replayed 55
+  remotely committed objects beyond its earlier local checkpoint. The vector copy
+  drained 46 acknowledged batches and identically replayed one uncertain batch.
+  The [resume receipt](evidence/2026-10-22/stage-transfer-resume-state.json) records a
+  measured progress sample; full hosted copy/audit acceptance remains incomplete.
+  A stage-only health and immutable event-receipt wrapper passes 19 focused checks,
+  including actual local scheduled dispatch and Workflow publication/replay.
+  The production snapshot entrypoint is unchanged. The full release gate passes
+  755 tests in 72 files, all compiler projects, runtime probes and invariants.
+  The isolated diagnostic config and dry-run build are checked; deployment is pending.
+  The [diagnostic validation receipt](evidence/2026-10-22/stage-snapshot-probe-validation.json)
+  records source hashes, local checks and request/storage bounds.
+  No further calendar trigger, serving request or document embedding has run.
+  Linux release CI passes for `3fc097a8056c90058e8dc3a524e97fde78e54715`, run `39896055623`.
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
