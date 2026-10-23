@@ -15,17 +15,23 @@ HTTP 200, the approved source commit/date and reported quota 4,999/5,000.
 No second secret PUT occurred.
 
 The approved recovery resumed once and completed its monitor at 22:34:18 UTC.
-The original coordinator is suspended and drained at revision 5, with no pending
-work or recorded failures. It reports 1,624 cumulative document attempts and
-16 extension calls, leaving 128 attempts and four calls under the approved
-1,752/20 ceilings. This is a successful monitor result; independent all-row
-metadata, changed-text and vector proofs remain required before claiming complete
-ingestion. The previous independent metadata read verified 792/1,112 changes.
-The prepared verifier's five-minute admission window elapsed during handover,
-before any metadata attempt. A new verifier will admit the original historical
-monitor and verify the current deployment and exact paused coordinator before
-its first data query. No source claim, resume or allowance is reset.
-See the [source/recovery validation](evidence/2026-10-23/staging-source-recovery-root-validation.json)
+The original coordinator is suspended and drained at revision 5. It retains
+1,624 cumulative document attempts and 16 extension calls, leaving 128 attempts
+and four calls under the unchanged 1,752/20 limits.
+
+The independent final metadata proof passed at **23:27:06 UTC**: all **277,857
+rows**, **1,112 target changes**, **276,745 unchanged rows**, exact feed/mutation
+identities and an empty pending outbox. It made 2,237 bounded read requests with
+zero query writes. The revision is published as `statutes-v2` at the approved
+source commit/date. The 84-request changed-text proof then passed: **74 unique
+objects / 24,836 bytes** cover all 1,112 changed references. Unchanged references
+use current full metadata parity and the earlier full baseline byte proof; this
+is a composite proof, not a fresh whole-store byte audit. A fresh five-GET read
+and independent proof publication passed at 23:28 UTC. The bounded vector backup
+is now running from the same paused checkpoint.
+
+See the [completed metadata/text validation](evidence/2026-10-23/staging-completed-metadata-text-root-validation.json),
+[source/recovery validation](evidence/2026-10-23/staging-source-recovery-root-validation.json)
 and [binding recovery record](V1-STAGING-BINDING-RECOVERY.md).
 Retrieval evaluation and production migration remain pending. Production and
 Railway are unchanged.
@@ -37,7 +43,7 @@ Railway are unchanged.
 | V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
-| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local fixes pass; one authenticated recovery monitor completed; independent final metadata/text/vector proofs pending |
+| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Full hosted metadata and composite changed-text proofs pass; vector backup running |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
@@ -414,7 +420,7 @@ The large local artifacts remain outside Git. The commands can reproduce them fr
 
 ## Remaining release gates
 
-1. Finish the authenticated source-access remedy, complete ingestion within the approved cumulative limits, then verify text bytes, vector visibility and the resulting backup.
+1. Finish vector visibility and the resulting backup. Authenticated recovery, full completed metadata and composite changed-text byte proofs pass within the approved limits.
 2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
 3. Run post-reconciliation flows, fresh calibration, held-out retrieval, and bounded performance checks against the coherent serving target; verify positive BYOK generation with an approved provider key.
 4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper and staging-only HTTP adapter are locally verified. The client's initial and full-phase windows are locally verified; its owned operator, consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending.

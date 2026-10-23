@@ -142,3 +142,14 @@ its first attempt. Preserve that packet. A new packet must admit the original
 monitor historically and check the current deployment, bindings, schedules and
 exact paused coordinator before any D1 query. It must retain the original
 timestamps, claims, revision and usage; no new ingestion resume is needed.
+
+The final independent metadata proof subsequently passed at **23:27:06 UTC**:
+277,857 matching rows, 1,112 matching target/feed/mutation identities, 276,745
+unchanged rows, an empty outbox and the published `statutes-v2` revision. The
+changed-text proof passed at 23:27:48 UTC (74 unique objects, 24,836 bytes, all
+1,112 changed references). Fresh completion and independent proof publication
+passed at 23:28 UTC. See the
+[metadata/text validation](evidence/2026-10-23/staging-completed-metadata-text-root-validation.json).
+The text proof's historical baseline/immutable-writer limits remain explicit.
+Vector export/download remains in progress; these proofs do not establish
+vector/model provenance, serving performance or production migration.
