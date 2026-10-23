@@ -1,0 +1,198 @@
+{
+  "format": 1,
+  "scope": "synthetic-local-protected-state-d1-binding-only",
+  "date": "2026-10-23",
+  "runtime": {
+    "node": "v25.9.0",
+    "bun": "1.3.5",
+    "miniflare": "5.20261019.1-beta",
+    "esbuild": "0.28.2"
+  },
+  "checks": [
+    {
+      "command": "CIVICSIGNAL_WORKERD_TESTS=1 node node_modules/vitest/vitest.mjs run test/protected-state-d1.test.ts test/protected-state-format.test.ts test/protected-state.test.ts",
+      "result": "pass",
+      "tests": 78,
+      "note": "26 D1 cases plus35 original copier and17 shared-format cases; then added stage proof and zero/absent sequence cases below"
+    },
+    {
+      "command": "CIVICSIGNAL_WORKERD_TESTS=1 node node_modules/vitest/vitest.mjs run test/protected-state-d1.test.ts",
+      "result": "pass",
+      "tests": 29,
+      "note": "Final behavior includes exact completed stage receipt, completed read-only operations, explicit zero and absent sequence facts"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.worker.json",
+      "result": "pass"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.bun.json",
+      "result": "pass"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.tooling.json",
+      "result": "pass"
+    }
+  ],
+  "facts": {
+    "actualWorkerdD1R2": true,
+    "outboundDisabled": true,
+    "cloudOrSecretAccess": false,
+    "protectedTablesComparedToSqlite": 8,
+    "syntheticCorpusRows": 18,
+    "freshAuditObjectReads": 18,
+    "protectedPagesHighwaterFixture": 9,
+    "nextHistoryIds": [
+      121,
+      1001
+    ],
+    "zeroVersusAbsentSequences": true,
+    "lateSqlRollback": true,
+    "falseAndNullAtomicGuards": true,
+    "fullMetadataReferenceRescan": true,
+    "sealedFormat1FilesUnchanged": true
+  },
+  "limits": {
+    "pageBytes": 65536,
+    "protectedPageRows": 16,
+    "compactPageRows": 16,
+    "metadataReturnedRows": 17,
+    "strictTextPageRows": 8,
+    "schemaInventorySentinel": 64,
+    "foreignKeyViolationsReturned": 1
+  },
+  "remainingGates": [
+    "common-freeze authentic production D1/KV acquisition",
+    "private backup validation and exact-target authenticated hosted transport",
+    "production binding and AUTH_DB rollback/usage-namespace review"
+  ],
+  "assumptions": [
+    "all other D1 and R2 writers remain stopped throughout the multi-step proof",
+    "page membership is established by the complete pinned chain, not individual page hashes",
+    "no transactional snapshot or arbitrary same-count mutation detection after a page was verified"
+  ],
+  "changedFiles": [
+    {
+      "path": "scripts/lib/protected-state.ts",
+      "bytes": 27394,
+      "sha256": "fdd7432e1490a66ed96d93b3de80cfd4a4052dc117d075d3c501bf9fa52703d0"
+    },
+    {
+      "path": "scripts/lib/protected-state-d1.ts",
+      "bytes": 3096,
+      "sha256": "b7e395a5aa63ccdecc3c7aaccb5c1e5757357c45da0edd1de4a1e9e23691cb9b"
+    },
+    {
+      "path": "src/corpora/protected-state-d1-admission.ts",
+      "bytes": 3464,
+      "sha256": "688fee5d80b7ba49323027d91ce2f86d9adf79a4c7150b2e0ee29255661b743f"
+    },
+    {
+      "path": "src/corpora/protected-state-d1-schema.ts",
+      "bytes": 5749,
+      "sha256": "2fed84c4168504bb794a7ed0154174db46d6bfed99052e7575c74e76ae66c072"
+    },
+    {
+      "path": "src/corpora/protected-state-d1.ts",
+      "bytes": 21058,
+      "sha256": "4c7af6923256f4a2ae8815aee47e95222e3e583d1f90defeca5057bdec8fcdea"
+    },
+    {
+      "path": "test/protected-state-d1.test.ts",
+      "bytes": 27219,
+      "sha256": "5fc093b52594c3d590f00c0703b57522a8ed087ff4022c4ca6f7fea7872e8921"
+    },
+    {
+      "path": "docs/PROTECTED-D1-BINDING.md",
+      "bytes": 6684,
+      "sha256": "ae4517d307986161b0916e3e4d9e19fba3fce2e86d01c98565554e7ef176fdb4"
+    }
+  ],
+  "unchangedInputs": [
+    {
+      "path": "src/corpora/protected-state-format.ts",
+      "bytes": 6903,
+      "sha256": "20160c0be7e64c105437d377b7145d6465012317d089677cd84e9c92dc9140ea"
+    },
+    {
+      "path": "test/protected-state-format.test.ts",
+      "bytes": 12661,
+      "sha256": "e129f84971d9d5047fd5747b2ee4a1f12aed302b4748c82902a8c516f5e66937"
+    },
+    {
+      "path": "test/protected-state.test.ts",
+      "bytes": 23041,
+      "sha256": "1a0b8277c40242c95a64c32fc4cc10259ead9a2eef53aca09086848cda636163"
+    },
+    {
+      "path": "test/fixtures/protected-state-format-v1-pages.jsonl",
+      "bytes": 1758,
+      "sha256": "858ff4bf1a1c47c9a83d56ee650771c54278e02a5d41a86c03412e8e915f3e05"
+    },
+    {
+      "path": "migrations/0005_workspace_auth.sql",
+      "bytes": 1420,
+      "sha256": "7c23dc6b153af407fcc40d710ee43f71b3b84d2e1849c1ae57ac3b60aad89250"
+    },
+    {
+      "path": "src/corpora/compact-restore.ts",
+      "bytes": 7286,
+      "sha256": "7e45842a7ce489229d110501c355ff1fea1202c857fef17a91490ec9b8c20c5e"
+    },
+    {
+      "path": "src/corpora/text-store.ts",
+      "bytes": 14469,
+      "sha256": "f613a767d7c04a8e6d8c96b948787c9fbc072d928361ea752a7dc5111ec035df"
+    },
+    {
+      "path": "services/restore/protocol.ts",
+      "bytes": 6702,
+      "sha256": "6cb59b577f12baa612755c858e2404704d476c6c69269af3626da6f50592ed1c"
+    },
+    {
+      "path": "services/restore/fresh-schema.ts",
+      "bytes": 1504,
+      "sha256": "9f6e24cb56ea763cc1131012ba7c579b09e6e160d2c12bf07811f3e7d21e1f8b"
+    },
+    {
+      "path": "services/restore/worker.ts",
+      "bytes": 18528,
+      "sha256": "847cc35f2625f69c44a4c91e2841f60f844ca0efa849f7d77ed5614b74a0ac15"
+    },
+    {
+      "path": "scripts/restore-text-staging.ts",
+      "bytes": 18775,
+      "sha256": "10a6141d55ba5303c53d75168d476b85ef1fdcc523cb9df6dd1601bde8091a73"
+    },
+    {
+      "path": "scripts/prepare-text-cutover.ts",
+      "bytes": 33377,
+      "sha256": "de745f79d2815e6682bdcef4cfc299cbe5cf223a22eda8a6034d2179e9777df6"
+    },
+    {
+      "path": "scripts/lib/local-d1.ts",
+      "bytes": 1731,
+      "sha256": "f10c3066e802c031eef778525cfdf45e3d60deafd74073106c9a54d2af5d1473"
+    },
+    {
+      "path": "tsconfig.worker.json",
+      "bytes": 246,
+      "sha256": "c3abb58c1b35084e468646303001a918f76cd449d874bb895d6531e63bb1229b"
+    },
+    {
+      "path": "tsconfig.bun.json",
+      "bytes": 279,
+      "sha256": "de472f784cbe084c054b83ad461f763da6dcb888cf5dcac94ccc7e2da55d9d5c"
+    },
+    {
+      "path": "tsconfig.tooling.json",
+      "bytes": 185,
+      "sha256": "57d0303efdfa3191bfe2e5e1398aa817390e4b116a6304e74da77357dac88bfe"
+    },
+    {
+      "path": "package.json",
+      "bytes": 3317,
+      "sha256": "546dc96890c5523ddb671ce143f2ea07ef37b0b2226805a6dea282e895f5205b"
+    }
+  ]
+}

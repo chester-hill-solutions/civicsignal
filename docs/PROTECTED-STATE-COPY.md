@@ -14,6 +14,13 @@ shared format boundary; it does not add a hosted restore route or remote apply.
 The [validation receipt](evidence/2026-10-22/protected-state-format-validation.json)
 records the golden hashes, byte boundaries and local runtime checks.
 
+The separate [D1 binding helper](PROTECTED-D1-BINDING.md) applies this sealed
+format to a staging-only D1 binding after checking the actual compact metadata,
+text references and a fresh complete R2 audit. Its synthetic workerd fixtures
+also cover atomic page replay, publication guards and original sequence facts.
+It has no hosted route or production acquisition mode. The limitations below
+describe the offline SQLite copier.
+
 Keep the source/auth/target files and output outside the repository. Use private
 0700 directories and 0600 files, owned by the operator, with no symlinks or SQLite
 WAL/SHM/journal companions. Output directories must be new. The cutover bundle is

@@ -254,6 +254,8 @@ async function loadPlan(directory: string, expected: string) {
   assert(n===manifest.pages&&order.every(t=>counts[t]===manifest.tables[t].rows&&hashes[t].digest('hex')===manifest.tables[t].sha256),'PLAN_TABLE_DIGEST');
   return {manifest,pagesPath};
 }
+/** Reuse full private-file, page and table-digest checks for D1 admission sidecars. */
+export {loadPlan as loadProtectedStatePlan};
 function corpusIdentity(db: DatabaseSync) {
   const digest=new IndexDigester(),metadata=createHash('sha256');let rows=0;
   for(const row of db.prepare(`SELECT ${COMPACT_STATUTE_COLUMNS.join(',')} FROM statute_sections ORDER BY id COLLATE BINARY`).iterate()){

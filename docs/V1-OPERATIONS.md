@@ -76,6 +76,12 @@ explicit IDs and sequence high-water marks. It does not acquire a consistent
 production backup, apply to remote D1, or verify the target's text references,
 compact markers or text objects. Those remain separate cutover checks.
 
+The separate [D1 binding helper](PROTECTED-D1-BINDING.md) now verifies those
+actual metadata/reference/marker inputs and performs a fresh full R2 audit before
+copying protected rows. All 81 focused tests pass, including 29 cases using
+synthetic local D1/R2. This is local binding implementation evidence; consistent
+production acquisition and authenticated hosted transport remain pending.
+
 Before a corpus backup, use the deployed coordinator's
 [suspend/drain protocol](../services/snapshot/OPERATIONS.md#suspend-the-corpus-writer-before-backup)
 and verify the same original namespace and suspension revision afterward.

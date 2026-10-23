@@ -378,6 +378,16 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   implement a hosted protected-data copy or establish production-backup consistency.
   See the [format validation](evidence/2026-10-22/protected-state-format-validation.json).
 
+- Protected D1 copy: a fixed-table binding helper now checks the matching complete
+  compact-restore receipt, actual corpus metadata and text references, and a fresh
+  full R2 audit before protected inserts. Page receipts, row inserts, publication
+  and sequence guards share a D1 batch; exact replay is read-only. The 81 focused
+  tests include 29 synthetic local D1/R2 cases for rollback, competing pages,
+  tampering and original sequence highwaters. This completes the local binding
+  slice, with no hosted route, production acquisition or deployment. See the
+  [binding interface and limits](PROTECTED-D1-BINDING.md) and
+  [validation receipt](evidence/2026-10-23/protected-state-d1-root-validation.json).
+
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
@@ -386,7 +396,7 @@ The large local artifacts remain outside Git. The commands can reproduce them fr
 1. Finish the authenticated source-access remedy, complete ingestion within the approved cumulative limits, then verify text bytes, vector visibility and the resulting backup.
 2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
 3. Run post-reconciliation flows, fresh calibration, held-out retrieval, and bounded performance checks against the coherent serving target; verify positive BYOK generation with an approved provider key.
-4. Check text migration and the protected-table copy against a consistent production backup. The new protected-state copier is locally verified and does not verify target text references or compact markers.
+4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper is locally verified, including actual target metadata/references, compact markers and fresh R2 bytes. Production acquisition and authenticated hosted application remain pending.
 5. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
 
 See [V1-OPERATIONS.md](V1-OPERATIONS.md) and [V1-EVALUATION.md](V1-EVALUATION.md) for procedures.
