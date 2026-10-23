@@ -6,10 +6,16 @@ Execution exhausted the original embedding limit. The user approved the exact
 on an unknown failure after six calls and 1,304 cumulative document attempts.
 Independent paused reads verify 792 of 1,112 target changes, with 320 remaining
 and no pending outbox. The saved error matches a GitHub source-head HTTP 403;
-its reason remains unproved. The current diagnostic build refuses resume and
-retains the same suspended coordinator, counters and no alarm. See the
+its historical reason remains unproved. A separate one-shot probe at 19:16 UTC
+confirmed current anonymous GitHub quota exhaustion: HTTP 403, remaining 0/60.
+The current diagnostic version `40110049-9cf5-44c3-b23f-ed39e06da7b7` refuses
+resume and retains the same suspended coordinator, counters and no alarm. Its
+read-only verification succeeded after the earlier local ENOSPC failure; old
+partial evidence remains. The consumed probe cannot be replayed. No continuation
+deployment or resume followed. See the
 [progress proof](evidence/2026-10-22/stage-recovery-progress-1.json) and
-[failure identification](evidence/2026-10-22/stage-recovery-source-403.json).
+[failure identification](evidence/2026-10-22/stage-recovery-source-403.json), plus
+the [current quota observation](evidence/2026-10-22/stage-source-head-quota-exhausted.json).
 The [setup receipt](evidence/2026-10-22/stage-setup.json) records the isolated resources.
 Hosted acceptance remains incomplete until each phase has its required evidence.
 The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).

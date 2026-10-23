@@ -12,10 +12,15 @@ changes and an empty pending outbox; 320 changes remain. The original 1,112-atte
 reconciliation failed its bound. The approved same-coordinator recovery has spent
 1,304 cumulative document attempts and six extension calls; 448 document slots
 and 14 calls remain. Its saved failure matches a GitHub source-head HTTP 403.
-The refusal reason remains unproved. The stop-only diagnostic deployment retains
-the suspended revision, no alarm and unchanged counters. There has been no
-contingency resume. See the [progress proof](evidence/2026-10-22/stage-recovery-progress-1.json)
-and [failure identification](evidence/2026-10-22/stage-recovery-source-403.json).
+The earlier refusal reason remains unproved. A separate one-shot probe at
+19:16 UTC returned HTTP 403 with anonymous GitHub quota 0/60. The current
+stop-only version `40110049-9cf5-44c3-b23f-ed39e06da7b7` was independently checked
+after a local disk failure interrupted its first verification. It retains the
+suspended revision, no alarm and unchanged counters. The probe is consumed; the
+prepared continuation refused qualification and was never deployed or resumed.
+See the [progress proof](evidence/2026-10-22/stage-recovery-progress-1.json),
+[earlier failure identification](evidence/2026-10-22/stage-recovery-source-403.json)
+and [current quota observation](evidence/2026-10-22/stage-source-head-quota-exhausted.json).
 Completed ingestion, retrieval evaluation and production migration remain pending.
 
 ## Release requirements
@@ -25,7 +30,7 @@ Completed ingestion, retrieval evaluation and production migration remain pendin
 | V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
-| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local recovery fixes pass; 792/1,112 hosted changes verified; source HTTP 403 paused recovery |
+| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local recovery fixes pass; 792/1,112 hosted changes verified; fresh source probe confirms exhausted anonymous quota |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |

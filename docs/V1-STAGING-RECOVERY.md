@@ -9,8 +9,15 @@ all 1,112 spent attempts and permits 640 more document attempts across at most
 remain. The original object is suspended at revision 3, quiescent, with no alarm.
 Its base persisted failure classification remains unknown, but a stop-only
 hashed diagnostic and exact frozen-code match identify a GitHub source-head HTTP
-403. The refusal reason is not established. The current stop-only version is
-`0f865aad-faf1-4e96-82c4-8d48befe18b2`; it refuses resume and ingestion.
+403. That earlier refusal reason is not established. The current stop-only
+version is `40110049-9cf5-44c3-b23f-ed39e06da7b7`; it refuses resume and ingestion.
+Independent verification at 19:16 UTC passed after preserving the earlier
+ENOSPC-interrupted verification. One immutable source probe then returned HTTP
+403 with anonymous quota limit 60, used 60 and remaining 0. Its reported reset is
+19:36:41 UTC; that time does not guarantee availability on shared source-IP quota.
+The consumed probe cannot be replayed. The separately reviewed continuation2b
+failed its source qualification and made no deployment or resume attempt.
+See the [current observation](evidence/2026-10-22/stage-source-head-quota-exhausted.json).
 No contingency resume has occurred.
 See the [attempt receipt](evidence/2026-10-22/stage-recovery-approved-attempt-1.json).
 Subsequent [independent paused reads](evidence/2026-10-22/stage-recovery-progress-1.json)

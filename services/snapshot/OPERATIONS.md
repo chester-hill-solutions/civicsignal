@@ -125,11 +125,19 @@ After an uncertain acknowledgement, read status; never reset the coordinator,
 budget, pending checkpoint, or outbox. Repeating suspend with the current paused
 revision repairs a failed alarm deletion without changing that revision.
 Resume keeps alarm and admission writes inside the same short control lock;
-external I/O never holds it. If either write fails or loses its acknowledgement,
-read status before acting. A still-suspended revision may have an uncertain
-recovery alarm: repeat suspend with that exact revision to remove it, wait for
-quiescence, then retry resume. If status is already open at the next revision,
-the resume committed; do not replay or overwrite it using the older revision.
+external I/O never holds it. If status is already open at the next revision,
+the resume committed; do not replay it using the older revision. To stop, suspend
+that observed open revision and verify its newer paused revision and quiescence.
+
+A timed-out resume may arrive after a status read. Seeing the original paused
+revision, or repeating its idempotent suspend, does not fence that late request.
+Keep the outcome uncertain and use the reviewed compatible stop-only build; verify
+its active version and the same drained coordinator. That build refuses resume
+while deployed. Before restoring any resumable entry, require a strictly newer
+durable paused revision or a separately reviewed resolution of the delayed
+request. Never automatically retry resume from the original revision to settle
+uncertainty. An unconfirmed pause or unavailable status also requires the finite
+stop procedure and an explicit uncertain result until readback succeeds.
 A delivered alarm waits for the control lock and checks the persisted gate.
 This ordering does not assume a transaction across alarm and key-value writes.
 
