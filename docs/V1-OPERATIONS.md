@@ -27,6 +27,12 @@ services requires a separate decision.
 The CHS workspace ID equals the former customer ID.
 A new key shares the workspace allowance. A key rotation must preserve that workspace.
 
+The candidate supports an optional `AUTH_DB` binding for CHS keys and workspace
+billing. Without it, both use `CIVIC_DB`. Before a future corpus switch, explicitly
+pin `AUTH_DB` to the authoritative identity store and keep that binding fixed
+through corpus rollback. An unavailable explicit auth store returns 503. See the
+[corpus rollback procedure](CORPUS-ROLLBACK.md); no deployed binding has changed.
+
 ## Local release gates
 
 Use Bun 1.3.5 and Node 24 or later.
@@ -231,7 +237,10 @@ Check every copied identity, allowance, revision, row count, and history count.
 Check all metadata/text pairs through strict R2 mode on the fresh store.
 Set API `CORPUS_TEXT_MODE=r2` and pipeline `CORPUS_RETAIN_D1_TEXT=false` for the fresh binding.
 Check exact citations, semantic results, change feed, and HTTP/MCP usage before the switch.
-Fresh-store rollback restores the original binding and its matching text mode.
+Fresh-store rollback restores only `CIVIC_DB` and its matching text mode after
+the original corpus passes the parser/vector compatibility checks. Keep the
+authoritative `AUTH_DB` binding and existing usage namespace fixed; switching
+authorization back to a stale copy could reactivate revoked keys or allowances.
 Never reset usage objects or replace the Vectorize index.
 
 The local full snapshot uses parser `statutes-v2`.
@@ -257,7 +266,9 @@ If checks fail, use a reviewed rollback build that retains the CHS authorization
 The old Worker uses legacy KV authorization.
 It can reactivate a key revoked only in the new workspace table.
 Do not switch to that Worker after workspace key changes without a checked legacy revocation reconciliation.
-Restore D1 or select the intact previous store through the reviewed recovery procedure.
+Restore corpus data or select the intact previous corpus store through the
+reviewed recovery procedure, retaining current authorization and billing in
+`AUTH_DB` and the same usage objects.
 Never reset usage counters or delete operation receipts as part of rollback.
 
 

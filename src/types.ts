@@ -18,6 +18,8 @@ export interface Env {
   DEMO_BROWSER_API_KEY?: string;
   /** Corpus store. */
   CIVIC_DB?: D1Database;
+  /** CHS keys and workspace billing; defaults to CIVIC_DB. Keep fixed during corpus rollback. */
+  AUTH_DB?: D1Database;
   /** Static corpus snapshots and rendered briefs. */
   CORPORA?: R2Bucket;
   /** d1(default), verify, prefer-r2 or r2. Enable only after parity checks. */

@@ -161,6 +161,14 @@ Verify the same suspended revision and corpus identity again after every
 backup component is complete; reject the consistency claim if admission
 changed. Resume only after the backup has passed its own verification.
 
+The generic `scripts/export-vectors.ts` backup client requires an explicit
+pipeline origin, original coordinator ID, current suspension revision and new
+journal. Its initial and final `/control` reads must show that same identity
+and revision, suspended and quiescent, with `pending=false`, `failures=0`, no
+active/queued work, no alarm handler and no alarm. A paused failed or unfinished
+reconciliation is ineligible. These stronger client prerequisites do not make
+quiescence alone a publication or parity proof.
+
 D1 commits each bounded group of rows, change events, optional text references
 and Vectorize outbox entries together. Recovery replays idempotent vector
 operations before reconciliation reads fingerprints. PostgreSQL includes row,
@@ -351,7 +359,7 @@ an isolation mechanism.
    log. Replace the example URL with the reviewed staging URL:
 
    ```sh
-   bun scripts/export-vectors.ts --revision 0507465393c224c0491fc8c17c88340217acc656 --dir dist/workflow-validation-v2-bounded --url https://STAGING-PIPELINE-HOST
+   bun scripts/export-vectors.ts --revision 0507465393c224c0491fc8c17c88340217acc656 --dir dist/workflow-validation-v2-bounded --url https://STAGING-PIPELINE-HOST --coordinator-id ORIGINAL_64_HEX_OBJECT_ID --suspension-revision CURRENT_REVISION --journal /private/backup-directory/attempt-001.jsonl
    ```
 
    The server reads its published index; clients cannot supply IDs or choose
@@ -363,10 +371,41 @@ an isolation mechanism.
    vectors may omit that metadata. Parts contain finite 768-dimensional
    float32 values in published index order; absent vectors are allowed only
    for verified placeholder rows. Conditional creates and actual stream
-   readback hashes protect parts, receipts and the final manifest. Repeating
-   the command resumes through byte-identical artifacts; changed bytes fail.
-   The driver publishes the manifest itself after server verification and
-   saves a local copy; no separate mutable upload step is needed.
+   readback hashes protect parts, receipts and the final manifest. The client
+   independently checks every fixed part's ID/fingerprint digest against its
+   complete locally verified snapshot index, and compares all part receipts
+   with the final vector manifest. Every POST sends the suspension revision
+   and requires its exact echoed header.
+
+   Supply only a root HTTPS origin (HTTP loopback is allowed for local tests).
+   Credentials, paths, query strings and fragments in `--url` are refused.
+   `PIPELINE_SECRET` comes only from the environment; there is no URL fallback,
+   credential refresh, redirect following or automatic retry. Requests are
+   serial and capped at the derived part count plus three: initial control,
+   one POST per fixed part, manifest POST, final control. Control requests have
+   a 15-second/16-KiB bound; part/manifest requests default to 120 seconds with
+   8-KiB/256-KiB response bounds. The client supports at most 1,000 fixed parts.
+
+   Supply an already existing, durable, non-symlink journal parent directory
+   owned by the operator, with mode 0700.
+   The client refuses a missing, symlinked, non-directory, differently owned or
+   non-0700 parent before credential access or transport; it creates no journal
+   ancestors. A new 0600 journal exclusively records the plan and fsynced intents
+   before requests. Failed and uncertain attempts retain their journal and never
+   continue automatically. Do not remove a journal to retry. After reviewing
+   the failure and the same completed suspension, a separately authorized
+   retry uses a new journal; immutable server objects still refuse changed
+   bytes. Local manifests use exclusive creation and are never overwritten,
+   including when a file appears during execution. The local receipt is saved
+   only after the final control read passes.
+
+   This protocol and the server's R2 readback receipts do not independently
+   download or verify local vector bytes. Acquire and check those artifacts
+   separately before claiming a usable backup. Neither the positional index,
+   768-dimensional shape nor the receipt attests which model generated an
+   existing vector. Preserve the separate model provenance/calibration limit;
+   exporting existing vectors does not re-embed or repair them. A successful
+   client run is not proof that production backup acquisition is complete.
 
 7. Repeat the approved same gates in production only after staging acceptance,
    fresh rollback artifacts and reviewed bindings. Production snapshot commands

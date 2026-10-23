@@ -1,7 +1,10 @@
 # CivicSignal v1 isolated hosted validation plan
 
 The user approved full bounded staging on 2026-10-22, Toronto time.
-Execution has reached the original embedding limit and is paused. The [setup receipt](evidence/2026-10-22/stage-setup.json) records the isolated resources.
+Execution exhausted the original embedding limit. The user approved the exact
+[bounded recovery](V1-STAGING-RECOVERY.md) on 2026-10-23; its first attempt paused
+on an unknown failure after six calls and 1,304 cumulative document attempts.
+The same original coordinator is suspended with no alarm. The [setup receipt](evidence/2026-10-22/stage-setup.json) records the isolated resources.
 Hosted acceptance remains incomplete until each phase has its required evidence.
 The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
 The completed copy jobs resumed from their preserved checkpoints after five disk samples
@@ -63,10 +66,13 @@ outbox. The cap and spent count were neither reset nor increased. See the
 The original bounded reconciliation acceptance failed. Local recovery now commits
 each successful 32-document provider batch before making the next call. This
 reduces repeated work after interruption; uncertain accepted requests still spend
-allowance. No additional embeddings are approved. A concrete cumulative recovery
-proposal must receive explicit approval before execution.
-The [recovery candidate](V1-STAGING-RECOVERY.md) proposes one preserved-counter
-extension with independent document and provider-call limits; it is not approval.
+allowance. The subsequently approved [recovery candidate](V1-STAGING-RECOVERY.md)
+preserves all spent usage and adds at most 640 document attempts and 20 encoder
+calls on the same coordinator. The deployed grant was verified while still
+paused before one explicit resume. That attempt paused safely on an unknown
+failure; 448 document slots and 14 calls remain within the same grant. No
+contingency resume has occurred. The recovery result remains unverified. See the
+[attempt receipt](evidence/2026-10-22/stage-recovery-approved-attempt-1.json).
 
 Both noon cleanup guards exited. The proposed 13:00 Snapshot discovery probe
 missed its reviewed arming margin and was never armed. Its guards removed and

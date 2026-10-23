@@ -1,7 +1,15 @@
 # Bounded staging recovery candidate
 
-Status: locally validated and independently reviewed, ready for usage approval.
-**No additional allowance is approved or executed.**
+Status: the user approved this exact bounded recovery on 2026-10-23 at
+13:53 UTC. The isolated recovery entry is deployed as
+`573be17a-e46c-4431-a97b-a24a5c2c8b60`; its verified one-time grant preserves
+all 1,112 spent attempts and permits 640 more document attempts across at most
+20 encoder calls. The first recovery attempt paused after six calls at 13:57 UTC:
+1,304 cumulative document attempts are spent, 448 document slots and 14 calls
+remain. The original object is suspended at revision 3, quiescent, with no alarm.
+Its persisted failure is classified unknown. No contingency resume has occurred.
+See the [attempt receipt](evidence/2026-10-22/stage-recovery-approved-attempt-1.json).
+Completion and the new reported progress are not yet independently verified.
 The original 1,112-document staging reconciliation failed its bound. Its result
 and [stop evidence](evidence/2026-10-22/stage-pipeline-budget-stop.json) remain part
 of release acceptance. A recovered result must retain that history.
@@ -112,8 +120,8 @@ The positive workerd fixture supplies the fixed policy identity because its loca
 namespace differs; the actual entry separately refuses the wrong local object.
 These local proofs do not attest a hosted grant or successful recovery.
 The [candidate receipt](evidence/2026-10-22/stage-recovery-extension-candidate.json)
-pins the recovery/stop bundles and the frozen operator manifest. Its prepared
-authorization has not been executed.
+pins the recovery/stop bundles and the frozen operator manifest. The subsequent
+approved execution must retain that candidate and the original failed result.
 The [independent review](evidence/2026-10-22/stage-recovery-extension-independent-review.json)
 matches the frozen runtime and operator hashes and reports no remaining actionable
 findings. It records the fixed failure/reconstruction, deployment-guard and final

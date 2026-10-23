@@ -8,9 +8,13 @@ Existing Railway services are outside this release. Preserve unrelated work and 
 
 Current hosted status: the full baseline restore, snapshot Workflow artifact
 parity and 14 serving smokes pass. Non-empty ingestion remains incomplete:
-600 of 1,112 expected changes are durable, and all 1,112 approved embedding
-submissions are spent. Staging recovery is suspended on its original coordinator;
-no additional allowance is approved. Retrieval evaluation and production migration
+600 of 1,112 expected changes were durable when the original 1,112 embedding
+allowance was exhausted. The user has now approved the exact 640-document,
+20-call extension in [V1-STAGING-RECOVERY.md](V1-STAGING-RECOVERY.md), and its
+first attempt paused safely on an unknown failure after six calls and 1,304
+cumulative document submissions. The same coordinator is suspended with no alarm;
+448 document slots and 14 calls remain within that approval. Completion is not
+verified. Retrieval evaluation and production migration
 remain pending. See the [stop receipt](evidence/2026-10-22/stage-pipeline-budget-stop.json).
 
 ## Release requirements
@@ -329,13 +333,30 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
 - Snapshot follow-up: The 13:00 candidate missed its arming margin and was never
   armed. Both guard sessions exited successfully after confirming schedules
   empty. No alternate calendar or second full publication was started.
+- Local migration preparation: Explicit `AUTH_DB` keeps CHS keys and billing
+  authoritative while `CIVIC_DB` changes during a corpus rollback. Ten new
+  HTTP/MCP contracts cover revocation, capabilities, disabled/tightened billing,
+  replacement keys, shared usage and explicit-store failure. The paused vector
+  export client checks the original object/revision, complete suspension,
+  index/part digests and response bounds, with exclusive durable local intents.
+  Independent review found and fixed a journal-parent durability gap. The
+  [final local gate](evidence/2026-10-22/rollback-backup-local-release-gate.json)
+  passes 1,018 tests across 82 files, all four compiler projects, runtime probes,
+  invariants, 117 vendored files and five dry-run builds. No deployed auth
+  binding or production backup is established by these local checks.
+- Approved staging recovery: The exact preserved-counter extension was approved
+  and initialized on the original coordinator. Its first explicit resume reported
+  192 changed rows before pausing on an unknown failure. Counters retain all
+  1,304 cumulative attempts and six extension calls. There is no alarm or automatic
+  contingency resume. The [attempt receipt](evidence/2026-10-22/stage-recovery-approved-attempt-1.json)
+  retains the original failed bound and the incomplete recovered result.
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
 ## Remaining release gates
 
-1. Complete non-empty hosted ingestion after a separately approved bounded recovery, then verify vector visibility and the resulting backup.
+1. Diagnose the safely paused recovery failure, complete ingestion within the approved cumulative limits, then verify vector visibility and the resulting backup.
 2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
 3. Run post-reconciliation flows, fresh calibration, held-out retrieval, and bounded performance checks against the coherent serving target; verify positive BYOK generation with an approved provider key.
 4. Check text migration and the protected-table copy against a consistent production backup. The new protected-state copier is locally verified and does not verify target text references or compact markers.

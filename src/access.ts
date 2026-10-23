@@ -38,9 +38,10 @@ export async function authenticateRequest(env: Env, request: Request): Promise<R
   if (secret.startsWith('pk_')) {
     throw new AccessError('WRONG_KEY_KIND', 'A public browser key cannot authorize this route.', 403);
   }
-  if (!env.CIVIC_DB) throw new AccessError('AUTH_UNAVAILABLE', 'Authorization is unavailable.', 503);
+  const authDb = env.AUTH_DB ?? env.CIVIC_DB;
+  if (!authDb) throw new AccessError('AUTH_UNAVAILABLE', 'Authorization is unavailable.', 503);
 
-  const db = drizzle(env.CIVIC_DB);
+  const db = drizzle(authDb);
   const actor = await verifyApiKey(db, secret).catch(() => {
     throw new AccessError('AUTH_UNAVAILABLE', 'Authorization is unavailable.', 503);
   });
