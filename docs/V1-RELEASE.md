@@ -415,6 +415,15 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   [full-client validation](evidence/2026-10-23/protected-state-full-client-root-validation.json). See the
   [transport validation](evidence/2026-10-23/protected-state-http-root-validation.json).
 
+- OpenCode Zen: the explicit `opencode-zen` adapter supports the reviewed
+  `claude-haiku-4-5` Messages model, reusing the Anthropic protocol. A fixed
+  endpoint, total generation deadline, body bound and no redirects/retries
+  preserve one provider call. All 88 focused checks and Worker/tooling compilers
+  pass. Independent review reproduced and fixed late-response cleanup and
+  parsing-deadline gaps before the staging bundle was frozen. The user approved
+  one positive hosted check capped at 128 output tokens; it has not run. See the
+  [Zen validation](evidence/2026-10-23/opencode-zen-root-validation.json).
+
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 

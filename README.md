@@ -75,7 +75,11 @@ MCP lists tools only when their corpus and backends are available:
 `cite_provision`, `statute_changes`, `statute_lookup`, and `brief_topic`.
 
 BYOK chat also requires `X-CivicSignal-BYOK-Provider` and `X-CivicSignal-BYOK-Key`.
-Supported providers are Anthropic, OpenAI, and Google. The generation key goes only to the selected provider.
+Supported providers are Anthropic, OpenAI, Google, and OpenCode Zen (`opencode-zen`).
+The initial Zen adapter supports `claude-haiku-4-5` through the
+[OpenCode Messages API](https://opencode.ai/v2/docs/console/api/inference).
+That model is listed in the [paid model table](https://opencode.ai/v2/docs/console/models/).
+The generation key goes only to the selected provider.
 The CivicSignal key authorizes corpus access separately.
 
 ## Corpus and search checks

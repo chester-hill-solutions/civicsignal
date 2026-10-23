@@ -257,6 +257,26 @@ describe('chat execution', () => {
     expect(JSON.parse(String(init.body)).systemInstruction.parts[0].text).toContain('Quote it verbatim');
   });
 
+  it('sends licence-gated retrieved context to the reviewed Zen model with maxTokens128', async () => {
+    const retrieve = vi.fn(async () => brief());
+    const send = vi.fn(async (_url: string, _init?: RequestInit) => Response.json({ content: [{ type: 'text', text: 'A cited answer.' }] }));
+    vi.stubGlobal('fetch', send);
+    const result = await runChat({ env: {} as Env, retrieve, byokKey: 'caller-zen-key', byokProvider: 'opencode-zen' },
+      { provider: 'opencode-zen', messages: [{ role: 'user', content: 'Name the cited statute.' }], maxTokens: 128 });
+    expect(retrieve).toHaveBeenCalledTimes(1);expect(send).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String(send.mock.calls[0]![1]!.body));
+    expect(body.max_tokens).toBe(128);expect(body.model).toBe('claude-haiku-4-5');
+    expect(body.system).toContain('Quote it verbatim');expect(result.cited[2]?.text).toBe('');
+    expect(result.provider).toBe('opencode-zen');expect(JSON.stringify(result)).not.toContain('caller-zen-key');
+  });
+
+  it.each([{ provider: 'google' }, { model: 'gpt-4.1-mini' }])('rejects mismatched Zen provider/model before retrieval', async (change) => {
+    const retrieve = vi.fn(async () => brief()),send = vi.fn();vi.stubGlobal('fetch', send);
+    await expect(runChat({ env: {} as Env, retrieve, byokKey: 'caller-zen-key', byokProvider: 'opencode-zen' },
+      { provider: 'opencode-zen', messages: [{ role: 'user', content: 'Name the cited statute.' }], maxTokens: 128, ...change })).rejects.toBeInstanceOf(ChatInputError);
+    expect(retrieve).not.toHaveBeenCalled();expect(send).not.toHaveBeenCalled();
+  });
+
   it('rejects provider disagreement before retrieval or generation', async () => {
     const retrieve = vi.fn(async () => brief());
     const send = vi.fn();

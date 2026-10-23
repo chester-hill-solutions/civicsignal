@@ -338,3 +338,24 @@ product result journal. A permanent partition cannot make the response and count
 commit atomic, and reconciling usage does not recover a lost product result.
 A new HTTP request starts a new operation and can consume another unit; do not
 describe an uncertain response as an ordinary unbilled retrieval failure.
+
+## OpenCode Zen BYOK
+
+The new `opencode-zen` provider uses the caller's BYOK key with the fixed
+[OpenCode Messages endpoint](https://opencode.ai/v2/docs/console/api/inference).
+The initial supported model is `claude-haiku-4-5`, from the current
+[paid model table](https://opencode.ai/v2/docs/console/models/). Use the existing
+`X-CivicSignal-BYOK-Provider` and `X-CivicSignal-BYOK-Key` headers on `/api/chat`;
+CivicSignal workspace authentication remains required. Unsupported Zen models
+and mismatched body/header providers fail before retrieval.
+
+Zen reuses Anthropic message serialization and parsing. Its one provider POST
+has a 30-second total deadline and 256 KiB response bound, with redirects, retries
+and fallback disabled. Existing providers and the global 4,096-token request
+limit retain their previous behavior. The approved hosted check supplies
+`maxTokens:128` explicitly and uses one original staging-relay reservation.
+
+The [local validation](evidence/2026-10-23/opencode-zen-root-validation.json)
+records 88 passing focused tests, two compiler projects, independent review and
+the exact staged bundle. Positive hosted generation remains pending. A direct
+provider call cannot replace the authenticated staging `/api/chat` acceptance.

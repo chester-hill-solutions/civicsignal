@@ -78,6 +78,43 @@ async function setup(limit = 5) {
 }
 
 describe('HTTP and MCP access and metering', () => {
+  it('routes one authenticated Zen chat through retrieval, generation and shared usage', async () => {
+    const fixture = await setup();
+    const send = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      expect(String(input)).toBe('https://opencode.ai/inference/anthropic/v1/messages');
+      expect(init?.redirect).toBe('error');
+      expect(new Headers(init?.headers).get('authorization')).toBe('Bearer fixture-zen-generation-key');
+      const body = JSON.parse(String(init?.body));
+      expect(body.model).toBe('claude-haiku-4-5');expect(body.max_tokens).toBe(128);
+      expect(body.system).toContain('A verified test provision.');
+      expect(body.system).toContain('https://example.test/act/1');
+      expect(String(init?.body)).not.toContain('fixture-zen-generation-key');
+      return Response.json({ content: [{ type: 'text', text: 'Test Act section 1: https://example.test/act/1' }] });
+    });
+    const request = { method: 'POST', headers: { 'content-type': 'application/json',
+      'x-civicsignal-byok-provider': 'opencode-zen', 'x-civicsignal-byok-key': 'fixture-zen-generation-key' },
+      body: JSON.stringify({ provider: 'opencode-zen', topic: 'Test Act section 1', maxTokens: 128,
+        messages: [{ role: 'user', content: 'Give the cited statute name and its link.' }] }) };
+    expect((await fixture.send('/api/chat', request, false)).status).toBe(401);
+    expect(send).not.toHaveBeenCalled();expect(await fixture.count()).toBe(0);
+    const response = await fixture.send('/api/chat', request);
+    expect(response.status).toBe(200);
+    const body = await response.json() as Record<string, unknown>;
+    expect(body).toMatchObject({ provider: 'opencode-zen', model: 'claude-haiku-4-5',
+      answer: 'Test Act section 1: https://example.test/act/1', cited: [expect.objectContaining({ corpusId: 'statutes-canada', redistribution: 'open' })] });
+    expect(body.retrieval).toEqual([expect.objectContaining({ corpusId: 'statutes-canada', mode: 'exact' })]);
+    expect(JSON.stringify(body)).not.toContain('fixture-zen-generation-key');
+    expect(send).toHaveBeenCalledTimes(1);expect(await fixture.count()).toBe(1);
+    expect(new Set(fixture.names)).toEqual(new Set(['customer:customer_kept']));
+  });
+  it.each([{ provider: 'google' }, { model: 'gpt-4.1-mini' }])('refuses unsupported Zen routing before generation or billing', async (change) => {
+    const fixture = await setup(),send = vi.spyOn(globalThis, 'fetch');
+    const response = await fixture.send('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json',
+      'x-civicsignal-byok-provider': 'opencode-zen', 'x-civicsignal-byok-key': 'fixture-zen-generation-key' },
+      body: JSON.stringify({ provider: 'opencode-zen', topic: 'Test Act section 1', maxTokens: 128,
+        messages: [{ role: 'user', content: 'Give the cited statute name and its link.' }], ...change }) });
+    expect(response.status).toBe(400);expect(send).not.toHaveBeenCalled();expect(await fixture.count()).toBe(0);
+  });
   it('rejects unauthenticated HTTP and MCP before corpus retrieval', async () => {
     const fixture = await setup();
     expect((await fixture.send('/api/brief?topic=leave', {}, false)).status).toBe(401);

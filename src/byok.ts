@@ -18,7 +18,7 @@ import type { CorpusItem } from "@chester-hill-solutions/corpus";
  * is the difference between a chat surface and a licence incident.
  */
 
-export type ByokProvider = "anthropic" | "openai" | "google";
+export type ByokProvider = "anthropic" | "openai" | "google" | "opencode-zen";
 
 export interface ProviderSpec {
   label: string;
@@ -30,6 +30,25 @@ export interface ProviderSpec {
   parse(body: unknown): string;
 }
 
+export const OPENCODE_ZEN_MODEL = "claude-haiku-4-5";
+export const OPENCODE_ZEN_LIMITS = { timeoutMs: 30_000, responseBytes: 256 * 1024 } as const;
+const OPENCODE_ZEN_ENDPOINT = "https://opencode.ai/inference/anthropic/v1/messages";
+
+const anthropicBody: ProviderSpec["body"] = ({ system, messages, model, maxTokens }) => ({
+  model,
+  max_tokens: maxTokens,
+  system,
+  messages: messages.map((m) => ({ role: m.role, content: m.content })),
+});
+const anthropicText: ProviderSpec["parse"] = (body) => {
+  const content = (body as { content?: { type: string; text?: string }[] })?.content ?? [];
+  return content
+    .filter((part) => part.type === "text" && typeof part.text === "string")
+    .map((part) => part.text!)
+    .join("\n")
+    .trim();
+};
+
 export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
   anthropic: {
     label: "Anthropic",
@@ -40,20 +59,8 @@ export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     }),
-    body: ({ system, messages, model, maxTokens }) => ({
-      model,
-      max_tokens: maxTokens,
-      system,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    }),
-    parse: (body) => {
-      const content = (body as { content?: { type: string; text?: string }[] })?.content ?? [];
-      return content
-        .filter((part) => part.type === "text" && typeof part.text === "string")
-        .map((part) => part.text!)
-        .join("\n")
-        .trim();
-    },
+    body: anthropicBody,
+    parse: anthropicText,
   },
   openai: {
     label: "OpenAI",
@@ -96,10 +103,109 @@ export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
         .trim();
     },
   },
+  "opencode-zen": {
+    label: "OpenCode Zen",
+    defaultModel: OPENCODE_ZEN_MODEL,
+    endpoint: () => OPENCODE_ZEN_ENDPOINT,
+    headers: (apiKey) => ({ authorization: `Bearer ${apiKey}`, "content-type": "application/json" }),
+    body: anthropicBody,
+    parse: anthropicText,
+  },
 };
 
 export function isByokProvider(value: string): value is ByokProvider {
   return Object.hasOwn(PROVIDERS, value);
+}
+
+/** The initial Zen adapter supports one reviewed Messages-family model. */
+export function supportsByokModel(provider: ByokProvider, model?: string): boolean {
+  return provider !== "opencode-zen" || !model?.trim() || model.trim() === OPENCODE_ZEN_MODEL;
+}
+
+/** One finite Zen POST. No redirects, retry, fallback or provider-body errors. */
+async function opencodeZenAnswer(apiKey: string, body: unknown, parse: ProviderSpec["parse"], signal?: AbortSignal): Promise<string> {
+  const controller = new AbortController();
+  const deadline = performance.now() + OPENCODE_ZEN_LIMITS.timeoutMs;
+  const failure = () => new Error("The OpenCode Zen request did not complete within its bounds.");
+  let rejectDeadline!: (reason: Error) => void;
+  const expired = new Promise<never>((_resolve, reject) => { rejectDeadline = reject; });
+  void expired.catch(() => {});
+  const abort = () => { controller.abort(); rejectDeadline(failure()); };
+  const timer = setTimeout(abort, OPENCODE_ZEN_LIMITS.timeoutMs);
+  signal?.addEventListener("abort", abort, { once: true });
+  const check = () => { if (controller.signal.aborted || signal?.aborted || performance.now() >= deadline) throw failure(); };
+  const within = async <T>(pending: Promise<T>): Promise<T> => {
+    void pending.catch(() => {});
+    check();
+    const result = await Promise.race([pending, expired]);
+    check();
+    return result;
+  };
+  let response: Response | undefined;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  let complete = false;
+  let finished = false;
+  let failedStatus: number | undefined;
+  try {
+    check();
+    const requestBody = JSON.stringify(body);
+    check();
+    const pending = fetch(OPENCODE_ZEN_ENDPOINT, {
+      method: "POST", headers: PROVIDERS["opencode-zen"].headers(apiKey), body: requestBody,
+      redirect: "error", signal: controller.signal,
+    }).then((value) => {
+      if (finished) {
+        // A transport ignoring abort may settle late. Dispose its body; never send again.
+        void value.body?.cancel().catch(() => {});
+        throw failure();
+      }
+      response = value;
+      check();
+      return value;
+    });
+    response = await within(pending);
+    if (!response.ok) { failedStatus = response.status; throw failure(); }
+    const declared = response.headers.get("content-length");
+    if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > OPENCODE_ZEN_LIMITS.responseBytes)) throw failure();
+    reader = response.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    if (reader) for (;;) {
+      const next = await within(reader.read());
+      if (next.done) break;
+      size += next.value.byteLength;
+      if (size > OPENCODE_ZEN_LIMITS.responseBytes) throw failure();
+      if (next.value.byteLength) chunks.push(next.value);
+    }
+    const bytes = new Uint8Array(size);
+    let at = 0;
+    for (const chunk of chunks) { bytes.set(chunk, at); at += chunk.byteLength; }
+    check();
+    const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    check();
+    const answer = parse(value);
+    check();
+    if (apiKey && answer.includes(apiKey)) throw failure();
+    check();
+    complete = true;
+    return answer;
+  } catch {
+    throw failedStatus === undefined ? failure() : new Error(`The OpenCode Zen endpoint returned ${failedStatus}.`);
+  } finally {
+    finished = true;
+    if (!complete) {
+      controller.abort();
+      const cancel = reader ? reader.cancel() : response?.body?.cancel();
+      if (cancel) {
+        // Cleanup shares the original deadline. An uncertain call is terminal.
+        const settled = cancel.catch(() => {});
+        try { if (performance.now() < deadline) await Promise.race([settled, expired]); } catch { /* Preserve the original safe failure. */ }
+      }
+    }
+    reader?.releaseLock();
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", abort);
+  }
 }
 
 /** One retrieved item, ready to be put in front of a model. */
@@ -203,17 +309,17 @@ export async function chatByok(options: {
   const spec = PROVIDERS[options.provider];
   const model = options.model?.trim() || spec.defaultModel;
 
+  if (!supportsByokModel(options.provider, model)) throw new Error("OpenCode Zen supports only " + OPENCODE_ZEN_MODEL + ".");
+  const requestBody = spec.body({ system: options.system, messages: options.messages, model, maxTokens: options.maxTokens ?? 1200 });
+  if (options.provider === "opencode-zen") {
+    const answer = await opencodeZenAnswer(options.apiKey, requestBody, spec.parse, options.signal);
+    return { answer, provider: options.provider, model, cited: 0 };
+  }
+
   const response = await fetch(spec.endpoint(model), {
     method: "POST",
     headers: spec.headers(options.apiKey),
-    body: JSON.stringify(
-      spec.body({
-        system: options.system,
-        messages: options.messages,
-        model,
-        maxTokens: options.maxTokens ?? 1200,
-      }),
-    ),
+    body: JSON.stringify(requestBody),
     ...(options.signal ? { signal: options.signal } : {}),
   });
 

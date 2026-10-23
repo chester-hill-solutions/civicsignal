@@ -2,6 +2,8 @@ import {
   buildContextBlock,
   chatByok,
   isByokProvider,
+  supportsByokModel,
+  OPENCODE_ZEN_MODEL,
   PROVIDERS,
   type ByokProvider,
   type CitedItem,
@@ -98,7 +100,7 @@ export function parseChatRequest(body: unknown): ChatRequest {
   }
   const provider = optionalText(record, 'provider', 32);
   if (provider && !isByokProvider(provider)) {
-    throw new ChatInputError('Supported providers: anthropic, openai, google.');
+    throw new ChatInputError('Supported providers: anthropic, openai, google, opencode-zen.');
   }
   const model = optionalText(record, 'model', 200);
   if (model && !/^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/.test(model)) {
@@ -189,11 +191,14 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
   request = parseChatRequest(request);
   if (!isByokProvider(deps.byokProvider)) {
     throw new ChatInputError(
-      'Supported providers: anthropic, openai, google.',
+      'Supported providers: anthropic, openai, google, opencode-zen.',
     );
   }
   if (request.provider && request.provider !== deps.byokProvider) {
     throw new ChatInputError('The provider in the body must match the BYOK provider header.');
+  }
+  if (!supportsByokModel(deps.byokProvider, request.model)) {
+    throw new ChatInputError('OpenCode Zen supports only ' + OPENCODE_ZEN_MODEL + '.');
   }
   if (!deps.byokKey.trim() || deps.byokKey.length > 4096) {
     throw new ChatInputError('A generation key is required. Send it in the ' + BYOK_KEY_HEADER + ' header.');
