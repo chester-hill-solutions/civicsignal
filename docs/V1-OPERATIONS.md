@@ -85,8 +85,11 @@ private row values and cursor keys. Text steps require the expected session
 version before R2 reads and preserve the atomic guard after those reads.
 All 119 focused tests pass, including 49 protected-D1 checks. This is local
 implementation evidence. The default configuration leaves the routes disabled;
-consistent production acquisition, a durable staging client, hosted application
-and a separately reviewed production target adapter remain pending. See the
+The initial-admission client is also locally verified with 132 focused checks.
+It seals inputs before credentials, journals bounded windows and stops at
+`checking-text`. Completing its later phases and owned operator, consistent
+production acquisition, hosted application and a separately reviewed production
+target adapter remain pending. See the
 [transport validation](evidence/2026-10-23/protected-state-http-root-validation.json).
 
 Before a corpus backup, use the deployed coordinator's

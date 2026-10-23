@@ -4,7 +4,7 @@ import {Miniflare} from 'miniflare';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
 import type {DatabaseSync as Sqlite} from 'node:sqlite';
-import {chmod,mkdtemp,readFile,readdir,realpath,rm,writeFile} from 'node:fs/promises';
+import {chmod,lstat,mkdir,mkdtemp,readFile,readdir,realpath,rm,writeFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {prepareTextCutover,jsonLines,sha256File} from '../scripts/prepare-text-cutover';
@@ -19,6 +19,18 @@ import {PROTECTED_D1_AUTH_SCHEMA} from '../src/corpora/protected-state-d1-schema
 import {compareProtectedD1Keys,type ProtectedD1Admission,type ProtectedD1Identity} from '../src/corpora/protected-state-d1-admission';
 import {localD1} from '../scripts/lib/local-d1';
 import {readProtectedRestoreBody,PROTECTED_BODY_TIMEOUT_MS} from '../services/restore/protected';
+import {inspectProtectedD1Client,runProtectedD1InitialWindow} from '../scripts/lib/protected-state-d1-client';
+import {protectedD1ClientMain} from '../scripts/protected-state-d1';
+const clientFsyncFault=vi.hoisted(()=>({afterSync:undefined as ((path:string)=>void)|undefined,beforeRead:undefined as ((path:string)=>void)|undefined}));
+vi.mock('node:fs',async importOriginal=>{
+ const actual=await importOriginal<typeof import('node:fs')>(),paths=new Map<number,string>();
+ return {...actual,openSync:(...args:Parameters<typeof actual.openSync>)=>{const fd=actual.openSync(...args);paths.set(fd,String(args[0]));return fd;},
+  closeSync:(fd:number)=>{paths.delete(fd);actual.closeSync(fd);},fsyncSync:(fd:number)=>{actual.fsyncSync(fd);clientFsyncFault.afterSync?.(paths.get(fd)??'');}};
+});
+vi.mock('node:fs/promises',async importOriginal=>{
+ const actual=await importOriginal<typeof import('node:fs/promises')>();
+ return {...actual,readFile:(...args:Parameters<typeof actual.readFile>)=>{clientFsyncFault.beforeRead?.(String(args[0]));return actual.readFile(...args);}};
+});
 const {DatabaseSync}=createRequire(import.meta.url)('node:sqlite') as {DatabaseSync:typeof Sqlite};
 const cleanup:(()=>Promise<unknown>|void)[]=[];
 afterEach(async()=>{for(const close of cleanup.splice(0).reverse())await close();});
@@ -104,7 +116,8 @@ async function fixture(historyMode:'highwater'|'zero'|'absent'='highwater',envOv
  async function ready(){expect((await begin()).status).toBe(200);await corpus();await text();}
  async function apply(){for(const page of pages){const r=await call('apply',{page});expect(r.status,r.code).toBe(200);}}
  async function verify(){for(const page of pages){const r=await call('verify',{page});expect(r.status,r.code).toBe(200);}}
- return {root,source,targetFile,bundle,output,manifest,admission,identity,pages,compactPages,mf,db,call,begin,corpus,text,ready,apply,verify,sealedPagesSha,sealedManifestSha,protectedCall,protectedHeaders,send};
+ const client={directory:output,manifestSha256:prepared.manifestSha256,admissionPath:sidecar,admissionSha256:admitted.admissionSha256,admissionFileSha256:admitted.fileSha256,cutoverBundle:bundle,target,journalDirectory:join(root,'client-journal'),credential:()=>token,fetch:send};
+ return {root,source,targetFile,bundle,output,manifest,admission,identity,pages,compactPages,mf,db,call,begin,corpus,text,ready,apply,verify,sealedPagesSha,sealedManifestSha,protectedCall,protectedHeaders,send,client};
 }
 
 describe('protected D1 fixed assets',()=>{
@@ -375,5 +388,144 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('protected pages
   await writeFile(join(f.output,'pages.jsonl'),pages.map(p=>JSON.stringify(p)).join('\n')+'\n');manifest.pagesSha256=await sha256File(join(f.output,'pages.jsonl'));
   await writeFile(join(f.output,'manifest.json'),JSON.stringify(manifest)+'\n');
   await expect(prepareProtectedD1Admission({directory:f.output,manifestSha256:await sha256File(join(f.output,'manifest.json')),cutoverBundle:f.bundle,target:f.identity.target,outputPath:join(f.root,'new-admission.json')})).rejects.toMatchObject({code:kind==='unordered'?'PROTECTED_D1_KEY_ORDER':'PROTECTED_SEQUENCE_FACTS'});
+ },30_000);
+});
+describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('durable initial protected admission windows',()=>{
+ async function journalText(directory:string):Promise<string>{let text='';for(const name of await readdir(directory)){const path=join(directory,name),info=await lstat(path);expect(info.mode&0o777).toBe(info.isDirectory()?0o700:0o600);text+=info.isDirectory()?await journalText(path):await readFile(path,'utf8');}return text;}
+ it('seals without credentials or networking, then resumes exact small windows and stops before text/auth rows',async()=>{
+  const f=await fixture();let credentials=0,sends=0,active=0,peak=0;
+  const options={...f.client,credential:()=>{credentials++;return f.client.credential();},fetch:(async(url,init)=>{sends++;active++;peak=Math.max(peak,active);try{return await f.send(url,init);}finally{active--;}}) as typeof fetch,maxRequests:4};
+  expect(await inspectProtectedD1Client(options)).toMatchObject({execute:false,compactPages:2,corpusRows:18});expect(credentials).toBe(0);expect(sends).toBe(0);
+  const first=await runProtectedD1InitialWindow(options);expect(first).toMatchObject({outcome:'bounded',attempts:3,progress:{phase:'checking-corpus',compactPages:1,version:1}});
+  const second=await runProtectedD1InitialWindow(options);expect(second).toMatchObject({outcome:'checking-text',attempts:2,progress:{compactPages:2,version:2,textRows:0}});
+  expect(await runProtectedD1InitialWindow(options)).toMatchObject({outcome:'checking-text',attempts:1});expect(peak).toBe(1);
+  expect(await f.db.prepare('SELECT count(*) AS n FROM workspace').first()).toEqual({n:0});
+  const state=JSON.parse((await f.db.prepare('SELECT state_json FROM protected_state_d1_session').first<{state_json:string}>())!.state_json);expect(state.audit).toBeNull();expect(state.phase).toBe('checking-text');
+  const text=await journalText(options.journalDirectory);for(const secret of ['Synthetic','key_hash','Bearer ',f.client.credential(),f.root])expect(text).not.toContain(secret);
+ },30_000);
+ it('fsyncs an exclusive request intent before selecting the credential',async()=>{
+  const f=await fixture();let selected=false;
+  const r=await runProtectedD1InitialWindow({...f.client,maxRequests:1,credential:async()=>{const path=join(f.client.journalDirectory,'window-000001','request-0001.intent.json');expect(JSON.parse(await readFile(path,'utf8'))).toMatchObject({step:'status',attempt:1});expect((await lstat(path)).mode&0o777).toBe(0o600);selected=true;return f.client.credential();}});
+  expect(r).toMatchObject({outcome:'bounded',attempts:1,progress:{initialized:false}});expect(selected).toBe(true);
+ },30_000);
+ it.each(['begin','corpus'] as const)('reconciles a committed lost %s reply through one GET, ends the window, and never resends it',async(lostStep)=>{
+  const f=await fixture();let lost=false;const posts:string[]=[];
+  const send:typeof fetch=async(url,init)=>{const step=new URL(String(url)).pathname.split('/').at(-1)!;if(init?.method==='POST')posts.push(step==='corpus'?step+':'+JSON.parse(String(init.body)).page.page:step);
+   const response=await f.send(url,init);if(step===lostStep&&!lost){lost=true;await response.body?.cancel();throw new Error('PRIVATE '+f.client.credential());}return response;};
+  const first=await runProtectedD1InitialWindow({...f.client,fetch:send});expect(first.outcome).toBe('reconciled');expect(first.requests.at(-1)?.kind).toBe('ack');
+  const before=[...posts];expect(await runProtectedD1InitialWindow({...f.client,fetch:send})).toMatchObject({outcome:'checking-text'});
+  expect(posts.filter(p=>p==='begin')).toHaveLength(1);expect(posts.filter(p=>p==='corpus:1')).toHaveLength(1);expect(before.length).toBe(lostStep==='begin'?1:2);
+  expect(await journalText(f.client.journalDirectory)).not.toContain('PRIVATE');
+ },30_000);
+ it('never treats unchanged status as a fence for a late POST or permission to resend',async()=>{
+  const f=await fixture();let sends=0;
+  const send:typeof fetch=async(url,init)=>{sends++;if(init?.method==='POST')throw new Error('lost before reply');return f.send(url,init);};
+  const result=await runProtectedD1InitialWindow({...f.client,fetch:send});expect(result).toMatchObject({outcome:'unresolved',attempts:3,progress:{initialized:false}});expect(sends).toBe(3);
+  // The original uncertain begin could still commit after that unchanged GET.
+  expect((await f.protectedCall('begin',{manifest:f.manifest,admission:f.admission})).status).toBe(200);
+  let credentials=0;await expect(runProtectedD1InitialWindow({...f.client,credential:()=>{credentials++;return f.client.credential();},fetch:async()=>{sends++;throw Error('must not send');}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_UNRESOLVED'});expect(credentials).toBe(0);expect(sends).toBe(3);
+ },30_000);
+ it('requires fresh remote parity with the complete durable receipt prefix',async()=>{
+  const f=await fixture();expect((await runProtectedD1InitialWindow({...f.client,maxRequests:4})).outcome).toBe('bounded');
+  await f.db.prepare('UPDATE protected_state_d1_session SET version=version+1').run();let posts=0;
+  const result=await runProtectedD1InitialWindow({...f.client,fetch:async(url,init)=>{if(init?.method==='POST')posts++;return f.send(url,init);}});expect(result.outcome).toBe('failed');expect(result.attempts).toBe(1);expect(posts).toBe(0);
+ },30_000);
+ it.each(['protected','admission','cutover'] as const)('refuses %s source drift before credentials, networking or a new journal',async(kind)=>{
+  const f=await fixture(),path=kind==='protected'?join(f.output,'pages.jsonl'):kind==='admission'?f.client.admissionPath:join(f.bundle,'objects.pack');await writeFile(path,'PRIVATE corrupted source');let selected=0,sends=0;
+  await expect(runProtectedD1InitialWindow({...f.client,credential:()=>{selected++;return f.client.credential();},fetch:async()=>{sends++;throw Error('must not send');}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_LOCAL_OR_TRANSPORT'});
+  expect(selected).toBe(0);expect(sends).toBe(0);await expect(lstat(f.client.journalDirectory)).rejects.toMatchObject({code:'ENOENT'});
+ },30_000);
+ it('refuses competing and crash windows without repairing their markers',async()=>{
+  const f=await fixture();let release!:()=>void,entered!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;}),seen=new Promise<void>(resolve=>{entered=resolve;});let secondSelected=0;
+  const first=runProtectedD1InitialWindow({...f.client,maxRequests:1,fetch:async(url,init)=>{entered();await gate;return f.send(url,init);}});
+  await seen;try{await expect(runProtectedD1InitialWindow({...f.client,credential:()=>{secondSelected++;return f.client.credential();}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_CRASH_OR_COMPETING_WINDOW'});}finally{release();}
+  expect(secondSelected).toBe(0);await first;
+  const directory=join(f.client.journalDirectory,'window-000002');await mkdir(directory,{mode:0o700});await writeFile(join(directory,'started.json'),'partial',{mode:0o600});
+  await expect(runProtectedD1InitialWindow(f.client)).rejects.toMatchObject({code:'PROTECTED_CLIENT_CRASH_OR_COMPETING_WINDOW'});expect(await readFile(join(directory,'started.json'),'utf8')).toBe('partial');
+ },30_000);
+ it('refuses a partial/tampered acknowledgement prefix and preserves its bytes',async()=>{
+  const f=await fixture();await runProtectedD1InitialWindow({...f.client,maxRequests:1});const path=join(f.client.journalDirectory,'window-000001','request-0001.ack.json');await writeFile(path,'{"partial":');
+  let selected=0;await expect(runProtectedD1InitialWindow({...f.client,credential:()=>{selected++;return f.client.credential();}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_LOCAL_OR_TRANSPORT'});expect(selected).toBe(0);expect(await readFile(path,'utf8')).toBe('{"partial":');
+ },30_000);
+ it('reserves an extra GET attempt and its complete time budget before any POST',async()=>{
+  const f=await fixture();let posts=0;
+  expect(await runProtectedD1InitialWindow({...f.client,wallMs:1000,requestMs:700,fetch:async(url,init)=>{if(init?.method==='POST')posts++;return f.send(url,init);}})).toMatchObject({outcome:'bounded',attempts:1});expect(posts).toBe(0);
+ },30_000);
+ it.each([{maxRequests:65},{wallMs:300001},{requestMs:15001},{maxRequests:0}])('refuses limits beyond hard bounds %j before credentials',async(bounds)=>{
+  const f=await fixture();let selected=0;await expect(runProtectedD1InitialWindow({...f.client,...bounds,credential:()=>{selected++;return '';}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_LIMITS'});expect(selected).toBe(0);
+ },30_000);
+ it.each(['redirect','oversize','invalid-json'] as const)('bounds/refuses %s replies without automatic retries or payload leakage',async(kind)=>{
+  const f=await fixture();let sends=0;const result=await runProtectedD1InitialWindow({...f.client,fetch:async()=>{sends++;return kind==='redirect'?new Response('PRIVATE',{status:302,headers:{location:'https://production.invalid'}}):new Response(kind==='oversize'?'PRIVATE'.repeat(3000):'PRIVATE invalid JSON');}});
+  expect(result).toMatchObject({outcome:'failed',attempts:1});expect(sends).toBe(1);expect(await journalText(f.client.journalDirectory)).not.toContain('PRIVATE');
+ },30_000);
+ it('bounds a stalled response body and cancels it',async()=>{
+  const f=await fixture();let cancelled=false;vi.spyOn(performance,'now').mockReturnValue(0);
+  try{const result=await runProtectedD1InitialWindow({...f.client,requestMs:20,fetch:async()=>new Response(new ReadableStream<Uint8Array>({pull(){return new Promise(()=>{});},cancel(){cancelled=true;}}))});
+   expect(result).toMatchObject({outcome:'failed',attempts:1,code:'PROTECTED_CLIENT_REQUEST_TIMEOUT'});expect(cancelled).toBe(true);
+  }finally{vi.restoreAllMocks();}
+ },30_000);
+ it('refuses reconciliation while the failed POST body cancellation remains unsettled',async()=>{
+  const f=await fixture();let sends=0,cancelPending=false;vi.spyOn(performance,'now').mockReturnValue(0);
+  try{const result=await runProtectedD1InitialWindow({...f.client,requestMs:1000,fetch:async(url,init)=>{sends++;const response=await f.send(url,init);
+    if(init?.method!=='POST')return response;
+    await response.body?.cancel();return new Response(new ReadableStream<Uint8Array>({cancel(){cancelPending=true;return new Promise(()=>{});}}),{status:503});}});
+   expect(result).toMatchObject({outcome:'unresolved',attempts:2,progress:{initialized:false}});expect(sends).toBe(2);expect(cancelPending).toBe(true);
+   expect((await f.protectedCall('status')).phase).toBe('checking-corpus');let selected=0;
+   await expect(runProtectedD1InitialWindow({...f.client,credential:()=>{selected++;return f.client.credential();},fetch:async()=>{sends++;throw Error('must not send');}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_UNRESOLVED'});
+   expect(selected).toBe(0);expect(sends).toBe(2);
+  }finally{vi.restoreAllMocks();}
+ },30_000);
+ it.each(['request-0001.ack.json','result.json','accepted.json'])('refuses normal acceptance when %s fsync crosses the wall and preserves the durable ack',async(faultFile)=>{
+  const f=await fixture();let clock=0;vi.spyOn(performance,'now').mockImplementation(()=>clock);
+  clientFsyncFault.afterSync=path=>{if(path.endsWith('/'+faultFile))clock=11;};
+  try{await expect(runProtectedD1InitialWindow({...f.client,maxRequests:1,wallMs:10,requestMs:5,fetch:async()=>Response.json({initialized:false})})).rejects.toMatchObject({code:'PROTECTED_CLIENT_WALL'});
+   clientFsyncFault.afterSync=undefined;const directory=join(f.client.journalDirectory,'window-000001'),path=join(directory,'request-0001.ack.json'),ack=await readFile(path,'utf8');
+   expect(JSON.parse(ack)).toMatchObject({kind:'ack',progress:{initialized:false}});await expect(lstat(join(directory,'request-0001.failure.json'))).rejects.toMatchObject({code:'ENOENT'});
+   let selected=0,sends=0;await expect(runProtectedD1InitialWindow({...f.client,credential:()=>{selected++;return f.client.credential();},fetch:async()=>{sends++;throw Error('must not send');}})).rejects.toBeDefined();
+   expect(selected).toBe(0);expect(sends).toBe(0);expect(await readFile(path,'utf8')).toBe(ack);
+  }finally{clientFsyncFault.afterSync=undefined;vi.restoreAllMocks();}
+ },30_000);
+ it('preserves acknowledged POST progress as failed without a second terminal or reconciliation after an ack fsync overrun',async()=>{
+  const f=await fixture();let clock=0,sends=0;vi.spyOn(performance,'now').mockImplementation(()=>clock);
+  clientFsyncFault.afterSync=path=>{if(path.endsWith('/request-0002.ack.json'))clock=3001;};
+  try{await expect(runProtectedD1InitialWindow({...f.client,maxRequests:3,wallMs:3000,requestMs:1000,fetch:async(url,init)=>{sends++;return f.send(url,init);}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_WALL'});
+   const directory=join(f.client.journalDirectory,'window-000001'),result=JSON.parse(await readFile(join(directory,'result.json'),'utf8'));
+   expect(result).toMatchObject({outcome:'failed',attempts:2,progress:{phase:'checking-corpus',version:0,compactPages:0},code:'PROTECTED_CLIENT_WALL'});expect(sends).toBe(2);
+   expect((await readdir(directory)).sort()).toEqual(['request-0001.ack.json','request-0001.intent.json','request-0002.ack.json','request-0002.intent.json','result.json','started.json']);
+  }finally{clientFsyncFault.afterSync=undefined;vi.restoreAllMocks();}
+ },30_000);
+ it('cancels a late response and never overlaps another request with the unsettled send',async()=>{
+  const f=await fixture();let cancelled=false,sends=0,clock=0;vi.spyOn(performance,'now').mockImplementation(()=>clock);
+  try{const result=await runProtectedD1InitialWindow({...f.client,requestMs:5,fetch:async()=>{sends++;clock=6;await new Promise(r=>setTimeout(r,30));return new Response(new ReadableStream<Uint8Array>({cancel(){cancelled=true;}}));}});
+   expect(result).toMatchObject({outcome:'failed',attempts:1});await new Promise(r=>setTimeout(r,40));expect(sends).toBe(1);expect(cancelled).toBe(true);
+  }finally{vi.restoreAllMocks();}
+ },30_000);
+ it('checks the monotonic request deadline after credential selection before sending',async()=>{
+  const f=await fixture();let clock=0,sends=0;vi.spyOn(performance,'now').mockImplementation(()=>clock);
+  try{const result=await runProtectedD1InitialWindow({...f.client,requestMs:5,credential:()=>{clock=6;return f.client.credential();},fetch:async()=>{sends++;throw Error('must not send');}});expect(result).toMatchObject({outcome:'failed',attempts:1,code:'PROTECTED_CLIENT_REQUEST_TIMEOUT'});expect(sends).toBe(0);}finally{vi.restoreAllMocks();}
+ },30_000);
+ it('refuses an exhausted overall wall after full sealing without selecting credentials or creating a journal',async()=>{
+  const f=await fixture();let selected=0,sends=0;vi.spyOn(performance,'now').mockReturnValueOnce(0).mockReturnValue(300001);
+  try{await expect(runProtectedD1InitialWindow({...f.client,credential:()=>{selected++;return '';},fetch:async()=>{sends++;throw Error('must not send');}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_WALL'});
+   expect(selected).toBe(0);expect(sends).toBe(0);await expect(lstat(f.client.journalDirectory)).rejects.toMatchObject({code:'ENOENT'});
+  }finally{vi.restoreAllMocks();}
+ },30_000);
+ it('enforces the monotonic deadline while immediately fulfilled chunks starve the timer',async()=>{
+  const f=await fixture();let clock=0,cancelled=false;vi.spyOn(performance,'now').mockImplementation(()=>clock);
+  try{const result=await runProtectedD1InitialWindow({...f.client,requestMs:5,fetch:async()=>new Response(new ReadableStream<Uint8Array>({pull(controller){clock+=6;controller.enqueue(new TextEncoder().encode('{"initialized":false}'));},cancel(){cancelled=true;}},{highWaterMark:0}))});
+   expect(result).toMatchObject({outcome:'failed',attempts:1,code:'PROTECTED_CLIENT_REQUEST_TIMEOUT'});expect(cancelled).toBe(true);
+  }finally{vi.restoreAllMocks();}
+ },30_000);
+ it('defaults the thin CLI to source-only inspection without a journal or execution mode',async()=>{
+  const f=await fixture(),target=join(f.root,'client-target.json');await writeFile(target,JSON.stringify(f.client.target),{mode:0o600});
+  const result=await protectedD1ClientMain(['--directory',f.output,'--manifest-sha256',f.client.manifestSha256,'--admission',f.client.admissionPath,'--admission-sha256',f.client.admissionSha256,'--admission-file-sha256',f.client.admissionFileSha256,'--cutover',f.bundle,'--target',target]);
+  expect(result).toMatchObject({execute:false,compactPages:2});await expect(lstat(f.client.journalDirectory)).rejects.toMatchObject({code:'ENOENT'});
+ },30_000);
+ it('refuses an oversized private CLI target before reading its bytes',async()=>{
+  const f=await fixture(),target=join(f.root,'client-target.json');await writeFile(target,'PRIVATE invalid JSON'.padEnd(16*1024+1,'x'),{mode:0o600});
+  let targetReads=0;clientFsyncFault.beforeRead=path=>{if(path===target)targetReads++;};
+  try{await expect(protectedD1ClientMain(['--directory',f.output,'--manifest-sha256',f.client.manifestSha256,'--admission',f.client.admissionPath,'--admission-sha256',f.client.admissionSha256,'--admission-file-sha256',f.client.admissionFileSha256,'--cutover',f.bundle,'--target',target])).rejects.toMatchObject({code:'PROTECTED_CLIENT_TARGET_BOUND'});expect(targetReads).toBe(0);
+   await expect(lstat(f.client.journalDirectory)).rejects.toMatchObject({code:'ENOENT'});
+  }finally{clientFsyncFault.beforeRead=undefined;}
  },30_000);
 });

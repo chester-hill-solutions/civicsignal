@@ -1,0 +1,80 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T21:46:23.818508+00:00",
+  "authority": "independent-root-validation",
+  "baseCommit": "6494abd181b2701c3293ab33cf6a6be8b5f22530",
+  "scope": "initial-admission-only",
+  "files": {
+    "scripts/lib/protected-state-d1-client.ts": {
+      "bytes": 20528,
+      "sha256": "dec24f6beff7b4cff217db4c45ca4e79ded4c5372fd6ebe136e07c93e29bd705"
+    },
+    "scripts/protected-state-d1.ts": {
+      "bytes": 2878,
+      "sha256": "1e4becdd1eaddf407f5e8ed3d823f7e7598787fd69fec962deafb0758058f2ae"
+    },
+    "scripts/lib/protected-state-d1.ts": {
+      "bytes": 6086,
+      "sha256": "71347b86c02ff0cd777bf9698f5fb801e86dd20521aa81f3d9ddffd10997ccef"
+    },
+    "test/protected-state-d1.test.ts": {
+      "bytes": 62596,
+      "sha256": "cd402ea928ebf16d3b4149ea7160dc3f3cadeb49b9f9c6b95451ae759e4c7a85"
+    }
+  },
+  "validation": {
+    "command": "CIVICSIGNAL_WORKERD_TESTS=1 bun run test test/protected-state-d1.test.ts test/protected-state.test.ts test/protected-state-format.test.ts",
+    "exitCode": 0,
+    "files": 3,
+    "passed": 132,
+    "skipped": 0,
+    "d1AndClient": 80,
+    "offlineCopier": 35,
+    "sharedFormat": 17,
+    "durationSeconds": 162.11,
+    "compilers": [
+      "tsconfig.worker.json",
+      "tsconfig.bun.json",
+      "tsconfig.tooling.json"
+    ],
+    "compilersPassed": true,
+    "independentReview": {
+      "findingsReproducedAndFixed": 3,
+      "targetedRegressionCases": 6,
+      "passed": true
+    }
+  },
+  "behavior": {
+    "defaultInspection": true,
+    "fullInputSealingBeforeCredential": true,
+    "lazyCredentialAfterDurableIntent": true,
+    "privateExclusiveFsyncedHashChain": true,
+    "freshStatusBeforeSubsequentWindow": true,
+    "reconcileOnlyExactExpectedCommittedState": true,
+    "uncertainUnchangedStatusBlocksAutomaticResume": true,
+    "pendingCleanupBlocksReconciliation": true,
+    "acknowledgementPreservedAfterObservedDeadlineOverrun": true,
+    "stopsAt": "checking-text",
+    "automaticWriteRetries": 0
+  },
+  "limits": {
+    "requestsPerWindow": 64,
+    "wallMsIncludingInputSealing": 300000,
+    "requestMs": 15000,
+    "responseBytes": 16384,
+    "inFlight": 1,
+    "limitsMayOnlyBeReduced": true
+  },
+  "boundaries": {
+    "syntheticLocalD1R2Only": true,
+    "cloudRequests": 0,
+    "credentialContentsRead": false,
+    "serverOrFrozenPacketsChanged": false,
+    "hostedCopyProven": false,
+    "productionAcquisitionProven": false,
+    "remainingClientPhasesImplemented": false,
+    "outerOwnedProcessDeadlineProvided": false,
+    "hermeticRuntimeProvided": false,
+    "filesystemSyscallsPreemptible": false
+  }
+}

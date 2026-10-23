@@ -2,8 +2,8 @@
 
 The fixed-table binding helper and its staging-only HTTP adapter are implemented
 and tested against synthetic local workerd D1/R2. The checked-in restore config
-remains disabled with no bindings. There is no execution client, acquisition code
-or production target configuration. `checkedTarget` remains staging-only. Local
+remains disabled with no bindings. The initial-admission client below is locally
+verified. There is no acquisition code or production target configuration. `checkedTarget` remains staging-only. Local
 transport tests do not authorize or establish an actual hosted restore.
 
 ## Inputs and interface
@@ -143,6 +143,35 @@ same-count tampering to a page after it was verified. Completed replay verifies
 the supplied page, rather than rescanning the whole corpus. The helper never
 writes corpus metadata, text references, R2, Vectorize or usage Durable Objects.
 
+## Initial-admission client
+
+`scripts/protected-state-d1.ts` defaults to local inspection. It seals the original
+protected manifest/pages, compact bundle, sidecar file and logical hashes, exact
+target and page prefixes before any credential callback or network request.
+`--execute-window` additionally requires a private `--journal` directory and lazily
+selects `RESTORE_TOKEN`. Inspection does not create a journal or select a token.
+
+One explicit window performs status, begin when needed, then compact corpus
+admission pages. It stops at `checking-text`; text auditing, protected-row loading,
+verification and final corpus checks are not implemented in this client yet.
+Each window permits at most 64 attempts and 300 seconds, including input sealing.
+Requests have a 15-second total deadline, 16 KiB response cap and one in flight.
+Those limits can be reduced, never raised, by CLI options.
+
+Private exclusive intent and terminal files are fsynced and linked by hashes.
+A subsequent window requires the complete accepted receipt prefix and an exact
+fresh status. A lost POST reply can be reconciled only by its exact expected
+committed progress. An unchanged or ambiguous status cannot fence a late POST:
+that journal remains unresolved and refuses automatic resumption. Pending response
+cancellation also prevents a reconciliation request. There is no automatic write
+retry or journal reset.
+
+Local filesystem calls cannot be preempted. Checks after those calls reject an
+observed deadline overrun while preserving durable acknowledgements and progress.
+The CLI does not provide an outer owned-process deadline or a hermetic startup
+environment; an eventual hosted operator must supply those controls. These tests
+establish protocol behavior against synthetic local D1/R2, not a hosted copy.
+
 ## Local validation and remaining release gates
 
 `test/protected-state-d1.test.ts` builds a test-only inline Worker, disables
@@ -160,11 +189,15 @@ audit checkpoint does not commit. Parser tests cover a declared oversize, stalle
 fulfilled chunks that delay timer delivery. Target identities use canonical
 field order. Schema checks compare SQL token sequences, rejecting split type
 names that alter SQLite affinity while allowing harmless spacing/comments. Existing 35 protected copier tests and 17 shared-format tests
-preserve original format 1 canonical bytes.
+preserve original format 1 canonical bytes. The initial-admission client brings
+the focused total to 132 checks (80 D1/client, 35 copier and 17 format), including
+interruption, pending cancellation, lost replies, deadline overruns, journal
+corruption and pre-read input bounds. See the
+[client validation](evidence/2026-10-23/protected-state-client-root-validation.json).
 
 Production still requires a consistent authenticated D1/KV backup under a common
 writer/auth freeze, verified private acquisition receipts, a separately reviewed
-durable execution client and operator retry/intent policy, actual hosted staging
+completion of the execution client and its owned operator, actual hosted staging
 copy evidence, production-specific exact-target transport/resource review, and the
 `AUTH_DB` rollback/usage-namespace gate. None is
 closed or approved by these local tests. Existing frozen recovery, backup
