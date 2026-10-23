@@ -1,0 +1,347 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T04:48:26.264986+00:00",
+  "status": "Reviewed protocol handoff completed; full hosted restore and audit remain in progress",
+  "sourceCommit": "c93c8fa9955907db24233803a8261a30118dd239",
+  "linuxReleaseCi": {
+    "runId": 39900965703,
+    "conclusion": "success"
+  },
+  "priorOwnerStop": {
+    "at": "2026-10-23T04:34:10.829152+00:00",
+    "authorization": "Parent-reviewed c93c8fa9955907db24233803a8261a30118dd239; handoff step1 only",
+    "pid": 14686,
+    "verifiedCommand": "node dist/release/staging/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json --execute --checkpoint dist/release/staging/legacy-text-restore.json --concurrency 4 --upload-batch-size 16",
+    "activeBundleSha256": "077a9cea76480cbd20d96533d2292bd0bce9c3a2c2e21c015d2b8eaad6aecf13",
+    "beforeCheckpoint": {
+      "format": 1,
+      "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+      "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+      "uploadedObjects": 78548,
+      "appliedPages": 0
+    },
+    "beforeCheckpointSha256": "e1fe0d9f13274947cd78fe13710434a798ac9ee89adc0e8c2efdb9eda9af96ef",
+    "signal": "SIGINT",
+    "maximumUncertainUniqueObjects": 64,
+    "noResetDeleteOrAdvance": true,
+    "signalSent": true,
+    "confirmedAt": "2026-10-23T04:34:29.291663+00:00",
+    "ownerDead": true,
+    "ownerProof": {
+      "command": "ps -p 14686 -o pid=,command=",
+      "exitCode": 1,
+      "stdoutEmpty": true
+    },
+    "monitorSession": 80359,
+    "monitorExecExitCode": 254,
+    "finalCheckpoint": {
+      "format": 1,
+      "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+      "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+      "uploadedObjects": 78548,
+      "appliedPages": 0
+    },
+    "finalCheckpointSha256": "e1fe0d9f13274947cd78fe13710434a798ac9ee89adc0e8c2efdb9eda9af96ef",
+    "executionFinished": {
+      "finishedAt": "2026-10-23T04:34:14.548882+00:00",
+      "exitCode": -2,
+      "elapsedSeconds": 3097.589,
+      "diskInterrupted": false,
+      "oneAutomaticResumeConsumed": true
+    },
+    "activeBundleSha256After": "077a9cea76480cbd20d96533d2292bd0bce9c3a2c2e21c015d2b8eaad6aecf13",
+    "remoteCountNotProbed": true
+  },
+  "deployment": {
+    "at": "2026-10-23T04:37:53.836Z",
+    "readOnly": true,
+    "descriptorVerified": true,
+    "activePercentage": 100,
+    "versionId": "d3d642b6-f598-4a4e-ab1c-d411d06c79a7",
+    "comparedPriorVersion": "aec00122-16a2-4e69-940b-437d6efae525",
+    "exactBindingCount": 8,
+    "bindingsMatchPrior": true,
+    "runtimeMatchPrior": true,
+    "handlers": [
+      "fetch"
+    ],
+    "bindings": [
+      {
+        "name": "RESTORE_ACCOUNT_ID",
+        "text": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "type": "plain_text"
+      },
+      {
+        "name": "RESTORE_D1_ID",
+        "text": "e0fa8e43-82f9-4864-b237-6e82d77a860c",
+        "type": "plain_text"
+      },
+      {
+        "database_id": "e0fa8e43-82f9-4864-b237-6e82d77a860c",
+        "id": "e0fa8e43-82f9-4864-b237-6e82d77a860c",
+        "name": "RESTORE_DB",
+        "type": "d1"
+      },
+      {
+        "name": "RESTORE_ENABLED",
+        "text": "staging-only",
+        "type": "plain_text"
+      },
+      {
+        "name": "RESTORE_R2_NAME",
+        "text": "civicsignal-v1-stage-corpus-20261022",
+        "type": "plain_text"
+      },
+      {
+        "name": "RESTORE_STAGE_ID",
+        "text": "stage-20261022",
+        "type": "plain_text"
+      },
+      {
+        "bucket_name": "civicsignal-v1-stage-corpus-20261022",
+        "name": "RESTORE_TEXTS",
+        "type": "r2_bucket"
+      },
+      {
+        "name": "RESTORE_TOKEN",
+        "type": "secret_text"
+      }
+    ],
+    "target": {
+      "format": 1,
+      "stageOnly": true,
+      "stageId": "stage-20261022",
+      "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+      "d1Id": "e0fa8e43-82f9-4864-b237-6e82d77a860c",
+      "r2Bucket": "civicsignal-v1-stage-corpus-20261022",
+      "adminUrl": "https://civicsignal-v1-stage-restore-20261022.chester-hill-solutions.workers.dev"
+    },
+    "descriptorSha256": "2485ed173bb0070599b906df0f4a59f9534434acf8e7056ebfc6bb7d2a655f49",
+    "deploymentSha256": "e8d452ce1d68693f2091a7276683609290e722e13a625cfda36212efe49f853b"
+  },
+  "statusBeforeResume": {
+    "at": "2026-10-23T04:38:23.917Z",
+    "readOnly": true,
+    "authenticatedGets": 1,
+    "httpStatus": 200,
+    "verified": true,
+    "descriptorVersion": "d3d642b6-f598-4a4e-ab1c-d411d06c79a7",
+    "uncertainObjectsNowObserved": 63,
+    "status": {
+      "target": {
+        "format": 1,
+        "stageOnly": true,
+        "stageId": "stage-20261022",
+        "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "d1Id": "e0fa8e43-82f9-4864-b237-6e82d77a860c",
+        "r2Bucket": "civicsignal-v1-stage-corpus-20261022",
+        "adminUrl": "https://civicsignal-v1-stage-restore-20261022.chester-hill-solutions.workers.dev"
+      },
+      "initialized": true,
+      "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+      "phase": "loading",
+      "counts": {
+        "rows": 0,
+        "refs": 0,
+        "pages": 0,
+        "objects": 78611,
+        "objectBytes": 103401137
+      },
+      "checkedPages": 0,
+      "uploadBatch": {
+        "version": 1,
+        "maxObjects": 16,
+        "maxBytes": 2097152
+      },
+      "metadataBatch": {
+        "version": 1,
+        "maxPages": 4,
+        "maxBytes": 131072,
+        "maxReferenceBytes": 16777216
+      },
+      "auditProtocol": {
+        "version": 1,
+        "pageRows": 8,
+        "maxCheckpoints": 16
+      },
+      "countsVerifiedAtPublication": false,
+      "audit": null
+    }
+  },
+  "resume": {
+    "at": "2026-10-23T04:40:53.056010+00:00",
+    "freeBytes": 14521450496,
+    "runnerSha256": "4f18bb392932dd3a7188d64a9482c2b2bbbcd97896b554d652f5b13c9e276d61",
+    "preservedOldRunnerSha256": "077a9cea76480cbd20d96533d2292bd0bce9c3a2c2e21c015d2b8eaad6aecf13",
+    "beforeCheckpoint": {
+      "format": 1,
+      "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+      "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+      "uploadedObjects": 78548,
+      "appliedPages": 0
+    },
+    "beforeCheckpointSha256": "e1fe0d9f13274947cd78fe13710434a798ac9ee89adc0e8c2efdb9eda9af96ef",
+    "sourceDigests": {
+      "scripts/restore-text-staging.ts": "10a6141d55ba5303c53d75168d476b85ef1fdcc523cb9df6dd1601bde8091a73",
+      "services/restore/worker.ts": "847cc35f2625f69c44a4c91e2841f60f844ca0efa849f7d77ed5614b74a0ac15",
+      "services/restore/metadata-batch.ts": "216b6437d7a817eda65e959ccf7421e9b3d7f930cef316436222b6ab15a7a05f",
+      "src/corpora/text-store.ts": "f613a767d7c04a8e6d8c96b948787c9fbc072d928361ea752a7dc5111ec035df",
+      "test/staging-text-restore.test.ts": "e406a4d6d2b13cf69a071100328888a6b6c4d623ed802450403383be95f3d72e",
+      "test/restore-metadata-batch.test.ts": "ff4d8bb6082bc7a9e85026871d1de57b1c18e8c3b3653122bd0278ed386b7c62",
+      "test/text-store.test.ts": "bfd7857c2d2946166f72e34270b6747d2188a84953352081c20b6a93540dce21"
+    },
+    "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+    "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+    "sourceReceiptSha256": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc",
+    "deployedVersion": "d3d642b6-f598-4a4e-ab1c-d411d06c79a7",
+    "replayedUncertainObjects": 63,
+    "guardBytes": 1073741824,
+    "guardPollSeconds": 5,
+    "automaticDiskFloorRestarts": 0,
+    "maximumUncertainObjectsPerStop": 64,
+    "command": [
+      "node",
+      "dist/release/staging/page-batch-candidate/restore-text-staging.mjs",
+      "--bundle",
+      "dist/text-cutover-legacy-20261022",
+      "--target",
+      "dist/release/staging/restore-target.json",
+      "--execute",
+      "--checkpoint",
+      "dist/release/staging/legacy-text-restore.json",
+      "--concurrency",
+      "4",
+      "--upload-batch-size",
+      "16",
+      "--metadata-batch-pages",
+      "4",
+      "--audit-checkpoints",
+      "16"
+    ],
+    "priorOwnerDead": true,
+    "monitorPid": 74628,
+    "pid": 74630
+  },
+  "initialProgress": {
+    "at": "2026-10-23T04:42:23.445356+00:00",
+    "pid": 74630,
+    "checkpoint": {
+      "format": 1,
+      "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+      "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+      "uploadedObjects": 80020,
+      "appliedPages": 0
+    },
+    "freeBytes": 14631378944,
+    "firstAdvancedAt": "2026-10-23T04:41:43.125642+00:00",
+    "measuredPostStartupObjectsPerSecond": 33.334160073414516,
+    "samples": [
+      {
+        "at": "2026-10-23T04:41:58.151707+00:00",
+        "elapsedSeconds": 65.083,
+        "freeBytes": 13877899264,
+        "checkpoint": {
+          "format": 1,
+          "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+          "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+          "uploadedObjects": 79252,
+          "appliedPages": 0
+        }
+      },
+      {
+        "at": "2026-10-23T04:42:03.155360+00:00",
+        "elapsedSeconds": 70.087,
+        "freeBytes": 14821642240,
+        "checkpoint": {
+          "format": 1,
+          "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+          "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+          "uploadedObjects": 79316,
+          "appliedPages": 0
+        }
+      },
+      {
+        "at": "2026-10-23T04:42:08.418238+00:00",
+        "elapsedSeconds": 75.349,
+        "freeBytes": 14655971328,
+        "checkpoint": {
+          "format": 1,
+          "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+          "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+          "uploadedObjects": 79508,
+          "appliedPages": 0
+        }
+      },
+      {
+        "at": "2026-10-23T04:42:13.428857+00:00",
+        "elapsedSeconds": 80.36,
+        "freeBytes": 14649798656,
+        "checkpoint": {
+          "format": 1,
+          "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+          "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+          "uploadedObjects": 79636,
+          "appliedPages": 0
+        }
+      },
+      {
+        "at": "2026-10-23T04:42:18.435878+00:00",
+        "elapsedSeconds": 85.367,
+        "freeBytes": 14651244544,
+        "checkpoint": {
+          "format": 1,
+          "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+          "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+          "uploadedObjects": 79828,
+          "appliedPages": 0
+        }
+      },
+      {
+        "at": "2026-10-23T04:42:23.445356+00:00",
+        "elapsedSeconds": 90.376,
+        "freeBytes": 14631378944,
+        "checkpoint": {
+          "format": 1,
+          "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+          "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+          "uploadedObjects": 80020,
+          "appliedPages": 0
+        }
+      }
+    ]
+  },
+  "limits": {
+    "servingRequests": 0,
+    "documentEmbeddingSubmissions": 0,
+    "productionChanges": false,
+    "railwayServiceChanges": false,
+    "automaticDiskFloorResumeAlreadyConsumed": true,
+    "additionalAutomaticDiskFloorRestarts": 0
+  },
+  "acceptance": {
+    "objectsTarget": 208396,
+    "metadataPagesTarget": 17367,
+    "rowsTarget": 277857,
+    "strictAuditRequired": true,
+    "fullRestoreComplete": false
+  },
+  "queryBudgetEvidence": {
+    "metadataMaxIndividualSqlStatements": 149,
+    "metadataMaxBindingCalls": 20,
+    "auditMaxBindingCalls": 85,
+    "requiredD1QueriesPerInvocation": 1000,
+    "acceptedDeployedUsageModel": "standard",
+    "entitlementAssessment": "Inference from the accepted paid-only Standard usage model and deployed paid-only Container application; not a direct billing-plan receipt. Hosted metadata and strict audit must still complete.",
+    "subscriptionRead": {
+      "httpStatus": 403,
+      "observedAt": "2026-10-23T04:54:21.088Z",
+      "meaning": "Current OAuth could not read account subscriptions; this does not establish a free plan.",
+      "noPlanChange": true
+    },
+    "officialSources": [
+      "https://developers.cloudflare.com/d1/platform/limits/",
+      "https://developers.cloudflare.com/workers/platform/pricing/",
+      "https://developers.cloudflare.com/containers/platform/pricing/"
+    ]
+  }
+}

@@ -237,7 +237,25 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   766 tests in 73 files, all compiler projects, runtime probes, invariants and five
   Worker builds. The [validation receipt](evidence/2026-10-22/stage-metadata-audit-validation.json)
   records source hashes, full-bundle verification and sampled local memory.
-  The current hosted copy is unchanged; protocol handoff remains pending.
+  The reviewed Worker is deployed at version `d3d642b6-f598-4a4e-ab1c-d411d06c79a7`.
+  Its eight bindings and runtime match the prior isolated deployment. The old
+  client stopped before replacement; the new client retains the same source,
+  plan, target and durable checkpoint. It replayed 63 uncertain objects before
+  advancing. The [handoff receipt](evidence/2026-10-22/stage-restore-protocol-handoff.json)
+  records initial progress beyond 80,000 objects. Full metadata publication and
+  strict hosted audit remain incomplete. Linux release CI passes for
+  `c93c8fa9955907db24233803a8261a30118dd239`, run `39900965703`.
+
+
+- Vector baseline accepted: Every one of the 254,671 substantive vectors passed
+  exact float32, ID, language, jurisdiction and fingerprint readback. All 277,857
+  source positions are verified, including 23,186 zero placeholders. The durable
+  journal is complete with no pending batches. An independent descriptor and
+  count read confirms the original stage index identity, 768 dimensions, cosine
+  metric and 254,671 vectors. The last visibility timeout and its readback-only
+  recovery remain in the [completion receipt](evidence/2026-10-22/stage-vector-restore-complete.json).
+  This proves equality with the pinned backup; it does not attest the legacy
+  embedding model or replace the separate hosted quality and reconciliation gates.
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.

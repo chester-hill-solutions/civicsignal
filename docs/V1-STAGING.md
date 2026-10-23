@@ -6,7 +6,13 @@ Hosted acceptance remains incomplete until each phase has its required evidence.
 The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
 The copy jobs resumed from their preserved checkpoints after five disk samples
 over two minutes all exceeded 5 GiB. The same 1 GiB stop guards remain active.
-Full baseline audits remain incomplete. See the
+The text client completed a reviewed protocol handoff after its prior owner
+stopped. It replayed 63 uncertain objects and resumed the same checkpoint. The
+[handoff receipt](evidence/2026-10-22/stage-restore-protocol-handoff.json) records the
+isolated deployment and initial progress. The vector baseline is complete: all 277,857 positions and 254,671 substantive
+vectors passed exact readback, with an independent final count and no pending
+batches. See the [completion receipt](evidence/2026-10-22/stage-vector-restore-complete.json).
+Full text baseline publication and audit remain incomplete. See the
 [resume receipt](evidence/2026-10-22/stage-transfer-resume-state.json) and earlier
 [transfer stop receipt](evidence/2026-10-22/stage-transfer-stop-state.json).
 The two observed calendar windows produced no snapshot event or Workflow instance;

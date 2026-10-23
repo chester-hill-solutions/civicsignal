@@ -18,9 +18,11 @@ They do not confirm a release or a production data change.
 | `vector-index-descriptor.json` | Observed source index dimensions and cosine metric | Read-only point-in-time descriptor |
 | `v2-artifact-archive.json` | Retained compressed bundle hash and extraction command | Large archive remains outside Git |
 | `clean-checkout.json` | Frozen install, four compiler checks, 693 tests, runtime probes and five dry-run builds | Local macOS evidence; hosted acceptance remains pending |
-| `linux-ci.json` | Linux Node 24 frozen install, 693 tests and five builds | Hosted acceptance remains pending; separate Railway plan needs a CI credential |
+| `linux-ci.json` | Linux Node 24 frozen install, 693 tests and five builds | Historical candidate evidence; Railway was later removed from the v1 release gate |
+| `stage-restore-protocol-handoff.json` | Isolated Worker binding readback, stopped prior owner, preserved checkpoint and replay of 63 uncertain objects | Full metadata publication and strict hosted audit remain incomplete |
 | `stage-setup.json` | Approved limits, created resource identities and deployed stage versions | In-progress setup evidence; no completed hosted acceptance or production migration |
 | `stage-fixes-validation.json` | 715 local tests, four compiler checks and five builds after reproduced staging fixes | Linux rerun follows the candidate update |
+| `stage-vector-restore-complete.json` | All 277,857 source positions, exact readback of 254,671 vectors and independent final count; preserved visibility failure and readback-only recovery | Pinned legacy backup equality; hosted reconciliation and quality remain incomplete |
 | `stage-vector-restore-first-window.json` | 10,200 source positions and 8,508 vectors checked through the bounded pending window | Full baseline copy remains in progress |
 | `usage-workerd.json` | Real SQLite Durable Object transactions and concurrent receipt replay | Local runtime; no hosted availability claim |
 | `evaluation-labels.json` | Sixty positive labels against thirty immutable source blobs | Source labels; no search quality measurement |
