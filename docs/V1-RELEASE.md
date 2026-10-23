@@ -11,15 +11,15 @@ Keep Railway running. Preserve unrelated work and the Postgres portability code.
 | ID | Outcome | Acceptance evidence | Status |
 | --- | --- | --- | --- |
 | V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
-| V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | In progress |
+| V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
 | V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local checks pass; hosted cycle pending |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local parity passes; hosted Workflow pending |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Local proof complete; live cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local route checks pass; hosted checks pending |
-| V1-09 | Complete engineering gates | Worker, Bun, scripts and IaC type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | In progress |
-| V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Pending |
+| V1-09 | Complete engineering gates | Worker, Bun, scripts and IaC type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Clean local gates pass; Linux CI pending |
+| V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Candidate prepared; hosted acceptance pending |
 
 ## Work order
 
@@ -91,7 +91,7 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   The tracked patch reconstructs the pinned Git tree from base commit `853ffc5a606e5526cb64cf453238180223a39d12`.
   All five isolated package builds match the vendored runtime files.
   Local Bun workspaces prevent empty nested package copies during installation.
-  Final clean-checkout gates remain pending.
+  The final fresh checkout installs the frozen lockfile and passes its gates.
 - V1-03: Regression tests cover language and policy cache keys, warm-cache reuse, bounded inputs, Google credentials, and BYOK CORS.
   Citation titles now follow the database binding, source revision, and parser version.
 - V1-04: Fault-injection tests cover D1 outbox recovery and Postgres transaction rollback.
@@ -122,7 +122,13 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   All four compiler projects pass after the full fixture boundary fix.
   All five Worker dry-run builds pass, including the disabled stage restore Worker.
   No Worker or image was deployed.
-  The final clean-checkout gate remains pending after the last export changes.
+  A fresh clone of `b3adaab08a2563cfd41c9ca6b94a02f14a96eb81` passes the complete local gate.
+  It passes 693 tests across 68 files, both real workerd probes, all invariants, and five Worker builds.
+  The check uses Bun 1.3.5 and Node 25.9.0 on macOS. Linux Node 24 CI remains separate.
+  Corpus invariant checks skip absent historical SQL/JSONL artifacts; the separate full-corpus proof covers current snapshot data.
+  One earlier parallel check exposed a timing assumption in a relay test.
+  Deterministic checks now cover expiry before forwarding and cancellation after the request starts.
+  Production timeout behavior did not change.
 - Encoder: The local amd64 image builds from a pinned base and model artifact.
   Network-disabled smoke checks pass for artifact identity, health, authentication, invalid JSON, and empty batches.
   These checks do not measure inference quality or latency.
@@ -146,7 +152,7 @@ The large local artifacts remain outside Git. The commands can reproduce them fr
 
 1. Check the full Workflow in isolated hosted staging after approval.
 2. Check the approved live text migration and protected-table copy against a consistent production backup.
-3. Pass the final compiler, test, invariant, build, and clean-checkout gates after the export changes.
+3. Pass Linux Node 24 CI for the prepared candidate; the final local clean-checkout gates pass.
 4. Run fresh calibration, held-out retrieval, and bounded performance checks against a verified serving target.
 5. Check one non-empty automated publication and ingestion cycle with observed freshness.
 6. Review the prepared migration and release candidate before any required deployment approval.

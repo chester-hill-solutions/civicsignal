@@ -17,6 +17,7 @@ They do not confirm a release or a production data change.
 | `legacy-vector-live-sample.json` | Fresh 329/329 substantive stored vectors match; 27 verified placeholders | Sampled live equality only |
 | `vector-index-descriptor.json` | Observed source index dimensions and cosine metric | Read-only point-in-time descriptor |
 | `v2-artifact-archive.json` | Retained compressed bundle hash and extraction command | Large archive remains outside Git |
+| `clean-checkout.json` | Frozen install, four compiler checks, 693 tests, runtime probes and five dry-run builds | Local macOS evidence; hosted acceptance remains pending |
 | `usage-workerd.json` | Real SQLite Durable Object transactions and concurrent receipt replay | Local runtime; no hosted availability claim |
 | `evaluation-labels.json` | Sixty positive labels against thirty immutable source blobs | Source labels; no search quality measurement |
 | `encoder-image.json` | Pinned artifact, local image, and HTTP smoke checks | Inference needs a compatible AVX host |
