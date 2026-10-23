@@ -21,7 +21,12 @@ or production data change.
 | `linux-ci.json` | Linux Node 24 frozen install, 693 tests and five builds | Historical candidate evidence; Railway was later removed from the v1 release gate |
 | `stage-restore-protocol-handoff.json` | Isolated Worker binding readback, stopped prior owner, preserved checkpoint and replay of 63 uncertain objects | Full metadata publication and strict hosted audit remain incomplete |
 | `stage-snapshot-0600-arming.json` | Actual renewal, checked deployment and live guards, confirmed singleton 06:00 UTC calendar | Arming does not prove scheduled dispatch, Workflow completion or artifact parity |
-| `stage-snapshot-0600-outcome.json` | Exact source checks, both watchdog removals, independent empty-calendar and absent-instance/receipt reads | No scheduled dispatch was observed; hosted publication remains unverified |
+| `stage-snapshot-0600-outcome.json` | Exact source checks, both watchdog removals, independent empty-calendar and absent-instance/receipt reads | No scheduled dispatch was observed in that window |
+| `stage-snapshot-artifact-parity.json` | All 127 Workflow steps and exact equality for 240 hosted artifacts; complete local verification | API-triggered canonical instance; scheduled dispatch remains unverified |
+| `stage-text-restore-complete.json` | Full 277,857-row/250,978,206-byte strict audit and independent D1 baseline checks | Legacy parser baseline; production auth/history migration remains separate |
+| `stage-serving-baseline.json` | Verified synthetic auth, deployed stage bindings, empty initial usage namespace and 14 passing HTTP/MCP/inference smokes | Baseline protocol proof; reconciliation and quality/performance measurements remain pending |
+| `stage-dependencies-ready.json` | Pinned stage encoder/image/one-instance limit and exact Vectorize identity, count and language filter | Management identity proof; serving inference is recorded separately |
+| `stage-pipeline-1200-arming.json` | Verified deployment, exact persisted source/cap, successful baseline encoder and both live cleanup guards; actual singleton calendar readback | Arming does not prove dispatch, reconciliation or final vector visibility |
 | `stage-oauth-renewal-050842.json` | One bounded read-only account check renewed OAuth through 06:08:42 UTC | No forced login, expiry edit or production probe |
 | `exact-citation-section-preference.json` | Real bilingual source rows, SQLite/PostgreSQL regressions and 787-test full gate | Retrieval-only local proof; unknown URL formats keep fallback ambiguity |
 | `stage-setup.json` | Approved limits, created resource identities and deployed stage versions | In-progress setup evidence; no completed hosted acceptance or production migration |

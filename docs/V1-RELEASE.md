@@ -14,8 +14,8 @@ Existing Railway services are outside this release. Preserve unrelated work and 
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
 | V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local checks pass; hosted cycle pending |
-| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local parity passes; hosted scheduled execution remains unverified |
-| V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Local proof complete; live cutover pending |
+| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
+| V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local route checks pass; hosted checks pending |
 | V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass |
@@ -280,6 +280,25 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   retains these observations without a provider root-cause claim. The
   [arming receipt](evidence/2026-10-22/stage-snapshot-0600-arming.json) does not
   establish dispatch, Workflow completion or hosted artifact parity.
+
+- Hosted baseline and Workflow acceptance: The complete strict text audit passed
+  all 277,857 rows and 250,978,206 bytes. An independent D1 read confirms legacy
+  parser NULL, complete compact references, empty retained text and no pending
+  vector mutations. The canonical snapshot Workflow completed all 127 steps.
+  All 240 hosted artifacts match the frozen reference; local verification passes
+  all 277,857 rows. Scheduled dispatch remains an unmet gate.
+  See the [text receipt](evidence/2026-10-22/stage-text-restore-complete.json) and
+  [artifact receipt](evidence/2026-10-22/stage-snapshot-artifact-parity.json).
+- Hosted serving baseline: Only migration 0005 and synthetic fixtures were
+  applied. All four test key hashes, capabilities, statuses and fuses passed
+  independent private comparison. The isolated API's bindings and fresh empty
+  usage namespace were checked before serving. All 14 baseline smokes passed,
+  including exact English/French sections, HTTP auth refusals, MCP and actual
+  encoder/vector/reranker/R2 execution. The ledger reserves 14 of 160 requests.
+  The pipeline control persists the exact source tuple and cap 1,112 with zero
+  submissions. Its single noon calendar was armed with both live cleanup guards.
+  Reconciliation and measured retrieval quality remain incomplete. See the
+  [baseline receipt](evidence/2026-10-22/stage-serving-baseline.json).
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.

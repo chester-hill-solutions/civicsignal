@@ -12,11 +12,15 @@ stopped. It replayed 63 uncertain objects and resumed the same checkpoint. The
 isolated deployment and initial progress. The vector baseline is complete: all 277,857 positions and 254,671 substantive
 vectors passed exact readback, with an independent final count and no pending
 batches. See the [completion receipt](evidence/2026-10-22/stage-vector-restore-complete.json).
-Full text baseline publication and audit remain incomplete. See the
+Full text baseline publication and strict audit passed: all 277,857 rows and
+250,978,206 text bytes were verified. A separate D1 read confirmed the exact
+legacy publication, empty retained text, complete references and empty outbox.
+See the [completion receipt](evidence/2026-10-22/stage-text-restore-complete.json),
+the
 [resume receipt](evidence/2026-10-22/stage-transfer-resume-state.json) and earlier
 [transfer stop receipt](evidence/2026-10-22/stage-transfer-stop-state.json).
 The two earlier calendar windows produced no snapshot event or Workflow instance;
-both triggers were removed and checked. Hosted publication remains an unmet gate.
+both triggers were removed and checked. Scheduled dispatch remains an unmet gate.
 A stage-only diagnostic wrapper is deployed. One read-only health request returned
 the exact marker, and live logs captured its successful fetch event. The proposed
 05:00 UTC calendar was never armed: its deadline preflight made zero provider
@@ -31,6 +35,26 @@ calendar. A later read confirmed no instance or diagnostic receipt. See the
 [outcome receipt](evidence/2026-10-22/stage-snapshot-0600-outcome.json).
 Hosted scheduled publication remains unverified. See the
 [diagnostic state receipt](evidence/2026-10-22/stage-snapshot-probe-state.json).
+
+One API creation then started the same canonical Workflow ID with exact pinned
+parameters. All 127 steps completed without errors. All 240 hosted artifacts,
+390,423,509 bytes, match the pinned reference byte for byte. The local verifier
+also passed all 277,857 rows. This closes hosted Workflow and artifact parity;
+it does not prove calendar dispatch. See the
+[parity receipt](evidence/2026-10-22/stage-snapshot-artifact-parity.json).
+
+The isolated API is deployed. All 14 baseline HTTP/MCP checks passed, including
+bilingual exact citations, auth refusals and a semantic query whose encoder,
+vector search, reranker and row hydration all reported success. The ledger has
+14 of 160 requests reserved. Only migration 0005 and synthetic auth fixtures were
+applied. A successful management read proved the fresh usage namespace empty
+before the first serving call. See the
+[baseline receipt](evidence/2026-10-22/stage-serving-baseline.json).
+The pipeline is deployed with its exact source pin and a durable cap of 1,112,
+zero submissions and 1,112 remaining. Its single noon UTC calendar was confirmed
+at 11:33:09 UTC with both independent guards ready. They remove the schedule on
+observed activity or by 12:05 UTC. Reconciliation remains unverified.
+See the [arming receipt](evidence/2026-10-22/stage-pipeline-1200-arming.json).
 
 The goal is to close hosted snapshot, restore, ingestion, inference and retrieval
 checks with an isolated candidate. Use the detailed snapshot commands and stop
