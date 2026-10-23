@@ -3,8 +3,8 @@
 This is the execution checklist for the v1 goal started on 2026-10-22. It reconciles
 the code audit, the CHS package review, `docs/PLAN.md`, and section 9 of
 `~/.civicsignal/HANDOFF.md`. The checklist records verified outcomes, not intentions.
-The production target is Cloudflare. Keep the existing Vectorize index and vectors.
-Keep Railway running. Preserve unrelated work and the Postgres portability code.
+Cloudflare is the only v1 deployment target. Keep the existing Vectorize index and vectors.
+Existing Railway services are outside this release. Preserve unrelated work and the Bun/Postgres portability code.
 
 ## Release requirements
 
@@ -18,7 +18,7 @@ Keep Railway running. Preserve unrelated work and the Postgres portability code.
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Local proof complete; live cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local route checks pass; hosted checks pending |
-| V1-09 | Complete engineering gates | Worker, Bun, scripts and IaC type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass; Railway plan needs CI credential |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Candidate prepared; hosted acceptance pending |
 
 ## Work order
@@ -56,7 +56,7 @@ check without recording the reason.
 | Earlier plan | v1 disposition | Reason and owner |
 | --- | --- | --- |
 | Shared commercial spine | Replace production copies with CHS auth, auth-d1, and api-billing | One identity, capability, and meter path; product keeps its billing profile |
-| Railway API migration and Cloudflare deletion | Superseded | The current handoff selects Cloudflare; keep Railway and portability code |
+| Railway API migration and Cloudflare deletion | Superseded | Cloudflare is the v1 target; retained Bun/Postgres portability does not require Railway hosting |
 | Statute ingestion, snapshots, vector export, text move | Required | V1-04 through V1-07 remain release gates |
 | News, GDELT, debates, bills | Excluded from v1 | No production ingestion; discovery omits them and routes refuse unsupported coverage |
 | Riding, municipal, regional and provincial filters | Excluded from v1 | Federal statutes do not support these filters; requests fail explicitly |
@@ -134,8 +134,8 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   A checked upstream commit supports reuse of the frozen Bun install. Its CLI version is pinned too.
   Automatic plan comments are disabled. The saved plan remains a review artifact; no apply occurred.
   The corrected action reaches planning, but CI supplies an empty `RAILWAY_TOKEN`.
-  Railway refuses the plan. Configure an authorized repository Actions secret before a future merge or apply decision.
-  Never commit or print the token. This credential dependency does not change any Railway service.
+  Railway refuses the plan. No apply occurs.
+  The later scope correction removes this legacy workflow and credential requirement from the v1 release gate.
 - Encoder: The local amd64 image builds from a pinned base and model artifact.
   Network-disabled smoke checks pass for artifact identity, health, authentication, invalid JSON, and empty batches.
   These checks do not measure inference quality or latency.
@@ -177,6 +177,12 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   The first snapshot calendar attempt produced no observed event or Workflow instance.
   Its trigger was removed and independently checked. A controlled calendar retry uses the same deterministic instance ID.
   The approved JEV credential is prepared privately for stage reranking. No provider result is claimed.
+- Release scope correction: Cloudflare is the v1 deployment target.
+  The legacy Railway workflow and its credential requirement are removed from release CI.
+  The default validation command no longer runs the optional legacy Railway graph check.
+  Bun/Postgres portability remains available independently of Railway hosting.
+  Existing Railway services have not been decommissioned; no Railway API apply occurred.
+  Linux release CI passes for the copy-fix candidate `06f4c062cef6be0f9e95946005c2cef92f210678`, run `39892412999`.
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
@@ -185,10 +191,8 @@ The large local artifacts remain outside Git. The commands can reproduce them fr
 
 1. Complete the approved hosted Workflow and compare every published artifact with the checked local source.
 2. Check the approved live text migration and protected-table copy against a consistent production backup.
-3. Configure the missing Railway CI project credential and check its read-only plan before any merge/apply decision.
-   Local and Linux release gates pass. Keep Railway unchanged.
-4. Run fresh calibration, held-out retrieval, and bounded performance checks against a verified serving target.
-5. Check one non-empty automated publication and ingestion cycle with observed freshness.
-6. Review the prepared migration and release candidate before any required deployment approval.
+3. Run fresh calibration, held-out retrieval, and bounded performance checks against a verified serving target.
+4. Check one non-empty automated publication and ingestion cycle with observed freshness.
+5. Review the prepared migration and release candidate before any required deployment approval.
 
 See [V1-OPERATIONS.md](V1-OPERATIONS.md) and [V1-EVALUATION.md](V1-EVALUATION.md) for procedures.

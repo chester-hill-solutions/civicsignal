@@ -7,7 +7,12 @@ The release checklist records the completed checks and remaining gates.
 
 Use Cloudflare for the production API and corpus pipeline.
 Keep the current Vectorize index, encoder artifact, usage namespace, and account identity.
-Keep Railway services in place. Keep the Bun API as undeployed portability code.
+Keep existing Railway services unchanged during this release. Keep the Bun API as undeployed portability code.
+Railway is outside the v1 deployment and release gate. The old Railway workflow
+has been removed. Retained Railway configuration is inactive legacy material;
+the Bun/Postgres implementation does not depend on Railway hosting.
+Existing Railway services have not been decommissioned. Any change to those
+services requires a separate decision.
 
 | Resource | Identity |
 | --- | --- |

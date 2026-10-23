@@ -32,6 +32,12 @@ node dist/verify-text-restore.mjs --bundle dist/text-cutover-new --output dist/t
 
 The earlier v2 bundle has been archived after integrity checking; its completed proof remains `dist/text-restore-full-20261022-v2/report.json`. The audit ran under Node.js v25.9.0 after the local store files were prepared. A completed restore can be rechecked with the last command plus `--resume`; it checks the same bundle/page identity and every original row against the verified backup before auditing. Output directories are never silently replaced. Interrupted sealing also has a checked `--recover` path documented by the preparation CLI.
 
+The three completed local proof stores now use lossless `.sqlite.gz` archives in
+that same directory to preserve disk headroom. Their decompressed SHA-256 values
+were checked before compression replaced the local uncompressed copies.
+The adjacent `compression-receipt.json` records both sets of hashes.
+Decompress those three files before a resume check against this retained proof.
+
 ## Verified legacy staging input
 
 The retained archive is `dist/text-cutover-full-20261022-v2.tar.gz`.

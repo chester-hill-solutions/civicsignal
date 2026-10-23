@@ -9,7 +9,7 @@
     "deploy": "wrangler deploy",
     "typecheck": "bun run typecheck:worker && bun run typecheck:bun && bun run typecheck:tooling && bun run typecheck:snapshot",
     "test": "vitest run",
-    "validate": "bun run check:vendor && bun run typecheck && CIVICSIGNAL_WORKERD_TESTS=1 bun run test && bun run check:runtime && bun run check:billing-invariants && bun run check:corpus-invariants && bun run check:railway-iac",
+    "validate": "bun run check:vendor && bun run typecheck && CIVICSIGNAL_WORKERD_TESTS=1 bun run test && bun run check:runtime && bun run check:billing-invariants && bun run check:corpus-invariants",
     "check:billing-invariants": "node scripts/check-billing-invariants.mjs",
     "check:corpus-invariants": "node scripts/check-corpus-invariants.mjs",
     "check:railway-iac": "bun scripts/check-railway-iac.ts",
