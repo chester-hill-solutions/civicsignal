@@ -4,7 +4,13 @@ The user approved full bounded staging on 2026-10-22, Toronto time.
 Execution exhausted the original embedding limit. The user approved the exact
 [bounded recovery](V1-STAGING-RECOVERY.md) on 2026-10-23; its first attempt paused
 on an unknown failure after six calls and 1,304 cumulative document attempts.
-The same original coordinator is suspended with no alarm. The [setup receipt](evidence/2026-10-22/stage-setup.json) records the isolated resources.
+Independent paused reads verify 792 of 1,112 target changes, with 320 remaining
+and no pending outbox. The saved error matches a GitHub source-head HTTP 403;
+its reason remains unproved. The current diagnostic build refuses resume and
+retains the same suspended coordinator, counters and no alarm. See the
+[progress proof](evidence/2026-10-22/stage-recovery-progress-1.json) and
+[failure identification](evidence/2026-10-22/stage-recovery-source-403.json).
+The [setup receipt](evidence/2026-10-22/stage-setup.json) records the isolated resources.
 Hosted acceptance remains incomplete until each phase has its required evidence.
 The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
 The completed copy jobs resumed from their preserved checkpoints after five disk samples
@@ -71,7 +77,7 @@ preserves all spent usage and adds at most 640 document attempts and 20 encoder
 calls on the same coordinator. The deployed grant was verified while still
 paused before one explicit resume. That attempt paused safely on an unknown
 failure; 448 document slots and 14 calls remain within the same grant. No
-contingency resume has occurred. The recovery result remains unverified. See the
+contingency resume has occurred. Completion remains unverified. See the
 [attempt receipt](evidence/2026-10-22/stage-recovery-approved-attempt-1.json).
 
 Both noon cleanup guards exited. The proposed 13:00 Snapshot discovery probe

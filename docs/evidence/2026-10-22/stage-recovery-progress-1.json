@@ -1,0 +1,211 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T14:18:53.350Z",
+  "kind": "independent-paused-progress-check",
+  "target": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "database": "e0fa8e43-82f9-4864-b237-6e82d77a860c",
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "origin": "https://civicsignal-v1-stage-pipeline-20261022.chester-hill-solutions.workers.dev",
+    "version": "573be17a-e46c-4431-a97b-a24a5c2c8b60",
+    "namespace": "751026e8a12f46dc87f829d44cef4221",
+    "object": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "corpus": "statutes-canada",
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2",
+    "rows": 277857,
+    "changes": 1112,
+    "deltaSha256": "6065dc50bfd6e9ce3fca25c36f9c0ce178191b2d1d1e60e0c638816a058e5be9",
+    "indexSha256": "24fc30cfc427d5231c24fce911de198e92b7ada8b429aa4c6341ccb4f0159feb",
+    "manifestSha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e",
+    "baselineManifestSha256": "e018fdd638031f99b03a220513b4e3f1e62f96b91a2fd884ec57a0b84c619dec",
+    "bindingsProofSha256": "f561c655820240e1a963dc18a750c5f180edd42be60fb25597a609d1d2eb6482"
+  },
+  "controlBefore": {
+    "controlled": true,
+    "format": 1,
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2",
+    "cap": 1752,
+    "submitted": 1304,
+    "remaining": 448,
+    "recovery": {
+      "plan": {
+        "format": 1,
+        "id": "v1-stage-recovery-20261023-1112-to-1752",
+        "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-pipeline-20261022",
+        "namespaceId": "751026e8a12f46dc87f829d44cef4221",
+        "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+        "corpusId": "statutes-canada",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2",
+        "initialAdmissionRevision": 1,
+        "originalCap": 1112,
+        "originalSubmitted": 1112,
+        "totalCap": 1752,
+        "maxCalls": 20,
+        "maxDocumentsPerCall": 32,
+        "indexDigest": "b9b9ad97092ae2c5b4a35580f0cafe73"
+      },
+      "planSha256": "26b6b13a511ac3f55e07bffc08686f8997addc88425838564bbf789d256e5b13",
+      "reservedCalls": 6
+    },
+    "corpusId": "statutes-canada",
+    "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "coordinator": {
+      "format": 1,
+      "revision": 3,
+      "suspended": true,
+      "active": null,
+      "queued": 0,
+      "alarmHandlersActive": 0,
+      "alarmAt": null,
+      "pending": true,
+      "failures": 8,
+      "lastFailure": {
+        "classification": "unknown"
+      },
+      "quiescent": true
+    }
+  },
+  "controlAfter": {
+    "controlled": true,
+    "format": 1,
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2",
+    "cap": 1752,
+    "submitted": 1304,
+    "remaining": 448,
+    "recovery": {
+      "plan": {
+        "format": 1,
+        "id": "v1-stage-recovery-20261023-1112-to-1752",
+        "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-pipeline-20261022",
+        "namespaceId": "751026e8a12f46dc87f829d44cef4221",
+        "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+        "corpusId": "statutes-canada",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2",
+        "initialAdmissionRevision": 1,
+        "originalCap": 1112,
+        "originalSubmitted": 1112,
+        "totalCap": 1752,
+        "maxCalls": 20,
+        "maxDocumentsPerCall": 32,
+        "indexDigest": "b9b9ad97092ae2c5b4a35580f0cafe73"
+      },
+      "planSha256": "26b6b13a511ac3f55e07bffc08686f8997addc88425838564bbf789d256e5b13",
+      "reservedCalls": 6
+    },
+    "corpusId": "statutes-canada",
+    "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "coordinator": {
+      "format": 1,
+      "revision": 3,
+      "suspended": true,
+      "active": null,
+      "queued": 0,
+      "alarmHandlersActive": 0,
+      "alarmAt": null,
+      "pending": true,
+      "failures": 8,
+      "lastFailure": {
+        "classification": "unknown"
+      },
+      "quiescent": true
+    }
+  },
+  "checkpoint": {
+    "counts": {
+      "rows": 277857,
+      "refs": 277857,
+      "retained_text_rows": 0,
+      "other_rows": 0,
+      "invalid_refs": 0,
+      "missing_refs": 0,
+      "changes": 792,
+      "mutations": 792,
+      "pending_mutations": 0,
+      "runs": 0
+    },
+    "state": [
+      {
+        "corpus_id": "statutes-canada",
+        "commit_sha": "0507465393c224c0491fc8c17c88340217acc656",
+        "commit_date": "2026-10-15",
+        "as_of": "2026-10-15",
+        "row_count": 277857,
+        "last_run_at": "2026-10-23T01:21:03.985Z",
+        "parser_version": null
+      }
+    ]
+  },
+  "summary": {
+    "expectedDelta": 1112,
+    "matchingTargetFingerprints": 792,
+    "remainingTargetFingerprints": 320,
+    "matchingTargetIdsSha256": "847873f606940af178413572fc65eb520bdbfd91ef62932052abf035ee671009",
+    "remainingIdsSha256": "479d67a46969bfefa77ee3bfe5e3805330bc554ba0c435266c04c14484fbc880",
+    "fullMetadataRowsVerified": 0,
+    "preservedUnchangedBaselineRowsVerified": 0,
+    "feedIdentities": 792,
+    "completedMutationIdentities": 792,
+    "pendingOutbox": 0,
+    "requestCount": 55,
+    "d1Queries": 49,
+    "controlCount": 2,
+    "managementGets": 4,
+    "allQueryRowsWritten": 0
+  },
+  "limits": {
+    "timeoutMs": 15000,
+    "responseBytes": 262144,
+    "requestBytes": 262144,
+    "requests": 67,
+    "retries": 0,
+    "redirects": 0,
+    "refresh": false
+  },
+  "acceptance": false,
+  "evidence": {
+    "dist/release/staging/recovery-completion-proof/candidate.json": {
+      "bytes": 4025,
+      "sha256": "59f6daccc7b2e6e75a584f28c492fe519b46a3d828e91e6cd438b0376d6fd96f"
+    },
+    "dist/release/staging/recovery-completion-proof/prepared.json": {
+      "bytes": 3094,
+      "sha256": "53fd07ce14a4ec17777c8bc7752c89aa471a099b85ee2f9df33fa5be1445d3a8"
+    },
+    "dist/release/staging/recovery-completion-proof/local-validation.json": {
+      "bytes": 1918,
+      "sha256": "bbf3fd484eb3274dc1de5f285a861cb6e388f48721a7673ac612ff512de5e746"
+    },
+    "dist/release/staging/recovery-completion-proof/progress-attempt-1.json": {
+      "bytes": 9893,
+      "sha256": "bd3ae9bd2e6255c4e0a17c61691e8be9c879d80823b08eef81ac183df98108d6"
+    },
+    "dist/release/staging/recovery-completion-proof/progress-attempt-1.journal.jsonl": {
+      "bytes": 20061,
+      "sha256": "a924df2ab95551c397a3d3436be2b28060d982777131d662127245cc317812ac"
+    }
+  },
+  "boundaries": {
+    "pipelineWrites": 0,
+    "servingRequests": 0,
+    "embeddingSubmissions": 0,
+    "productionChanged": false,
+    "railwayChanged": false
+  },
+  "proofLimits": [
+    "D1 row, citation, fingerprint and text-reference metadata parity only; no new independent R2 text-byte or Vectorize download.",
+    "Legacy all-row R2 readback is historical evidence, not a current whole-store byte proof.",
+    "A completion run may report only its remaining changes; run counts are never summed to 1,112."
+  ]
+}

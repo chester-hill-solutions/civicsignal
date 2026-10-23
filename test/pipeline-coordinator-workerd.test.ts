@@ -158,7 +158,7 @@ async function httpFixture(holdSource = false) {
       manifest: { mainModule: 'worker.js', modules: { 'worker.js': { type: 'esm', contents: pipelineScript } } },
     }, dev: { outboundService: { type: 'fetcher', handler: async request => {
       outbound.push(request.url);
-      if (holdSource && request.url === 'https://api.github.com/repos/justicecanada/laws-lois-xml/commits/main') {
+      if (holdSource && request.url === 'https://api.github.com/repos/justicecanada/laws-lois-xml/commits?sha=main&per_page=1') {
         sourceEntered.resolve(); await sourceRelease.promise;
         return new LocalResponse('private fixture source failure', { status: 503 });
       }

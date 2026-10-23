@@ -1,0 +1,126 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T14:33:15.658Z",
+  "kind": "paused-source-http-failure-identification",
+  "deployment": {
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "namespaceId": "751026e8a12f46dc87f829d44cef4221",
+    "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "versionId": "0f865aad-faf1-4e96-82c4-8d48befe18b2",
+    "settingsVerified": true,
+    "schedules": []
+  },
+  "control": {
+    "controlled": true,
+    "format": 1,
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2",
+    "cap": 1752,
+    "submitted": 1304,
+    "remaining": 448,
+    "recovery": {
+      "plan": {
+        "format": 1,
+        "id": "v1-stage-recovery-20261023-1112-to-1752",
+        "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-pipeline-20261022",
+        "namespaceId": "751026e8a12f46dc87f829d44cef4221",
+        "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+        "corpusId": "statutes-canada",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2",
+        "initialAdmissionRevision": 1,
+        "originalCap": 1112,
+        "originalSubmitted": 1112,
+        "totalCap": 1752,
+        "maxCalls": 20,
+        "maxDocumentsPerCall": 32,
+        "indexDigest": "b9b9ad97092ae2c5b4a35580f0cafe73"
+      },
+      "planSha256": "26b6b13a511ac3f55e07bffc08686f8997addc88425838564bbf789d256e5b13",
+      "reservedCalls": 6
+    },
+    "corpusId": "statutes-canada",
+    "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "coordinator": {
+      "format": 1,
+      "revision": 3,
+      "suspended": true,
+      "active": null,
+      "queued": 0,
+      "alarmHandlersActive": 0,
+      "alarmAt": null,
+      "pending": true,
+      "failures": 8,
+      "lastFailure": {
+        "classification": "unknown"
+      },
+      "quiescent": true
+    }
+  },
+  "failureDiagnostic": {
+    "format": 1,
+    "category": "unknown",
+    "signature": null,
+    "persistedErrorSha256": "3bc8aeec050697364a7ef1cb6212906c568b020694e4fea2dcd8b225db4fdb49"
+  },
+  "identification": {
+    "method": "exact SHA-256 equality with UTF-8 persisted String(error)",
+    "sourceLocation": "src/ingest/source.ts:132",
+    "message": "Error: the corpus repository returned 403",
+    "persistedBytes": 41,
+    "persistedErrorSha256": "3bc8aeec050697364a7ef1cb6212906c568b020694e4fea2dcd8b225db4fdb49",
+    "sourceRequest": "GitHubCorpusSource.head()",
+    "httpStatus": 403,
+    "reasonEstablished": false
+  },
+  "operatorLimits": {
+    "managementGETs": 4,
+    "controlGETs": 1,
+    "timeoutMs": 15000,
+    "managementResponseBytes": 262144,
+    "controlResponseBytes": 16384,
+    "retries": 0,
+    "redirects": 0,
+    "credentialRefresh": false
+  },
+  "evidence": {
+    "dist/release/staging/recovery-failure-diagnostic/candidate.json": {
+      "bytes": 3286,
+      "sha256": "14225499cf8e7aa217d09ead71b85272ea9b3fb74fc267441c67459a1919c7f1"
+    },
+    "dist/release/staging/recovery-failure-diagnostic/operations/operations-manifest.json": {
+      "bytes": 3859,
+      "sha256": "80950d9e4b724756ea3f59f6d0c91c2212107c85ab9857c70ea65f7018549e07"
+    },
+    "dist/release/staging/recovery-failure-diagnostic/operations/deploy-diagnostic.json": {
+      "bytes": 902,
+      "sha256": "ad538eac2925a67f139f3ea694e69e2cafb1e6b611883b9f18c169b3920fb096"
+    },
+    "dist/release/staging/recovery-failure-diagnostic/operations/postverify.json": {
+      "bytes": 6280,
+      "sha256": "1533c92a6b30b64b496c16ca79d5eddcc5366876682d25c76d6871ea09801ab9"
+    },
+    "dist/release/staging/recovery-diagnostic-recipes/hash-lookup-result.json": {
+      "bytes": 1311,
+      "sha256": "49b8c3e26d11d9760a4702f88b47e22877f6df2e0318a741bc95c138b5d32f39"
+    }
+  },
+  "acceptance": false,
+  "boundaries": {
+    "automaticResume": false,
+    "resumeRefusedByCurrentBuild": true,
+    "servingRequests": 0,
+    "embeddingSubmissions": 0,
+    "productionChanged": false,
+    "railwayChanged": false
+  },
+  "proofLimits": [
+    "The exact saved error establishes HTTP403 from the GitHub source-head request; it does not establish rate limiting, authentication or another refusal reason.",
+    "The stop-only diagnostic deployment preserves the original coordinator, admission revision and cumulative grant. It refuses ingestion and resume.",
+    "No raw saved error, provider response body, secret or arbitrary header was returned by the hosted diagnostic. The matched message came from the frozen local code."
+  ]
+}

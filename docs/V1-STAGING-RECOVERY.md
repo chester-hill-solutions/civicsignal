@@ -7,9 +7,16 @@ all 1,112 spent attempts and permits 640 more document attempts across at most
 20 encoder calls. The first recovery attempt paused after six calls at 13:57 UTC:
 1,304 cumulative document attempts are spent, 448 document slots and 14 calls
 remain. The original object is suspended at revision 3, quiescent, with no alarm.
-Its persisted failure is classified unknown. No contingency resume has occurred.
+Its base persisted failure classification remains unknown, but a stop-only
+hashed diagnostic and exact frozen-code match identify a GitHub source-head HTTP
+403. The refusal reason is not established. The current stop-only version is
+`0f865aad-faf1-4e96-82c4-8d48befe18b2`; it refuses resume and ingestion.
+No contingency resume has occurred.
 See the [attempt receipt](evidence/2026-10-22/stage-recovery-approved-attempt-1.json).
-Completion and the new reported progress are not yet independently verified.
+Subsequent [independent paused reads](evidence/2026-10-22/stage-recovery-progress-1.json)
+verify 792 target fingerprints and matching feed/mutation identities, 320 remaining,
+and no pending outbox. This is metadata evidence, not a new complete R2/vector byte
+audit or completed publication. See the [failure identification](evidence/2026-10-22/stage-recovery-source-403.json).
 The original 1,112-document staging reconciliation failed its bound. Its result
 and [stop evidence](evidence/2026-10-22/stage-pipeline-budget-stop.json) remain part
 of release acceptance. A recovered result must retain that history.

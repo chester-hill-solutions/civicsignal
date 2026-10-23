@@ -54,9 +54,10 @@ async function fixture(options: { invalidStage?: boolean; sourceFailure?: boolea
     },
     dev: { outboundService: { type: 'fetcher', handler: async (request) => {
       const url = new URL(request.url); outbound.push(url.href);
-      if (url.host === 'api.github.com' && (url.pathname.endsWith('/commits/main') || url.pathname.endsWith('/commits/' + SNAPSHOT_STAGE_COMMIT))) {
-        return new LocalResponse(options.sourceFailure ? 'private upstream response must never be exposed' : JSON.stringify({ sha: SNAPSHOT_STAGE_COMMIT,
-          commit: { committer: { date: SNAPSHOT_STAGE_DATE + 'T00:00:00Z' } } }), { status: options.sourceFailure ? 503 : 200 });
+      if (url.host === 'api.github.com' && url.pathname.endsWith('/commits') && url.searchParams.get('per_page') === '1' &&
+        ['main', SNAPSHOT_STAGE_COMMIT].includes(url.searchParams.get('sha') ?? '')) {
+        return new LocalResponse(options.sourceFailure ? 'private upstream response must never be exposed' : JSON.stringify([{ sha: SNAPSHOT_STAGE_COMMIT,
+          commit: { committer: { date: SNAPSHOT_STAGE_DATE + 'T00:00:00Z' } } }]), { status: options.sourceFailure ? 503 : 200 });
       }
       if (url.host === 'codeload.github.com' && url.pathname === '/justicecanada/laws-lois-xml/tar.gz/' + SNAPSHOT_STAGE_COMMIT) return new LocalResponse(tarball);
       throw new Error('Unexpected outbound call; all external networking is forbidden in this local fixture.');

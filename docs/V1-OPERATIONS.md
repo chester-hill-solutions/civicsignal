@@ -191,6 +191,23 @@ Manual and scheduled requests share that coordinator. A pending checkpoint survi
 The recovery outbox must drain before a new diff starts.
 A completed state requires agreement on both source commit and parser version.
 
+Source discovery in the new candidate uses GitHub's commit-list endpoint with
+`per_page=1`, rather than downloading changed-file patches. It makes one attempt,
+with a 15-second deadline and 1 MiB streamed response bound. Redirects, malformed
+revision/date metadata and oversized bodies fail closed. Safe errors retain the
+HTTP status, fixed failure code and validated numeric quota fields within the
+coordinator's 500-character saved-error limit. They exclude response bodies,
+addresses, credentials and underlying transport errors. This local change is not
+a claim that an existing hosted Worker uses the new helper.
+
+Treat HTTP 403 alone as a refusal with an unproved cause. A 403/429 with
+`remaining:0` identifies an exhausted primary request allowance. Respect any
+reported `retryAfterSeconds` and UTC `reset` before an operator continuation.
+The helper performs no retry. In bounded staging, review the same source pin,
+coordinator revision and remaining cumulative document/call counters before any
+explicit resume. Never reset the ledger or substitute a different source to
+recover from a refusal. See [GitHub's rate-limit guidance](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
+
 Check a full non-empty snapshot and restore before the production switch.
 Check every index offset and row fingerprint against the pinned source.
 Check the largest parser group in the Workers runtime.

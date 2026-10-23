@@ -6,16 +6,17 @@ the code audit, the CHS package review, `docs/PLAN.md`, and section 9 of
 Cloudflare is the only v1 deployment target. Keep the existing Vectorize index and vectors.
 Existing Railway services are outside this release. Preserve unrelated work and the Bun/Postgres portability code.
 
-Current hosted status: the full baseline restore, snapshot Workflow artifact
-parity and 14 serving smokes pass. Non-empty ingestion remains incomplete:
-600 of 1,112 expected changes were durable when the original 1,112 embedding
-allowance was exhausted. The user has now approved the exact 640-document,
-20-call extension in [V1-STAGING-RECOVERY.md](V1-STAGING-RECOVERY.md), and its
-first attempt paused safely on an unknown failure after six calls and 1,304
-cumulative document submissions. The same coordinator is suspended with no alarm;
-448 document slots and 14 calls remain within that approval. Completion is not
-verified. Retrieval evaluation and production migration
-remain pending. See the [stop receipt](evidence/2026-10-22/stage-pipeline-budget-stop.json).
+Current hosted status: baseline restore, snapshot Workflow artifact parity and
+14 serving smokes pass. Independent paused reads now confirm 792 of 1,112 target
+changes and an empty pending outbox; 320 changes remain. The original 1,112-attempt
+reconciliation failed its bound. The approved same-coordinator recovery has spent
+1,304 cumulative document attempts and six extension calls; 448 document slots
+and 14 calls remain. Its saved failure matches a GitHub source-head HTTP 403.
+The refusal reason remains unproved. The stop-only diagnostic deployment retains
+the suspended revision, no alarm and unchanged counters. There has been no
+contingency resume. See the [progress proof](evidence/2026-10-22/stage-recovery-progress-1.json)
+and [failure identification](evidence/2026-10-22/stage-recovery-source-403.json).
+Completed ingestion, retrieval evaluation and production migration remain pending.
 
 ## Release requirements
 
@@ -24,7 +25,7 @@ remain pending. See the [stop receipt](evidence/2026-10-22/stage-pipeline-budget
 | V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
-| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local recovery fixes pass; hosted cycle paused at exhausted allowance |
+| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Local recovery fixes pass; 792/1,112 hosted changes verified; source HTTP 403 paused recovery |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
@@ -350,6 +351,19 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   1,304 cumulative attempts and six extension calls. There is no alarm or automatic
   contingency resume. The [attempt receipt](evidence/2026-10-22/stage-recovery-approved-attempt-1.json)
   retains the original failed bound and the incomplete recovered result.
+  Subsequent [independent paused reads](evidence/2026-10-22/stage-recovery-progress-1.json)
+  verify 792 target fingerprints and matching feed/mutation identities, with 320
+  remaining and no pending outbox. The [stop-only diagnostic](evidence/2026-10-22/stage-recovery-source-403.json)
+  preserves the same counters and identifies the saved source-head HTTP 403 by
+  exact error hash. It does not establish the refusal reason or completed ingestion.
+
+- Source-head reliability: the candidate now requests one commit-list metadata
+  item, with a total deadline, streamed size bound and safe persisted HTTP/quota
+  diagnostics. It follows no redirects and performs no retry. Independent review
+  clears the head-only change. The [new full local gate](evidence/2026-10-22/source-head-local-validation.json)
+  passes 1,070 tests in 83 files, all four compiler projects, runtime/vendor checks
+  and five builds. The optional corpus checker paths absent from this checkout
+  are recorded as skips. Existing hosted bundles remain unchanged by this fix.
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
