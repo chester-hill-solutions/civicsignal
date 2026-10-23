@@ -6,6 +6,14 @@ credential, acquisition or production-apply mode. SQLite is read directly; saved
 SQL uses a separate restricted Node importer. The importer feature-detects the
 SQLite authorizer and refuses older runtimes rather than running unrestricted SQL.
 
+The fixed table/column order, scalar validation and format-1 page codec now live
+in `src/corpora/protected-state-format.ts`. The offline copier imports that same
+codec. Original canonical page bytes and hashes are unchanged. The module uses
+platform Web Crypto and runs in a Worker without Node compatibility. This is a
+shared format boundary; it does not add a hosted restore route or remote apply.
+The [validation receipt](evidence/2026-10-22/protected-state-format-validation.json)
+records the golden hashes, byte boundaries and local runtime checks.
+
 Keep the source/auth/target files and output outside the repository. Use private
 0700 directories and 0600 files, owned by the operator, with no symlinks or SQLite
 WAL/SHM/journal companions. Output directories must be new. The cutover bundle is

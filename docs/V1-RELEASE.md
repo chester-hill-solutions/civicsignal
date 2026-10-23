@@ -370,12 +370,20 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   and five builds. The optional corpus checker paths absent from this checkout
   are recorded as skips. Existing hosted bundles remain unchanged by this fix.
 
+- Protected-copy format: the offline copier now shares its fixed table/column,
+  scalar and format-1 page codec with a Worker-safe module. All original golden
+  page hashes remain unchanged, including Unicode and exact 64 KiB boundaries.
+  The focused 52-test check includes actual local workerd without Node
+  compatibility. This prepares the D1 binding implementation; it does not
+  implement a hosted protected-data copy or establish production-backup consistency.
+  See the [format validation](evidence/2026-10-22/protected-state-format-validation.json).
+
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
 ## Remaining release gates
 
-1. Diagnose the safely paused recovery failure, complete ingestion within the approved cumulative limits, then verify vector visibility and the resulting backup.
+1. Finish the authenticated source-access remedy, complete ingestion within the approved cumulative limits, then verify text bytes, vector visibility and the resulting backup.
 2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
 3. Run post-reconciliation flows, fresh calibration, held-out retrieval, and bounded performance checks against the coherent serving target; verify positive BYOK generation with an approved provider key.
 4. Check text migration and the protected-table copy against a consistent production backup. The new protected-state copier is locally verified and does not verify target text references or compact markers.

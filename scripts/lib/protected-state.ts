@@ -11,31 +11,20 @@ import { COMPACT_STATUTE_COLUMNS } from '../../src/corpora/compact-restore';
 import { IndexDigester } from '../../src/ingest/snapshot-format';
 import { jsonLines, sha256File, verifyTextCutover } from '../prepare-text-cutover';
 
-type Scalar = string | number | null;
-const tables = {
-  workspace: ['id','name','slug','created_at','updated_at'],
-  civic_workspace_billing: ['workspace_id','plan','fuse_limit','fuse_soft_warn','stripe_customer_id','enabled'],
-  workspace_api_key: ['id','workspace_id','name','key_hash','display_prefix','capabilities','status','created_by_user_id','last_used_at','created_at','updated_at'],
-  corpus_runs: ['id','corpus_id','commit_sha','commit_date','ran_at','added','changed','removed','unchanged','embedded','duration_ms','ok','error','parser_version'],
-  corpus_changes: ['id','corpus_id','change','row_id','instrument','citation','section','heading','status','summary','source_url','occurred_at','recorded_at'],
-  corpus_mutations: ['id','corpus_id','payload','completed_at'],
-  corpus_state: ['corpus_id','commit_sha','commit_date','as_of','row_count','last_run_at','parser_version'],
-  sqlite_sequence: ['name','seq'],
-} as const;
-type Table = keyof typeof tables;
-const order = Object.keys(tables) as Table[];
-const authTables = order.slice(0, 3);
-const history = ['corpus_runs','corpus_changes'] as const;
-const corpus = 'statutes-canada';
-const maxPageBytes = 64 * 1024;
-const maxRows = 16;
-const digestPattern = /^[a-f0-9]{64}$/;
+import {
+  PROTECTED_TABLE_COLUMNS as tables, PROTECTED_TABLE_ORDER as order,
+  PROTECTED_AUTH_TABLES as authTables, PROTECTED_HISTORY_TABLES as history,
+  PROTECTED_CORPUS_ID as corpus, MAX_PROTECTED_PAGE_BYTES as maxPageBytes,
+  MAX_PROTECTED_PAGE_ROWS as maxRows, PROTECTED_DIGEST_PATTERN as digestPattern,
+  ProtectedStateError, protectedRowValues as rowValues, protectedRowCanonical as canonical,
+  protectedPageCanonical, checkedProtectedManifest as checkedManifest, checkedProtectedPage as checkedPage,
+  type ProtectedScalar as Scalar, type ProtectedTable as Table,
+  type ProtectedTableDigest as TableDigest, type ProtectedPage, type ProtectedManifest,
+} from '../../src/corpora/protected-state-format';
+export {ProtectedStateError, type ProtectedPage, type ProtectedManifest} from '../../src/corpora/protected-state-format';
+
 const sha = (value: string | Uint8Array) => createHash('sha256').update(value).digest('hex');
-const canonical = (row: readonly Scalar[]) => JSON.stringify(row) + '\n';
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-export class ProtectedStateError extends Error {
-  constructor(readonly code: string) { super(code); this.name = 'ProtectedStateError'; }
-}
 function assert(value: unknown, code: string): asserts value { if (!value) throw new ProtectedStateError(code); }
 function safeError(error: unknown): never { throw error instanceof ProtectedStateError ? error : new ProtectedStateError('PROTECTED_STATE_FAILURE'); }
 
@@ -93,21 +82,6 @@ function tableRows(db: DatabaseSync, table: Table, legacy = false): Iterable<Rec
   const projection = tables[table].map(name => actual.includes(name) ? name : `NULL AS ${name}`).join(',');
   return db.prepare(`SELECT ${projection} FROM ${table}${table === 'sqlite_sequence' ? " WHERE name IN ('corpus_runs','corpus_changes')" : ''} ORDER BY ${tables[table][0]} COLLATE BINARY`).iterate();
 }
-function rowValues(table: Table, row: Record<string, unknown>): Scalar[] {
-  const values = tables[table].map(name => row[name]);
-  assert(values.every(value => value === null || typeof value === 'string' || typeof value === 'number' && Number.isSafeInteger(value)), 'INVALID_PROTECTED_VALUE');
-  if(table!=='corpus_runs'&&table!=='corpus_changes'&&table!=='sqlite_sequence')assert(typeof values[0]==='string'&&values[0].length>0,'INVALID_PROTECTED_ID');
-  if ('corpus_id' in row) assert(row['corpus_id'] === corpus, 'UNSUPPORTED_CORPUS_IDENTITY');
-  if (table === 'corpus_mutations') assert(row['payload'] === null && typeof row['completed_at'] === 'string', 'PENDING_OUTBOX');
-  if (table === 'workspace_api_key') {
-    assert(typeof row['key_hash'] === 'string' && digestPattern.test(row['key_hash']) && ['active','revoked'].includes(String(row['status'])), 'INVALID_AUTH_ROW');
-    let caps: unknown; try { caps = JSON.parse(String(row['capabilities'])); } catch { throw new ProtectedStateError('INVALID_AUTH_ROW'); }
-    assert(Array.isArray(caps) && caps.every(value => typeof value === 'string'), 'INVALID_AUTH_ROW');
-  }
-  if (table === 'corpus_runs' || table === 'corpus_changes') assert(typeof row['id'] === 'number' && row['id'] > 0, 'INVALID_HISTORY_ID');
-  if (table === 'sqlite_sequence') assert(history.includes(row['name'] as typeof history[number]) && typeof row['seq'] === 'number' && row['seq'] >= 0, 'INVALID_SEQUENCE');
-  return values as Scalar[];
-}
 function count(db: DatabaseSync, table: Table | 'protected_state_pages') { return exists(db, table) ? Number(db.prepare(`SELECT count(*) AS n FROM ${table}`).get()?.['n']) : 0; }
 function transaction<T>(db: DatabaseSync, action: () => T): T {
   db.exec('BEGIN IMMEDIATE'); try { const value = action(); db.exec('COMMIT'); return value; } catch (error) { db.exec('ROLLBACK'); throw error; }
@@ -161,31 +135,6 @@ function mergeAuth(source: DatabaseSync, desired: DatabaseSync, auth: unknown) {
   }
   for (const statement of migration.statements) desired.prepare(statement.sql).run(...statement.params);
   healthy(desired);
-}
-
-export interface ProtectedPage { page: number; table: Table; rows: Scalar[][]; sha256: string }
-interface TableDigest { rows: number; sha256: string }
-export interface ProtectedManifest {
-  format: 1; sourceKind:'sqlite'|'sql';sourceSha256: string;sourceSqliteSha256:string; legacyAuthSha256: string; targetSha256: string; cutoverManifestSha256: string;
-  corpusDigest: string;corpusMetadataSha256:string; corpusRows: number; revision: string; initialPublication: Scalar[][];
-  pages: number; pagesSha256: string; tables: Record<Table, TableDigest>;
-}
-function checkedManifest(value: unknown): ProtectedManifest {
-  assert(value && typeof value === 'object', 'INVALID_MANIFEST'); const m = value as ProtectedManifest;
-  assert(m.format === 1 && ['sqlite','sql'].includes(m.sourceKind) && [m.sourceSha256,m.sourceSqliteSha256,m.legacyAuthSha256,m.targetSha256,m.cutoverManifestSha256,m.pagesSha256,m.corpusMetadataSha256].every(x => typeof x === 'string' && digestPattern.test(x)) &&
-    /^[a-f0-9]{32}$/.test(m.corpusDigest) && Number.isSafeInteger(m.corpusRows) && m.corpusRows > 0 &&
-    /^[a-f0-9]{40}:[a-z0-9][a-z0-9-]{0,63}$/.test(m.revision) && Number.isSafeInteger(m.pages) && m.pages > 0 &&
-    equal(Object.keys(m.tables), order) && order.every(t => Number.isSafeInteger(m.tables[t].rows) && m.tables[t].rows >= 0 && digestPattern.test(m.tables[t].sha256)) &&
-    Array.isArray(m.initialPublication) && m.initialPublication.length === 1, 'INVALID_MANIFEST');
-  return m;
-}
-function checkedPage(value: unknown): ProtectedPage {
-  assert(value && typeof value === 'object', 'INVALID_PAGE'); const page = value as ProtectedPage;
-  assert(Number.isSafeInteger(page.page) && page.page > 0 && order.includes(page.table) && Array.isArray(page.rows) && page.rows.length > 0 && page.rows.length <= maxRows &&
-    Buffer.byteLength(JSON.stringify(page)) <= maxPageBytes && page.rows.every(row => Array.isArray(row) && row.length === tables[page.table].length), 'INVALID_PAGE');
-  for (const row of page.rows) rowValues(page.table, Object.fromEntries(tables[page.table].map((key, i) => [key,row[i]])));
-  assert(page.sha256 === sha(JSON.stringify({ page: page.page, table: page.table, rows: page.rows })), 'PAGE_HASH_MISMATCH');
-  return page;
 }
 
 export async function prepareProtectedState(options: {
@@ -263,7 +212,7 @@ export async function prepareProtectedState(options: {
         const flush = () => {
           if (!pending.length) return;
           const body = {page:++pageNo,table,rows:pending};
-          writeFileSync(fd,JSON.stringify({...body,sha256:sha(JSON.stringify(body))})+'\n'); pending=[];
+          writeFileSync(fd,JSON.stringify({...body,sha256:sha(protectedPageCanonical(body))})+'\n'); pending=[];
         };
         for (const row of tableRows(db,table,true)) {
           const values = rowValues(table,row); hash.update(canonical(values)); count++;
@@ -299,7 +248,7 @@ async function loadPlan(directory: string, expected: string) {
   let n=0; const hashes = Object.fromEntries(order.map(t=>[t,createHash('sha256')])) as Record<Table,ReturnType<typeof createHash>>;
   const counts = Object.fromEntries(order.map(t=>[t,0])) as Record<Table,number>; let lastTable=-1;
   for await (const value of jsonLines(pagesPath)) {
-    const p=checkedPage(value); assert(p.page===++n && order.indexOf(p.table)>=lastTable,'PAGE_ORDER');lastTable=order.indexOf(p.table);
+    const p=await checkedPage(value); assert(p.page===++n && order.indexOf(p.table)>=lastTable,'PAGE_ORDER');lastTable=order.indexOf(p.table);
     for(const row of p.rows){hashes[p.table].update(canonical(row));counts[p.table]++;}
   }
   assert(n===manifest.pages&&order.every(t=>counts[t]===manifest.tables[t].rows&&hashes[t].digest('hex')===manifest.tables[t].sha256),'PLAN_TABLE_DIGEST');
@@ -331,7 +280,7 @@ async function verifyCheckpoint(db:DatabaseSync,pagesPath:string,m:ProtectedMani
   let gap=false,recorded=0,stateCopied=false,sequenceCopied=false;
   const sequences=new Map<string,number>();
   for await(const value of jsonLines(pagesPath)){
-    const page=checkedPage(value),receipt=db.prepare('SELECT sha256 FROM protected_state_pages WHERE page=?').get(page.page);
+    const page=await checkedPage(value),receipt=db.prepare('SELECT sha256 FROM protected_state_pages WHERE page=?').get(page.page);
     if(page.table==='sqlite_sequence')for(const row of page.rows)sequences.set(String(row[0]),Number(row[1]));
     if(!receipt){gap=true;continue;}
     assert(!gap&&receipt['sha256']===page.sha256,'PAGE_RECEIPT_MISMATCH');verifyRows(db,page);recorded++;
@@ -370,7 +319,7 @@ export async function applyProtectedState(options:{directory:string;manifestSha2
     await verifyCheckpoint(db,pagesPath,m);
     let applied=0,skipped=0;
     for await(const value of jsonLines(pagesPath)){
-      const page=checkedPage(value);
+      const page=await checkedPage(value);
       transaction(db,()=>{
         const recorded=db!.prepare('SELECT sha256 FROM protected_state_pages WHERE page=?').get(page.page);
         if(recorded){assert(recorded['sha256']===page.sha256,'PAGE_RECEIPT_MISMATCH');verifyRows(db!,page);skipped++;return;}
