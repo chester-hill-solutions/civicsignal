@@ -5,6 +5,8 @@ import { readJsonBody, RequestInputError } from '../../src/http';
 import { checkedRestorePlan, checkedTarget, digestPattern, hashJson, nextPageChain, RESTORE_SUPPORT_SCHEMA,
   RestoreInputError, type RestorePlan, type StagingRestoreTarget } from './protocol';
 import { isFreshRestoreDatabase } from './fresh-schema';
+import { decodeUploadBatch, MAX_UPLOAD_BATCH_BYTES, UPLOAD_BATCH_CAPABILITIES, UPLOAD_BATCH_PARALLELISM,
+  type UploadBatchAcknowledgement } from './upload-batch';
 
 /** This contract is exercised against actual local D1/R2 bindings. The disabled
  * checked-in config has no bindings; generated staging config supplies them. */
@@ -51,7 +53,7 @@ function checkSession(session: Session | null, target: StagingRestoreTarget, pla
 async function status(db: D1Database, target: StagingRestoreTarget, planHash: string) {
   const session = await currentSession(db);
   if (!session) {
-    return { target, initialized: false, fresh: await isFreshRestoreDatabase(db) };
+    return { target, initialized: false, fresh: await isFreshRestoreDatabase(db),uploadBatch:UPLOAD_BATCH_CAPABILITIES };
   }
   checkSession(session, target, planHash);
   const plan=checkedRestorePlan(JSON.parse(session.plan_json));
@@ -61,12 +63,12 @@ async function status(db: D1Database, target: StagingRestoreTarget, planHash: st
     (SELECT count(*) FROM statute_text_refs) AS refs,(SELECT count(*) FROM corpus_compact_pages) AS pages`).first():
     {rows:plan.rowCount,refs:plan.rowCount,pages:plan.pageCount};
   const counts={...metadata,...journal};
-  return { target, initialized: true, planHash, phase: session.phase, counts, checkedPages: session.page_check_after,
+  return { target, initialized: true, planHash, phase: session.phase, counts, checkedPages: session.page_check_after,uploadBatch:UPLOAD_BATCH_CAPABILITIES,
     countsVerifiedAtPublication:session.phase!=='loading',
     audit: session.audit_checkpoint ? JSON.parse(session.audit_checkpoint) as TextParityCheckpoint : null };
 }
 
-async function objectBytes(request: Request) {
+async function objectBytes(request: Request,validateUtf8=true) {
   if (Number(request.headers.get('content-length')) > MAX_PROVISION_TEXT_BYTES) throw new RestoreInputError('The object exceeds 2 MiB.',413);
   const reader = request.body?.getReader();
   if (!reader) throw new RestoreInputError('A non-empty text object is required.');
@@ -80,8 +82,28 @@ async function objectBytes(request: Request) {
   if (!length) throw new RestoreInputError('A non-empty text object is required.');
   const bytes = new Uint8Array(length); let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk,offset); offset += chunk.byteLength; }
-  try { new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes); } catch { throw new RestoreInputError('The text must be valid UTF-8.'); }
+  if(validateUtf8)checkedUtf8(bytes);
   return bytes;
+}
+
+function checkedUtf8(bytes:Uint8Array<ArrayBuffer>) {
+  try {new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}catch {throw new RestoreInputError('The text must be valid UTF-8.');}
+}
+
+/** Arrival ordinal remains the existing journal's counter. Source ordinals in
+ * batch descriptors/acks bind only the pinned client request's source range. */
+async function commitObject(db:D1Database,bucket:R2Bucket,plan:RestorePlan,sha:string,bytes:Uint8Array<ArrayBuffer>) {
+  const reference:ProvisionTextReference={rowId:'stage-upload',corpusId:'statutes-canada',rowFingerprint:'0'.repeat(32),contentSha256:sha,
+    objectKey:provisionTextKey(sha),bytes:bytes.byteLength,createdAt:plan.publication.lastRunAt};
+  await writeImmutableProvisionText(bucket,{reference,bytes});
+  await db.prepare(`INSERT OR IGNORE INTO stage_restore_objects(ordinal,object_key,sha256,bytes,cumulative_bytes)
+    SELECT (SELECT coalesce(max(ordinal),0)+1 FROM stage_restore_objects),?,?,?,
+    coalesce((SELECT cumulative_bytes FROM stage_restore_objects ORDER BY ordinal DESC LIMIT 1),0)+?
+    WHERE (SELECT coalesce(max(ordinal),0) FROM stage_restore_objects)<?`)
+    .bind(reference.objectKey,sha,bytes.byteLength,bytes.byteLength,plan.objectCount).run();
+  const recorded=await db.prepare('SELECT sha256,bytes FROM stage_restore_objects WHERE object_key=?').bind(reference.objectKey).first<{sha256:string;bytes:number}>();
+  if(recorded?.sha256!==sha||recorded.bytes!==bytes.byteLength)throw new RestoreInputError('The planned unique-object bound was exceeded.',409);
+  return {verified:true as const,sha256:sha,bytes:bytes.byteLength};
 }
 
 async function initialize(request: Request, db: D1Database, target: StagingRestoreTarget, planHash: string) {
@@ -140,17 +162,23 @@ export async function handleRestoreRequest(request: Request, env: RestoreEnv): P
       if (session.phase === 'complete') throw new RestoreInputError('The completed restore is read-only.',409);
       const sha = object[1]!; const bytes = await objectBytes(request);
       if (await textSha256(bytes) !== sha) throw new RestoreInputError('The object content digest differs.',422);
-      const reference: ProvisionTextReference = {rowId:'stage-upload',corpusId:'statutes-canada',rowFingerprint:'0'.repeat(32),contentSha256:sha,
-        objectKey:provisionTextKey(sha),bytes:bytes.byteLength,createdAt:plan.publication.lastRunAt};
-      await writeImmutableProvisionText(bucket,{reference,bytes});
-      await db.prepare(`INSERT OR IGNORE INTO stage_restore_objects(ordinal,object_key,sha256,bytes,cumulative_bytes)
-        SELECT (SELECT coalesce(max(ordinal),0)+1 FROM stage_restore_objects),?,?,?,
-        coalesce((SELECT cumulative_bytes FROM stage_restore_objects ORDER BY ordinal DESC LIMIT 1),0)+?
-        WHERE (SELECT coalesce(max(ordinal),0) FROM stage_restore_objects)<?`)
-        .bind(reference.objectKey,sha,bytes.byteLength,bytes.byteLength,plan.objectCount).run();
-      const recorded = await db.prepare('SELECT sha256,bytes FROM stage_restore_objects WHERE object_key=?').bind(reference.objectKey).first<{sha256:string;bytes:number}>();
-      if (recorded?.sha256 !== sha || recorded.bytes !== bytes.byteLength) throw new RestoreInputError('The planned unique-object bound was exceeded.',409);
-      return json({verified:true,sha256:sha,bytes:bytes.byteLength});
+      return json(await commitObject(db,bucket,plan,sha,bytes));
+    }
+    if(request.method==='POST'&&path==='/v1/restore/objects'){
+      if(session.phase==='complete')throw new RestoreInputError('The completed restore is read-only.',409);
+      const frame=await objectBytes(request,false);
+      if(frame.byteLength>MAX_UPLOAD_BATCH_BYTES)throw new RestoreInputError('The complete upload batch exceeds 2 MiB.',413);
+      const objects=decodeUploadBatch(frame,plan.objectCount);
+      // Every descriptor/content pair validates before the first R2/SQL write.
+      for(const item of objects){checkedUtf8(item.bytes);if(await textSha256(item.bytes)!==item.sha256)throw new RestoreInputError('The object content digest differs.',422);}
+      const acknowledgements:UploadBatchAcknowledgement[]=Array(objects.length);let position=0;let failed=false;let failure:unknown;
+      async function worker(){while(!failed&&position<objects.length){const at=position++;const item=objects[at]!;
+        try{acknowledgements[at]={sourceOrdinal:item.sourceOrdinal,...await commitObject(db,bucket,plan,item.sha256,item.bytes)};}catch(error){failed=true;failure=error;}}}
+      // All in-flight binding work settles before either success or error reply.
+      const outcomes=await Promise.allSettled(Array.from({length:Math.min(UPLOAD_BATCH_PARALLELISM,objects.length)},()=>worker()));
+      const unexpected=outcomes.find((outcome)=>outcome.status==='rejected');if(unexpected?.status==='rejected')throw unexpected.reason;
+      if(failed)throw failure;
+      return json({verified:true,objects:acknowledgements});
     }
     if (request.method === 'POST' && path === '/v1/restore/page') {
       if (session.phase !== 'loading') throw new RestoreInputError('Metadata loading is closed.',409);

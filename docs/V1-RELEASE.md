@@ -157,7 +157,26 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   The vector copy exposed minute-scale eventual visibility; verified checkpoints remain distinct from acknowledgements.
   Production and Railway remain unchanged.
   The reproduced setup fixes pass 715 local tests in 69 files, all four compiler projects, runtime probes and five Worker builds.
-  Linux CI must check this candidate update too. The [fix receipt](evidence/2026-10-22/stage-fixes-validation.json) pins the tested source files.
+  Linux release CI passes for commit `33c5a90df5fa76b3a64de8695161bdc06f251fa7`, run `39890354847`.
+  The [fix receipt](evidence/2026-10-22/stage-fixes-validation.json) pins the tested source files.
+- Hosted copy follow-up: The single-object text copy measured about 4.5 verified objects per second.
+  An optional bounded binary transport keeps each object's immutable write and full readback.
+  It permits 16 objects and 2 MiB per request, four network requests, and four object workers per request.
+  Source-range acknowledgements preserve the existing journal's arrival-counter semantics.
+  Local fault tests cover partial writes, lost replies, exact acknowledgements and replay from a paused checkpoint.
+  Four concurrent maximum-size frames sampled 30,692,139 bytes of combined workerd heap/backing storage.
+  This is a sampled local result, not a hosted memory maximum.
+  The stage restore deployment retains the same eight isolated bindings and token.
+  The vector verifier now checks at most four read-only groups at once before advancing a batch.
+  A small exact-readback probe measured 1,647 ms serial and 602 ms at concurrency four.
+  A transient host `ENOSPC` stopped a build and vector copy; all pending receipts survived.
+  Disposable task installation caches were removed. Validation then passes 736 tests in 70 files,
+  all four compiler projects, both runtime probes, all invariants and all five Worker builds.
+  The [copy follow-up receipt](evidence/2026-10-22/stage-copy-fixes-validation.json) records source and log hashes.
+  Both copies resume their existing journals; completed hosted audits remain pending.
+  The first snapshot calendar attempt produced no observed event or Workflow instance.
+  Its trigger was removed and independently checked. A controlled calendar retry uses the same deterministic instance ID.
+  The approved JEV credential is prepared privately for stage reranking. No provider result is claimed.
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.

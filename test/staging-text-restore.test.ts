@@ -8,7 +8,8 @@ import { prepareTextCutover, jsonLines, readCutoverObject, type CutoverTextRefer
 import { restoreTextStaging, stagingPlan } from '../scripts/restore-text-staging';
 import { checkedTarget, hashJson, type StagingRestoreTarget } from '../services/restore/protocol';
 import { compactPageDigest, type CompactRestorePage } from '../src/corpora/compact-restore';
-import { rowFingerprintWithText } from '../src/corpora/text-store';
+import { provisionTextKey,rowFingerprintWithText,textSha256 } from '../src/corpora/text-store';
+import { encodeUploadBatch,MAX_UPLOAD_BATCH_BYTES,uploadBatchBytes,type UploadBatchObject } from '../services/restore/upload-batch';
 import { testD1 } from './helpers/d1';
 
 const close:(()=>Promise<unknown>|void)[]=[];
@@ -17,13 +18,13 @@ let script='';
 beforeAll(async()=>{const output=await build({entryPoints:['services/restore/worker.ts'],bundle:true,format:'esm',platform:'browser',target:'es2022',write:false});script=output.outputFiles[0]!.text;});
 
 async function first(path:string){for await(const value of jsonLines(path))return value;throw new Error('Empty fixture.');}
-async function fixture(){
+async function fixture(largeFirst=false){
   const directory=await mkdtemp(join(tmpdir(),'civicsignal-stage-restore-'));close.push(()=>rm(directory,{recursive:true,force:true}));
   const original=testD1();close.push(original.close);
   const rows:Record<string,unknown>[]=[];
   for(const language of ['en','fr'])for(let section=1;section<=9;section++){
     const row={id:`acts-${language}-${section}`,corpus_id:'statutes-canada',act:language==='en'?'Test Act':'Loi de test',citation:'T-1',section:String(section),
-      status:'in-force',schedule:null,part:null,heading:null,text:language==='en'?`Original rule ${section}.`:`Règle originale ${section}.`,
+      status:'in-force',schedule:null,part:null,heading:null,text:largeFirst&&language==='en'&&section===1?'X'.repeat(MAX_UPLOAD_BATCH_BYTES-20):language==='en'?`Original rule ${section}.`:`Règle originale ${section}.`,
       source_url:`https://laws-lois.justice.gc.ca/${language}/acts/T-1/section-${section}.html`,jurisdiction:'CA',in_force:1,topics:null,language,last_changed:'2026-10-15'};
     rows.push({...row,text_hash:rowFingerprintWithText(row,row.text)});
   }
@@ -63,6 +64,15 @@ async function fixture(){
   async function upload(){for await(const value of jsonLines(join(bundle,'references.jsonl'))){const ref=value as unknown as CutoverTextReference;
     const result=await call(`object/${ref.contentSha256}`,await readCutoverObject(bundle,ref,manifest),'PUT');expect(result.status).toBe(200);}}
   return {directory,bundle,manifest,plan,target,token,mf,send,call,upload,original,rows};
+}
+
+async function sourceObjects(f:Awaited<ReturnType<typeof fixture>>,count=18){
+  const objects:UploadBatchObject[]=[];let sourceOrdinal=0;
+  for await(const row of jsonLines(join(f.bundle,'object-index.jsonl'))){sourceOrdinal++;if(sourceOrdinal>count)break;
+    const reference=row as unknown as CutoverTextReference;
+    objects.push({sourceOrdinal,sha256:reference.contentSha256,bytes:await readCutoverObject(f.bundle,reference,f.manifest)});
+  }
+  return objects;
 }
 
 describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('isolated staging restore using real local workerd D1 and R2 bindings',()=>{
@@ -116,6 +126,76 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('isolated stagin
     expect((await f.call('init',f.plan.plan)).status).toBe(409);
     expect(await db.prepare("SELECT count(*) AS count FROM sqlite_master WHERE name='statute_sections'").first()).toEqual({count:0});
     expect(await db.prepare('SELECT id FROM sqliteXhidden').first()).toEqual({id:42});
+  },30_000);
+
+  it('resumes batched source ranges over out-of-order arrival ordinals and uncertain committed uploads',async()=>{
+    const f=await fixture();expect((await f.call('init',f.plan.plan)).status).toBe(200);const objects=await sourceObjects(f);
+    // A paused four-object checkpoint can have later identical puts committed,
+    // and the old concurrent transport assigns arrival ordinals in any order.
+    for(const item of objects.slice(0,6).reverse())expect((await f.call(`object/${item.sha256}`,item.bytes,'PUT')).status).toBe(200);
+    const checkpoint=join(f.directory,'partial.json');await writeFile(checkpoint,JSON.stringify({format:1,planHash:f.plan.planHash,targetHash:await hashJson(f.target),uploadedObjects:4,appliedPages:0}));
+    let frames=0;let lost=false;const withLostAck:typeof fetch=async(input,init)=>{const response=await f.send(input,init);
+      if(String(input).endsWith('/objects')){frames++;if(!lost){lost=true;await response.body?.cancel();return new Response('uncertain acknowledgement',{status:503});}}return response;};
+    const result=await restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint,concurrency:4,uploadBatchSize:16,fetch:withLostAck});
+    expect(result).toMatchObject({audit:{complete:true,rowsVerified:18,bytesVerified:f.manifest.textBytes}});expect(frames).toBe(2);
+    const db=await f.mf.getD1Database('RESTORE_DB');
+    expect(await db.prepare('SELECT sha256 FROM stage_restore_objects WHERE ordinal=1').first()).toEqual({sha256:objects[5]!.sha256});
+    expect(await db.prepare('SELECT count(*) AS count,max(ordinal) AS last,sum(bytes) AS bytes FROM stage_restore_objects').first()).toEqual({count:18,last:18,bytes:f.manifest.objectsBytes});
+    expect(await db.prepare('SELECT cumulative_bytes FROM stage_restore_objects ORDER BY ordinal DESC LIMIT 1').first()).toEqual({cumulative_bytes:f.manifest.objectsBytes});
+    expect(JSON.parse(await readFile(checkpoint,'utf8'))).toMatchObject({uploadedObjects:18,appliedPages:2});
+  },30_000);
+
+  it('refuses an incomplete acknowledgement set without advancing a checkpoint and safely replays',async()=>{
+    const f=await fixture();const checkpoint=join(f.directory,'bad-ack.json');let altered=false;
+    const badAck:typeof fetch=async(input,init)=>{const response=await f.send(input,init);if(!altered&&String(input).endsWith('/objects')){
+      altered=true;const value=await response.json() as {objects:{sourceOrdinal:number}[]};value.objects[0]!.sourceOrdinal=999;
+      return Response.json(value);}return response;};
+    await expect(restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint,uploadBatchSize:16,fetch:badAck})).rejects.toThrow('exact complete upload source range');
+    await expect(readFile(checkpoint)).rejects.toMatchObject({code:'ENOENT'});
+    expect(await restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint,uploadBatchSize:16,fetch:f.send})).toMatchObject({audit:{complete:true,rowsVerified:18}});
+    const db=await f.mf.getD1Database('RESTORE_DB');expect(await db.prepare('SELECT count(*) AS count FROM stage_restore_objects').first()).toEqual({count:18});
+  },30_000);
+
+  it('uses the compatible single-object path when framing would exceed the aggregate bound',async()=>{
+    const f=await fixture(true);let singles=0;let batches=0;
+    const inspect:typeof fetch=async(input,init)=>{if(init?.method==='PUT')singles++;if(String(input).endsWith('/objects'))batches++;return f.send(input,init);};
+    expect(await restoreTextStaging({bundle:f.bundle,target:f.target,execute:true,token:f.token,checkpoint:join(f.directory,'large.json'),uploadBatchSize:16,fetch:inspect}))
+      .toMatchObject({audit:{complete:true,rowsVerified:18,bytesVerified:f.manifest.textBytes}});
+    expect(singles).toBe(1);expect(batches).toBe(2);
+  },30_000);
+
+  it('prevalidates every batched hash and UTF8 object before any write, then recovers a partial immutable failure',async()=>{
+    const f=await fixture();expect((await f.call('init',f.plan.plan)).status).toBe(200);const objects=await sourceObjects(f,6);
+    const badHash=encodeUploadBatch(objects,18);badHash[badHash.length-1]^=1;
+    expect((await f.call('objects',badHash)).status).toBe(422);
+    const badUtf8=encodeUploadBatch(objects,18);badUtf8[badUtf8.length-1]=0xff;
+    expect((await f.call('objects',badUtf8)).status).toBe(400);
+    const db=await f.mf.getD1Database('RESTORE_DB');const bucket=await f.mf.getR2Bucket('RESTORE_TEXTS');
+    expect(await db.prepare('SELECT count(*) AS count FROM stage_restore_objects').first()).toEqual({count:0});
+    expect(await bucket.get(provisionTextKey(objects[0]!.sha256))).toBeNull();
+    // Fixture corruption represents a provider failure; immutable writes cannot
+    // repair it. Every other in-flight object must settle before the 503 reply.
+    await bucket.put(provisionTextKey(objects[0]!.sha256),'corrupt');const frame=encodeUploadBatch(objects,18);
+    expect((await f.call('objects',frame)).status).toBe(503);
+    const partial=await db.prepare('SELECT count(*) AS count FROM stage_restore_objects').first<{count:number}>();expect(partial!.count).toBeGreaterThan(0);expect(partial!.count).toBeLessThan(6);
+    expect(await(await bucket.get(provisionTextKey(objects[0]!.sha256)))?.text()).toBe('corrupt');
+    await bucket.put(provisionTextKey(objects[0]!.sha256),objects[0]!.bytes);
+    expect((await f.call('objects',frame)).status).toBe(200);expect((await f.call('objects',frame)).status).toBe(200);
+    expect(await db.prepare('SELECT count(*) AS count,max(ordinal) AS last FROM stage_restore_objects').first()).toEqual({count:6,last:6});
+  },30_000);
+
+  it('processes four concurrent full 2 MiB frames with sixteen individually verified objects each',async()=>{
+    const f=await fixture();expect((await f.call('init',f.plan.plan)).status).toBe(200);
+    const payload=MAX_UPLOAD_BATCH_BYTES-uploadBatchBytes(16,0);const objects:UploadBatchObject[]=[];
+    for(let at=0;at<16;at++){const bytes=new Uint8Array(Math.floor(payload/16)+(at<payload%16?1:0));bytes.fill(65+at);
+      objects.push({sourceOrdinal:at+1,sha256:await textSha256(bytes),bytes});}
+    const frame=encodeUploadBatch(objects,18);expect(frame.byteLength).toBe(MAX_UPLOAD_BATCH_BYTES);
+    const responses=await Promise.all(Array.from({length:4},()=>f.call('objects',frame)));
+    for(const response of responses){expect(response.status).toBe(200);
+      const body=await response.json() as {objects:{sourceOrdinal:number;sha256:string;bytes:number;verified:boolean}[]};
+      expect(body.objects).toEqual(objects.map((item)=>({sourceOrdinal:item.sourceOrdinal,sha256:item.sha256,bytes:item.bytes.length,verified:true})));}
+    const db=await f.mf.getD1Database('RESTORE_DB');expect(await db.prepare('SELECT count(*) AS count,sum(bytes) AS bytes FROM stage_restore_objects').first()).toEqual({count:16,bytes:payload});
+    const over=new Uint8Array(MAX_UPLOAD_BATCH_BYTES+1);expect((await f.call('objects',over)).status).toBe(413);
   },30_000);
 
   it('rolls back failed row/reference pages, refuses arbitrary SQL and never overwrites immutable content',async()=>{

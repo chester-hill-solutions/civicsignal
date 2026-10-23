@@ -172,8 +172,7 @@ export class StageVectorApi {
     return result.mutationId;
   }
   async verify(vectors: readonly RestoreVector[]): Promise<void> {
-    for (let at = 0; at < vectors.length; at += 20) {
-      const chunk = vectors.slice(at, at + 20);
+    const verifyChunk = async (chunk: readonly RestoreVector[]) => {
       let verified = false;
       for (let poll = 0; poll < 12; poll++) {
         const actual = await this.request<{ id?: string; values?: number[]; metadata?: Record<string, unknown> }[]>('/get_by_ids', {
@@ -189,7 +188,22 @@ export class StageVectorApi {
         if (poll < 11) await this.pause(5000);
       }
       if (!verified) throw new Error('Stage vector readback did not match values/IDs/fingerprints/language/jurisdiction within the bounded visibility window.');
-    }
+    };
+    let next = 0;
+    let failed = false;
+    const worker = async () => {
+      while (!failed) {
+        const at = next; next += 20;
+        if (at >= vectors.length) return;
+        try { await verifyChunk(vectors.slice(at, at + 20)); }
+        catch (error) { failed = true; throw error; }
+      }
+    };
+    // At most four read-only requests/poll groups run at once. A failed group
+    // stops new groups; settle every in-flight reader before returning failure.
+    // The caller cannot advance a checkpoint until all groups have succeeded.
+    const outcomes = await Promise.allSettled(Array.from({ length: Math.min(4, Math.ceil(vectors.length / 20)) }, worker));
+    for (const outcome of outcomes) if (outcome.status === 'rejected') throw outcome.reason;
   }
   async requireCount(count: number): Promise<void> {
     for (let poll = 0; poll < 12; poll++) {

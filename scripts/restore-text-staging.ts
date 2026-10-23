@@ -6,8 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { checkedRestorePlan, checkedTarget, hashJson, type RestorePlan, type StagingRestoreTarget } from '../services/restore/protocol';
 import { jsonLines, readCutoverObject, sha256File, verifyTextCutover, type CutoverTextReference, type TextCutoverManifest } from './prepare-text-cutover';
 import { parseLegacyReceipt } from './lib/legacy-receipt';
+import { encodeUploadBatch, MAX_UPLOAD_BATCH_BYTES, MAX_UPLOAD_BATCH_OBJECTS, UPLOAD_BATCH_CAPABILITIES,
+  uploadBatchBytes, verifiedUploadBatchAcknowledgements, type UploadBatchObject } from '../services/restore/upload-batch';
 
-interface RemoteStatus { initialized: boolean; fresh?:boolean; planHash?:string; phase?:string; counts?:{pages:number}; audit?:{complete:boolean;rowsVerified:number;bytesVerified:number} }
+interface RemoteStatus { initialized: boolean; fresh?:boolean; planHash?:string; phase?:string; counts?:{pages:number}; audit?:{complete:boolean;rowsVerified:number;bytesVerified:number};uploadBatch?:typeof UPLOAD_BATCH_CAPABILITIES }
 interface Checkpoint { format:1; planHash:string; targetHash:string; uploadedObjects:number; appliedPages:number }
 
 export async function stagingPlan(bundle: string) {
@@ -39,10 +41,10 @@ async function boundedJson(response: Response) {
 
 function transport(target:StagingRestoreTarget,planHash:string,token:string,send:typeof fetch) {
   if(token.length<32||token.length>512)throw new Error('Supply RESTORE_TOKEN through the execution environment.');
-  return async (path:string,method='GET',body?:unknown,binary=false):Promise<unknown>=>{
+  return async (path:string,method='GET',body?:unknown,binary=false,contentType?:string):Promise<unknown>=>{
     const headers:Record<string,string>={authorization:`Bearer ${token}`,'x-restore-stage':target.stageId,'x-restore-account':target.accountId,
       'x-restore-d1':target.d1Id,'x-restore-r2':target.r2Bucket,'x-restore-plan':planHash};
-    if(body!==undefined)headers['content-type']=binary?'text/plain; charset=utf-8':'application/json';
+    if(body!==undefined)headers['content-type']=contentType??(binary?'text/plain; charset=utf-8':'application/json');
     for(let attempt=0;attempt<4;attempt++){
       let response:Response;
       try {response=await send(new URL(path,target.adminUrl),{method,headers,
@@ -64,7 +66,7 @@ async function saveCheckpoint(path:string,value:Checkpoint) {
 
 /** The caller must explicitly authorize execute and supply an isolated target.
  * fetch injection makes the entire driver testable through local workerd. */
-export async function restoreTextStaging(options:{bundle:string;target:unknown;execute?:boolean;token?:string;checkpoint?:string;concurrency?:number;
+export async function restoreTextStaging(options:{bundle:string;target:unknown;execute?:boolean;token?:string;checkpoint?:string;concurrency?:number;uploadBatchSize?:number;
   fetch?:typeof fetch;onProgress?:(value:unknown)=>void}) {
   const target=checkedTarget(options.target);
   const {manifest,plan,planHash}=await stagingPlan(resolve(options.bundle));
@@ -73,6 +75,9 @@ export async function restoreTextStaging(options:{bundle:string;target:unknown;e
   if(!options.checkpoint)throw new Error('Execution requires an explicit local checkpoint path.');
   const concurrency=options.concurrency??4;
   if(!Number.isSafeInteger(concurrency)||concurrency<1||concurrency>8)throw new Error('Upload concurrency must be between one and eight.');
+  const uploadBatchSize=options.uploadBatchSize??1;
+  if(!Number.isSafeInteger(uploadBatchSize)||uploadBatchSize<1||uploadBatchSize>MAX_UPLOAD_BATCH_OBJECTS)throw new Error('Upload batch size must be between one and sixteen.');
+  if(uploadBatchSize>1&&concurrency>4)throw new Error('Batched uploads allow at most four concurrent network requests.');
   const request=transport(target,planHash,options.token??'',options.fetch??fetch);
   let checkpoint:Checkpoint={format:1,planHash,targetHash,uploadedObjects:0,appliedPages:0};
   const exists=await lstat(options.checkpoint).catch((e:NodeJS.ErrnoException)=>{if(e.code==='ENOENT')return null;throw e;});
@@ -85,6 +90,8 @@ export async function restoreTextStaging(options:{bundle:string;target:unknown;e
   if(!status.initialized){if(!status.fresh)throw new Error('The staging database is populated; no initialization was attempted.');status=await request('/v1/restore/init','POST',plan) as RemoteStatus;}
   if(status.planHash!==planHash)throw new Error('The staging service returned a different plan identity.');
   if(status.phase==='loading'){
+    if(uploadBatchSize>1&&(status.uploadBatch?.version!==UPLOAD_BATCH_CAPABILITIES.version||
+      status.uploadBatch.maxObjects!==MAX_UPLOAD_BATCH_OBJECTS||status.uploadBatch.maxBytes!==MAX_UPLOAD_BATCH_BYTES))throw new Error('The staging service does not advertise the bounded upload-batch protocol.');
     const pack=manifest.objectStorage==='pack'?await open(join(options.bundle,'objects.pack'),'r'):undefined;
     let position=0;let batch:CutoverTextReference[]=[];
     async function flush(){await Promise.all(batch.map(async(reference)=>{
@@ -92,8 +99,39 @@ export async function restoreTextStaging(options:{bundle:string;target:unknown;e
       const result=await request(`/v1/restore/object/${reference.contentSha256}`,'PUT',bytes,true) as {verified?:boolean;sha256?:string;bytes?:number};
       if(result.verified!==true||result.sha256!==reference.contentSha256||result.bytes!==reference.bytes)throw new Error('The staging service did not verify an uploaded object.');
     }));checkpoint.uploadedObjects+=batch.length;await saveCheckpoint(options.checkpoint!,checkpoint);options.onProgress?.({uploadedObjects:checkpoint.uploadedObjects});batch=[];}
-    try {for await(const row of jsonLines(join(options.bundle,'object-index.jsonl'))){position++;if(position<=checkpoint.uploadedObjects)continue;
-      batch.push(row as unknown as CutoverTextReference);if(batch.length===concurrency)await flush();}if(batch.length)await flush();}
+    try {
+      if(uploadBatchSize===1){for await(const row of jsonLines(join(options.bundle,'object-index.jsonl'))){position++;if(position<=checkpoint.uploadedObjects)continue;
+        batch.push(row as unknown as CutoverTextReference);if(batch.length===concurrency)await flush();}if(batch.length)await flush();}
+      else {
+        type SourceObject={reference:CutoverTextReference;sourceOrdinal:number};
+        type Frame={objects:SourceObject[];single:boolean};
+        let pending:SourceObject[]=[];let payloadBytes=0;let wave:Frame[]=[];
+        async function sendFrame(frame:Frame){
+          const objects:UploadBatchObject[]=[];
+          for(const item of frame.objects)objects.push({sourceOrdinal:item.sourceOrdinal,sha256:item.reference.contentSha256,
+            bytes:await readCutoverObject(options.bundle,item.reference,manifest,pack)});
+          if(frame.single){const item=objects[0]!;const response=await request(`/v1/restore/object/${item.sha256}`,'PUT',item.bytes,true) as {verified?:boolean;sha256?:string;bytes?:number};
+            if(response.verified!==true||response.sha256!==item.sha256||response.bytes!==item.bytes.byteLength)throw new Error('The staging service did not verify an uploaded object.');}
+          else {const response=await request('/v1/restore/objects','POST',encodeUploadBatch(objects,manifest.objectCount),true,'application/octet-stream');
+            if(!verifiedUploadBatchAcknowledgements(response,objects))throw new Error('The staging service did not acknowledge the exact complete upload source range.');}
+        }
+        async function flushWave(){
+          if(!wave.length)return;
+          const results=await Promise.allSettled(wave.map(sendFrame));
+          const failed=results.find((result)=>result.status==='rejected');if(failed?.status==='rejected')throw failed.reason;
+          checkpoint.uploadedObjects+=wave.reduce((sum,frame)=>sum+frame.objects.length,0);
+          await saveCheckpoint(options.checkpoint!,checkpoint);options.onProgress?.({uploadedObjects:checkpoint.uploadedObjects});wave=[];
+        }
+        async function queueFrame(single=false){if(!pending.length)return;wave.push({objects:pending,single});pending=[];payloadBytes=0;if(wave.length===concurrency)await flushWave();}
+        for await(const row of jsonLines(join(options.bundle,'object-index.jsonl'))){position++;if(position<=checkpoint.uploadedObjects)continue;
+          const reference=row as unknown as CutoverTextReference;
+          if(uploadBatchBytes(1,reference.bytes)>MAX_UPLOAD_BATCH_BYTES){await queueFrame();pending=[{reference,sourceOrdinal:position}];await queueFrame(true);continue;}
+          if(pending.length&&(pending.length===uploadBatchSize||uploadBatchBytes(pending.length+1,payloadBytes+reference.bytes)>MAX_UPLOAD_BATCH_BYTES))await queueFrame();
+          pending.push({reference,sourceOrdinal:position});payloadBytes+=reference.bytes;
+        }
+        await queueFrame();await flushWave();
+      }
+    }
     finally {await pack?.close();}
     checkpoint.appliedPages=Number(status.counts?.pages??0);
     for await(const page of jsonLines(join(options.bundle,'fresh-pages.jsonl'))){if(Number(page['page'])<=checkpoint.appliedPages)continue;
@@ -109,12 +147,13 @@ export async function restoreTextStaging(options:{bundle:string;target:unknown;e
 
 async function main(){const args=process.argv.slice(2);const values=new Map<string,string>();let execute=false;
   for(let at=0;at<args.length;at++){const key=args[at]!;if(key==='--execute'){if(execute)throw new Error('Duplicate --execute.');execute=true;continue;}
-    const value=args[++at];if(!['--bundle','--target','--checkpoint','--concurrency'].includes(key)||!value||value.startsWith('--')||values.has(key))throw new Error('Use --bundle <verified bundle> --target <isolated target.json> [--execute --checkpoint <local progress.json>] [--concurrency 1..8].');values.set(key,value);}
+    const value=args[++at];if(!['--bundle','--target','--checkpoint','--concurrency','--upload-batch-size'].includes(key)||!value||value.startsWith('--')||values.has(key))throw new Error('Use --bundle <verified bundle> --target <isolated target.json> [--execute --checkpoint <local progress.json>] [--concurrency 1..8] [--upload-batch-size 1..16].');values.set(key,value);}
   if(!values.get('--bundle')||!values.get('--target'))throw new Error('Both --bundle and --target are required.');
   const targetPath=values.get('--target')!;if((await stat(targetPath)).size>16*1024)throw new Error('The staging target file is too large.');
   const result=await restoreTextStaging({bundle:values.get('--bundle')!,target:JSON.parse(await readFile(targetPath,'utf8')),execute,
     ...(execute?{token:process.env['RESTORE_TOKEN']??'',checkpoint:values.get('--checkpoint')}:{}),
-    ...(values.has('--concurrency')?{concurrency:Number(values.get('--concurrency'))}:{}),onProgress:(value)=>console.error(JSON.stringify(value))});
+    ...(values.has('--concurrency')?{concurrency:Number(values.get('--concurrency'))}:{}),
+    ...(values.has('--upload-batch-size')?{uploadBatchSize:Number(values.get('--upload-batch-size'))}:{}),onProgress:(value)=>console.error(JSON.stringify(value))});
   console.log(JSON.stringify(result,null,2));}
 if(process.argv[1]&&/(?:^|[/\\])restore-text-staging\.(?:ts|mjs)$/.test(process.argv[1])&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   main().catch((error)=>{console.error(error instanceof Error?error.message:'Staging restore failed.');process.exitCode=1;});}

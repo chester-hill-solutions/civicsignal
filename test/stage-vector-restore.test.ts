@@ -45,7 +45,7 @@ async function fixture(count = 4) {
 }
 
 function fakeApi(options: { mismatch?: boolean; loseAck?: boolean; loseAllAcks?: boolean; metric?: string; initial?: number;
-  hiddenReads?: number; beforeRead?: (writes: number) => void; onUpsert?: (vectors: RestoreVector[], writes: number) => Promise<void> } = {}) {
+  hiddenReads?: number; beforeRead?: (writes: number) => void; onRead?: (ids: string[]) => Promise<void>; onUpsert?: (vectors: RestoreVector[], writes: number) => Promise<void> } = {}) {
   const held = new Map<string, RestoreVector>();
   let writes = 0; let requests = 0; let reads = 0; let lose = options.loseAck ?? false;
   const send: StageVectorTransport = async (input, init) => {
@@ -66,7 +66,7 @@ function fakeApi(options: { mismatch?: boolean; loseAck?: boolean; loseAllAcks?:
     if (url.pathname.endsWith('/get_by_ids')) {
       const body = JSON.parse(String(init?.body)) as { ids: string[] };
       expect(body.ids.length).toBeLessThanOrEqual(20);
-      reads++; options.beforeRead?.(writes);
+      reads++; options.beforeRead?.(writes); await options.onRead?.(body.ids);
       if (reads <= (options.hiddenReads ?? 0)) return Response.json({ success: true, result: [] });
       return Response.json({ success: true, result: body.ids.flatMap(id => {
         const vector = held.get(id); if (!vector) return [];
@@ -178,7 +178,7 @@ describe('stage-only vector restore', () => {
   });
   it('does not advance the verified cursor while a full pending window is invisible', async () => {
     const test = await fixture(205); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
-    const options = { hiddenReads: 12 }; const api = fakeApi(options);
+    const options = { hiddenReads: 1000000 }; const api = fakeApi(options);
     await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 2, pendingWindow: 2 })).rejects.toThrow('readback');
     expect(JSON.parse(await readFile(journal, 'utf8'))).toMatchObject({ nextPosition: 0, verifiedVectors: 0, pending: [
       { from: 0, through: 100, mutationId: 'mutation-1' }, { from: 100, through: 200, mutationId: 'mutation-2' },
@@ -237,6 +237,43 @@ describe('stage-only vector restore', () => {
     const refused = fakeApi();
     for (const pendingWindow of [0, 101, 1.5]) await expect(applyStageVectorPlan(plan, refused.api, { journal, maxBatches: 1, pendingWindow })).rejects.toThrow('pendingWindow');
     expect(refused.requests()).toBe(0);
+  });
+
+  it('bounds exact readback concurrency at four while retaining 20 IDs per request', async () => {
+    const test = await fixture(100); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    let active = 0; let maximum = 0; let readGroups = 0;
+    const api = fakeApi({ async onRead(ids) {
+      expect(ids.length).toBeLessThanOrEqual(20); readGroups++; active++; maximum = Math.max(maximum, active);
+      expect(JSON.parse(await readFile(journal, 'utf8')).nextPosition).toBe(0);
+      await new Promise(resolve => setTimeout(resolve, 5)); active--;
+    } });
+    expect(await applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1 })).toMatchObject({ complete: true, verifiedVectors: 99 });
+    expect(maximum).toBe(4); expect(active).toBe(0); expect(readGroups).toBe(5);
+  });
+  it('settles every in-flight read on failure without advancing or starting another group', async () => {
+    const test = await fixture(100); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    let release = () => {}; let unblockObserved = () => {};
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const observed = new Promise<void>(resolve => { unblockObserved = resolve; });
+    let blocked = 0; let finished = 0; let settled = false;
+    const api = fakeApi({ async onRead(ids) {
+      if (ids.includes('acts-en-0000')) throw new Error('Synthetic read-only transport failure');
+      blocked++; if (blocked === 3) unblockObserved();
+      await gate; finished++;
+    } });
+    const result = applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1 }).then(
+      () => { settled = true; return 'unexpected success'; },
+      error => { settled = true; return error instanceof Error ? error.message : 'unknown failure'; });
+    await observed;
+    // Let the first reader exhaust its three existing transport attempts while
+    // its peers remain in flight. The method must not return that failure early.
+    await new Promise(resolve => setTimeout(resolve, 5));
+    expect(settled).toBe(false); expect(finished).toBe(0);
+    expect(JSON.parse(await readFile(journal, 'utf8'))).toMatchObject({ nextPosition: 0, verifiedVectors: 0 });
+    release();
+    expect(await result).toContain('transport/response failure');
+    expect(blocked).toBe(3); expect(finished).toBe(3); expect(api.writes()).toBe(1);
+    expect(JSON.parse(await readFile(journal, 'utf8'))).toMatchObject({ nextPosition: 0, pending: [{ mutationId: 'mutation-1' }] });
   });
 
 });

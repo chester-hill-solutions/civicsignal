@@ -60,6 +60,25 @@ It publishes source-derived baseline state and audits all rows in persisted eigh
 Object uploads and page application permit identical retries. Client checkpoints pin the exact target and plan.
 Upload counters use indexed journal positions. Completed restores reject further writes.
 
+The default transport still uploads one object per request. The optional
+`--upload-batch-size 16` transport sends at most 16 objects in one binary frame,
+including headers and payload within **2 MiB**. Its eight-byte header identifies
+the version/count; each 40-byte descriptor contains a SHA-256, byte length and
+`sourceOrdinal`. Source ordinals must be positive, contiguous, unique and within
+the pinned object-index count. Every object's SHA-256 and UTF-8 validate before
+the first write. Descriptors and acknowledgements bind the client's source range;
+they do not replace the existing upload journal's arrival-counter ordinal.
+This preserves already committed objects whose arrival order differs from source order.
+
+Each batch has at most four object workers. Every object still receives its own
+conditional immutable R2 create, full byte/hash readback and checked journal entry.
+All in-flight workers settle before either success or failure is returned.
+The client permits at most four simultaneous batch requests and verifies the
+complete source-ordinal/SHA/byte acknowledgement set before checkpointing a wave.
+Failed or uncertain waves replay identically; a wave can contain at most 64 objects.
+An individual object too large to fit with framing uses the compatible single-object path.
+Metadata pages, publication and the full strict-row audit are unchanged.
+
 Hosted D1 created `_cf_KV (key TEXT PRIMARY KEY, value BLOB) WITHOUT ROWID` in the otherwise empty stage store.
 Local workerd creates `_cf_METADATA (key INTEGER PRIMARY KEY, value BLOB)`.
 The shared freshness guard accepts only these observed names and exact schema shapes, plus SQLite internals.
@@ -73,15 +92,41 @@ Plan mode is offline and does not read the token. Execution requires the explici
 bun build scripts/restore-text-staging.ts --target=node --packages=external --outfile=dist/restore-text-staging.mjs
 node dist/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target <generated-restore-target.json>
 # Only after the isolated staging operation is approved and RESTORE_TOKEN is injected:
-node dist/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target <generated-restore-target.json> --execute --checkpoint <local-progress.json>
+node dist/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target <generated-restore-target.json> --execute --checkpoint <local-progress.json> --concurrency 4 --upload-batch-size 16
 ```
 
 Do not put the token in arguments or config files. Restore initialization must run on the empty D1 **before any root migrations**. The Worker creates compatible corpus state/run/change/mutation tables; runs and changes remain empty. It does not fabricate production auth, workspace or history records. After the corpus audit, apply **only `migrations/0005_workspace_auth.sql`** for isolated staging API access; do not reapply the corpus migrations to the restored schema. Production protected-state copying remains a later operation from a consistent backup.
 
-The focused gate adds `test/restore-fresh-schema.test.ts` to the four existing restore/text test files.
-All **39/39** focused tests pass, including six real local workerd tests.
-Worker, Bun and tooling typechecks pass. The complete local release suite passes **715 tests**.
-Hosted restore and its full audit are in progress under the user's staging approval.
+The focused gate covers six restore/text test files, including binary framing and
+fresh-schema checks. All **58/58** focused tests pass, including eleven real local
+workerd tests. They cover out-of-order arrival counters, uncertain prefix replay,
+lost and malformed acknowledgements, zero-write prevalidation failures, partial
+immutable failure, near-limit single-object fallback, and four concurrent full-size
+frames. Worker, Bun and tooling typechecks pass. The complete frozen candidate
+passes **736 tests across 70 files**, including the local runtime and invariant gates.
+
+A local workerd/DevTools probe exercised four simultaneous 2 MiB frames containing
+16 objects each, with server parallelism four. All 64 acknowledgements verified;
+the idempotent journal retained 16 unique objects. Nine heap samples recorded
+maximum combined JS/backing/embedder usage of **30,692,139 bytes (29.27 MiB)**.
+The raw report is `dist/release/staging/legacy-text-restore-evidence/upload-batch-heap.json`;
+the probe source and bundled runner are
+`dist/release/staging/probe-restore-batch-memory.{ts,mjs}`.
+Sampling can miss instantaneous peaks and does not prove a hosted memory limit.
+The batch path performs at most 66 binding operations per request (32 R2,
+32 journal SQL, two session SQL), with at most four active object operations.
+These are below the current documented internal-service and connection limits
+for the reviewed deployment. See [Workers limits](https://developers.cloudflare.com/workers/platform/limits/).
+
+The approved hosted single-object run was deliberately paused at a durable
+checkpoint of **1,236 objects and zero metadata pages** after measuring about
+4.5 verified objects/second. Its exact process was verified before SIGINT;
+at most four subsequent identical puts may already have committed. Its logs and
+checkpoint remain in `dist/release/staging/legacy-text-restore-evidence/attempt-2`.
+The batch deployment and independent binding readback passed for stage version
+`aec00122-16a2-4e69-940b-437d6efae525`. The copy resumes the
+same target, source plan and checkpoint. No reset, deletion or ordinal relabel is required.
+The hosted restore and full strict audit are not yet complete.
 
 The physical-size comparison above covers the serving-compatible compact corpus and page journal. The staging upload journal and future protected-state copy add metadata; hosted D1 size must be measured after the approved complete restore.
 

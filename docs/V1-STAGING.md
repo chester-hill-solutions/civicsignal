@@ -320,6 +320,9 @@ The existing format 1 journal migrates without changing its identity or verified
 `--max-batches` limits logical submissions, including uncertain replay.
 Each submission retains its separate maximum of three identical REST transport tries.
 Twelve bounded visibility checks remain unchanged. A failure stops the writer with its pending receipts intact.
+Readback runs at most four groups of 20 IDs concurrently within one batch.
+Every in-flight group settles before an error returns. All groups must verify
+before the batch checkpoint advances. The journal and write bounds are unchanged.
 
 The CLI uses an existing Wrangler login or operator-supplied
 `CLOUDFLARE_API_TOKEN`; it does not read CivicSignal secret files or refresh a
@@ -337,7 +340,8 @@ client's target JSON using the actual deployed restore origin and exact generate
 mode makes no request:
 
 ```sh
-bun scripts/restore-text-staging.ts --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json
+bun build scripts/restore-text-staging.ts --target=node --packages=external --outfile=dist/release/staging/restore-text-staging.mjs
+node dist/release/staging/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json
 ```
 
 Only after the bundle path, target identities, schema, token and write budget are
@@ -345,8 +349,21 @@ reviewed, execute the remote restore with `RESTORE_TOKEN` supplied privately in
 the environment:
 
 ```sh
-bun scripts/restore-text-staging.ts --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json --execute --checkpoint dist/release/staging/legacy-text-restore.json --concurrency 4
+node dist/release/staging/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json --execute --checkpoint dist/release/staging/legacy-text-restore.json --concurrency 4 --upload-batch-size 16
 ```
+
+The opt-in transport requires the deployed restore service to advertise binary
+protocol version 1. Each frame contains at most 16 objects and 2 MiB total;
+network concurrency remains four and server object parallelism is at most four.
+Every object is prevalidated, conditionally created and fully read back before
+its source-ordinal/SHA/byte acknowledgement is accepted. Source ordinals bind
+the pinned client index; the existing journal retains its arrival-counter ordinals.
+All acknowledgements in a wave must verify before the local checkpoint advances.
+Replay the same checkpoint after uncertainty, including any previously committed
+objects beyond it. Near-limit individual objects retain the single-object path;
+metadata pages and the full strict audit remain unchanged.
+The single-object transport remains the default when the flag is omitted.
+See [transport validation and resource evidence](TEXT-CUTOVER-VALIDATION.md#concrete-staging-restore-protocol).
 
 Confirm all metadata/text pairs, non-null old fingerprints, vector IDs/counts,
 completed baseline publication parser `null` (`SHA:legacy`), full strict-text audit
