@@ -54,7 +54,18 @@ Legacy input requires the explicit receipt and exact pinned SHA. Missing checks,
 
 `services/restore/worker.ts` is an isolated admin Worker. Its checked-in config is disabled and has no resource bindings. An approved generated config supplies only `RESTORE_DB`, `RESTORE_TEXTS`, explicit staging resource identity vars and the `RESTORE_TOKEN` secret. Both client and server refuse the known production D1 ID/bucket; remote admin origins must match `civicsignal-v1-stage-restore-*.<account>.workers.dev`. Loopback origins are allowed for local workerd fixtures. Every authenticated request repeats account, stage, D1, R2 and checked plan identities. There is no SQL execution endpoint or production application route.
 
-The bounded protocol initializes a fresh database, conditionally creates immutable text objects with byte/hash readback, applies checked 16-row pages transactionally, checks their ordered SHA-256 chain in 64-page steps, publishes source-derived baseline state, and audits all current rows in persisted eight-row checkpoints (up to four per request). Object uploads and page application can be retried; client checkpoints pin the exact target and plan. Upload counters use indexed journal positions, avoiding a full corpus count for every object/audit step. Completed restores reject further writes. The only accepted pre-existing bookkeeping table is D1's automatically created `_cf_METADATA`.
+The bounded protocol initializes a fresh store and conditionally creates immutable text objects with byte/hash readback.
+It applies checked 16-row pages transactionally and checks their ordered SHA-256 chain in 64-page steps.
+It publishes source-derived baseline state and audits all rows in persisted eight-row checkpoints, with four checkpoints per request.
+Object uploads and page application permit identical retries. Client checkpoints pin the exact target and plan.
+Upload counters use indexed journal positions. Completed restores reject further writes.
+
+Hosted D1 created `_cf_KV (key TEXT PRIMARY KEY, value BLOB) WITHOUT ROWID` in the otherwise empty stage store.
+Local workerd creates `_cf_METADATA (key INTEGER PRIMARY KEY, value BLOB)`.
+The shared freshness guard accepts only these observed names and exact schema shapes, plus SQLite internals.
+It rejects unknown or malformed `_cf_*` objects, application tables/views and prefix lookalikes.
+The initial hosted refusal preserved all data and sent no initialization, upload or page write.
+The corrected deployed guard returned `fresh:true` before the approved restore began.
 
 Plan mode is offline and does not read the token. Execution requires the explicit switch, an isolated target generated from observed resource inventory, an operator-injected environment secret and a local checkpoint path:
 
@@ -67,12 +78,18 @@ node dist/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --
 
 Do not put the token in arguments or config files. Restore initialization must run on the empty D1 **before any root migrations**. The Worker creates compatible corpus state/run/change/mutation tables; runs and changes remain empty. It does not fabricate production auth, workspace or history records. After the corpus audit, apply **only `migrations/0005_workspace_auth.sql`** for isolated staging API access; do not reapply the corpus migrations to the restored schema. Production protected-state copying remains a later operation from a consistent backup.
 
-Verification: `CIVICSIGNAL_WORKERD_TESTS=1 bun run test test/staging-text-restore.test.ts test/legacy-text-input.test.ts test/text-cutover.test.ts test/text-store.test.ts` passed **24/24**, including the real local workerd D1/R2 driver, injected row/reference failure and transaction rollback, immutable overwrite refusal, corrupted-text refusal and successful audit after fixture repair, page-chain tampering, populated/production-target refusal, source receipt pinning and legacy NULL publication. Worker, Bun and tooling typechecks passed. Hosted restore/audit remains pending approval.
+The focused gate adds `test/restore-fresh-schema.test.ts` to the four existing restore/text test files.
+All **39/39** focused tests pass, including six real local workerd tests.
+Worker, Bun and tooling typechecks pass. The complete local release suite passes **715 tests**.
+Hosted restore and its full audit are in progress under the user's staging approval.
 
 The physical-size comparison above covers the serving-compatible compact corpus and page journal. The staging upload journal and future protected-state copy add metadata; hosted D1 size must be measured after the approved complete restore.
 
 ## Production boundary
 
-This proves a concrete local storage reduction and complete corpus parity. It performs no live D1/R2/Vectorize writes. Production auth, workspace, publication state and change/run history must be copied and checked from one protected backup before changing the binding; those protected records are outside this corpus-only size comparison. Keep the existing Vectorize index and usage Durable Object namespace.
+The local proof shows a concrete storage reduction and complete corpus parity.
+Approved hosted staging is now in progress; production remains unchanged.
+Production auth, workspace, publication state and change/run history must come from one protected backup before the binding switch.
+Those protected records are outside this corpus-only size comparison. Keep the existing Vectorize index and usage Durable Object namespace.
 
 For the fresh-store path, retain the original database unchanged and **do not apply `clear-text.sql` to it**. The bundle's clear/rollback SQL belongs to the optional in-place path. Fresh-store rollback restores the original binding. Upload and verify immutable objects, restore/check the fresh database, set API strict R2 serving and pipeline `CORPUS_RETAIN_D1_TEXT=false` only for the approved cutover, and follow [V1 operations](V1-OPERATIONS.md). Current defaults retain D1 text.

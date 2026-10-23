@@ -4,6 +4,7 @@ import { auditProvisionTextPage, MAX_PROVISION_TEXT_BYTES, provisionTextKey, rea
 import { readJsonBody, RequestInputError } from '../../src/http';
 import { checkedRestorePlan, checkedTarget, digestPattern, hashJson, nextPageChain, RESTORE_SUPPORT_SCHEMA,
   RestoreInputError, type RestorePlan, type StagingRestoreTarget } from './protocol';
+import { isFreshRestoreDatabase } from './fresh-schema';
 
 /** This contract is exercised against actual local D1/R2 bindings. The disabled
  * checked-in config has no bindings; generated staging config supplies them. */
@@ -50,10 +51,7 @@ function checkSession(session: Session | null, target: StagingRestoreTarget, pla
 async function status(db: D1Database, target: StagingRestoreTarget, planHash: string) {
   const session = await currentSession(db);
   if (!session) {
-    // D1 itself creates _cf_METADATA on first binding use. It is the sole
-    // non-SQLite bookkeeping table accepted in an otherwise empty target.
-    const count = await db.prepare("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name<>'_cf_METADATA'").first<{count:number}>();
-    return { target, initialized: false, fresh: Number(count?.count) === 0 };
+    return { target, initialized: false, fresh: await isFreshRestoreDatabase(db) };
   }
   checkSession(session, target, planHash);
   const plan=checkedRestorePlan(JSON.parse(session.plan_json));
@@ -91,8 +89,7 @@ async function initialize(request: Request, db: D1Database, target: StagingResto
   if (await hashJson(plan) !== planHash || plan.schemaSha256 !== await textSha256(new Uint8Array(new TextEncoder().encode(COMPACT_CORPUS_SCHEMA)))) throw new RestoreInputError('The plan or fresh schema identity differs.',422);
   const existing = await currentSession(db);
   if (existing) { checkSession(existing,target,planHash); return; }
-  const tables = await db.prepare("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name<>'_cf_METADATA'").first<{count:number}>();
-  if (Number(tables?.count) !== 0) throw new RestoreInputError('Only a fresh empty staging database can be initialized.',409);
+  if (!await isFreshRestoreDatabase(db)) throw new RestoreInputError('Only a fresh empty staging database can be initialized.',409);
   const statements = (COMPACT_CORPUS_SCHEMA + RESTORE_SUPPORT_SCHEMA).split(';').map((sql) => sql.trim()).filter(Boolean).map((sql) => db.prepare(sql));
   statements.push(db.prepare(`INSERT INTO stage_restore_session(id,plan_sha256,plan_json,stage_id,account_id,d1_id,r2_name,phase,page_check_chain) VALUES(1,?,?,?,?,?,?,'loading',?)`)
     .bind(planHash,JSON.stringify(plan),target.stageId,target.accountId,target.d1Id,target.r2Bucket,'0'.repeat(64)));

@@ -99,6 +99,25 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('isolated stagin
     expect(await db.prepare("SELECT count(*) AS count FROM sqlite_master WHERE name='statute_sections'").first()).toEqual({count:0});
   },30_000);
 
+  it('rejects an existing application view in both status and initialization',async()=>{
+    const f=await fixture();const db=await f.mf.getD1Database('RESTORE_DB');
+    await db.exec('CREATE VIEW protected_view AS SELECT 42 AS preserved;');
+    expect(await(await f.call('status',undefined,'GET')).json()).toMatchObject({initialized:false,fresh:false});
+    expect((await f.call('init',f.plan.plan)).status).toBe(409);
+    expect(await db.prepare('SELECT * FROM protected_view').first()).toEqual({preserved:42});
+    expect(await db.prepare("SELECT count(*) AS count FROM sqlite_master WHERE name='statute_sections'").first()).toEqual({count:0});
+  },30_000);
+
+  it('does not treat the underscore in the SQLite bookkeeping prefix as a wildcard',async()=>{
+    const f=await fixture();const db=await f.mf.getD1Database('RESTORE_DB');
+    await db.exec('CREATE TABLE sqliteXhidden (id INTEGER PRIMARY KEY);');
+    await db.prepare('INSERT INTO sqliteXhidden VALUES(42)').run();
+    expect(await(await f.call('status',undefined,'GET')).json()).toMatchObject({initialized:false,fresh:false});
+    expect((await f.call('init',f.plan.plan)).status).toBe(409);
+    expect(await db.prepare("SELECT count(*) AS count FROM sqlite_master WHERE name='statute_sections'").first()).toEqual({count:0});
+    expect(await db.prepare('SELECT id FROM sqliteXhidden').first()).toEqual({id:42});
+  },30_000);
+
   it('rolls back failed row/reference pages, refuses arbitrary SQL and never overwrites immutable content',async()=>{
     const f=await fixture();expect((await f.call('init',f.plan.plan)).status).toBe(200);
     const page=await first(join(f.bundle,'fresh-pages.jsonl')) as unknown as CompactRestorePage;

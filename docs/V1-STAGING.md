@@ -1,9 +1,9 @@
 # CivicSignal v1 isolated hosted validation plan
 
-This is a proposed next action, prepared on 2026-10-22. It authorizes no remote
-write, deployment, inference, or production change by itself. No proposed stage resource or stage hosted
-result below is claimed to exist. Approval should name the phases and budgets it
-covers. The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
+The user approved full bounded staging on 2026-10-22, Toronto time.
+Execution is in progress. The [setup receipt](evidence/2026-10-22/stage-setup.json) records observed identities, versions and current limits.
+Hosted acceptance remains incomplete until each phase has its required evidence.
+The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
 
 The goal is to close hosted snapshot, restore, ingestion, inference and retrieval
 checks with an isolated candidate. Use the detailed snapshot commands and stop
@@ -154,7 +154,7 @@ reviewable; they do not establish a hosted result:
    tool creates resources, deploys a Worker or makes a serving call on startup.
 
 Restore initialization must receive an empty stage D1 store.
-Only SQLite internals and D1's `_cf_METADATA` table can exist.
+Only SQLite internals and the exact observed `_cf_KV` or `_cf_METADATA` bookkeeping schemas can exist.
 The restore creates the compact corpus and supporting publication/run/change/outbox/parser tables.
 After the full corpus audit, apply only `migrations/0005_workspace_auth.sql` for synthetic stage access.
 Do not apply the root migrations before restore initialization.
@@ -175,8 +175,8 @@ Prepare the resource-creation bootstrap offline:
 bun scripts/prepare-staging-config.ts --bootstrap 20261022 --out dist/release/staging
 ```
 
-After approval, use that reviewed config and record actual outputs. The following
-remote creation commands have not been run as part of this plan:
+The approved execution used the reviewed config for these creation commands.
+Saved responses and independent readbacks supply the actual resource identities:
 
 ```sh
 bun x --no-install wrangler r2 bucket create civicsignal-v1-stage-corpus-20261022 --config dist/release/staging/resources.json --update-config=false
@@ -190,6 +190,16 @@ verified metric, then create the separate index:
 ```sh
 bun x --no-install wrangler vectorize create civicsignal-v1-stage-statutes-20261022 --dimensions 768 --metric "$STAGE_VECTOR_METRIC" --config dist/release/staging/resources.json --update-config=false --json
 ```
+
+The stage also needs the source index's language metadata filter before vector writes:
+
+```sh
+bun x --no-install wrangler vectorize create-metadata-index civicsignal-v1-stage-statutes-20261022 --propertyName language --type string --config dist/release/staging/resources.json
+```
+
+The source and stage readbacks both report `language` with type `String`.
+Set `CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a` for account-specific commands.
+Some R2 commands do not use the config's account selection in this Wrangler release.
 
 Save the returned and independently checked resource descriptors in an inventory
 JSON matching the generator's strict format: `format:1`, the exact `accountId`,
@@ -286,7 +296,7 @@ a stage journal and a bounded allowance. Use the verified source/destination
 metric, not the locally requested metric above:
 
 ```sh
-bun scripts/restore-stage-vectors.ts --dir dist/legacy-preflight --revision 0507465393c224c0491fc8c17c88340217acc656 --receipt dist/legacy-preflight/legacy-receipt.json --receipt-sha256 600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc --account ad5ec479b9a421faa2ed06c3d1c2b23a --index civicsignal-v1-stage-statutes-20261022 --metric "$STAGE_VECTOR_METRIC" --apply --journal dist/release/staging/legacy-vector-restore.json --max-batches 100
+bun scripts/restore-stage-vectors.ts --dir dist/legacy-preflight --revision 0507465393c224c0491fc8c17c88340217acc656 --receipt dist/legacy-preflight/legacy-receipt.json --receipt-sha256 600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc --account ad5ec479b9a421faa2ed06c3d1c2b23a --index civicsignal-v1-stage-statutes-20261022 --metric "$STAGE_VECTOR_METRIC" --apply --journal dist/release/staging/legacy-vector-restore.json --max-batches 100 --pending-window 100
 ```
 
 This future command requires an empty stage index on its first invocation. Each
@@ -301,6 +311,15 @@ time. Hold exclusive ownership of the stage index through this copy; pipeline
 and other writers remain disabled. The final stage count must be 254,671. This
 copies stored values and performs zero document embeddings. Retain checkpoints,
 completion output and descriptor with the acceptance packet.
+
+Hosted checks exposed minute-scale visibility delay after an acknowledged upsert.
+The bounded pending window holds at most 100 batches, each with 100 source positions.
+Format 2 preserves each intended batch and acknowledgement before any later write.
+Every checkpoint still requires complete value and metadata readback.
+The existing format 1 journal migrates without changing its identity or verified counts.
+`--max-batches` limits logical submissions, including uncertain replay.
+Each submission retains its separate maximum of three identical REST transport tries.
+Twelve bounded visibility checks remain unchanged. A failure stops the writer with its pending receipts intact.
 
 The CLI uses an existing Wrangler login or operator-supplied
 `CLOUDFLARE_API_TOKEN`; it does not read CivicSignal secret files or refresh a

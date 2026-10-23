@@ -44,9 +44,10 @@ async function fixture(count = 4) {
     prepare: (pin = receiptSha256) => prepareStageVectorPlan({ directory, revision, receipt: receiptPath, receiptSha256: pin }) };
 }
 
-function fakeApi(options: { mismatch?: boolean; loseAck?: boolean; metric?: string; initial?: number } = {}) {
+function fakeApi(options: { mismatch?: boolean; loseAck?: boolean; loseAllAcks?: boolean; metric?: string; initial?: number;
+  hiddenReads?: number; beforeRead?: (writes: number) => void; onUpsert?: (vectors: RestoreVector[], writes: number) => Promise<void> } = {}) {
   const held = new Map<string, RestoreVector>();
-  let writes = 0; let requests = 0; let lose = options.loseAck ?? false;
+  let writes = 0; let requests = 0; let reads = 0; let lose = options.loseAck ?? false;
   const send: StageVectorTransport = async (input, init) => {
     requests++;
     const url = new URL(String(input));
@@ -56,13 +57,17 @@ function fakeApi(options: { mismatch?: boolean; loseAck?: boolean; metric?: stri
       expect(new Headers(init?.headers).get('Content-Type')).toBe('application/x-ndjson');
       const vectors = String(init?.body).trim().split('\n').map(line => JSON.parse(line) as RestoreVector);
       expect(vectors.length).toBeLessThanOrEqual(100); writes++;
+      await options.onUpsert?.(vectors, writes);
       for (const vector of vectors) held.set(vector.id, vector);
+      if (options.loseAllAcks) throw new Error('Synthetic response loss after commit');
       if (lose) { lose = false; throw new Error('Synthetic response loss after commit'); }
       return Response.json({ success: true, result: { mutationId: `mutation-${writes}` } });
     }
     if (url.pathname.endsWith('/get_by_ids')) {
       const body = JSON.parse(String(init?.body)) as { ids: string[] };
       expect(body.ids.length).toBeLessThanOrEqual(20);
+      reads++; options.beforeRead?.(writes);
+      if (reads <= (options.hiddenReads ?? 0)) return Response.json({ success: true, result: [] });
       return Response.json({ success: true, result: body.ids.flatMap(id => {
         const vector = held.get(id); if (!vector) return [];
         return [{ ...vector, metadata: { ...vector.metadata, ...(options.mismatch ? { fingerprint: 'wrong' } : {}) } }];
@@ -130,7 +135,7 @@ describe('stage-only vector restore', () => {
   it('journals a pending batch until actual metadata/value readback succeeds', async () => {
     const test = await fixture(); const plan = await test.prepare(); const options = { mismatch: true }; const api = fakeApi(options); const journal = join(test.directory, 'journal.json');
     await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1 })).rejects.toThrow('readback');
-    expect(JSON.parse(await readFile(journal, 'utf8'))).toMatchObject({ nextPosition: 0, verifiedVectors: 0, pending: { mutationId: 'mutation-1' } });
+    expect(JSON.parse(await readFile(journal, 'utf8'))).toMatchObject({ nextPosition: 0, verifiedVectors: 0, pending: [{ mutationId: 'mutation-1' }] });
     options.mismatch = false;
     expect((await applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1 })).complete).toBe(true);
     expect(api.writes()).toBe(1);
@@ -157,4 +162,81 @@ describe('stage-only vector restore', () => {
     expect(api.writes()).toBe(2);
     const held = await restoreVectors(plan, plan.rows.slice(100)); expect(held).toHaveLength(5);
   });
+  it('fills only the bounded pending window with 100-position writes before readback', async () => {
+    const test = await fixture(305); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    let highestPending = 0; let firstRead = true;
+    const api = fakeApi({ beforeRead(writes) { if (firstRead) { expect(writes).toBe(2); firstRead = false; } },
+      async onUpsert(vectors) {
+        const saved = JSON.parse(await readFile(journal, 'utf8'));
+        expect(saved.nextPosition).toBeLessThan(saved.pending.at(-1).through);
+        highestPending = Math.max(highestPending, saved.pending.length);
+        expect(vectors.length).toBeLessThanOrEqual(100);
+      } });
+    const result = await applyStageVectorPlan(plan, api.api, { journal, maxBatches: 3, pendingWindow: 2 });
+    expect(result).toMatchObject({ complete: false, nextPosition: 300, verifiedVectors: 299, batches: 3, verifiedBatches: 3, pendingBatches: 0 });
+    expect(highestPending).toBe(2); expect(api.writes()).toBe(3);
+  });
+  it('does not advance the verified cursor while a full pending window is invisible', async () => {
+    const test = await fixture(205); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    const options = { hiddenReads: 12 }; const api = fakeApi(options);
+    await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 2, pendingWindow: 2 })).rejects.toThrow('readback');
+    expect(JSON.parse(await readFile(journal, 'utf8'))).toMatchObject({ nextPosition: 0, verifiedVectors: 0, pending: [
+      { from: 0, through: 100, mutationId: 'mutation-1' }, { from: 100, through: 200, mutationId: 'mutation-2' },
+    ] });
+    options.hiddenReads = 0;
+    const result = await applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1, pendingWindow: 1 });
+    expect(result).toMatchObject({ complete: true, batches: 1, verifiedBatches: 3, verifiedVectors: 204, pendingBatches: 0 });
+    expect(api.writes()).toBe(3); // Two acknowledged batches were read, not resubmitted.
+  });
+  it('preserves an uncertain batch and counts its replay against the invocation submission bound', async () => {
+    const test = await fixture(205); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    const options = { loseAllAcks: true }; const api = fakeApi(options);
+    await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 2, pendingWindow: 2 })).rejects.toThrow('transport');
+    const pending = JSON.parse(await readFile(journal, 'utf8'));
+    expect(pending).toMatchObject({ nextPosition: 0, verifiedVectors: 0, pending: [{ from: 0, through: 100 }] });
+    expect(pending.pending[0].mutationId).toBeUndefined(); expect(api.writes()).toBe(3); // Existing bounded identical HTTP retries.
+    options.loseAllAcks = false;
+    const result = await applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1, pendingWindow: 2 });
+    expect(result).toMatchObject({ complete: false, nextPosition: 100, verifiedVectors: 99, batches: 1, pendingBatches: 0 });
+    expect(api.writes()).toBe(4); expect(api.held.size).toBe(99);
+  });
+  it('validates every pending digest before draining or submitting any batch on resume', async () => {
+    const test = await fixture(305); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    const options = { mismatch: true }; const api = fakeApi(options);
+    await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 3, pendingWindow: 3 })).rejects.toThrow('readback');
+    const saved = JSON.parse(await readFile(journal, 'utf8')); saved.pending[2].digest = '0'.repeat(64);
+    await writeFile(journal, JSON.stringify(saved)); options.mismatch = false;
+    await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1, pendingWindow: 1 })).rejects.toThrow('Pending restore batch');
+    expect(api.writes()).toBe(3); expect(JSON.parse(await readFile(journal, 'utf8')).nextPosition).toBe(0);
+  });
+  it('refuses non-contiguous or resized pending ranges before another upsert', async () => {
+    const test = await fixture(205); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    const api = fakeApi({ mismatch: true });
+    await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 2, pendingWindow: 2 })).rejects.toThrow('readback');
+    const saved = JSON.parse(await readFile(journal, 'utf8')); saved.pending[1].from = 101;
+    await writeFile(journal, JSON.stringify(saved));
+    await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1 })).rejects.toThrow('contiguous source positions');
+    expect(api.writes()).toBe(2);
+  });
+  it('migrates the current format1 acknowledged checkpoint without resetting or replaying it', async () => {
+    const test = await fixture(); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    const options = { mismatch: true }; const api = fakeApi(options);
+    await expect(applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1 })).rejects.toThrow('readback');
+    const saved = JSON.parse(await readFile(journal, 'utf8'));
+    const legacy = { ...saved, format: 1, pending: saved.pending[0] }; delete legacy.pending.acknowledgedAt;
+    await writeFile(journal, JSON.stringify(legacy)); options.mismatch = false;
+    expect(await applyStageVectorPlan(plan, api.api, { journal, maxBatches: 1, pendingWindow: 100 })).toMatchObject({ complete: true, batches: 0, verifiedBatches: 1 });
+    expect(api.writes()).toBe(1);
+    expect(JSON.parse(await readFile(journal, 'utf8'))).toMatchObject({ format: 2, identity: saved.identity, complete: true, nextPosition: 4, verifiedVectors: 3, pending: [] });
+  });
+  it('keeps the default window at one and refuses unsupported window bounds before requests', async () => {
+    const test = await fixture(105); const plan = await test.prepare(); const journal = join(test.directory, 'journal.json');
+    let firstRead = true;
+    const api = fakeApi({ beforeRead(writes) { if (firstRead) { expect(writes).toBe(1); firstRead = false; } } });
+    await applyStageVectorPlan(plan, api.api, { journal, maxBatches: 2 });
+    const refused = fakeApi();
+    for (const pendingWindow of [0, 101, 1.5]) await expect(applyStageVectorPlan(plan, refused.api, { journal, maxBatches: 1, pendingWindow })).rejects.toThrow('pendingWindow');
+    expect(refused.requests()).toBe(0);
+  });
+
 });

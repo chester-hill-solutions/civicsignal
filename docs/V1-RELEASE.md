@@ -142,7 +142,7 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   An actual inference check hit the host's missing AVX support under amd64 emulation.
   The disposable container stopped. A compatible hosted inference check remains required.
 - Operations: A read-only production query returned 277,857 rows at source commit `0507465393c224c0491fc8c17c88340217acc656`.
-  No remote data, index, service, secret, or deployment changed.
+  Before staging approval, no remote data, index, service, secret, or deployment changed.
   A later read confirms the authoritative source head matches this commit.
   This point-in-time match does not prove automated end-to-end freshness.
 - Staging preparation: The checked legacy receipt covers every row fingerprint and all 277,857 finite vector positions.
@@ -150,14 +150,21 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   Full local preflight passes for the isolated vector restore.
   The stage text restore passes 24 focused checks, including four real local workerd D1/R2 checks.
   Source pins, a durable 1,112-document submission cap, and a shared 160-request relay constrain the proposed hosted checks.
-  Standalone configs require observed stage resource identities. This work created no stage resource.
+  Standalone configs require observed stage resource identities.
+  The user subsequently approved full bounded staging. Hosted execution is now in progress.
+  The [stage setup receipt](evidence/2026-10-22/stage-setup.json) records the separate resources and observed versions.
+  The first restore status refused hosted D1 bookkeeping before any initialization or upload.
+  The vector copy exposed minute-scale eventual visibility; verified checkpoints remain distinct from acknowledgements.
+  Production and Railway remain unchanged.
+  The reproduced setup fixes pass 715 local tests in 69 files, all four compiler projects, runtime probes and five Worker builds.
+  Linux CI must check this candidate update too. The [fix receipt](evidence/2026-10-22/stage-fixes-validation.json) pins the tested source files.
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
 ## Remaining release gates
 
-1. Check the full Workflow in isolated hosted staging after approval.
+1. Complete the approved hosted Workflow and compare every published artifact with the checked local source.
 2. Check the approved live text migration and protected-table copy against a consistent production backup.
 3. Configure the missing Railway CI project credential and check its read-only plan before any merge/apply decision.
    Local and Linux release gates pass. Keep Railway unchanged.

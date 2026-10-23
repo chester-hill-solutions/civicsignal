@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
-import { lstat, open, readFile, rename, stat, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
+import { lstat, open, readFile, rename, stat } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { z } from 'zod';
 import { SnapshotReader } from '../../src/ingest/snapshot-source';
 import { IndexDigester, parseVectorsManifest } from '../../src/ingest/snapshot-format';
@@ -202,61 +202,116 @@ export class StageVectorApi {
   }
 }
 
-const journalSchema = z.object({ format: z.literal(1), identity: z.string(), account: z.string(), index: z.string(), createdOn: z.string(),
-  nextPosition: z.number().int().nonnegative(), verifiedVectors: z.number().int().nonnegative(),
-  pending: z.object({ from: z.number().int().nonnegative(), through: positive, digest, mutationId: z.string().optional() }).optional(), complete: z.boolean() });
+const pendingSchema = z.object({ from: z.number().int().nonnegative(), through: positive, digest,
+  mutationId: z.string().min(1).optional(), acknowledgedAt: z.string().datetime().optional() });
+const journalFields = { identity: z.string(), account: z.string(), index: z.string(), createdOn: z.string(),
+  nextPosition: z.number().int().nonnegative(), verifiedVectors: z.number().int().nonnegative(), complete: z.boolean() };
+const legacyJournalSchema = z.object({ ...journalFields, format: z.literal(1), pending: pendingSchema.optional() });
+const windowJournalSchema = z.object({ ...journalFields, format: z.literal(2), pending: z.array(pendingSchema).max(100) });
+const journalSchema = z.discriminatedUnion('format', [legacyJournalSchema, windowJournalSchema]);
+type WindowJournal = z.infer<typeof windowJournalSchema>;
+
+/** Sync before rename and sync its directory before a network send/checkpoint acknowledgement. */
+async function saveJournal(path: string, journal: WindowJournal) {
+  const temporary = `${path}.next-${randomUUID()}`;
+  const file = await open(temporary, 'wx', 0o600);
+  try { await file.writeFile(JSON.stringify(journal, null, 2) + '\n'); await file.sync(); }
+  finally { await file.close(); }
+  await rename(temporary, path);
+  const directory = await open(dirname(path), 'r');
+  try { await directory.sync(); } finally { await directory.close(); }
+}
 
 /** Resume only the same target creation and artifact identity; readbacks precede checkpoints. */
 export async function applyStageVectorPlan(plan: StageVectorPlan, api: StageVectorApi, options: { journal: string; maxBatches: number;
-  progress?: (message: string) => void }) {
+  pendingWindow?: number; progress?: (message: string) => void }) {
   assertStageVectorTarget(api.target);
   if (!Number.isSafeInteger(options.maxBatches) || options.maxBatches < 1 || options.maxBatches > 3000) throw new Error('maxBatches must be 1 to 3000.');
+  const window = options.pendingWindow ?? 1;
+  if (!Number.isSafeInteger(window) || window < 1 || window > 100) throw new Error('pendingWindow must be 1 to 100.');
   const descriptor = await api.descriptor();
   if (descriptor.name !== api.target.index || descriptor.config?.dimensions !== plan.source.dimensions || descriptor.config.metric !== api.target.metric || !descriptor.created_on) throw new Error('Stage index descriptor/name/dimensions/metric/creation identity mismatch.');
   const identity = sha(JSON.stringify({ receipt: plan.receiptSha256, store: plan.storeSha256, source: plan.source, target: api.target, createdOn: descriptor.created_on }));
-  let journal: z.infer<typeof journalSchema>;
-  try { journal = journalSchema.parse(JSON.parse(await readFile(options.journal, 'utf8'))); }
-  catch (error) {
+  let journal: WindowJournal;
+  try {
+    const decoded = journalSchema.parse(JSON.parse(await readFile(options.journal, 'utf8')));
+    journal = decoded.format === 1 ? { ...decoded, format: 2, pending: decoded.pending ? [decoded.pending] : [] } : decoded;
+  } catch (error) {
     if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
     await api.requireCount(0);
-    journal = { format: 1, identity, account: api.target.account, index: api.target.index, createdOn: descriptor.created_on, nextPosition: 0, verifiedVectors: 0, complete: false };
+    journal = { format: 2, identity, account: api.target.account, index: api.target.index, createdOn: descriptor.created_on,
+      nextPosition: 0, verifiedVectors: 0, pending: [], complete: false };
   }
   if (journal.identity !== identity || journal.account !== api.target.account || journal.index !== api.target.index || journal.createdOn !== descriptor.created_on || journal.nextPosition > plan.source.rows) throw new Error('Stage restore journal target/artifact identity mismatch.');
   if ((journal.nextPosition !== plan.source.rows && journal.nextPosition % 100 !== 0) ||
     journal.verifiedVectors !== plan.rows.slice(0, journal.nextPosition).filter(row => !row.placeholder).length ||
-    (journal.complete && (journal.nextPosition !== plan.source.rows || journal.pending))) throw new Error('Invalid stage restore checkpoint counts.');
+    (journal.complete && (journal.nextPosition !== plan.source.rows || journal.pending.length))) throw new Error('Invalid stage restore checkpoint counts.');
+  let through = journal.nextPosition;
+  // Validate every pending range and digest before any new write, including when
+  // the operator resumes with a smaller window than was previously submitted.
+  for (const [at, pending] of journal.pending.entries()) {
+    if (through >= plan.source.rows || pending.from !== through || pending.through !== Math.min(plan.source.rows, through + 100)) throw new Error('Pending restore ranges are not the exact contiguous source positions.');
+    const vectors = await restoreVectors(plan, plan.rows.slice(pending.from, pending.through));
+    if (pending.digest !== sha(JSON.stringify(vectors)) || pending.acknowledgedAt && !pending.mutationId ||
+      !vectors.length && pending.mutationId || vectors.length && !pending.mutationId && at !== journal.pending.length - 1) throw new Error('Pending restore batch differs from verified source or acknowledgement order.');
+    through = pending.through;
+  }
   if (journal.complete) {
     // A completed journal never overwrites a later pipeline revision. Recheck
     // the current values/metadata rather than treating an old receipt as live proof.
     for (let at = 0; at < plan.rows.length; at += 100) await api.verify(await restoreVectors(plan, plan.rows.slice(at, at + 100)));
     await api.requireCount(plan.source.embedded);
     return { complete: true, nextPosition: journal.nextPosition, verifiedVectors: journal.verifiedVectors, batches: 0,
-      receiptSha256: plan.receiptSha256, target: api.target, documentEmbeddings: 0, reverified: true };
+      verifiedBatches: 0, pendingBatches: 0, receiptSha256: plan.receiptSha256, target: api.target, documentEmbeddings: 0, reverified: true };
   }
-  const save = async () => { const temporary = `${options.journal}.next`; await writeFile(temporary, JSON.stringify(journal, null, 2) + '\n', { mode: 0o600 }); await rename(temporary, options.journal); };
+  const save = () => saveJournal(options.journal, journal);
   await save();
   let batches = 0;
-  while (journal.nextPosition < plan.rows.length && batches < options.maxBatches) {
-    const from = journal.nextPosition;
-    const through = Math.min(plan.rows.length, from + 100);
-    const vectors = await restoreVectors(plan, plan.rows.slice(from, through));
-    const batchDigest = sha(JSON.stringify(vectors));
-    if (journal.pending && (journal.pending.from !== from || journal.pending.through !== through || journal.pending.digest !== batchDigest)) throw new Error('Pending restore batch differs from verified source.');
-    journal.pending ??= { from, through, digest: batchDigest };
+  let verifiedBatches = 0;
+  const submit = async (pending: z.infer<typeof pendingSchema>, vectors: RestoreVector[]) => {
+    if (!vectors.length || pending.mutationId) return;
+    if (batches >= options.maxBatches) throw new Error('The invocation submission allowance is exhausted.');
+    // A call (including a replay after uncertain transport) consumes one logical
+    // submission. Its existing bounded REST retries still send identical values.
+    batches++;
+    pending.mutationId = await api.upsert(vectors);
+    pending.acknowledgedAt = new Date().toISOString();
     await save();
-    if (vectors.length) {
-      // Repeating identical upserts is safe after uncertain transport/ack loss.
-      if (!journal.pending.mutationId) { journal.pending.mutationId = await api.upsert(vectors); await save(); }
-      await api.verify(vectors);
+    options.progress?.(`Acknowledged stage positions ${pending.from}-${pending.through}; pending batches ${journal.pending.length}.`);
+  };
+  const verifyOldest = async () => {
+    const pending = journal.pending[0]!;
+    const vectors = await restoreVectors(plan, plan.rows.slice(pending.from, pending.through));
+    await submit(pending, vectors);
+    if (vectors.length) await api.verify(vectors);
+    journal.nextPosition = pending.through;
+    journal.verifiedVectors += vectors.length;
+    journal.pending.shift();
+    await save();
+    verifiedBatches++;
+    options.progress?.(`Verified stage positions ${journal.nextPosition}/${plan.source.rows}; vectors ${journal.verifiedVectors}; pending batches ${journal.pending.length}.`);
+  };
+  // Drain prior acknowledgements first. They do not consume this invocation's
+  // new-submission allowance, and no reset/re-upsert follows mere visibility lag.
+  while (journal.pending.length) await verifyOldest();
+  while (journal.nextPosition < plan.rows.length) {
+    while (journal.pending.length < window && batches < options.maxBatches) {
+      const from = journal.pending.at(-1)?.through ?? journal.nextPosition;
+      if (from === plan.rows.length) break;
+      const next = Math.min(plan.rows.length, from + 100);
+      const vectors = await restoreVectors(plan, plan.rows.slice(from, next));
+      const pending = { from, through: next, digest: sha(JSON.stringify(vectors)) };
+      journal.pending.push(pending);
+      await save(); // The exact intended batch is durable before any POST.
+      await submit(pending, vectors);
     }
-    journal.nextPosition = through; journal.verifiedVectors += vectors.length; delete journal.pending;
-    await save(); batches++;
-    options.progress?.(`Verified stage positions ${through}/${plan.source.rows}; vectors ${journal.verifiedVectors}.`);
+    if (!journal.pending.length) break;
+    await verifyOldest();
   }
   if (journal.nextPosition === plan.source.rows) {
-    if (journal.verifiedVectors !== plan.source.embedded) throw new Error('Restored vector count differs from the receipt.');
+    if (journal.pending.length || journal.verifiedVectors !== plan.source.embedded) throw new Error('Restored vector count differs from the receipt.');
     await api.requireCount(plan.source.embedded); journal.complete = true; await save();
   }
   return { complete: journal.complete, nextPosition: journal.nextPosition, verifiedVectors: journal.verifiedVectors, batches,
-    receiptSha256: plan.receiptSha256, target: api.target, documentEmbeddings: 0 };
+    verifiedBatches, pendingBatches: journal.pending.length, receiptSha256: plan.receiptSha256, target: api.target, documentEmbeddings: 0 };
 }
