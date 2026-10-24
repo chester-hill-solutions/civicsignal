@@ -409,8 +409,10 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   The initial and full-phase clients now have 171 focused local checks. Both
   seal inputs before credentials and durably journal bounded windows. Explicit
   `--full-phases` uses a distinct plan and completes text/load/verify/final scan/finish;
-  independent review clears 39 new full-flow cases. The owned operator, actual
-  hosted copy and consistent production acquisition remain pending; this does not
+  independent review clears 39 new full-flow cases. The single-window process
+  operator passes 21 Python regressions and four bundled Bun/workerd fixtures.
+  Review found and fixed acceptance-file persistence uncertainty before release.
+  Actual hosted copy and consistent production acquisition remain pending; this does not
   enable a production target. See the
   [full-client validation](evidence/2026-10-23/protected-state-full-client-root-validation.json). See the
   [transport validation](evidence/2026-10-23/protected-state-http-root-validation.json).
@@ -423,6 +425,19 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   parsing-deadline gaps before the staging bundle was frozen. The user approved
   one positive hosted check capped at 128 output tokens; it has not run. See the
   [Zen validation](evidence/2026-10-23/opencode-zen-root-validation.json).
+  The expanded Bun compiler check then found that its reader interface also
+  requires `readMany`. A structural type for the three methods used fixes this
+  without changing the compiled Worker bytes. All four compiler projects now
+  pass; the new staging candidate preserves the earlier bundle exactly.
+  See the [Bun compatibility validation](evidence/2026-10-23/opencode-zen-bun-compatibility-root-validation.json).
+
+- Fresh local release gate: 1,233 tests in 86 files, all four compiler projects,
+  117 vendored files, both real workerd runtime probes, billing/corpus invariants
+  and all five Worker dry-run builds pass. The separate owned-process Python
+  suite passes 21 cases and is now a Linux CI step. Historical corpus invariant
+  artifacts remain explicitly skipped when absent; hosted corpus proofs are
+  separate. Fresh Linux CI for this increment remains pending. See the
+  [local release validation](evidence/2026-10-23/release-local-gates-post-recovery.json).
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
@@ -432,7 +447,7 @@ The large local artifacts remain outside Git. The commands can reproduce them fr
 1. Finish vector visibility and the resulting backup. Authenticated recovery, full completed metadata and composite changed-text byte proofs pass within the approved limits.
 2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
 3. Run post-reconciliation flows, fresh calibration, held-out retrieval, and bounded performance checks against the coherent serving target; verify positive BYOK generation with an approved provider key.
-4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper and staging-only HTTP adapter are locally verified. The client's initial and full-phase windows are locally verified; its owned operator, consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending.
+4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper, staging-only HTTP adapter, initial/full-phase client and single-window process operator are locally verified. Consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending.
 5. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
 
 See [V1-OPERATIONS.md](V1-OPERATIONS.md) and [V1-EVALUATION.md](V1-EVALUATION.md) for procedures.

@@ -89,8 +89,12 @@ The client is now locally verified with 171 focused checks. It seals inputs
 before credentials and journals bounded windows. Default initial mode stops at
 `checking-text`; explicit `--full-phases` uses a distinct plan/journal and covers
 text, load, verify, final compact scan and finish. Independent review passes
-39 added full-flow cases. The owned operator, consistent production acquisition,
-hosted application and a separately reviewed production target remain pending. See the
+39 added full-flow cases. The single-window process operator is also locally
+verified with 21 Python checks and four actual bundled Bun/workerd fixtures.
+It seals the runtime, supplies a fixed environment and owns inspection/execution
+with bounded logs and cleanup. See its [commands and limits](PROTECTED-D1-BINDING.md#single-window-process-operator).
+Consistent production acquisition, hosted application and a separately reviewed
+production target remain pending. See the
 [transport validation](evidence/2026-10-23/protected-state-http-root-validation.json).
 
 Before a corpus backup, use the deployed coordinator's

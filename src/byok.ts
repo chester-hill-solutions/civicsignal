@@ -142,7 +142,7 @@ async function opencodeZenAnswer(apiKey: string, body: unknown, parse: ProviderS
     return result;
   };
   let response: Response | undefined;
-  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  let reader: Pick<ReadableStreamDefaultReader<Uint8Array>, 'read' | 'cancel' | 'releaseLock'> | undefined;
   let complete = false;
   let finished = false;
   let failedStatus: number | undefined;

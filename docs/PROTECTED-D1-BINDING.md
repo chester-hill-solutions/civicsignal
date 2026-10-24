@@ -172,9 +172,41 @@ retry or journal reset.
 
 Local filesystem calls cannot be preempted. Checks after those calls reject an
 observed deadline overrun while preserving durable acknowledgements and progress.
-The CLI does not provide an outer owned-process deadline or a hermetic startup
-environment; an eventual hosted operator must supply those controls. These tests
-establish protocol behavior against synthetic local D1/R2, not a hosted copy.
+The CLI itself does not own its process or startup environment. Use the reviewed
+operator below for those controls. These tests establish protocol behavior
+against synthetic local D1/R2, not a hosted copy.
+
+## Single-window process operator
+
+`scripts/build-protected-state-d1-owned.mjs --inputs /ABS/private/inputs.json
+--bun /ABS/physical/bun` prepares a fixed CLI bundle and an unapproved review
+template. Preparation can also resolve Bun from PATH. It seals the actual Bun
+1.3.5 path, bytes and hash; execution uses that reviewed runtime directly.
+The template binds the source, target, journal, credential-file metadata, bundle
+and limits. A trusted review must approve exactly one window and set a finite
+expiry. Then run:
+
+```sh
+env -i PATH=/usr/bin:/bin python3 -I -B \
+  scripts/protected-state-d1-owned.py --execute-reviewed-window \
+  --review /ABS/journal.owned/window-000001.reviewed.json
+```
+
+The operator checks startup-file absence by metadata and supplies a fixed child
+environment. A five-second runtime proof and source-only inspection precede the
+durable execution intent and credential selection. Inspection is bounded to 300
+seconds and execution to 330 seconds, each with at most ten seconds of cleanup;
+all child logs together are capped at 2 MiB. The CLI's smaller request/window
+limits still apply. Local filesystem calls remain nonpreemptible; observed
+expiry or persistence uncertainty prevents acceptance.
+
+Owner receipts live under the journal-derived `.owned` directory. Pending or
+uncertain attempts block a later window, including an acceptance file written
+before its fsync failed. Preserve its permanent uncertainty fence and all
+original receipts. No window starts another window automatically. The operator
+has 21 Python regression checks and four actual bundled Bun/workerd fixtures;
+this is local evidence, with hosted application still pending. See the
+[operator validation](evidence/2026-10-23/protected-state-owned-root-validation.json).
 
 ## Local validation and remaining release gates
 
@@ -207,8 +239,7 @@ All three relevant compiler projects pass. See the
 [full-client validation](evidence/2026-10-23/protected-state-full-client-root-validation.json).
 
 Production still requires a consistent authenticated D1/KV backup under a common
-writer/auth freeze, verified private acquisition receipts, the separately reviewed
-owned operator, actual hosted staging
+writer/auth freeze, verified private acquisition receipts, actual hosted staging
 copy evidence, production-specific exact-target transport/resource review, and the
 `AUTH_DB` rollback/usage-namespace gate. None is
 closed or approved by these local tests. Existing frozen recovery, backup

@@ -33,5 +33,7 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Check every runtime, tests, and invariants
         run: bun run validate
+      - name: Check the protected-copy process owner
+        run: python3 -I -B test/protected-state-d1-owned.test.py
       - name: Bundle every Cloudflare Worker without deployment
         run: bun run build
