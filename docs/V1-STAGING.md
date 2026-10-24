@@ -1,5 +1,15 @@
 # CivicSignal v1 isolated hosted validation plan
 
+Current disposition, **2026-10-24**: recovery, full metadata, composite changed-text
+verification, complete vector backup and manual hosted Workflow parity are
+complete. API v7 passed the native-provider repair and cold/warm recheck; the
+original serving ledger is **159/160**. Positive Zen generation, broad serving
+acceptance, scheduled first publication and production migration remain open.
+The [release crosswalk](V1-RELEASE.md#current-closure-crosswalk--2026-10-24) is the
+current status; the progress paragraphs below retain earlier staging history and
+approved bounds. The [scheduled-publication review](V1-SCHEDULED-PUBLICATION-REVIEW.md)
+explains why the retained existing-publication probe cannot close that gate.
+
 The user approved full bounded staging on 2026-10-22, Toronto time.
 Execution exhausted the original embedding limit. The user approved the exact
 [bounded recovery](V1-STAGING-RECOVERY.md) on 2026-10-23; its first attempt paused

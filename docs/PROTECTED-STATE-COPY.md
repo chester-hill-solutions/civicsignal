@@ -20,9 +20,12 @@ text references and a fresh complete R2 audit. Its synthetic workerd fixtures
 also cover atomic page replay, publication guards and original sequence facts.
 Its authenticated staging-only HTTP adapter remains disabled in the checked-in
 config and is exercised only with synthetic local bindings. Initial-admission
-client windows are locally verified; its later phases and owned operator,
-consistent production acquisition and actual hosted copy proof remain separate
-gates. The limitations below describe the offline SQLite copier.
+and full-phase client windows are locally verified, as is the single-window
+owned operator. The [full-client receipt](evidence/2026-10-23/protected-state-full-client-root-validation.json)
+and [owned-operator receipt](evidence/2026-10-23/protected-state-owned-root-validation.json)
+record those local checks. Consistent production acquisition, actual hosted copy
+proof and a separately reviewed production target adapter remain separate gates.
+The limitations below describe the offline SQLite copier.
 
 Keep the source/auth/target files and output outside the repository. Use private
 0700 directories and 0600 files, owned by the operator, with no symlinks or SQLite

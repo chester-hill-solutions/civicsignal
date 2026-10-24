@@ -151,12 +151,12 @@ remain open; no new generation call is approved. See the
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
 | V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Full hosted metadata, composite changed-text proof and complete vector backup pass |
-| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
+| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled discovery and first publication remain unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
 | V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass |
-| V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; migration tooling, hosted acceptance and final audit pending |
+| V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Work order
 
@@ -209,6 +209,34 @@ check without recording the reason.
 The old plans remain as history. Their opening notices link to this checklist.
 README and live discovery describe the current v1 scope.
 No exclusion removes the snapshot, restore, text migration, evaluation, or recovery gates.
+
+## Current closure crosswalk — 2026-10-24
+
+This crosswalk separates completed implementation from remaining release evidence.
+It does not supersede the failed observations or authorize another hosted operation.
+The deployed API source is `78e0c2f`; later documentation commits do not imply a
+different deployed bundle. The original serving ledger remains **159/160**.
+
+| Requirement | Completed evidence to preserve | Remaining release work |
+| --- | --- | --- |
+| V1-01 | CHS auth/auth-d1/api-billing integration, shared HTTP/MCP metering, key lifecycle and quota tests; local full protected-copy client and owned operator | Establish actual production auth authority and a common maintenance interval; acquire a consistent backup; prove hosted identity/history preservation before switching bindings. See [acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md). |
+| V1-02 | Frozen clean-checkout installation, vendored exports and provenance, Worker/Bun/scripts compilation and five dry builds in [Linux CI](evidence/2026-10-24/provider-redirect-linux-ci.json) | Preserve these checks on the final source candidate. |
+| V1-03 | Cache language/decision isolation, no reranking on a warm hit, input limits, Google authentication and browser CORS regressions; native provider redirect repair and [hosted cold/warm recheck](evidence/2026-10-24/staging-api-v7-calibration-recheck-root-observation.json) | Positive OpenCode Zen generation remains unverified. The sealed one-request proposal needs separate approval; the two earlier generation attempts are spent. |
+| V1-04 | Completed non-empty reconciliation, all 277,857 metadata rows, 1,112 changed targets, empty outbox, composite changed-text verification and complete vector backup | Preserve the paused original coordinator and cumulative usage; no recovery replay is required for this completed gate. Legacy vector model provenance remains an explicit limitation. |
+| V1-05 | Manual hosted Workflow: 127 steps and byte parity for all 240 artifacts / 390,423,509 bytes | Qualify actual scheduled discovery and first publication. The existing-publication probe cannot establish first publication. See [qualification review](V1-SCHEDULED-PUBLICATION-REVIEW.md). |
+| V1-06 | Full staging baseline restore, strict text audit, manifest/index/fingerprint enforcement, complete vector backup and local protected-copy schema/sequence admission | Qualify production acquisition, isolated hosted protected copy, the production target adapter and the eventual migration/rollback. Staging rows cannot prove original production schema. |
+| V1-07 | Calibration, held-out bilingual results and bounded latency/cache observations are retained in [evaluation evidence](V1-EVALUATION.md) | Investigate held-out misses, false acceptance and provider/hydration errors; prepare new acceptance/performance validation within separately approved usage. A successful single calibration pair does not replace the failed holdout or benchmark. |
+| V1-08 | Explicit scope exclusions, HTTP/MCP discovery, exact citations, change-feed paging and 21 hosted smokes | Close positive BYOK chat acceptance; repeat affected advertised-route checks on the final candidate if its source or bindings change. |
+| V1-09 | 1,566 tests in 93 files, 23 Linux Python cases, runtime regressions, expanded compilers, invariant checks and dry builds | Keep source-specific receipts and rerun required gates after substantive changes. Preserve the earlier local log-cap failure and its uncertainty rather than rewriting it as a pass. |
+| V1-10 | Current operations, restore/copy tools, scope dispositions and draft PR #1 | Complete the four remaining gates below, reconcile the exact release source/bindings and obtain any required final production approval after the concrete switch/rollback candidate is reviewable. |
+
+The held-out runner fails on request errors or missing responses; it does not
+enforce a numeric Hit@5 or false-acceptance release threshold. The observed
+40/48 Hit@5 and one false acceptance among 15 completed unsupported queries are
+quality findings, not an implemented automatic acceptance rule. The benchmark
+runner does reject incomplete measurements or failed warm-ups. Neither historical
+run becomes accepted because the later calibration pair passed. Do not choose
+thresholds by tuning on those held-out answers.
 
 ## Reviewed implementation evidence — 2026-10-22
 
@@ -672,12 +700,15 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
 Small evidence files live in the dated `docs/evidence/` directories.
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
+The recovery, full metadata, composite changed-text byte verification and complete
+vector backup gate is closed within the approved limits. Preserve the original
+paused coordinator and backup evidence.
+
 ## Remaining release gates
 
-1. Recovery, full metadata, composite changed-text bytes and the complete vector backup pass within the approved limits. Preserve the original paused coordinator and backup evidence.
-2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
-3. Investigate the retained retrieval/scope/provider/hydration failures and both failed Zen attempts. Post-reconciliation flows pass; calibration, holdout and benchmark attempts are complete, with acceptance unresolved. Do not silently retry, tune on holdout, or extend the approved generation/request limits.
-4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper, staging-only HTTP adapter, initial/full-phase client and single-window process operator are locally verified. Consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending. The [production acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md) and [binding metadata receipt](evidence/2026-10-23/production-binding-metadata-root-validation.json) record preparation and remaining acquisition limits.
-5. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
+1. Verify scheduled snapshot discovery and first publication. The manually recovered hosted Workflow and complete artifact parity already pass. The claimed probe requires an already published revision; its existing-publication no-op cannot establish scheduled first publication.
+2. Investigate the retained retrieval/scope/provider/hydration failures and both failed Zen attempts. Post-reconciliation flows pass; calibration, holdout and benchmark attempts are complete, with acceptance unresolved. Do not silently retry, tune on holdout, or extend the approved generation/request limits.
+3. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper, staging-only HTTP adapter, initial/full-phase client and single-window process operator are locally verified. Consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending. The [production acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md) and [binding metadata receipt](evidence/2026-10-23/production-binding-metadata-root-validation.json) record preparation and remaining acquisition limits.
+4. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
 
 See [V1-OPERATIONS.md](V1-OPERATIONS.md) and [V1-EVALUATION.md](V1-EVALUATION.md) for procedures.
