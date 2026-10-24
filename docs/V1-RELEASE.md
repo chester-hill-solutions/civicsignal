@@ -93,6 +93,22 @@ the [new Cron outcome](evidence/2026-10-23/staging-cron-0140-root-observation.js
 Retrieval acceptance and production migration remain pending. Production and
 Railway are unchanged.
 
+The provider-boundary and cache-error diagnostics are now deployed to staging.
+At **03:28:25 UTC on October 24**, version
+`f512cf84-fbcc-4990-bad0-13cdc0678c71` passed independent postverification of
+the same 13 bindings, runtime, original usage namespace and empty schedule.
+The frozen API source is `f4960c3`; the newer protected-copy tools are in
+`638303a`. Deployment used one CLI invocation and eight explicit management
+proof GETs; the CLI's internal protocol calls are not included in that count.
+It used no serving or generation reservation, so the ledger remains **154/160**.
+A token response with a valid 3,599-second lifetime exposed an overly strict
+3,600-second minimum in the local renewal validator. That failed attempt is
+preserved. A separately reviewed local recovery persisted the retained reply,
+with the original 28 scopes, without another token request. See the
+[staging deployment receipt](evidence/2026-10-24/staging-api-v5-root-observation.json).
+Retrieval-only characterization is being prepared; no new serving result is
+claimed by the deployment receipt.
+
 ## Release requirements
 
 | ID | Outcome | Acceptance evidence | Status |
@@ -575,7 +591,7 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   Ledger use remains **154/160**. See the
   [source, regression and full-gate receipt](evidence/2026-10-24/provider-boundary-root-validation.json).
 
-- Latest completed Linux CI includes exact provider-repair head
+- Earlier completed Linux CI includes exact provider-repair head
   `f4960c373efd54423000ceb743071a935f679782` in merge `f85982c562f637e8fb23d8814c1aea9403868897`:
   **1,492 tests in 92 files**, 21 Python cases, all four compilers, 117 vendor
   files, two actual local runtime probes, invariants, frozen installation and
@@ -597,6 +613,14 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   unchanged. Independent review passes. Production schema classification,
   authenticated acquisition, common freeze and hosted copy remain open. See the
   [schema validation](evidence/2026-10-24/protected-source-schema-root-validation.json).
+
+- Latest completed Linux CI includes exact schema-repair head
+  `638303af586658a2cf00f0ffbceea3456c5ba18f` in generated PR merge
+  `dfd7c3b8c2554c78cd10e69d922995c791fc2521`. The clean frozen installation,
+  **1,537 tests in 92 files**, **23 Python cases**, all four compilers, 117
+  vendor files, two local runtime probes, invariants and all five dry builds
+  pass. See [run 40057475781](https://github.com/chester-hill-solutions/civicsignal/actions/runs/40057475781)
+  and the [root CI observation](evidence/2026-10-24/protected-source-schema-linux-ci.json).
 
 Small evidence files live in the dated `docs/evidence/` directories.
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
