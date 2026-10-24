@@ -70,6 +70,36 @@ describe('safe serving retrieval observations', () => {
     expect(f.retrieval[1]).toMatchObject({ cache: 'hit', mode: 'rerank', scoreSource: 'cached', preRefusalTopScore: 0.9, providers: { encoder: 'not-called', vector: 'not-called', reranker: 'not-called', rows: 'ok' } });
     expect(f.retrieval[1]!.scoredAt).toBe(f.retrieval[0]!.scoredAt);
   });
+  it.each(['d1', 'r2'])('records cached answer selection when %s hydration fails without inventing cached scores', async (stage) => {
+    const send = vi.fn(async () => Response.json({ answers: { c0: { noul: 0.9 }, needs_federal_statute: { noul: 1 }, any_relevant: { noul: 1 } } }));
+    vi.stubGlobal('fetch', send);
+    const f = fixture();
+    const cache = new Map<string, unknown>();
+    f.ctx.jev = { key: 'private-provider-key' };
+    f.ctx.cache = { get: async (key) => cache.get(key) ?? null, put: async (key, value) => { cache.set(key, value); } };
+    const query = { topic: 'private-question', language: 'fr' };
+    await statutesCorpus.retrieve(query, f.ctx);
+    if (stage === 'd1') f.rows.mockImplementation(() => { throw new Error('private-row-failure'); });
+    else f.ctx.provisionTexts = { hydrate: async () => { throw new Error('private-row-failure'); } };
+
+    await expect(statutesCorpus.retrieve(query, f.ctx)).rejects.toThrow('private-row-failure');
+    expect(f.retrieval).toHaveLength(2);
+    expect(f.retrieval[1]).toMatchObject({ cache: 'hit', decision: 'error', mode: 'vector-floor',
+      scoreSource: 'none', preRefusalTopScore: null, scoredAt: null, candidateCount: 0, resultCount: 0,
+      providers: { encoder: 'not-called', vector: 'not-called', reranker: 'not-called', rows: 'error' } });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(f.vector).toHaveBeenCalledTimes(1);
+    expect(f.embedQuery).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(f.retrieval)).not.toMatch(/private-question|private-row-failure|private-provider-key|private-candidate-body/);
+  });
+  it('keeps a selected answer with missing rows stale and performs the existing fresh search', async () => {
+    const f = fixture();
+    f.ctx.cache = { get: async () => ({ decision: 'answer', anyRelevant: 1, order: ['missing-row'] }), put: async () => {} };
+    expect(await statutesCorpus.retrieve({ topic: 'private-question', language: 'fr' }, f.ctx)).toHaveLength(1);
+    expect(f.vector).toHaveBeenCalledTimes(1);
+    expect(f.embedQuery).toHaveBeenCalledTimes(1);
+    expect(f.retrieval[0]).toMatchObject({ cache: 'stale', decision: 'answer', scoreSource: 'computed', preRefusalTopScore: 0.9 });
+  });
   it.each([statutesCorpus, postgresStatutesCorpus])('observes exact lookups without inventing a vector score', async (corpus) => {
     const f = fixture();
     await corpus.retrieve({ act: 'Test Act', section: '1', language: 'fr' }, f.ctx);

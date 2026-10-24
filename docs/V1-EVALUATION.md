@@ -1,6 +1,78 @@
 # CivicSignal v1 retrieval evaluation
 
-The new runner measures the HTTP retrieval path that a caller uses. It does not replace the serving adapter with an evaluation search. No production retrieval accuracy, latency, throughput, or freshness result has been obtained with this new set yet. A green unit test is not a deployment benchmark.
+The runner measures the HTTP retrieval path that a caller uses. It does not replace the serving adapter with an evaluation search. Isolated staging measurements are recorded below; no production measurement is claimed. A green unit test is not a deployment benchmark.
+
+## Hosted staging observations — 2026-10-24 UTC
+
+The reconciled, strict-R2 staging API version `02dd9821-6bac-481d-89a4-5dfdf977bc6e`
+served source `0507465393c224c0491fc8c17c88340217acc656`, parser `statutes-v2`,
+with `embeddinggemma-2-270m`, JEV reranking and the unchanged
+`vectorize:federal-authority-v3-observed` policy. The original durable relay
+retains its 160-request cumulative limit. Latency includes the local relay and
+durable reservation overhead. The original vector index was preserved; legacy
+embedding model provenance remains unattested even though its complete backup
+and metadata are verified.
+
+| Measurement | Calibration | Holdout |
+| --- | ---: | ---: |
+| Valid responses / planned | 20/20 | 63/64 |
+| Answerable Hit@1 | 11/12 | 35/48 |
+| Answerable Hit@5 and Hit@10 | 11/12 | 40/48 |
+| Mean reciprocal rank | 0.9167 | 0.7681 |
+| False refusals / completed answerable | 0/12 | 3/48 |
+| Accepted answerable without gold | 1 | 5 |
+| False accepts / completed unsupported | 0/8 | 1/15 |
+| English Hit@5 | 6/6 | 21/24 |
+| French Hit@5 | 5/6 | 19/24 |
+| Both languages Hit@5 | 5/6 pairs | 18/24 pairs |
+| Completed client latency p50 / p95 | 2.155 / 3.041 s | 2.502 / 3.385 s |
+
+Calibration retained all 20 fresh computed score observations, with no provider
+errors. Its threshold sweep is an unapplied candidate, not validation of the
+reranker authority decision. The serving floor remains 0.62. Holdout used the
+fixed policy and reported no cache hits. Its one error was an encoder-related
+HTTP 502 on `unsupported-quebec-civil-code-en`; that case does not enter the
+false-accept denominator. The false accept asked for the current federal wage
+amount on an administrative webpage and received statute results. The eight
+missed positive labels include three refusals and five wrong-result responses;
+the French set is weaker. Provider-level latency and cause of the encoder
+failure have not been established by these observations.
+
+The held-out process exited unsuccessfully. These results expose retrieval and
+scope limitations and do not close release acceptance. Subsequent tuning must
+retain this result as history and use new held-out questions for independent
+validation. No retry or threshold change occurred. A first calibration invocation
+was blocked locally by the network sandbox before any relay reservation; its
+20 local transport errors and failed receipt are preserved separately. The
+explicit corrected invocation used the same dataset, policy and original ledger.
+
+Local reports: `dist/evaluation/v1-stage-20261022-network-recovery-calibration.json`
+and `dist/evaluation/v1-stage-20261022-network-recovery-holdout.json`.
+
+The 44-call benchmark completed its planned attempts at 00:43:45 UTC and exited
+unsuccessfully. Its mix is ten answerable, ten unsupported, ten English and ten
+French queries per measured batch, plus two warm-ups per concurrency level.
+
+| Concurrency | Measured valid | Warm-up failures | Cache hits / measured | Completed p50 / p95 | Valid requests/s |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 19/20 | 1/2 | 11/20 | 2.121 / 4.602 s | 0.456 |
+| 4 | 20/20 | 1/2 | 20/20 | 0.440 / 1.924 s | 3.882 |
+
+The serial error is a row-hydration 502 on `A-1-6-en#4`. Warm-up response
+observations were discarded by this runner version; their failure counts alone
+cannot identify a provider or cause. The two levels have different cache
+populations. Their throughput ratio is not an isolated concurrency improvement,
+maximum sustainable load, uncached inference performance or production capacity.
+The raw report is `dist/evaluation/v1-stage-20261022-network-recovery-benchmark.json`.
+
+The one approved Zen chat request, capped at 128 output tokens, reached the relay
+at reservation 153 and failed acceptance. Its terminal receipt retained no safe
+HTTP status, correlation or failed predicate, so it cannot establish whether the
+provider failed or the response/citation contract was unmet. No second generation
+attempt ran. The original relay stopped cleanly at **153/160** reservations,
+preserving all failures and its original prefix. See the
+[serving receipt](evidence/2026-10-23/staging-retrieval-generation-root-validation.json).
+Production was not changed.
 
 ## Dataset and evidence
 

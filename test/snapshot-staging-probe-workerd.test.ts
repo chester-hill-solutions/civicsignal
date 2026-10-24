@@ -12,11 +12,12 @@ import { manifestKey, parseManifest, SNAPSHOT_PARSER_VERSION } from '../src/inge
 const event = { cron: '25 4 23 10 *', scheduledTime: Date.parse('2026-10-23T04:25:00Z') };
 const cleanup: (() => Promise<unknown>)[] = [];
 afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close(); });
-let script = '';
+let script = '',productionScript='';
 beforeAll(async () => {
   const output = await build({ entryPoints: ['services/snapshot/staging-probe.ts'], bundle: true,
     format: 'esm', platform: 'browser', target: 'es2022', external: ['cloudflare:*', 'node:*'], write: false });
   script = output.outputFiles[0]!.text;
+  productionScript=(await build({entryPoints:['services/snapshot/worker.ts'],bundle:true,format:'esm',platform:'browser',target:'es2022',external:['cloudflare:*','node:*'],write:false})).outputFiles[0]!.text;
 });
 
 function archive(): Uint8Array<ArrayBuffer> {
@@ -33,7 +34,7 @@ function archive(): Uint8Array<ArrayBuffer> {
   return new Uint8Array(gzipSync(Buffer.concat([...entries, Buffer.alloc(1024)])));
 }
 
-async function fixture(options: { invalidStage?: boolean; sourceFailure?: boolean } = {}) {
+async function fixture(options: { invalidStage?: boolean; sourceFailure?: boolean; changedHead?: boolean; missingManifest?: boolean; production?: boolean } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'civicsignal-snapshot-probe-'));
   cleanup.push(() => rm(directory, { recursive: true, force: true }));
   const name = 'snapshot-probe-local';
@@ -47,82 +48,53 @@ async function fixture(options: { invalidStage?: boolean; sourceFailure?: boolea
         CORPUS: { type: 'r2', name: 'snapshot-probe-fixture', dev: { remote: false } },
         SNAPSHOT: { type: 'workflow', name, worker: name, exportName: 'CorpusSnapshot' },
         ...Object.fromEntries(Object.entries({ SNAPSHOT_STAGE_ID: options.invalidStage ? 'production-is-forbidden' : SNAPSHOT_STAGE_ID,
-          SNAPSHOT_PINNED_COMMIT: SNAPSHOT_STAGE_COMMIT, SNAPSHOT_PINNED_DATE: SNAPSHOT_STAGE_DATE }).map(([key, value]) => [key, { type: 'text' as const, value }])),
+          SNAPSHOT_PINNED_COMMIT: SNAPSHOT_STAGE_COMMIT, SNAPSHOT_PINNED_DATE: SNAPSHOT_STAGE_DATE, SNAPSHOT_PROBE_CRON:event.cron, SNAPSHOT_PROBE_TIME:String(event.scheduledTime) }).map(([key, value]) => [key, { type: 'text' as const, value }])),
       },
       exports: { CorpusSnapshot: { type: 'workflow', name } },
-      manifest: { mainModule: 'worker.js', modules: { 'worker.js': { type: 'esm', contents: script } } },
+      manifest: { mainModule: 'worker.js', modules: { 'worker.js': { type: 'esm', contents: options.production ? productionScript : script } } },
     },
     dev: { outboundService: { type: 'fetcher', handler: async (request) => {
       const url = new URL(request.url); outbound.push(url.href);
       if (url.host === 'api.github.com' && url.pathname.endsWith('/commits') && url.searchParams.get('per_page') === '1' &&
         ['main', SNAPSHOT_STAGE_COMMIT].includes(url.searchParams.get('sha') ?? '')) {
-        return new LocalResponse(options.sourceFailure ? 'private upstream response must never be exposed' : JSON.stringify([{ sha: SNAPSHOT_STAGE_COMMIT,
+        return new LocalResponse(options.sourceFailure ? 'private upstream response must never be exposed' : JSON.stringify([{ sha: options.changedHead ? 'f'.repeat(40) : SNAPSHOT_STAGE_COMMIT,
           commit: { committer: { date: SNAPSHOT_STAGE_DATE + 'T00:00:00Z' } } }]), { status: options.sourceFailure ? 503 : 200 });
       }
-      if (url.host === 'codeload.github.com' && url.pathname === '/justicecanada/laws-lois-xml/tar.gz/' + SNAPSHOT_STAGE_COMMIT) return new LocalResponse(tarball);
+      if (options.production && url.host === 'codeload.github.com' && url.pathname === '/justicecanada/laws-lois-xml/tar.gz/' + SNAPSHOT_STAGE_COMMIT) return new LocalResponse(tarball);
       throw new Error('Unexpected outbound call; all external networking is forbidden in this local fixture.');
     } } },
   }] });
   cleanup.push(() => mf.dispose());
   const bucket = await mf.getR2Bucket('CORPUS', name);
   const bindings = await mf.getBindings<{ SNAPSHOT: Workflow }>(name);
+  if(!options.missingManifest&&!options.production)await bucket.put(manifestKey(SNAPSHOT_STAGE_COMMIT,SNAPSHOT_PARSER_VERSION),JSON.stringify({syntheticExistingPublication:true}));
   const address = await mf.ready;
-  const scheduled = async () => {
-    const url = new URL(`/cdn-cgi/local/scheduled?cron=${encodeURIComponent(event.cron)}&time=${event.scheduledTime}&format=json`, address);
+  const scheduled = async (nominal=event) => {
+    const url = new URL(`/cdn-cgi/local/scheduled?cron=${encodeURIComponent(nominal.cron)}&time=${nominal.scheduledTime}&format=json`, address);
     const response = await fetch(url.toString());
     return { status: response.status, body: await response.json() as { outcome: string } };
   };
   return { mf, bucket, workflow: bindings.SNAPSHOT, outbound, scheduled };
 }
 
-describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS'] !== '1')('snapshot stage probe in actual local workerd', () => {
-  it('runs /health without writes/outbound work, then dispatches the real scheduled handler and Workflow exactly once across replay', async () => {
-    const f = await fixture();
-    const response = await f.mf.dispatchFetch('https://local-snapshot.invalid/health');
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ marker: SNAPSHOT_PROBE_MARKER, stageId: SNAPSHOT_STAGE_ID, commit: SNAPSHOT_STAGE_COMMIT, parser: SNAPSHOT_PARSER_VERSION });
-    expect(f.outbound).toEqual([]); expect((await f.bucket.list()).objects).toEqual([]);
-    for (const result of await Promise.all([f.scheduled(), f.scheduled()])) {
-      expect(result).toMatchObject({ status: 200, body: { outcome: 'ok' } });
-    }
-    const prefix = await probeEventPrefix(event);
-    const before = await f.bucket.get(prefix + 'entered.json');
-    expect(before).not.toBeNull();
-    const entered = await before!.text();
-    const uploaded = before!.uploaded.toISOString();
-    expect(await (await f.bucket.get(prefix + 'completed.json'))!.text()).toContain('scheduled handler returned');
-    const instance = await f.workflow.get(`${SNAPSHOT_PARSER_VERSION}-${SNAPSHOT_STAGE_COMMIT}`);
-    await vi.waitFor(async () => { expect((await instance.status()).status).toBe('complete'); }, { interval: 50, timeout: 15_000 });
-    const key = manifestKey(SNAPSHOT_STAGE_COMMIT, SNAPSHOT_PARSER_VERSION);
-    const manifestObject = await f.bucket.get(key);
-    const manifest = parseManifest(await manifestObject!.text());
-    expect(manifest.rows.count).toBe(2);
-    expect(manifest.parser).toBe(SNAPSHOT_PARSER_VERSION);
-    expect((await f.bucket.get(manifest.index.key))!.size).toBe(manifest.index.bytes);
-    expect(f.outbound.filter((url) => url.startsWith('https://codeload.github.com/'))).toHaveLength(1);
-    expect(await f.scheduled()).toMatchObject({ status: 200, body: { outcome: 'ok' } });
-    const replay = await f.bucket.get(prefix + 'entered.json');
-    expect(await replay!.text()).toBe(entered); expect(replay!.uploaded.toISOString()).toBe(uploaded);
-    expect((await f.bucket.list({ prefix: SNAPSHOT_PROBE_PREFIX })).objects).toHaveLength(2);
-    expect((await f.bucket.get(key))!.etag).toBe(manifestObject!.etag);
-    expect(f.outbound.filter((url) => url.startsWith('https://codeload.github.com/'))).toHaveLength(1);
-    for (const object of (await f.bucket.list({ prefix: SNAPSHOT_PROBE_PREFIX })).objects) expect(object.size).toBeLessThanOrEqual(SNAPSHOT_PROBE_MAX_BYTES);
-  }, 30_000);
-
-  it('records an actual source failure without creating a Workflow or exposing exception/source text', async () => {
-    const f = await fixture({ sourceFailure: true });
-    expect((await f.scheduled()).body.outcome).toBe('exception');
-    const prefix = await probeEventPrefix(event);
-    const objects = (await f.bucket.list({ prefix })).objects;
-    expect(objects.map((object) => object.key.split('/').at(-1))).toEqual(['entered.json', 'failed.json']);
-    for (const object of objects) expect(await (await f.bucket.get(object.key))!.text()).not.toMatch(/private|503|repository returned/);
+describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS'] !== '1')('claimed snapshot stage probe in actual local workerd', () => {
+  it('keeps health free of I/O and claims one source call across native concurrent R2 events', async () => {
+    const f=await fixture(),key=manifestKey(SNAPSHOT_STAGE_COMMIT,SNAPSHOT_PARSER_VERSION),before=(await f.bucket.get(key))!;
+    const response=await f.mf.dispatchFetch('https://local-snapshot.invalid/health');expect(response.status).toBe(200);expect(await response.json()).toMatchObject({marker:SNAPSHOT_PROBE_MARKER,approvedCron:event.cron,approvedTime:event.scheduledTime});expect(f.outbound).toEqual([]);
+    for(const result of await Promise.all([f.scheduled(),f.scheduled()]))expect(result).toMatchObject({status:200,body:{outcome:'ok'}});
+    await f.scheduled();const prefix=await probeEventPrefix(event),entered=(await f.bucket.get(prefix+'entered.json'))!;
+    expect(entered).not.toBeNull();expect((await f.bucket.get(prefix+'completed.json'))).not.toBeNull();expect(f.outbound).toHaveLength(1);expect(f.outbound[0]).toContain('/commits?sha=main&per_page=1');expect((await f.bucket.get(key))!.etag).toBe(before.etag);
     await expect(f.workflow.get(`${SNAPSHOT_PARSER_VERSION}-${SNAPSHOT_STAGE_COMMIT}`)).rejects.toThrow('instance.not_found');
-  }, 30_000);
-
-  it('rejects a wrong stage identity before diagnostic writes, source reads or Workflow creation', async () => {
-    const f = await fixture({ invalidStage: true });
-    expect((await f.mf.dispatchFetch('https://local-snapshot.invalid/health')).status).toBe(503);
-    expect((await f.scheduled()).body.outcome).toBe('exception');
-    expect(f.outbound).toEqual([]); expect((await f.bucket.list()).objects).toEqual([]);
-  }, 30_000);
+    for(const o of (await f.bucket.list({prefix:SNAPSHOT_PROBE_PREFIX})).objects)expect(o.size).toBeLessThanOrEqual(SNAPSHOT_PROBE_MAX_BYTES);
+  },30000);
+  it.each([{sourceFailure:true},{changedHead:true},{missingManifest:true}])('never creates a Workflow/files after guarded failure: %j',async options=>{
+    const f=await fixture(options);expect((await f.scheduled()).body.outcome).toBe('exception');await f.scheduled();expect(f.outbound).toHaveLength(1);const prefix=await probeEventPrefix(event);expect(await f.bucket.get(prefix+'entered.json')).not.toBeNull();const failed=await f.bucket.get(prefix+'failed.json');expect(failed).not.toBeNull();expect(await failed!.text()).not.toContain('private upstream');expect(await f.bucket.get(prefix+'completed.json')).toBeNull();await expect(f.workflow.get(`${SNAPSHOT_PARSER_VERSION}-${SNAPSHOT_STAGE_COMMIT}`)).rejects.toThrow('instance.not_found');
+  },30000);
+  it('rejects wrong stage and unapproved events before all source/receipt work',async()=>{
+    const invalid=await fixture({invalidStage:true});expect((await invalid.mf.dispatchFetch('https://local-snapshot.invalid/health')).status).toBe(503);expect((await invalid.scheduled()).body.outcome).toBe('exception');expect(invalid.outbound).toEqual([]);expect((await invalid.bucket.list({prefix:SNAPSHOT_PROBE_PREFIX})).objects).toEqual([]);
+    const f=await fixture();expect((await f.scheduled({...event,scheduledTime:event.scheduledTime+60000})).body.outcome).toBe('exception');expect(f.outbound).toEqual([]);expect((await f.bucket.list({prefix:SNAPSHOT_PROBE_PREFIX})).objects).toEqual([]);
+  },30000);
+  it('preserves production default Workflow creation/publication through the shared path',async()=>{
+    const f=await fixture({production:true});expect((await f.scheduled()).body.outcome).toBe('ok');const instance=await f.workflow.get(`${SNAPSHOT_PARSER_VERSION}-${SNAPSHOT_STAGE_COMMIT}`);await vi.waitFor(async()=>expect((await instance.status()).status).toBe('complete'),{interval:50,timeout:15000});const manifest=parseManifest(await(await f.bucket.get(manifestKey(SNAPSHOT_STAGE_COMMIT,SNAPSHOT_PARSER_VERSION)))!.text());expect(manifest.rows.count).toBe(2);expect(f.outbound.filter(url=>url.startsWith('https://codeload.github.com/'))).toHaveLength(1);
+  },30000);
 });

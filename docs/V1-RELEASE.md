@@ -7,7 +7,7 @@ Cloudflare is the only v1 deployment target. Keep the existing Vectorize index a
 Existing Railway services are outside this release. Preserve unrelated work and the Bun/Postgres portability code.
 
 Current hosted status: baseline restore, snapshot Workflow artifact parity and
-14 serving smokes pass. The dedicated, expiring public-read-only GitHub token was
+21 serving smokes pass, including seven checks after reconciliation. The dedicated, expiring public-read-only GitHub token was
 created through the browser. Its sole binding PUT remains unacknowledged; an
 independent five-GET readback established its name/type and deployment identity.
 The authenticated source probe then passed at 22:28:24 UTC on October 23:
@@ -28,12 +28,47 @@ objects / 24,836 bytes** cover all 1,112 changed references. Unchanged reference
 use current full metadata parity and the earlier full baseline byte proof; this
 is a composite proof, not a fresh whole-store byte audit. A fresh five-GET read
 and independent proof publication passed at 23:28 UTC. The bounded vector backup
-is now running from the same paused checkpoint.
+completed at **00:25:45 UTC on October 24**: **277,857 vector positions**, including
+**254,671 substantive vectors** and **23,186 placeholders**, in an **853,576,720-byte**
+verified store. Export, manifest read and part downloads used **60 cumulative
+requests**. An initial manifest-byte comparison failed because JSON property order
+differed; the failed run remains preserved. A separately reviewed download-only
+continuation verified semantic equality, durably retained the exact remote manifest,
+and downloaded the existing 28 immutable parts. It did not repeat export or model work.
+Legacy vector model provenance remains unattested.
+
+The updated staging API passed deployment/binding verification at **00:27:57 UTC**.
+Its `AUTH_DB` alias uses the same staging D1, strict R2 reads remain enabled, and
+the original usage namespace is preserved. Post-reconciliation checks passed for
+increasing change-feed pages, cold retrieval, warm cache reuse without another
+encoder/vector/reranker query, French cache isolation, and the original exhausted
+HTTP/MCP quota. The 20 fresh calibration queries then completed without request or
+provider errors: Hit@1/5/10 is **11/12**, with **0/8** unsupported false accepts.
+No threshold or serving policy was changed. The held-out run completed at
+**00:42:23 UTC** with **63/64** valid responses: Hit@1 **35/48**, Hit@5/10
+**40/48**, **3/48** false refusals and five accepted answerable queries without
+their gold provision. English Hit@5 is **21/24** and French **19/24**; both
+languages succeed for **18/24** provision pairs. Of 15 completed unsupported
+queries, one was accepted. The remaining unsupported query returned an
+encoder-related 502 and is an error, not a correct refusal. This run exited
+unsuccessfully and remains release-blocking evidence; it was not retried or
+used to change policy. The planned benchmark also exited unsuccessfully: serial
+measurement completed **19/20** requests with one row-hydration 502; each concurrency
+level lost one of two warm-ups. Concurrency four completed **20/20** measured
+requests from cache. Completed client p95 was **4.602 s** serial and **1.924 s**
+at concurrency four, with different cache populations; these are bounded staging
+observations, not production capacity. The single approved 128-token Zen attempt
+reached staging but failed acceptance. Its generic receipt cannot distinguish
+provider failure from response/citation mismatch. No second generation call ran.
+The original relay stopped cleanly at **153/160** reservations. See the
+[retrieval/generation receipt](evidence/2026-10-23/staging-retrieval-generation-root-validation.json).
 
 See the [completed metadata/text validation](evidence/2026-10-23/staging-completed-metadata-text-root-validation.json),
 [source/recovery validation](evidence/2026-10-23/staging-source-recovery-root-validation.json)
-and [binding recovery record](V1-STAGING-BINDING-RECOVERY.md).
-Retrieval evaluation and production migration remain pending. Production and
+and [binding recovery record](V1-STAGING-BINDING-RECOVERY.md). The
+[backup/API/smoke receipt](evidence/2026-10-23/staging-vector-backup-api-smokes-root-validation.json)
+records the completed gates and their limitations.
+Retrieval acceptance and production migration remain pending. Production and
 Railway are unchanged.
 
 ## Release requirements
@@ -43,11 +78,11 @@ Railway are unchanged.
 | V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
-| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Full hosted metadata and composite changed-text proofs pass; vector backup running |
+| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Full hosted metadata, composite changed-text proof and complete vector backup pass |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
-| V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Pending |
-| V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local route checks pass; hosted checks pending |
+| V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
+| V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; single Zen check failed acceptance |
 | V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; migration tooling, hosted acceptance and final audit pending |
 
@@ -436,17 +471,42 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   and all five Worker dry-run builds pass. The separate owned-process Python
   suite passes 21 cases and is now a Linux CI step. Historical corpus invariant
   artifacts remain explicitly skipped when absent; hosted corpus proofs are
-  separate. Fresh Linux CI for this increment remains pending. See the
-  [local release validation](evidence/2026-10-23/release-local-gates-post-recovery.json).
+  separate. Clean Linux CI then passes on `57a3222`, including the portable
+  Python fixtures, frozen install and all builds. See the
+  [local release validation](evidence/2026-10-23/release-local-gates-post-recovery.json)
+  and [Linux CI receipt](evidence/2026-10-23/release-linux-ci-57a3222.json).
+
+- Historical Cron observation: six bounded read-only requests returned the
+  known health scope control, no scheduled rows, no diagnostic objects, and
+  the unchanged API-created Workflow/manifest. This does not establish a
+  Cloudflare cause or scheduled publication. The Cron gate stays open. See the
+  [observation and limits](evidence/2026-10-23/staging-cron-historical-root-observation.json).
+
+- Fresh local gate on October 24: **1,276 tests in 88 files**, 21 owned-process
+  Python cases, four compilers, 117 vendor files, two real runtime probes,
+  invariants and five Worker dry-run builds pass with stable source hashes.
+  The isolated test/build environment received no cloud/provider credentials.
+  This covers the claimed staging snapshot probe and synthetic protected-copy
+  preparer; it does not turn failed hosted retrieval/generation into acceptance.
+  See the [gate receipt](evidence/2026-10-23/release-local-gates-20261024.json).
+
+- Retained failure diagnostics: selecting a cached answer now records a cache hit
+  before D1/R2 hydration, including a later hydration failure. Missing rows still
+  use the existing stale-entry search path; failed hydration invents no cached
+  score. Benchmark reports retain provenance-checked warm-up observations and
+  correlation IDs with the same request count. All 54 focused checks, three
+  affected compiler projects and the API dry-run build pass. This source is
+  undeployed; the earlier hosted reports remain unchanged. See the
+  [observability validation](evidence/2026-10-23/retrieval-observability-root-validation.json).
 
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
 ## Remaining release gates
 
-1. Finish vector visibility and the resulting backup. Authenticated recovery, full completed metadata and composite changed-text byte proofs pass within the approved limits.
+1. Recovery, full metadata, composite changed-text bytes and the complete vector backup pass within the approved limits. Preserve the original paused coordinator and backup evidence.
 2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
-3. Run post-reconciliation flows, fresh calibration, held-out retrieval, and bounded performance checks against the coherent serving target; verify positive BYOK generation with an approved provider key.
+3. Investigate the retained retrieval/scope/provider/hydration failures and the failed Zen check. Post-reconciliation flows pass; calibration, holdout and benchmark attempts are complete, with acceptance unresolved. Do not silently retry, tune on holdout, or extend the approved generation/request limits.
 4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper, staging-only HTTP adapter, initial/full-phase client and single-window process operator are locally verified. Consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending.
 5. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
 

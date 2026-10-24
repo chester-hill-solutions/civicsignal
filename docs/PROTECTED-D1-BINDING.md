@@ -244,3 +244,30 @@ copy evidence, production-specific exact-target transport/resource review, and t
 `AUTH_DB` rollback/usage-namespace gate. None is
 closed or approved by these local tests. Existing frozen recovery, backup
 and completion operators remain unchanged.
+
+## Synthetic fixture preparation
+
+`scripts/prepare-protected-state-d1-fixture.ts` prepares a private 18-row fixture
+using the existing cutover, protected-state, admission and full-client tooling.
+It checks target and credential metadata before reading either payload and never
+reads credential contents. It refuses target/credential aliases and the populated
+original staging resources. Its config and owner inputs are explicitly unapproved.
+
+```sh
+bun --no-env-file scripts/prepare-protected-state-d1-fixture.ts \
+  --output /absolute/private/new-fixture \
+  --target /absolute/private/returned-target.json \
+  --credential-file /absolute/private/restore-token.json
+node scripts/build-protected-state-d1-owned.mjs \
+  --inputs /absolute/private/new-fixture/owned-inputs.json \
+  --bun /absolute/physical/bun
+```
+
+The 12 focused checks include an actual local workerd full copy in 26 requests
+(25 POSTs and one status GET). All eight tables, Unicode, active/revoked keys and
+sequence highwaters 120/1000 survive, above surviving IDs 2/10. These checks also
+pass within the 1,276-test release gate. See the
+[fixture validation](evidence/2026-10-23/protected-fixture-preparation-root-validation.json).
+New isolated hosted resources, independent emptiness checks and separately
+reviewed deployment/window execution remain necessary. This fixture establishes
+no production backup, common freeze or production identity migration.

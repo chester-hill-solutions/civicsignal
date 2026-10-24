@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-24T00:12:09.749770+00:00",
+  "scope": "historical-staging-cron-observation",
+  "candidateSha256": "039de895b1215234001349d690cc2f456eddd76200a0b67f82997be2cd285e40",
+  "reviewSha256": "3901f2e93ef9ca133de8b6d3327838364262816daaad33a5465441047b5d0938",
+  "resultSha256": "3ab8abebfd4dd27693e3cfa6e415470e99b69365bef527ba4dd86a7c7c2779cb",
+  "ownedResultSha256": "52f3c2ddc71066091b0ddb719c01e8a27acf2eaa7897b7f996b715dd812ab5fb",
+  "wrapperExitCode": 0,
+  "ownedProcessSettled": true,
+  "offlineReceiptChainQualified": true,
+  "requests": 6,
+  "requestsMeaning": "One fixed GraphQL query POST and five exact management/storage GETs.",
+  "observations": {
+    "historicalScheduledDatasetRows": 0,
+    "historicalDispatchObserved": false,
+    "healthScopeControlObserved": true,
+    "enteredReceiptObserved": false,
+    "completedReceiptObserved": false,
+    "failedReceiptObserved": false,
+    "canonicalTriggerSource": "api",
+    "scheduledPublicationProven": false,
+    "releaseCronGateAutomaticallyClosed": false,
+    "absenceMeaning": "No matching evidence was returned in this fixed historical window. Absence does not establish non-dispatch or provider root cause; retention, permissions and telemetry visibility remain limits.",
+    "publicationMeaning": "The existing instance and exact manifest remain attributed to the documented API creation. A scheduled row or handler-completed receipt alone never proves scheduled Workflow publication."
+  },
+  "sourceRequests": 0,
+  "modelRequests": 0,
+  "servingRequests": 0,
+  "remoteMutations": 0,
+  "originalEvidencePreserved": true,
+  "limitations": [
+    "The existing canonical Workflow and manifest remain attributed to API creation.",
+    "No matching historical Cron evidence was returned; this does not prove non-dispatch, complete retention/visibility or a Cloudflare root cause.",
+    "Scheduled discovery/publication remains an open release gate."
+  ]
+}

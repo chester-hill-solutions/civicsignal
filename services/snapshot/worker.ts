@@ -47,11 +47,13 @@ export class CorpusSnapshot extends WorkflowEntrypoint<SnapshotEnv & SnapshotCon
   }
 }
 
-export default {
-  async scheduled(_event: ScheduledController, env: SnapshotEnv & SnapshotControlEnv): Promise<void> {
-    const revision = await new GitHubCorpusSource().head();
+/** Shared discovery path; staging may require publication and inject one bounded head. */
+export async function runSnapshotScheduled(env: SnapshotEnv & SnapshotControlEnv,
+  options: { head?: () => Promise<CorpusRevision>; requirePublished?: boolean } = {}): Promise<void> {
+    const revision = await (options.head ?? (() => new GitHubCorpusSource().head()))();
     assertSnapshotRevision(env, revision);
     if (await env.CORPUS.head(manifestKey(revision.commit, SNAPSHOT_PARSER_VERSION))) return;
+    if (options.requirePublished) throw new Error('Snapshot staging probe requires the existing published revision.');
     // The pinned revision is also the Workflow id: a concurrent trigger reuses
     // its existing instance rather than starting a second writer.
     try { await env.SNAPSHOT.create({ id: `${SNAPSHOT_PARSER_VERSION}-${revision.commit}`, params: { revision } }); }
@@ -61,5 +63,10 @@ export default {
       if (['errored', 'terminated'].includes(status.status)) throw new Error(`snapshot ${revision.commit} needs operator recovery: ${status.status}`);
       if (!['queued', 'running', 'waiting', 'paused', 'complete'].includes(status.status)) throw error;
     }
+}
+
+export default {
+  async scheduled(_event: ScheduledController, env: SnapshotEnv & SnapshotControlEnv): Promise<void> {
+    await runSnapshotScheduled(env);
   },
 };

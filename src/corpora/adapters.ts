@@ -242,6 +242,10 @@ export async function retrieveStatutesByVector(
         return trace.result([], cached.decision);
       }
       if (cached?.order.length) {
+        // A hit records selection of this cached order, even if D1/R2 loading
+        // fails. Cached scores are copied only after all rows hydrate; missing
+        // rows still mark the entry stale and run the existing fresh search.
+        observation.cache = 'hit';
         const rows = await trace.provider('rows', () => backend.loadRows(ctx, cached.order));
         const byId = new Map(rows.map((row) => [String(row['id']), row]));
         if (cached.order.every((id) => byId.has(id))) {

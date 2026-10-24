@@ -21,11 +21,13 @@ const runs = [];
 const schedule = balancedSchedule(selected.eligible, count);
 for (const concurrency of levels) {
   const warmups = await collectObservations(Array.from({ length: warmup }, (_, at) => selected.eligible[at % selected.eligible.length]!), concurrency, (question) => requestRetrieval(target, question));
+  warmups.observations = validateServingProvenance(warmups.observations, provenance);
   const measured = await collectObservations(schedule.map((question, at) => ({ ...question, id: `${question.id}#${at}` })), concurrency, (question) => requestRetrieval(target, question));
   measured.observations = validateServingProvenance(measured.observations, provenance);
   const succeeded = measured.observations.filter((observation) => observation.outcome === 'ok');
   runs.push({
     concurrency, warmupRequests: warmup, warmupFailures: warmups.observations.filter((o) => o.outcome !== 'ok').length,
+    warmupObservations: warmups.observations,
     measuredRequests: count, completedRequests: succeeded.length,
     errorResponses: measured.observations.filter((o) => o.outcome === 'http-error').length,
     transportErrors: measured.observations.filter((o) => o.outcome === 'transport-error').length,
