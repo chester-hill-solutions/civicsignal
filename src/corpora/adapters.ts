@@ -279,7 +279,7 @@ export async function retrieveStatutesByVector(
       const ranked = await trace.provider('reranker', () => rankWithJev(question, ordered.map((row) => ({
         id: String(row['id']), title: `${String(row['act'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
         text: String(row['text'] ?? ''),
-      })), { key: ctx.jev!.key }));
+      })), { key: ctx.jev!.key, onFailure: (failure) => { observation.rerankerFailure = failure; } }));
       if (ranked) {
         observation.mode = 'rerank';
         const decision = decide(ranked.flags, ranked.anyRelevant);

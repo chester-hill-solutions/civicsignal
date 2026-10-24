@@ -17,7 +17,7 @@
  * The candidate and authority questions share one request and the same state.
  */
 import { ENCODER_CONTRACT } from './encoder';
-import { providerJsonOnce } from './provider-json';
+import { ProviderJsonError, providerJsonOnce, type ProviderJsonPhase } from './provider-json';
 
 /** The endpoint of the inference gateway. */
 export const JEV_ENDPOINT = 'https://opencode.ai/inference/systemone/v1/systemone';
@@ -33,6 +33,16 @@ export const EXCERPT_CHARS = 250;
 
 /** The candidate budget used by this product's retrieval policy. */
 export const CANDIDATE_COUNT = 250;
+
+/** Saturated diagnostic counts, never provider answer names or values. */
+export const MAX_JEV_FAILURE_COUNT = CANDIDATE_COUNT + 7;
+export interface JevFailure {
+  phase: ProviderJsonPhase;
+  upstreamStatus?: number;
+  schemaReason?: 'response-shape' | 'answers-shape' | 'requested-answers';
+  rejectedCount?: number;
+  missingCount?: number;
+}
 
 /** The limit on the relevance, inside a question that passed the authority test. */
 export const RELEVANCE_FLOOR = 0.5;
@@ -120,10 +130,13 @@ function candidateQuestion(at: number): string {
 export async function rankWithJev(
   query: string,
   candidates: Candidate[],
-  options: { key: string; endpoint?: string; model?: string; send?: typeof fetch },
+  options: { key: string; endpoint?: string; model?: string; send?: typeof fetch; onFailure?: (failure: JevFailure) => void | PromiseLike<void> },
 ): Promise<JevResult | null> {
   if (candidates.length === 0) return null;
   const candidateCount = candidates.length;
+  let onFailure: typeof options.onFailure;
+  try { onFailure = options.onFailure; } catch { /* Optional observer access is isolated too. */ }
+  let schemaFailure: Pick<JevFailure, 'schemaReason' | 'rejectedCount' | 'missingCount'> | undefined;
 
   const questions: Record<string, { type: string; instructions: string }> = {};
   candidates.forEach((_, at) => {
@@ -158,15 +171,29 @@ export async function rankWithJev(
       requestBytes: 1024 * 1024,
       send: options.send,
       parse: (value) => {
-        if (!record(value) || !record(value.answers)) throw new Error('Invalid Jev response.');
+        if (!record(value)) {
+          schemaFailure = { schemaReason: 'response-shape' };
+          throw new Error('Invalid Jev response.');
+        }
+        if (!record(value.answers)) {
+          schemaFailure = { schemaReason: 'answers-shape' };
+          throw new Error('Invalid Jev response.');
+        }
         const answers = value.answers;
         const scores: Record<string, number> = {};
+        let rejected = 0, missing = 0;
         for (const name of Object.keys(questions)) {
+          if (!Object.hasOwn(answers, name)) { missing++; continue; }
           const answer = answers[name];
-          if (!Object.hasOwn(answers, name) || !record(answer) || answer.type !== 'noul' ||
+          if (!record(answer) || answer.type !== 'noul' ||
             typeof answer.noul !== 'number' || !Number.isFinite(answer.noul) ||
-            answer.noul < 0 || answer.noul > 1) throw new Error('Invalid Jev response.');
+            answer.noul < 0 || answer.noul > 1) { rejected++; continue; }
           scores[name] = answer.noul;
+        }
+        if (rejected || missing) {
+          schemaFailure = { schemaReason: 'requested-answers',
+            rejectedCount: Math.min(rejected, MAX_JEV_FAILURE_COUNT), missingCount: Math.min(missing, MAX_JEV_FAILURE_COUNT) };
+          throw new Error('Invalid Jev response.');
         }
         const flags = {} as AuthorityFlags;
         for (const name of Object.keys(ATOMIC_QUESTIONS) as AtomicQuestion[]) flags[name] = scores[name]!;
@@ -177,7 +204,14 @@ export async function rankWithJev(
         };
       },
     });
-  } catch {
+  } catch (error) {
+    const phase = error instanceof ProviderJsonError ? error.phase : 'transport';
+    const failure: JevFailure = { phase };
+    if (error instanceof ProviderJsonError && error.httpStatus !== undefined) failure.upstreamStatus = error.httpStatus;
+    if (phase === 'response-validation' && schemaFailure) Object.assign(failure, schemaFailure);
+    // Diagnostics cannot change the existing null/fallback contract.
+    try { void Promise.resolve(onFailure?.(failure)).catch(() => {}); }
+    catch { /* No raw observer exception or awaited diagnostics work. */ }
     return null;
   }
 }

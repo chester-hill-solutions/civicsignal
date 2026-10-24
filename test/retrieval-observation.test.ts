@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { statutesCorpus } from '../src/corpora/adapters';
 import { postgresStatutesCorpus } from '../src/corpora/postgres-adapters';
-import { observeRetrievalContext, type RetrievalObservation } from '../src/corpora/retrieval-observation';
+import { observeRetrievalContext, rerankerFailureSchema, type RetrievalObservation } from '../src/corpora/retrieval-observation';
 import type { CorpusContext } from '../src/corpora/types';
 
 const row = { id: 'row-1', corpus_id: 'statutes-canada', act: 'Test Act', instrument: 'Test Act', section: '1', text: 'private-candidate-body', source_url: 'https://example.test/1', language: 'fr', in_force: 1 };
@@ -60,7 +60,7 @@ describe('safe serving retrieval observations', () => {
     f.ctx.jev = { key: 'private-provider-key' };
     const items = await statutesCorpus.retrieve({ topic: 'private-question', language: 'fr' }, f.ctx);
     expect(items).toHaveLength(1);
-    expect(f.retrieval[0]).toMatchObject({ mode: 'vector-floor', fallback: true, decision: 'answer', providers: { reranker: 'error' } });
+    expect(f.retrieval[0]).toMatchObject({ mode: 'vector-floor', fallback: true, decision: 'answer', providers: { reranker: 'error' }, rerankerFailure: kind === 'HTTP error' ? { phase: 'upstream-http', upstreamStatus: 503 } : { phase: 'response-validation', upstreamStatus: 200, schemaReason: 'response-shape' } });
     expect(JSON.stringify(f.retrieval)).not.toMatch(/private-question|private-provider-key|private-candidate-body|private-upstream-error/);
   });
   it('discloses originating score provenance on cache hits and makes no new provider calls', async () => {
@@ -138,5 +138,40 @@ describe('safe serving retrieval observations', () => {
     f.ctx.onRetrieval = () => { throw new Error('private-diagnostic-error'); };
     expect(await statutesCorpus.retrieve({ act: 'Test Act', section: '1' }, f.ctx)).toHaveLength(1);
     expect(console.error).toHaveBeenCalledWith('{"event":"retrieval_observer_failed"}');
+  });
+});
+
+
+describe('bounded optional reranker failure observations', () => {
+  it.each([
+    {phase:'unexpected'}, {phase:'transport',upstreamStatus:99}, {phase:'transport',upstreamStatus:600},
+    {phase:'transport',upstreamStatus:200.5}, {phase:'response-validation',missingCount:-1},
+    {phase:'response-validation',missingCount:258}, {phase:'response-validation',rejectedCount:.5},
+    {phase:'response-validation',schemaReason:'private-reason'}, {phase:'transport',message:'private-cause'},
+  ])('rejects unbounded or unapproved failure metadata %#',value=>{
+    expect(rerankerFailureSchema.safeParse(value).success).toBe(false);
+  });
+  it('includes only coarse schema counts while preserving vector fallback and result order',async()=>{
+    const send=vi.fn(async()=>Response.json({answers:{c0:{type:'noul',noul:'private-invalid-score'}}}));vi.stubGlobal('fetch',send);
+    const f=fixture();f.ctx.jev={key:'private-provider-key'};
+    expect(await statutesCorpus.retrieve({topic:'private-question',language:'fr'},f.ctx)).toHaveLength(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(f.retrieval[0]).toMatchObject({mode:'vector-floor',fallback:true,providers:{reranker:'error'},rerankerFailure:{phase:'response-validation',upstreamStatus:200,schemaReason:'requested-answers',rejectedCount:1,missingCount:7}});
+    expect(JSON.stringify(f.retrieval)).not.toMatch(/private|c0|needs_federal|any_relevant/);
+  });
+  it('keeps a throwing serving observer from changing provider fallback',async()=>{
+    vi.stubGlobal('fetch',vi.fn(async()=>new Response('private-provider-error',{status:503})));
+    vi.spyOn(console,'error').mockImplementation(()=>{});
+    const f=fixture();f.ctx.jev={key:'private-provider-key'};f.ctx.onRetrieval=()=>{throw new Error('private-observer');};
+    expect(await statutesCorpus.retrieve({topic:'private-question',language:'fr'},f.ctx)).toHaveLength(1);
+    expect(f.vector).toHaveBeenCalledTimes(1);expect(f.rows).toHaveBeenCalledTimes(1);
+    expect(console.error).toHaveBeenCalledTimes(1);expect(console.error).toHaveBeenCalledWith('{"event":"retrieval_observer_failed"}');
+  });
+  it('omits failure metadata on a successful rerank and cache hit',async()=>{
+    const send=vi.fn(async()=>jevResponse());vi.stubGlobal('fetch',send);const f=fixture(),cache=new Map<string,unknown>();
+    f.ctx.jev={key:'private-provider-key'};f.ctx.cache={get:async k=>cache.get(k)??null,put:async(k,v)=>{cache.set(k,v);}};
+    const query={topic:'private-question',language:'fr'};
+    await statutesCorpus.retrieve(query,f.ctx);await statutesCorpus.retrieve(query,f.ctx);
+    expect(send).toHaveBeenCalledTimes(1);expect(f.retrieval.map(x=>x.rerankerFailure)).toEqual([undefined,undefined]);
   });
 });

@@ -154,28 +154,28 @@ describe('Jev response failure boundary', () => {
   });
 
   it('refuses an over-1MiB UTF-8 request before sending', async () => {
-    const send = vi.fn<typeof fetch>();
-    expect(await rankWithJev('é'.repeat(512 * 1024), candidates, { key: 'synthetic-unused-key', send })).toBeNull();
-    expect(send).not.toHaveBeenCalled();
+    const send = vi.fn<typeof fetch>(), failure=vi.fn();
+    expect(await rankWithJev('é'.repeat(512 * 1024), candidates, { key: 'synthetic-unused-key', send, onFailure:failure })).toBeNull();
+    expect(send).not.toHaveBeenCalled();expect(failure).toHaveBeenCalledWith({phase:'request-serialization'});
   });
 
   it.each(['declared', 'actual'])('caps %s response bytes at 256KiB', async kind => {
-    let cancelled = 0;
+    let cancelled = 0;const failure=vi.fn();
     const send = vi.fn<typeof fetch>(async () => new Response(new ReadableStream<Uint8Array>({
       start(c) { if (kind === 'actual') c.enqueue(new Uint8Array(256 * 1024 + 1)); },
       cancel() { cancelled++; },
     }), { headers: kind === 'declared' ? { 'content-length': String(256 * 1024 + 1) } : {} }));
-    expect(await rankWithJev('synthetic question', candidates, { key: 'synthetic-unused-key', send })).toBeNull();
-    expect(send).toHaveBeenCalledTimes(1); expect(cancelled).toBe(1);
+    expect(await rankWithJev('synthetic question', candidates, { key: 'synthetic-unused-key', send,onFailure:failure })).toBeNull();
+    expect(send).toHaveBeenCalledTimes(1); expect(cancelled).toBe(1);expect(failure).toHaveBeenCalledWith({phase:'response-body',upstreamStatus:200});
   });
 
   it('bounds an ignored-abort fetch at the original 15s deadline', async () => {
     vi.useFakeTimers(); vi.spyOn(performance, 'now').mockReturnValue(0);
-    const send = vi.fn<typeof fetch>(() => new Promise<Response>(() => {})); let settled = false;
-    const pending = rankWithJev('synthetic question', candidates, { key: 'synthetic-unused-key', send }).then(value => { settled = true; return value; });
+    const send = vi.fn<typeof fetch>(() => new Promise<Response>(() => {})); let settled = false;const failure=vi.fn();
+    const pending = rankWithJev('synthetic question', candidates, { key: 'synthetic-unused-key', send,onFailure:failure }).then(value => { settled = true; return value; });
     await vi.advanceTimersByTimeAsync(14_999); expect(settled).toBe(false);
     await vi.advanceTimersByTimeAsync(1); expect(await pending).toBeNull();
-    expect(send).toHaveBeenCalledTimes(1); expect(send.mock.calls[0]![1]?.signal?.aborted).toBe(true);
+    expect(send).toHaveBeenCalledTimes(1); expect(send.mock.calls[0]![1]?.signal?.aborted).toBe(true);expect(failure).toHaveBeenCalledWith({phase:'timeout'});
   });
 
   it('bounds a stalled response read within the same 15s deadline', async () => {
@@ -196,5 +196,63 @@ describe('Jev response failure boundary', () => {
     }, { highWaterMark: 0 })));
     expect(await rankWithJev('synthetic question', candidates, { key: 'synthetic-unused-key', send })).toBeNull();
     expect(send).toHaveBeenCalledTimes(1); expect(cancelled).toBe(1);
+  });
+});
+
+describe('safe Jev failure diagnostics', () => {
+  it.each([
+    {label:'transport',makeSend:()=>vi.fn<typeof fetch>().mockRejectedValue(new Error('private-key-and-cause')),expected:{phase:'transport'}},
+    {label:'HTTP',makeSend:()=>vi.fn<typeof fetch>().mockResolvedValue(new Response('private-provider-body',{status:429})),expected:{phase:'upstream-http',upstreamStatus:429}},
+    {label:'JSON',makeSend:()=>vi.fn<typeof fetch>().mockResolvedValue(new Response('{private-invalid-json')),expected:{phase:'response-parse',upstreamStatus:200}},
+    {label:'response envelope',makeSend:()=>sender(null),expected:{phase:'response-validation',upstreamStatus:200,schemaReason:'response-shape'}},
+    {label:'answers envelope',makeSend:()=>sender({answers:[]}),expected:{phase:'response-validation',upstreamStatus:200,schemaReason:'answers-shape'}},
+  ])('emits only fixed metadata for $label failure',async({makeSend,expected})=>{
+    const failure=vi.fn(),send=makeSend();
+    expect(await rankWithJev('private-query',candidates,{key:'private-key',send,onFailure:failure})).toBeNull();
+    expect(failure).toHaveBeenCalledTimes(1);expect(failure).toHaveBeenCalledWith(expected);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(failure.mock.calls)).not.toMatch(/private|cause|message/);
+  });
+  it('counts missing and rejected requested answers without retaining names or values',async()=>{
+    const answers:Record<string,unknown>=completeAnswers();delete answers.c1;delete answers.any_relevant;
+    answers.c0={type:'noul',noul:'private-bad-value'};answers.needs_provincial={type:'boolean',noul:0};
+    answers.unrequested_private_name='private-extra-value';const failure=vi.fn();
+    expect(await rankWithJev('private-query',candidates,{key:'private-key',send:sender({answers}),onFailure:failure})).toBeNull();
+    expect(failure).toHaveBeenCalledTimes(1);expect(failure).toHaveBeenCalledWith({phase:'response-validation',upstreamStatus:200,schemaReason:'requested-answers',rejectedCount:2,missingCount:2});
+    expect(JSON.stringify(failure.mock.calls)).not.toMatch(/private|c0|c1|provincial|any_relevant/);
+  });
+  it('keeps observer exceptions isolated from the same null fallback',async()=>{
+    const send=sender(null),failure=vi.fn(()=>{throw new Error('private-observer');});
+    expect(await rankWithJev('private-query',candidates,{key:'private-key',send,onFailure:failure})).toBeNull();
+    expect(failure).toHaveBeenCalledTimes(1);expect(send).toHaveBeenCalledTimes(1);
+  });
+  it('isolates rejected and stalled async observers without extending fallback',async()=>{
+    const rejected=vi.fn(async()=>{throw new Error('private-async-observer');});
+    expect(await rankWithJev('private-query',candidates,{key:'private-key',send:sender(null),onFailure:rejected})).toBeNull();
+    await new Promise(resolve=>setImmediate(resolve));expect(rejected).toHaveBeenCalledTimes(1);
+    const stalled=vi.fn(()=>new Promise<void>(()=>{}));
+    expect(await rankWithJev('private-query',candidates,{key:'private-key',send:sender(null),onFailure:stalled})).toBeNull();
+    expect(stalled).toHaveBeenCalledTimes(1);
+  });
+  it('snapshots observer selection before the exchange',async()=>{
+    let finish!:(value:Response)=>void;const send=vi.fn<typeof fetch>(()=>new Promise(resolve=>{finish=resolve;})),first=vi.fn(),later=vi.fn();
+    const options={key:'private-key',send,onFailure:first};const pending=rankWithJev('private-query',candidates,options);options.onFailure=later;
+    finish(Response.json(null));expect(await pending).toBeNull();expect(first).toHaveBeenCalledTimes(1);expect(later).not.toHaveBeenCalled();
+  });
+  it('keeps an observer accessor failure optional',async()=>{
+    const options={key:'private-key',send:sender(null),get onFailure():undefined{throw new Error('private-observer-accessor');}};
+    expect(await rankWithJev('private-query',candidates,options)).toBeNull();
+  });
+  it('does not emit a failure for valid complete zeros or an empty candidate list',async()=>{
+    const answers=completeAnswers();for(const answer of Object.values(answers))answer.noul=0;
+    const failure=vi.fn(),send=sender({answers});
+    expect((await rankWithJev('private-query',candidates,{key:'private-key',send,onFailure:failure}))?.relevance).toEqual([0,0]);
+    expect(await rankWithJev('private-query',[],{key:'private-key',send,onFailure:failure})).toBeNull();
+    expect(failure).not.toHaveBeenCalled();expect(send).toHaveBeenCalledTimes(1);
+  });
+  it('bounds diagnostic counts for larger direct caller inputs without changing fallback',async()=>{
+    const many=Array.from({length:300},()=>candidates[0]!),failure=vi.fn();
+    expect(await rankWithJev('private-query',many,{key:'private-key',send:sender({answers:{}}),onFailure:failure})).toBeNull();
+    expect(failure).toHaveBeenCalledTimes(1);expect(failure).toHaveBeenCalledWith({phase:'response-validation',upstreamStatus:200,schemaReason:'requested-answers',rejectedCount:0,missingCount:257});
   });
 });

@@ -1,8 +1,17 @@
 import { z } from 'zod';
 import { ENCODER_CONTRACT } from '../encoder';
+import { MAX_JEV_FAILURE_COUNT } from '../jev';
 import type { CorpusContext, CorpusQuery } from './types';
 
 const providerStatus = z.enum(['not-called', 'ok', 'error', 'disabled']);
+export const rerankerFailureSchema = z.object({
+  phase: z.enum(['request-serialization', 'transport', 'upstream-http', 'response-body',
+    'response-parse', 'timeout', 'cancelled', 'response-validation']),
+  upstreamStatus: z.number().int().min(100).max(599).optional(),
+  schemaReason: z.enum(['response-shape', 'answers-shape', 'requested-answers']).optional(),
+  rejectedCount: z.number().int().min(0).max(MAX_JEV_FAILURE_COUNT).optional(),
+  missingCount: z.number().int().min(0).max(MAX_JEV_FAILURE_COUNT).optional(),
+}).strict();
 /** Public, bounded metadata only. No question, candidate text, key or exception. */
 export const retrievalObservationSchema = z.object({
   version: z.literal(1), corpusId: z.literal('statutes-canada'),
@@ -15,6 +24,7 @@ export const retrievalObservationSchema = z.object({
   vectorFloor: z.number().finite().nullable(), candidateCount: z.number().int().nonnegative(), resultCount: z.number().int().nonnegative(),
   cache: z.enum(['disabled', 'miss', 'hit', 'stale', 'bypass']), fallback: z.boolean(),
   providers: z.object({ encoder: providerStatus, vector: providerStatus, reranker: providerStatus, rows: providerStatus }),
+  rerankerFailure: rerankerFailureSchema.optional(),
   elapsedMs: z.number().finite().nonnegative(),
 });
 export type RetrievalObservation = z.infer<typeof retrievalObservationSchema>;
