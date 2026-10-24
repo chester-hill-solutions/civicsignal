@@ -1,3 +1,4 @@
+import { SNAPSHOT_PARSER_VERSION } from './snapshot-format';
 /**
  * The cycle, incrementally.
  *
@@ -125,6 +126,7 @@ export async function runIncrementalPipeline(options: {
   const log = options.logger ?? (() => {});
   const { corpusId, previous, next, source, store, encoder } = options;
 
+  await store.recoverPendingWrites();
   const change = await source.changedFiles(previous.commit, next.commit);
   if (change.truncated) {
     throw new Error(
@@ -241,17 +243,17 @@ export async function runIncrementalPipeline(options: {
     entry.embedding = embeddings.get(entry.row.id) ?? null;
   }
 
-  // The rows first, then the removals: a row that is written and then
-  // removed would be a provision the corpus holds and the store does not.
-  if (toWrite.length > 0) await store.upsert(toWrite);
-  if (removedIds.length > 0) await store.remove(removedIds);
-
-  await store.recordChanges(feed);
+  await store.applyBatch({
+    corpusId, revision: next.commit, occurredAt: next.date,
+    upserts: toWrite, removedIds,
+    changes: feed.filter((entry) => entry.change !== 'removed'),
+  });
   log(
     `${corpusId}: ${added} added, ${changed} changed, ${removedIds.length} removed, ${unchanged} unchanged`,
   );
 
   const run: PipelineRun = {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: next.commit,
     commitDate: next.date,
@@ -261,8 +263,8 @@ export async function runIncrementalPipeline(options: {
     durationMs: Date.now() - started,
     ok: true,
   };
-  await store.recordRun(run);
-  await store.setState({
+  await store.finishRun(run, {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: next.commit,
     commitDate: next.date,

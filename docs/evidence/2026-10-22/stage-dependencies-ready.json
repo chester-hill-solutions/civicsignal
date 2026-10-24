@@ -1,0 +1,338 @@
+{
+  "format": 1,
+  "scope": "Independent management-only readback of isolated staging encoder and Vectorize dependencies before API deployment",
+  "ready": true,
+  "observedFrom": "2026-10-23T11:13:38.426Z",
+  "observedThrough": "2026-10-23T11:15:19.808Z",
+  "pins": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-encoder-20261022",
+    "version": "0857d68d-5f44-4a64-8e0e-3aac5402f5b3",
+    "etag": "2d383c7617ee1721770ebb4171ddb9402eb62f2f61072165bc1c33bb0ebd1d65",
+    "application": "a03dd873-2d74-483b-b1b8-d68ca8a7ba5b",
+    "applicationCreatedAt": "2026-10-23T02:14:50.824999936Z",
+    "namespace": "ba1f3b5492834259873f7f2cf48f2a01",
+    "image": "registry.cloudflare.com/ad5ec479b9a421faa2ed06c3d1c2b23a/civicsignal-v1-stage-encoder-20261022@sha256:71302112da046a98e9e1c6b09b38921aebd85b5d6c9161289d2524ed1e431d81",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "createdOn": "2026-10-23T02:06:42.218162Z",
+    "dimensions": 768,
+    "metric": "cosine",
+    "vectorCount": 254671
+  },
+  "verifiedObservations": [
+    {
+      "label": "encoder-deployment",
+      "verified": true,
+      "observation": {
+        "deploymentId": "b04edd03-ed29-4b2d-ac26-141fc979d7ae",
+        "versions": [
+          {
+            "version_id": "0857d68d-5f44-4a64-8e0e-3aac5402f5b3",
+            "percentage": 100
+          }
+        ],
+        "source": "wrangler",
+        "createdOn": "2026-10-23T02:17:53.643764Z"
+      }
+    },
+    {
+      "label": "encoder-version",
+      "verified": true,
+      "observation": {
+        "versionId": "0857d68d-5f44-4a64-8e0e-3aac5402f5b3",
+        "etag": "2d383c7617ee1721770ebb4171ddb9402eb62f2f61072165bc1c33bb0ebd1d65",
+        "namespace": "ba1f3b5492834259873f7f2cf48f2a01",
+        "container": "civicsignal-v1-stage-encoder-20261022",
+        "secretBindingPresent": true
+      }
+    },
+    {
+      "label": "encoder-application",
+      "verified": true,
+      "observation": {
+        "id": "a03dd873-2d74-483b-b1b8-d68ca8a7ba5b",
+        "name": "civicsignal-v1-stage-encoder-20261022",
+        "createdAt": "2026-10-23T02:14:50.824999936Z",
+        "maxInstances": 1,
+        "instances": 1,
+        "image": "registry.cloudflare.com/ad5ec479b9a421faa2ed06c3d1c2b23a/civicsignal-v1-stage-encoder-20261022@sha256:71302112da046a98e9e1c6b09b38921aebd85b5d6c9161289d2524ed1e431d81",
+        "namespace": "ba1f3b5492834259873f7f2cf48f2a01",
+        "health": {
+          "errors": [],
+          "instances": {
+            "active": 0,
+            "assigned": 0,
+            "healthy": 1,
+            "stopped": 0,
+            "failed": 0,
+            "scheduling": 0,
+            "starting": 0
+          }
+        }
+      }
+    },
+    {
+      "label": "vector-descriptor",
+      "verified": true,
+      "observation": {
+        "name": "civicsignal-v1-stage-statutes-20261022",
+        "createdOn": "2026-10-23T02:06:42.218162Z",
+        "dimensions": 768,
+        "metric": "cosine"
+      }
+    },
+    {
+      "label": "vector-info",
+      "verified": true,
+      "observation": {
+        "dimensions": 768,
+        "vectorCount": 254671
+      }
+    },
+    {
+      "label": "vector-metadata",
+      "verified": true,
+      "observation": {
+        "indexName": "civicsignal-v1-stage-statutes-20261022",
+        "metadataIndexes": [
+          {
+            "propertyName": "language",
+            "indexType": "String"
+          }
+        ]
+      }
+    }
+  ],
+  "originalAttempt": {
+    "format": 1,
+    "observedAt": "2026-10-23T11:13:40.103Z",
+    "scope": "Independent stage dependency management GET readback only",
+    "ready": false,
+    "pins": {
+      "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+      "worker": "civicsignal-v1-stage-encoder-20261022",
+      "version": "0857d68d-5f44-4a64-8e0e-3aac5402f5b3",
+      "etag": "2d383c7617ee1721770ebb4171ddb9402eb62f2f61072165bc1c33bb0ebd1d65",
+      "application": "a03dd873-2d74-483b-b1b8-d68ca8a7ba5b",
+      "applicationCreatedAt": "2026-10-23T02:14:50.824999936Z",
+      "namespace": "ba1f3b5492834259873f7f2cf48f2a01",
+      "image": "registry.cloudflare.com/ad5ec479b9a421faa2ed06c3d1c2b23a/civicsignal-v1-stage-encoder-20261022@sha256:71302112da046a98e9e1c6b09b38921aebd85b5d6c9161289d2524ed1e431d81",
+      "index": "civicsignal-v1-stage-statutes-20261022",
+      "createdOn": "2026-10-23T02:06:42.218162Z",
+      "dimensions": 768,
+      "metric": "cosine",
+      "vectorCount": 254671
+    },
+    "getCount": 6,
+    "getLimit": 6,
+    "perRequestTimeoutMs": 15000,
+    "perResponseMaxBytes": 262144,
+    "retries": 0,
+    "refreshes": 0,
+    "servingCalls": 0,
+    "encoderInferences": 0,
+    "indexWrites": 0,
+    "productionReads": 0,
+    "credentialValuesPrinted": false,
+    "receipts": [
+      {
+        "label": "encoder-deployment",
+        "observedAt": "2026-10-23T11:13:38.426Z",
+        "httpStatus": 200,
+        "codes": [],
+        "bytes": 1219,
+        "bodySha256": "faa798382ea0e159c704116a81f192278a4186ba26a2e04cbd04053cc8bf4137",
+        "cfRay": "a4f050463dde39cf-YYZ"
+      },
+      {
+        "label": "encoder-deployment",
+        "verified": true,
+        "observation": {
+          "deploymentId": "b04edd03-ed29-4b2d-ac26-141fc979d7ae",
+          "versions": [
+            {
+              "version_id": "0857d68d-5f44-4a64-8e0e-3aac5402f5b3",
+              "percentage": 100
+            }
+          ],
+          "source": "wrangler",
+          "createdOn": "2026-10-23T02:17:53.643764Z"
+        }
+      },
+      {
+        "label": "encoder-version",
+        "observedAt": "2026-10-23T11:13:38.601Z",
+        "httpStatus": 200,
+        "codes": [],
+        "bytes": 1645,
+        "bodySha256": "d97efecadcf3d50ae42d4c6576832164eb8e684b341ff76a8a8387b806f11a0a",
+        "cfRay": "a4f050479ebe39cf-YYZ"
+      },
+      {
+        "label": "encoder-version",
+        "verified": true,
+        "observation": {
+          "versionId": "0857d68d-5f44-4a64-8e0e-3aac5402f5b3",
+          "etag": "2d383c7617ee1721770ebb4171ddb9402eb62f2f61072165bc1c33bb0ebd1d65",
+          "namespace": "ba1f3b5492834259873f7f2cf48f2a01",
+          "container": "civicsignal-v1-stage-encoder-20261022",
+          "secretBindingPresent": true
+        }
+      },
+      {
+        "label": "encoder-application",
+        "observedAt": "2026-10-23T11:13:39.150Z",
+        "httpStatus": 200,
+        "codes": [],
+        "bytes": 1096,
+        "bodySha256": "11b97b7feb2e2f74d4412237c8f15650e3b56583bc1faa39582cbba279b11894",
+        "cfRay": "a4f05048bf6939cf-YYZ"
+      },
+      {
+        "label": "encoder-application",
+        "verified": true,
+        "observation": {
+          "id": "a03dd873-2d74-483b-b1b8-d68ca8a7ba5b",
+          "name": "civicsignal-v1-stage-encoder-20261022",
+          "createdAt": "2026-10-23T02:14:50.824999936Z",
+          "maxInstances": 1,
+          "instances": 1,
+          "image": "registry.cloudflare.com/ad5ec479b9a421faa2ed06c3d1c2b23a/civicsignal-v1-stage-encoder-20261022@sha256:71302112da046a98e9e1c6b09b38921aebd85b5d6c9161289d2524ed1e431d81",
+          "namespace": "ba1f3b5492834259873f7f2cf48f2a01",
+          "health": {
+            "errors": [],
+            "instances": {
+              "active": 0,
+              "assigned": 0,
+              "healthy": 1,
+              "stopped": 0,
+              "failed": 0,
+              "scheduling": 0,
+              "starting": 0
+            }
+          }
+        }
+      },
+      {
+        "label": "vector-descriptor",
+        "observedAt": "2026-10-23T11:13:39.407Z",
+        "httpStatus": 200,
+        "codes": [],
+        "bytes": 323,
+        "bodySha256": "adfb9995d9c0e86c5d36e56b22b6bd37d6c819afe2c3da48be3cdebc1f5ca6fe",
+        "cfRay": "a4f0504c294d39cf-YYZ"
+      },
+      {
+        "label": "vector-descriptor",
+        "verified": true,
+        "observation": {
+          "name": "civicsignal-v1-stage-statutes-20261022",
+          "createdOn": "2026-10-23T02:06:42.218162Z",
+          "dimensions": 768,
+          "metric": "cosine"
+        }
+      },
+      {
+        "label": "vector-info",
+        "observedAt": "2026-10-23T11:13:39.882Z",
+        "httpStatus": 200,
+        "codes": [],
+        "bytes": 224,
+        "bodySha256": "52b9f24b493c63fe89597e4d680ee6cf64e5470ae27761daaf70c5851849947c",
+        "cfRay": "a4f0504dca3739cf-YYZ"
+      },
+      {
+        "label": "vector-info",
+        "verified": true,
+        "observation": {
+          "dimensions": 768,
+          "vectorCount": 254671
+        }
+      },
+      {
+        "label": "vector-metadata",
+        "observedAt": "2026-10-23T11:13:40.102Z",
+        "httpStatus": 200,
+        "codes": [],
+        "bytes": 141,
+        "bodySha256": "19e21e6d7e5c31fed36aa94ffb2694d656b999d5846c7739e65aaff2a20ddacd",
+        "cfRay": "a4f05050bc2439cf-YYZ"
+      }
+    ],
+    "safeCode": "ARRAY_SHAPE"
+  },
+  "correctiveMetadataRead": {
+    "verified": true,
+    "observedAt": "2026-10-23T11:15:19.808Z",
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "httpStatus": 200,
+    "bytes": 141,
+    "bodySha256": "19e21e6d7e5c31fed36aa94ffb2694d656b999d5846c7739e65aaff2a20ddacd",
+    "metadataIndexes": [
+      {
+        "propertyName": "language",
+        "indexType": "String"
+      }
+    ],
+    "fullMetadataResponseRetained": false,
+    "responsePath": null,
+    "managementGetsThisInvocation": 1,
+    "totalManagementGets": 7,
+    "perRequestTimeoutMs": 15000,
+    "perResponseMaxBytes": 262144,
+    "retries": 0,
+    "refreshes": 0,
+    "servingCalls": 0,
+    "encoderInferences": 0,
+    "indexWrites": 0,
+    "productionReads": 0
+  },
+  "parserFailure": {
+    "originalCode": "ARRAY_SHAPE",
+    "cause": "Local script expected result array; pinned Wrangler uses result.metadataIndexes.",
+    "resourceDrift": false,
+    "evidence": "Original sixth and corrective seventh response are both HTTP 200, 141 bytes and have identical SHA256. Corrective parser verifies language/String.",
+    "responseSha256": "19e21e6d7e5c31fed36aa94ffb2694d656b999d5846c7739e65aaff2a20ddacd",
+    "fullResponseRetained": false,
+    "reason": "Strict whole-envelope safe-content allowlist did not certify retention; safe name/property/type projection is retained."
+  },
+  "operationBudget": {
+    "originalManagementGets": 6,
+    "explicitlyApprovedCorrectiveGets": 1,
+    "totalManagementGets": 7,
+    "perRequestTimeoutMs": 15000,
+    "perResponseMaxBytes": 262144,
+    "retries": 0,
+    "refreshes": 0,
+    "tokenHelper": "token() only"
+  },
+  "boundaries": {
+    "servingCalls": 0,
+    "encoderInferences": 0,
+    "pipelineCalls": 0,
+    "cloudResourceWrites": 0,
+    "indexWrites": 0,
+    "productionReads": 0,
+    "credentialValuesPrinted": false
+  },
+  "evidenceFiles": {
+    "dist/release/staging/dependency-ready-20261023/proof.json": {
+      "bytes": 5041,
+      "sha256": "c1c4ea50a972374756fbf2ecc21474872c199a6880a26a55cc834d539fb867db"
+    },
+    "dist/release/staging/dependency-ready-20261023/requests.jsonl": {
+      "bytes": 4325,
+      "sha256": "0a1faac41673e689a0111a2ea2c81bfaa3a9c95f5fbf180bb2396a028e1d555d"
+    },
+    "dist/release/staging/dependency-ready-20261023/metadata-correction.json": {
+      "bytes": 712,
+      "sha256": "873151cce2ab47b3ce0213890d4a488f32565277f9b33b3c0ec885aa9288c556"
+    }
+  },
+  "limits": [
+    "Readback establishes dependency identities/configuration at observed times; no inference or serving behavior was tested.",
+    "Container health counters are observed management metadata, not a new inference health check.",
+    "No source/model provenance claim is added beyond exact deployed image digest."
+  ]
+}

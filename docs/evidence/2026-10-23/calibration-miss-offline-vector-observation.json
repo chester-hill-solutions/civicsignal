@@ -1,0 +1,21 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-24T01:36:41.857911+00:00",
+  "scope": "Offline calibration miss vector presence only; no query embedding or model call",
+  "calibrationId": "E-2.01-24-fr",
+  "goldId": "acts-fr-198647",
+  "position": 83903,
+  "finite": true,
+  "nonzero": true,
+  "l2": 0.9999998204842463,
+  "indexSha256": "24fc30cfc427d5231c24fce911de198e92b7ada8b429aa4c6341ccb4f0159feb",
+  "vectorStoreSha256FromCompletedBackup": "21dcdd09cdac16cde05a69ee7bf09b0d1abdff5db37636e3438b6e45c4c41666",
+  "limitations": [
+    "Stored vector presence does not attest embedding-model identity, top100 candidate membership, reranker input or causal failure stage.",
+    "No query vector or raw100 candidates were retained in the completed evaluation; rank-versus-candidate cause remains unresolved."
+  ],
+  "privateSourceReceiptSha256": "e0ebd1b2ebe3321ad9c9e3e522ac63012883017993784317811fdd6774457315",
+  "networkRequests": 0,
+  "modelCalls": 0,
+  "servingCalls": 0
+}

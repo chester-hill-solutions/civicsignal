@@ -1,274 +1,61 @@
 /**
- * The statutes corpus, on Postgres.
- *
- * This is the same corpus as the D1 adapter in `adapters.ts`, against the
- * other schema — and it is a separate file rather than a parameterisation of
- * that one, because the D1 adapter is **temporary**: it goes when the Worker
- * does (step 6 of the port), and a file that is on its way out is not worth
- * bending into a shared abstraction.
- *
- * The two schemas differ in more than names:
- *
- * | | D1 | Postgres |
- * |---|---|---|
- * | the table | `statute_sections` | `statute_provisions` |
- * | the instrument | `act` | `instrument` |
- * | in force | an integer | a boolean |
- * | topics | a column | a column — the corpus has none to write yet |
- *
- * The lexical path is the same shape on both: a `LIKE` over the folded
- * `search_text`, with the query folded the same way. Postgres has a full-text
- * index as well (`to_tsvector('english', search_text)`), which is better, but
- * it is stemmed with the *English* configuration and the corpus is bilingual —
- * so the `LIKE` is the path that behaves identically in both languages, and it
- * is the one this uses.
+ * Postgres remains a portability implementation. Storage mapping differs; the
+ * candidate, authority, keyword and cache decision pipeline is shared with the
+ * production Worker. pgvector returns cosine similarity while Vectorize uses
+ * its measured compressed scale, so their fallback thresholds differ.
  */
 import type { RawCorpusItem } from '@chester-hill-solutions/corpus';
 import { STATUTES_CANADA } from './policies';
-import { splitTopics } from './adapters';
-import { likePatterns, resolveLimit, type Corpus, type CorpusContext, type CorpusQuery } from './types';
+import { retrieveStatutesByVector, statuteItems } from './adapters';
+import { resolveLimit, type Corpus, type CorpusContext, type CorpusQuery } from './types';
+import { retrievalTrace } from './retrieval-observation';
+import { loadExactProvisionRows } from './provision-lookup';
 
-/** Runs a LIKE match against a normalised token column. */
-const TOKEN_MATCH = "search_text LIKE ? ESCAPE '\\'";
+/** Historical local-cosine calibration; fresh held-out calibration is still required. */
+export const POSTGRES_VECTOR_FLOOR = 0.81;
 
-/**
- * The token clause, as the D1 adapter builds it.
- *
- * It is here rather than imported because the D1 adapter is on its way out —
- * but the *shape* of the lexical path is identical on both planes, so the two
- * must not drift apart. It is a disjunction, not a conjunction: a query that
- * matches any of its terms matches, and the pattern carries the wildcards
- * already folded the same way the corpus was folded.
- */
-function tokenClause(patterns: string[]): { sql: string; binds: string[] } {
-  if (patterns.length === 0) return { sql: '', binds: [] };
-  return {
-    sql: ` AND (${patterns.map(() => TOKEN_MATCH).join(' OR ')})`,
-    binds: patterns,
-  };
+function normalizedRow(row: Record<string, unknown>): Record<string, unknown> {
+  return { ...row, act: row['instrument'], in_force: row['in_force'] === true || row['in_force'] === 1 ? 1 : 0 };
 }
 
-/** The query, in the shape the adapter needs. */
-async function queryRows<T>(
-  ctx: CorpusContext,
-  sql: string,
-  binds: unknown[],
-): Promise<T[]> {
+const COLUMNS = 'id, corpus_id, instrument, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language';
+
+async function queryRows(ctx: CorpusContext, sql: string, binds: unknown[]): Promise<Record<string, unknown>[]> {
   if (!ctx.db) return [];
-  const stmt = ctx.db.prepare(sql);
-  const result = await stmt.bind(...binds).all<T>();
-  return result.results ?? [];
+  const result = await ctx.db.prepare(sql).bind(...binds).all<Record<string, unknown>>();
+  return (result.results ?? []).map(normalizedRow);
 }
 
-/**
- * The citation path: one provision, resolved exactly.
- *
- * The language filter matters most here, because this is the path that returns
- * a *definitive* answer. An exact lookup that matched both official versions
- * of a provision would hand the caller two rows and let it choose — which is
- * exactly the ambiguity a citation is supposed to remove.
- */
-async function retrieveProvision(
-  query: CorpusQuery,
-  ctx: CorpusContext,
-): Promise<RawCorpusItem[]> {
-  const lang = query.language
-    ? { sql: ' AND language = ?', binds: [query.language.toLowerCase()] }
-    : { sql: '', binds: [] as string[] };
-
-  const rows = await queryRows<Record<string, unknown>>(
-    ctx,
-    `SELECT id, corpus_id, instrument, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
-       FROM statute_provisions
-      WHERE instrument = ? AND section = ?${lang.sql}
-      ORDER BY in_force DESC, id
-      LIMIT ?`,
-    [query.act!, query.section!, ...lang.binds, String(resolveLimit(query.limit))],
-  );
-
-  return rows.map((row) => ({
-    corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),
-    kind: 'statute' as const,
-    id: String(row['id']),
-    title: `${String(row['instrument'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
-    body: row['text'] === null || row['text'] === undefined ? undefined : String(row['text']),
-    citationUrl: String(row['source_url']),
-    source: STATUTES_CANADA.publisher,
-    jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
-    language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
-    topics: splitTopics(row['topics']),
-    extra: {
-      act: String(row['instrument']),
-      citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
-      section: String(row['section']),
-      status: row['status'] === null || row['status'] === undefined ? undefined : String(row['status']),
-      inForce: row['in_force'] === true || row['in_force'] === 1,
-    },
-  }));
+async function rowsById(ctx: CorpusContext, ids: string[]): Promise<Record<string, unknown>[]> {
+  if (!ids.length) return [];
+  return queryRows(ctx, `SELECT ${COLUMNS} FROM statute_provisions WHERE id IN (${ids.map(() => '?').join(', ')})`, ids);
 }
 
-/**
- * Search by meaning, when the deployment has an index and a way to embed.
- *
- * Returns `null` when the deployment has neither an index nor an embedder,
- * which is the signal to fall back to the lexical path. It returns an empty
- * array when the search ran and found nothing, and the caller falls back
- * anyway: "the corpus has nothing about that" is a strong claim, and it
- * should be a claim about both searches rather than one.
- *
- * The language is a filter on the index, not a filter afterwards. The two
- * official versions of a provision are separate rows, so a French question
- * that competes with the English rows for a place in the top k gets half the
- * top k back in the wrong language.
- */
-async function retrieveByVector(
-  query: CorpusQuery,
-  ctx: CorpusContext,
-): Promise<RawCorpusItem[] | null> {
-  if (!ctx.vector || !ctx.embedQuery) return null;
-
-  const question = [query.topic, ...(query.keywords ?? [])].filter(Boolean).join(' ');
-  if (!question.trim()) return null;
-
-  const vector = await ctx.embedQuery(question);
-  const filter = query.language ? { language: query.language.toLowerCase() } : undefined;
-  const matches = await ctx.vector.query(vector, resolveLimit(query.limit), filter);
-  if (matches.length === 0) return [];
-
-  // The rows come from the database, in the order the index ranked them, and a
-  // row the index names but the database does not have is a row that has been
-  // removed since the index was written.
-  const rows = await rowsById(
-    ctx,
-    matches.map((m) => m.id),
-  );
-  const byId = new Map(rows.map((row) => [String(row['id']), row]));
-  return matches
-    .map((match) => byId.get(match.id))
-    .filter((row): row is Record<string, unknown> => row !== undefined)
-    .map((row) => ({
-      corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),
-      kind: 'statute' as const,
-      id: String(row['id']),
-      title: `${String(row['instrument'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
-      body: row['text'] === null || row['text'] === undefined ? undefined : String(row['text']),
-      citationUrl: String(row['source_url']),
-      source: STATUTES_CANADA.publisher,
-      jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
-      language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
-      topics: splitTopics(row['topics']),
-      extra: {
-        act: String(row['instrument']),
-        citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
-        section: String(row['section']),
-        status: row['status'] === null || row['status'] === undefined ? undefined : String(row['status']),
-        inForce: row['in_force'] === true || row['in_force'] === 1,
-      },
-    }));
-}
-
-/**
- * Fetch rows by id, keeping the order they were asked for.
- *
- * Postgres takes as many bound parameters as a statement can carry, so there
- * is no chunking here — the chunking on the D1 plane was D1's limit, not the
- * corpus's.
- */
-async function rowsById(
-  ctx: CorpusContext,
-  ids: string[],
-): Promise<Record<string, unknown>[]> {
-  if (ids.length === 0 || !ctx.db) return [];
-  const placeholders = ids.map(() => '?').join(', ');
-  const stmt = ctx.db.prepare(
-    `SELECT id, corpus_id, instrument, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
-       FROM statute_provisions
-      WHERE id IN (${placeholders})`,
-  );
-  const result = await stmt.bind(...ids).all<Record<string, unknown>>();
-  return result.results ?? [];
+async function retrieveProvision(query: CorpusQuery, ctx: CorpusContext): Promise<RawCorpusItem[]> {
+  const language = query.language ? ' AND language = ?' : '';
+  const rows = await loadExactProvisionRows(query.section!, (canonical) => queryRows(ctx, `SELECT ${COLUMNS} FROM statute_provisions
+    WHERE instrument = ? AND section = ?${language}${canonical} ORDER BY in_force DESC, id LIMIT ?`,
+    [query.act!, query.section!, ...(query.language ? [query.language.toLowerCase()] : []), resolveLimit(query.limit)]));
+  return statuteItems(rows, { limit: query.limit });
 }
 
 export const postgresStatutesCorpus: Corpus = {
   id: STATUTES_CANADA.id,
   policy: STATUTES_CANADA,
-  supports(query: CorpusQuery): boolean {
-    return Boolean(query.topic || (query.keywords && query.keywords.length > 0));
+  supports(query) {
+    return Boolean((query.act && query.section) || query.topic || query.keywords?.length);
   },
-  async retrieve(query: CorpusQuery, ctx: CorpusContext): Promise<RawCorpusItem[]> {
-    // A citation is an exact lookup, and it takes its own path: the
-    // text-search path needs keywords or a topic and returns nothing without
-    // them — which is right for a search and wrong for a citation, because a
-    // citation carries neither. It also does not filter on in force, because
-    // "it was repealed in 2010" is a better answer than nothing.
+  async retrieve(query: CorpusQuery, ctx: CorpusContext) {
     if (query.act && query.section) {
-      return retrieveProvision(query, ctx);
+      const trace = await retrievalTrace(ctx, query, 'postgres-cosine', 'exact', null);
+      try { return trace.result(await trace.provider('rows', () => retrieveProvision(query, ctx))); }
+      catch (error) { trace.observation.decision = 'error'; throw error; }
+      finally { trace.emit(); }
     }
-
-    // The vector arm, when the deployment has one.
-    //
-    // This is the arm the product was measured on and the one it should use:
-    // over 36 questions, vector search found 14 of 18 ordinary-language
-    // questions against the keyword baseline's 3, and its MRR was 0.617 against
-    // 0.310. The lexical path below is the fallback — right for a small
-    // corpus, and a poor answer for a quarter of a million provisions.
-    //
-    // On this plane the arm is *cheaper* than it was: the rows and their
-    // vectors are in one table, so the neighbour and the provision it belongs
-    // to are one query rather than two against two stores that can disagree.
-    const vectorItems = await retrieveByVector(query, ctx);
-    if (vectorItems && vectorItems.length > 0) return vectorItems;
-
-    const patterns = likePatterns(query);
-    if (patterns.length === 0) return [];
-    const { sql: tok, binds: tokBinds } = tokenClause(patterns);
-    const jur = query.jurisdiction
-      ? { sql: ' AND jurisdiction = ?', binds: [query.jurisdiction.toUpperCase()] }
-      : { sql: '', binds: [] as string[] };
-    // The language is a lens the caller chooses, exactly like the jurisdiction:
-    // the two official versions of a provision are separate rows, and without
-    // the filter one provision is two answers.
-    const lang = query.language
-      ? { sql: ' AND language = ?', binds: [query.language.toLowerCase()] }
-      : { sql: '', binds: [] as string[] };
-    const act = query.act ? { sql: ' AND instrument = ?', binds: [query.act] } : { sql: '', binds: [] as string[] };
-    // A citation lookup is not a topic search: it has to find the provision
-    // whether or not it is in force, because "it was repealed in 2010" is a
-    // better answer than nothing.
-    const liveOnly = query.act ? '' : ' AND in_force';
-
-    const rows = await queryRows<Record<string, unknown>>(
-      ctx,
-      `SELECT id, corpus_id, instrument, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
-         FROM statute_provisions
-        WHERE 1 = 1${liveOnly}${tok}${jur.sql}${lang.sql}${act.sql}
-        ORDER BY in_force DESC, instrument, section
-        LIMIT ?`,
-      [...tokBinds, ...jur.binds, ...lang.binds, ...act.binds, String(resolveLimit(query.limit))],
-    );
-
-    return rows.map((row) => ({
-      corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),
-      kind: 'statute' as const,
-      id: String(row['id']),
-      title: `${String(row['instrument'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
-      body: row['text'] === null || row['text'] === undefined ? undefined : String(row['text']),
-      citationUrl: String(row['source_url']),
-      source: STATUTES_CANADA.publisher,
-      jurisdiction: row['jurisdiction'] === null ? undefined : String(row['jurisdiction']),
-      language: row['language'] === null || row['language'] === undefined ? undefined : String(row['language']),
-      // The column exists on both planes and holds the same thing on both: the
-      // corpus has no topic classifier yet, so a topic is a promise. The brief's
-      // distribution over topics is therefore empty on both planes, which is a
-      // behaviour and not a port's gap.
-      topics: splitTopics(row['topics']),
-      extra: {
-        act: String(row['instrument']),
-        citation: row['citation'] === null || row['citation'] === undefined ? undefined : String(row['citation']),
-        section: String(row['section']),
-        status: row['status'] === null || row['status'] === undefined ? undefined : String(row['status']),
-        inForce: row['in_force'] === true || row['in_force'] === 1,
-      },
-    }));
+    // An authority refusal or a weak nearest neighbour must not be turned into
+    // an answer by a second lexical search. A missing backend is unavailable.
+    return (await retrieveStatutesByVector(query, ctx, {
+      id: 'postgres-cosine', floor: POSTGRES_VECTOR_FLOOR, loadRows: rowsById,
+    })) ?? [];
   },
 };

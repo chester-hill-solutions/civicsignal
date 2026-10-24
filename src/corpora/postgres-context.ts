@@ -11,7 +11,7 @@
  * small, and the port is the wiring, not the retrieval.
  */
 import postgres from 'postgres';
-import type { CorpusContext } from '@chester-hill-solutions/corpus';
+import type { CorpusContext } from './types';
 import type { SqlRunner } from '@chester-hill-solutions/api-billing/postgres';
 import { postgresCorpusDatabase } from './postgres-driver';
 import { postgresVectorIndex } from './postgres-vector';
@@ -22,11 +22,14 @@ import { postgresVectorIndex } from './postgres-vector';
  * The house's `SqlRunner` wants a promise, so this is the one place the two
  * shapes meet.
  */
-export function sqlRunner(sql: postgres.Sql): SqlRunner {
+export function sqlRunner(sql: postgres.Sql | postgres.TransactionSql): SqlRunner {
   return {
     unsafe(query: string, params?: unknown[]): Promise<unknown[]> {
       return Promise.resolve(sql.unsafe(query, params as postgres.SerializableParameter[]));
     },
+    ...('begin' in sql ? { async transaction<T>(work: (transaction: SqlRunner) => Promise<T>): Promise<T> {
+      return await sql.begin((transaction) => work(sqlRunner(transaction))) as T;
+    } } : {}),
   };
 }
 

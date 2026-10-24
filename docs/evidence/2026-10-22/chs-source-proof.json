@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-23T00:58:35.372Z",
+  "scope": "Local source reconstruction, isolated five-package builds and file comparison; no remote deployment, publishing, production measurement or source-worktree writes.",
+  "provenance": {
+    "source": "chester-hill-solutions/chester-hill-solutions",
+    "revision": "9abf87ed3f47c83d1ddf9547d28bac979cd0c478",
+    "baseRevision": "853ffc5a606e5526cb64cf453238180223a39d12",
+    "sourceTree": "772354c9f4c3c519e84bfd46e94183a0eea84f1d",
+    "sourcePatch": {
+      "path": "vendor/patches/api-billing-0.1.1.patch",
+      "sha256": "833e7503f0a94f23329c4f208cc89440dcd2b77a515a309f64e03a27d2a439dd"
+    }
+  },
+  "originalSource": {
+    "path": "/Users/ladmin/WebProjects/chs-corpus",
+    "targetCommitAbsent": true,
+    "before": {
+      "revision": "853ffc5a606e5526cb64cf453238180223a39d12",
+      "clean": true
+    },
+    "after": {
+      "revision": "853ffc5a606e5526cb64cf453238180223a39d12",
+      "clean": true
+    },
+    "sourceWorktreeUnchanged": true,
+    "preservationEvidence": "Original checkout HEAD and clean status matched before and after; focused regression also preserves a deliberately dirty source worktree and verifies no target objects were imported into it."
+  },
+  "reconstruction": {
+    "command": "CHS_REPO=/Users/ladmin/WebProjects/chs-corpus bun scripts/vendor-corpus.ts --verify-source",
+    "status": "passed",
+    "method": "Shallow local base fetch into a temporary Git checkout; hash/header validation; git apply --check --index; git apply --index; git write-tree identity verification.",
+    "reconstructedTree": "772354c9f4c3c519e84bfd46e94183a0eea84f1d",
+    "preservesGitlinks": true,
+    "vendorChanged": false
+  },
+  "isolatedBuild": {
+    "status": "passed",
+    "temporaryDirectory": "/private/tmp/civicsignal-chs-refresh-proof-sX5TyH",
+    "install": {
+      "command": [
+        "bun",
+        "install",
+        "--frozen-lockfile",
+        "--ignore-scripts",
+        "--filter",
+        "@chester-hill-solutions/app-origin",
+        "--filter",
+        "@chester-hill-solutions/auth",
+        "--filter",
+        "@chester-hill-solutions/auth-d1",
+        "--filter",
+        "@chester-hill-solutions/api-billing",
+        "--filter",
+        "@chester-hill-solutions/corpus"
+      ],
+      "status": "passed",
+      "dependencyAccess": "Public package downloads were allowed for the isolated install; no registry publication occurred."
+    },
+    "packages": [
+      {
+        "name": "app-origin",
+        "version": "0.1.0",
+        "command": "bun run --cwd packages/app-origin build",
+        "status": "passed"
+      },
+      {
+        "name": "auth",
+        "version": "0.6.0",
+        "command": "bun run --cwd packages/auth build",
+        "status": "passed"
+      },
+      {
+        "name": "auth-d1",
+        "version": "0.9.0",
+        "command": "bun run --cwd packages/auth-d1 build",
+        "status": "passed"
+      },
+      {
+        "name": "api-billing",
+        "version": "0.1.1",
+        "command": "bun run --cwd packages/api-billing build",
+        "status": "passed"
+      },
+      {
+        "name": "corpus",
+        "version": "0.1.0",
+        "command": "bun run --cwd packages/corpus build",
+        "status": "passed"
+      }
+    ],
+    "runtimeAndMetadataComparison": {
+      "filesChecked": 117,
+      "mismatches": [],
+      "status": "passed",
+      "normalization": "Package metadata uses JavaScript JSON.stringify with two spaces, a final newline and literal Unicode; scripts/devDependencies removed; selected workspace dependencies remain workspace:*."
+    },
+    "logs": [
+      "/private/tmp/civicsignal-chs-refresh-proof-install.log",
+      "/private/tmp/civicsignal-chs-refresh-proof-build.log"
+    ]
+  },
+  "focusedChecks": [
+    {
+      "command": "bun x --no-install vitest run test/vendor-source.test.ts test/coverage.test.ts",
+      "status": "passed",
+      "tests": 21,
+      "files": 2,
+      "sourceAndMetadataTests": 8,
+      "coverageTests": 13
+    },
+    {
+      "command": "bun x --no-install tsc --noEmit --strict --target ES2022 --module ESNext --moduleResolution bundler --types bun-types,node --skipLibCheck scripts/vendor-corpus.ts scripts/lib/vendor-source.ts test/vendor-source.test.ts",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "upstreamRootGates": {
+    "status": "not verified green",
+    "context": "Earlier CHS isolated-clone root checks used CivicSignal dependencies rather than a complete CHS workspace install. These environment-limited attempts do not establish whether full CHS CI passes or fails at the pinned source.",
+    "attempts": [
+      {
+        "command": "bun run build",
+        "exitCode": 2
+      },
+      {
+        "command": "bun run typecheck",
+        "exitCode": 2
+      },
+      {
+        "command": "bun run test",
+        "exitCode": 1
+      }
+    ],
+    "stoppingFailure": "product-catalog/src/discovery.ts could not resolve workspace @chester-hill-solutions/seeded-rng.",
+    "successfulTestsBeforeStop": {
+      "corpus": 23,
+      "apiBilling": 46,
+      "scripts": 151,
+      "seededRng": 11
+    },
+    "logs": [
+      "/private/tmp/chs-api-billing-root-build.log",
+      "/private/tmp/chs-api-billing-root-typecheck.log",
+      "/private/tmp/chs-api-billing-root-test.log"
+    ]
+  },
+  "limitations": [
+    "Source patch reconstructs the pinned tree locally; the isolated commit has not been pushed or published upstream.",
+    "The focused source proof and five-package builds do not replace CivicSignal final validation/build/clean-checkout gates or full CHS CI.",
+    "No production correctness, freshness, throughput or billing availability conclusion follows from these local checks."
+  ]
+}

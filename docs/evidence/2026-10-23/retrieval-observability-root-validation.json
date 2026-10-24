@@ -1,0 +1,110 @@
+{
+  "format": 1,
+  "at": "2026-10-24T00:57:12.899058+00:00",
+  "passed": true,
+  "scope": [
+    "Cache hit means a valid cached answer order was selected, even if D1/R2 load fails. No cached mode/score is invented on failure. Missing rows keep stale fresh-search behavior.",
+    "Benchmark retains original safe warmup observations after the same provenance validator as measured requests; failures/wrong provenance remain failures.",
+    "No extra requests; synthetic actual entry fixtures prove44 attempts for2levels*(2warmups+20measured). No model/threshold/authority/floor/cache-key/scope tuning."
+  ],
+  "sourcePins": {
+    "src/corpora/adapters.ts": {
+      "bytes": 27682,
+      "sha256": "e35c9570c71142afa499196836ee434869223433d2b40ef1f5c0cda695e10d00"
+    },
+    "scripts/bench-v1.ts": {
+      "bytes": 5390,
+      "sha256": "3dd569634220d03e8df2d8b5bde6fd43ac85c74ff5ce879fd800bd70fadb8cbe"
+    },
+    "test/retrieval-observation.test.ts": {
+      "bytes": 9331,
+      "sha256": "6e242dd1cefc37855256c324baf9041951129f3d980fb496563f32220e4f8de8"
+    },
+    "test/benchmark-observations.test.ts": {
+      "bytes": 4623,
+      "sha256": "fdeca4233f758ce464ade01b7485d6f2c540bbf75d6035cd87e35f961ef548da"
+    }
+  },
+  "focusedTests": 54,
+  "files": 4,
+  "compilerProjects": 3,
+  "workerDryRunBuilds": 1,
+  "credentialsSupplied": false,
+  "deployed": false,
+  "existingDeployment": "02dd9821-6bac-481d-89a4-5dfdf977bc6e",
+  "rootChecks": [
+    {
+      "exitCode": 0,
+      "timedOut": false,
+      "logBoundExceeded": false,
+      "localFailure": false,
+      "localFailureCode": null,
+      "maxLogBytes": 2097152,
+      "childPid": 63714,
+      "ownedProcessSettled": true,
+      "name": "focused",
+      "logSha256": "9f93568ed862c0bd1550c23858ec9d3d4053d14773315fd03bf0da362370b420",
+      "passed": true
+    },
+    {
+      "exitCode": 0,
+      "timedOut": false,
+      "logBoundExceeded": false,
+      "localFailure": false,
+      "localFailureCode": null,
+      "maxLogBytes": 2097152,
+      "childPid": 63735,
+      "ownedProcessSettled": true,
+      "name": "typecheck-worker",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "passed": true
+    },
+    {
+      "exitCode": 0,
+      "timedOut": false,
+      "logBoundExceeded": false,
+      "localFailure": false,
+      "localFailureCode": null,
+      "maxLogBytes": 2097152,
+      "childPid": 63741,
+      "ownedProcessSettled": true,
+      "name": "typecheck-bun",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "passed": true
+    },
+    {
+      "exitCode": 0,
+      "timedOut": false,
+      "logBoundExceeded": false,
+      "localFailure": false,
+      "localFailureCode": null,
+      "maxLogBytes": 2097152,
+      "childPid": 63752,
+      "ownedProcessSettled": true,
+      "name": "typecheck-tooling",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "passed": true
+    },
+    {
+      "exitCode": 0,
+      "timedOut": false,
+      "logBoundExceeded": false,
+      "localFailure": false,
+      "localFailureCode": null,
+      "maxLogBytes": 2097152,
+      "childPid": 63856,
+      "ownedProcessSettled": true,
+      "name": "build-api",
+      "logSha256": "ee0e9834b0822dd5f90da80cdd7f74cb20a236c550c0c2b9579adcb4b5a285a9",
+      "passed": true
+    }
+  ],
+  "rootReceiptSha256": "816b4c196dfaab1a9adc92c412816acd5e813a7fca002901645015a20a3faa8d",
+  "preChangeFullGate": "release-local-gates-20261024.json",
+  "limits": [
+    "Actual top100 candidates and Jev raw authority/relevance values were not retained.",
+    "Serial rows error cannot be separated into D1/transientR2/reference/hash/fingerprint/staticbytecap from old telemetry.",
+    "Gold nonzero vectors do not authenticate legacy full embedding inputs/model.",
+    "No hosted replay, policy tuning, new model request or retrospective modification of earlier reports."
+  ]
+}

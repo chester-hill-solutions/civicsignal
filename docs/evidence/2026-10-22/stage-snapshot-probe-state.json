@@ -1,0 +1,269 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T06:07:35.820555+00:00",
+  "status": "The 06:00 UTC calendar produced no observed scheduled trace, diagnostic receipt or Workflow instance during the guarded window; watchdog cleanup and independent schedules[] readback passed. Hosted calendar publication remains unverified.",
+  "hostedProbe": {
+    "format": 1,
+    "recordedAt": "2026-10-23T04:14:12.440Z",
+    "status": "probe_health_and_trace_passed_calendar_not_armed",
+    "sourceCommit": "c25dcc197a5272b825fad84d2befbc316b8d5eec",
+    "configSha256": "70c964847ed91a852a01987c02746e7df06f0a4612809e06889c51e6d6fa5c14",
+    "deployment": {
+      "mode": "after",
+      "observedAt": "2026-10-23T04:11:12.664Z",
+      "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+      "worker": "civicsignal-v1-stage-snapshot-20261022",
+      "version": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+      "etag": "af019cdc08abf1cc03d9931829f23b59fed4c38e2792ba25d712f76b7db99a1d",
+      "handlers": [
+        "fetch",
+        "scheduled"
+      ],
+      "workflowId": "f69bdbef-2554-44e1-b683-52eed805acc6",
+      "schedules": [],
+      "instances": 0,
+      "instanceHttpStatus": 404,
+      "source": {
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "observedAt": "2026-10-23T04:11:12.664Z"
+      },
+      "controlsPassed": true
+    },
+    "health": {
+      "url": "https://civicsignal-v1-stage-snapshot-20261022.chester-hill-solutions.workers.dev/health",
+      "startedAt": "2026-10-23T04:12:20.829Z",
+      "completedAt": "2026-10-23T04:12:21.020Z",
+      "attempts": 1,
+      "status": 200,
+      "cfRay": "a4ede726fcf1375a-YYZ",
+      "date": "Fri, 23 Oct 2026 04:12:21 GMT",
+      "bytes": 184,
+      "truncated": false,
+      "sha256": "177903309c6a41fc749f6fe73817ba1c5b86ef840d6b60f89d9dea65fd17d84d",
+      "marker": {
+        "marker": "snapshot-staging-probe-v1",
+        "stageId": "civicsignal-v1-stage-snapshot-20261022",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2"
+      },
+      "exactExpectedMarker": true
+    },
+    "trace": {
+      "observedAt": "2026-10-23T04:14:12.440Z",
+      "source": "actual unfiltered Wrangler 4.151.3 tail",
+      "scriptName": "civicsignal-v1-stage-snapshot-20261022",
+      "scriptVersion": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+      "outcome": "ok",
+      "eventTimestamp": 1792728741017,
+      "event": {
+        "method": "GET",
+        "pathname": "/health",
+        "responseStatus": 200
+      },
+      "marker": {
+        "marker": "snapshot-staging-probe-v1",
+        "phase": "health"
+      },
+      "exceptions": [],
+      "truncated": false,
+      "wallTimeMs": 1,
+      "cpuTimeMs": 0,
+      "headersRetained": false
+    },
+    "schedules": {
+      "observedAt": "2026-10-23T04:13:04.692Z",
+      "httpStatus": 200,
+      "schedules": []
+    },
+    "remoteManifestBefore": "specified key does not exist",
+    "remoteManifestAfter": "specified key does not exist",
+    "noCalendarOrManualTrigger": true,
+    "noProviderRootCauseClaim": true
+  },
+  "calendarArmingAborted": {
+    "recordedAt": "2026-10-23T04:25:25.473Z",
+    "status": "calendar_not_armed_preflight_deadline_refusal",
+    "cron": "0 5 23 10 *",
+    "scheduledAt": "2026-10-23T05:00:00Z",
+    "armDeadline": "2026-10-23T04:25:00Z",
+    "armingCommandMinimumReadbackBudgetMs": 20000,
+    "armingCommandSpawned": false,
+    "armingCommandProviderRequests": 0,
+    "reason": "Arming preflight reached the command with less than20seconds remaining for confirmed control-plane readback",
+    "subsequentIndependentReadback": {
+      "observedAt": "2026-10-23T04:25:08.107Z",
+      "httpStatus": 200,
+      "schedules": []
+    },
+    "guardSessions": {
+      "primaryV2": 24081,
+      "backup": 96419
+    },
+    "alternateCalendarOrRetry": false
+  },
+  "originalGuardsCleanup": {
+    "observedAt": "2026-10-23T04:29:57.475Z",
+    "httpStatus": 200,
+    "schedules": [],
+    "ownedStatusSockets": [
+      {
+        "port": 51871,
+        "closed": true
+      },
+      {
+        "port": 51872,
+        "closed": true
+      }
+    ],
+    "guards": [
+      {
+        "pid": 22682,
+        "session": 24081,
+        "exitCode": 0,
+        "removal": {
+          "reason": "operator-signal",
+          "observedAt": "2026-10-23T04:28:10.100Z",
+          "commandExitCode": 0,
+          "getStatus": 200,
+          "schedules": []
+        }
+      },
+      {
+        "pid": 77507,
+        "session": 96419,
+        "exitCode": 0,
+        "removal": {
+          "reason": "operator-signal",
+          "observedAt": "2026-10-23T04:28:07.370Z",
+          "putStatus": 200,
+          "getStatus": 200,
+          "schedules": []
+        }
+      }
+    ],
+    "calendarNeverArmed": true
+  },
+  "nextCandidate": {
+    "cron": "0 6 23 10 *",
+    "dueAt": "2026-10-23T06:00:00Z",
+    "armBy": "2026-10-23T05:25:00Z",
+    "watchdogAt": "2026-10-23T06:05:00Z",
+    "status": "Armed once at 05:12:13.533Z and singleton confirmed at 05:12:16.712Z; no dispatch observed before 06:05 watchdog removal; no automatic retry.",
+    "preparedStatus": "Prepared locally only; no guard startup or schedule arm; real renewal receipt and parent review required"
+  },
+  "servingRequests": 0,
+  "documentEmbeddingSubmissions": 0,
+  "productionChanges": false,
+  "railwayServiceChanges": false,
+  "statusHistory": [
+    {
+      "recordedAt": "2026-10-23T04:32:38.836283+00:00",
+      "status": "Hosted diagnostic health/trace passed; scheduled publication remains unverified; no schedule enabled"
+    },
+    {
+      "recordedAt": "2026-10-23T05:14:18.535Z",
+      "status": "One isolated06:00UTC calendar armed and confirmed; both guards ready afterCLI; publication remains pending"
+    }
+  ],
+  "calendar0600ArmingReceipt": "stage-snapshot-0600-arming.json",
+  "calendar0600Arming": {
+    "format": 1,
+    "recordedAt": "2026-10-23T05:14:18.535Z",
+    "status": "one_calendar_armed_publication_pending",
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-snapshot-20261022",
+    "workflow": {
+      "name": "civicsignal-v1-stage-snapshot-20261022",
+      "id": "f69bdbef-2554-44e1-b683-52eed805acc6",
+      "className": "CorpusSnapshot",
+      "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656"
+    },
+    "r2Bucket": "civicsignal-v1-stage-corpus-20261022",
+    "source": {
+      "commit": "0507465393c224c0491fc8c17c88340217acc656",
+      "date": "2026-10-15",
+      "parser": "statutes-v2"
+    },
+    "activeWorkerVersion": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+    "configSha256": "9a1afc401642884fd01fa2358fd596268e38405457a981751d38618e7382743a",
+    "driverSha256": "89920a311c479362919979b756b31c66e904be4b07ffae9e650381da0addcbc2",
+    "arming": {
+      "armedAt": "2026-10-23T05:12:13.533Z",
+      "confirmedAt": "2026-10-23T05:12:16.712Z",
+      "configSha": "9a1afc401642884fd01fa2358fd596268e38405457a981751d38618e7382743a",
+      "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+      "worker": "civicsignal-v1-stage-snapshot-20261022",
+      "commandExitCode": 0,
+      "schedules": [
+        {
+          "cron": "0 6 23 10 *",
+          "created_on": "2026-10-23T05:12:15.18495Z",
+          "modified_on": "2026-10-23T05:12:15.18495Z"
+        }
+      ],
+      "due": "2026-10-23T06:00:00.000Z",
+      "afterStates": [
+        {
+          "guard": "primary",
+          "pid": 52404,
+          "phase": "ready",
+          "ready": true,
+          "removed": false,
+          "observedAt": "2026-10-23T05:12:16.713Z",
+          "lastObservationAt": "2026-10-23T05:11:48.680Z",
+          "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+          "worker": "civicsignal-v1-stage-snapshot-20261022",
+          "cron": "0 6 23 10 *",
+          "scheduledAt": "2026-10-23T06:00:00.000Z",
+          "tokenExpiresAt": "2026-10-23T06:08:42.390Z"
+        },
+        {
+          "guard": "backup",
+          "pid": 52407,
+          "phase": "ready",
+          "ready": true,
+          "removed": false,
+          "observedAt": "2026-10-23T05:12:16.713Z",
+          "lastObservationAt": "2026-10-23T05:12:07.585Z",
+          "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+          "worker": "civicsignal-v1-stage-snapshot-20261022",
+          "cron": "0 6 23 10 *",
+          "scheduledAt": "2026-10-23T06:00:00.000Z",
+          "tokenExpiresAt": "2026-10-23T06:08:42.390Z"
+        }
+      ]
+    },
+    "guardSessions": {
+      "primary": 29573,
+      "backup": 68982
+    },
+    "watchdogAt": "2026-10-23T06:05:00.000Z",
+    "sourceCheckAt": "2026-10-23T05:58:30.000Z",
+    "scheduledHandlerCompletionIsWorkflowCompletion": false,
+    "fullHostedParityVerified": false,
+    "productionChanges": false
+  },
+  "calendar0600OutcomeReceipt": "stage-snapshot-0600-outcome.json",
+  "calendar0600Outcome": {
+    "recordedAt": "2026-10-23T06:07:35.820555+00:00",
+    "status": "calendar_observation_window_closed_without_observed_dispatch",
+    "sourceChecksPassedAt": "2026-10-23T05:58:30.468Z",
+    "backupRemovalConfirmedAt": "2026-10-23T06:05:00.776Z",
+    "primaryRemovalConfirmedAt": "2026-10-23T06:05:05.757Z",
+    "independentSchedulesEmptyAt": "2026-10-23T06:06:07.731Z",
+    "instanceHttpStatus": 404,
+    "instanceErrorCodes": [
+      10400
+    ],
+    "diagnosticReceiptHttpStatuses": {
+      "entered": 404,
+      "completed": 404,
+      "failed": 404
+    },
+    "ownedGuardsStopped": true,
+    "noProviderRootCauseClaim": true,
+    "calendarGateMet": false
+  }
+}

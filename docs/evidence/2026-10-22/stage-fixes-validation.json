@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-10-23T02:34:23.846086+00:00",
+  "sourceFiles": {
+    "services/restore/worker.ts": "ce1321684bbc05478c426551969adfd352489ab14d5bd243cc760eed5b42e51e",
+    "services/restore/fresh-schema.ts": "9f6e24cb56ea763cc1131012ba7c579b09e6e160d2c12bf07811f3e7d21e1f8b",
+    "scripts/lib/stage-vector-restore.ts": "727db8ac5f77876e0c2d6028417461bb3417fa7ff53316fa90924854d375000f",
+    "scripts/restore-stage-vectors.ts": "24c22d38caf4e20265f34c4491bb9ba7461cd80e4f14f63f6fd8f85fd4e16a5c",
+    "test/restore-fresh-schema.test.ts": "d1c4061cb5a400727be7d10de206fb27ab3234428f7011388eead5b70e36ca71",
+    "test/staging-text-restore.test.ts": "4afa0116f43a849e5caa1f295c1c44426a2c7f30ba042b8f1bff1cd8321a1a11",
+    "test/stage-vector-restore.test.ts": "621b5d9dcb913b84ed01ca8d2a9d3065ddcf96d918aac6928b14700fdf27c295"
+  },
+  "validation": {
+    "command": "bun run validate",
+    "exitCode": 0,
+    "testFiles": 69,
+    "testsPassed": 715,
+    "compilerProjects": 4,
+    "vendorFilesChecked": 117,
+    "workerdTestsEnabled": true,
+    "runtimeAndInvariantsPassed": true
+  },
+  "build": {
+    "command": "bun run build",
+    "exitCode": 0,
+    "workerDryRuns": 5
+  },
+  "logs": {
+    "/private/tmp/civicsignal-stage-fixes-validate.log": "cfd08e739e04b0d0b13b265545627a55cb2fb83ae04225bece4a6e4ad069ad93",
+    "/private/tmp/civicsignal-stage-fixes-build.log": "98cb7250db7fb39494936607cb01b9cb8bba6cfd1132277082ed6f52674f3cec"
+  },
+  "limitations": [
+    "Local checks after hosted setup fixes; Linux rerun follows commit",
+    "No completed hosted restore, snapshot publication or quality result claimed"
+  ]
+}

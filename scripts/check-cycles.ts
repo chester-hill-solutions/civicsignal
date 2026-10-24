@@ -40,6 +40,7 @@ import { join } from 'node:path';
 import {
   embeddableText,
   type ChangeFeedEntry,
+  type CorpusBatch,
   type CorpusStore,
   type PipelineRow,
   type RemovedRow,
@@ -50,6 +51,7 @@ import { runSnapshotPipeline } from '../src/ingest/snapshot-pipeline';
 import { GitHubCorpusSource } from '../src/ingest/source';
 import { SnapshotReader, type SnapshotBucket } from '../src/ingest/snapshot-source';
 import { fingerprint, fingerprintsOf } from '../src/ingest/reconcile';
+import type { PipelineRun, PipelineState } from '../src/ingest/reconcile';
 import { parseSnapshotIndex } from '../src/ingest/snapshot-diff';
 import { FileSnapshotBucket } from './lib/file-snapshot';
 
@@ -88,12 +90,39 @@ class ParityStore implements CorpusStore {
   readonly removed: RemovedRow[] = [];
   readonly changes: ChangeFeedEntry[] = [];
   readonly runs: unknown[] = [];
-  state: Record<string, unknown> | null = null;
+  state: PipelineState | null = null;
 
   constructor(
     private readonly hashes: Map<string, string>,
     private readonly before: SnapshotReader,
   ) {}
+
+  async recoverPendingWrites(): Promise<void> {}
+
+  async applyBatch(batch: CorpusBatch): Promise<void> {
+    const previousHashes = new Map(this.hashes);
+    const previousWritten = new Map(this.written);
+    const removedCount = this.removed.length;
+    const changeCount = this.changes.length;
+    try {
+      await this.upsert(batch.upserts);
+      const removed = await this.remove(batch.removedIds.filter((id) => this.hashes.has(id)));
+      await this.recordChanges([...batch.changes, ...removed.map((row): ChangeFeedEntry => ({
+        corpusId: batch.corpusId, change: 'removed', rowId: row.id,
+        instrument: row.instrument, citation: row.citation, section: row.section,
+        heading: row.heading, status: row.status, summary: row.heading,
+        sourceUrl: row.sourceUrl, occurredAt: batch.occurredAt,
+      }))]);
+    } catch (error) {
+      this.hashes.clear();
+      for (const [id, hash] of previousHashes) this.hashes.set(id, hash);
+      this.written.clear();
+      for (const [id, row] of previousWritten) this.written.set(id, row);
+      this.removed.length = removedCount;
+      this.changes.length = changeCount;
+      throw error;
+    }
+  }
 
   async fingerprints(): Promise<Map<string, string>> {
     return new Map(this.hashes);
@@ -135,11 +164,16 @@ class ParityStore implements CorpusStore {
     this.runs.push(run);
   }
 
+  async finishRun(run: PipelineRun, state?: PipelineState): Promise<void> {
+    this.runs.push(run);
+    if (state) this.state = state;
+  }
+
   async recordChanges(changes: ChangeFeedEntry[]): Promise<void> {
     this.changes.push(...changes);
   }
 
-  async setState(state: Record<string, unknown>): Promise<void> {
+  async setState(state: PipelineState): Promise<void> {
     this.state = state;
   }
 }
@@ -161,14 +195,13 @@ function recordingEncoder() {
 /** A bucket that counts the requests made through it. */
 function countingBucket(inner: SnapshotBucket): { bucket: SnapshotBucket; reads: () => number } {
   let reads = 0;
-  const wrap = (object: Awaited<ReturnType<SnapshotBucket['get']>>) => object;
   return {
     bucket: {
       async get(key: string, options?: { range: { offset: number; length: number } }) {
         reads++;
-        return wrap(options ? inner.get(key, options) : inner.get(key));
+        return options ? inner.get(key, options) : inner.get(key);
       },
-    } as SnapshotBucket,
+    },
     reads: () => reads,
   };
 }

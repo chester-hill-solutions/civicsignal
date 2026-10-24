@@ -17,12 +17,14 @@
  *
  *     bun scripts/build-vector-store.ts --revision 0507465
  */
-import { appendFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { appendFileSync, readFileSync, writeFileSync, renameSync, rmSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { SnapshotReader } from '../src/ingest/snapshot-source';
+import { FileSnapshotBucket } from './lib/file-snapshot';
 import { ENCODER_CONTRACT } from '../src/encoder';
-import { parseVectorsManifest, vectorsManifestKey } from '../src/ingest/snapshot-format';
+import { IndexDigester, parseVectorsManifest, SNAPSHOT_PARSER_VERSION, snapshotNamespace, vectorsManifestKey } from '../src/ingest/snapshot-format';
 import { token as cloudflareToken } from './lib/cloudflare-auth';
-import { readFileSync } from 'node:fs';
 
 const BUCKET = 'civicsignal-corpus';
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? 'ad5ec479b9a421faa2ed06c3d1c2b23a';
@@ -41,10 +43,20 @@ if (!revision) {
   process.exit(2);
 }
 
+const selectedParser = arg('--parser', SNAPSHOT_PARSER_VERSION);
+if (selectedParser !== 'legacy' && selectedParser !== SNAPSHOT_PARSER_VERSION) throw new Error('unsupported parser; select current parser or explicit legacy');
+const parser = selectedParser === 'legacy' ? undefined : selectedParser;
+
 const manifest = parseVectorsManifest(
-  readFileSync(join(dir, vectorsManifestKey(revision)), 'utf8'),
-  vectorsManifestKey(revision),
+  readFileSync(join(dir, vectorsManifestKey(revision, parser)), 'utf8'),
+  vectorsManifestKey(revision, parser),
 );
+if (manifest.commit !== revision || manifest.parser !== parser) throw new Error('vector manifest revision/parser mismatch');
+const snapshot = new SnapshotReader(new FileSnapshotBucket(dir), revision, { parser });
+const identity = new IndexDigester();
+let entries = 0;
+for await (const entry of snapshot.indexEntries()) { identity.add(entry); entries++; }
+if (entries !== manifest.index.entries || identity.digest() !== manifest.index.digest) throw new Error('vectors do not belong to this exact snapshot index and fingerprints');
 if (manifest.dims !== ENCODER_CONTRACT.dimensions) {
   throw new Error(
     `the vectors are ${manifest.dims}-dimensional and the encoder contract says ` +
@@ -52,7 +64,8 @@ if (manifest.dims !== ENCODER_CONTRACT.dimensions) {
   );
 }
 
-const out = join(dir, `${revision}.store.emb`);
+const out = join(dir, snapshotNamespace(parser), `${revision}.store.emb`);
+const temporary = `${out}.partial`;
 const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 /** The sixteen-byte header `loadVectorStore` reads, then nothing else. */
@@ -69,7 +82,8 @@ async function main(): Promise<void> {
     `${manifest.count} vector(s) of ${manifest.dims} in ${manifest.parts.length} part(s), ` +
       `${mb(manifest.bytes)} — assembling ${out}`,
   );
-  writeFileSync(out, header());
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(temporary, header());
 
   let written = 0;
   for (const [at, part] of manifest.parts.entries()) {
@@ -84,7 +98,8 @@ async function main(): Promise<void> {
         `${part.key} is ${bytes.byteLength} bytes in the bucket and ${part.bytes} in the manifest`,
       );
     }
-    appendFileSync(out, bytes);
+    if (part.sha256 && createHash('sha256').update(bytes).digest('hex') !== part.sha256) throw new Error(`vector part SHA-256 mismatch: ${part.key}`);
+    appendFileSync(temporary, bytes);
     written += bytes.byteLength;
     console.log(
       `  ${String(at + 1).padStart(2)}/${manifest.parts.length}  ${part.key}  ` +
@@ -96,7 +111,8 @@ async function main(): Promise<void> {
   if (written !== expected) {
     throw new Error(`wrote ${written} bytes of vectors, expected ${expected}`);
   }
+  renameSync(temporary, out);
   console.log(`\n${out} — 16 bytes of header and ${mb(written)} of vectors`);
 }
 
-await main();
+try { await main(); } catch (error) { rmSync(temporary, { force: true }); throw error; }

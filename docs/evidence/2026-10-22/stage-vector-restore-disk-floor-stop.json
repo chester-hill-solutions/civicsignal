@@ -1,0 +1,35 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T03:16:54.337Z",
+  "stoppedAt": "2026-10-23T03:15:23.727Z",
+  "reason": "Owned PID68247 terminated by approved monitor after free disk818372608bytes crossed1GiB floor",
+  "exitCode": 143,
+  "target": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "createdOn": "2026-10-23T02:06:42.218162Z"
+  },
+  "checkpoint": {
+    "path": "dist/release/staging/legacy-vector-restore-checkpoint-disk-floor-20261023.json",
+    "sha256": "2e8160d42e4d17d8ab956f602af00ca190e93454607e0a8771fe4597defbc585",
+    "bytes": 12120,
+    "identity": "265590b800471325614871da6ac4f813fb4b4ab0a1ebfa40077a3530efe20fda",
+    "nextPosition": 79200,
+    "verifiedVectors": 65383,
+    "pendingBatches": 47,
+    "pendingFrom": 79200,
+    "pendingThrough": 83900,
+    "acknowledgedPendingBatches": 46,
+    "uncertainBatch": {
+      "from": 83800,
+      "through": 83900,
+      "digest": "faa7edf59bc4d8904648f6cd83003b9185ec807de44dedea71ca75e7f8a83e69"
+    }
+  },
+  "helperSha256": "228007585f4d8a6ef3987a174b2e49c2eec2c99aa21695f136420c2e850f01a9",
+  "lockRetained": true,
+  "resets": 0,
+  "deletes": 0,
+  "documentEmbeddings": 0,
+  "servingCalls": 0
+}

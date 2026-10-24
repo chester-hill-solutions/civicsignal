@@ -1,0 +1,48 @@
+{
+  "format": 1,
+  "revision": "0507465393c224c0491fc8c17c88340217acc656:statutes-v2",
+  "verifiedRows": 277857,
+  "verifiedTextBytes": 250978206,
+  "metadataDifferences": 0,
+  "sourceDatabaseUnchanged": true,
+  "originalSha256": "c30e2d04c3c3e271daab2f3a435bad175cee38cd5778cd22cb61a5b9ea0d0868",
+  "exactSamples": [
+    {
+      "id": "acts-en-151510",
+      "citation": "C-6",
+      "section": "8",
+      "language": "en"
+    },
+    {
+      "id": "acts-fr-147900",
+      "citation": "C-6",
+      "section": "8",
+      "language": "fr"
+    }
+  ],
+  "semanticHydrationSamples": 2,
+  "originalBytes": 416051200,
+  "compactBytes": 216674304,
+  "savedBytes": 199376896,
+  "restorePages": 17367,
+  "maxRestorePageBytes": 25661,
+  "maxRestoreStatements": 34,
+  "savedPercent": 47.92,
+  "protectedState": "Local corpus proof only; production auth/workspace/history must be copied and checked from one protected backup before binding changes.",
+  "evidence": "Local SQLite and bounded packed-object reader; no live D1/R2/Vectorize mutation or encoder calls.",
+  "bundle": {
+    "format": 2,
+    "rowCount": 277857,
+    "objectCount": 208396,
+    "textBytes": 250978206,
+    "objectsBytes": 244470986,
+    "objectStorage": "pack",
+    "objectPackSha256": "d8fb8d76d1d7e3b9aace9f289417df2cf67659b80524b4914873abebf8537d5b",
+    "referencesSha256": "de64eff5b8b7ac9c1d53f8977cfa61aaaa36ad6635df8de441638227f1ebc2e0",
+    "backupSha256": "774c6f816270381484ca8aebe849cb214c2d02380a8cb7739cc7f0a8a0f93057",
+    "freshSchemaSha256": "a53abc16d891e07977838f8746cc610956f7df8ead66ae1ce40016e665c9496f",
+    "freshPagesSha256": "64fe6ad4aba95b6929605bb221f9d846476840f95ec9420bd423a8bed0df353d",
+    "objectIndexSha256": "14fb49426dc55bc329daffdfe84a0979110c85f6caa7979ef8810c1484ca1f59"
+  },
+  "runtime": "Node.js v25.9.0; bundled with Bun v1.3.5 for Node; resumed completed local SQLite files."
+}

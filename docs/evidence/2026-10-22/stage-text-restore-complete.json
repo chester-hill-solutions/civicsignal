@@ -1,0 +1,74 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T11:17:30.876036+00:00",
+  "stageOnly": true,
+  "target": {
+    "format": 1,
+    "stageOnly": true,
+    "stageId": "stage-20261022",
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "d1Id": "e0fa8e43-82f9-4864-b237-6e82d77a860c",
+    "r2Bucket": "civicsignal-v1-stage-corpus-20261022",
+    "adminUrl": "https://civicsignal-v1-stage-restore-20261022.chester-hill-solutions.workers.dev"
+  },
+  "completedAt": "2026-10-23T10:35:15.169407+00:00",
+  "exitCode": 0,
+  "audit": {
+    "revision": "0507465393c224c0491fc8c17c88340217acc656:legacy",
+    "rowCount": 277857,
+    "mutationCount": 0,
+    "after": "regulations-fr-dors-2002-423-34-2-24",
+    "rowsVerified": 277857,
+    "bytesVerified": 250978206,
+    "complete": true
+  },
+  "publishedCounts": {
+    "rows": 277857,
+    "refs": 277857,
+    "pages": 17367,
+    "objects": 208396,
+    "objectBytes": 244470986
+  },
+  "finalCheckpointSha256": "a52d012089b757ed503df89e954b563ac10dc6a5358dea01b033c7768c7e2e7d",
+  "ownedProcessStopped": true,
+  "ownedLockRemoved": true,
+  "diskInterrupted": false,
+  "independentD1Read": {
+    "observedAt": "2026-10-23T11:14:39.704Z",
+    "summary": {
+      "rows": 277857,
+      "refs": 277857,
+      "d1TextRows": 0,
+      "textBytes": 250978206,
+      "objects": 208396,
+      "objectBytes": 244470986,
+      "pages": 17367,
+      "parser": null,
+      "complete": true,
+      "mutations": 0,
+      "authTablesAbsent": true,
+      "allQueryRowsWritten": 0,
+      "fullR2ReadbackEvidence": "legacy-text-restore-evidence/attempt-5-page-audit-batch/complete-verification.json"
+    },
+    "managementRequests": 9,
+    "allQueryRowsWritten": 0
+  },
+  "evidence": [
+    {
+      "path": "dist/release/staging/legacy-text-restore-evidence/attempt-5-page-audit-batch/complete-verification.json",
+      "sha256": "9deb0538cb70d9da590555c9068f466673096a8a9b00d40144b4f9de9af138ef"
+    },
+    {
+      "path": "dist/release/staging/stage-baseline-proof.json",
+      "sha256": "2ee894fca324fe116b01737addb091df19c97f735eb93c8226e8e2bf9967363a"
+    }
+  ],
+  "limitations": [
+    "Baseline parser is SQL NULL/legacy; statutes-v2 reconciliation is still pending.",
+    "Synthetic staging proof does not copy production auth or usage history.",
+    "Production migration and deployment remain separate decisions."
+  ],
+  "servingRequestsAtCompletion": 0,
+  "documentEmbeddingSubmissionsAtCompletion": 0,
+  "productionChanges": false
+}

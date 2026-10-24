@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { fingerprint } from '../src/ingest/reconcile';
 import {
   SnapshotReader,
   linesOf,
@@ -105,7 +106,7 @@ function snapshotOf(rows: PipelineRow[], partBytes?: number) {
   lines.forEach((line, position) => {
     const len = new TextEncoder().encode(line).length;
     index.push(
-      `{"id":${JSON.stringify(rows[position]!.id)},"fp":"hash-${position}","off":${offset},"len":${len}}`,
+      `{"id":${JSON.stringify(rows[position]!.id)},"fp":${JSON.stringify(fingerprint(rows[position]!))},"off":${offset},"len":${len}}`,
     );
     offset += len;
   });
@@ -147,11 +148,12 @@ describe('the snapshot in a bucket', () => {
     const index = await source.index();
 
     expect(index.size).toBe(2);
-    expect(index.get('a-1')?.fp).toBe('hash-0');
+    expect(index.get('a-1')?.fp).toBe(fingerprint(rows[0]!));
     // The manifest first — it is what says where the rest is — and then the
     // index, whole. The manifest is read once and remembered.
     expect(reads.map((read) => read.key)).toEqual([
       'abc123.manifest.json',
+      'abc123.index.jsonl',
       'abc123.index.jsonl',
     ]);
   });
@@ -221,28 +223,16 @@ describe('the snapshot in a bucket', () => {
     expect(found.map((r) => r.id)).toEqual(['a-2', 'a-1']);
   });
 
-  /**
-   * The rows come back in the order their entries were given, and an entry
-   * that points at nothing is skipped rather than throwing.
-   *
-   * The caller is the diff, and a diff that hands over an entry has read it
-   * out of the index — so an entry with no bytes behind it means the rows
-   * file and the index disagree, and the row that is missing is one the
-   * caller asked for. The cycle counts what came back against what it asked
-   * for and stops loudly, which is why this must not silently return a
-   * half-filled list.
-   */
-  it('skips an entry whose bytes are not there', async () => {
+  /** A truncated range must stop the cycle before a partial write can land. */
+  it('refuses an entry whose bytes are not there', async () => {
     const { bucket } = fakeBucket(files);
     const source = new SnapshotReader(bucket, 'abc123');
     const index = await source.index();
 
-    const found = await source.rows([
+    await expect(source.rows([
       index.get('a-1')!,
       { id: 'gone', fp: '', off: 10_000, len: 100 },
-    ]);
-
-    expect(found.map((r) => r.id)).toEqual(['a-1']);
+    ])).rejects.toThrow(/truncated snapshot row/);
   });
 
   it('reads adjacent rows in one request', async () => {

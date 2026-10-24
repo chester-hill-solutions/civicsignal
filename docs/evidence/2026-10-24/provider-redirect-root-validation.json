@@ -1,0 +1,101 @@
+{
+  "format": 1,
+  "kind": "provider-redirect-root-validation",
+  "observedAt": "2026-10-24T04:22:29.717987+00:00",
+  "sourceCommit": "78e0c2faaeb6103c22de911a165cd6a08b043f7a",
+  "sourcePins": [
+    {
+      "path": "src/provider-json.ts",
+      "sha256": "78a8fd520eda687b13b1ebe7a0dad0d22f53b49cba71a5bc7ac86862bc04dec6",
+      "bytes": 6785
+    },
+    {
+      "path": "test/provider-json-workerd.test.ts",
+      "sha256": "c3d8ca275787d7a9538e728ae777fc7424ce30ecfb0c2b1230f4f939c373910d",
+      "bytes": 4135
+    },
+    {
+      "path": "test/provider-json.test.ts",
+      "sha256": "dcdc1b519cad2f12b85a467947d58f9aec313ab60b05b0ef9a5f3cad84288c66",
+      "bytes": 14236
+    },
+    {
+      "path": "test/jev-response-boundary.test.ts",
+      "sha256": "55cce7aced62152a95b07b00100ece34f89c818ee749783ba93bdf1db77efaed",
+      "bytes": 15323
+    },
+    {
+      "path": "test/byok.test.ts",
+      "sha256": "6f31170c2106ae049869ee91c4549d33ecabf29c47481765f9bc274b908c94ac",
+      "bytes": 11080
+    },
+    {
+      "path": "test/endpoints.test.ts",
+      "sha256": "5a5ef81e8b82602b98fa41713d3445bebab3f59499b0ae5f8dbe5441e7709afe",
+      "bytes": 28434
+    }
+  ],
+  "problem": "Workers rejects redirect:error before outbound I/O; the existing provider wrapper catches it as safe transport failure.",
+  "repair": "Use manual redirect mode and preserve the existing non-success/redirect response refusal; no follow-up or credential forwarding.",
+  "detachedNativeFetchWorks": true,
+  "receiverBindingChanged": false,
+  "endpointModelPromptThresholdCacheBillingDeadlineCapsOrRetryChanged": false,
+  "nativeLocalReproduction": {
+    "cases": 12,
+    "realProviderRequests": 0,
+    "credentialReads": 0,
+    "allOutboundIntercepted": true,
+    "originalSourceArchived": true,
+    "result": {
+      "path": "dist/release/staging/native-fetch-binding-repro-v1/result.json",
+      "sha256": "5e113857f25117cb5f0278863d678643c2ce27b1be09577187754a099dc18f92",
+      "bytes": 2948
+    }
+  },
+  "nativeRegressionCases": 5,
+  "focusedRegressions": 207,
+  "fullRootValidation": {
+    "passed": true,
+    "typescriptTests": 1566,
+    "typescriptFiles": 93,
+    "compilerProjects": 4,
+    "vendorFiles": 117,
+    "runtimeProbes": 2,
+    "billingAndCorpusInvariantsPassed": true,
+    "dryBuilds": 5,
+    "sourcePins": 436,
+    "sourcesUnchanged": true,
+    "allOwnedProcessesSettled": true
+  },
+  "pythonQualification": "The unchanged capture/operator source retains its separately logged23-case qualification and07587e4 Linux23-case pass; no unrelated Python rerun was included in this local provider-only continuation. New78e0c2f LinuxCI also passes23cases.",
+  "originalIntermittentCaptureFailureRepaired": false,
+  "artifacts": [
+    {
+      "path": "dist/release/provider-redirect-root-validation-20261024-v1/result.json",
+      "sha256": "8eb160a4cd4cadcb01684442599fe4be52128de8550970ff1158e8a11096fa3f",
+      "bytes": 150625
+    },
+    {
+      "path": "dist/release/provider-redirect-root-validation-20261024-v1/validate.log",
+      "sha256": "dc7a7f2c028506d1b743908328b0be18f1f8ae639eb2bed9ab7bab2502603897",
+      "bytes": 41317
+    },
+    {
+      "path": "dist/release/provider-redirect-root-validation-20261024-v1/build.log",
+      "sha256": "2ee24f9645874a2792670653df27edd308f73ba7a0e435e4510fdd581b150777",
+      "bytes": 4642
+    },
+    {
+      "path": "dist/release/staging/native-fetch-binding-repro-v1/validation.json",
+      "sha256": "1600d1d5ded3c6de0ae84e8456a3bb99ad2033e9101629ce82b7fc8ab851663b",
+      "bytes": 772
+    }
+  ],
+  "cloudCalls": 0,
+  "realProviderCalls": 0,
+  "stagingServingCalls": 0,
+  "historicalZen153154CauseEstablished": false,
+  "hostedAcceptanceClaim": false,
+  "productionChanged": false,
+  "railwayChanged": false
+}

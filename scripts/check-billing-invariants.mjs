@@ -1,132 +1,91 @@
 #!/usr/bin/env node
 /**
- * Billing invariants.
- *
- * The rule this product cannot get wrong: a billable unit is recorded only after a
- * successful retrieval, never on an error, and never more than once per request.
- * The failure mode is invisible at runtime — a route that bills before it knows
- * whether it succeeded quietly overcharges.
- *
- * These checks read the source rather than instrumenting it, so they have to find
- * the *order* rather than the presence of a call. The first version of this file
- * compared two string offsets in the whole file, which stopped establishing the
- * invariant the moment a second route was added: it looked at the first billing
- * call and the first query call, wherever they happened to be, and reported on
- * those. A check that reports success without establishing anything is worse than
- * no check, so this version works per handler.
+ * Static billing architecture checks. These establish dependency boundaries,
+ * not runtime billing order or call counts. The endpoint and access tests verify
+ * successful-call billing, errors, quota enforcement, and MCP bookkeeping.
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import ts from 'typescript';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const failures = [];
+const modules = new Map();
 
-function walk(dir, out = []) {
-  for (const entry of readdirSync(dir)) {
-    if (entry === 'node_modules' || entry === '.git') continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) walk(full, out);
-    else if (full.endsWith('.ts')) out.push(full);
+function load(path) {
+  if (modules.has(path)) return modules.get(path);
+  if (!existsSync(path)) {
+    failures.push(`missing module: ${relative(ROOT, path)}`);
+    return null;
   }
-  return out;
-}
-
-const files = walk(join(ROOT, 'src'));
-const sources = files.map((f) => ({ path: f, text: readFileSync(f, 'utf8') }));
-
-// 1. Every API route must go through the spine's billable recorder, and every one
-//    must authenticate a server key.
-const indexSrc = readFileSync(join(ROOT, 'src', 'index.ts'), 'utf8');
-if (!indexSrc.includes('recordSuccessfulBillable')) {
-  failures.push('src/index.ts never records a billable unit');
-}
-if (!indexSrc.includes('authorizeServerKey')) {
-  failures.push('src/index.ts never authenticates a server key');
-}
-
-// 2. Within every handler that bills, the retrieval must happen before the billing.
-//    Work is done by one of: the query runner, the chat runner, the vector index, or
-//    the brief builder. A handler that bills without any of them is billing for
-//    nothing.
-const WORK_CALLS = [
-  'await runQuery(',
-  'await runChat(',
-  'await index.query(',
-  'await buildBrief(',
-];
-const BILL_CALL = 'await recordSuccessfulBillable(';
-
-/** Split a source file into `async function name(...) { … }` bodies. */
-function handlerBodies(text) {
-  const bodies = [];
-  const re = /async function (\w+)\s*\([^)]*\)\s*(?::[^{]*)?\{/g;
-  let match;
-  while ((match = re.exec(text)) !== null) {
-    const start = match.index + match[0].length;
-    let depth = 1;
-    let i = start;
-    while (i < text.length && depth > 0) {
-      if (text[i] === '{') depth++;
-      else if (text[i] === '}') depth--;
-      i++;
+  const text = readFileSync(path, 'utf8');
+  const ast = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
+  const imports = [];
+  for (const statement of ast.statements) {
+    if ((ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)) &&
+        statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)) {
+      imports.push(statement.moduleSpecifier.text);
     }
-    bodies.push({ name: match[1], body: text.slice(start, i) });
   }
-  return bodies;
+  const module = { text, imports };
+  modules.set(path, module);
+  return module;
 }
 
-for (const { path, text } of sources) {
-  for (const handler of handlerBodies(text)) {
-    const billIdx = handler.body.indexOf(BILL_CALL);
-    if (billIdx === -1) continue;
+// Trace the production Worker, including MCP. An old implementation may remain
+// as a migration reference, but it must not become reachable from an entrypoint.
+const reachable = new Set();
+function visit(path) {
+  if (reachable.has(path)) return;
+  reachable.add(path);
+  const module = load(path);
+  if (!module) return;
+  for (const dependency of module.imports) {
+    if (!dependency.startsWith('.')) continue;
+    const base = resolve(dirname(path), dependency);
+    const target = [base, `${base}.ts`, join(base, 'index.ts')].find(existsSync);
+    if (!target) {
+      failures.push(`${relative(ROOT, path)}: unresolved local import ${dependency}`);
+    } else visit(target);
+  }
+}
+visit(join(ROOT, 'src/index.ts'));
 
-    const workIdx = WORK_CALLS.map((c) => handler.body.indexOf(c))
-      .filter((i) => i !== -1)
-      .sort((a, b) => a - b)[0];
+for (const legacy of ['src/spine/api-keys.ts', 'src/spine/billing.ts', 'src/spine/quota.ts']) {
+  if (reachable.has(join(ROOT, legacy))) failures.push(`Worker reaches legacy implementation ${legacy}`);
+}
 
-    if (workIdx === undefined) {
-      failures.push(`${path}: ${handler.name} bills without doing any work`);
-    } else if (workIdx > billIdx) {
-      failures.push(`${path}: ${handler.name} records the billable unit before the work`);
+for (const [file, packages] of [
+  ['src/access.ts', ['@chester-hill-solutions/auth', '@chester-hill-solutions/auth-d1']],
+  ['src/metering.ts', ['@chester-hill-solutions/api-billing']],
+]) {
+  const path = join(ROOT, file);
+  const module = load(path);
+  if (!reachable.has(path)) failures.push(`${file} is not reachable from the production Worker`);
+  for (const dependency of packages) {
+    if (!module?.imports.some((value) => value === dependency || value.startsWith(`${dependency}/`))) {
+      failures.push(`${file} must use ${dependency}`);
     }
   }
 }
 
-// 3. A route must not bill twice.
-for (const { path, text } of sources) {
-  for (const handler of handlerBodies(text)) {
-    const count = handler.body.split(BILL_CALL).length - 1;
-    if (count > 1) {
-      failures.push(`${path}: ${handler.name} records ${count} billable units`);
-    }
-  }
+const policies = load(join(ROOT, 'src/corpora/policies.ts'));
+const declared = (policies?.text.match(/redistribution:\s*'(open|cite-only|metadata-only)'/g) ?? []).length;
+const policyIds = (policies?.text.match(/^\s{2}id:\s*'/gm) ?? []).length;
+if (declared !== policyIds || policyIds === 0) {
+  failures.push(`corpus policies declare ${policyIds} corpora and ${declared} redistribution regimes`);
 }
 
-// 4. The free allowance must be a named constant with a documented default.
-const customer = readFileSync(join(ROOT, 'src', 'spine', 'customer.ts'), 'utf8');
-if (!/DEFAULT_FREE_MONTHLY_ALLOWANCE\s*=\s*\d+/.test(customer)) {
-  failures.push('src/spine/customer.ts: the free allowance is not a literal default');
-}
-
-// 5. Every corpus must declare a redistribution regime.
-const policies = readFileSync(join(ROOT, 'src', 'corpora', 'policies.ts'), 'utf8');
-const declared = (policies.match(/redistribution:\s*'(open|cite-only|metadata-only)'/g) || []).length;
-const policyIds = (policies.match(/^\s{2}id:\s*'/gm) || []).length;
-if (declared !== policyIds) {
-  failures.push(`src/corpora/policies.ts: ${policyIds} corpora declared but ${declared} redistribution regimes`);
-}
-
-// 6. The pricing shown to buyers must match the metered price.
-const pricing = readFileSync(join(ROOT, 'src', 'routes', 'capabilities.ts'), 'utf8');
-if (!/unitPriceUsd:\s*0\.005/.test(pricing)) {
-  failures.push('src/routes/capabilities.ts: the advertised unit price is not 0.005 USD');
+// v1 has no confirmed public paid price. Discovery must not promise a stale
+// historical estimate; the configured workspace plan remains authoritative.
+const pricing = load(join(ROOT, 'src/routes/capabilities.ts'));
+if (!/unitPriceUsd:\s*null/.test(pricing?.text ?? '')) {
+  failures.push('v1 must leave the unconfigured public paid price null');
 }
 
 if (failures.length) {
   console.error('billing-invariants: FAILED');
-  for (const f of failures) console.error(`  - ${f}`);
+  for (const failure of failures) console.error(`  - ${failure}`);
   process.exit(1);
 }
-console.log(
-  'billing-invariants: ok (bill-after-work, single-record, work-before-bill per handler, free-allowance default, corpus regimes declared, price consistent)',
-);
+console.log('billing-invariants: ok (CHS auth/metering dependencies, no reachable legacy implementations, honest v1 price contract, corpus redistribution declarations)');

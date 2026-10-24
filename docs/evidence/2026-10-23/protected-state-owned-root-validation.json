@@ -1,0 +1,79 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-24T00:00:47.857767+00:00",
+  "scope": "protected-state-single-window-owned-process",
+  "files": [
+    {
+      "path": "scripts/build-protected-state-d1-owned.mjs",
+      "bytes": 7598,
+      "sha256": "d18a3947c945859fa3900e2103fee2114add2ec638d6d26bb25a6685521976e1"
+    },
+    {
+      "path": "scripts/protected-state-d1-owned.py",
+      "bytes": 20290,
+      "sha256": "700bffb479d90f73e1c15f9c07567e1a0171cc538fc9d400daf037e6bb172dbf"
+    },
+    {
+      "path": "scripts/lib/capture_owned.py",
+      "bytes": 4480,
+      "sha256": "e262416e5ca9d25b37f869f238b5cbffe3d71c9ac178eb1bc4191b45fd367455"
+    },
+    {
+      "path": "scripts/lib/capture_owned.provenance.json",
+      "bytes": 354,
+      "sha256": "1ffa0f4d730dd736612c179f6a4fa8ca25998e3ef58b57e9a776de0be61969b4"
+    },
+    {
+      "path": "test/protected-state-d1-owned.test.py",
+      "bytes": 15284,
+      "sha256": "0c880452c1bfd0626c588c8825b48f14d8babab812077bee905c849ead6999a7"
+    },
+    {
+      "path": "test/protected-state-d1-owned.test.ts",
+      "bytes": 14922,
+      "sha256": "d08ac8569a4cb3e4392c2e3c3e9ad82fbf92a5e5b5142bfb73d6bfeec5d32da2"
+    }
+  ],
+  "checks": {
+    "pythonCases": 21,
+    "rootPythonRerunPassed": true,
+    "authorPythonNormalAndOptimizedPassed": true,
+    "actualBundledBunWorkerdFixtures": 4,
+    "fullSuiteFixturesRootRerunPassed": true,
+    "portableReviewedRuntime": true,
+    "hostileAmbientEnvironmentRejectedOrIgnored": true,
+    "preCredentialSourceInspection": true,
+    "uncertainReceiptFenceRegression": true,
+    "parentFsyncFailureRegression": true,
+    "immutableCapturePromotedByteIdentical": true,
+    "existingClientFilesUnchanged": true,
+    "independentReview": "clear after reproduced persistence fix"
+  },
+  "limits": {
+    "executeOneReviewedWindow": true,
+    "runtimeProofSeconds": 5,
+    "inspectionSeconds": 300,
+    "executionSeconds": 330,
+    "cleanupSecondsPerChild": 10,
+    "aggregateLogBytes": 2097152,
+    "clientMaxRequests": 64,
+    "clientWallMs": 300000,
+    "clientRequestMs": 15000,
+    "initialReviewReserveSeconds": 700,
+    "automaticNextWindow": false,
+    "allowanceExtension": false
+  },
+  "history": {
+    "initialAcceptancePersistenceDefect": "A written accepted marker could survive a reported parent-fsync failure while the on-disk result still said passed.",
+    "fix": "Preserve receipts and create permanent receipt-uncertain fence; later admission refuses any fence entry, including partial bytes.",
+    "sandboxCancellationFixture": "One sandbox-only run reported uncertain settlement; the approved local-process rerun passed without helper changes."
+  },
+  "realCredentialsRead": false,
+  "hostedExecution": false,
+  "productionTargetAuthorized": false,
+  "limitations": [
+    "Local filesystem operations cannot be preempted; observed expiry refuses acceptance.",
+    "A reported persistence failure is terminal. Preserve every original marker; a total filesystem failure can also prevent writing a diagnostic fence. Never use a failed process return as authorization for another window.",
+    "Hosted protected-copy application and consistent production acquisition remain pending."
+  ]
+}

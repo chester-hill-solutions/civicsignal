@@ -1,0 +1,71 @@
+{
+  "recordedAt": "2026-10-23T03:31:53.491047+00:00",
+  "status": "Transfers stopped by local disk guards; waiting for at least 5 GiB of stable free space",
+  "resumeAuthorized": true,
+  "newUserReply": "User said they will free at least5GiB; this is not evidence that space is available",
+  "candidate": {
+    "commit": "9cdcd745c0506eb1ad2f1bbc1a9cdd689406d05c",
+    "linuxReleaseCiRun": 39893197952,
+    "linuxReleaseCiConclusion": "success",
+    "railwayWorkflowRemoved": true,
+    "railwayCredentialGateRemoved": true
+  },
+  "text": {
+    "checkpoint": {
+      "format": 1,
+      "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+      "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+      "uploadedObjects": 21332,
+      "appliedPages": 0
+    },
+    "checkpointSha256": "b370f73a0c3ef64860b65e2323dced20b37aa5513ff4b11e6fd1f06cd5d98c1c",
+    "maximumUncheckpointedWaveObjects": 64,
+    "metadataAndAuditComplete": false
+  },
+  "vector": {
+    "checkpoint": {
+      "path": "dist/release/staging/legacy-vector-restore-checkpoint-disk-floor-20261023.json",
+      "sha256": "2e8160d42e4d17d8ab956f602af00ca190e93454607e0a8771fe4597defbc585",
+      "bytes": 12120,
+      "identity": "265590b800471325614871da6ac4f813fb4b4ab0a1ebfa40077a3530efe20fda",
+      "nextPosition": 79200,
+      "verifiedVectors": 65383,
+      "pendingBatches": 47,
+      "pendingFrom": 79200,
+      "pendingThrough": 83900,
+      "acknowledgedPendingBatches": 46,
+      "uncertainBatch": {
+        "from": 83800,
+        "through": 83900,
+        "digest": "faa7edf59bc4d8904648f6cd83003b9185ec807de44dedea71ca75e7f8a83e69"
+      }
+    },
+    "lockRetained": true,
+    "fullCopyComplete": false
+  },
+  "servingRequests": 0,
+  "documentEmbeddingSubmissions": 0,
+  "productionChanges": false,
+  "railwayServiceChanges": false,
+  "snapshot": {
+    "scheduledAtUtc": [
+      "2026-10-23T02:45:00Z",
+      "2026-10-23T03:25:00Z"
+    ],
+    "observedScheduledEvents": 0,
+    "observedWorkflowInstances": 0,
+    "publicationComplete": false,
+    "schedulesRemovedAndIndependentlyConfirmedEmpty": true,
+    "secondMemoryOnlyRemovalConfirmedAt": "2026-10-23T03:30:09.912Z",
+    "secondPrimaryRemovalConfirmedAt": "2026-10-23T03:30:11.974Z",
+    "cause": "Unresolved; missing observed execution is not proof of a completed publication"
+  },
+  "automaticResume": {
+    "maxAutomaticResumes": 1,
+    "minimumAvailableBytes": 5368709120,
+    "stableForSeconds": 120,
+    "sampleEverySeconds": 30,
+    "copyStopBelowBytes": 1073741824,
+    "scope": "Same verified journals, source artifacts, staging targets and bounded commands only; no serving, auth migration or pipeline work"
+  }
+}

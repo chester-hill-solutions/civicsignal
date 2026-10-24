@@ -1,4 +1,5 @@
 import type { CorpusItem } from "@chester-hill-solutions/corpus";
+import { providerJsonOnce, ProviderJsonError, type ProviderJsonPhase } from './provider-json';
 
 /**
  * BYOK chat: retrieval, then the caller's own model.
@@ -18,7 +19,7 @@ import type { CorpusItem } from "@chester-hill-solutions/corpus";
  * is the difference between a chat surface and a licence incident.
  */
 
-export type ByokProvider = "anthropic" | "openai" | "google";
+export type ByokProvider = "anthropic" | "openai" | "google" | "opencode-zen";
 
 export interface ProviderSpec {
   label: string;
@@ -30,6 +31,52 @@ export interface ProviderSpec {
   parse(body: unknown): string;
 }
 
+export const OPENCODE_ZEN_MODEL = "claude-haiku-4-5";
+export const BYOK_LIMITS = { timeoutMs: 30_000, responseBytes: 256 * 1024 } as const;
+export const OPENCODE_ZEN_LIMITS = BYOK_LIMITS;
+const OPENCODE_ZEN_ENDPOINT = "https://opencode.ai/inference/anthropic/v1/messages";
+
+export interface GenerationFailure {
+  provider: ByokProvider;
+  phase: ProviderJsonPhase;
+  upstreamStatus?: number;
+}
+
+/** Domain tag: a retrieval provider failure must never become generation metadata. */
+export class GenerationFailureError extends Error implements GenerationFailure {
+  readonly phase: ProviderJsonPhase;
+  readonly upstreamStatus?: number;
+  constructor(readonly provider: ByokProvider, failure: ProviderJsonError) {
+    super('The generation call failed.');
+    this.name = 'GenerationFailureError';
+    this.phase = failure.phase;
+    this.upstreamStatus = failure.httpStatus;
+  }
+}
+
+const anthropicBody: ProviderSpec["body"] = ({ system, messages, model, maxTokens }) => ({
+  model,
+  max_tokens: maxTokens,
+  system,
+  messages: messages.map((m) => ({ role: m.role, content: m.content })),
+});
+function providerRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+const invalidGenerationResponse = () => new Error('Invalid generation response.');
+const anthropicText: ProviderSpec["parse"] = (body) => {
+  if (!providerRecord(body) || !Array.isArray(body['content'])) throw invalidGenerationResponse();
+  const text: string[] = [];
+  for (const part of body['content']) {
+    if (!providerRecord(part) || typeof part['type'] !== 'string') throw invalidGenerationResponse();
+    if (part['type'] === 'text') {
+      if (typeof part['text'] !== 'string') throw invalidGenerationResponse();
+      text.push(part['text']);
+    }
+  }
+  return text.join('\n').trim();
+};
+
 export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
   anthropic: {
     label: "Anthropic",
@@ -40,20 +87,8 @@ export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     }),
-    body: ({ system, messages, model, maxTokens }) => ({
-      model,
-      max_tokens: maxTokens,
-      system,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    }),
-    parse: (body) => {
-      const content = (body as { content?: { type: string; text?: string }[] })?.content ?? [];
-      return content
-        .filter((part) => part.type === "text" && typeof part.text === "string")
-        .map((part) => part.text!)
-        .join("\n")
-        .trim();
-    },
+    body: anthropicBody,
+    parse: anthropicText,
   },
   openai: {
     label: "OpenAI",
@@ -69,38 +104,55 @@ export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
       messages: [{ role: "system", content: system }, ...messages.map((m) => ({ role: m.role, content: m.content }))],
     }),
     parse: (body) => {
-      const choices = (body as { choices?: { message?: { content?: string } }[] })?.choices ?? [];
-      return (choices[0]?.message?.content ?? "").trim();
+      if (!providerRecord(body) || !Array.isArray(body['choices'])) throw invalidGenerationResponse();
+      const choice: unknown = body['choices'][0];
+      if (!providerRecord(choice) || !providerRecord(choice['message']) || typeof choice['message']['content'] !== 'string') throw invalidGenerationResponse();
+      return choice['message']['content'].trim();
     },
   },
   google: {
     label: "Google",
     defaultModel: "gemini-2.5-flash",
     endpoint: (model) =>
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    headers: (apiKey) => ({ "content-type": "application/json" }),
-    body: ({ system, messages, model, maxTokens }) => ({
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    headers: (apiKey) => ({ "content-type": "application/json", "x-goog-api-key": apiKey }),
+    body: ({ system, messages, maxTokens }) => ({
       systemInstruction: { parts: [{ text: system }] },
       generationConfig: { maxOutputTokens: maxTokens },
       contents: messages.map((m) => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],
       })),
-      ...(model ? {} : {}),
     }),
     parse: (body) => {
-      const candidates = (body as { candidates?: { content?: { parts?: { text?: string }[] } }[] })?.candidates ?? [];
-      const parts = candidates[0]?.content?.parts ?? [];
-      return parts
-        .map((part) => part.text ?? "")
-        .join("")
-        .trim();
+      if (!providerRecord(body) || !Array.isArray(body['candidates'])) throw invalidGenerationResponse();
+      const candidate: unknown = body['candidates'][0];
+      if (!providerRecord(candidate) || !providerRecord(candidate['content']) || !Array.isArray(candidate['content']['parts'])) throw invalidGenerationResponse();
+      return candidate['content']['parts'].map((part: unknown) => {
+        if (!providerRecord(part)) throw invalidGenerationResponse();
+        if (!Object.hasOwn(part, 'text')) return '';
+        if (typeof part['text'] !== 'string') throw invalidGenerationResponse();
+        return part['text'];
+      }).join('').trim();
     },
+  },
+  "opencode-zen": {
+    label: "OpenCode Zen",
+    defaultModel: OPENCODE_ZEN_MODEL,
+    endpoint: () => OPENCODE_ZEN_ENDPOINT,
+    headers: (apiKey) => ({ authorization: `Bearer ${apiKey}`, "content-type": "application/json" }),
+    body: anthropicBody,
+    parse: anthropicText,
   },
 };
 
 export function isByokProvider(value: string): value is ByokProvider {
-  return value in PROVIDERS;
+  return Object.hasOwn(PROVIDERS, value);
+}
+
+/** The initial Zen adapter supports one reviewed Messages-family model. */
+export function supportsByokModel(provider: ByokProvider, model?: string): boolean {
+  return provider !== "opencode-zen" || !model?.trim() || model.trim() === OPENCODE_ZEN_MODEL;
 }
 
 /** One retrieved item, ready to be put in front of a model. */
@@ -201,29 +253,27 @@ export async function chatByok(options: {
   maxTokens?: number;
   signal?: AbortSignal;
 }): Promise<ByokChatResult> {
-  const spec = PROVIDERS[options.provider];
+  const provider = options.provider, apiKey = options.apiKey;
+  const spec = PROVIDERS[provider], parse = spec.parse;
   const model = options.model?.trim() || spec.defaultModel;
 
-  const response = await fetch(spec.endpoint(model), {
-    method: "POST",
-    headers: spec.headers(options.apiKey),
-    body: JSON.stringify(
-      spec.body({
-        system: options.system,
-        messages: options.messages,
-        model,
-        maxTokens: options.maxTokens ?? 1200,
-      }),
-    ),
-    ...(options.signal ? { signal: options.signal } : {}),
-  });
-
-  if (!response.ok) {
-    // The provider's body may echo the key, so it is not passed through.
-    throw new Error(`The ${spec.label} endpoint returned ${response.status}.`);
+  if (!supportsByokModel(provider, model)) throw new Error("OpenCode Zen supports only " + OPENCODE_ZEN_MODEL + ".");
+  const requestBody = spec.body({ system: options.system, messages: options.messages, model, maxTokens: options.maxTokens ?? 1200 });
+  try {
+    const answer = await providerJsonOnce({
+      url: spec.endpoint(model), headers: spec.headers(apiKey), body: requestBody,
+      timeoutMs: BYOK_LIMITS.timeoutMs, responseBytes: BYOK_LIMITS.responseBytes, signal: options.signal,
+      parse(value) {
+        const answer = parse(value);
+        if (typeof answer !== 'string' || !answer.trim() || apiKey && answer.includes(apiKey)) {
+          throw invalidGenerationResponse();
+        }
+        return answer;
+      },
+    });
+    return { answer, provider, model, cited: 0 };
+  } catch (error) {
+    if (error instanceof ProviderJsonError) throw new GenerationFailureError(provider, error);
+    throw error;
   }
-
-  const body = (await response.json()) as unknown;
-  const answer = spec.parse(body);
-  return { answer, provider: options.provider, model, cited: 0 };
 }

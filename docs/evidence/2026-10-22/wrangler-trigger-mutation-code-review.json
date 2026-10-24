@@ -1,0 +1,60 @@
+{
+  "format": 1,
+  "kind": "local-static-wrangler-trigger-mutation-review",
+  "observedAt": "2026-10-23T12:51:35.333Z",
+  "source": {
+    "package": "wrangler",
+    "version": "4.151.3",
+    "path": "node_modules/wrangler/wrangler-dist/cli.js",
+    "sha256": "85a0fd68160392c7b9233a2a3406a94d61ab2a84d6dc192ebcb758774a76ee61"
+  },
+  "references": [
+    {
+      "line": 356232,
+      "finding": "triggers deploy passes resolved config and firstDeploy=false to triggersDeploy."
+    },
+    {
+      "line": 191409,
+      "finding": "resolveTriggersInput resolves script name, routes and Cron input; resolveCronTriggers at line 191437 takes args.triggers or config.triggers.crons."
+    },
+    {
+      "line": 165121,
+      "finding": "triggersDeploy unconditionally awaits subdomainDeploy before applying Cron schedules."
+    },
+    {
+      "line": 165592,
+      "finding": "subdomainDeploy reads the Worker subdomain, then unconditionally POSTs /accounts/{account}/workers/scripts/{script}/subdomain with enabled and previews_enabled, including when desired settings match the existing values. The POST is wrapped by retryOnAPIFailure."
+    },
+    {
+      "line": 165227,
+      "finding": "If crons is defined, including an empty array, the command PUTs /accounts/{account}/workers/scripts/{script}/schedules with crons.map(cron => ({cron})); an empty array removes all schedules."
+    }
+  ],
+  "boundedConclusion": {
+    "triggersDeployIsSchedulesOnly": false,
+    "additionalMutationOnInspectedStagePath": "POST Worker subdomain settings",
+    "codeUploadOnInspectedPathFound": false,
+    "bindingOrSettingsPatchOnInspectedPathFound": false,
+    "versionOrDeploymentPostOnInspectedPathFound": false,
+    "otherConfigDependentOperations": [
+      "routes",
+      "custom domains",
+      "queue consumers",
+      "workflows",
+      "event triggers"
+    ],
+    "schedulesOnlyAlternative": "Explicit account/script PUT /workers/scripts/{script}/schedules with JSON [], followed by a schedules GET readback. This skips the subdomain mutation and unrelated trigger resources."
+  },
+  "causality": {
+    "parentReportedHostedObservation": "The scheduled invocation logged a Durable Object reset because its code was updated at 2026-10-23T12:06:16.301Z, after the stage Cron cleanup. See stage-pipeline-1200-dashboard-reset.json for separately collected hosted evidence.",
+    "subdomainMutationCausedResetProved": false,
+    "explanation": "Static CLI inspection establishes the extra request, not Cloudflare control-plane behavior or the cause of the observed reset. No request was issued or replayed for this review."
+  },
+  "limitations": [
+    "Removing schedules does not remove pending Durable Object alarms or cancel already accepted work.",
+    "The alternative request is a narrow operational design, not authorization to execute it.",
+    "This is local source inspection, not a cloud API or runtime mutation test."
+  ],
+  "cloudCalls": 0,
+  "deployments": 0
+}

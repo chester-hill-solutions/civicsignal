@@ -1,5 +1,10 @@
 # The corpus snapshot
 
+## Current v1 authority
+
+Format history and original design. Current Workflow uses parser-versioned keys and bounded index partitions; see V1-OPERATIONS.md.
+[The v1 release checklist](V1-RELEASE.md) takes precedence over the historical claims below.
+
 The corpus is XML in a git repository, and that is the reason three separate
 things are awkward.
 

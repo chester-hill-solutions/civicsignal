@@ -5,6 +5,10 @@ import {
   indexLine,
   locate,
   parseManifest,
+  parseVectorsManifest,
+  SNAPSHOT_PARSER_VERSION,
+  manifestKey,
+  indexKey,
   partStarts,
   DEFAULT_PART_BYTES,
   SNAPSHOT_FORMAT,
@@ -183,6 +187,40 @@ describe('the manifest', () => {
     expect(() => parseManifest('not json')).toThrow(/not JSON/);
   });
 
+  it.each([
+    (manifest: SnapshotManifest) => { manifest.rows.count = -1; },
+    (manifest: SnapshotManifest) => { manifest.rows.bytes = Number.NaN; },
+    (manifest: SnapshotManifest) => { manifest.rows.partBytes = 0.5; },
+    (manifest: SnapshotManifest) => { manifest.index.entries = 2; },
+    (manifest: SnapshotManifest) => { manifest.index.bytes = -100; },
+    (manifest: SnapshotManifest) => { manifest.date = '2026-99-32'; },
+    (manifest: SnapshotManifest) => { manifest.rows.parts[0]!.bytes = 0; },
+    (manifest: SnapshotManifest) => { manifest.rows.parts[1]!.key = manifest.rows.parts[0]!.key; },
+    (manifest: SnapshotManifest) => { manifest.rows.parts[0]!.key = 'another-revision.rows.000.jsonl'; },
+    (manifest: SnapshotManifest) => { manifest.index.key = '../other.index.jsonl'; },
+    (manifest: SnapshotManifest) => { manifest.index.sha256 = 'bad'; },
+    (manifest: SnapshotManifest) => { manifest.index.digest = 'bad'; },
+    (manifest: SnapshotManifest) => { manifest.rows.parts[0]!.sha256 = 'bad'; },
+  ])('refuses malformed counts, offsets, keys and digests before reading objects', (mutate) => {
+    const manifest = manifestWith([{ key: 'abc123.rows.000.jsonl', bytes: 100 }, { key: 'abc123.rows.001.jsonl', bytes: 50 }], 150);
+    mutate(manifest);
+    expect(() => parseManifest(JSON.stringify(manifest))).toThrow();
+  });
+
+  it('keeps parser-versioned and legacy revision identities separate', () => {
+    expect(manifestKey('abc123')).toBe('abc123.manifest.json');
+    expect(manifestKey('abc123', SNAPSHOT_PARSER_VERSION)).toBe('snapshots/statutes-v2/abc123.manifest.json');
+    const manifest = manifestWith([{ key: 'snapshots/statutes-v2/abc123.rows.000.jsonl', bytes: 100 }], 100);
+    manifest.parser = SNAPSHOT_PARSER_VERSION;
+    manifest.index.key = indexKey(manifest.commit, manifest.parser);
+    manifest.index.digest = 'a'.repeat(32);
+    manifest.index.sha256 = 'a'.repeat(64);
+    manifest.rows.parts[0]!.sha256 = 'b'.repeat(64);
+    expect(parseManifest(JSON.stringify(manifest)).parser).toBe(SNAPSHOT_PARSER_VERSION);
+    manifest.parser = '../escape';
+    expect(() => parseManifest(JSON.stringify(manifest))).toThrow('parser identity');
+  });
+
   it('refuses a snapshot with no parts', () => {
     expect(() => parseManifest(JSON.stringify(manifestWith([], 0)))).toThrow(/names no parts/);
   });
@@ -210,5 +248,28 @@ describe('finding a row in the parts', () => {
     expect(locate(manifest, 149)).toEqual({ part: 1, local: 49 });
     expect(locate(manifest, 150)).toEqual({ part: 2, local: 0 });
     expect(locate(manifest, 174)).toEqual({ part: 2, local: 24 });
+  });
+});
+
+
+describe('vector manifest release boundary', () => {
+  const valid = () => ({ format: SNAPSHOT_FORMAT, commit: 'abc123', dims: 2, count: 3,
+    bytes: 24, embedded: 2, notEmbedded: 1, index: { entries: 3, digest: 'a'.repeat(32) },
+    parts: [{ key: 'abc123.vectors.000.f32', bytes: 16, count: 2, from: 0 },
+      { key: 'abc123.vectors.001.f32', bytes: 8, count: 1, from: 2 }] });
+  it('accepts an exact positional layout', () => { expect(parseVectorsManifest(JSON.stringify(valid())).count).toBe(3); });
+  it.each([
+    (manifest: ReturnType<typeof valid>) => { manifest.dims = -2; },
+    (manifest: ReturnType<typeof valid>) => { manifest.embedded = 3; },
+    (manifest: ReturnType<typeof valid>) => { manifest.index.digest = 'bad'; },
+    (manifest: ReturnType<typeof valid>) => { manifest.parts[1]!.from = 1; },
+    (manifest: ReturnType<typeof valid>) => { manifest.parts[1]!.key = manifest.parts[0]!.key; },
+    (manifest: ReturnType<typeof valid>) => { manifest.parts[0]!.key = 'other.vectors.000.f32'; },
+    (manifest: ReturnType<typeof valid>) => { manifest.parts[0]!.count = 1.5; },
+    (manifest: ReturnType<typeof valid>) => { manifest.parts[0]!.bytes = 0; },
+  ])('refuses invalid vector identities, counts and positions', (mutate) => {
+    const manifest = valid();
+    mutate(manifest);
+    expect(() => parseVectorsManifest(JSON.stringify(manifest))).toThrow();
   });
 });

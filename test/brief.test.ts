@@ -110,7 +110,7 @@ describe('brief assembly', () => {
 
   it('reports which corpora contributed and under which regime', async () => {
     const brief = await buildBrief({ topic: 'housing' }, ctx, corpora);
-    const ids = brief.coverage.map((c) => c.corpusId).sort();
+    const ids = brief.coverage.filter((c) => c.status === 'supported').map((c) => c.corpusId).sort();
     expect(ids).toEqual(['gdelt', 'hansard-federal', 'news-canada', 'statutes-canada']);
     const hansard = brief.coverage.find((c) => c.corpusId === 'hansard-federal')!;
     expect(hansard.redistribution).toBe('cite-only');
@@ -191,7 +191,8 @@ describe('brief assembly', () => {
   it('returns an explicit empty brief rather than an error for an unknown corpus', async () => {
     const brief = await buildBrief({ topic: 'housing' }, ctx, []);
     expect(brief.news).toHaveLength(0);
-    expect(brief.coverage).toHaveLength(0);
+    expect(brief.coverage).toHaveLength(5);
+    expect(brief.coverage.every((entry) => entry.status === 'unavailable')).toBe(true);
     expect(brief.sentiment.mean).toBeNull();
   });
 });

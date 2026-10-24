@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T19:34:31.473910+00:00",
+  "kind": "shared-protected-format-local-validation",
+  "scope": "Worker-safe format extraction; original sealed format1 canonical bytes retained",
+  "files": {
+    "scripts/lib/protected-state.ts": {
+      "bytes": 27261,
+      "sha256": "cf1d9e116fd8762e95b59086de391931387d4be7c171cec92c9bb4c1c236a8f0"
+    },
+    "src/corpora/protected-state-format.ts": {
+      "bytes": 6903,
+      "sha256": "20160c0be7e64c105437d377b7145d6465012317d089677cd84e9c92dc9140ea"
+    },
+    "test/protected-state-format.test.ts": {
+      "bytes": 12661,
+      "sha256": "e129f84971d9d5047fd5747b2ee4a1f12aed302b4748c82902a8c516f5e66937"
+    },
+    "test/fixtures/protected-state-format-v1-pages.jsonl": {
+      "bytes": 1758,
+      "sha256": "858ff4bf1a1c47c9a83d56ee650771c54278e02a5d41a86c03412e8e915f3e05"
+    }
+  },
+  "verification": {
+    "focusedTests": 52,
+    "testFiles": 2,
+    "existingOfflineProtectedTests": 35,
+    "newFormatTests": 17,
+    "originalTableGoldenDigests": 8,
+    "syntheticJsonlBytes": 1758,
+    "exactMaxPageBytesAccepted": 65536,
+    "nextByteRefused": 65537,
+    "actualLocalWorkerd": true,
+    "workerdNodeCompatibility": false,
+    "workerTypecheckPassed": true,
+    "focusedBunTypecheckPassed": true,
+    "toolingTypecheckPassed": true,
+    "independentRootFocusedRerunPassed": true,
+    "diffCheckPassed": true
+  },
+  "boundaries": {
+    "cloudRequests": 0,
+    "realCredentialReads": 0,
+    "productionChanges": false,
+    "remoteD1ApplyImplemented": false,
+    "newHostedRoute": false
+  },
+  "proofLimits": [
+    "Synthetic golden fixtures and local runtime only; no production backup acquisition, remote apply or live target text-reference parity.",
+    "Historical manifest shape remains unchanged; D1 admission must validate and compare every initial publication field before using it.",
+    "Later binding-helper code is a separate increment; this receipt covers only the four listed format files."
+  ]
+}

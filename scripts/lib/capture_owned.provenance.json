@@ -1,0 +1,8 @@
+{
+  "format": 1,
+  "source": "dist/release/staging/stage-completion-read-auth-v2/capture_owned.py",
+  "sourceSha256": "e262416e5ca9d25b37f869f238b5cbffe3d71c9ac178eb1bc4191b45fd367455",
+  "promotedFile": "scripts/lib/capture_owned.py",
+  "unchangedBytes": true,
+  "scope": "Owned process-group capture; TERM then KILL, at most ten seconds of cleanup."
+}

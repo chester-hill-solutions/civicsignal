@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { runSnapshotPipeline } from '../src/ingest/snapshot-pipeline';
 import type { SnapshotSource } from '../src/ingest/snapshot-source';
 import type { SnapshotIndexEntry } from '../src/ingest/snapshot-diff';
-import type { PipelineRow } from '../src/ingest/pipeline';
+import { EMBED_BATCH, type PipelineRow } from '../src/ingest/pipeline';
 import { fingerprint } from '../src/ingest/reconcile';
 import { FakeStore, row } from './helpers/corpus-store';
 
@@ -260,5 +260,34 @@ describe('a cycle with a budget', () => {
     await expect(
       runSnapshotPipeline({ ...options(store, truncated) }),
     ).rejects.toThrow(/has no row for/);
+  });
+
+  it('keeps the row budget, placeholders, removals and publication boundary across provider-sized writes', async () => {
+    const active = Array.from({ length: EMBED_BATCH }, (_, i) =>
+      rowOf(`a-${String(i).padStart(3, '0')}`, `Provision ${i}.`));
+    const placeholder = row('p-placeholder', { status: 'placeholder', text: '[Reserved]' });
+    const same = rowOf('s-same', 'Unchanged.'), gone = rowOf('z-gone', 'Removed later.');
+    const store = new FakeStore([same, gone]);
+    const source = snapshotOf([...active, placeholder, same]);
+    const submitted: string[] = [];
+    const counting = { async embed(documents: { title: string; text: string }[]) {
+      submitted.push(...documents.map(document => document.text));
+      return documents.map(() => [0.1, 0.2]);
+    } };
+    const first = await runSnapshotPipeline({ ...options(store, source), encoder: counting, maxRows: EMBED_BATCH + 1 });
+    expect(first).toMatchObject({ remaining: true, embedded: EMBED_BATCH,
+      counts: { added: EMBED_BATCH + 1, removed: 0 } });
+    expect(store.rows.has(placeholder.id)).toBe(true); expect(store.rows.has(gone.id)).toBe(true);
+    expect(store.states).toHaveLength(0);
+    expect(submitted).toEqual(active.map(value => value.text));
+
+    const second = await runSnapshotPipeline({ ...options(store, source), encoder: counting, maxRows: EMBED_BATCH + 1 });
+    expect(second).toMatchObject({ remaining: false, embedded: 0,
+      counts: { added: 0, changed: 0, removed: 1, unchanged: EMBED_BATCH + 2 } });
+    expect(store.rows.has(gone.id)).toBe(false);
+    expect(store.states).toHaveLength(1);
+    expect(store.states[0]).toMatchObject({ commit: 'new456', rowCount: EMBED_BATCH + 2 });
+    expect(store.changes).toHaveLength(EMBED_BATCH + 2);
+    expect(submitted).toHaveLength(EMBED_BATCH);
   });
 });

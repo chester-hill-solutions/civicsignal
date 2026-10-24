@@ -1,0 +1,81 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T03:57:07.020171+00:00",
+  "status": "Existing staging copies resumed after measured stable disk qualification; full audits remain incomplete",
+  "userInstruction": "GO",
+  "candidateCommit": "3fc097a8056c90058e8dc3a524e97fde78e54715",
+  "linuxReleaseCi": {
+    "run": 39896055623,
+    "conclusion": "success"
+  },
+  "diskQualification": {
+    "format": 1,
+    "qualifiedAt": "2026-10-23T03:40:03.420Z",
+    "startedAt": "2026-10-23T03:38:03.399Z",
+    "durationMs": 120021,
+    "samples": 5,
+    "intervalMs": 30000,
+    "thresholdBytes": 5368709120,
+    "minimumAvailableBytes": 5713764352,
+    "availableBytes": 20908154880,
+    "cloudRequests": 0,
+    "copyInvocations": 0
+  },
+  "resume": {
+    "automaticResumeOrdinal": 1,
+    "maximumAutomaticResumes": 1,
+    "stopBelowBytes": 1073741824,
+    "sameSourceAndTargets": true,
+    "journalReset": false,
+    "newInitialization": false
+  },
+  "text": {
+    "startedAt": "2026-10-23T03:42:36.871539+00:00",
+    "checkpoint": {
+      "format": 1,
+      "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+      "targetHash": "cc9b039b2df3e084acfd116db5f6881908567ab92a58b28beed8b8561ee9eee4",
+      "uploadedObjects": 39124,
+      "appliedPages": 0
+    },
+    "checkpointSha256": "4b9c04d5554df842798d7010af5bc6b243a43c7747affbcde9d165be08a495cd",
+    "resumeRemoteObjects": 21387,
+    "resumeLocalObjects": 21332,
+    "uncertainObjectsReplayed": 55,
+    "evidenceDirectory": "dist/release/staging/legacy-text-restore-evidence/attempt-4-stable-disk",
+    "fullAuditComplete": false
+  },
+  "vector": {
+    "startedAt": "2026-10-23T03:44:07.331Z",
+    "identity": "265590b800471325614871da6ac4f813fb4b4ab0a1ebfa40077a3530efe20fda",
+    "nextPosition": 112500,
+    "verifiedVectors": 91832,
+    "pendingBatches": 100,
+    "complete": false,
+    "checkpointSha256": "22f86ba13c66f6c35585fdd85cd1b2b57e9ac0c4503ff3881581b21febdc31fe",
+    "acknowledgedBatchesDrainedAtResume": 46,
+    "uncertainBatchIdenticallyReplayed": {
+      "from": 83800,
+      "through": 83900
+    },
+    "resumeLedger": "dist/release/staging/legacy-vector-resume-stable-20261023.jsonl"
+  },
+  "diskObservation": {
+    "observedAt": "2026-10-23T03:57:05.390078+00:00",
+    "availableBytes": 15241256960
+  },
+  "snapshot": {
+    "publicationComplete": false,
+    "schedulesEnabled": false,
+    "diagnosis": "Stage-only diagnostic wrapper and local integration tests in progress; no diagnostic deployment or new calendar trigger yet"
+  },
+  "servingRequests": 0,
+  "documentEmbeddingSubmissions": 0,
+  "productionChanges": false,
+  "railwayServiceChanges": false,
+  "dependencies": {
+    "restoredWithFrozenLockfile": true,
+    "vendorFilesVerified": 117,
+    "lockfileChanged": false
+  }
+}

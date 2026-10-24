@@ -1,5 +1,10 @@
 # The platform: one host
 
+## Current v1 authority
+
+Historical Railway migration proposal. Cloudflare remains the production target; Railway remains in place.
+[The v1 release checklist](V1-RELEASE.md) takes precedence over the historical claims below.
+
 The decision, the shape, and the order it happens in.
 
 ## The decision

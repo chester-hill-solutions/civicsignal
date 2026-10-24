@@ -51,4 +51,11 @@ describe('the language a request asks for', () => {
     expect(query.limit).toBe(5);
     expect(query.since).toBe('2020-01-01');
   });
+  it('accepts exact citations and applies their language', () => {
+    expect(parseQuery(url('act=Code+du+travail&section=210'))).toMatchObject({ act: 'Code du travail', section: '210', language: 'fr' });
+  });
+  it.each(['limit=NaN', 'limit=1.5', 'limit=0', 'limit=51', 'language=de', 'act=Test', 'topic=a&topic=b', 'unknown=value'])
+  ('refuses malformed or ambiguous query %s', (input) => {
+    expect(() => parseQuery(url(input))).toThrow();
+  });
 });

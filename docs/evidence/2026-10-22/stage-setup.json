@@ -1,0 +1,82 @@
+{
+  "recordedAt": "2026-10-23T02:20:14.214659+00:00",
+  "approval": {
+    "dateToronto": "2026-10-22",
+    "answer": "Approve full bounded staging",
+    "servingRequestCap": 160,
+    "documentEmbeddingSubmissionCap": 1112,
+    "encoderInstanceCap": 1,
+    "productionMigrationApproved": false,
+    "railwayChangesApproved": false
+  },
+  "candidateCommit": "878ec8698ab8d07383b1c7b7fe57c619a5115612",
+  "sourcePreflight": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15T18:08:27Z"
+  },
+  "inventory": {
+    "format": 1,
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "suffix": "20261022",
+    "observedAt": "2026-10-23T02:08:25.568176Z",
+    "d1": {
+      "name": "civicsignal-v1-stage-d1-20261022",
+      "id": "e0fa8e43-82f9-4864-b237-6e82d77a860c"
+    },
+    "r2": {
+      "name": "civicsignal-v1-stage-corpus-20261022"
+    },
+    "cache": {
+      "title": "civicsignal-v1-stage-cache-20261022",
+      "id": "46eabd7a195049d3b66d4d0fd3637f11"
+    },
+    "vectorize": {
+      "name": "civicsignal-v1-stage-statutes-20261022",
+      "dimensions": 768,
+      "metric": "cosine"
+    }
+  },
+  "creationReadback": {
+    "d1Tables": 0,
+    "d1Bytes": 12288,
+    "r2Objects": 0,
+    "vectorCount": 0,
+    "vectorMetric": "cosine",
+    "vectorDimensions": 768,
+    "vectorCreatedOn": "2026-10-23T02:06:42.218162Z",
+    "languageMetadataIndex": "String"
+  },
+  "restore": {
+    "origin": "https://civicsignal-v1-stage-restore-20261022.chester-hill-solutions.workers.dev",
+    "secretEquippedVersion": "4ef0a002-c626-4cfa-b514-4e3c10ed11e3",
+    "bindingsIndependentlyChecked": 8,
+    "status": "Strict hosted bookkeeping guard returned HTTP200/fresh:true; same-target initialization and immutable-object upload began under pinned plan",
+    "correctedVersion": "64c7da58-683a-4810-9a75-cd992a6f9322"
+  },
+  "encoder": {
+    "origin": "https://civicsignal-v1-stage-encoder-20261022.chester-hill-solutions.workers.dev",
+    "initialVersion": "5e6c4678-7030-4318-997d-38ee623a5041",
+    "localImageSha256": "c8b7bbb3f91f5b36bd3edd38ce0711ca90220b9b5b156457a8c60e865116952c",
+    "registryImageSha256": "71302112da046a98e9e1c6b09b38921aebd85b5d6c9161289d2524ed1e431d81",
+    "applicationId": "a03dd873-2d74-483b-b1b8-d68ca8a7ba5b",
+    "maxInstances": 1,
+    "inferenceVerified": false,
+    "secretEquippedVersion": "0857d68d-5f44-4a64-8e0e-3aac5402f5b3",
+    "configurationReadback": "encoder-application.json confirms exact registry digest, DO namespace and max_instances1"
+  },
+  "status": {
+    "snapshot": "Deployed; one calendar schedule armed for 2026-10-23T02:45:00Z; publication pending",
+    "vectorRestore": "First100-submission pending window completed:10200positions/8508non-placeholdervectors independently read back; full copy continuing under bounded controller",
+    "servingRequests": 0,
+    "documentEmbeddings": 0,
+    "productionChanged": false
+  },
+  "descriptorHashes": {
+    "d1-descriptor.json": "30c3e27d57e0e3b158661b2d0119c26a9211c61b8ddbde8b6170a862cfd7fa00",
+    "r2-descriptor.txt": "696d8a109ae9f7338ed5f3e566ae441711ea3ca3a5927dd6aa937b612df932b9",
+    "vector-descriptor.json": "7e864c5501e4454447690578b5a8f5c509514d5bda1ddf999970ed83b94aaf0b",
+    "vector-info.json": "74e272f7d98553c7664654722407f4f947e55978bfbf1e6587fc4fea46229b7b",
+    "vector-metadata.json": "145ed4ff782ddb7acb7fb47672016b43caff2a8e22b93a43e8cdf86516cb0b5e",
+    "restore-deployed-descriptor.json": "754f016b19e26d0e33f7e5b38864d5c856b3a8d10aced7f6cd167825ab479fa5"
+  }
+}

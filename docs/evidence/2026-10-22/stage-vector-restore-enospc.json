@@ -1,0 +1,31 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T02:54:28.435Z",
+  "stoppedAt": "2026-10-23T02:50:35.095Z",
+  "reason": "ENOSPC opening next durable journal temporary file; no subsequent child was started",
+  "scope": "partial stage baseline only",
+  "target": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "createdOn": "2026-10-23T02:06:42.218162Z"
+  },
+  "checkpoint": {
+    "path": "dist/release/staging/legacy-vector-restore-checkpoint-enospc-20261023.json",
+    "sha256": "5e6d7d23adf11e52f3d0df51390721ca6ba1cea161f637dd6508b23c6781d6dc",
+    "bytes": 14144,
+    "mtime": "2026-10-23T02:50:33.751Z",
+    "identity": "265590b800471325614871da6ac4f813fb4b4ab0a1ebfa40077a3530efe20fda",
+    "format": 2,
+    "nextPosition": 44800,
+    "verifiedVectors": 35316,
+    "pendingBatches": 55,
+    "pendingFrom": 44800,
+    "pendingThrough": 50300,
+    "acknowledgedPendingBatches": 54
+  },
+  "sourceReceiptSha256": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc",
+  "reset": false,
+  "deletes": 0,
+  "documentEmbeddings": 0,
+  "servingCalls": 0
+}

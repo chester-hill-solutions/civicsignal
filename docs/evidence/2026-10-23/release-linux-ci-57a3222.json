@@ -1,0 +1,30 @@
+{
+  "format": 1,
+  "scope": "clean-checkout-linux-release-gates",
+  "headCommit": "57a322207573aea6fa50674ad0b0c80eb8bc204a",
+  "runId": 40043174499,
+  "jobId": 120718797682,
+  "url": "https://github.com/chester-hill-solutions/civicsignal/actions/runs/40043174499",
+  "status": "completed",
+  "conclusion": "success",
+  "pullRequest": 1,
+  "checks": {
+    "frozenLockfileInstallation": true,
+    "vitestTests": 1233,
+    "vitestFiles": 86,
+    "compilerProjects": 4,
+    "vendorFiles": 117,
+    "pythonTests": 21,
+    "actualBundledBunWorkerdFixtures": 4,
+    "usageLedgerRuntimeProbe": true,
+    "r2ImmutabilityRuntimeProbe": true,
+    "billingInvariants": true,
+    "corpusInvariants": true,
+    "workerDryRunBuilds": 5
+  },
+  "limitations": [
+    "GitHub Actions checks the pull-request checkout associated with this exact head.",
+    "Absent optional historical corpus SQL/JSONL artifacts are explicit skips; full hosted corpus proofs are separate.",
+    "No production deployment or real provider generation occurs in CI."
+  ]
+}

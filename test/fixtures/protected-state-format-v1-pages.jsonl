@@ -1,0 +1,8 @@
+{"page":1,"table":"workspace","rows":[["workspace","L'Acte — règle\n第二行 \ud800x\udfff",null,0,9007199254740991]],"sha256":"8e525394a601068031c17aba2721b97ed6c02db120b7baed4958109bcdf6e6c5"}
+{"page":2,"table":"civic_workspace_billing","rows":[["workspace","free",1000,0,null,0]],"sha256":"0b44ec94bfbfd368d76adcc365ed4ee9dc7b08e2c891a37fb29fd5379d701b52"}
+{"page":3,"table":"workspace_api_key","rows":[["key","workspace","Key","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","prefix","[\"civicsignal.retrieve\"]","revoked",null,0,1,2]],"sha256":"7c75312462137f1a4f4d1a6bd54a9c9c93cc48c659d31dbaa2511f39d6182298"}
+{"page":4,"table":"corpus_runs","rows":[[120,"statutes-canada","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","2026-10-15","2026-10-23T00:00:00Z",0,320,0,277537,320,100,1,null,"statutes-v2"]],"sha256":"d76744c24256fdd3e57166253618212e127a5e4c7f95ebe02be5235bbc1428c3"}
+{"page":5,"table":"corpus_changes","rows":[[1000,"statutes-canada","changed","acts-en-1","Act","T-1","1",null,"in-force","Summary","https://example.invalid","2026-10-15","2026-10-23T00:00:00Z"]],"sha256":"31ff9ccf206bebffa9eb4a7a0a72243d243cea8653ecb6c54ccaf65417527cc3"}
+{"page":6,"table":"corpus_mutations","rows":[["operation","statutes-canada",null,"2026-10-23T00:00:00Z"]],"sha256":"5d2011459e287f71dfab074a81840fdaa210f09f259a94740bb992da6b49fff4"}
+{"page":7,"table":"corpus_state","rows":[["statutes-canada","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","2026-10-15","2026-10-15",277857,"2026-10-23T00:00:00Z","statutes-v2"]],"sha256":"73cc01f6e91cc8df5b8ed8682af69127fe1643914603de5344d06a8c682ed678"}
+{"page":8,"table":"sqlite_sequence","rows":[["corpus_changes",1001]],"sha256":"20401e8d2085caa1ccdf277d749f7a7532c87e279fb6ebc4fdaf3df474b37758"}

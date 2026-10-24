@@ -1,0 +1,131 @@
+{
+  "recordedAt": "2026-10-23T02:57:14.675133+00:00",
+  "sourceFiles": {
+    "services/restore/worker.ts": "f81208558d6caac7b41538c0d5e1d757ad6d37d91bb79aba908b814c22e4b931",
+    "services/restore/upload-batch.ts": "d8365ba69e2f0f57b7068f36d8f3f77798485c5a218fe774c5441a8a75d36f60",
+    "scripts/restore-text-staging.ts": "21fa32a7682ddc7f265fbbdea1206fa9c9e247c3af729b67458c40ec931f95f3",
+    "scripts/lib/stage-vector-restore.ts": "228007585f4d8a6ef3987a174b2e49c2eec2c99aa21695f136420c2e850f01a9",
+    "test/staging-text-restore.test.ts": "f47e785f7f77ee59ccead5bf2a4c5a4b1d0da6e35102c0d41b08fcc3e72be463",
+    "test/restore-upload-batch.test.ts": "0088673079d490a05e6f2e9853c4c96e098ad8c1596dbba2ccf69e592c21a4b3",
+    "test/stage-vector-restore.test.ts": "e3024663e3f1dd0af0fb30709ac5d97d6dfcdd590289910ec2d710a43596d4e5"
+  },
+  "validation": {
+    "command": "bun run validate",
+    "exitCode": 0,
+    "testFiles": 70,
+    "testsPassed": 736,
+    "compilerProjects": 4,
+    "vendorFilesChecked": 117,
+    "workerdTestsEnabled": true,
+    "runtimeAndInvariantsPassed": true
+  },
+  "build": {
+    "command": "bun run build",
+    "exitCode": 0,
+    "workerDryRuns": 5,
+    "restoreKiB": 45.38,
+    "restoreGzipKiB": 11.58
+  },
+  "logs": {
+    "/private/tmp/civicsignal-stage-copy-fixes-validate.log": "701be21d9b0d09f46d3810f3867155588739c6daf9707985db8e3a2d9a4bd90c",
+    "/private/tmp/civicsignal-stage-batch-build-rerun.log": "7bedec40d8a37a47739d08fdb5fd2ff367b4b300573289e4698afc5e05a41539",
+    "/private/tmp/civicsignal-stage-batch-build.log": "439f9ed2d2be4368e6b8a9a6980075647ffb28caa51f9c0ef557b4124012a209"
+  },
+  "priorBuildFailure": "ENOSPC while writing an encoder dry-run artifact; retained original log, then full build passed",
+  "localHeapSample": {
+    "localOnly": true,
+    "provenHostedMemoryLimit": false,
+    "methodology": "Actual restore Worker in local workerd with real D1/R2, four concurrent 2MiB frames containing 16 objects each, same immutable objects replayed across four requests, Runtime.getHeapUsage sampled every5ms; sample maxima can miss instantaneous peaks.",
+    "sourceDigests": {
+      "services/restore/worker.ts": "f81208558d6caac7b41538c0d5e1d757ad6d37d91bb79aba908b814c22e4b931",
+      "services/restore/upload-batch.ts": "d8365ba69e2f0f57b7068f36d8f3f77798485c5a218fe774c5441a8a75d36f60",
+      "src/corpora/text-store.ts": "1a540c8409788cb82f06065313bd1813eb2e1983ecc4ae137b00fe2e99e9ca08"
+    },
+    "requests": 4,
+    "frameBytes": 2097152,
+    "objectsPerRequest": 16,
+    "serverParallelism": 4,
+    "journal": {
+      "objects": 16,
+      "bytes": 2096504,
+      "last": 16
+    },
+    "samples": 9,
+    "maxUsed": 8660476,
+    "maxBacking": 19710303,
+    "maxCombined": 30692139,
+    "values": [
+      {
+        "usedSize": 1024304,
+        "totalSize": 2359296,
+        "embedderHeapUsedSize": 515872,
+        "backingStorageSize": 271520
+      },
+      {
+        "usedSize": 1053624,
+        "totalSize": 2359296,
+        "embedderHeapUsedSize": 515872,
+        "backingStorageSize": 284000
+      },
+      {
+        "usedSize": 1329372,
+        "totalSize": 2621440,
+        "embedderHeapUsedSize": 515872,
+        "backingStorageSize": 780192
+      },
+      {
+        "usedSize": 1402592,
+        "totalSize": 3670016,
+        "embedderHeapUsedSize": 644840,
+        "backingStorageSize": 2232617
+      },
+      {
+        "usedSize": 2194736,
+        "totalSize": 5242880,
+        "embedderHeapUsedSize": 902760,
+        "backingStorageSize": 5255465
+      },
+      {
+        "usedSize": 4757448,
+        "totalSize": 8388608,
+        "embedderHeapUsedSize": 1418616,
+        "backingStorageSize": 10408266
+      },
+      {
+        "usedSize": 5576116,
+        "totalSize": 9175040,
+        "embedderHeapUsedSize": 1676536,
+        "backingStorageSize": 13668682
+      },
+      {
+        "usedSize": 8660476,
+        "totalSize": 11796480,
+        "embedderHeapUsedSize": 2321360,
+        "backingStorageSize": 19710303
+      },
+      {
+        "usedSize": 8660476,
+        "totalSize": 11796480,
+        "embedderHeapUsedSize": 2321360,
+        "backingStorageSize": 19710303
+      }
+    ]
+  },
+  "restoreDeployment": {
+    "versionId": "aec00122-16a2-4e69-940b-437d6efae525",
+    "descriptorSha256": "55a5312f01cf3236f24580026ba7751e938338be1ddebfbeec8cf8c5271fccdb",
+    "bindings": 8,
+    "stageOnly": true
+  },
+  "existingLinuxGate": {
+    "commit": "33c5a90df5fa76b3a64de8695161bdc06f251fa7",
+    "runId": 39890354847,
+    "conclusion": "success"
+  },
+  "limitations": [
+    "Hosted copies and full audits are still in progress",
+    "New candidate Linux gate follows commit",
+    "No serving, document embedding or JEV provider call has been made",
+    "Sampled local heap does not prove an absolute hosted peak"
+  ]
+}

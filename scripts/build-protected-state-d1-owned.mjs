@@ -1,0 +1,40 @@
+/** Local preparation only. Fixed CLI entry; never reads a credential's bytes. */
+import {build,version} from 'esbuild';
+import {execFileSync} from 'node:child_process';
+import {accessSync,constants,readFileSync,lstatSync,realpathSync,mkdirSync,openSync,writeSync,fsyncSync,closeSync} from 'node:fs';
+import {resolve,dirname,relative,join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
+import migrationAssets from './lib/protected-state-schema-assets.json' with {type:'json'};
+const ROOT=dirname(dirname(fileURLToPath(import.meta.url))),ENTRY='scripts/protected-state-d1.ts';
+const require=(v)=>{if(!v)throw Error('protected-owned-preparation-refused');},digest=b=>createHash('sha256').update(b).digest('hex');
+function privatePath(path,directory=false){require(typeof path==='string'&&path===resolve(path)&&!path.startsWith(ROOT+'/')&&path!==ROOT&&realpathSync(path)===path);const s=lstatSync(path),p=lstatSync(dirname(path));require(!s.isSymbolicLink()&&(directory?s.isDirectory():s.isFile()&&s.nlink===1)&&(s.mode&0o777)===(directory?0o700:0o600)&&s.uid===process.getuid()&&p.isDirectory()&&(directory||(p.mode&0o777)===0o700&&p.uid===process.getuid()));return path;}
+function input(path){privatePath(path);require(lstatSync(path).size<=16384);return JSON.parse(readFileSync(path,'utf8'));}
+function pin(path){require(realpathSync(path)===path&&lstatSync(path).isFile()&&!lstatSync(path).isSymbolicLink());const b=readFileSync(path);return {bytes:b.length,sha256:digest(b)};}
+function write(path,b){const fd=openSync(path,'wx',0o600);try{let n=0;while(n<b.length)n+=writeSync(fd,b,n,b.length-n);fsyncSync(fd);}finally{closeSync(fd);}const d=openSync(dirname(path),'r');try{fsyncSync(d);}finally{closeSync(d);}}
+function json(path,value){write(path,Buffer.from(JSON.stringify(value,null,2)+'\n'));}
+try{
+ const args=process.argv.slice(2);require((args.length===2||args.length===4)&&args[0]==='--inputs'&&(args.length===2||args[2]==='--bun')&&!['ESBUILD_BINARY_PATH','NODE_OPTIONS','NODE_PATH','BUN_OPTIONS'].some(k=>process.env[k]));
+ let selected=args[3];if(!selected)selected=(process.env.PATH??'').split(':').map(p=>join(p,'bun')).find(p=>{try{accessSync(p,constants.X_OK);return true;}catch{return false;}});require(selected&&selected===resolve(selected));const BUN=realpathSync(selected),bunVersion=execFileSync(BUN,['--no-env-file','--version'],{env:{PATH:'/usr/bin:/bin'},timeout:5000,maxBuffer:4096,encoding:'utf8'}).trim();require(bunVersion==='1.3.5');
+ const c=input(args[1]);require(c.format===1&&['initial','full'].includes(c.mode)&&Number.isSafeInteger(c.window)&&c.window>=1&&c.window<=100000);
+ for(const k of ['directory','cutoverBundle'])privatePath(c[k],true);for(const k of ['admissionPath','targetFile','credentialFile'])privatePath(c[k]);privatePath(dirname(c.journalDirectory),true);require(c.journalDirectory===resolve(c.journalDirectory)&&!c.journalDirectory.startsWith(ROOT+'/'));
+ const limits={maxRequests:c.maxRequests??64,wallMs:c.wallMs??300000,requestMs:c.requestMs??15000};for(const [k,max]of Object.entries({maxRequests:64,wallMs:300000,requestMs:15000}))require(Number.isSafeInteger(limits[k])&&limits[k]>=1&&limits[k]<=max);
+ const registry=c.journalDirectory+'.owned';if(c.window===1){mkdirSync(registry,{mode:0o700});mkdirSync(join(registry,'home'),{mode:0o700});}privatePath(registry,true);privatePath(join(registry,'home'),true);
+ const result=await build({entryPoints:[join(ROOT,ENTRY)],absWorkingDir:ROOT,outfile:join(registry,'protected-state-d1.mjs'),bundle:true,write:false,format:'esm',platform:'node',target:'esnext',conditions:['bun','import'],metafile:true,legalComments:'none',logLevel:'error',define:{'import.meta.dirname':JSON.stringify(join(ROOT,'scripts/lib'))}});
+ const uses=[];for(const name of Object.keys(result.metafile.inputs)){const text=readFileSync(join(ROOT,name),'utf8'),count=(text.match(/import\.meta\.dirname/g)??[]).length;if(count)uses.push({path:name,count});}
+ require(JSON.stringify(uses)===JSON.stringify([{path:'scripts/lib/protected-state.ts',count:1}]));
+ for(const output of Object.values(result.metafile.outputs))require(output.imports.every(i=>i.external&&/^(node:|bun:)/.test(i.path)));
+ const bundlerAlias='node_modules/esbuild/package.json',bundlerPhysical=relative(ROOT,realpathSync(join(ROOT,bundlerAlias))),aliases={[bundlerAlias]:bundlerPhysical};
+ for(const [name,expected]of Object.entries(migrationAssets))require(pin(join(ROOT,'migrations',name)).sha256===expected);
+ const sources=new Set([...Object.keys(result.metafile.inputs),...Object.keys(migrationAssets).map(name=>'migrations/'+name),ENTRY,'scripts/build-protected-state-d1-owned.mjs','package.json','tsconfig.json',bundlerPhysical]);
+ const files={};for(const name of [...sources].sort()){require(!name.startsWith('/')&&!name.split('/').includes('..'));files[name]=pin(join(ROOT,name));}
+ const bytes=Buffer.from(result.outputFiles[0].contents),manifest={format:1,preparedOnly:true,root:ROOT,entry:ENTRY,bundle:'protected-state-d1.mjs',bundlePin:{bytes:bytes.length,sha256:digest(bytes)},bundler:{name:'esbuild',version},options:{format:'esm',platform:'node',target:'esnext',conditions:['bun','import'],legalComments:'none'},dirnameOverride:{value:join(ROOT,'scripts/lib'),uses},aliases,files};
+ if(c.window===1){write(join(registry,'protected-state-d1.mjs'),bytes);json(join(registry,'bundle-manifest.json'),manifest);}else{require(digest(readFileSync(join(registry,'protected-state-d1.mjs')))===manifest.bundlePin.sha256&&JSON.stringify(JSON.parse(readFileSync(join(registry,'bundle-manifest.json'),'utf8')))===JSON.stringify(manifest));}
+ const admission=input(c.admissionPath),target=input(c.targetFile),m=input(join(c.directory,'manifest.json'));
+ require(target.format===1&&target.stageOnly===true);const canonical={format:1,stageOnly:true,stageId:target.stageId,accountId:target.accountId,d1Id:target.d1Id,r2Bucket:target.r2Bucket,adminUrl:new URL(target.adminUrl).origin};
+ const schemaPath=privatePath(join(c.directory,'source-schema.json'));require(lstatSync(schemaPath).size<=256*1024);const sourceSchemaSha256=pin(schemaPath).sha256;
+ const pins={format:1,slice:c.mode==='full'?'full-copy-v1':'initial-admission-v1',manifestSha256:c.manifestSha256,sourceSchemaSha256,admissionSha256:c.admissionSha256,admissionFileSha256:c.admissionFileSha256,targetSha256:admission.targetSha256,compactPlanSha256:admission.compactPlanSha256,protectedPagesSha256:m.pagesSha256,compactPagesSha256:admission.compactPlan.pagesSha256};
+ const s=lstatSync(c.credentialFile,{bigint:true}),credential={path:c.credentialFile,dev:String(s.dev),ino:String(s.ino),size:Number(s.size),mtimeNs:String(s.mtimeNs),uid:Number(s.uid),mode:Number(s.mode)&0o777};require(credential.size<=4096);
+ const review={format:1,authority:'prepared-unapproved',executeOneWindow:false,validUntil:null,workspace:ROOT,mode:c.mode,window:c.window,operatorSha256:pin(join(ROOT,'scripts/protected-state-d1-owned.py')).sha256,captureSha256:pin(join(ROOT,'scripts/lib/capture_owned.py')).sha256,bundleManifestSha256:pin(join(registry,'bundle-manifest.json')).sha256,bundleSha256:manifest.bundlePin.sha256,runtime:{kind:'bun',version:bunVersion,path:BUN,...pin(BUN)},inputs:{directory:c.directory,manifestSha256:c.manifestSha256,sourceSchemaSha256,admissionPath:c.admissionPath,admissionSha256:c.admissionSha256,admissionFileSha256:c.admissionFileSha256,cutoverBundle:c.cutoverBundle,targetFile:c.targetFile,targetFileSha256:pin(c.targetFile).sha256,journalDirectory:c.journalDirectory},target:canonical,planSha256:digest(Buffer.from(JSON.stringify(pins))),credential,limits,automaticNextWindow:false,allowanceExtension:false};
+ const path=join(registry,`window-${String(c.window).padStart(6,'0')}.review-template.json`);json(path,review);console.log(JSON.stringify({preparedOnly:true,executionApproved:false,bundleSha256:review.bundleSha256,reviewTemplate:path,credentialBytesRead:0}));
+}catch{console.error(JSON.stringify({error:'protected_owned_preparation_refused',credentialBytesRead:0}));process.exitCode=1;}

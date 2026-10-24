@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T12:46:54.601Z",
+  "scope": "Local snapshot provider-batch durability regression only",
+  "change": "Diff/write batches use the existing EMBED_BATCH (32), so applyBatch completes before another provider batch is submitted.",
+  "red": {
+    "command": "bun run test test/corpus-recovery.test.ts -t 'commits each successful snapshot provider batch'",
+    "priorBatchSize": 200,
+    "exitCode": 1,
+    "observedFailure": "While the second provider call was blocked, the first changed row retained its baseline fingerprint; the prior successful provider batch had not been applied."
+  },
+  "checks": [
+    {
+      "command": "bun run test test/corpus-recovery.test.ts -t 'commits each successful snapshot provider batch'",
+      "exitCode": 0,
+      "tests": 1
+    },
+    {
+      "command": "bun run test test/snapshot-pipeline.test.ts test/corpus-recovery.test.ts test/postgres-corpus-recovery.test.ts test/snapshot-diff.test.ts",
+      "exitCode": 0,
+      "tests": 35,
+      "files": 4
+    },
+    {
+      "command": "bun run typecheck:worker",
+      "exitCode": 0
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc -p dist/snapshot-provider-batch-validation/tsconfig.tooling.json --noEmit",
+      "exitCode": 0
+    }
+  ],
+  "focusedToolingProject": {
+    "extends": "../../tsconfig.tooling.json",
+    "include": [
+      "../../test/corpus-recovery.test.ts",
+      "../../test/snapshot-pipeline.test.ts"
+    ],
+    "exclude": []
+  },
+  "verified": [
+    "Real SQLite/D1 transactions commit first-batch rows and feed before the later blocked/failing provider call; its vector outbox is drained.",
+    "Restart uses committed fingerprints and submits only remaining documents; no duplicate feed events or premature publication.",
+    "Changed and added rows, placeholders, removals, an invocation row budget crossing the provider boundary, and final publication are preserved."
+  ],
+  "sourceFiles": {
+    "src/ingest/snapshot-pipeline.ts": {
+      "bytes": 8513,
+      "sha256": "c24fa865e6c448c4cdb2ca4bfeceb7dff38067e4293c5c98e100f0fb8da48ffb"
+    },
+    "test/corpus-recovery.test.ts": {
+      "bytes": 14942,
+      "sha256": "032f3516ec65c9cdf551c7361494146e7f9b6e1afe148796cd85796158d42414"
+    },
+    "test/snapshot-pipeline.test.ts": {
+      "bytes": 10684,
+      "sha256": "685ebd3f17d23b9951ddf610edd273c2b0f80ec26798cc75d7f36ce5dac5f5df"
+    }
+  },
+  "limits": [
+    "A failed or uncertain accepted provider request can still spend attempts without committed rows. Repetition is limited, not eliminated; budget reservation/refund semantics are unchanged.",
+    "No cloud requests, embeddings at a real provider, deployments, live configuration changes, or production data access were performed.",
+    "No hosted recovery, latency or throughput result and no full repository test/build claim."
+  ]
+}

@@ -29,6 +29,13 @@ import type { SnapshotIndexEntry } from './snapshot-diff';
 
 /** The manifest's format number. A reader refuses one it does not know. */
 export const SNAPSHOT_FORMAT = 1;
+/** Increment when row semantics change. Existing snapshots remain immutable. */
+export const SNAPSHOT_PARSER_VERSION = 'statutes-v2';
+export function snapshotNamespace(parser?: string): string {
+  if (parser === undefined) return '';
+  if (typeof parser !== 'string' || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(parser)) throw new Error('invalid snapshot parser identity');
+  return `snapshots/${parser}/`;
+}
 
 /** How large a part is, unless the builder was told otherwise. */
 export const DEFAULT_PART_BYTES = 64 * 1024 * 1024;
@@ -39,6 +46,8 @@ export interface SnapshotPart {
   key: string;
   /** Its size in bytes. */
   bytes: number;
+  /** Digest of immutable bytes, when produced by the Workflow builder. */
+  sha256?: string;
 }
 
 /** What a snapshot is, and where all of it is. */
@@ -46,6 +55,8 @@ export interface SnapshotManifest {
   format: number;
   /** The corpus revision this is a snapshot of. */
   commit: string;
+  /** Absent only on legacy snapshots; selects an immutable namespace. */
+  parser?: string;
   /** The revision's date, as the corpus reports it. */
   date: string;
   rows: {
@@ -62,17 +73,20 @@ export interface SnapshotManifest {
     bytes: number;
     /** How many provisions the index names. Should equal `rows.count`. */
     entries: number;
+    /** Digest of the ordered (id, fingerprint) sequence. */
+    digest?: string;
+    sha256?: string;
   };
 }
 
 /** The manifest's key. */
-export function manifestKey(commit: string): string {
-  return `${commit}.manifest.json`;
+export function manifestKey(commit: string, parser?: string): string {
+  return `${snapshotNamespace(parser)}${commit}.manifest.json`;
 }
 
 /** The index's key. */
-export function indexKey(commit: string): string {
-  return `${commit}.index.jsonl`;
+export function indexKey(commit: string, parser?: string): string {
+  return `${snapshotNamespace(parser)}${commit}.index.jsonl`;
 }
 
 /** A part's key. */
@@ -88,33 +102,43 @@ export function partKey(commit: string, part: number): string {
  * arrived — and the reader would find that out by asking for a row and
  * getting nothing, which looks exactly like a row that is not in the corpus.
  */
+function positiveInteger(value: unknown): value is number { return Number.isSafeInteger(value) && (value as number) > 0; }
+function nonnegativeInteger(value: unknown): value is number { return Number.isSafeInteger(value) && (value as number) >= 0; }
+function validRevision(value: unknown): value is string { return typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(value); }
+function validDate(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+}
+function validDigest(value: unknown, length: number): boolean { return typeof value === 'string' && new RegExp(`^[a-f0-9]{${length}}$`).test(value); }
+
 export function parseManifest(text: string, where = 'the manifest'): SnapshotManifest {
   let manifest: SnapshotManifest;
-  try {
-    manifest = JSON.parse(text) as SnapshotManifest;
-  } catch {
-    throw new Error(`${where} is not JSON`);
-  }
-  // The shape first, so that a manifest from a newer builder is told the
-  // format is wrong rather than the shape is.
-  if (!manifest.commit || !manifest.rows || !manifest.index) {
+  try { manifest = JSON.parse(text) as SnapshotManifest; }
+  catch { throw new Error(`${where} is not JSON`); }
+  if (!manifest || typeof manifest !== 'object' || !manifest.commit || !manifest.rows || !manifest.index) {
     throw new Error(`${where} does not describe a snapshot`);
   }
-  if (manifest.format !== SNAPSHOT_FORMAT) {
-    throw new Error(
-      `${where} is format ${manifest.format}; this reader knows format ${SNAPSHOT_FORMAT}`,
-    );
+  if (manifest.format !== SNAPSHOT_FORMAT) throw new Error(`${where} is format ${manifest.format}; this reader knows format ${SNAPSHOT_FORMAT}`);
+  if (!Array.isArray(manifest.rows.parts) || !manifest.rows.parts.length) throw new Error(`${where} names no parts`);
+  if (!validRevision(manifest.commit) || !validDate(manifest.date) ||
+    !positiveInteger(manifest.rows.count) || !positiveInteger(manifest.rows.bytes) || !positiveInteger(manifest.rows.partBytes) ||
+    !positiveInteger(manifest.index.bytes) || !positiveInteger(manifest.index.entries) || manifest.rows.count !== manifest.index.entries) {
+    throw new Error(`${where} has invalid revision, date, sizes or counts`);
   }
-  if (!Array.isArray(manifest.rows.parts) || manifest.rows.parts.length === 0) {
-    throw new Error(`${where} names no parts`);
+  const prefix = `${snapshotNamespace(manifest.parser)}${manifest.commit}`;
+  if (manifest.index.key !== `${prefix}.index.jsonl` ||
+    manifest.index.digest !== undefined && !validDigest(manifest.index.digest, 32) ||
+    manifest.index.sha256 !== undefined && !validDigest(manifest.index.sha256, 64)) throw new Error(`${where} has an invalid index identity`);
+  if (manifest.parser !== undefined && (!validDigest(manifest.index.digest, 32) || !validDigest(manifest.index.sha256, 64))) throw new Error(`${where} lacks parser-versioned index integrity`);
+  const seen = new Set<string>();
+  let total = 0;
+  for (const part of manifest.rows.parts) {
+    const suffix = part && typeof part.key === 'string' && part.key.startsWith(`${prefix}.rows.`) ? part.key.slice(`${prefix}.rows.`.length) : '';
+    if (!part || !/^(?:g\d{4}\.)?\d{3,}\.jsonl$/.test(suffix) || !positiveInteger(part.bytes) || seen.has(part.key) ||
+      (manifest.parser !== undefined || part.sha256 !== undefined) && !validDigest(part.sha256, 64)) throw new Error(`${where} has an invalid or duplicate row part`);
+    seen.add(part.key);
+    total += part.bytes;
   }
-  const total = manifest.rows.parts.reduce((sum, part) => sum + part.bytes, 0);
-  if (total !== manifest.rows.bytes) {
-    throw new Error(
-      `${where} says the rows are ${manifest.rows.bytes} bytes, and its ` +
-        `${manifest.rows.parts.length} part(s) add up to ${total} — the snapshot is incomplete`,
-    );
-  }
+  if (!Number.isSafeInteger(total) || total !== manifest.rows.bytes) throw new Error(`${where} says the rows are ${manifest.rows.bytes} bytes, and its ${manifest.rows.parts.length} part(s) add up to ${total} — the snapshot is incomplete`);
   return manifest;
 }
 
@@ -201,6 +225,7 @@ export function indexLine(entry: SnapshotIndexEntry): string {
 export interface VectorsManifest {
   format: number;
   commit: string;
+  parser?: string;
   /** How many floats per vector. Fixed by the model, not by the export. */
   dims: number;
   /** How many vectors the file holds — one per provision, placeholders included. */
@@ -214,6 +239,8 @@ export interface VectorsManifest {
     count: number;
     /** The position of its first vector, in the snapshot's order. */
     from: number;
+    /** Immutable vector bytes; required for parser-versioned exports. */
+    sha256?: string;
   }[];
   /**
    * The index this file belongs to.
@@ -257,30 +284,50 @@ export interface VectorsManifest {
  * hash of the chunk hashes, over the count, which is the same value however
  * the work is divided.
  */
-export function indexDigest(entries: Iterable<{ id: string; fp: string }>): string {
-  const chunks: string[] = [];
-  let buffer = '';
-  let count = 0;
-  for (const entry of entries) {
-    buffer += `${entry.id}\u0000${entry.fp}\n`;
-    count++;
-    if (buffer.length >= 1_000_000) {
-      chunks.push(hash128(buffer));
-      buffer = '';
+export class IndexDigester {
+  private readonly chunks: string[] = [];
+  private buffer = '';
+  private count = 0;
+
+  add(entry: { id: string; fp: string }): void {
+    this.buffer += `${entry.id}\u0000${entry.fp}\n`;
+    this.count++;
+    if (this.buffer.length >= 1_000_000) {
+      this.chunks.push(hash128(this.buffer));
+      this.buffer = '';
     }
   }
-  if (buffer) chunks.push(hash128(buffer));
-  return hash128(`${count}\n${chunks.join('\n')}`);
+
+  digest(): string {
+    const hashes = this.buffer ? [...this.chunks, hash128(this.buffer)] : this.chunks;
+    return hash128(`${this.count}\n${hashes.join('\n')}`);
+  }
+}
+
+export function indexDigest(entries: Iterable<{ id: string; fp: string }>): string {
+  const digester = new IndexDigester();
+  for (const entry of entries) digester.add(entry);
+  return digester.digest();
+}
+
+/** Positional vector bytes are unsafe unless every id and fingerprint agrees. */
+export function assertVectorIndex(manifest: VectorsManifest, entries: Iterable<{ id: string; fp: string }>): void {
+  let count = 0;
+  const digester = new IndexDigester();
+  for (const entry of entries) { digester.add(entry); count++; }
+  if (count !== manifest.index.entries || digester.digest() !== manifest.index.digest) {
+    throw new Error('vectors do not belong to this exact snapshot index and fingerprints');
+  }
 }
 
 /** The vectors manifest's key. */
-export function vectorsManifestKey(commit: string): string {
-  return `${commit}.vectors.manifest.json`;
+export function vectorsManifestKey(commit: string, parser?: string): string {
+  return `${snapshotNamespace(parser)}${commit}.vectors.manifest.json`;
 }
 
 /** A vectors part's key. */
-export function vectorsPartKey(commit: string, part: number): string {
-  return `${commit}.vectors.${String(part).padStart(3, '0')}.f32`;
+export function vectorsPartKey(commit: string, part: number, parser?: string): string {
+  return `${snapshotNamespace(parser)}${commit}.vectors.${String(part).padStart(3, '0')}.f32`;
 }
 
 /**
@@ -299,7 +346,7 @@ export function parseVectorsManifest(text: string, where = 'the vectors manifest
   } catch {
     throw new Error(`${where} is not JSON`);
   }
-  if (!manifest.commit || !Array.isArray(manifest.parts)) {
+  if (!manifest || typeof manifest !== 'object' || !manifest.commit || !Array.isArray(manifest.parts)) {
     throw new Error(`${where} does not describe a vectors file`);
   }
   if (manifest.format !== SNAPSHOT_FORMAT) {
@@ -319,6 +366,25 @@ export function parseVectorsManifest(text: string, where = 'the vectors manifest
         `${manifest.count} vector(s) — one of the two is not what it says it is`,
     );
   }
+  if (!validRevision(manifest.commit) || !positiveInteger(manifest.count) || !positiveInteger(manifest.dims) ||
+    !positiveInteger(manifest.bytes) || !validDigest(manifest.index.digest, 32) || !positiveInteger(manifest.index.entries) ||
+    !nonnegativeInteger(manifest.embedded) || !nonnegativeInteger(manifest.notEmbedded) || manifest.embedded + manifest.notEmbedded !== manifest.count || !manifest.parts.length) {
+    throw new Error(`${where} has invalid counts, dimensions or index digest`);
+  }
+  const prefix = `${snapshotNamespace(manifest.parser)}${manifest.commit}.vectors.`;
+  const keys = new Set<string>();
+  let position = 0;
+  for (const part of manifest.parts) {
+    const suffix = part && typeof part.key === 'string' && part.key.startsWith(prefix) ? part.key.slice(prefix.length) : '';
+    if (!part || !/^\d{3,}\.f32$/.test(suffix) || keys.has(part.key) || !positiveInteger(part.count) ||
+      !positiveInteger(part.bytes) || !nonnegativeInteger(part.from) || part.from !== position || part.bytes !== part.count * manifest.dims * 4 ||
+      (manifest.parser !== undefined || part.sha256 !== undefined) && !validDigest(part.sha256, 64)) {
+      throw new Error(`${where} has an invalid or duplicate vector part`);
+    }
+    keys.add(part.key);
+    position += part.count;
+  }
+  if (position !== manifest.count) throw new Error(`${where} vector part counts are incomplete`);
   const expected = manifest.count * manifest.dims * 4;
   if (manifest.bytes !== expected) {
     throw new Error(
