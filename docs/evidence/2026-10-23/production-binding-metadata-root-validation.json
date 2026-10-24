@@ -1,0 +1,55 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-24T01:29:49.998318+00:00",
+  "scope": "Read-only production management metadata; no production data or provider call",
+  "resultSha256": "a973640eacf5f4d852c3e06e6f94374d5c9e6a67a644f5fde4a28acaac84534e",
+  "ownedResultSha256": "88f146cb5731088074f6a0f2b5826f6d412fb1b03d93ff5c23979be61db33bc3",
+  "ownedExitCode": 0,
+  "ownedProcessSettled": true,
+  "requests": 8,
+  "productionWrites": false,
+  "sqlQueries": 0,
+  "dataReads": 0,
+  "sourceCalls": 0,
+  "modelCalls": 0,
+  "servingCalls": 0,
+  "workers": [
+    {
+      "script": "civicsignal",
+      "versionId": "4c06fcd8-db2e-47b9-92ad-fc214522e73e",
+      "deploymentId": "7ed7880d-8a05-4307-a85f-610fa1f2f0f2",
+      "observedAt": "2026-10-24T01:10:06.706Z",
+      "hasAuthDb": false,
+      "hasCorpora": false,
+      "hasApiKeys": true,
+      "hasCivicDb": true,
+      "hasPipelineCoordinator": false,
+      "durableObjectBindingCount": 1,
+      "schedules": []
+    },
+    {
+      "script": "civicsignal-pipeline",
+      "versionId": "7394930d-13a2-4aad-9b20-0de60b8ccf8c",
+      "deploymentId": "48b7df97-46cf-4ebe-b9cf-9fc0339148e7",
+      "observedAt": "2026-10-24T01:10:10.688Z",
+      "hasAuthDb": false,
+      "hasCorpora": false,
+      "hasApiKeys": false,
+      "hasCivicDb": true,
+      "hasPipelineCoordinator": false,
+      "durableObjectBindingCount": 0,
+      "schedules": [
+        {
+          "cron": "23 11 * * *"
+        }
+      ]
+    }
+  ],
+  "productionMaintenanceQualified": false,
+  "productionAcquisitionQualified": false,
+  "limitations": [
+    "Point-in-time binding/version/calendar observations; deployed source contents and auth data authority were not established.",
+    "No production schema, publication, rows, keys, sequence values, writer inventory or global quiescence was read or qualified.",
+    "The observed pipeline has no coordinator binding; the staging suspend/drain protocol cannot be assumed available."
+  ]
+}

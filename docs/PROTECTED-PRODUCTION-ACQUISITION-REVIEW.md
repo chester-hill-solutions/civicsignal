@@ -1,0 +1,48 @@
+# Protected production acquisition review
+
+## Plan validation summary
+
+**Adjust.** The proposed read-only D1/KV acquisition can reuse the existing protected copier and auth collector. Production metadata observed on 2026-10-24 requires a different maintenance procedure from staging: the deployed pipeline has no coordinator binding. No production freeze, data acquisition, migration or binding switch has been performed or approved by this review. No formal ADR was found; the release, protected-copy and rollback documents supply the governing constraints.
+
+## What the plan already covers well
+
+The plan preserves the full original SQL and raw KV captures, distinguishes normalized auth data from raw backups, preserves the original usage namespace, and keeps the existing restore adapter restricted to staging. It correctly requires original sequence highwaters, explicit absence, an empty outbox and a compatible corpus publication before preparing a migration. Its separate common freeze addresses the lack of a transaction spanning D1 and KV.
+
+## Gaps, conflicts, or redundancies to fix
+
+1. **Production maintenance is unresolved.** Eight read-only management requests observed API version `4c06fcd8-db2e-47b9-92ad-fc214522e73e` and pipeline version `7394930d-13a2-4aad-9b20-0de60b8ccf8c`. The API has `API_KEYS` and `CIVIC_DB`, with no `AUTH_DB` or `CORPORA`; the pipeline has no Durable Object/coordinator binding. These are binding observations, not proof of the deployed auth schema or data authority. Do not substitute the staging coordinator or treat Cron removal as a complete writer freeze. Define maintenance for the actual deployed versions and every auth, billing and ingestion writer before implementing a live acquisition operator.
+2. **Correct the export continuation mapping.** The inspected Wrangler 4.151.3 `pollExport` sends request `current_bookmark` and feeds response `at_bookmark` into the next request. The initial export is a new export, not selection of an arbitrary historical bookmark. Preserve the full response chain, including uncertain starts, without automatically restarting it.
+3. **Source schema admission is weaker than the plan claims.** `scripts/lib/protected-state.ts:64–76` validates column names and hidden-column absence; `:97–99` checks integrity and existing FK violations. It does not verify that declared FK, UNIQUE, CHECK, index or trigger definitions match an accepted source schema. The strict destination checker in `src/corpora/protected-state-d1-schema.ts:14–39` is a separate contract. Retain actual source schema objects, classify the deployed legacy schema, and review an explicit source admission rule before treating a production backup as compatible. An empty `foreign_key_check` cannot establish that foreign keys were declared.
+4. **Keep sequence evidence and authenticity separate.** A local bridge can check a fixed query, exact before/after presence and values, raw response hashes, unchanged SQL and matching freeze/export attestations. Those relationships do not authenticate the provider or establish global quiescence. Do not fabricate a captured-production envelope. Preserve absent versus explicit zero, reject contradictory literal SQL facts, and hash the consumed SQL before committing the derived database.
+5. **Use a finite credential owner.** `scripts/lib/cloudflare-auth.ts:28–37` selects a token but does not validate file identity or expiry. Its `fetchWithAuth` path at `:82–118` retries and can refresh via a production query at `:45–49`. A future acquisition must select credentials after its durable intent, use fixed metadata/expiry checks and a minimal environment, and avoid that retry/refresh path. Never forward the credential to the signed export-download origin.
+6. **The proposed ceiling is not a demonstrated capacity.** Two maximum KV views permit 2,020 calls; 74 fixed facts calls, 60 export calls and one download consume 2,155 of the proposed 2,200. Enumerate and bound every additional identity/control observation. Review actual inventory, current primary pagination/export/consistency documentation and signed-origin rules before selecting an executable budget. Matching KV views remain point-in-time evidence under an operational freeze, not proof of global convergence.
+
+## Existing code/product references to reuse or extend
+
+- `src/auth-export.ts:1–51`: implement a `LegacyAuthReader` over sealed paginated captures around `collectLegacyAuth`; pagination belongs in acquisition. Preserve authoritative hash-index checks and monotonic revocation.
+- `src/auth-migration.ts:24–71`: reuse `normalizeAuthExport` and `prepareAuthMigration`. Keep the full raw capture separately because normalization strips unknown fields.
+- `scripts/lib/protected-sql-import.mjs`: the separate explicit evidence function now extends the restricted streaming importer using the same parser, authorizer and transaction. The original two-argument importer and CLI remain strict. Its [94-test local validation](evidence/2026-10-23/protected-original-sequence-bridge-root-validation.json) establishes no production acquisition.
+- `scripts/lib/protected-state.ts:54–61,116–140`: reuse sealed-file checks and auth merging. A distinct authoritative auth database would require a reviewed second-source extension; it must not be silently collapsed into the corpus source.
+- `scripts/lib/protected-state-d1.ts:15` and `services/restore/protocol.ts:19`: retain the existing admission and staging-only target check. A production target adapter is a later, separate change.
+- `docs/PROTECTED-D1-BINDING.md`: retain the existing local synthetic fixture and hosted-copy gates. The 18-row fixture does not qualify production acquisition or a full hosted copy.
+
+## API impact and validation notes
+
+**No HTTP, MCP or format-1 protected manifest change is needed for the local sequence bridge.** It produces a private SQLite source for the existing copier plus a separate provenance receipt. It must report `providerAuthenticated`, `globalQuiescenceEstablished` and `productionAcquisitionQualified` as false. No endpoint, arbitrary SQL route, production target override or automatic acquisition mode is introduced. Production `AUTH_DB` authority and the original usage namespace remain release and rollback requirements.
+
+## Final adjusted plan, summarized
+
+1. **Locally complete:** the narrow offline sequence bridge and fault tests retain unchanged raw inputs and the original strict import path. Preserve its validation and separately qualify upstream acquisition evidence.
+2. Define source schema admission and maintenance for the observed production versions; inventory every relevant writer and auth authority.
+3. Confirm current primary provider contracts and actual inventory. Select an enumerated finite acquisition budget and signed-download rules.
+4. Implement one fixed-resource read-only acquisition client using the existing auth collector, protected file tools and owned-process pattern. Keep common-freeze establishment separate.
+5. Prepare the complete concrete production maintenance/acquisition packet for its separate approval. Acquire only after that decision, preserving all failures and original artifacts.
+6. Qualify corpus/parser/text/vector compatibility and execute the isolated hosted synthetic/full-copy checks. Review a production target adapter and final switch/rollback only after those results exist.
+
+## Handover items for engineering, enumerated
+
+1. **SQL importer and tests:** prove deleted highwaters 120/1000 above surviving IDs 2/10, absent versus zero, failed/foreign/partial evidence, conflicting qualified sequence writes, pre-commit rollback and strict default behavior. Treat post-commit close/hash failure as refused acceptance with a retained file, not retroactive rollback.
+2. **Source schema admission:** compare the retained actual schema with an explicitly accepted legacy or current schema. Test missing constraints, hidden columns, unexpected protected tables and unsupported objects. Do not infer compatibility from column names alone.
+3. **Maintenance packet:** name actual versions, bindings, writer controls, credential lifetime and observed freeze interval. Verify that authentication cannot mutate covered timestamps during acquisition; preserve the original usage object identities. No staging control may stand in for production.
+4. **Acquisition reader:** test complete pagination, repeated cursors, changed same-count values, expiry, exact export continuation, lost acknowledgements, bounded download, token/origin separation and terminal persistence failures. Emit safe public counts/digests and private raw captures.
+5. **Release evidence:** keep local materialization, authenticated acquisition, hosted protected copy and production binding switch as separately evidenced gates. Update `docs/V1-RELEASE.md` only from actual completed results.

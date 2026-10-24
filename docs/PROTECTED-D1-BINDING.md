@@ -271,3 +271,46 @@ pass within the 1,276-test release gate. See the
 New isolated hosted resources, independent emptiness checks and separately
 reviewed deployment/window execution remain necessary. This fixture establishes
 no production backup, common freeze or production identity migration.
+
+## Offline original-sequence evidence bridge
+
+`scripts/lib/protected-sql-import.mjs` provides the explicit library function
+`importProtectedSqlWithOriginalSequenceEvidence(source, destination, {path, sha256})`.
+The original two-argument importer and its CLI remain strict: an ordinary SQL
+dump without both literal sequence facts is still refused. No CLI flag or
+format-1 protected manifest change is added.
+
+The bridge accepts unchanged private SQL plus seven separate, hash-pinned JSON
+files, each at most 16 KiB: the evidence envelope, common-freeze and export
+attestations, before/after observations and their original raw D1 responses.
+They must use the fixed production account/database identity and exact two-name
+query, agree on provenance and freeze, and establish complete equal before/after
+facts. Each sequence is explicitly present with its original nonnegative safe
+integer or absent. Missing, failed or partial queries do not establish absence.
+Inputs must be canonical owner-only files outside the repository; aliases,
+hardlinks and existing output paths are refused.
+
+Materialization reuses the streaming parser, SQLite authorizer and transaction.
+It hashes the SQL bytes actually consumed before COMMIT, rejects contradictory
+literal facts and unrecognized writes to `sqlite_sequence`, and restores only
+the two original observed sequence facts. An absent fact with surviving history
+is refused. `MAX(id)` is used only to reject an invalid supplied highwater; it
+does not reconstruct one. Integrity and FK checks run before COMMIT. Pre-commit
+refusals roll back imported DDL and data. A post-commit close/hash failure refuses
+acceptance and retains the private file.
+
+The result supplies the derived SQLite, original SQL and evidence digests for
+the existing `sourceKind: 'sqlite'` copier input. It always reports
+`providerAuthenticated: false`, `globalQuiescenceEstablished: false` and
+`productionAcquisitionQualified: false`. These private attestations establish
+local consistency only. The caller must provide a bounded owned process; this
+library adds no deadline or remote acquisition behavior.
+
+The [production acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md)
+records the actual deployed binding differences, missing maintenance procedure,
+source-schema admission gap and remaining acquisition/hosted-copy gates.
+All **94 focused copier/bridge/format tests**, including the optional actual local
+workerd check, pass in the corrected root run. Tooling TypeScript and independent
+peer review also pass. The first root run omitted Bun from its clean PATH; its
+two CLI-spawn failures remain preserved separately. See the
+[bridge validation](evidence/2026-10-23/protected-original-sequence-bridge-root-validation.json).

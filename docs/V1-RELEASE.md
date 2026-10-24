@@ -57,17 +57,39 @@ measurement completed **19/20** requests with one row-hydration 502; each concur
 level lost one of two warm-ups. Concurrency four completed **20/20** measured
 requests from cache. Completed client p95 was **4.602 s** serial and **1.924 s**
 at concurrency four, with different cache populations; these are bounded staging
-observations, not production capacity. The single approved 128-token Zen attempt
-reached staging but failed acceptance. Its generic receipt cannot distinguish
-provider failure from response/citation mismatch. No second generation call ran.
-The original relay stopped cleanly at **153/160** reservations. See the
-[retrieval/generation receipt](evidence/2026-10-23/staging-retrieval-generation-root-validation.json).
+observations, not production capacity. The original approved 128-token Zen attempt
+failed acceptance at reservation 153. Its generic receipt cannot distinguish
+provider failure from response/citation mismatch; that attempt and its clean
+153-reservation relay shutdown remain preserved in the
+[original retrieval/generation receipt](evidence/2026-10-23/staging-retrieval-generation-root-validation.json).
+
+A separately user-approved, one-request diagnostic then consumed reservation
+**154/160** at **01:18:50 UTC**, with the same 128-token cap and original ledger.
+It returned staging **HTTP 502 / `UPSTREAM_UNAVAILABLE`**, correlation
+`req_mvlpnc3f3csiit1oeq`, and failed acceptance without retry. The response does not
+establish whether Zen was called, the key was valid, or which upstream stage
+failed. No raw body, answer or key-derived hash is retained in the public receipt.
+The restarted relay's owner timed out with cleanup uncertainty; a separate check
+at **01:24:41 UTC** found its PID and listener absent. That later observation does
+not qualify or rewrite the uncertain owner result. The ledger remains **154/160**,
+with six unspent reservations and no reset. See the
+[diagnostic and shutdown evidence](evidence/2026-10-23/opencode-zen-diagnostic-v2-root-observation.json).
 
 See the [completed metadata/text validation](evidence/2026-10-23/staging-completed-metadata-text-root-validation.json),
 [source/recovery validation](evidence/2026-10-23/staging-source-recovery-root-validation.json)
 and [binding recovery record](V1-STAGING-BINDING-RECOVERY.md). The
 [backup/API/smoke receipt](evidence/2026-10-23/staging-vector-backup-api-smokes-root-validation.json)
 records the completed gates and their limitations.
+The separately armed **01:40 UTC** staging Cron experiment finished its guarded
+window with both independent cleanup pairs passing at **01:45 UTC**. The final
+seven-request read passed at **01:45:38 UTC**, returning no scheduled rows and
+HTTP 404 for the entered, completed and failed event objects. Its historical
+health control showed one success and zero errors; the calendar was empty and
+the prior API-created Workflow and manifest were unchanged. Scheduled discovery
+and publication remain unverified. These absences do not establish non-dispatch
+or a platform cause. The reader made no source/model/serving calls; the runtime
+ceiling was one possible source call, whose actual execution is unattested. See
+the [new Cron outcome](evidence/2026-10-23/staging-cron-0140-root-observation.json).
 Retrieval acceptance and production migration remain pending. Production and
 Railway are unchanged.
 
@@ -82,7 +104,7 @@ Railway are unchanged.
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled dispatch remains unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
-| V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; single Zen check failed acceptance |
+| V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
 | V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; migration tooling, hosted acceptance and final audit pending |
 
@@ -458,8 +480,12 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   preserve one provider call. All 88 focused checks and Worker/tooling compilers
   pass. Independent review reproduced and fixed late-response cleanup and
   parsing-deadline gaps before the staging bundle was frozen. The user approved
-  one positive hosted check capped at 128 output tokens; it has not run. See the
+  one positive hosted check capped at 128 output tokens. That attempt failed at
+  reservation 153; the separately approved diagnostic at 154 returned staging
+  HTTP 502 and also failed acceptance. Hosted generation remains unverified. See the
   [Zen validation](evidence/2026-10-23/opencode-zen-root-validation.json).
+  The [later diagnostic receipt](evidence/2026-10-23/opencode-zen-diagnostic-v2-root-observation.json)
+  preserves both attempts' distinct evidence and the relay-owner uncertainty.
   The expanded Bun compiler check then found that its reader interface also
   requires `readMany`. A structural type for the three methods used fixes this
   without changing the compiled Worker bytes. All four compiler projects now
@@ -482,6 +508,17 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   Cloudflare cause or scheduled publication. The Cron gate stays open. See the
   [observation and limits](evidence/2026-10-23/staging-cron-historical-root-observation.json).
 
+- October 24 claimed Cron experiment: immutable staging runtime
+  `f00194fb-5062-4b0a-930b-b2aa12ded3f5` passed empty-calendar deployment and exact
+  binding/runtime postverify before the single 01:40 event. Arming was confirmed
+  at 01:05:21 UTC. Primary made 20 R2 observations, then both independent guards
+  completed unconditional T+5 `PUT[]`/`GET[]` cleanup with settled success.
+  The final seven-request observation returned zero scheduled rows and three
+  absent event receipts, with the health control and prior API publication
+  intact. Empty-calendar confirmations are point-in-time evidence; the Cron
+  gate remains open without an inferred platform cause or source-call count.
+  See the [actual outcome](evidence/2026-10-23/staging-cron-0140-root-observation.json).
+
 - Fresh local gate on October 24: **1,276 tests in 88 files**, 21 owned-process
   Python cases, four compilers, 117 vendor files, two real runtime probes,
   invariants and five Worker dry-run builds pass with stable source hashes.
@@ -499,6 +536,24 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   undeployed; the earlier hosted reports remain unchanged. See the
   [observability validation](evidence/2026-10-23/retrieval-observability-root-validation.json).
 
+- Latest clean Linux CI: the pull-request merge candidate including exact head
+  `520c102da791795de7b03577f46c42dfb65cb886` passes **1,281 tests in 89 files**,
+  21 Python cases, all four compilers, 117 vendor files, two real runtime probes,
+  invariants and five Worker dry-run builds. GitHub tested merge `4bce33c`, which
+  includes that head and base `717bf329`; this is not a detached-head checkout
+  claim. The newer API diagnostics source is undeployed and does not change the
+  failed hosted results. See the
+  [CI successor receipt](evidence/2026-10-23/release-linux-ci-520c102.json) and
+  [successful run](https://github.com/chester-hill-solutions/civicsignal/actions/runs/40048032415).
+
+- Offline original-sequence bridge: **94 focused tests**, including actual local
+  workerd, tooling TypeScript and independent peer review pass. The bridge
+  preserves original highwaters from separate pinned evidence and refuses
+  conflicting qualified sequence writes. The original strict importer remains
+  unchanged. This local result does not qualify production acquisition, global
+  quiescence or hosted protected copy. See the
+  [bridge validation](evidence/2026-10-23/protected-original-sequence-bridge-root-validation.json).
+
 Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
@@ -506,8 +561,8 @@ The large local artifacts remain outside Git. The commands can reproduce them fr
 
 1. Recovery, full metadata, composite changed-text bytes and the complete vector backup pass within the approved limits. Preserve the original paused coordinator and backup evidence.
 2. Verify scheduled snapshot discovery/publication. The manually recovered hosted Workflow and complete artifact parity already pass.
-3. Investigate the retained retrieval/scope/provider/hydration failures and the failed Zen check. Post-reconciliation flows pass; calibration, holdout and benchmark attempts are complete, with acceptance unresolved. Do not silently retry, tune on holdout, or extend the approved generation/request limits.
-4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper, staging-only HTTP adapter, initial/full-phase client and single-window process operator are locally verified. Consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending.
+3. Investigate the retained retrieval/scope/provider/hydration failures and both failed Zen attempts. Post-reconciliation flows pass; calibration, holdout and benchmark attempts are complete, with acceptance unresolved. Do not silently retry, tune on holdout, or extend the approved generation/request limits.
+4. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper, staging-only HTTP adapter, initial/full-phase client and single-window process operator are locally verified. Consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending. The [production acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md) and [binding metadata receipt](evidence/2026-10-23/production-binding-metadata-root-validation.json) record preparation and remaining acquisition limits.
 5. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
 
 See [V1-OPERATIONS.md](V1-OPERATIONS.md) and [V1-EVALUATION.md](V1-EVALUATION.md) for procedures.

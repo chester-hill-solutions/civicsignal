@@ -38,6 +38,13 @@ missed positive labels include three refusals and five wrong-result responses;
 the French set is weaker. Provider-level latency and cause of the encoder
 failure have not been established by these observations.
 
+An offline check also found a finite, nonzero stored vector for the single
+calibration miss, `E-2.01-24-fr` (norm 0.99999982). A zero placeholder does not
+explain that miss. The completed run did not retain its query vector or raw
+100-candidate set, so candidate omission and reranking remain unresolved. No
+serving or model request was made for this check. See the
+[vector observation](evidence/2026-10-23/calibration-miss-offline-vector-observation.json).
+
 The held-out process exited unsuccessfully. These results expose retrieval and
 scope limitations and do not close release acceptance. Subsequent tuning must
 retain this result as history and use new held-out questions for independent
@@ -65,14 +72,55 @@ populations. Their throughput ratio is not an isolated concurrency improvement,
 maximum sustainable load, uncached inference performance or production capacity.
 The raw report is `dist/evaluation/v1-stage-20261022-network-recovery-benchmark.json`.
 
-The one approved Zen chat request, capped at 128 output tokens, reached the relay
-at reservation 153 and failed acceptance. Its terminal receipt retained no safe
-HTTP status, correlation or failed predicate, so it cannot establish whether the
-provider failed or the response/citation contract was unmet. No second generation
-attempt ran. The original relay stopped cleanly at **153/160** reservations,
-preserving all failures and its original prefix. See the
-[serving receipt](evidence/2026-10-23/staging-retrieval-generation-root-validation.json).
-Production was not changed.
+The original approved Zen chat request, capped at 128 output tokens, reached the
+relay at reservation 153 and failed acceptance. Its terminal receipt retained no
+safe HTTP status, correlation or failed predicate, so it cannot establish whether
+the provider failed or the response/citation contract was unmet. That attempt and
+the earlier clean **153/160** relay shutdown remain unchanged in the
+[original serving receipt](evidence/2026-10-23/staging-retrieval-generation-root-validation.json).
+
+The user then approved one additional diagnostic request under the same 128-token
+cap. Reservation **154** returned staging **HTTP 502 / `UPSTREAM_UNAVAILABLE`** at
+01:18:55 UTC, correlation `req_mvlpnc3f3csiit1oeq`. Its fixed HTTP-status predicate
+failed; no retry ran. This is more specific evidence of a staging API failure,
+but it does not identify the failed retrieval/provider stage, establish a Zen
+call, or verify the generation key or an answer/citation contract. The diagnostic
+retains safe status, correlation and error-code metadata, with no raw body, answer
+or key-derived hash. See the
+[diagnostic successor receipt](evidence/2026-10-23/opencode-zen-diagnostic-v2-root-observation.json).
+
+The October 24 documentation check confirms that the configured Zen endpoint,
+Bearer authentication and `claude-haiku-4-5` model match OpenCode's current
+[inference API](https://dev.opencode.ai/v2/docs/console/api/inference/) and
+[model table](https://dev.opencode.ai/v2/docs/console/models). This does not
+establish key/account eligibility or that the failed staging request reached
+generation; it supplies no basis for changing the endpoint or retrying.
+
+The original ledger now retains **154/160** reservations, six unspent, with its
+original prefix and no reset. The restarted diagnostic relay's owned process
+timed out with cleanup uncertainty. An independent observation at **01:24:41 UTC**
+found its PID and listener absent; this is later point-in-time evidence and does
+not turn the original timeout into a settled success. Neither hosted Zen attempt
+passes acceptance. Production was not changed.
+
+The newer API diagnostics source at `520c102` passes clean Linux pull-request merge
+candidate CI: **1,281 tests in 89 files**, 21 Python cases, four compiler projects,
+117 vendor files, two runtime probes and five dry-run builds. GitHub's generated
+merge candidate includes that exact head; it was not a detached standalone head
+checkout. This source remains undeployed, so those diagnostics do not explain the
+earlier hosted failures retrospectively. See the
+[CI receipt](evidence/2026-10-23/release-linux-ci-520c102.json).
+
+The separate **01:40 UTC** snapshot Cron experiment completed both independent
+cleanup guards at T+5. Its final seven-request read passed at **01:45:38 UTC**:
+zero scheduled metric rows, absent entered/completed/failed event objects, one
+successful historical health control, an empty calendar and the unchanged
+API-created Workflow/manifest. This leaves the Cron discovery/publication gate
+open; absence does not establish non-dispatch or a platform cause. The reader
+made no source, model or serving calls. The frozen runtime allowed at most one
+source request for that event, but its actual execution is unattested. These
+observations add no retrieval or generation measurements. See the
+[Cron outcome and limits](evidence/2026-10-23/staging-cron-0140-root-observation.json).
 
 ## Dataset and evidence
 

@@ -29,6 +29,31 @@ async function sqlDump(source:string,destination:string,sequences=true){
   await writeFile(destination,sql+'COMMIT;\n',{mode:0o600});
 }
 
+type SequenceFact={presence:'absent'}|{presence:'present';value:number};
+type SequenceFacts={corpus_runs:SequenceFact;corpus_changes:SequenceFact};
+const originalSequenceQuery="SELECT name,seq FROM sqlite_sequence WHERE name IN ('corpus_runs','corpus_changes') ORDER BY name COLLATE BINARY LIMIT 3";
+/** Synthetic attestations exercise local consistency, never production freeze. */
+async function sequenceEvidence(root:string,sql:string,facts:SequenceFacts,overrides:{
+  freeze?:Record<string,unknown>;exported?:Record<string,unknown>;before?:Record<string,unknown>;after?:Record<string,unknown>;
+  rawBefore?:Record<string,unknown>;rawAfter?:Record<string,unknown>;evidence?:Record<string,unknown>;
+}={}){
+  const common={format:1,provenance:'synthetic',accountId:'ad5ec479b9a421faa2ed06c3d1c2b23a',databaseId:'8056b1a0-f858-4f89-a332-91f7f350eb7b'};
+  const save=async(name:string,value:unknown)=>{const path=join(root,name);await writeFile(path,JSON.stringify(value)+'\n',{mode:0o600});return {path,sha256:await sha256File(path)};};
+  const rows=Object.entries(facts).filter(([,fact])=>fact.presence==='present').map(([name,fact])=>({name,seq:fact.presence==='present'?fact.value:0})).sort((a,b)=>a.name.localeCompare(b.name));
+  const raw={success:true,errors:[],result:[{success:true,results:rows,meta:{rows_read:rows.length}}]};
+  const rawBefore=await save('sequence-before.raw.json',{...raw,...overrides.rawBefore}),rawAfter=await save('sequence-after.raw.json',{...raw,...overrides.rawAfter});
+  const freeze=await save('sequence-freeze.json',{...common,kind:'protected-common-freeze',qualified:true,settled:true,...overrides.freeze});
+  const rawSqlSha256=await sha256File(sql);
+  const exported=await save('sequence-export.json',{...common,kind:'protected-d1-export',freezeSha256:freeze.sha256,rawSqlSha256,passed:true,settled:true,...overrides.exported});
+  const observation={...common,kind:'protected-sequence-observation',query:originalSequenceQuery,freezeSha256:freeze.sha256,success:true,complete:true,facts};
+  const before=await save('sequence-before.json',{...observation,response:rawBefore,...overrides.before}),after=await save('sequence-after.json',{...observation,response:rawAfter,...overrides.after});
+  return save('sequence-evidence.json',{...common,kind:'protected-original-sequence-evidence',rawSqlSha256,query:originalSequenceQuery,freeze,export:exported,before,after,...overrides.evidence});
+}
+function importWithEvidence(source:string,destination:string,reference:{path:string;sha256:string}){
+  const code="import {importProtectedSqlWithOriginalSequenceEvidence as run} from "+JSON.stringify(new URL('../scripts/lib/protected-sql-import.mjs',import.meta.url).href)+"; try {console.log(JSON.stringify({passed:true,result:await run(process.argv[1],process.argv[2],JSON.parse(process.argv[3]))}));}catch(e){console.log(JSON.stringify({passed:false,code:e.message}));}";
+  return JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',code,source,destination,JSON.stringify(reference)],{encoding:'utf8',timeout:180000,maxBuffer:65536})) as {passed:boolean;code?:string;result?:Record<string,unknown>};
+}
+
 async function fixture(){
   const root=await realpath(await mkdtemp(join(tmpdir(),'protected-state-')));cleanup.push(root);await chmod(root,0o700);
   const source=join(root,'source.sqlite'),target=join(root,'target.sqlite'),auth=join(root,'auth.json'),bundle=join(root,'cutover'),output=join(root,'protected');
@@ -232,5 +257,134 @@ describe('offline protected state',()=>{
     const args=['--bundle',f.output,'--manifest-sha256',prepared.manifestSha256,'--target',f.target];
     expect(JSON.parse(execFileSync('bun',[cli,'apply-local',...args],{encoding:'utf8'}))).toMatchObject({verified:true});
     const proof=execFileSync('bun',[cli,'verify-local',...args],{encoding:'utf8'});expect(JSON.parse(proof)).toMatchObject({verified:true});expect(proof).not.toContain('cust_one');
+  });
+});
+
+describe('offline original sequence evidence bridge',()=>{
+  const savedFacts:SequenceFacts={corpus_runs:{presence:'present',value:120},corpus_changes:{presence:'present',value:1000}};
+  async function smallSource(sqlText="CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);\nCREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);\n"){
+    const root=await realpath(await mkdtemp(join(tmpdir(),'sequence-evidence-')));cleanup.push(root);await chmod(root,0o700);
+    const sql=join(root,'original.sql'),destination=join(root,'materialized.sqlite');await writeFile(sql,sqlText,{mode:0o600});return {root,sql,destination};
+  }
+  function rolledBack(path:string){const db=new DatabaseSync(path,{readOnly:true});try{expect(db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").all()).toEqual([]);}finally{db.close();}}
+  it('retains saved120/1000 above surviving2/10 and feeds the unchanged SQLite copier without rewriting SQL',async()=>{
+    const f=await fixture();f.edit(f.source,'DELETE FROM corpus_changes WHERE id<>10');
+    const sql=join(f.root,'original.sql'),materialized=join(f.root,'materialized.sqlite');await sqlDump(f.source,sql,false);
+    // Exercise the hash of actual consumed UTF-8 chunks, not a separate prehash.
+    await writeFile(sql,'--'+'.'.repeat(65530)+'\n'+await readFile(sql,'utf8'));
+    const original=await sha256File(sql),reference=await sequenceEvidence(f.root,sql,savedFacts),imported=importWithEvidence(sql,materialized,reference);
+    expect(imported.passed).toBe(true);
+    expect(imported.result).toMatchObject({materialized:true,sourceKind:'sqlite',rawSqlSha256:original,evidenceSha256:reference.sha256,provenance:'synthetic',evidenceConsistent:true,providerAuthenticated:false,globalQuiescenceEstablished:false,productionAcquisitionQualified:false});
+    expect(imported.result?.['sourceSqliteSha256']).toBe(await sha256File(materialized));
+    const prepared=await prepareProtectedState({...await f.options(),source:{kind:'sqlite',path:materialized,sha256:String(imported.result?.['sourceSqliteSha256'])}});
+    const options={directory:f.output,manifestSha256:prepared.manifestSha256,targetSqlite:f.target};
+    expect(await applyProtectedState(options)).toMatchObject({verified:true});expect(await verifyProtectedState(options)).toMatchObject({verified:true});
+    const target=openProtectedDatabase(f.target,false);try{
+      expect(target.prepare('SELECT id FROM corpus_runs').all()).toEqual([{id:2}]);expect(target.prepare('SELECT id FROM corpus_changes').all()).toEqual([{id:10}]);
+      expect(Number(target.prepare('INSERT INTO corpus_runs(corpus_id,commit_sha,commit_date,ran_at) VALUES(?,?,?,?)').run('statutes-canada',commit,date,date).lastInsertRowid)).toBe(121);
+      expect(Number(target.prepare('INSERT INTO corpus_changes(corpus_id,change,row_id,instrument,citation,section,occurred_at,recorded_at) VALUES(?,?,?,?,?,?,?,?)').run('statutes-canada','changed','row','Act','T-1','1',date,date).lastInsertRowid)).toBe(1001);
+    }finally{target.close();}
+    expect(await sha256File(sql)).toBe(original);expect(JSON.stringify(imported.result)).not.toContain('cust_one');
+  });
+  it.each(['absent','zero'] as const)('keeps original %s sequence facts distinct for empty history',async kind=>{
+    const f=await smallSource(),fact:SequenceFact=kind==='absent'?{presence:'absent'}:{presence:'present',value:0};
+    const result=importWithEvidence(f.sql,f.destination,await sequenceEvidence(f.root,f.sql,{corpus_runs:fact,corpus_changes:fact}));expect(result.passed).toBe(true);
+    const db=new DatabaseSync(f.destination);try{expect(db.prepare('SELECT name,seq FROM sqlite_sequence ORDER BY name').all()).toEqual(kind==='absent'?[]:[{name:'corpus_changes',seq:0},{name:'corpus_runs',seq:0}]);}finally{db.close();}
+  });
+  it.each([
+    {before:{complete:false}},
+    {freeze:{settled:false}},
+    {exported:{passed:false}},
+    {exported:{settled:false}},
+    {before:{databaseId:'00000000-0000-0000-0000-000000000000'}},
+    {freeze:{provenance:'captured'}},
+    {evidence:{provenance:'captured'}},
+    {before:{query:'SELECT max(id) FROM corpus_runs'}},
+    {before:{freezeSha256:'f'.repeat(64)}},
+    {evidence:{extraFact:true}},
+    {before:{facts:{corpus_runs:{presence:'absent'}}}},
+    {before:{facts:{...savedFacts,other_sequence:{presence:'absent'}}}},
+    {before:{facts:{corpus_runs:{presence:'absent',value:0},corpus_changes:{presence:'absent'}}}},
+  ])('refuses incomplete, foreign, mixed or failed attestations before output: %j',async overrides=>{
+    const f=await smallSource(),result=importWithEvidence(f.sql,f.destination,await sequenceEvidence(f.root,f.sql,savedFacts,overrides));
+    expect(result.passed).toBe(false);expect(result.code).toMatch(/^[A-Z_]+$/);expect(await lstat(f.destination).catch(()=>null)).toBeNull();
+  });
+  it.each([
+    {success:false,result:[]},
+    {success:true,result:[]},
+    {success:true,result:[{success:true,results:[]},{success:true,results:[]}]},
+    {success:true,result:[{success:false,results:[]}]},
+    {success:true,result:[{success:true,results:[{name:'corpus_runs',seq:120},{name:'corpus_runs',seq:120}]}]},
+    {success:true,result:[{success:true,results:[{name:'other',seq:120}]}]},
+    {success:true,result:[{success:true,results:[{name:'corpus_runs',seq:120,privateValue:'must-not-escape'}]}]},
+    {success:true,result:[{success:true,results:[{name:'corpus_runs',seq:9007199254740992}]}]},
+  ])('requires one complete successful raw SELECT and exact fixed rows: %j',async rawBefore=>{
+    const f=await smallSource(),result=importWithEvidence(f.sql,f.destination,await sequenceEvidence(f.root,f.sql,savedFacts,{rawBefore}));
+    expect(result.passed).toBe(false);expect(JSON.stringify(result)).not.toContain('must-not-escape');expect(await lstat(f.destination).catch(()=>null)).toBeNull();
+  });
+  it('rejects changed before/after facts rather than treating two independently complete observations as equal',async()=>{
+    const f=await smallSource(),facts={corpus_runs:{presence:'present' as const,value:121},corpus_changes:savedFacts.corpus_changes};
+    const reference=await sequenceEvidence(f.root,f.sql,savedFacts,{after:{facts},rawAfter:{success:true,result:[{success:true,results:[{name:'corpus_changes',seq:1000},{name:'corpus_runs',seq:121}]}]}});
+    expect(importWithEvidence(f.sql,f.destination,reference)).toMatchObject({passed:false,code:'SQL_SEQUENCE_OBSERVATION_CHANGED'});expect(await lstat(f.destination).catch(()=>null)).toBeNull();
+  });
+  it('checks raw response hashes and input aliases before creating output',async()=>{
+    const f=await smallSource(),reference=await sequenceEvidence(f.root,f.sql,savedFacts);
+    await writeFile(join(f.root,'sequence-before.raw.json'),'{}');
+    expect(importWithEvidence(f.sql,f.destination,reference)).toMatchObject({passed:false,code:'SQL_SEQUENCE_EVIDENCE_HASH'});expect(await lstat(f.destination).catch(()=>null)).toBeNull();
+    const second=await smallSource(),ref=await sequenceEvidence(second.root,second.sql,savedFacts),value=JSON.parse(await readFile(ref.path,'utf8'));
+    value.after=value.before;await writeFile(ref.path,JSON.stringify(value));ref.sha256=await sha256File(ref.path);
+    expect(importWithEvidence(second.sql,second.destination,ref)).toMatchObject({passed:false,code:'SQL_SEQUENCE_INPUT_ALIAS'});expect(await lstat(second.destination).catch(()=>null)).toBeNull();
+  });
+  it('rejects a non-private or hardlinked evidence input without creating output',async()=>{
+    const f=await smallSource(),reference=await sequenceEvidence(f.root,f.sql,savedFacts);await chmod(join(f.root,'sequence-export.json'),0o644);
+    expect(importWithEvidence(f.sql,f.destination,reference)).toMatchObject({passed:false,code:'PRIVATE_SEQUENCE_INPUT'});expect(await lstat(f.destination).catch(()=>null)).toBeNull();
+    await chmod(join(f.root,'sequence-export.json'),0o600);await link(join(f.root,'sequence-export.json'),join(f.root,'export-alias.json'));
+    expect(importWithEvidence(f.sql,f.destination,reference)).toMatchObject({passed:false,code:'PRIVATE_SEQUENCE_INPUT'});
+  });
+  it.each([0,2])('refuses an original absence with a surviving history row id%s and rolls back every table',async id=>{
+    const f=await smallSource(`CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);INSERT INTO corpus_runs VALUES(${id});`);
+    const facts:SequenceFacts={corpus_runs:{presence:'absent'},corpus_changes:{presence:'absent'}};
+    expect(importWithEvidence(f.sql,f.destination,await sequenceEvidence(f.root,f.sql,facts))).toMatchObject({passed:false,code:'SQL_SEQUENCE_SOURCE_REQUIRED'});rolledBack(f.destination);
+  });
+  it('refuses a conflicting literal dump fact without replacing its lineage and rolls back all imported data',async()=>{
+    const f=await smallSource("CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);INSERT INTO corpus_runs VALUES(2);DELETE FROM sqlite_sequence;INSERT INTO sqlite_sequence VALUES('corpus_runs',3);INSERT INTO sqlite_sequence VALUES('corpus_changes',1000);");
+    expect(importWithEvidence(f.sql,f.destination,await sequenceEvidence(f.root,f.sql,savedFacts))).toMatchObject({passed:false,code:'SQL_SEQUENCE_FACT_CONFLICT'});rolledBack(f.destination);
+  });
+  it.each(['main.sqlite_sequence','"main"."sqlite_sequence"','[main].[sqlite_sequence]','/* private comment */ sqlite_sequence'])('refuses unrecognized explicit sequence writes through %s without overwriting their facts',async table=>{
+    const f=await smallSource(`CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);INSERT INTO ${table} VALUES('corpus_runs',3);INSERT INTO ${table} VALUES('corpus_changes',4);`);
+    const result=importWithEvidence(f.sql,f.destination,await sequenceEvidence(f.root,f.sql,savedFacts));
+    expect(result.passed).toBe(false);expect(JSON.stringify(result)).not.toContain('private comment');rolledBack(f.destination);
+  });
+  it('hashes the consumed SQL stream and rolls back late changes after imported DDL and rows',async()=>{
+    const f=await smallSource('CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);INSERT INTO corpus_runs VALUES(2);'),reference=await sequenceEvidence(f.root,f.sql,savedFacts);
+    await writeFile(f.sql,await readFile(f.sql,'utf8')+'CREATE TABLE late_private_data(secret TEXT);INSERT INTO late_private_data VALUES(\'private-source-value\');');
+    expect(importWithEvidence(f.sql,f.destination,reference)).toMatchObject({passed:false,code:'SQL_SEQUENCE_CONSUMED_HASH'});rolledBack(f.destination);
+  });
+  it('rolls back a late FK failure after restoring both sequence facts',async()=>{
+    const f=await smallSource('CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE parent(id INTEGER PRIMARY KEY);CREATE TABLE child(id INTEGER REFERENCES parent(id));INSERT INTO child VALUES(99);');
+    expect(importWithEvidence(f.sql,f.destination,await sequenceEvidence(f.root,f.sql,savedFacts))).toMatchObject({passed:false,code:'SQL_IMPORT_INTEGRITY'});rolledBack(f.destination);
+  });
+  it('accepts matching literal facts and preserves unrelated raw rows and sequence entries',async()=>{
+    const f=await smallSource("CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE other(id INTEGER PRIMARY KEY AUTOINCREMENT,value TEXT);INSERT INTO corpus_runs VALUES(2);INSERT INTO corpus_changes VALUES(10);INSERT INTO other VALUES(7,'unmodified');DELETE FROM sqlite_sequence;INSERT INTO sqlite_sequence VALUES('corpus_runs',120);INSERT INTO sqlite_sequence VALUES('corpus_changes',1000);INSERT INTO sqlite_sequence VALUES('other',42);");
+    expect(importWithEvidence(f.sql,f.destination,await sequenceEvidence(f.root,f.sql,savedFacts)).passed).toBe(true);
+    const db=new DatabaseSync(f.destination,{readOnly:true});try{expect(db.prepare('SELECT * FROM other').all()).toEqual([{id:7,value:'unmodified'}]);expect(db.prepare("SELECT seq FROM sqlite_sequence WHERE name='other'").get()?.['seq']).toBe(42);}finally{db.close();}
+  });
+  it('refuses oversized evidence by metadata before output and snapshots the caller evidence digest',async()=>{
+    const f=await smallSource(),reference=await sequenceEvidence(f.root,f.sql,savedFacts);await writeFile(join(f.root,'sequence-freeze.json'),' '.repeat(16*1024+1));
+    expect(importWithEvidence(f.sql,f.destination,reference)).toMatchObject({passed:false,code:'PRIVATE_SEQUENCE_INPUT'});expect(await lstat(f.destination).catch(()=>null)).toBeNull();
+    const other=await smallSource(),ref=await sequenceEvidence(other.root,other.sql,savedFacts);
+    const code="import {importProtectedSqlWithOriginalSequenceEvidence as run} from "+JSON.stringify(new URL('../scripts/lib/protected-sql-import.mjs',import.meta.url).href)+";const reference=JSON.parse(process.argv[3]);const pending=run(process.argv[1],process.argv[2],reference);reference.sha256='f'.repeat(64);console.log(JSON.stringify(await pending));";
+    const result=JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',code,other.sql,other.destination,JSON.stringify(ref)],{encoding:'utf8'}));expect(result.evidenceSha256).toBe(ref.sha256);
+  });
+  it.each(["ATTACH DATABASE 'must-not-create.sqlite' AS leak;","CREATE VIRTUAL TABLE private_virtual USING fts5(private_text);","CREATE TABLE x(a); INSERT INTO x SELECT 1;"])('keeps the existing authorizer restrictions in evidence mode: %s',async attack=>{
+    const f=await smallSource(attack),reference=await sequenceEvidence(f.root,f.sql,savedFacts),result=importWithEvidence(f.sql,f.destination,reference);
+    expect(result.passed).toBe(false);expect(JSON.stringify(result)).not.toContain('private_');expect(await lstat(join(f.root,'must-not-create.sqlite')).catch(()=>null)).toBeNull();rolledBack(f.destination);
+  });
+  it('leaves the strict default export and four-argument CLI refusing omitted sequence facts',async()=>{
+    const f=await smallSource();
+    const code="import {importProtectedSql} from "+JSON.stringify(new URL('../scripts/lib/protected-sql-import.mjs',import.meta.url).href)+"; try{await importProtectedSql(process.argv[1],process.argv[2]);}catch(e){console.log(e.message);}";
+    expect(execFileSync(process.execPath,['--input-type=module','-e',code,f.sql,f.destination],{encoding:'utf8'}).trim()).toBe('SQL_SEQUENCE_FACTS_REQUIRED');
+    expect(()=>execFileSync(process.execPath,[importer,f.sql,join(f.root,'cli.sqlite')],{stdio:['ignore','pipe','pipe']})).toThrow();
+    expect(()=>execFileSync(process.execPath,[importer,f.sql,join(f.root,'extra.sqlite'),'--evidence'],{stdio:['ignore','pipe','pipe']})).toThrow();
   });
 });
