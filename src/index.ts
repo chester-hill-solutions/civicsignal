@@ -20,6 +20,7 @@ import type { CorpusContext, CorpusQuery } from './corpora/types';
 import { parseChangesQuery, readStatuteChanges } from './routes/changes';
 import type { RetrievalObservation } from './corpora/retrieval-observation';
 import { createR2ProvisionTextStore, parseCorpusTextMode } from './corpora/text-store';
+import { GenerationFailureError } from './byok';
 
 export { ApiKeyUsageDO } from '@chester-hill-solutions/api-billing/durable-object';
 
@@ -108,7 +109,8 @@ export default {
       }
       console.error(JSON.stringify({ correlationId, event: 'request_failed', route: url.pathname,
         errorType: error instanceof Error ? error.name : 'unknown' }));
-      return errorResponse('UPSTREAM_UNAVAILABLE', 'The request could not complete. Retry later.', env, origin, correlationId, 502, retrieval);
+      return errorResponse('UPSTREAM_UNAVAILABLE', 'The request could not complete. Retry later.', env, origin, correlationId, 502, retrieval,
+        error instanceof GenerationFailureError ? error : undefined);
     }
   },
 };

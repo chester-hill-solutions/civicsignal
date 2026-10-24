@@ -554,7 +554,28 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   quiescence or hosted protected copy. See the
   [bridge validation](evidence/2026-10-23/protected-original-sequence-bridge-root-validation.json).
 
-Small evidence files live in [evidence/2026-10-22](evidence/2026-10-22/).
+- V1-03 / V1-07 / V1-08 / V1-09, provider-boundary follow-up at **02:26 UTC on
+  October 24**: all four BYOK providers now use one 30-second / 256 KiB exchange
+  with no redirects, retries or fallback. Empty, malformed and key-echoing answers
+  fail before usage is consumed. Optional generation metadata preserves the
+  observed status and safe failure phase while retaining the existing HTTP 502
+  contract; retrieval errors do not imply generation was attempted. Jev now
+  requires every requested typed, finite probability in [0,1] and uses a
+  15-second / 256 KiB response / 1 MiB request boundary. Invalid responses take
+  the existing fallback. Its prompt, model, decision rule and thresholds are
+  unchanged. Only Jev-enabled cache identities change, preventing old permissive
+  responses from bypassing validation. Root and independent peer reviews pass.
+  The stable source passes **1,492 tests in 92 files**, **21 Python cases**, all
+  four compilers, 117 vendor files, two actual local workerd probes, invariants
+  and five Worker dry-run builds. All **433 source pins** match before and after.
+  Earlier red regressions, a timing-fixture failure and the first full run's
+  obsolete parser assertion remain recorded; the corrected run uses separate
+  settled receipts. This source is **not deployed**, adds **zero hosted requests**
+  and does not explain the historical failures or close hosted acceptance.
+  Ledger use remains **154/160**. See the
+  [source, regression and full-gate receipt](evidence/2026-10-24/provider-boundary-root-validation.json).
+
+Small evidence files live in the dated `docs/evidence/` directories.
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
 
 ## Remaining release gates

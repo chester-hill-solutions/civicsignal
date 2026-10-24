@@ -353,13 +353,30 @@ The initial supported model is `claude-haiku-4-5`, from the current
 CivicSignal workspace authentication remains required. Unsupported Zen models
 and mismatched body/header providers fail before retrieval.
 
-Zen reuses Anthropic message serialization and parsing. Its one provider POST
-has a 30-second total deadline and 256 KiB response bound, with redirects, retries
-and fallback disabled. Existing providers and the global 4,096-token request
-limit retain their previous behavior. The approved hosted check supplies
-`maxTokens:128` explicitly and uses one original staging-relay reservation.
+Zen reuses Anthropic message serialization and parsing. The current local candidate
+applies one shared provider exchange to all four BYOK providers: a 30-second total
+deadline and 256 KiB response bound, with redirects, retries and fallback disabled.
+The deadline includes serialization, response streaming, JSON/schema validation
+and cleanup. Synchronous JavaScript cannot be preempted; elapsed-time checks reject
+its result after an overrun. Provider endpoints, authentication, model defaults and
+the global 4,096 output-token request limit are unchanged.
+
+Missing, blank, malformed or key-echoing generation answers fail before usage is
+consumed. The API retains HTTP 502 and `UPSTREAM_UNAVAILABLE`, with optional safe
+metadata such as `generation: { provider: "opencode-zen", phase: "upstream-http",
+upstreamStatus: 401 }`. The status is present only after an actual response was
+observed. A generation response with invalid JSON or schema can therefore have
+upstream status 200. Only typed generation failures get this metadata; a retrieval
+failure does not imply that a model was called. Raw provider bodies, causes, keys,
+prompts and answers are excluded from failure metadata.
+
+These changes are local source until a separately verified staging deployment.
+The two approved hosted checks each supplied `maxTokens:128` and consumed original
+staging-relay reservations 153 and 154; both failed acceptance. Another generation
+attempt needs approval, even while six original serving reservations remain.
 
 The [local validation](evidence/2026-10-23/opencode-zen-root-validation.json)
-records 88 passing focused tests, two compiler projects, independent review and
-the exact staged bundle. Positive hosted generation remains pending. A direct
+records the original 88 passing focused tests, two compiler projects, independent
+review and the earlier staged bundle. It is historical evidence for that source.
+Positive hosted generation remains pending. A direct
 provider call cannot replace the authenticated staging `/api/chat` acceptance.

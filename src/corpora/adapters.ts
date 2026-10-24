@@ -8,7 +8,7 @@ import {
   STATUTES_ONTARIO,
 } from './policies';
 import { hash128 } from '../ingest/reconcile';
-import { ATOMIC_QUESTIONS, CANDIDATE_COUNT, decide, EXCERPT_CHARS, JEV_MODEL, rankWithJev, RELEVANCE_FLOOR, reorder } from '../jev';
+import { ATOMIC_QUESTIONS, CANDIDATE_COUNT, decide, EXCERPT_CHARS, JEV_CONTRACT_VERSION, JEV_MODEL, rankWithJev, RELEVANCE_FLOOR, reorder } from '../jev';
 import { ENCODER_CONTRACT } from '../encoder';
 import { normalizeForSearch } from '../text';
 import { RETRIEVAL_POLICY_VERSION, retrievalTrace, type RetrievalBackend } from './retrieval-observation';
@@ -108,7 +108,7 @@ export function retrievalCacheKey(query: CorpusQuery, revision: string, useJev: 
     policy: RETRIEVAL_POLICY_VERSION,
     backend: backend.id,
     floor: backend.floor,
-    reranker: useJev ? { model: JEV_MODEL, questions: ATOMIC_QUESTIONS, excerptChars: EXCERPT_CHARS, candidates: CANDIDATE_COUNT, relevanceFloor: RELEVANCE_FLOOR } : null,
+    reranker: useJev ? { contract: JEV_CONTRACT_VERSION, model: JEV_MODEL, questions: ATOMIC_QUESTIONS, excerptChars: EXCERPT_CHARS, candidates: CANDIDATE_COUNT, relevanceFloor: RELEVANCE_FLOOR } : null,
   };
   return `retrieval:v2:${hash128(JSON.stringify(contract))}`;
 }

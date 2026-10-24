@@ -15,6 +15,11 @@ interface UsageStorage {
   put(name: string | Record<string, unknown>, value?: unknown): Promise<void>;
   transaction<T>(work: (transaction: UsageStorage) => Promise<T>): Promise<T>;
 }
+const generationProviders=['anthropic','openai','google','opencode-zen'] as const;
+const generationEndpoints={anthropic:'https://api.anthropic.com/v1/messages',openai:'https://api.openai.com/v1/chat/completions',google:'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent','opencode-zen':'https://opencode.ai/inference/anthropic/v1/messages'};
+function providerText(provider:typeof generationProviders[number],text:string){
+  return provider==='openai'?{choices:[{message:{content:text}}]}:provider==='google'?{candidates:[{content:{parts:[{text}]}}]}:{content:[{type:'text',text}]};
+}
 beforeEach(() => vi.restoreAllMocks());
 afterEach(() => { for (const close of closed.splice(0)) close(); vi.restoreAllMocks(); });
 
@@ -114,6 +119,85 @@ describe('HTTP and MCP access and metering', () => {
       body: JSON.stringify({ provider: 'opencode-zen', topic: 'Test Act section 1', maxTokens: 128,
         messages: [{ role: 'user', content: 'Give the cited statute name and its link.' }], ...change }) });
     expect(response.status).toBe(400);expect(send).not.toHaveBeenCalled();expect(await fixture.count()).toBe(0);
+  });
+  it.each(generationProviders.flatMap(provider=>(['http401','http429','http503','transport','json','shape','body-limit','fetch-timeout','body-timeout'] as const).map(kind=>({provider,kind}))))('reports safe $provider $kind generation failure at the Worker HTTP/metering boundary',async({provider,kind})=>{
+    const fixture=await setup(),key='fixture-generation-key-must-stay-private',prompt='fixture-private-prompt',detail='fixture-private-upstream-detail';
+    const logs=vi.spyOn(console,'error').mockImplementation(()=>{});
+    let started!:()=>void;const sent=new Promise<void>(resolve=>{started=resolve;});
+    const timeout=kind.endsWith('timeout');if(timeout)vi.useFakeTimers();
+    const send=vi.spyOn(globalThis,'fetch').mockImplementation(async(input,init)=>{
+      expect(String(input)).toBe(generationEndpoints[provider]);expect(init?.method).toBe('POST');expect(init?.redirect).toBe('error');started();
+      if(kind==='fetch-timeout')return new Promise<Response>(()=>{});
+      if(kind==='body-timeout')return new Response(new ReadableStream<Uint8Array>({start(){},cancel(){}}));
+      if(kind.startsWith('http'))return new Response(key+' '+prompt+' '+detail,{status:Number(kind.slice(4))});
+      if(kind==='transport')throw new Error(key+' '+prompt+' '+detail);
+      if(kind==='json')return new Response(key+' '+prompt+' '+detail);
+      if(kind==='body-limit')return new Response('x'.repeat(256*1024+1));
+      return Response.json(provider==='openai'?{choices:[{message:{content:{private:detail}}}]}:provider==='google'?{candidates:[{content:{parts:{private:detail}}}]}:{content:{private:detail}});
+    });
+    try{
+      const pending=fixture.send('/api/chat',{method:'POST',headers:{'content-type':'application/json','x-civicsignal-byok-provider':provider,'x-civicsignal-byok-key':key},
+        body:JSON.stringify({provider,topic:'Test Act section 1',maxTokens:128,messages:[{role:'user',content:prompt}]})});
+      if(timeout){await sent;await vi.advanceTimersByTimeAsync(30_001);}
+      const response=await pending,body=await response.json() as Record<string,unknown>;
+      expect(response.status).toBe(502);expect(body).toMatchObject({code:'UPSTREAM_UNAVAILABLE',error:'The request could not complete. Retry later.',retrieval:[expect.objectContaining({mode:'exact'})]});
+      const phase=kind.startsWith('http')?'upstream-http':kind==='transport'?'transport':kind==='json'?'response-parse':kind==='shape'?'response-validation':timeout?'timeout':'response-body';
+      const generation={provider,phase,...(kind.startsWith('http')?{upstreamStatus:Number(kind.slice(4))}:kind==='transport'||kind==='fetch-timeout'?{}:{upstreamStatus:200})};
+      expect(body.generation).toEqual(generation);expect(body).not.toHaveProperty('upstreamStatus');
+      expect(send).toHaveBeenCalledTimes(1);expect(await fixture.count()).toBe(0);
+      for(const privateValue of [key,prompt,detail]){expect(JSON.stringify(body)).not.toContain(privateValue);expect(JSON.stringify(logs.mock.calls)).not.toContain(privateValue);}
+    }finally{if(timeout)vi.useRealTimers();}
+  });
+  it.each(generationProviders.flatMap(provider=>['missing','empty','whitespace','key-echo'].map(kind=>({provider,kind}))))('refuses $provider $kind generation without consuming usage',async({provider,kind})=>{
+    const fixture=await setup(),key='fixture-private-generation-key',logs=vi.spyOn(console,'error').mockImplementation(()=>{});
+    const text=kind==='empty'?'':kind==='whitespace'?' \n\t ':key;
+    const send=vi.spyOn(globalThis,'fetch').mockResolvedValue(Response.json(kind==='missing'?{}:providerText(provider,text)));
+    const response=await fixture.send('/api/chat',{method:'POST',headers:{'content-type':'application/json','x-civicsignal-byok-provider':provider,'x-civicsignal-byok-key':key},
+      body:JSON.stringify({provider,topic:'Test Act section 1',maxTokens:128,messages:[{role:'user',content:'fixture-private-prompt'}]})});
+    const body=await response.json() as Record<string,unknown>;
+    expect({status:response.status,usage:await fixture.count()}).toEqual({status:502,usage:0});
+    expect(body).toMatchObject({code:'UPSTREAM_UNAVAILABLE',generation:{provider,phase:'response-validation',upstreamStatus:200}});
+    expect(send).toHaveBeenCalledTimes(1);expect(JSON.stringify(body)).not.toContain(key);expect(JSON.stringify(logs.mock.calls)).not.toContain(key);
+  });
+  it.each([
+    ...[123,{}].flatMap(text=>[false,true].map(mixed=>({provider:'google',reply:{candidates:[{content:{parts:[...(mixed?[{text:'valid'}]:[]),{text}]}}]}}))),
+    ...['anthropic','opencode-zen'].flatMap(provider=>[123,{}].map(text=>({provider,reply:{content:[{type:'text',text:'valid'},{type:'text',text}]}}))),
+    {provider:'openai',reply:{choices:{0:{message:{content:'valid'}}}}},
+    {provider:'google',reply:{candidates:{0:{content:{parts:[{text:'valid'}]}}}}},
+  ])('rejects malformed $provider text/schema without coercion or partial acceptance: $reply',async({provider,reply})=>{
+    const fixture=await setup();vi.spyOn(console,'error').mockImplementation(()=>{});
+    const send=vi.spyOn(globalThis,'fetch').mockResolvedValue(Response.json(reply));
+    const response=await fixture.send('/api/chat',{method:'POST',headers:{'content-type':'application/json','x-civicsignal-byok-provider':provider,'x-civicsignal-byok-key':'fixture-private-key'},
+      body:JSON.stringify({provider,topic:'Test Act section 1',maxTokens:128,messages:[{role:'user',content:'Give the citation.'}]})});
+    expect({status:response.status,usage:await fixture.count()}).toEqual({status:502,usage:0});
+    expect(await response.json()).toMatchObject({generation:{provider,phase:'response-validation',upstreamStatus:200}});expect(send).toHaveBeenCalledTimes(1);
+  });
+  it.each(['google','anthropic','opencode-zen'] as const)('preserves legitimate nontext %s parts beside valid text',async provider=>{
+    const fixture=await setup(),answer='A verified cited answer.';
+    const reply=provider==='google'?{candidates:[{content:{parts:[{inlineData:{mimeType:'image/png',data:'fixture'}},{text:answer}]}}]}:
+      {content:[{type:'tool_use',id:'fixture',name:'fixture',input:{}},{type:'text',text:answer}]};
+    const send=vi.spyOn(globalThis,'fetch').mockResolvedValue(Response.json(reply));
+    const response=await fixture.send('/api/chat',{method:'POST',headers:{'content-type':'application/json','x-civicsignal-byok-provider':provider,'x-civicsignal-byok-key':'fixture-private-key'},
+      body:JSON.stringify({provider,topic:'Test Act section 1',maxTokens:128,messages:[{role:'user',content:'Give the citation.'}]})});
+    expect(response.status).toBe(200);expect(await response.json()).toMatchObject({answer});expect(await fixture.count()).toBe(1);expect(send).toHaveBeenCalledTimes(1);
+  });
+  it.each(generationProviders)('bills one valid %s generation exactly once',async provider=>{
+    const fixture=await setup(),send=vi.spyOn(globalThis,'fetch').mockResolvedValue(Response.json(providerText(provider,'A verified cited answer.')));
+    const response=await fixture.send('/api/chat',{method:'POST',headers:{'content-type':'application/json','x-civicsignal-byok-provider':provider,'x-civicsignal-byok-key':'fixture-private-key'},
+      body:JSON.stringify({provider,topic:'Test Act section 1',maxTokens:128,messages:[{role:'user',content:'Give the citation.'}]})});
+    expect(response.status).toBe(200);expect(await response.json()).toMatchObject({provider,answer:'A verified cited answer.'});expect(await fixture.count()).toBe(1);expect(send).toHaveBeenCalledTimes(1);
+  });
+  it('keeps a failed retrieval distinct from generation and never calls or bills a model',async()=>{
+    const fixture=await setup(),send=vi.spyOn(globalThis,'fetch').mockRejectedValue(new Error('Unexpected external call'));
+    const logs=vi.spyOn(console,'error').mockImplementation(()=>{});
+    fixture.env.VECTORIZE={async query(){return {matches:[]};}};
+    fixture.env.ENCODER_TOKEN='fixture-only';fixture.env.ENCODER_SERVICE={async fetch(){throw new Error('fixture-private-encoder-detail');}};
+    const response=await fixture.send('/api/chat',{method:'POST',headers:{'content-type':'application/json','x-civicsignal-byok-provider':'opencode-zen','x-civicsignal-byok-key':'fixture-private-key'},
+      body:JSON.stringify({provider:'opencode-zen',topic:'Employment rights without an exact citation',messages:[{role:'user',content:'fixture-private-prompt'}]})});
+    const body=await response.json() as Record<string,unknown>;
+    expect(response.status).toBe(502);expect(body).not.toHaveProperty('generation');
+    expect(body.retrieval).toEqual([expect.objectContaining({decision:'error',providers:expect.objectContaining({encoder:'error'})})]);
+    expect(send).not.toHaveBeenCalled();expect(await fixture.count()).toBe(0);expect(JSON.stringify(body)).not.toContain('fixture-private-encoder-detail');expect(JSON.stringify(logs.mock.calls)).not.toContain('fixture-private-encoder-detail');
   });
   it('rejects unauthenticated HTTP and MCP before corpus retrieval', async () => {
     const fixture = await setup();

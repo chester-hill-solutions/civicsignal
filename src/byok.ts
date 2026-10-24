@@ -1,4 +1,5 @@
 import type { CorpusItem } from "@chester-hill-solutions/corpus";
+import { providerJsonOnce, ProviderJsonError, type ProviderJsonPhase } from './provider-json';
 
 /**
  * BYOK chat: retrieval, then the caller's own model.
@@ -31,8 +32,27 @@ export interface ProviderSpec {
 }
 
 export const OPENCODE_ZEN_MODEL = "claude-haiku-4-5";
-export const OPENCODE_ZEN_LIMITS = { timeoutMs: 30_000, responseBytes: 256 * 1024 } as const;
+export const BYOK_LIMITS = { timeoutMs: 30_000, responseBytes: 256 * 1024 } as const;
+export const OPENCODE_ZEN_LIMITS = BYOK_LIMITS;
 const OPENCODE_ZEN_ENDPOINT = "https://opencode.ai/inference/anthropic/v1/messages";
+
+export interface GenerationFailure {
+  provider: ByokProvider;
+  phase: ProviderJsonPhase;
+  upstreamStatus?: number;
+}
+
+/** Domain tag: a retrieval provider failure must never become generation metadata. */
+export class GenerationFailureError extends Error implements GenerationFailure {
+  readonly phase: ProviderJsonPhase;
+  readonly upstreamStatus?: number;
+  constructor(readonly provider: ByokProvider, failure: ProviderJsonError) {
+    super('The generation call failed.');
+    this.name = 'GenerationFailureError';
+    this.phase = failure.phase;
+    this.upstreamStatus = failure.httpStatus;
+  }
+}
 
 const anthropicBody: ProviderSpec["body"] = ({ system, messages, model, maxTokens }) => ({
   model,
@@ -40,13 +60,21 @@ const anthropicBody: ProviderSpec["body"] = ({ system, messages, model, maxToken
   system,
   messages: messages.map((m) => ({ role: m.role, content: m.content })),
 });
+function providerRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+const invalidGenerationResponse = () => new Error('Invalid generation response.');
 const anthropicText: ProviderSpec["parse"] = (body) => {
-  const content = (body as { content?: { type: string; text?: string }[] })?.content ?? [];
-  return content
-    .filter((part) => part.type === "text" && typeof part.text === "string")
-    .map((part) => part.text!)
-    .join("\n")
-    .trim();
+  if (!providerRecord(body) || !Array.isArray(body['content'])) throw invalidGenerationResponse();
+  const text: string[] = [];
+  for (const part of body['content']) {
+    if (!providerRecord(part) || typeof part['type'] !== 'string') throw invalidGenerationResponse();
+    if (part['type'] === 'text') {
+      if (typeof part['text'] !== 'string') throw invalidGenerationResponse();
+      text.push(part['text']);
+    }
+  }
+  return text.join('\n').trim();
 };
 
 export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
@@ -76,8 +104,10 @@ export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
       messages: [{ role: "system", content: system }, ...messages.map((m) => ({ role: m.role, content: m.content }))],
     }),
     parse: (body) => {
-      const choices = (body as { choices?: { message?: { content?: string } }[] })?.choices ?? [];
-      return (choices[0]?.message?.content ?? "").trim();
+      if (!providerRecord(body) || !Array.isArray(body['choices'])) throw invalidGenerationResponse();
+      const choice: unknown = body['choices'][0];
+      if (!providerRecord(choice) || !providerRecord(choice['message']) || typeof choice['message']['content'] !== 'string') throw invalidGenerationResponse();
+      return choice['message']['content'].trim();
     },
   },
   google: {
@@ -95,12 +125,15 @@ export const PROVIDERS: Record<ByokProvider, ProviderSpec> = {
       })),
     }),
     parse: (body) => {
-      const candidates = (body as { candidates?: { content?: { parts?: { text?: string }[] } }[] })?.candidates ?? [];
-      const parts = candidates[0]?.content?.parts ?? [];
-      return parts
-        .map((part) => part.text ?? "")
-        .join("")
-        .trim();
+      if (!providerRecord(body) || !Array.isArray(body['candidates'])) throw invalidGenerationResponse();
+      const candidate: unknown = body['candidates'][0];
+      if (!providerRecord(candidate) || !providerRecord(candidate['content']) || !Array.isArray(candidate['content']['parts'])) throw invalidGenerationResponse();
+      return candidate['content']['parts'].map((part: unknown) => {
+        if (!providerRecord(part)) throw invalidGenerationResponse();
+        if (!Object.hasOwn(part, 'text')) return '';
+        if (typeof part['text'] !== 'string') throw invalidGenerationResponse();
+        return part['text'];
+      }).join('').trim();
     },
   },
   "opencode-zen": {
@@ -120,92 +153,6 @@ export function isByokProvider(value: string): value is ByokProvider {
 /** The initial Zen adapter supports one reviewed Messages-family model. */
 export function supportsByokModel(provider: ByokProvider, model?: string): boolean {
   return provider !== "opencode-zen" || !model?.trim() || model.trim() === OPENCODE_ZEN_MODEL;
-}
-
-/** One finite Zen POST. No redirects, retry, fallback or provider-body errors. */
-async function opencodeZenAnswer(apiKey: string, body: unknown, parse: ProviderSpec["parse"], signal?: AbortSignal): Promise<string> {
-  const controller = new AbortController();
-  const deadline = performance.now() + OPENCODE_ZEN_LIMITS.timeoutMs;
-  const failure = () => new Error("The OpenCode Zen request did not complete within its bounds.");
-  let rejectDeadline!: (reason: Error) => void;
-  const expired = new Promise<never>((_resolve, reject) => { rejectDeadline = reject; });
-  void expired.catch(() => {});
-  const abort = () => { controller.abort(); rejectDeadline(failure()); };
-  const timer = setTimeout(abort, OPENCODE_ZEN_LIMITS.timeoutMs);
-  signal?.addEventListener("abort", abort, { once: true });
-  const check = () => { if (controller.signal.aborted || signal?.aborted || performance.now() >= deadline) throw failure(); };
-  const within = async <T>(pending: Promise<T>): Promise<T> => {
-    void pending.catch(() => {});
-    check();
-    const result = await Promise.race([pending, expired]);
-    check();
-    return result;
-  };
-  let response: Response | undefined;
-  let reader: Pick<ReadableStreamDefaultReader<Uint8Array>, 'read' | 'cancel' | 'releaseLock'> | undefined;
-  let complete = false;
-  let finished = false;
-  let failedStatus: number | undefined;
-  try {
-    check();
-    const requestBody = JSON.stringify(body);
-    check();
-    const pending = fetch(OPENCODE_ZEN_ENDPOINT, {
-      method: "POST", headers: PROVIDERS["opencode-zen"].headers(apiKey), body: requestBody,
-      redirect: "error", signal: controller.signal,
-    }).then((value) => {
-      if (finished) {
-        // A transport ignoring abort may settle late. Dispose its body; never send again.
-        void value.body?.cancel().catch(() => {});
-        throw failure();
-      }
-      response = value;
-      check();
-      return value;
-    });
-    response = await within(pending);
-    if (!response.ok) { failedStatus = response.status; throw failure(); }
-    const declared = response.headers.get("content-length");
-    if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > OPENCODE_ZEN_LIMITS.responseBytes)) throw failure();
-    reader = response.body?.getReader();
-    const chunks: Uint8Array[] = [];
-    let size = 0;
-    if (reader) for (;;) {
-      const next = await within(reader.read());
-      if (next.done) break;
-      size += next.value.byteLength;
-      if (size > OPENCODE_ZEN_LIMITS.responseBytes) throw failure();
-      if (next.value.byteLength) chunks.push(next.value);
-    }
-    const bytes = new Uint8Array(size);
-    let at = 0;
-    for (const chunk of chunks) { bytes.set(chunk, at); at += chunk.byteLength; }
-    check();
-    const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
-    check();
-    const answer = parse(value);
-    check();
-    if (apiKey && answer.includes(apiKey)) throw failure();
-    check();
-    complete = true;
-    return answer;
-  } catch {
-    throw failedStatus === undefined ? failure() : new Error(`The OpenCode Zen endpoint returned ${failedStatus}.`);
-  } finally {
-    finished = true;
-    if (!complete) {
-      controller.abort();
-      const cancel = reader ? reader.cancel() : response?.body?.cancel();
-      if (cancel) {
-        // Cleanup shares the original deadline. An uncertain call is terminal.
-        const settled = cancel.catch(() => {});
-        try { if (performance.now() < deadline) await Promise.race([settled, expired]); } catch { /* Preserve the original safe failure. */ }
-      }
-    }
-    reader?.releaseLock();
-    clearTimeout(timer);
-    signal?.removeEventListener("abort", abort);
-  }
 }
 
 /** One retrieved item, ready to be put in front of a model. */
@@ -306,29 +253,27 @@ export async function chatByok(options: {
   maxTokens?: number;
   signal?: AbortSignal;
 }): Promise<ByokChatResult> {
-  const spec = PROVIDERS[options.provider];
+  const provider = options.provider, apiKey = options.apiKey;
+  const spec = PROVIDERS[provider], parse = spec.parse;
   const model = options.model?.trim() || spec.defaultModel;
 
-  if (!supportsByokModel(options.provider, model)) throw new Error("OpenCode Zen supports only " + OPENCODE_ZEN_MODEL + ".");
+  if (!supportsByokModel(provider, model)) throw new Error("OpenCode Zen supports only " + OPENCODE_ZEN_MODEL + ".");
   const requestBody = spec.body({ system: options.system, messages: options.messages, model, maxTokens: options.maxTokens ?? 1200 });
-  if (options.provider === "opencode-zen") {
-    const answer = await opencodeZenAnswer(options.apiKey, requestBody, spec.parse, options.signal);
-    return { answer, provider: options.provider, model, cited: 0 };
+  try {
+    const answer = await providerJsonOnce({
+      url: spec.endpoint(model), headers: spec.headers(apiKey), body: requestBody,
+      timeoutMs: BYOK_LIMITS.timeoutMs, responseBytes: BYOK_LIMITS.responseBytes, signal: options.signal,
+      parse(value) {
+        const answer = parse(value);
+        if (typeof answer !== 'string' || !answer.trim() || apiKey && answer.includes(apiKey)) {
+          throw invalidGenerationResponse();
+        }
+        return answer;
+      },
+    });
+    return { answer, provider, model, cited: 0 };
+  } catch (error) {
+    if (error instanceof ProviderJsonError) throw new GenerationFailureError(provider, error);
+    throw error;
   }
-
-  const response = await fetch(spec.endpoint(model), {
-    method: "POST",
-    headers: spec.headers(options.apiKey),
-    body: JSON.stringify(requestBody),
-    ...(options.signal ? { signal: options.signal } : {}),
-  });
-
-  if (!response.ok) {
-    // The provider's body may echo the key, so it is not passed through.
-    throw new Error(`The ${spec.label} endpoint returned ${response.status}.`);
-  }
-
-  const body = (await response.json()) as unknown;
-  const answer = spec.parse(body);
-  return { answer, provider: options.provider, model, cited: 0 };
 }

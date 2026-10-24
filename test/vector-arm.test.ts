@@ -580,8 +580,11 @@ describe('the retrieval cache', () => {
     const index = fakeIndex([{ id: 'first', score: 0.9, metadata: {} }, { id: 'second', score: 0.8, metadata: {} }]);
     const { cache } = mapCache();
     const send = vi.fn(async () => new Response(JSON.stringify({ answers: {
-      c0: { noul: 0.6 }, c1: { noul: 0.9 },
-      needs_federal_statute: { noul: 1 }, any_relevant: { noul: 1 },
+      c0: { type: 'noul', noul: 0.6 }, c1: { type: 'noul', noul: 0.9 },
+      needs_federal_statute: { type: 'noul', noul: 1 }, any_relevant: { type: 'noul', noul: 1 },
+      needs_provincial: { type: 'noul', noul: 0 }, needs_court_decision: { type: 'noul', noul: 0 },
+      needs_foreign_law: { type: 'noul', noul: 0 }, is_not_law: { type: 'noul', noul: 0 },
+      asks_published_figure: { type: 'noul', noul: 0 },
     } })));
     vi.stubGlobal('fetch', send);
     const embed = vi.fn(async () => [0.1]);

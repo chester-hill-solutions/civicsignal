@@ -23,7 +23,10 @@ function context(score: number, extras: Partial<CorpusContext> = {}) {
 
 function authority(needsProvincial: number) {
   const send = vi.fn(async () => new Response(JSON.stringify({ answers: {
-    c0: { noul: 1 }, any_relevant: { noul: 1 }, needs_federal_statute: { noul: 1 }, needs_provincial: { noul: needsProvincial },
+    c0: { type: 'noul', noul: 1 }, any_relevant: { type: 'noul', noul: 1 },
+    needs_federal_statute: { type: 'noul', noul: 1 }, needs_provincial: { type: 'noul', noul: needsProvincial },
+    needs_court_decision: { type: 'noul', noul: 0 }, needs_foreign_law: { type: 'noul', noul: 0 },
+    is_not_law: { type: 'noul', noul: 0 }, asks_published_figure: { type: 'noul', noul: 0 },
   } })));
   vi.stubGlobal('fetch', send);
   return send;

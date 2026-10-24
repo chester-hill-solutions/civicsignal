@@ -5,6 +5,14 @@ import { observeRetrievalContext, type RetrievalObservation } from '../src/corpo
 import type { CorpusContext } from '../src/corpora/types';
 
 const row = { id: 'row-1', corpus_id: 'statutes-canada', act: 'Test Act', instrument: 'Test Act', section: '1', text: 'private-candidate-body', source_url: 'https://example.test/1', language: 'fr', in_force: 1 };
+function jevResponse() {
+  return Response.json({ answers: {
+    c0: { type: 'noul', noul: 0.9 }, needs_federal_statute: { type: 'noul', noul: 1 },
+    any_relevant: { type: 'noul', noul: 1 }, needs_provincial: { type: 'noul', noul: 0 },
+    needs_court_decision: { type: 'noul', noul: 0 }, needs_foreign_law: { type: 'noul', noul: 0 },
+    is_not_law: { type: 'noul', noul: 0 }, asks_published_figure: { type: 'noul', noul: 0 },
+  } });
+}
 function fixture(score = 0.9) {
   const retrieval: RetrievalObservation[] = [];
   const rows = vi.fn();
@@ -45,8 +53,9 @@ describe('safe serving retrieval observations', () => {
     expect(put).not.toHaveBeenCalled();
     expect(f.retrieval[0]).toMatchObject({ revision: 'source-commit', parserVersion: 'statutes-v2', cache: 'bypass', scoreSource: 'computed' });
   });
-  it('makes a successful provider fallback visible without error text or credentials', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('private-upstream-error', { status: 503 })));
+  it.each(['HTTP error', 'invalid HTTP 200'])('makes a successful %s provider fallback visible without error text or credentials', async kind => {
+    vi.stubGlobal('fetch', vi.fn(async () => kind === 'HTTP error'
+      ? new Response('private-upstream-error', { status: 503 }) : Response.json(null)));
     const f = fixture();
     f.ctx.jev = { key: 'private-provider-key' };
     const items = await statutesCorpus.retrieve({ topic: 'private-question', language: 'fr' }, f.ctx);
@@ -55,7 +64,7 @@ describe('safe serving retrieval observations', () => {
     expect(JSON.stringify(f.retrieval)).not.toMatch(/private-question|private-provider-key|private-candidate-body|private-upstream-error/);
   });
   it('discloses originating score provenance on cache hits and makes no new provider calls', async () => {
-    const send = vi.fn(async () => Response.json({ answers: { c0: { noul: 0.9 }, needs_federal_statute: { noul: 1 }, any_relevant: { noul: 1 } } }));
+    const send = vi.fn(async () => jevResponse());
     vi.stubGlobal('fetch', send);
     const f = fixture();
     const cache = new Map<string, unknown>();
@@ -71,7 +80,7 @@ describe('safe serving retrieval observations', () => {
     expect(f.retrieval[1]!.scoredAt).toBe(f.retrieval[0]!.scoredAt);
   });
   it.each(['d1', 'r2'])('records cached answer selection when %s hydration fails without inventing cached scores', async (stage) => {
-    const send = vi.fn(async () => Response.json({ answers: { c0: { noul: 0.9 }, needs_federal_statute: { noul: 1 }, any_relevant: { noul: 1 } } }));
+    const send = vi.fn(async () => jevResponse());
     vi.stubGlobal('fetch', send);
     const f = fixture();
     const cache = new Map<string, unknown>();

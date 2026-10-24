@@ -209,7 +209,7 @@ describe('the providers', () => {
     for (const [name, spec] of Object.entries(PROVIDERS)) {
       expect(spec.defaultModel.length).toBeGreaterThan(0);
       expect(spec.endpoint(spec.defaultModel)).toMatch(/^https:\/\//);
-      expect(spec.parse({})).toBe('');
+      expect(() => spec.parse({})).toThrow('Invalid generation response.');
       expect(spec.headers('secret-key')).toBeTruthy();
       expect(name.length).toBeGreaterThan(0);
     }

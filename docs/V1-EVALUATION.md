@@ -103,7 +103,7 @@ found its PID and listener absent; this is later point-in-time evidence and does
 not turn the original timeout into a settled success. Neither hosted Zen attempt
 passes acceptance. Production was not changed.
 
-The newer API diagnostics source at `520c102` passes clean Linux pull-request merge
+The earlier API diagnostics source at `520c102` passed clean Linux pull-request merge
 candidate CI: **1,281 tests in 89 files**, 21 Python cases, four compiler projects,
 117 vendor files, two runtime probes and five dry-run builds. GitHub's generated
 merge candidate includes that exact head; it was not a detached standalone head
@@ -121,6 +121,32 @@ made no source, model or serving calls. The frozen runtime allowed at most one
 source request for that event, but its actual execution is unattested. These
 observations add no retrieval or generation measurements. See the
 [Cron outcome and limits](evidence/2026-10-23/staging-cron-0140-root-observation.json).
+
+The subsequent local investigation reproduced provider-boundary defects without
+another hosted request. Jev HTTP 200 with JSON `null` threw outside its failure
+handler; partial answers fabricated zero scores and malformed probabilities were
+accepted. BYOK providers accepted empty answers and consumed usage, three allowed
+synthetic key echoes, and malformed text/array shapes could become billable answers.
+These reproductions do not establish the cause of either historical Zen failure
+or any held-out miss.
+
+The repaired local source uses one bounded JSON exchange per provider, validates
+answers before billing and retains only safe generation failure phase/status
+metadata. Jev requires every requested typed Noul probability, with a 15-second
+deadline, 256 KiB response cap and 1 MiB request cap. Its existing failure fallback,
+model, prompt, authority rule and thresholds remain unchanged. All four BYOK
+providers use the 30-second / 256 KiB boundary. Jev-enabled cache keys include
+`jev-noul-complete-15s-v1`; vector-only keys are unchanged. Existing cached decisions
+contain no raw authority flags with which to validate the stricter contract, so
+they cannot be reused as evidence for it. The documented probability shape was
+checked against the primary [System One API](https://docs.typesafe.ai/api/system-one).
+
+The [local validation receipt](evidence/2026-10-24/provider-boundary-root-validation.json)
+records exact source pins, regressions, independent reviews and release checks.
+This source remains undeployed. The original serving ledger stays at **154/160**;
+no generation or retrieval call was added. The previous holdout and benchmark
+failures remain open. New hosted acceptance must name the actual deployed source
+and cache contract; it cannot reinterpret the earlier measurements as a pass.
 
 ## Dataset and evidence
 

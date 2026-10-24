@@ -14,10 +14,10 @@
  * and changeable.
  *
  * The candidate ranking uses one Noul for each candidate, in the same call.
- * Jev evaluates every question against the same state and in isolation, so more
- * questions cost tokens and do not cost time.
+ * The candidate and authority questions share one request and the same state.
  */
 import { ENCODER_CONTRACT } from './encoder';
+import { providerJsonOnce } from './provider-json';
 
 /** The endpoint of the inference gateway. */
 export const JEV_ENDPOINT = 'https://opencode.ai/inference/systemone/v1/systemone';
@@ -25,10 +25,13 @@ export const JEV_ENDPOINT = 'https://opencode.ai/inference/systemone/v1/systemon
 /** The model. */
 export const JEV_MODEL = 'jev-1.13';
 
+/** Responses cached under an older transport/schema contract must be re-evaluated. */
+export const JEV_CONTRACT_VERSION = 'jev-noul-complete-15s-v1';
+
 /** How many characters of a provision Jev reads. */
 export const EXCERPT_CHARS = 250;
 
-/** How many candidates to send. The limit for one call is 250. */
+/** The candidate budget used by this product's retrieval policy. */
 export const CANDIDATE_COUNT = 250;
 
 /** The limit on the relevance, inside a question that passed the authority test. */
@@ -120,6 +123,7 @@ export async function rankWithJev(
   options: { key: string; endpoint?: string; model?: string; send?: typeof fetch },
 ): Promise<JevResult | null> {
   if (candidates.length === 0) return null;
+  const candidateCount = candidates.length;
 
   const questions: Record<string, { type: string; instructions: string }> = {};
   candidates.forEach((_, at) => {
@@ -141,35 +145,45 @@ export async function rankWithJev(
     `question: ${query}`,
   ].join('\n\n');
 
-  const send = options.send ?? fetch;
-  let body: { answers?: Record<string, { noul?: number }> };
   try {
-    const response = await send(options.endpoint ?? JEV_ENDPOINT, {
-      method: 'POST',
+    return await providerJsonOnce({
+      url: options.endpoint ?? JEV_ENDPOINT,
       headers: {
         authorization: `Bearer ${options.key}`,
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ model: options.model ?? JEV_MODEL, state, questions }),
+      body: { model: options.model ?? JEV_MODEL, state, questions },
+      timeoutMs: 15_000,
+      responseBytes: 256 * 1024,
+      requestBytes: 1024 * 1024,
+      send: options.send,
+      parse: (value) => {
+        if (!record(value) || !record(value.answers)) throw new Error('Invalid Jev response.');
+        const answers = value.answers;
+        const scores: Record<string, number> = {};
+        for (const name of Object.keys(questions)) {
+          const answer = answers[name];
+          if (!Object.hasOwn(answers, name) || !record(answer) || answer.type !== 'noul' ||
+            typeof answer.noul !== 'number' || !Number.isFinite(answer.noul) ||
+            answer.noul < 0 || answer.noul > 1) throw new Error('Invalid Jev response.');
+          scores[name] = answer.noul;
+        }
+        const flags = {} as AuthorityFlags;
+        for (const name of Object.keys(ATOMIC_QUESTIONS) as AtomicQuestion[]) flags[name] = scores[name]!;
+        return {
+          relevance: Array.from({ length: candidateCount }, (_, at) => scores[`c${at}`]!),
+          flags,
+          anyRelevant: scores.any_relevant!,
+        };
+      },
     });
-    if (!response.ok) return null;
-    body = (await response.json()) as typeof body;
   } catch {
     return null;
   }
+}
 
-  const answers = body.answers;
-  if (!answers) return null;
-
-  const flags = {} as AuthorityFlags;
-  for (const name of Object.keys(ATOMIC_QUESTIONS) as AtomicQuestion[]) {
-    flags[name] = answers[name]?.noul ?? 0;
-  }
-  return {
-    relevance: candidates.map((_, at) => answers[`c${at}`]?.noul ?? 0),
-    flags,
-    anyRelevant: answers['any_relevant']?.noul ?? 0,
-  };
+function record(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 /**

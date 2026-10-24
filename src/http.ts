@@ -1,5 +1,6 @@
 import type { Env } from './types';
 import type { RetrievalObservation } from './corpora/retrieval-observation';
+import { isByokProvider, type GenerationFailure } from './byok';
 
 /** CORS + security headers, in one place so every route agrees. */
 export function resolveCorsOrigin(
@@ -115,9 +116,18 @@ export function errorResponse(
   correlationId: string,
   status = 400,
   retrieval?: readonly RetrievalObservation[],
+  generation?: GenerationFailure,
 ): Response {
+  // Copy only the bounded public contract, never Error fields or provider data.
+  const phases: readonly GenerationFailure['phase'][] = ['request-serialization','transport','upstream-http','response-body',
+    'response-parse','timeout','cancelled','response-validation'];
+  const safeGeneration = generation && isByokProvider(generation.provider) && phases.includes(generation.phase)
+    ? { generation: { provider: generation.provider, phase: generation.phase,
+      ...(typeof generation.upstreamStatus === 'number' && Number.isInteger(generation.upstreamStatus) &&
+        generation.upstreamStatus >= 100 && generation.upstreamStatus <= 599 ? { upstreamStatus: generation.upstreamStatus } : {}) } }
+    : {};
   return jsonResponse(
-    { error: message, code, correlationId, timestamp: Date.now(), ...(retrieval ? { retrieval } : {}) },
+    { error: message, code, correlationId, timestamp: Date.now(), ...(retrieval ? { retrieval } : {}), ...safeGeneration },
     env,
     origin,
     correlationId,
