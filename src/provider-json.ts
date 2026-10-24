@@ -84,7 +84,8 @@ export async function providerJsonOnce<T>(options: ProviderJsonOptions<T>): Prom
     if (typeof body !== 'string' || requestBytes !== undefined && new TextEncoder().encode(body).byteLength > requestBytes) throw error(phase);
     check();
     phase = 'transport';
-    const pending = send(url, { method: 'POST', headers, body, redirect: 'error', signal: controller.signal }).then(value => {
+    // Workers supports manual/follow. Inspect 3xx below without forwarding credentials.
+    const pending = send(url, { method: 'POST', headers, body, redirect: 'manual', signal: controller.signal }).then(value => {
       if (finished) {
         // A transport that ignored abort may fulfil after our terminal failure.
         try { void value.body?.cancel().catch(() => {}); } catch { /* No raw error or new request. */ }

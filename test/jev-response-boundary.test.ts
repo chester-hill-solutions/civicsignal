@@ -139,7 +139,7 @@ describe('Jev response failure boundary', () => {
     expect(send).toHaveBeenCalledTimes(1);
     const [url, init] = send.mock.calls[0]!;
     expect(url).toBe('https://synthetic.invalid/jev');
-    expect(init?.method).toBe('POST'); expect(init?.redirect).toBe('error');
+    expect(init?.method).toBe('POST'); expect(init?.redirect).toBe('manual');
     expect(init?.signal).toBeInstanceOf(AbortSignal);
     expect(new Headers(init?.headers).get('authorization')).toBe('Bearer synthetic-unused-key');
     expect(JSON.parse(String(init?.body)).model).toBe('synthetic-model');

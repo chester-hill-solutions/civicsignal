@@ -12,7 +12,7 @@ describe('BYOK upstream requests', () => {
     const [url,init]=send.mock.calls[0] as unknown as [string,RequestInit];
     const models={anthropic:'claude-sonnet-4-5',openai:'gpt-4.1-mini',google:'gemini-2.5-flash','opencode-zen':'claude-haiku-4-5'};
     const endpoints={anthropic:'https://api.anthropic.com/v1/messages',openai:'https://api.openai.com/v1/chat/completions',google:'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent','opencode-zen':'https://opencode.ai/inference/anthropic/v1/messages'};
-    expect(url).toBe(endpoints[provider]);expect(init.method).toBe('POST');expect(init.redirect).toBe('error');expect(send).toHaveBeenCalledTimes(1);
+    expect(url).toBe(endpoints[provider]);expect(init.method).toBe('POST');expect(init.redirect).toBe('manual');expect(send).toHaveBeenCalledTimes(1);
     const headers=new Headers(init.headers);
     expect(headers.get(provider==='anthropic'?'x-api-key':provider==='google'?'x-goog-api-key':'authorization')).toBe(provider==='openai'||provider==='opencode-zen'?'Bearer '+key:key);
     if(provider==='anthropic')expect(headers.get('anthropic-version')).toBe('2023-06-01');
@@ -57,7 +57,7 @@ describe('OpenCode Zen Messages adapter', () => {
     expect(send).toHaveBeenCalledTimes(1);
     const [url, init] = send.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('https://opencode.ai/inference/anthropic/v1/messages');
-    expect(init.method).toBe('POST'); expect(init.redirect).toBe('error');
+    expect(init.method).toBe('POST'); expect(init.redirect).toBe('manual');
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer caller-generation-key');
     expect(new Headers(init.headers).has('x-api-key')).toBe(false);
     expect(JSON.parse(String(init.body))).toEqual({ model: OPENCODE_ZEN_MODEL, max_tokens: 128,

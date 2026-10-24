@@ -28,7 +28,7 @@ describe('one bounded provider JSON exchange', () => {
     expect(send).toHaveBeenCalledTimes(1); expect(parse).toHaveBeenCalledTimes(1);
     const [url, init] = send.mock.calls[0]!;
     expect(url).toBe('https://provider.invalid/messages'); expect(init?.method).toBe('POST');
-    expect(init?.redirect).toBe('error'); expect(JSON.parse(String(init?.body))).toEqual({ input: 'synthetic request' });
+    expect(init?.redirect).toBe('manual'); expect(JSON.parse(String(init?.body))).toEqual({ input: 'synthetic request' });
     expect(new Headers(init?.headers).get('authorization')).toBe('Bearer synthetic-key');
     expect(init?.signal?.aborted).toBe(false);
   });

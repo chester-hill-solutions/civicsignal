@@ -87,7 +87,7 @@ describe('HTTP and MCP access and metering', () => {
     const fixture = await setup();
     const send = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       expect(String(input)).toBe('https://opencode.ai/inference/anthropic/v1/messages');
-      expect(init?.redirect).toBe('error');
+      expect(init?.redirect).toBe('manual');
       expect(new Headers(init?.headers).get('authorization')).toBe('Bearer fixture-zen-generation-key');
       const body = JSON.parse(String(init?.body));
       expect(body.model).toBe('claude-haiku-4-5');expect(body.max_tokens).toBe(128);
@@ -126,7 +126,7 @@ describe('HTTP and MCP access and metering', () => {
     let started!:()=>void;const sent=new Promise<void>(resolve=>{started=resolve;});
     const timeout=kind.endsWith('timeout');if(timeout)vi.useFakeTimers();
     const send=vi.spyOn(globalThis,'fetch').mockImplementation(async(input,init)=>{
-      expect(String(input)).toBe(generationEndpoints[provider]);expect(init?.method).toBe('POST');expect(init?.redirect).toBe('error');started();
+      expect(String(input)).toBe(generationEndpoints[provider]);expect(init?.method).toBe('POST');expect(init?.redirect).toBe('manual');started();
       if(kind==='fetch-timeout')return new Promise<Response>(()=>{});
       if(kind==='body-timeout')return new Response(new ReadableStream<Uint8Array>({start(){},cancel(){}}));
       if(kind.startsWith('http'))return new Response(key+' '+prompt+' '+detail,{status:Number(kind.slice(4))});
