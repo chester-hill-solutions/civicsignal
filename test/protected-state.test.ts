@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import type { DatabaseSync as Sqlite } from 'node:sqlite';
 import { chmod, lstat, link, mkdtemp, readFile, realpath, readdir, rm, writeFile } from 'node:fs/promises';
@@ -17,13 +18,14 @@ const cleanup:string[]=[];
 afterEach(async()=>{for(const path of cleanup.splice(0))await rm(path,{recursive:true,force:true});});
 const commit='a'.repeat(40),date='2026-10-15';
 const importer=resolve('scripts/lib/protected-sql-import.mjs');
-async function sqlDump(source:string,destination:string,sequences=true){
+async function sqlDump(source:string,destination:string,sequences=true,indexes=true){
   const db=openProtectedDatabase(source);let sql='PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n';
   const literal=(value:unknown)=>value===null?'NULL':typeof value==='number'?String(value):"'"+String(value).replace(/'/g,"''")+"'";
   try{
     const tables=db.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all();
     for(const table of tables)sql+=String(table['sql'])+';\n';
     for(const table of tables)for(const row of db.prepare(`SELECT * FROM ${String(table['name'])}`).iterate())sql+=`INSERT INTO ${String(table['name'])} VALUES(${Object.values(row).map(literal).join(',')});\n`;
+    if(indexes)for(const index of db.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL ORDER BY name").all())sql+=String(index['sql'])+';\n';
     if(sequences){sql+='DELETE FROM sqlite_sequence;\n';for(const row of db.prepare('SELECT name,seq FROM sqlite_sequence').all())sql+=`INSERT INTO sqlite_sequence VALUES(${literal(row['name'])},${literal(row['seq'])});\n`;}
   }finally{db.close();}
   await writeFile(destination,sql+'COMMIT;\n',{mode:0o600});
@@ -54,20 +56,22 @@ function importWithEvidence(source:string,destination:string,reference:{path:str
   return JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',code,source,destination,JSON.stringify(reference)],{encoding:'utf8',timeout:180000,maxBuffer:65536})) as {passed:boolean;code?:string;result?:Record<string,unknown>};
 }
 
-async function fixture(){
+async function fixture(alterSchema:(name:string,sql:string)=>string=(_name,sql)=>sql,through='0008'){
   const root=await realpath(await mkdtemp(join(tmpdir(),'protected-state-')));cleanup.push(root);await chmod(root,0o700);
   const source=join(root,'source.sqlite'),target=join(root,'target.sqlite'),auth=join(root,'auth.json'),bundle=join(root,'cutover'),output=join(root,'protected');
   const db=new DatabaseSync(source);
-  for(const name of (await readdir(resolve('migrations'))).filter(n=>n.endsWith('.sql')).sort())db.exec(await readFile(resolve('migrations',name),'utf8'));
+  for(const name of (await readdir(resolve('migrations'))).filter(n=>n.endsWith('.sql')&&n.slice(0,4)<=through).sort())db.exec(alterSchema(name,await readFile(resolve('migrations',name),'utf8')));
   const rows=['en','fr'].map(language=>{
     const row:Record<string,unknown>={id:`acts-${language}-1`,corpus_id:'statutes-canada',act:"L'Acte",section:'1',heading:null,
       text:language==='fr'?"Une règle avec l'apostrophe.\nDeuxième ligne.":'An original rule.',source_url:`https://laws-lois.justice.gc.ca/${language}/acts/T-1/section-1.html`,
       jurisdiction:'CA',in_force:1,topics:null,citation:'T-1',language,schedule:null,part:null,status:'in-force',last_changed:date};
     row['text_hash']=rowFingerprintWithText(row,String(row['text']));return row;
   });
-  for(const row of rows)db.prepare(INSERT_COMPACT_STATUTE_SQL).run(...COMPACT_STATUTE_COLUMNS.map(c=>row[c] as string|number|null));
-  db.prepare('INSERT INTO corpus_state VALUES(?,?,?,?,?,?,?)').run('statutes-canada',commit,date,date,2,'2026-10-22T16:37:09Z',null);
-  db.exec(`INSERT INTO workspace VALUES('cust_one','Private name','private-slug',100,200);
+  const sourceColumns=[...COMPACT_STATUTE_COLUMNS,...(through==='0003'?['search_text']:[])];
+  for(const row of rows)db.prepare(`INSERT INTO statute_sections(${sourceColumns.join(',')}) VALUES(${sourceColumns.map(()=>'?').join(',')})`).run(...sourceColumns.map(c=>c==='search_text'?'synthetic search':row[c] as string|number|null));
+  const publication=['statutes-canada',commit,date,date,2,'2026-10-22T16:37:09Z',...(through>='0008'?[null]:[])];
+  db.prepare(`INSERT INTO corpus_state VALUES(${publication.map(()=>'?').join(',')})`).run(...publication);
+  if(through>='0005')db.exec(`INSERT INTO workspace VALUES('cust_one','Private name','private-slug',100,200);
     INSERT INTO civic_workspace_billing VALUES('cust_one','metered',1200,1,'cus_private',0);
     INSERT INTO workspace_api_key VALUES('key_one','cust_one','Private key','${'b'.repeat(64)}','prefix','["scope.restricted"]','revoked','user_private',123,100,200);
     INSERT INTO workspace_api_key VALUES('key_two','cust_one','Tighten','${'c'.repeat(64)}','prefix2','[]','active',NULL,NULL,300,400);`);
@@ -76,7 +80,7 @@ async function fixture(){
   const insertChange=db.prepare('INSERT INTO corpus_changes(id,corpus_id,change,row_id,instrument,citation,section,summary,source_url,occurred_at,recorded_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)');
   for(let n=1;n<=19;n++)insertChange.run(n*10,'statutes-canada','removed',`removed-${n}`,'Act','T-1','1',"Résumé privé\nwith ' quote",'https://example.test',date,date);
   insertChange.run(1000,'statutes-canada','added','gone','Act','T-1','1',null,null,date,date);db.exec('DELETE FROM corpus_changes WHERE id=1000');
-  db.prepare('INSERT INTO corpus_mutations VALUES(?,?,NULL,?)').run('completed-private-id','statutes-canada',date);
+  if(through>='0006')db.prepare('INSERT INTO corpus_mutations VALUES(?,?,NULL,?)').run('completed-private-id','statutes-canada',date);
   const input=join(root,'rows.jsonl');await writeFile(input,rows.map(r=>JSON.stringify(r)).join('\n')+'\n');
   const cutover=await prepareTextCutover({input,output:bundle,revision:commit+':legacy',objectStorage:'pack'});
   const fresh=new DatabaseSync(target);fresh.exec(COMPACT_CORPUS_SCHEMA);
@@ -96,6 +100,76 @@ async function fixture(){
 }
 
 describe('offline protected state',()=>{
+  it('refuses a source with an undeclared key workspace FK before creating output',async()=>{
+    const f=await fixture((name,sql)=>name==='0005_workspace_auth.sql'?sql.replace(' REFERENCES workspace(id) ON DELETE CASCADE',''):sql);
+    await expect(prepareProtectedState(await f.options())).rejects.toMatchObject({code:'PROTECTED_SCHEMA_MISMATCH'});
+    expect(await lstat(f.output).catch(()=>null)).toBeNull();
+  });
+  it.each([
+    {name:'missing UNIQUE',change:(sql:string)=>sql.replace('key_hash TEXT NOT NULL UNIQUE','key_hash TEXT NOT NULL')},
+    {name:'missing CHECK',change:(sql:string)=>sql.replace(" CHECK(plan IN ('free', 'metered', 'enterprise'))",'')},
+    {name:'changed FK action',change:(sql:string)=>sql.replace('ON DELETE CASCADE','ON DELETE RESTRICT')},
+    {name:'changed default',change:(sql:string)=>sql.replace('DEFAULT 0 CHECK(fuse_limit','DEFAULT 1 CHECK(fuse_limit')},
+    {name:'missing index',change:(sql:string)=>sql.replace(/CREATE INDEX IF NOT EXISTS workspace_api_key_workspace_idx[\s\S]*?;/,'')},
+    {name:'changed partial index',change:(sql:string)=>sql.replace("WHERE status = 'active'","WHERE status = 'revoked'")},
+    {name:'unexpected index',change:(sql:string)=>sql+'CREATE INDEX unexpected_index ON workspace(name);'},
+    {name:'unexpected trigger',change:(sql:string)=>sql+"CREATE TRIGGER unexpected_trigger AFTER UPDATE ON workspace BEGIN UPDATE workspace_api_key SET status='active'; END;"},
+    {name:'unexpected view',change:(sql:string)=>sql+'CREATE VIEW unexpected_view AS SELECT id FROM workspace;'},
+    {name:'wrong affinity',change:(sql:string)=>sql.replace('id TEXT PRIMARY KEY NOT NULL','id T EXT PRIMARY KEY NOT NULL')},
+    {name:'missing PK and FKs',change:(sql:string)=>sql.replace('id TEXT PRIMARY KEY NOT NULL','id TEXT NOT NULL').replaceAll(' REFERENCES workspace(id) ON DELETE CASCADE','')},
+  ])('refuses $name declarations through actual preparation before output',async({change})=>{
+    const f=await fixture((name,sql)=>name==='0005_workspace_auth.sql'?change(sql):sql),options=await f.options();
+    await expect(prepareProtectedState(options)).rejects.toMatchObject({code:'PROTECTED_SCHEMA_MISMATCH'});
+    expect(await lstat(f.output).catch(()=>null)).toBeNull();expect(await sha256File(f.source)).toBe(options.source.sha256);
+  });
+  it.each(['0003','0004','0005','0006','0007','0008'])('admits the coherent public migration profile through %s and writes linked private evidence',async through=>{
+    const f=await fixture(undefined,through),prepared=await prepareProtectedState(await f.options());
+    expect(prepared.sourceSchemaProfile).toBe('migrations-through-'+through);
+    const path=join(f.output,'source-schema.json'),evidence=JSON.parse(await readFile(path,'utf8')),manifest=JSON.parse(await readFile(join(f.output,'manifest.json'),'utf8'));
+    expect(await sha256File(path)).toBe(prepared.sourceSchemaSha256);expect((await lstat(path)).mode&0o777).toBe(0o600);
+    expect(evidence).toMatchObject({contract:'protected-source-schema-v1',profile:prepared.sourceSchemaProfile,sourceKind:'sqlite',sourceSha256:manifest.sourceSha256,
+      sourceSqliteSha256:manifest.sourceSqliteSha256,manifestSha256:prepared.manifestSha256,providerAuthenticated:false,globalQuiescenceEstablished:false,productionAcquisitionQualified:false});
+    expect(manifest).not.toHaveProperty('sourceSchema');
+    expect(await applyProtectedState({directory:f.output,manifestSha256:prepared.manifestSha256,targetSqlite:f.target})).toMatchObject({verified:true});
+    if(through>='0005'){
+      expect(evidence.inventory.objects.some((object:{type:string;sql:unknown})=>object.type==='index'&&object.sql===null)).toBe(true);
+      const keys=evidence.inventory.objects.find((object:{name:string})=>object.name==='workspace_api_key');
+      expect(keys.indexes.some((index:{unique:number;origin:string})=>index.unique===1&&index.origin==='u')).toBe(true);
+    }
+  });
+  it.each(['mixed-parser','partial-auth','fake-bookkeeping','autoincrement'] as const)('refuses %s even when surviving rows and sequence marks look valid',async kind=>{
+    const f=await fixture((name,sql)=>kind==='autoincrement'&&name==='0003_pipeline.sql'?sql.replace('INTEGER PRIMARY KEY AUTOINCREMENT','INTEGER PRIMARY KEY'):sql);
+    if(kind==='mixed-parser')f.edit(f.source,'ALTER TABLE corpus_runs DROP COLUMN parser_version');
+    if(kind==='partial-auth')f.edit(f.source,'DROP TABLE workspace_api_key');
+    if(kind==='fake-bookkeeping')f.edit(f.source,'CREATE TABLE _cf_unknown(id TEXT)');
+    if(kind==='autoincrement')f.edit(f.source,"INSERT INTO sqlite_sequence(name,seq) VALUES('corpus_runs',120)");
+    await expect(prepareProtectedState(await f.options())).rejects.toMatchObject({code:'PROTECTED_SCHEMA_MISMATCH'});expect(await lstat(f.output).catch(()=>null)).toBeNull();
+  });
+  it('preserves meaningful token boundaries while permitting reviewed formatting differences',async()=>{
+    const f=await fixture((_name,sql)=>sql.replaceAll('CREATE TABLE IF NOT EXISTS','create table').replaceAll('CHECK(', 'CHECK /* separator */ ('));
+    expect(await prepareProtectedState(await f.options())).toMatchObject({sourceSchemaProfile:'migrations-through-0008'});
+  });
+  it('accepts only the exact supported bookkeeping schemas alongside a known source profile',async()=>{
+    const f=await fixture();f.edit(f.source,'CREATE TABLE _cf_KV(key TEXT PRIMARY KEY,value BLOB) WITHOUT ROWID;CREATE TABLE _cf_METADATA(key INTEGER PRIMARY KEY,value BLOB)');
+    expect(await prepareProtectedState(await f.options())).toMatchObject({sourceSchemaProfile:'migrations-through-0008'});
+  });
+  it.each(['missing','contract','source','sourceSqlite','manifest','inventory','rehashed-inventory','profile','extra-field','false-authenticity'] as const)('refuses %s source-schema evidence before target writes',async kind=>{
+    const f=await fixture(),prepared=await prepareProtectedState(await f.options()),path=join(f.output,'source-schema.json'),before=await sha256File(f.target),receipt=JSON.parse(await readFile(path,'utf8'));
+    if(kind==='missing')await rm(path);else{
+      if(kind==='contract')receipt.contract='older-contract';
+      if(kind==='source')receipt.sourceSha256='0'.repeat(64);
+      if(kind==='sourceSqlite')receipt.sourceSqliteSha256='0'.repeat(64);
+      if(kind==='manifest')receipt.manifestSha256='0'.repeat(64);
+      if(kind==='inventory')receipt.inventory.objects.pop();
+      if(kind==='rehashed-inventory'){receipt.inventory.objects.pop();receipt.inventorySha256=createHash('sha256').update(JSON.stringify(receipt.inventory)).digest('hex');}
+      if(kind==='profile')receipt.profile='migrations-through-0003';
+      if(kind==='extra-field')receipt.unreviewed=true;
+      if(kind==='false-authenticity')receipt.providerAuthenticated=true;
+      await writeFile(path,JSON.stringify(receipt)+'\n');
+    }
+    await expect(applyProtectedState({directory:f.output,manifestSha256:prepared.manifestSha256,targetSqlite:f.target})).rejects.toMatchObject({code:'PROTECTED_SOURCE_SCHEMA_EVIDENCE'});
+    expect(await sha256File(f.target)).toBe(before);
+  });
   it('preserves every protected table, monotonic revocation, original IDs and deleted-ID sequence marks',async()=>{
     const f=await fixture(),before=await sha256File(f.source),prepared=await prepareProtectedState(await f.options());
     expect(prepared.rows).toMatchObject({workspace:1,workspace_api_key:3,corpus_runs:1,corpus_changes:19,corpus_mutations:1,sqlite_sequence:2});
@@ -189,8 +263,7 @@ describe('offline protected state',()=>{
     await expect(protectedStateCli(['verify-local','--bundle','/not-opened','--manifest-sha256','a','--target','b','--remote','true'])).rejects.toMatchObject({code:'INVALID_ARGUMENTS'});
   });
   it('migrates a recognized legacy schema without inventing CHS state or completed mutations',async()=>{
-    const f=await fixture();
-    f.edit(f.source,'DROP TABLE workspace_api_key; DROP TABLE civic_workspace_billing; DROP TABLE workspace; DROP TABLE corpus_mutations; ALTER TABLE corpus_state DROP COLUMN parser_version; ALTER TABLE corpus_runs DROP COLUMN parser_version;');
+    const f=await fixture(undefined,'0004');
     const prepared=await prepareProtectedState(await f.options());expect(prepared.rows).toMatchObject({workspace_api_key:3,corpus_mutations:0});
     expect(await applyProtectedState({directory:f.output,manifestSha256:prepared.manifestSha256,targetSqlite:f.target})).toMatchObject({verified:true});
   });
@@ -216,12 +289,17 @@ describe('offline protected state',()=>{
   it('imports a saved SQL dump through the Node authorizer, retaining exact sequence facts and private literals',async()=>{
     const f=await fixture(),sql=join(f.root,'source.sql');await sqlDump(f.source,sql);
     // Force comment, UTF-8, quote and semicolon boundaries across input chunks.
-    await writeFile(sql,'--'+'.'.repeat(65530)+'\n'+await readFile(sql,'utf8')+"CREATE TABLE literal_fixture(x TEXT); INSERT INTO literal_fixture VALUES('règle; -- not a comment\n''quoted''');\n");
+    await writeFile(sql,'--'+'.'.repeat(65530)+'\n'+await readFile(sql,'utf8')+"INSERT INTO corpus_mutations VALUES('literal_fixture','statutes-canada',NULL,'règle; -- not a comment\n''quoted''');\n");
     const options=await f.options(),original=await sha256File(sql);
     const prepared=await prepareProtectedState({...options,source:{kind:'sql',path:sql,sha256:original}});
     expect(await applyProtectedState({directory:f.output,manifestSha256:prepared.manifestSha256,targetSqlite:f.target})).toMatchObject({verified:true});
     const manifest=JSON.parse(await readFile(join(f.output,'manifest.json'),'utf8'));
     expect(manifest).toMatchObject({sourceKind:'sql',sourceSha256:original});expect(await sha256File(sql)).toBe(original);
+  });
+  it('refuses an index-omitting SQL dump rather than qualifying a narrowed schema',async()=>{
+    const f=await fixture(),sql=join(f.root,'missing-indexes.sql');await sqlDump(f.source,sql,true,false);
+    await expect(prepareProtectedState({...await f.options(),source:{kind:'sql',path:sql,sha256:await sha256File(sql)}})).rejects.toMatchObject({code:'PROTECTED_SCHEMA_MISMATCH'});
+    expect(await lstat(f.output).catch(()=>null)).toBeNull();
   });
   it.each([
     "ATTACH DATABASE 'private-exfiltration.sqlite' AS leak;",
@@ -231,6 +309,8 @@ describe('offline protected state',()=>{
     "CREATE TABLE x(a); CREATE TRIGGER private_trigger AFTER INSERT ON x BEGIN SELECT 1; END;",
     "CREATE VIRTUAL TABLE private_virtual USING fts5(private_text);",
     "CREATE TABLE x(a); INSERT INTO x SELECT 1;",
+    'REINDEX;',
+    'REINDEX idx_corpus_runs_corpus;',
   ])('refuses hostile SQL without printing its values: %s',async attack=>{
     const f=await fixture(),sql=join(f.root,'hostile.sql');await writeFile(sql,attack,{mode:0o600});
     let stderr='';try{execFileSync(process.execPath,[importer,sql,join(f.root,'refused.sqlite')],{stdio:['ignore','pipe','pipe'],cwd:f.root});throw new Error('Unexpected import success');}
@@ -267,6 +347,32 @@ describe('offline original sequence evidence bridge',()=>{
     const sql=join(root,'original.sql'),destination=join(root,'materialized.sqlite');await writeFile(sql,sqlText,{mode:0o600});return {root,sql,destination};
   }
   function rolledBack(path:string){const db=new DatabaseSync(path,{readOnly:true});try{expect(db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").all()).toEqual([]);}finally{db.close();}}
+  it.each(['plain','partial','unique'] as const)('materializes an explicit %s index over populated rows through the strict importer',async kind=>{
+    const index=kind==='unique'?'CREATE UNIQUE INDEX idx_fixture ON fixture(value)':kind==='partial'?'CREATE INDEX idx_fixture ON fixture(value) WHERE id>0':'CREATE INDEX idx_fixture ON fixture(value)';
+    const f=await smallSource(`CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);
+      CREATE TABLE fixture(id INTEGER PRIMARY KEY,value TEXT);INSERT INTO fixture VALUES(1,'one');INSERT INTO fixture VALUES(2,'two');${index};
+      INSERT INTO sqlite_sequence VALUES('corpus_runs',0);INSERT INTO sqlite_sequence VALUES('corpus_changes',0);`);
+    expect(JSON.parse(execFileSync(process.execPath,[importer,f.sql,f.destination],{encoding:'utf8'}))).toMatchObject({materialized:true});
+    const db=new DatabaseSync(f.destination);try{
+      expect(db.prepare('SELECT count(*) AS n FROM fixture').get()?.['n']).toBe(2);
+      expect(db.prepare("SELECT name,\"unique\",partial FROM pragma_index_list('fixture') WHERE name='idx_fixture'").get()).toMatchObject({name:'idx_fixture',unique:kind==='unique'?1:0,partial:kind==='partial'?1:0});
+    }finally{db.close();}
+  });
+  it('refuses incidental, unrelated or foreign REINDEX callbacks while allowing the exact explicit index callback',async()=>{
+    const f=await smallSource("CREATE TABLE corpus_runs(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE corpus_changes(id INTEGER PRIMARY KEY AUTOINCREMENT);CREATE TABLE fixture(id INTEGER);CREATE INDEX idx_fixture ON fixture(id);CREATE TABLE after_index(id INTEGER);INSERT INTO sqlite_sequence VALUES('corpus_runs',0);INSERT INTO sqlite_sequence VALUES('corpus_changes',0);");
+    const code=`import assert from 'node:assert/strict';import {DatabaseSync,constants as c} from 'node:sqlite';import {importProtectedSql} from ${JSON.stringify(new URL('../scripts/lib/protected-sql-import.mjs',import.meta.url).href)};
+      const original=DatabaseSync.prototype.setAuthorizer;let explicit=0,incidental=0;
+      DatabaseSync.prototype.setAuthorizer=function(policy){return original.call(this,policy&&((action,a,b,db,trigger)=>{
+        const result=policy(action,a,b,db,trigger);
+        if(action===c.SQLITE_CREATE_TABLE){assert.equal(policy(c.SQLITE_REINDEX,'idx_fixture',null,'main',null),c.SQLITE_DENY);incidental++;}
+        if(action===c.SQLITE_CREATE_INDEX&&a==='idx_fixture'){
+          assert.equal(policy(c.SQLITE_REINDEX,'unrelated',null,'main',null),c.SQLITE_DENY);
+          assert.equal(policy(c.SQLITE_REINDEX,a,null,'foreign',null),c.SQLITE_DENY);
+          assert.equal(policy(c.SQLITE_REINDEX,a,null,'main',null),c.SQLITE_OK);explicit++;
+        }return result;
+      }));};await importProtectedSql(process.argv[1],process.argv[2]);console.log(JSON.stringify({explicit,incidental}));`;
+    expect(JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',code,f.sql,f.destination],{encoding:'utf8'}))).toMatchObject({explicit:1,incidental:5});
+  });
   it('retains saved120/1000 above surviving2/10 and feeds the unchanged SQLite copier without rewriting SQL',async()=>{
     const f=await fixture();f.edit(f.source,'DELETE FROM corpus_changes WHERE id<>10');
     const sql=join(f.root,'original.sql'),materialized=join(f.root,'materialized.sqlite');await sqlDump(f.source,sql,false);

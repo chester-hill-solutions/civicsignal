@@ -71,6 +71,14 @@ describe('synthetic protected-copy preparation',()=>{
   const f=await fixture(),proof=await prepareProtectedD1Fixture(f.options),bun=realpathSync((process.env.PATH??'').split(':').map(p=>join(p,'bun')).find(p=>existsSync(p))!);
   const built=await run(process.execPath,[join(ROOT,'scripts/build-protected-state-d1-owned.mjs'),'--inputs',proof.ownedInputs.path,'--bun',bun],{env:{PATH:'/usr/bin:/bin'},timeout:30000,maxBuffer:1048576});expect(JSON.parse(built.stdout)).toMatchObject({preparedOnly:true,executionApproved:false,credentialBytesRead:0});const registry=join(f.outputDirectory,'journal.owned'),review=JSON.parse(await readFile(join(registry,'window-000001.review-template.json'),'utf8'));
   expect(review).toMatchObject({authority:'prepared-unapproved',executeOneWindow:false,validUntil:null,mode:'full',window:1,target:f.target,automaticNextWindow:false,allowanceExtension:false,limits:{maxRequests:64,wallMs:300000,requestMs:15000}});expect(await readdir(registry)).not.toContain('window-000001');expect(existsSync(join(f.outputDirectory,'journal'))).toBe(false);
+  const input=JSON.parse(await readFile(proof.ownedInputs.path,'utf8')),bundle=join(registry,'protected-state-d1.mjs'),manifest=JSON.parse(await readFile(join(registry,'bundle-manifest.json'),'utf8'));
+  const args=['--no-env-file',bundle,'--full-phases','--directory',input.directory,'--manifest-sha256',input.manifestSha256,'--admission',input.admissionPath,'--admission-sha256',input.admissionSha256,'--admission-file-sha256',input.admissionFileSha256,'--cutover',input.cutoverBundle,'--target',input.targetFile];
+  const inspected=JSON.parse((await run(bun,args,{cwd:f.root,env:{HOME:join(registry,'home'),PATH:'/usr/bin:/bin',LANG:'C.UTF-8',TZ:'UTC'},timeout:30000,maxBuffer:1048576})).stdout);
+  expect(inspected).toMatchObject({execute:false,planSha256:review.planSha256,pins:{sourceSchemaSha256:review.inputs.sourceSchemaSha256}});
+  const assets=JSON.parse(await readFile(join(ROOT,'scripts/lib/protected-state-schema-assets.json'),'utf8'));
+  for(const [name,digest]of Object.entries(assets))expect(manifest.files['migrations/'+name].sha256).toBe(digest);
+  expect(manifest.files).toHaveProperty('scripts/lib/protected-state-schema-assets.json');
+  expect(existsSync(join(f.outputDirectory,'journal'))).toBe(false);expect(await readdir(registry)).not.toContain('window-000001');
  },30000);
 });
 

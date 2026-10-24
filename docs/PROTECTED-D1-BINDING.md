@@ -308,9 +308,36 @@ library adds no deadline or remote acquisition behavior.
 
 The [production acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md)
 records the actual deployed binding differences, missing maintenance procedure,
-source-schema admission gap and remaining acquisition/hosted-copy gates.
+production schema classification and remaining acquisition/hosted-copy gates.
 All **94 focused copier/bridge/format tests**, including the optional actual local
 workerd check, pass in the corrected root run. Tooling TypeScript and independent
 peer review also pass. The first root run omitted Bun from its clean PATH; its
 two CLI-spawn failures remain preserved separately. See the
 [bridge validation](evidence/2026-10-23/protected-original-sequence-bridge-root-validation.json).
+
+### Declared source schema evidence
+
+New preparation admits only coherent public migration profiles through 0003,
+0004, 0005, 0006, 0007 or 0008. It compares normalized SQL declarations and
+SQLite column, PK, FK and index facts against the pinned migration files.
+Missing constraints or indexes, changed defaults or collations, extra triggers
+or views and mixed profiles fail before plan output. Destination schema checks
+remain independent. The SQL importer now permits SQLite's internal reindex
+callback only for the exact main index created by that admitted `CREATE INDEX`
+statement; standalone `REINDEX` remains forbidden.
+
+Every new plan has a private `source-schema.json` linked to the original source,
+materialized SQLite and manifest hashes. Local apply, verify and D1 admission
+require this sidecar. Its exact bytes are also part of the owned D1 client's
+reviewed plan identity and are checked before credential selection. The bundle
+pins all eight migration assets and resolves them from the fixed repository
+location even when run from another directory. Format-1 manifests, pages and
+the hosted row protocol are unchanged. Historical plans without the new evidence
+cannot execute through the new client; prepare a new plan from sealed inputs.
+
+The local repair passes **1,537 tests in 92 files**, **23 Python cases**, four
+compilers, two actual workerd probes, invariants and all five dry builds, with
+435 source pins unchanged. Independent source review also passes. Earlier test
+assertion corrections remain recorded. This evidence does not authenticate a
+production acquisition, establish a common freeze or qualify a hosted protected
+copy. See the [schema validation](evidence/2026-10-24/protected-source-schema-root-validation.json).

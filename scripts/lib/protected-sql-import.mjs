@@ -155,10 +155,10 @@ async function materializeProtectedSql(source, destination, bridge=null) {
   demand(realpathSync(input)===input&&info.isFile()&&info.nlink===1&&info.uid===process.getuid()&&(info.mode&0o077)===0&&info.size<=2*1024**3,'PRIVATE_SQL_INPUT');
   demand(realpathSync(dirname(output))===dirname(output)&&parent.isDirectory()&&parent.uid===process.getuid()&&(parent.mode&0o077)===0,'PRIVATE_SQL_OUTPUT');
   if(bridge)demand(info.dev===bridge.sourceInfo.dev&&info.ino===bridge.sourceInfo.ino&&info.size===bridge.sourceInfo.size,'SQL_SEQUENCE_INPUT_CHANGED');
-  for(const key of ['SQLITE_OK','SQLITE_DENY','SQLITE_CREATE_TABLE','SQLITE_CREATE_INDEX','SQLITE_READ','SQLITE_INSERT','SQLITE_UPDATE','SQLITE_DELETE','SQLITE_SELECT','SQLITE_TRANSACTION','SQLITE_FUNCTION','SQLITE_PRAGMA'])demand(typeof constants[key]==='number','SQL_AUTHORISER_UNAVAILABLE');
+  for(const key of ['SQLITE_OK','SQLITE_DENY','SQLITE_CREATE_TABLE','SQLITE_CREATE_INDEX','SQLITE_REINDEX','SQLITE_READ','SQLITE_INSERT','SQLITE_UPDATE','SQLITE_DELETE','SQLITE_SELECT','SQLITE_TRANSACTION','SQLITE_FUNCTION','SQLITE_PRAGMA'])demand(typeof constants[key]==='number','SQL_AUTHORISER_UNAVAILABLE');
   process.umask(0o077);closeSync(openSync(output,'wx',0o600));
   const db=new DatabaseSync(output,{allowExtension:false,enableForeignKeyConstraints:false});
-  let current='',recognizedSequenceWrite=false;const sequenceFacts=new Map();let count=0,consumedBytes=0;const consumed=bridge?createHash('sha256'):null;
+  let current='',recognizedSequenceWrite=false,explicitIndex=null;const sequenceFacts=new Map();let count=0,consumedBytes=0;const consumed=bridge?createHash('sha256'):null;
   const consume=consumed?chunk=>{consumedBytes+=chunk.length;demand(consumedBytes<=bridge.sourceInfo.size,'SQL_SEQUENCE_CONSUMED_HASH');consumed.update(chunk);}:undefined;
   try{
     demand(typeof db.setAuthorizer==='function','SQL_AUTHORISER_UNAVAILABLE');
@@ -168,6 +168,14 @@ async function materializeProtectedSql(source, destination, bridge=null) {
       if(action===constants.SQLITE_PRAGMA)return allowedPragmas.has(String(arg1).toLowerCase())&&['0','1','ON','OFF','TRUE','FALSE'].includes(String(arg2).toUpperCase())?constants.SQLITE_OK:constants.SQLITE_DENY;
       if(action===constants.SQLITE_FUNCTION)return ['unixepoch','length'].includes(String(arg2).toLowerCase())?constants.SQLITE_OK:constants.SQLITE_DENY;
       if(action===constants.SQLITE_TRANSACTION)return constants.SQLITE_DENY;
+      if(action===constants.SQLITE_CREATE_INDEX&&/^CREATE\s+(?:UNIQUE\s+)?INDEX\b/i.test(current)){
+        if(dbName!=='main'||typeof arg1!=='string'||explicitIndex!==null&&explicitIndex!==arg1)return constants.SQLITE_DENY;
+        explicitIndex=arg1;return constants.SQLITE_OK;
+      }
+      // SQLite builds an explicit CREATE INDEX through a REINDEX callback.
+      // Only the exact main index admitted above belongs to this statement.
+      if(action===constants.SQLITE_REINDEX)return dbName==='main'&&arg1===explicitIndex&&explicitIndex!==null&&
+        /^CREATE\s+(?:UNIQUE\s+)?INDEX\b/i.test(current)?constants.SQLITE_OK:constants.SQLITE_DENY;
       if(action===constants.SQLITE_CREATE_TABLE||action===constants.SQLITE_CREATE_INDEX)return /^CREATE\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)\b/i.test(current)?constants.SQLITE_OK:constants.SQLITE_DENY;
       if([constants.SQLITE_INSERT,constants.SQLITE_UPDATE,constants.SQLITE_DELETE].includes(action)){
         // Qualified/comment-separated spellings must not bypass the literal
@@ -181,7 +189,7 @@ async function materializeProtectedSql(source, destination, bridge=null) {
       return action===constants.SQLITE_READ?constants.SQLITE_OK:constants.SQLITE_DENY;
     });
     for await(const statement of statements(input,consume)){
-      current=leading(statement).trim();recognizedSequenceWrite=false;if(!current)continue;
+      current=leading(statement).trim();recognizedSequenceWrite=false;explicitIndex=null;if(!current)continue;
       if(/^(?:BEGIN(?:\s+TRANSACTION)?|COMMIT|END(?:\s+TRANSACTION)?)\s*;?$/i.test(current))continue;
       demand(/^(?:CREATE\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)\b|INSERT\s+INTO\b|DELETE\s+FROM\b|PRAGMA\s)/i.test(current),'SQL_OPERATION_DENIED');
       if(/^DELETE\s+FROM\s+["`\[]?sqlite_sequence\b/i.test(current)){demand(/^DELETE\s+FROM\s+(?:sqlite_sequence|"sqlite_sequence"|`sqlite_sequence`|\[sqlite_sequence\])\s*;?$/i.test(current),'SQL_SEQUENCE_SYNTAX');recognizedSequenceWrite=true;}

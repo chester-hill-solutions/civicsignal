@@ -17,10 +17,10 @@ def prepared(root):
  root.chmod(0o700)
  for name in ['protected','cutover']: (root/name).mkdir(mode=0o700)
  target={'format':1,'stageOnly':True,'stageId':'stage-owned-fixture','accountId':'a'*32,'d1Id':'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','r2Bucket':'owned-stage-fixture','adminUrl':'http://127.0.0.1:1'}
- write(root/'target.json',target);write(root/'token.json',{'RESTORE_TOKEN':TOKEN});write(root/'protected/manifest.json',{'pagesSha256':'a'*64})
+ write(root/'target.json',target);write(root/'token.json',{'RESTORE_TOKEN':TOKEN});write(root/'protected/manifest.json',{'pagesSha256':'a'*64});write(root/'protected/source-schema.json',{'syntheticOwnerHashFixture':True})
  admission={'targetSha256':op.digest(json.dumps(target,separators=(',',':')).encode()),'compactPlanSha256':'b'*64,'compactPlan':{'pagesSha256':'c'*64}};write(root/'admission.json',admission)
  c={'format':1,'mode':'full','window':1,'directory':str(root/'protected'),'manifestSha256':op.sha_file(root/'protected/manifest.json'),'admissionPath':str(root/'admission.json'),'admissionSha256':'e'*64,'admissionFileSha256':op.sha_file(root/'admission.json'),'cutoverBundle':str(root/'cutover'),'targetFile':str(root/'target.json'),'journalDirectory':str(root/'journal'),'credentialFile':str(root/'token.json')}
- write(root/'inputs.json',c);return c
+ c['sourceSchemaSha256']=op.sha_file(root/'protected/source-schema.json');write(root/'inputs.json',c);return c
 
 class OperatorTests(unittest.TestCase):
  @classmethod
@@ -34,7 +34,7 @@ class OperatorTests(unittest.TestCase):
  def setUp(self):
   self.root=Path(tempfile.mkdtemp(prefix='protected-owned-unit-',dir=TEMP_ROOT));self.c=prepared(self.root);self.registry=self.root/'journal.owned';self.registry.mkdir(mode=0o700);(self.registry/'home').mkdir(mode=0o700)
   for name,b in [('protected-state-d1.mjs',self.bundle),('bundle-manifest.json',self.manifest)]: (self.registry/name).write_bytes(b);(self.registry/name).chmod(0o600)
-  self.r=json.loads(json.dumps(self.base));self.r.update(authority='trusted-parent-review',executeOneWindow=True,validUntil=expiry());self.r['inputs']={k:self.c[k] for k in ['directory','manifestSha256','admissionPath','admissionSha256','admissionFileSha256','cutoverBundle','targetFile','journalDirectory']};self.r['inputs']['targetFileSha256']=op.sha_file(self.root/'target.json');self.r['credential']=op.credential_metadata(self.root/'token.json');self.review=self.registry/'window-000001.reviewed.json';write(self.review,self.r)
+  self.r=json.loads(json.dumps(self.base));self.r.update(authority='trusted-parent-review',executeOneWindow=True,validUntil=expiry());self.r['inputs']={k:self.c[k] for k in ['directory','manifestSha256','sourceSchemaSha256','admissionPath','admissionSha256','admissionFileSha256','cutoverBundle','targetFile','journalDirectory']};self.r['inputs']['targetFileSha256']=op.sha_file(self.root/'target.json');self.r['credential']=op.credential_metadata(self.root/'token.json');self.review=self.registry/'window-000001.reviewed.json';write(self.review,self.r)
   self.calls=[];self.selected=0
  def tearDown(self):shutil.rmtree(self.root)
  def select(self,r):
@@ -72,6 +72,16 @@ class OperatorTests(unittest.TestCase):
    if self.calls[-1]=='inspection':(self.root/'protected/manifest.json').write_text('PRIVATE changed source')
    return r
   self.assertFalse(op.execute(self.review,capture,self.select)['passed']);self.assertEqual(self.selected,0);self.assertEqual(self.calls,['runtime','inspection'])
+ def test_source_schema_drift_after_inspection_precedes_key(self):
+  def capture(*args,**kwargs):
+   r=self.capture(*args,**kwargs)
+   if self.calls[-1]=='inspection':(self.root/'protected/source-schema.json').write_text('changed schema evidence')
+   return r
+  self.assertFalse(op.execute(self.review,capture,self.select)['passed']);self.assertEqual(self.selected,0);self.assertEqual(self.calls,['runtime','inspection'])
+ def test_missing_source_schema_is_refused_before_attempt_or_key(self):
+  (self.root/'protected/source-schema.json').unlink()
+  with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+  self.assertEqual(self.selected,0);self.assertEqual(self.calls,[]);self.assertFalse((self.registry/'window-000001').exists())
  def test_other_runtime_or_excess_limits_never_spawn(self):
   self.r['runtime']['path']='/bin/sh';self.review.write_text(json.dumps(self.r))
   with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)

@@ -10,6 +10,7 @@ import { prepareAuthMigration } from '../../src/auth-migration';
 import { COMPACT_STATUTE_COLUMNS } from '../../src/corpora/compact-restore';
 import { IndexDigester } from '../../src/ingest/snapshot-format';
 import { jsonLines, sha256File, verifyTextCutover } from '../prepare-text-cutover';
+import {admitProtectedSourceSchema,checkProtectedSourceSchemaEvidence} from './protected-state-schema';
 
 import {
   PROTECTED_TABLE_COLUMNS as tables, PROTECTED_TABLE_ORDER as order,
@@ -33,6 +34,7 @@ const sqlite = createRequire(import.meta.url)(process.versions['bun'] ? 'bun:sql
   Database: typeof DatabaseSync; DatabaseSync: typeof DatabaseSync;
 };
 const Database = process.versions['bun'] ? sqlite.Database : sqlite.DatabaseSync;
+const repository = resolve(import.meta.dirname, '../..');
 export function openProtectedDatabase(path: string, readOnly = true): DatabaseSync {
   const options:{readOnly?:boolean;readonly?:boolean;readwrite?:boolean;create?:boolean;allowExtension?:boolean} = process.versions['bun']
     ? {readonly:readOnly,readwrite:!readOnly,create:false} : {readOnly,allowExtension:false};
@@ -43,7 +45,6 @@ export function openProtectedDatabase(path: string, readOnly = true): DatabaseSy
 export async function privatePath(path: string, directory = false): Promise<string> {
   const absolute = resolve(path), actual = await realpath(absolute);
   const info = await lstat(absolute), parent = await lstat(dirname(absolute));
-  const repository = resolve(import.meta.dirname, '../..');
   const rel = relative(repository, absolute);
   assert(actual === absolute && (rel.startsWith('..' + '/') || isAbsolute(rel)), 'PRIVATE_PATH_REQUIRED');
   assert(!info.isSymbolicLink() && (directory ? info.isDirectory() : info.isFile() && info.nlink === 1) &&
@@ -171,6 +172,9 @@ export async function prepareProtectedState(options: {
     phase='OPEN';source = openProtectedDatabase(sourcePath); target = openProtectedDatabase(targetPath); desired = new Database(':memory:');
     phase='SCHEMA';
     healthy(source); healthy(target); knownProtectedSchema(source);knownProtectedSchema(target);emptyProtectedTarget(target);
+    const reference=new Database(':memory:');
+    let sourceSchema:ReturnType<typeof admitProtectedSourceSchema>;
+    try{sourceSchema=admitProtectedSourceSchema(source,reference,resolve(repository,'migrations'));}finally{reference.close();}
     for (const table of order.filter(t => !authTables.includes(t))) checkSchema(target,table);
     const sourceState = [...tableRows(source,'corpus_state',true)].map(row => rowValues('corpus_state',row));
     const targetState = [...tableRows(target,'corpus_state',true)].map(row => rowValues('corpus_state',row));
@@ -231,8 +235,14 @@ export async function prepareProtectedState(options: {
     const manifestText = JSON.stringify(manifest,null,2)+'\n';
     const manifestFd=openSync(resolve(output,'manifest.json'),'wx',0o600);
     try{writeFileSync(manifestFd,manifestText);fsyncSync(manifestFd);}finally{closeSync(manifestFd);}
+    const evidenceText=JSON.stringify({format:1,kind:'protected-source-schema',...sourceSchema,sourceKind:options.source.kind,
+      sourceSha256:options.source.sha256,sourceSqliteSha256,manifestSha256:sha(manifestText),
+      providerAuthenticated:false,globalQuiescenceEstablished:false,productionAcquisitionQualified:false})+'\n';
+    const evidenceFd=openSync(resolve(output,'source-schema.json'),'wx',0o600);
+    try{writeFileSync(evidenceFd,evidenceText);fsyncSync(evidenceFd);}finally{closeSync(evidenceFd);}
     for(const path of [output,dirname(output)]){const dir=openSync(path,'r');try{fsyncSync(dir);}finally{closeSync(dir);}}
-    return {manifestSha256:sha(manifestText),pages:pageNo,rows:Object.fromEntries(order.map(t=>[t,stats[t].rows]))};
+    return {manifestSha256:sha(manifestText),sourceSchemaSha256:sha(evidenceText),sourceSchemaProfile:sourceSchema.profile,
+      pages:pageNo,rows:Object.fromEntries(order.map(t=>[t,stats[t].rows]))};
   } catch(error) { if(error instanceof ProtectedStateError)throw error;throw new ProtectedStateError('PROTECTED_STATE_FAILURE_'+phase); }
   finally {source?.close();target?.close();desired?.close();}
 }
@@ -243,6 +253,16 @@ async function loadPlan(directory: string, expected: string) {
   const root = await privatePath(directory,true), manifestPath = await privatePath(resolve(root,'manifest.json'));
   assert(digestPattern.test(expected) && await sha256File(manifestPath) === expected,'MANIFEST_HASH_MISMATCH');
   const manifest = checkedManifest(JSON.parse(await readFile(manifestPath,'utf8')));
+  let sourceSchema:ReturnType<typeof checkProtectedSourceSchemaEvidence>&{sha256:string};
+  try{
+    const evidencePath=await privatePath(resolve(root,'source-schema.json'));
+    assert((await lstat(evidencePath)).size<=256*1024,'PROTECTED_SOURCE_SCHEMA_EVIDENCE');
+    const evidence=await readFile(evidencePath);assert(evidence.byteLength<=256*1024,'PROTECTED_SOURCE_SCHEMA_EVIDENCE');
+    const reference=new Database(':memory:');
+    try{sourceSchema={...checkProtectedSourceSchemaEvidence(JSON.parse(new TextDecoder('utf-8',{fatal:true,ignoreBOM:false}).decode(evidence)),reference,
+      {sourceKind:manifest.sourceKind,sourceSha256:manifest.sourceSha256,sourceSqliteSha256:manifest.sourceSqliteSha256,manifestSha256:expected},resolve(repository,'migrations')),sha256:sha(evidence)};
+    }finally{reference.close();}
+  }catch{throw new ProtectedStateError('PROTECTED_SOURCE_SCHEMA_EVIDENCE');}
   const pagesPath = await privatePath(resolve(root,'pages.jsonl'));
   assert(await sha256File(pagesPath) === manifest.pagesSha256,'PAGES_HASH_MISMATCH');
   let n=0; const hashes = Object.fromEntries(order.map(t=>[t,createHash('sha256')])) as Record<Table,ReturnType<typeof createHash>>;
@@ -252,7 +272,7 @@ async function loadPlan(directory: string, expected: string) {
     for(const row of p.rows){hashes[p.table].update(canonical(row));counts[p.table]++;}
   }
   assert(n===manifest.pages&&order.every(t=>counts[t]===manifest.tables[t].rows&&hashes[t].digest('hex')===manifest.tables[t].sha256),'PLAN_TABLE_DIGEST');
-  return {manifest,pagesPath};
+  return {manifest,pagesPath,sourceSchema};
 }
 /** Reuse full private-file, page and table-digest checks for D1 admission sidecars. */
 export {loadPlan as loadProtectedStatePlan};

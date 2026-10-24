@@ -387,7 +387,16 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('protected pages
   for(const table of PROTECTED_TABLE_ORDER){const rows=pages.filter(p=>p.table===table).flatMap(p=>p.rows);manifest.tables[table]={rows:rows.length,sha256:createHash('sha256').update(rows.map(protectedRowCanonical).join('')).digest('hex')};}
   await writeFile(join(f.output,'pages.jsonl'),pages.map(p=>JSON.stringify(p)).join('\n')+'\n');manifest.pagesSha256=await sha256File(join(f.output,'pages.jsonl'));
   await writeFile(join(f.output,'manifest.json'),JSON.stringify(manifest)+'\n');
+  // Keep source-schema evidence linked while isolating the intended page/sequence refusal.
+  const schemaPath=join(f.output,'source-schema.json'),schema=JSON.parse(await readFile(schemaPath,'utf8'));schema.manifestSha256=await sha256File(join(f.output,'manifest.json'));await writeFile(schemaPath,JSON.stringify(schema)+'\n');
   await expect(prepareProtectedD1Admission({directory:f.output,manifestSha256:await sha256File(join(f.output,'manifest.json')),cutoverBundle:f.bundle,target:f.identity.target,outputPath:join(f.root,'new-admission.json')})).rejects.toMatchObject({code:kind==='unordered'?'PROTECTED_D1_KEY_ORDER':'PROTECTED_SEQUENCE_FACTS'});
+ },30_000);
+ it.each(['missing','stale-contract','cross-source','cross-manifest'] as const)('refuses %s schema evidence before client credentials, journal or admission output',async kind=>{
+  const f=await fixture(),path=join(f.output,'source-schema.json'),schema=JSON.parse(await readFile(path,'utf8'));
+  if(kind==='missing')await rm(path);else{if(kind==='stale-contract')schema.contract='stale';if(kind==='cross-source')schema.sourceSha256='0'.repeat(64);if(kind==='cross-manifest')schema.manifestSha256='0'.repeat(64);await writeFile(path,JSON.stringify(schema)+'\n');}
+  let credentials=0,sends=0;await expect(runProtectedD1InitialWindow({...f.client,credential:()=>{credentials++;return 'synthetic-unused';},fetch:async()=>{sends++;throw Error('No send allowed.');}})).rejects.toMatchObject({code:'PROTECTED_CLIENT_LOCAL_OR_TRANSPORT'});
+  expect(credentials).toBe(0);expect(sends).toBe(0);expect(await lstat(f.client.journalDirectory).catch(()=>null)).toBeNull();
+  const outputPath=join(f.root,'refused-admission.json');await expect(prepareProtectedD1Admission({directory:f.output,manifestSha256:f.client.manifestSha256,cutoverBundle:f.bundle,target:f.client.target,outputPath})).rejects.toMatchObject({code:'PROTECTED_SOURCE_SCHEMA_EVIDENCE'});expect(await lstat(outputPath).catch(()=>null)).toBeNull();
  },30_000);
 });
 describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('durable initial protected admission windows',()=>{

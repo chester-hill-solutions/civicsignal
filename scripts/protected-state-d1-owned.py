@@ -82,6 +82,9 @@ def validate_current(review_path,original,reserve=0):
  helper=ROOT/'scripts/lib/capture_owned.py';require(sha_file(helper)==CAPTURE_SHA,'PROTECTED_OWNED_CODE_DRIFT')
  runtime=r['runtime'];require(runtime['kind']=='bun' and runtime['version']=='1.3.5' and isinstance(runtime['path'],str),'PROTECTED_OWNED_RUNTIME');binary=Path(runtime['path']);require(binary.is_absolute() and str(binary)==runtime['path'] and binary.resolve()==binary,'PROTECTED_OWNED_RUNTIME');pin(binary,runtime);require(binary.stat().st_uid in [0,os.getuid()] and not binary.stat().st_mode&0o022 and os.access(binary,os.X_OK),'PROTECTED_OWNED_RUNTIME')
  for path,expected in [(Path(r['inputs']['directory'])/'manifest.json',r['inputs']['manifestSha256']),(Path(r['inputs']['admissionPath']),r['inputs']['admissionFileSha256']),(Path(r['inputs']['targetFile']),r['inputs']['targetFileSha256'])]:require(digest(private_bytes(path,16384))==expected,'PROTECTED_OWNED_INPUT_DRIFT')
+ try:schema_bytes=private_bytes(Path(r['inputs']['directory'])/'source-schema.json',262144)
+ except OSError:raise ValueError('PROTECTED_OWNED_INPUT_DRIFT') from None
+ require(digest(schema_bytes)==r['inputs']['sourceSchemaSha256'],'PROTECTED_OWNED_INPUT_DRIFT')
  registry=Path(r['inputs']['journalDirectory']+'.owned');private_path(str(registry),True);startup_absence(registry)
  raw=private_bytes(registry/'bundle-manifest.json',1048576);require(digest(raw)==r['bundleManifestSha256'],'PROTECTED_OWNED_CODE_DRIFT');m=json.loads(raw)
  require(m['format']==1 and m['preparedOnly'] is True and m['root']==str(ROOT) and m['entry']=='scripts/protected-state-d1.ts' and m['bundle']=='protected-state-d1.mjs' and m['bundlePin']['sha256']==r['bundleSha256'] and m['options']=={'format':'esm','platform':'node','target':'esnext','conditions':['bun','import'],'legalComments':'none'} and m['dirnameOverride']=={'value':str(ROOT/'scripts/lib'),'uses':[{'path':'scripts/lib/protected-state.ts','count':1}]},'PROTECTED_OWNED_BUNDLE')

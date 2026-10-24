@@ -536,7 +536,7 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   undeployed; the earlier hosted reports remain unchanged. See the
   [observability validation](evidence/2026-10-23/retrieval-observability-root-validation.json).
 
-- Latest clean Linux CI: the pull-request merge candidate including exact head
+- Earlier clean Linux CI: the pull-request merge candidate including exact head
   `520c102da791795de7b03577f46c42dfb65cb886` passes **1,281 tests in 89 files**,
   21 Python cases, all four compilers, 117 vendor files, two real runtime probes,
   invariants and five Worker dry-run builds. GitHub tested merge `4bce33c`, which
@@ -574,6 +574,29 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   and does not explain the historical failures or close hosted acceptance.
   Ledger use remains **154/160**. See the
   [source, regression and full-gate receipt](evidence/2026-10-24/provider-boundary-root-validation.json).
+
+- Latest completed Linux CI includes exact provider-repair head
+  `f4960c373efd54423000ceb743071a935f679782` in merge `f85982c562f637e8fb23d8814c1aea9403868897`:
+  **1,492 tests in 92 files**, 21 Python cases, all four compilers, 117 vendor
+  files, two actual local runtime probes, invariants, frozen installation and
+  all five dry builds pass in [run 40054293590](https://github.com/chester-hill-solutions/civicsignal/actions/runs/40054293590).
+  This CI result predates the source-schema repair below.
+
+- V1-04 / protected-copy source admission at **03:11 UTC on October 24**:
+  preparation now checks complete declared schemas against pinned, coherent
+  public migration prefixes 0003–0008, rejecting unsupported or mixed schemas
+  before plan output. Every new executable plan requires a private schema
+  sidecar linked to the sealed source and manifest; its SHA is bound to the
+  owned D1 plan and checked before credentials are selected. The strict SQL
+  importer permits only the internal reindex callback for the exact index
+  being created. Standalone `REINDEX` remains forbidden. Format-1 manifests and
+  hosted wire data are unchanged; historical receiptless plans cannot execute
+  through the new client. Root validation passes **1,537 tests in 92 files**,
+  **23 Python cases**, all four compilers, 117 vendor files, two actual local
+  workerd probes, invariants and all five dry builds, with **435 source pins**
+  unchanged. Independent review passes. Production schema classification,
+  authenticated acquisition, common freeze and hosted copy remain open. See the
+  [schema validation](evidence/2026-10-24/protected-source-schema-root-validation.json).
 
 Small evidence files live in the dated `docs/evidence/` directories.
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.

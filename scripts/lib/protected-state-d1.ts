@@ -12,7 +12,7 @@ import {checkedProtectedD1Admission,compareProtectedD1Keys,protectedD1Assert as 
 export interface ProtectedD1SourceOptions {directory:string;manifestSha256:string;cutoverBundle:string;target:unknown}
 async function validatedSources(options:ProtectedD1SourceOptions){
  demand((await stat(await privatePath(resolve(options.directory,'manifest.json')))).size<=16*1024,'PROTECTED_D1_MANIFEST_BOUND');
- const {manifest,pagesPath}=await loadProtectedStatePlan(options.directory,options.manifestSha256),{plan,planHash}=await stagingPlan(options.cutoverBundle),target=checkedTarget(options.target);
+ const {manifest,pagesPath,sourceSchema}=await loadProtectedStatePlan(options.directory,options.manifestSha256),{plan,planHash}=await stagingPlan(options.cutoverBundle),target=checkedTarget(options.target);
  checkedProtectedRow('corpus_state',manifest.initialPublication[0]);
  let chain=ZERO_PROTECTED_CHAIN,last=-1,key:ProtectedScalar=null;
  const sequences:ProtectedD1Admission['sequences']={corpus_runs:null,corpus_changes:null};
@@ -26,7 +26,7 @@ async function validatedSources(options:ProtectedD1SourceOptions){
  const admission:ProtectedD1Admission={format:1,manifestSha256:options.manifestSha256,manifestCanonicalSha256:await hashJson(manifest),pagesSha256:manifest.pagesSha256,protectedChainSha256:chain,compactPlan:plan,compactPlanSha256:planHash,target,targetSha256:await hashJson(target),sequences};
  const admissionSha256=await hashJson(admission);await checkedProtectedD1Admission(admission,manifest,{admissionSha256,manifestSha256:options.manifestSha256,target});
  demand(await sha256File(pagesPath)===manifest.pagesSha256&&await sha256File(resolve(options.directory,'manifest.json'))===options.manifestSha256,'INPUT_CHANGED');
- return {manifest,pagesPath,admission,admissionSha256,target};
+ return {manifest,pagesPath,sourceSchema,admission,admissionSha256,target};
 }
 export async function prepareProtectedD1Admission(options:ProtectedD1SourceOptions&{outputPath:string}){
  const {admission,admissionSha256,manifest}=await validatedSources(options);
@@ -70,7 +70,7 @@ export async function loadProtectedD1ClientPlan(options:ProtectedD1SourceOptions
  }
  const finalVersion=2*admission.compactPlan.pageCount+textPrefixes.length-1+2*source.manifest.pages+1;
  if(full)demand(Number.isSafeInteger(finalVersion)&&Number.isSafeInteger(finalVersion+1),'PROTECTED_D1_FULL_PREFIX');
- const pins={format:1,slice:full?'full-copy-v1':'initial-admission-v1',manifestSha256:identity.manifestSha256,admissionSha256:identity.admissionSha256,admissionFileSha256:options.admissionFileSha256,targetSha256:admission.targetSha256,compactPlanSha256:admission.compactPlanSha256,protectedPagesSha256:source.manifest.pagesSha256,compactPagesSha256:admission.compactPlan.pagesSha256};
+ const pins={format:1,slice:full?'full-copy-v1':'initial-admission-v1',manifestSha256:identity.manifestSha256,sourceSchemaSha256:source.sourceSchema.sha256,admissionSha256:identity.admissionSha256,admissionFileSha256:options.admissionFileSha256,targetSha256:admission.targetSha256,compactPlanSha256:admission.compactPlanSha256,protectedPagesSha256:source.manifest.pagesSha256,compactPagesSha256:admission.compactPlan.pagesSha256};
  const beginBody=JSON.stringify({manifest:source.manifest,admission});demand(Buffer.byteLength(beginBody)<=16*1024,'PROTECTED_D1_BEGIN_BOUND');
  return {...source,admission,identity,compactPagesPath,prefixes,pins,full:full?{textPrefixes,protectedPrefixes,finalVersion}:undefined,beginBodySha256:await hashJson({manifest:source.manifest,admission}),planSha256:await hashJson(pins)};
 }

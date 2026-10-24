@@ -19,6 +19,8 @@ function normalized(sql:string){
  if(tokens[0]==='create'&&['table','index'].includes(tokens[optional-1]!)&&tokens.slice(optional,optional+3).join(' ')==='if not exists')tokens.splice(optional,3);
  return JSON.stringify(tokens);
 }
+/** Shared with the offline source checker; destination normalization is unchanged. */
+export {normalized as normalizeProtectedSchemaSql};
 function schemas(){const map=new Map<string,string>();for(const sql of fixedSchemaStatements(COMPACT_CORPUS_SCHEMA+RESTORE_SUPPORT_SCHEMA+PROTECTED_D1_AUTH_SCHEMA+PROTECTED_D1_JOURNAL_SCHEMA)){const name=/CREATE\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_][a-z0-9_]*)/i.exec(sql.replace(/--[^\n]*/g,''))?.[1];protectedD1Assert(name,'PROTECTED_FIXED_SCHEMA');map.set(name,normalized(sql));}return map;}
 export async function checkProtectedD1Schema(db:D1Database,initialized:boolean){
  const expected=schemas(),rows=(await db.prepare("SELECT name,type,sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*' ORDER BY name LIMIT 64").all<{name:string;type:string;sql:string|null}>()).results;
