@@ -71,8 +71,8 @@ establish whether Zen was called, the key was valid, or which upstream stage
 failed. No raw body, answer or key-derived hash is retained in the public receipt.
 The restarted relay's owner timed out with cleanup uncertainty; a separate check
 at **01:24:41 UTC** found its PID and listener absent. That later observation does
-not qualify or rewrite the uncertain owner result. The ledger remains **154/160**,
-with six unspent reservations and no reset. See the
+not qualify or rewrite the uncertain owner result. At that point the ledger was
+**154/160**, with six unspent reservations and no reset. See the
 [diagnostic and shutdown evidence](evidence/2026-10-23/opencode-zen-diagnostic-v2-root-observation.json).
 
 See the [completed metadata/text validation](evidence/2026-10-23/staging-completed-metadata-text-root-validation.json),
@@ -100,14 +100,48 @@ the same 13 bindings, runtime, original usage namespace and empty schedule.
 The frozen API source is `f4960c3`; the newer protected-copy tools are in
 `638303a`. Deployment used one CLI invocation and eight explicit management
 proof GETs; the CLI's internal protocol calls are not included in that count.
-It used no serving or generation reservation, so the ledger remains **154/160**.
+It used no serving or generation reservation; the ledger was then **154/160**.
 A token response with a valid 3,599-second lifetime exposed an overly strict
 3,600-second minimum in the local renewal validator. That failed attempt is
 preserved. A separately reviewed local recovery persisted the retained reply,
 with the original 28 scopes, without another token request. See the
 [staging deployment receipt](evidence/2026-10-24/staging-api-v5-root-observation.json).
-Retrieval-only characterization is being prepared; no new serving result is
-claimed by the deployment receipt.
+At **03:44 UTC**, the retrieval-only probe consumed reservations **155 and 156**.
+The exact original Zen topic returned HTTP 200 and the expected Canada Health
+Act section 8 citation without inference. The calibration query also returned
+HTTP 200, but reranking failed and the existing vector fallback placed its gold
+provision sixth. The probe stopped there: no warm third request or KV wait ran.
+Its child and owner settled and the ledger closed. After that probe the ledger
+retained **156/160**, four unspent, with its original prefix preserved. Failure
+phase/status, Zen key validity and positive chat acceptance remain unknown.
+This is diagnosis, not new quality acceptance. See the
+[retrieval probe receipt](evidence/2026-10-24/staging-api-v5-retrieval-root-observation.json).
+
+The subsequent diagnostics-only staging version
+`e33f3256-b9be-43c9-a5e3-d7d0bc1451b9` passed the same binding/runtime/usage/calendar
+checks. Its single fresh calibration query captured a reranker `transport`
+failure without an upstream HTTP status; fallback again placed the gold sixth.
+After that diagnosis the ledger was **157/160**, three unspent, and closed cleanly.
+Local workerd reproduction identifies an unsupported `redirect: "error"` option
+in the shared provider wrapper before outbound I/O. See the
+[deployment](evidence/2026-10-24/staging-api-v6-root-observation.json) and
+[fresh diagnostic](evidence/2026-10-24/staging-api-v6-reranker-diagnosis-root-observation.json).
+
+That compatibility defect is repaired in source `78e0c2f`, deployed as staging
+version `3efd1935-39ea-41da-b19c-e8bbf495b50d`. `manual` mode preserves redirect
+refusal without credential forwarding. The native runtime regressions and full
+local/Linux release checks pass **1,566 tests in 93 files**; Linux also passes
+**23 Python cases**. Same-binding postverification passed at **04:20:11 UTC**.
+The calibration cold/warm pair at **158/159** then passed: all providers succeeded
+cold, the expected provision ranked first, and warm reused identical result and
+score provenance without inference. Worker retrieval elapsed times were
+**2,301 / 1,450 ms**, not a capacity benchmark. The original ledger is closed at
+**159/160**, one unspent. Positive Zen generation and broad held-out acceptance
+remain open; no new generation call is approved. See the
+[repair](evidence/2026-10-24/provider-redirect-root-validation.json),
+[CI](evidence/2026-10-24/provider-redirect-linux-ci.json),
+[deployment](evidence/2026-10-24/staging-api-v7-root-observation.json) and
+[cold/warm result](evidence/2026-10-24/staging-api-v7-calibration-recheck-root-observation.json).
 
 ## Release requirements
 
@@ -621,6 +655,19 @@ No exclusion removes the snapshot, restore, text migration, evaluation, or recov
   vendor files, two local runtime probes, invariants and all five dry builds
   pass. See [run 40057475781](https://github.com/chester-hill-solutions/civicsignal/actions/runs/40057475781)
   and the [root CI observation](evidence/2026-10-24/protected-source-schema-linux-ci.json).
+
+- Reranker failure observations in source `07587e4` preserve only fixed phase,
+  observed status and coarse bounded validation counts. Independent review,
+  167 focused regressions, **1,561 tests in 92 files**, all compiler/vendor/runtime
+  and invariant checks, and five dry builds pass. The original local Python
+  aggregate failed one capture log-cap test; its cause remains unknown. A
+  separately retained instrumented qualification passed all **23** unchanged
+  cases and bounds. Clean Linux CI independently passes **1,561/92** and **23**
+  Python cases on merge `c46d0de4aed9722fd0b93a7a7b0d2005f2fe3d06` in
+  [run 40060555944](https://github.com/chester-hill-solutions/civicsignal/actions/runs/40060555944).
+  These checks did not exercise the newly reproduced native provider redirect
+  defect. See [local qualification](evidence/2026-10-24/jev-diagnostics-root-validation.json)
+  and [CI evidence](evidence/2026-10-24/jev-diagnostics-linux-ci.json).
 
 Small evidence files live in the dated `docs/evidence/` directories.
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.

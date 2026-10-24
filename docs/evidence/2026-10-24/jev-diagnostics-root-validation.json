@@ -1,0 +1,121 @@
+{
+  "format": 1,
+  "kind": "jev-diagnostics-root-validation",
+  "observedAt": "2026-10-24T04:04:23.474604+00:00",
+  "sourceCommit": "07587e4c1a9236baacf758a455d67b53257c820e",
+  "sourcePins": [
+    {
+      "path": "src/jev.ts",
+      "bytes": 9542,
+      "sha256": "33dc39762b680c98760a2dbc830df17d7244f462d371d589d3103941ee0c59ae"
+    },
+    {
+      "path": "src/corpora/retrieval-observation.ts",
+      "bytes": 5738,
+      "sha256": "eee5f4cab73dac2ad00d7d5ac2f421afb043cac37f37117efa8e253f996b0e18"
+    },
+    {
+      "path": "src/corpora/adapters.ts",
+      "bytes": 27804,
+      "sha256": "6e0c8c394107c5ad8e6c7ddad1c2661ecefa87c5a40c2fc3785dfceb37670289"
+    },
+    {
+      "path": "test/jev-response-boundary.test.ts",
+      "bytes": 15322,
+      "sha256": "8dba2a4806d7b7e59d5c6e2dbf749d8a5a2672ad8dd1c8bd869c0c72c6525e73"
+    },
+    {
+      "path": "test/retrieval-observation.test.ts",
+      "bytes": 12594,
+      "sha256": "5cce7b9ebf09a2fc0d2548ba5190f1360222d9a16cdb750f83ca5537e4d72af9"
+    }
+  ],
+  "change": "Optional fixed failure phase, observed upstream HTTP status and coarse saturated domain-validation counts; existing rerank request, prompt, model, thresholds, cache contract, fallback and billing unchanged.",
+  "privacy": "No raw query, candidate/answer names or values, key, provider body, cause or exception text retained.",
+  "independentReview": "Clear; one synthetic async observer rejection was reproduced, fixed and independently reconfirmed with zero unhandled rejections.",
+  "focusedRegressions": 167,
+  "fullValidation": {
+    "typescriptTests": 1561,
+    "typescriptFiles": 92,
+    "compilerProjects": 4,
+    "vendorFiles": 117,
+    "actualRuntimeProbes": 2,
+    "billingAndCorpusInvariantsPassed": true,
+    "sourcePinsBeforeAfter": 435,
+    "sourcesUnchanged": true,
+    "originalAggregatePassed": false,
+    "originalPythonTests": 23,
+    "originalPythonFailures": 1,
+    "originalPythonFailure": "CaptureTests.test_actual_log_cap; inner result not preserved; ResourceWarnings; original cause unknown.",
+    "originalCapturePidLaterAbsent": true,
+    "separateInstrumentedPythonQualification": {
+      "tests": 23,
+      "passed": true,
+      "sourcesAndBoundsUnchanged": true,
+      "ownedProcessSettled": true,
+      "logCapElapsedMs": 77.543,
+      "retainedBytes": 128,
+      "originalFailureRepaired": false
+    },
+    "dryBuilds": 5,
+    "dryBuildContinuationPassed": true
+  },
+  "artifacts": [
+    {
+      "path": "dist/release/jev-diagnostics-root-validation-20261024-v1/result.json",
+      "bytes": 150345,
+      "sha256": "68ac311909dc88de96e9460bd2b289268a8a0687109a77fc703a44974e9a09a9"
+    },
+    {
+      "path": "dist/release/jev-diagnostics-root-validation-20261024-v1/validate.log",
+      "bytes": 49962,
+      "sha256": "18e9f28e39c265c97090bc4568504461a3672e93d46988091fb7cfb6ec02b52b"
+    },
+    {
+      "path": "dist/release/jev-diagnostics-root-validation-20261024-v1/python.log",
+      "bytes": 1366,
+      "sha256": "501a3f19f3d7d0e0a72db649b5242ef3e1b6ee70ec0d165233b2a70a4a43342a"
+    },
+    {
+      "path": "dist/release/jev-diagnostics-root-validation-20261024-v1/build-result.json",
+      "bytes": 149645,
+      "sha256": "a5ec0bd8fac9efc3b287eb1484a5fca38e7201cb9726aefe8e190ca262607092"
+    },
+    {
+      "path": "dist/release/jev-diagnostics-root-validation-20261024-v1/build.log",
+      "bytes": 4534,
+      "sha256": "62880bf3ee029af04f129676945302d63fd077322d72936c9c9b93fb3997363a"
+    },
+    {
+      "path": "dist/release/capture-log-cap-diagnosis-20261024-v1/full-result.json",
+      "bytes": 4701,
+      "sha256": "a788ebe1d6ccaf27a1b602986ae38752e4013df0e634bafe6efe557df7e724d6"
+    },
+    {
+      "path": "dist/release/capture-log-cap-diagnosis-20261024-v1/full-owner-result.json",
+      "bytes": 201,
+      "sha256": "e3e4ecdea4c8f711b3c539279f011263dbb5029f9b8b425ae06413d5e67b1687"
+    },
+    {
+      "path": "dist/release/capture-log-cap-diagnosis-20261024-v1/full-owned.log",
+      "bytes": 5122,
+      "sha256": "bf56ad361909e2028c39deb67b9660d39c1541f4d14a3c6706dbb6b2baab0d49"
+    },
+    {
+      "path": "dist/release/jev-diagnostics-20261024-v1/agent-validation.json",
+      "bytes": 2537,
+      "sha256": "02e85f87533f5fe7ca723a25ac232edd11d4117f4dc1ed3c03d50d4edcba8dc1"
+    }
+  ],
+  "captureHelperSha256": "e262416e5ca9d25b37f869f238b5cbffe3d71c9ac178eb1bc4191b45fd367455",
+  "captureTestLimitation": "Failure-driven qualification passes unchanged; the original intermittent local failure remains unexplained and is not described as fixed. Actual operation ownership failures remain terminal and preserve uncertainty.",
+  "deployed": false,
+  "ciClaim": false,
+  "cloudCalls": 0,
+  "servingCalls": 0,
+  "providerCalls": 0,
+  "historicalFailureCauseEstablished": false,
+  "hostedAcceptanceClosed": false,
+  "productionChanged": false,
+  "railwayChanged": false
+}

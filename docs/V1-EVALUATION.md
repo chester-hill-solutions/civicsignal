@@ -96,8 +96,8 @@ Bearer authentication and `claude-haiku-4-5` model match OpenCode's current
 establish key/account eligibility or that the failed staging request reached
 generation; it supplies no basis for changing the endpoint or retrying.
 
-The original ledger now retains **154/160** reservations, six unspent, with its
-original prefix and no reset. The restarted diagnostic relay's owned process
+After the generation diagnostic, the ledger retained **154/160** reservations
+with its original prefix and no reset. The restarted diagnostic relay's owned process
 timed out with cleanup uncertainty. An independent observation at **01:24:41 UTC**
 found its PID and listener absent; this is later point-in-time evidence and does
 not turn the original timeout into a settled success. Neither hosted Zen attempt
@@ -143,10 +143,65 @@ checked against the primary [System One API](https://docs.typesafe.ai/api/system
 
 The [local validation receipt](evidence/2026-10-24/provider-boundary-root-validation.json)
 records exact source pins, regressions, independent reviews and release checks.
-This source remains undeployed. The original serving ledger stays at **154/160**;
-no generation or retrieval call was added. The previous holdout and benchmark
-failures remain open. New hosted acceptance must name the actual deployed source
-and cache contract; it cannot reinterpret the earlier measurements as a pass.
+That source was subsequently deployed as staging API version
+`f512cf84-fbcc-4990-bad0-13cdc0678c71`. The deployment itself added no serving
+request. At **03:44 UTC**, a separately owned retrieval probe used reservations
+**155 and 156**, then stopped at its cold-reranking predicate. Both HTTP responses
+were 200. The original Zen topic resolved exactly to Canada Health Act section 8
+with the expected citation and no encoder or reranker call. This diagnoses the
+already-used topic; it is neither fresh holdout validation nor proof of either
+historical generation failure's cause.
+
+The calibration question `P-21-4-en` returned ten results through the existing
+vector-floor fallback: encoder, Vectorize and row hydration succeeded, but the
+reranker reported an error. Its expected provision was sixth; the computed top
+score was 0.6629009 and retrieval elapsed time was 2,138 ms. The response did not
+identify the reranker failure phase or upstream status. The warm third request
+and KV-settle wait did not run. The child and owner settled, the ledger closed,
+and the failed qualification receipt remains preserved. No automatic retry ran.
+
+After that probe the ledger was **156/160**, with four reservations unspent and its
+154-request prefix unchanged. Zen key validity and positive chat acceptance
+remain unverified. The previous holdout and benchmark failures remain open; this
+two-request diagnosis does not replace them. See the
+[retrieval probe receipt](evidence/2026-10-24/staging-api-v5-retrieval-root-observation.json).
+
+Staging diagnostics version `e33f3256-b9be-43c9-a5e3-d7d0bc1451b9` then passed
+binding/runtime/usage/calendar postverification at **04:05:43 UTC**. Its one fresh
+calibration GET at reservation **157** returned HTTP 200 with the same vector
+fallback and gold rank six. The added observation identifies `transport`, with
+no observed upstream HTTP status. Retrieval elapsed time was 1,799 ms. The
+diagnostic owner and child settled and the original ledger closed at **157/160**,
+three unspent. No generation request or additional identity GET ran. See the
+[fresh diagnosis](evidence/2026-10-24/staging-api-v6-reranker-diagnosis-root-observation.json).
+
+A local workerd reproduction confirmed a compatibility defect in the shared
+provider wrapper: Workers rejects `redirect: "error"` before outbound I/O. Detached
+native fetch works; changing its receiver is unnecessary. Source `78e0c2f` uses
+`manual` while retaining non-success/redirect refusal. Five native runtime cases
+verify valid POST dispatch and same/cross-origin 302/307 refusal without a second
+request or credential forwarding. The full local and Linux gates pass
+**1,566 tests in 93 files**; Linux also passes **23 Python cases**. See the
+[repair qualification](evidence/2026-10-24/provider-redirect-root-validation.json)
+and [Linux CI](evidence/2026-10-24/provider-redirect-linux-ci.json).
+
+The repaired staging API `3efd1935-39ea-41da-b19c-e8bbf495b50d` passed the same
+binding/runtime/usage/calendar checks at **04:20:11 UTC**. Reservations **158/159**
+then passed normal cold/warm characterization of the same calibration question.
+Cold retrieval ran all providers successfully, used no fallback and placed the
+gold **first**, improving on the fallback's sixth position. After the bounded
+65-second wait, warm retrieval returned the same ordered IDs/citations, score
+provenance and originating timestamp, with no encoder/vector/reranker call.
+Worker retrieval elapsed times were **2,301 ms cold / 1,450 ms warm**; these are
+not client benchmark or capacity estimates. Both owner and child settled and the
+original ledger closed at **159/160**, leaving one reservation. See the
+[cold/warm observation](evidence/2026-10-24/staging-api-v7-calibration-recheck-root-observation.json).
+
+This closes the reproduced current provider-dispatch defect and this calibration
+check. It does not establish the cause of the older Zen attempts, which predate
+the wrapper deployment, or replace the failed holdout/benchmark results. Positive
+Zen chat acceptance and key eligibility remain unverified. Another generation
+call requires a new explicit approval even though one serving slot remains.
 
 ## Dataset and evidence
 
@@ -168,7 +223,7 @@ Verified on 2026-10-22:
 - Parser contract: `statutes-v2`; source and parser revisions are recorded separately.
 - Source blobs checked: **30**.
 - Positive question labels checked: **60/60**; rejected: **0**.
-- Dataset SHA-256: `5947e2417cebd4883df368a4aeca1dccdb79bd0329056155d7420016431f8cf9`.
+- Dataset SHA-256 (the runner's parsed JSON serialization): `5947e2417cebd4883df368a4aeca1dccdb79bd0329056155d7420016431f8cf9`.
 - Verification artifact generated locally: `dist/evaluation/v1-labels.json`.
 
 The negative set expressly asks for a different authority or source: provincial/municipal/foreign rules, court reasons, weather, statistics, current administrative amounts, and monetary-policy announcements. These are scope labels, not verified statements about those external sources. Federal minimum wage questions distinguish the current amount on a government webpage from the statutory rule. The Ontario HST-rate pair stays **unverified**: a rate may be stated in federal legislation, so its absence must not be assumed.
