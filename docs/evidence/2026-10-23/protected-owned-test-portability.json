@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-24T00:04:59.255081+00:00",
+  "scope": "protected-owned-python-test-portability",
+  "path": "test/protected-state-d1-owned.test.py",
+  "bytes": 15322,
+  "sha256": "39cf5b99b3df1b617b94422bd2e88b5928dd1a6c90a1d11c6812af918ddad019",
+  "change": "Resolve the operating system temporary directory instead of using the macOS-only /private/tmp path.",
+  "pythonCases": 21,
+  "rootRerunPassed": true,
+  "productionCodeChanged": false,
+  "priorFullLocalGate": "docs/evidence/2026-10-23/release-local-gates-post-recovery.json",
+  "freshLinuxCI": "pending"
+}

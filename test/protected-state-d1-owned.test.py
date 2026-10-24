@@ -6,6 +6,7 @@ ROOT=Path(__file__).resolve().parent.parent
 spec=importlib.util.spec_from_file_location('owned_under_test',ROOT/'scripts/protected-state-d1-owned.py');op=importlib.util.module_from_spec(spec);spec.loader.exec_module(op)
 spec=importlib.util.spec_from_file_location('capture_under_test',ROOT/'scripts/lib/capture_owned.py');cap=importlib.util.module_from_spec(spec);spec.loader.exec_module(cap)
 NODE=shutil.which('node')
+TEMP_ROOT=str(Path(tempfile.gettempdir()).resolve())
 TOKEN='SYNTHETIC-RESTORE-TOKEN-'*3
 
 def write(path,value):
@@ -24,14 +25,14 @@ def prepared(root):
 class OperatorTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
-  cls.cache=Path(tempfile.mkdtemp(prefix='protected-owned-prepared-',dir='/private/tmp'));prepared(cls.cache)
+  cls.cache=Path(tempfile.mkdtemp(prefix='protected-owned-prepared-',dir=TEMP_ROOT));prepared(cls.cache)
   r=cap.capture_owned([NODE,str(ROOT/'scripts/build-protected-state-d1-owned.mjs'),'--inputs',str(cls.cache/'inputs.json'),'--bun',str(Path(shutil.which('bun')).resolve())],ROOT,{'PATH':'/usr/bin:/bin','HOME':str(cls.cache)},cls.cache/'build.log',timeout=30,max_bytes=2097152)
   if not op.successful(r):raise AssertionError('Actual fixed builder failed: '+(cls.cache/'build.log').read_text())
   cls.base=op.private_json(cls.cache/'journal.owned/window-000001.review-template.json');cls.bundle=(cls.cache/'journal.owned/protected-state-d1.mjs').read_bytes();cls.manifest=(cls.cache/'journal.owned/bundle-manifest.json').read_bytes()
  @classmethod
  def tearDownClass(cls):shutil.rmtree(cls.cache)
  def setUp(self):
-  self.root=Path(tempfile.mkdtemp(prefix='protected-owned-unit-',dir='/private/tmp'));self.c=prepared(self.root);self.registry=self.root/'journal.owned';self.registry.mkdir(mode=0o700);(self.registry/'home').mkdir(mode=0o700)
+  self.root=Path(tempfile.mkdtemp(prefix='protected-owned-unit-',dir=TEMP_ROOT));self.c=prepared(self.root);self.registry=self.root/'journal.owned';self.registry.mkdir(mode=0o700);(self.registry/'home').mkdir(mode=0o700)
   for name,b in [('protected-state-d1.mjs',self.bundle),('bundle-manifest.json',self.manifest)]: (self.registry/name).write_bytes(b);(self.registry/name).chmod(0o600)
   self.r=json.loads(json.dumps(self.base));self.r.update(authority='trusted-parent-review',executeOneWindow=True,validUntil=expiry());self.r['inputs']={k:self.c[k] for k in ['directory','manifestSha256','admissionPath','admissionSha256','admissionFileSha256','cutoverBundle','targetFile','journalDirectory']};self.r['inputs']['targetFileSha256']=op.sha_file(self.root/'target.json');self.r['credential']=op.credential_metadata(self.root/'token.json');self.review=self.registry/'window-000001.reviewed.json';write(self.review,self.r)
   self.calls=[];self.selected=0
@@ -139,7 +140,7 @@ class OperatorTests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,'PROTECTED_OWNED_PRIOR_UNCERTAINTY'):op.prior_windows({**self.r,'window':2},self.registry)
 
 class CaptureTests(unittest.TestCase):
- def setUp(self):self.root=Path(tempfile.mkdtemp(prefix='protected-capture-',dir='/private/tmp'));self.root.chmod(0o700)
+ def setUp(self):self.root=Path(tempfile.mkdtemp(prefix='protected-capture-',dir=TEMP_ROOT));self.root.chmod(0o700)
  def tearDown(self):shutil.rmtree(self.root)
  def capture(self,program,**kw):return cap.capture_owned([sys.executable,'-I','-c',program],self.root,{'PATH':'/usr/bin:/bin'},self.root/'process.log',**kw)
  def test_actual_short_process_and_minimal_environment(self):
