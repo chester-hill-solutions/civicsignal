@@ -1,6 +1,8 @@
 import { appendFileSync, existsSync, fsyncSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { buildSync } from 'esbuild';
 import { describe, expect, it, vi } from 'vitest';
 import { FileRelayLedger, MAX_RELAY_BODY_BYTES, stagingRequestRelay, stagingTarget } from '../scripts/lib/staging-request-relay';
 
@@ -100,6 +102,56 @@ describe('durable local staging ledger', () => {
 });
 
 describe('bounded HTTP/MCP forwarding', () => {
+  it.each([
+    ['abort-and-reject', 499], ['reject-without-abort', 502], ['abort-and-fulfill', 499],
+  ] as const)('observes an already-created send promise in a real subprocess: %s', (mode, expectedStatus) => {
+    const directory = mkdtempSync(join(tmpdir(), 'civicsignal-relay-send-promise-'));
+    const script = join(directory, 'actual-relay.mjs'), path = join(directory, 'fixture-ledger.jsonl');
+    const contents = `
+      import assert from 'node:assert/strict';
+      import { setImmediate } from 'node:timers';
+      import { FileRelayLedger, stagingRequestRelay } from '../scripts/lib/staging-request-relay';
+      const mode = process.argv[3], expectedStatus = Number(process.argv[4]);
+      const target = 'https://civicsignal-v1-stage-api-promise.example-account.workers.dev';
+      const ledger = new FileRelayLedger({ path: process.argv[2], targetOrigin: target, limit: 1 });
+      const controller = new AbortController();
+      let calls = 0, unhandled = 0;
+      process.on('unhandledRejection', () => { unhandled++; process.exitCode = 1; });
+      try {
+        const relay = stagingRequestRelay({ targetOrigin: target, ledger, fetch: async () => {
+          calls++;
+          if (mode !== 'reject-without-abort') controller.abort();
+          if (mode !== 'abort-and-fulfill') throw new Error('SYNTHETIC_SEND_REJECTION');
+          return new Response('synthetic completed send');
+        } });
+        const response = await relay(new Request('http://127.0.0.1/api/statutes', { signal: controller.signal }));
+        await response.text();
+        assert.equal(response.status, expectedStatus);
+        assert.equal(calls, 1);
+        assert.equal(ledger.status().reserved, 1);
+        assert.equal(ledger.status().remaining, 0);
+        // Reach a real event-loop turn: a dropped rejection must be observed by
+        // this process, not swallowed by the test runner's global handlers.
+        await new Promise(resolve => setImmediate(resolve));
+        console.log(JSON.stringify({ status: response.status, calls, reserved: ledger.status().reserved, unhandled }));
+        assert.equal(unhandled, 0);
+      } finally { ledger.close(); }
+      assert.equal(FileRelayLedger.inspect(process.argv[2], target, 1).reserved, 1);
+    `;
+    try {
+      const bundled = buildSync({ stdin: { contents, resolveDir: join(process.cwd(), 'test'), loader: 'js' },
+        bundle: true, write: false, format: 'esm', platform: 'node', target: 'es2022', logLevel: 'silent' });
+      writeFileSync(script, bundled.outputFiles[0]!.contents, { mode: 0o600 });
+      const child = spawnSync(process.execPath, [script, path, mode, String(expectedStatus)], {
+        cwd: directory, env: { PATH: '/usr/bin:/bin', LANG: 'C', TZ: 'UTC' },
+        encoding: 'utf8', timeout: 5000, maxBuffer: 65536,
+      });
+      expect(child.error).toBeUndefined();
+      expect(child.status, child.stderr || child.stdout).toBe(0);
+      expect(JSON.parse(child.stdout)).toEqual({ status: expectedStatus, calls: 1, reserved: 1, unhandled: 0 });
+      expect(existsSync(path + '.lock')).toBe(false);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
   it('counts concurrent failed attempts exactly once before fetch and never exceeds the durable cap', async () => {
     const h = fixture(5); let calls = 0;
     try {

@@ -953,6 +953,31 @@ Its owner settles with exit one; Python and dry builds do not run. All 477 input
 The exact named test then passes in isolation, with seventeen tests skipped and settled ownership. That result does not qualify the failed aggregate.
 [Issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12) tracks diagnosis; the cause remains unknown. Full source and clean Linux qualification remain open.
 
+Source **`dba19d3679727863f2fb1fc0fe6b38a53d2a9eff`** then passes the [complete Linux comparison](evidence/2026-10-31/candidate-dba19d3-linux-ci-observation.json).
+Run 41253330453, job 124691204672, checks out merge `964cee4814b86df5590157765c2e6f2e593ebaa3` against base `717bf32`.
+All 1,972 tests in 102 files, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds pass.
+All 477 source/fixture inputs match that exact Git commit. Node is v24.22.1; Bun is 1.3.5.
+The Linux pass does not repair or explain the local EPIPE failure. Issue 12 remains open.
+
+Serving preparation then reproduces a separate relay defect through the actual source and a fresh one-request synthetic ledger.
+A send callback aborts synchronously and rejects; abortable returns another rejection without observing the original promise.
+The relay returns 499 with one spent reservation and one send, then Bun exits one with an unhandled rejection.
+[Issue 13](https://github.com/chester-hill-solutions/civicsignal/issues/13) records the defect. Two control cases distinguish it from cleanup and AbortController dispatch.
+The tracked subprocess regression fails before repair. The source repair remains in progress and needs complete successor qualification.
+No real request, credential, original-ledger change, or historical hosted-cause claim follows from this local reproduction.
+
+The [native diagnostic](evidence/2026-10-31/restore-frame-diagnostic-observation.json) retains 59 artifact pins and an inconclusive result.
+The full restore file, 61 original-buffered triggers, and ten controlled cadence variants pass with their original assertions.
+No EPIPE cause or repair is established. Expected relay-source drift stops the next probe before launch; the diagnostic keeps its original fence.
+
+The relay repair observes the already-created promise before its immediate abort rejection. It adds no retry or ledger change.
+The actual subprocess seam fails before repair and passes after repair; two controls exclude cleanup and AbortController dispatch as causes.
+Independent review accepts the exact source and final test pins. The final regression preserves 499, one send, one spent reservation, and no unhandled rejection.
+The [complete v8 local gate](evidence/2026-10-31/integrated-candidate-local-validation-v8.json) passes installation, all four compiler projects, and 1,975 tests in 102 files.
+All 27 Python cases, runtime/invariant checks, and five dry builds pass. All four owned phases settle with exit zero.
+All 477 source/fixture inputs stay unchanged. The original native restore test passes here; its earlier EPIPE cause remains unknown.
+Exact successor clean Linux and all hosted/production gates remain open. The earlier failed aggregates remain intact.
+
 ## Remaining release gates
 
 1. Verify scheduled snapshot discovery and first publication. The manually recovered hosted Workflow and complete artifact parity already pass. The claimed probe requires an already published revision; its existing-publication no-op cannot establish scheduled first publication.

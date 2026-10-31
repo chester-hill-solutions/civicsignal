@@ -160,7 +160,12 @@ export class FileRelayLedger implements RelayLedger {
 
 function abortError(): Error { return new DOMException('staging relay request aborted', 'AbortError'); }
 function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
-  if (signal.aborted) return Promise.reject(abortError());
+  if (signal.aborted) {
+    // The send/read promise was created before this call and can already be
+    // rejected. Keep observing it even when cancellation wins immediately.
+    void promise.catch(() => {});
+    return Promise.reject(abortError());
+  }
   return new Promise<T>((resolvePromise, reject) => {
     const abort = () => { reject(abortError()); };
     signal.addEventListener('abort', abort, { once: true });

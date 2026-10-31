@@ -8,7 +8,7 @@ The immediate objective is to close four release gates: scheduled first publicat
 
 ## Immediate work order
 
-1. **Qualify the MP-02 runtime increment.** Diagnose the native restore-frame failure; preserve the reviewed controls and accounting; complete local/Linux checks.
+1. **Qualify the relay successor in Linux.** Retain its complete local proof and the unresolved native restore finding.
 2. **Prepare the three open evidence paths.** Make the scheduled packet executable; prepare serving acceptance and consistent production acquisition alongside it.
 3. **Close the corresponding hosted gates.** Use fresh target evidence and the reviewed limits for each concrete operation.
 4. **Complete MP-05 after acquisition.** Qualify the protected copy, production target, and authorization-preserving rollback.
@@ -136,17 +136,20 @@ The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves
 | Package | Current position | Next deliverable |
 | --- | --- | --- |
 | MP-01 | Qualified source and requirement inventory retained | Refresh the candidate inventory after the current source increment |
-| MP-02 | Runtime controls pass focused checks and source review; successor accounting exists; fixed operator preparation remains non-live | Complete full source checks and the executable operation packet |
+| MP-02 | Runtime controls and the relay successor pass complete local checks; fixed operator preparation remains non-live | Complete exact Linux qualification and concrete operation admission |
 | MP-03 | Brief and text-hydration repairs qualify; successor bilingual labels have full source checks | Record acceptance policy and prepare the bounded serving packet |
 | MP-04 | Fixture acquisition, transport, and schema/sequence collectors qualify | Complete actual authority, writer, maintenance, and acquisition evidence |
 | MP-05 | Local copy, sequence, binding, and rollback mechanisms pass | Qualify production-derived hosted copy and the production target |
-| MP-06 | Engineering checks pass for `26d5049`; the PR remains a draft | Check the final source and reconcile all required release evidence |
+| MP-06 | Full local checks pass for the relay successor; exact Linux and final release evidence remain open | Qualify the exact source and reconcile all required release evidence |
 
 The qualification-runtime increment remains in progress.
 Its reference policies, retry limits, deadlines, and cleanup controls pass focused checks and independent source review.
 The [successor accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records the conditional runtime bounds.
 The [complete local check](evidence/2026-10-31/integrated-candidate-local-observation-v7.json) fails one native restore-frame test after 1,971 passes.
-The named isolated probe passes on unchanged source; the cause remains unknown. Full local and clean Linux checks remain open.
+The named isolated probe passes on unchanged source; the cause remains unknown.
+Source `dba19d3` then passes [clean Linux comparison](evidence/2026-10-31/candidate-dba19d3-linux-ci-observation.json): 1,972 tests, 27 Python cases, and five dry builds.
+That comparison does not repair the failed local check. The relay successor then passes [complete local validation](evidence/2026-10-31/integrated-candidate-local-validation-v8.json): 1,975 tests, 27 Python cases, and five dry builds.
+All 477 inputs stay unchanged. Exact successor Linux qualification remains open.
 Caller-enforced bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
 The fixed operator preparation remains non-live until a fresh successor consumes the qualified runtime and its reviewed accounting disposition.
 
@@ -156,6 +159,8 @@ No new deployment, scheduled event, generation, maintenance interval, or migrati
 
 Open public findings are [chat evidence contract, issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) and [scheduled operation accounting, issue 6](https://github.com/chester-hill-solutions/civicsignal/issues/6).
 The [native restore-frame finding, issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12), tracks the current full-check failure.
+The [relay abort finding, issue 13](https://github.com/chester-hill-solutions/civicsignal/issues/13), reproduces an unhandled send rejection after synchronous abort.
+The repair preserves the failed response, spent reservation, and no-retry behavior. Its failing/passing regression and source review pass locally.
 The release ledger retains closed findings and their source-specific qualification.
 
 ## Phase 1 Close the v1 release
@@ -220,6 +225,7 @@ Prepare a fresh successor from existing owned helpers; preserve every consumed m
 - Record numerical criteria as an explicit policy decision before adding automatic quality gates to the existing runner.
 - Retain the new [bilingual questions](../src/eval/data/v1-successor-questions.json) and their full source proof.
 - Prepare fresh target provenance for the next independent acceptance run; recheck labels if its source revision changes.
+- Repair the reproduced relay abort-promise defect through its actual caller; retain a regression for the spent reservation and failed response.
 - State request budgets, cache behavior, language splits, provider observations, latency, throughput, and freshness.
 - Qualify positive Zen chat through the existing authenticated retrieval, generation, citation, and metering path.
 - Check brief emission against the shared CHS corpus policy gate; extend existing checks where response paths diverge.
@@ -227,6 +233,7 @@ Prepare a fresh successor from existing owned helpers; preserve every consumed m
 
 The sealed [one-request Zen proposal](V1-ZEN-RECHECK.md) remains a separate decision.
 Its previous generation approvals are spent; the final recorded serving slot does not grant a new approval.
+The relay repair changes a file pinned by the retained packet. Preserve it and qualify a fresh source-bound successor before execution.
 New broad measurements need their own reviewed usage scope.
 
 **Exit evidence:** accepted bilingual retrieval and performance reports, positive hosted chat, and complete route checks for the exact candidate.
