@@ -36,6 +36,106 @@ function createTextFixture(text = '\uFEFFLe règlement exige une décision motiv
 }
 
 describe('immutable provision text', () => {
+  it.each(['r2', 'verify'] as const)('shares one verified object across concurrent %s rows with equal byte contracts', async mode => {
+    const fixture = createTextFixture(), first = await fixture.stage();
+    const row = { ...fixture.row, id: 'acts-fr-shared', text_hash: '' };
+    row.text_hash = rowFingerprintWithText(row, fixture.text);
+    const second = await prepareProvisionText({ rowId: row.id, corpusId: 'statutes-canada', rowFingerprint: row.text_hash, text: fixture.text });
+    await fixture.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings(second.reference)).run();
+    expect(second.reference.objectKey).toBe(first.reference.objectKey);
+    let release!: () => void, entered!: () => void;
+    const waiting = new Promise<void>(yes => { release = yes; }), started = new Promise<void>(yes => { entered = yes; });
+    let reads = 0;
+    const bucket = { async get(key: string) { reads++; entered(); await waiting; return fixture.bucket.get(key); } };
+    const result = createR2ProvisionTextStore(fixture.db, bucket, mode).hydrate([fixture.row, row]);
+    await started;
+    expect(reads).toBe(1);
+    release();
+    expect((await result).map(item => item.text)).toEqual([fixture.text, fixture.text]);
+    expect(reads).toBe(1);
+  });
+
+  it.each(['r2', 'verify'] as const)('rejects conflicting byte contracts in %s regardless of reference order', async mode => {
+    for (const reverse of [false, true]) for (const delta of [-1, 1]) {
+      const fixture = createTextFixture();
+      await fixture.stage();
+      const row = { ...fixture.row, id: 'acts-fr-shared', text_hash: '' };
+      row.text_hash = rowFingerprintWithText(row, fixture.text);
+      const second = await prepareProvisionText({ rowId: row.id, corpusId: 'statutes-canada', rowFingerprint: row.text_hash, text: fixture.text });
+      await fixture.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings({ ...second.reference, bytes: second.reference.bytes + delta })).run();
+      const rows = reverse ? [row, fixture.row] : [fixture.row, row];
+      await expect(createR2ProvisionTextStore(fixture.db, fixture.bucket, mode).hydrate(rows)).rejects.toBeInstanceOf(ProvisionTextError);
+    }
+  });
+
+  it('keeps verified D1 fallback for conflicting shared-object byte contracts', async () => {
+    for (const reverse of [false, true]) {
+      const fixture = createTextFixture();
+      await fixture.stage();
+      const row = { ...fixture.row, id: 'acts-fr-shared', text_hash: '' };
+      row.text_hash = rowFingerprintWithText(row, fixture.text);
+      const second = await prepareProvisionText({ rowId: row.id, corpusId: 'statutes-canada', rowFingerprint: row.text_hash, text: fixture.text });
+      await fixture.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings({ ...second.reference, bytes: second.reference.bytes + 1 })).run();
+      const rows = reverse ? [row, fixture.row] : [fixture.row, row];
+      expect((await createR2ProvisionTextStore(fixture.db, fixture.bucket, 'prefer-r2').hydrate(rows)).map(item => item.text)).toEqual([fixture.text, fixture.text]);
+      const corrupt = rows.map(item => ({ ...item, text: 'Unverified fallback.' }));
+      await expect(createR2ProvisionTextStore(fixture.db, fixture.bucket, 'prefer-r2').hydrate(corrupt)).rejects.toBeInstanceOf(ProvisionTextError);
+    }
+  });
+
+  it('settles an in-flight shared read before reporting a conflicting byte contract', async () => {
+    const fixture = createTextFixture();
+    await fixture.stage();
+    const row = { ...fixture.row, id: 'acts-fr-shared', text_hash: '' };
+    row.text_hash = rowFingerprintWithText(row, fixture.text);
+    const second = await prepareProvisionText({ rowId: row.id, corpusId: 'statutes-canada', rowFingerprint: row.text_hash, text: fixture.text });
+    await fixture.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings({ ...second.reference, bytes: second.reference.bytes + 1 })).run();
+    let release!: () => void, entered!: () => void, settled = false, reads = 0;
+    const waiting = new Promise<void>(yes => { release = yes; }), started = new Promise<void>(yes => { entered = yes; });
+    const bucket = { async get(key: string) { reads++; entered(); await waiting; return fixture.bucket.get(key); } };
+    const outcome = createR2ProvisionTextStore(fixture.db, bucket, 'r2').hydrate([fixture.row, row])
+      .then(() => { settled = true; return null; }, (error: unknown) => { settled = true; return error; });
+    await started;
+    await new Promise<void>(yes => setImmediate(yes));
+    expect(settled).toBe(false); expect(reads).toBe(1);
+    release();
+    expect(await outcome).toBeInstanceOf(ProvisionTextError);
+    expect(settled).toBe(true); expect(reads).toBe(1);
+  });
+
+  it('uses the largest conflicting reference before aggregate admission in either input order', async () => {
+    for (const reverse of [false, true]) {
+      const fixture = createTextFixture(), rows: Record<string, unknown>[] = [];
+      const objects = MAX_HYDRATED_TEXT_BYTES / MAX_PROVISION_TEXT_BYTES + 1;
+      for (let at = 0; at < objects; at++) {
+        const sha = at.toString(16).padStart(64, '0');
+        const pair = [MAX_PROVISION_TEXT_BYTES, 1].map((bytes, alias) => ({ ...fixture.row, id: `shared-${at}-${alias}`, text: '', bytes }));
+        for (const row of pair) await fixture.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings({ rowId: row.id,
+          corpusId: 'statutes-canada', rowFingerprint: String(fixture.row['text_hash']), contentSha256: sha,
+          objectKey: `statute-text/sha256/${sha}.txt`, bytes: row.bytes, createdAt: '2026-10-22T00:00:00Z' })).run();
+        rows.push(...(reverse ? pair.reverse() : pair));
+      }
+      await expect(createR2ProvisionTextStore(fixture.db, fixture.bucket, 'r2').hydrate(rows)).rejects.toThrow('hydration bound');
+      expect(fixture.reads()).toBe(0);
+    }
+  });
+
+  it('does not double-charge shared object bytes at the aggregate boundary', async () => {
+    const fixture = createTextFixture(), rows: Record<string, unknown>[] = [];
+    const objects = MAX_HYDRATED_TEXT_BYTES / MAX_PROVISION_TEXT_BYTES;
+    for (let at = 0; at < objects; at++) for (let alias = 0; alias < 2; alias++) {
+      const sha = at.toString(16).padStart(64, '0'), row = { ...fixture.row, id: `boundary-${at}-${alias}`, text: '' };
+      await fixture.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings({ rowId: row.id,
+        corpusId: 'statutes-canada', rowFingerprint: String(fixture.row['text_hash']), contentSha256: sha,
+        objectKey: `statute-text/sha256/${sha}.txt`, bytes: MAX_PROVISION_TEXT_BYTES, createdAt: '2026-10-22T00:00:00Z' })).run();
+      rows.push(row);
+    }
+    // No objects are supplied: reaching the object reader distinguishes valid
+    // byte admission from accidentally charging both aliases against the cap.
+    await expect(createR2ProvisionTextStore(fixture.db, fixture.bucket, 'r2').hydrate(rows)).rejects.toBeInstanceOf(ProvisionTextError);
+    expect(fixture.reads()).toBeGreaterThan(0);
+  });
+
   it('waits for a delayed sibling read to settle before returning a strict failure',async()=>{
     const fixture=createTextFixture();const first=await fixture.stage();
     const text='A delayed sibling provision.';const row={...fixture.row,id:'acts-en-sibling',text,text_hash:''};row.text_hash=rowFingerprintWithText(row,text);

@@ -841,6 +841,78 @@ Issue 4 remains a product/API decision; issue 6 retains the owned operator and a
 No hosted serving, generation, source, calendar, acquisition, production, or Railway operation follows from this CI result.
 All four hosted/production release gates remain open; PR 1 stays a draft.
 
+The [readiness authority audit](evidence/2026-10-31/scheduled-readiness-authority-audit.json) checks the retained staging packet before further execution work.
+Its October 24 review has expired, and both one-time arming markers exist with accepted arming and cleanup receipts.
+That packet checks existing-publication discovery; it cannot establish first publication or authorize a new event.
+The audit finds no newer approved first-publication packet in its searched scope.
+Five exploratory control-framework drafts remain preserved outside the active source tree, unvalidated and without prerequisite status.
+All 470 qualified implementation and fixture inputs remain unchanged.
+The next step reuses existing owned-read helpers for one bounded readiness check and preserves every refusal.
+No credential contents or account requests occur during this audit.
+
+The [local readiness receipt](evidence/2026-10-31/scheduled-readiness-local-validation.json) records 27 passing checks, packet compilation, owned inspection, and independent review.
+Root checks all 17 frozen file hashes and four command-log hashes; the owned inspection checks 34 manifest inputs.
+The failure regressions retain credential access, wire attempts, response bytes, and observed status without false success after journal-close uncertainty.
+The frozen packet permits at most six read-only management GETs; no execution review or operational intent exists.
+No real credential read, account request, or hosted qualification occurred. All 470 qualified implementation and fixture inputs remain unchanged.
+
+The [one-time readiness observation](evidence/2026-10-31/scheduled-readiness-admission-refusal.json) then refuses credential admission with `oauth-lifetime-insufficient`.
+The eligible file reports expiry `2026-10-27T22:26:55.876Z`. Its single stable read uses 801 bytes; token selections and wire requests both remain zero.
+The owned child exits with failure and settles; no timeout, log overflow, or receipt-persistence uncertainty occurs.
+The review, intent, journal, and permanent refusal remain intact. No retry or credential refresh follows.
+Current account state, scheduled publication, serving acceptance, and production qualification remain unproved.
+Credential recovery now precedes any reviewed successor readiness check. Issue 6 retains this finding.
+
+The [separate credential recovery](evidence/2026-10-31/credential-recovery-observation.json) then passes one explicit refresh POST with HTTP 200.
+The frozen packet passes 45 synthetic core cases, 20 owner cases, an optimized owner replay, compiler checks, and independent review.
+Root checks all 37 frozen inputs before execution and observes no matching Wrangler or OAuth writer process.
+The reply preserves the exact 28 stored scopes. Private recovery copies precede guarded replacement of the shared Wrangler configuration.
+The new access expiry is `2026-10-31T23:05:52.847Z`; child and owner pass with confirmed settlement and no persistence or refresh uncertainty.
+No retry, login, account API, source, serving, generation, deployment, or calendar action follows this operation.
+The original readiness refusal remains intact. A separately reviewed successor must establish current resource state.
+
+The [separate readiness successor](evidence/2026-10-31/scheduled-readiness-management-observation.json) passes at `2026-10-31T22:08:56.116Z` after exactly six management GETs.
+All six replies return HTTP 200 and total 6,513 bytes. The deployed version and settings agree on bindings and runtime.
+The Worker calendar is empty. The optional native Workflow schedule field is absent, so that calendar remains unknown.
+The owned process settles and rechecks all source pins; no refusal or persistence uncertainty occurs.
+The snapshot namespace and instance absence, current source, canonical artifacts, and first publication remain unverified.
+No mutation, source, serving, or generation request follows. The prior consumed packets remain unchanged.
+
+The offline serving investigation reproduces a separate text-reference defect in `src/corpora/text-store.ts`.
+Two rows share one content-addressed object but declare different byte lengths; the promise cache accepts both after one object read.
+The allocation preflight also lets a later smaller declaration replace the larger value for that object.
+[Issue 10](https://github.com/chester-hill-solutions/civicsignal/issues/10) tracks the narrow repair and serving regressions.
+This reproduction does not establish the cause of the retained hosted hydration failure. No new serving request occurs.
+
+The [hydration repair receipt](evidence/2026-10-31/hydration-contract-local-validation.json) retains five failing new regressions before the repair and 138 passing focused checks after it.
+The nine new cases cover both reference orders, conflicting lengths, concurrent sharing and settlement, verified fallback, allocation limits, and cached HTTP usage.
+The maximum declared size now controls allocation; a cached text promise also binds its checked byte length.
+Worker, Bun, and tooling compiler checks pass. Root checks all source, historical report, and test-log pins in the receipt.
+The retained holdout 502 reports an encoder failure before row access; the benchmark failure reports row access without a retained substage or reason.
+The original benchmark cause remains unknown. Full candidate integration and clean Linux qualification remain open for the new source.
+
+The [next full local observation](evidence/2026-10-31/integrated-candidate-local-observation-v4.json) passes frozen installation and all four compiler projects, then fails 356 tests across seven protected-data suites.
+Its temporary directory resides inside the repository. Protected inputs correctly reject that location with private-path admission errors.
+The aggregate passes 1,556 tests; all 472 source inputs remain unchanged and both owned processes settle.
+Python and dry-build phases do not run. Preserve this result and use external private temporary data in the successor.
+Independent review also reproduces a retained raw-file drift defect in the new acquisition facts collector.
+[Issue 11](https://github.com/chester-hill-solutions/civicsignal/issues/11) tracks final identity and byte checks under the same finite owner.
+The new source remains unqualified until that repair and its complete successor checks pass.
+
+The [facts integrity repair](evidence/2026-10-31/acquisition-facts-local-validation.json) retains the [166-case predecessor](evidence/2026-10-31/acquisition-facts-local-predecessor.json) and ten failing targeted regressions.
+The final focused set passes 179 cases, including thirteen new file-drift and acceptance-boundary regressions. Bun and tooling compiler checks pass.
+The collector rechecks every original file identity and complete bounded content after all durability operations, under the same finite owner.
+Independent review repeats the original failure: capture now refuses file drift, retains its failure, and permanently fences later owner work.
+A valid control succeeds; the reviewer also passes all 179 focused checks and confirms the final pins.
+These observations establish no authenticated acquisition, common writer freeze, source-schema classification, or production qualification.
+The corrected full candidate check uses private temporary data outside the checkout; its result remains pending.
+
+The [corrected complete local gate](evidence/2026-10-31/integrated-candidate-local-validation-v5.json) passes frozen installation, all four compiler projects, and 1,925 tests in 101 files.
+All 27 Python checks, native runtime probes, invariants, and five dry builds pass. All four owned phases settle with exit zero.
+The 472 source and fixture inputs remain unchanged across the complete check; root also rechecks them before the public receipt.
+Temporary protected data stays outside the checkout. The earlier failed aggregate remains intact.
+The source now needs clean Linux qualification. All hosted and production gates remain open; no deployment follows from these local checks.
+
 The recovery, full metadata, composite changed-text byte verification and complete
 vector backup gate is closed within the approved limits. Preserve the original
 paused coordinator and backup evidence.

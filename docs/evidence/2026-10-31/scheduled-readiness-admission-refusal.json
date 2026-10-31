@@ -1,0 +1,90 @@
+{
+  "format": 1,
+  "kind": "scheduled-publication-readiness-admission-refusal",
+  "recordedAt": "2026-10-31T21:55:06.319489+00:00",
+  "planWorkPackage": "MP-02",
+  "candidateSha256": "522b608d6fcf69cba062083a56db48e6f78e1983d2e1fc6e121fdfd0a9ad86aa",
+  "reviewSha256": "33fb930620fb571c8e753ded6b4ec958d3854601a3737d839cc8213370e636b5",
+  "executionScope": "one-time bounded read-only staging management preflight",
+  "passed": false,
+  "childCode": "oauth-lifetime-insufficient",
+  "ownerCode": "owned-child-failed-or-unsettled",
+  "credential": {
+    "fileReadAttempts": 1,
+    "credentialFileReads": 1,
+    "credentialBytesRead": 801,
+    "tokenSelections": 0,
+    "observedExpiry": "2026-10-27T22:26:55.876Z"
+  },
+  "transport": {
+    "wireAttempts": 0,
+    "completedResponses": 0,
+    "observedHTTPStatus": null,
+    "responseBytesRead": 0,
+    "responseByteCountComplete": true,
+    "responseBytesReserved": 0
+  },
+  "owner": {
+    "exitCode": 1,
+    "timedOut": false,
+    "logBoundExceeded": false,
+    "localFailure": false,
+    "ownedProcessSettled": true,
+    "receiptPersistenceUncertain": false,
+    "elapsedMs": 370.80233300002874
+  },
+  "retainedFiles": [
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v1/reviewed.json",
+      "bytes": 1029,
+      "sha256": "33fb930620fb571c8e753ded6b4ec958d3854601a3737d839cc8213370e636b5"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v1/operation.started.json",
+      "bytes": 303,
+      "sha256": "40d0a273dd77a33d9d48d98d122f3532f350cd844cf058531abf3c428011be24"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v1/requests.jsonl",
+      "bytes": 274,
+      "sha256": "ba7668a8b59d986bba0a681d2a226dc931e9105a4f00d8bda1eac34492a98c24"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v1/result.refused.json",
+      "bytes": 476,
+      "sha256": "68013fa37a3a5d8659e14b73f10073a86097256fa61e1534d23dca1776743800"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v1/operation-result.json",
+      "bytes": 1157,
+      "sha256": "a082327f2f327c1c07c54b887703fc6b50a551c82756164d83b2f7cea77df77b"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v1/operation.refused.json",
+      "bytes": 114,
+      "sha256": "38f2893b9ce9628e0577511ca41b4f910b1d3c837ef18ef007c1651e564e9194"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v1/operation.log",
+      "bytes": 104,
+      "sha256": "445cc8e963a65d1d5346a5b89d713cb98f1ec5761e138bce73cd885c58e300e0"
+    }
+  ],
+  "oneTimeMarkersPreserved": true,
+  "automaticRetry": false,
+  "automaticRefresh": false,
+  "freshAccountStateEstablished": false,
+  "sourceRequests": 0,
+  "servingRequests": 0,
+  "generationRequests": 0,
+  "deployments": 0,
+  "scheduleChanges": 0,
+  "productionChanges": 0,
+  "scheduledPublicationProven": false,
+  "originalLedgersChanged": false,
+  "limitations": [
+    "The current credential expired before this run; its token was not selected.",
+    "No HTTP request occurred, so actual account resources and calendar remain unobserved.",
+    "The consumed readiness packet cannot be retried or rewritten. Credential recovery and any successor need their own concrete review."
+  ]
+}

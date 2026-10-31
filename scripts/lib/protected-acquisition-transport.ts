@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {closeSync,constants,fsyncSync,fstatSync,lstatSync,mkdirSync,openSync,readSync,realpathSync,writeSync} from 'node:fs';
 import {dirname,resolve} from 'node:path';
 import {PROTECTED_ACQUISITION_SOURCE,type AcquisitionFixtureRequest} from './protected-acquisition';
+import {PROTECTED_ACQUISITION_FACT_QUERIES} from './protected-acquisition-facts';
 import {privatePath} from './protected-state';
 
 export class ProtectedAcquisitionTransportError extends Error {
@@ -29,6 +30,7 @@ const BASE='https://api.cloudflare.com';
 const prefix=`/client/v4/accounts/${PROTECTED_ACQUISITION_SOURCE.accountId}`;
 const KV=`${prefix}/storage/kv/namespaces/${PROTECTED_ACQUISITION_SOURCE.kvNamespaceId}`;
 const EXPORT=`${prefix}/d1/database/${PROTECTED_ACQUISITION_SOURCE.d1Id}/export`;
+const QUERY=`${prefix}/d1/database/${PROTECTED_ACQUISITION_SOURCE.d1Id}/query`;
 const keys=['customer:','key:','keyhash:'];
 
 export interface AcquisitionTransportLimits {
@@ -110,6 +112,9 @@ function managementRequest(input:AcquisitionFixtureRequest,maximum:number):Acqui
     const encoded=url.pathname.slice((KV+'/values/').length);let name:string;
     try{name=decodeURIComponent(encoded);}catch{fail('ACQUISITION_TRANSPORT_ENDPOINT');}
     demand(encoded===encodeURIComponent(name!)&&Buffer.byteLength(name!,'utf8')<=512&&keys.some(key=>name!.startsWith(key)&&name!.length>key.length),'ACQUISITION_TRANSPORT_ENDPOINT');
+  }else if(input.kind==='d1-schema'||input.kind==='d1-sequences'){
+    demand(input.method==='POST'&&url.pathname===QUERY&&!url.search&&
+      input.body===JSON.stringify({sql:PROTECTED_ACQUISITION_FACT_QUERIES[input.kind]}),'ACQUISITION_TRANSPORT_BODY');
   }else{
     demand(input.kind==='export'&&input.method==='POST'&&url.pathname===EXPORT&&!url.search&&typeof input.body==='string'&&Buffer.byteLength(input.body)<=16384,'ACQUISITION_TRANSPORT_ENDPOINT');
     let body:unknown;try{body=JSON.parse(input.body!);}catch{fail('ACQUISITION_TRANSPORT_BODY');}
@@ -244,6 +249,14 @@ export async function createFixtureAcquisitionTransport(options:AcquisitionTrans
   }
   return {
     fixtureOnly:true as const,
+    /** Synchronous fact parsing and private persistence share this owner's
+     * existing deadline and terminal fence; they never create a fresh budget. */
+    accept<T>(work:()=>T):T {
+      try{
+        demand(!failed,'ACQUISITION_TRANSPORT_TERMINAL');demand(!busy,'ACQUISITION_TRANSPORT_CONCURRENT');check();
+        const value=work();demand(!value||typeof value!=='object'||!('then' in value),'ACQUISITION_TRANSPORT_INPUT');check();return value;
+      }catch(error){const code=safeCode(error),settled=terminal(code,true);throw new ProtectedAcquisitionTransportError(code,settled);}
+    },
     async management(input:AcquisitionFixtureRequest,signal?:AbortSignal){
       let request:AcquisitionFixtureRequest;try{request=managementRequest(input,cap.responseBytes);}catch(error){refuseInput(error);}
       return execute('management',request!,signal,cap.managementMs,async scope=>{

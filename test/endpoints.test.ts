@@ -83,6 +83,45 @@ async function setup(limit = 5) {
 }
 
 describe('HTTP and MCP access and metering', () => {
+  it('refuses a cached answer with conflicting shared-text byte contracts before billing', async () => {
+    const fixture = await setup(), storage = memoryTextBucket();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const original = fixture.sqlite.prepare('SELECT * FROM statute_sections WHERE id=?').get('acts-en-one')!;
+    const text = String(original.text);
+    for (const id of ['acts-en-one', 'acts-en-two']) {
+      const row = { ...original, id };
+      const hash = rowFingerprintWithText(row, text);
+      if (id !== original.id) fixture.sqlite.prepare(`INSERT INTO statute_sections
+        (id,corpus_id,act,citation,section,status,text,source_url,jurisdiction,in_force,language)
+        SELECT ?,corpus_id,act,citation,section,status,text,source_url,jurisdiction,in_force,language FROM statute_sections WHERE id=?`).run(id, original.id);
+      fixture.sqlite.prepare('UPDATE statute_sections SET text_hash=?,text=? WHERE id=?').run(hash, '', id);
+      const artifact = await prepareProvisionText({ rowId: id, corpusId: 'statutes-canada', rowFingerprint: hash, text });
+      await writeImmutableProvisionText(storage.bucket, artifact);
+      await fixture.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings(artifact.reference)).run();
+    }
+    fixture.sqlite.prepare('UPDATE corpus_state SET row_count=2 WHERE corpus_id=?').run('statutes-canada');
+    fixture.env.CORPUS_TEXT_MODE = 'r2';
+    fixture.env.CORPORA = storage.bucket as unknown as R2Bucket;
+    const vector = vi.fn(async () => ({ matches: [] })), encoder = vi.fn(async () => Response.json({ vectors: [] }));
+    fixture.env.VECTORIZE = { query: vector };
+    fixture.env.ENCODER_TOKEN = 'synthetic-local-only';
+    fixture.env.ENCODER_SERVICE = { fetch: encoder };
+    fixture.env.CIVIC_CACHE = { get: async () => ({ decision: 'answer', anyRelevant: 1, order: ['acts-en-one', 'acts-en-two'] }),
+      put: async () => {} } as unknown as KVNamespace;
+    const route = '/api/statutes?topic=shared+test+rule&language=en&limit=2', before = storage.reads();
+    const valid = await fixture.send(route);
+    expect(valid.status).toBe(200);
+    expect(await fixture.count()).toBe(1);
+    expect(storage.reads() - before).toBe(1);
+    fixture.sqlite.prepare('UPDATE statute_text_refs SET bytes=bytes+1 WHERE row_id=?').run('acts-en-two');
+    const failed = await fixture.send(route), body = await failed.json();
+    expect(failed.status).toBe(502);
+    expect(body).toMatchObject({ code: 'UPSTREAM_UNAVAILABLE', retrieval: [expect.objectContaining({ cache: 'hit', decision: 'error',
+      scoreSource: 'none', providers: { encoder: 'not-called', vector: 'not-called', reranker: 'disabled', rows: 'error' } })] });
+    expect(await fixture.count()).toBe(1);
+    expect(vector).not.toHaveBeenCalled(); expect(encoder).not.toHaveBeenCalled();
+  });
+
   it('routes one authenticated Zen chat through retrieval, generation and shared usage', async () => {
     const fixture = await setup();
     const send = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {

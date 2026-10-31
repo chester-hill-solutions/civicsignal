@@ -1,6 +1,7 @@
 /**
  * Fixture-only acquisition protocol core. No credential selector, fetch, CLI,
- * live entry point, writer control, SQL query or signed-download adapter exists.
+ * live entry point or writer control exists. Separate import-only adapters
+ * implement fixed SQL facts and bounded signed download under one owner.
  * Raw replies, cursors, bookmarks, signed URLs and auth data stay private.
  * Unknown namespace prefixes are retained in their raw page and refused; this
  * is NOT a complete raw namespace backup when unclassified names are present.
@@ -32,7 +33,8 @@ export const PROTECTED_ACQUISITION_LIMITS = Object.freeze({
 });
 type Limits = {[K in keyof typeof PROTECTED_ACQUISITION_LIMITS]:number};
 type Source = typeof PROTECTED_ACQUISITION_SOURCE;
-type Kind = 'kv-list-a'|'kv-value-a'|'export'|'kv-list-b'|'kv-value-b';
+type CaptureKind = 'kv-list-a'|'kv-value-a'|'export'|'kv-list-b'|'kv-value-b';
+type Kind = CaptureKind|'d1-schema'|'d1-sequences';
 export interface AcquisitionFixtureRequest {
  readonly ordinal:number; readonly kind:Kind; readonly method:'GET'|'POST';
  readonly url:string; readonly body:string|null;
@@ -122,7 +124,7 @@ export async function captureProtectedAcquisitionFixture(options:ProtectedAcquis
   const save=(name:string,value:unknown)=>exclusive(directory!,name,bytes(value));
   const startSha256=save('capture.intent.json',{format:1,fixtureOnly:true,source:PROTECTED_ACQUISITION_SOURCE,limits:cap,startedAt,validUntil,providerAuthenticated:false,globalQuiescenceEstablished:false,productionAcquisitionQualified:false});check();
   const receipts:{intentSha256:string;rawSha256:string;ackSha256:string}[]=[];
-  async function request<T>(kind:Kind,path:string,body:string|null,parse:(body:Uint8Array)=>T):Promise<T>{
+  async function request<T>(kind:CaptureKind,path:string,body:string|null,parse:(body:Uint8Array)=>T):Promise<T>{
    check();requireFact(ioSettled,'ACQUISITION_UNSETTLED');
    while(clock.monotonic()-last<cap.minStartSpacingMs){await clock.sleep(cap.minStartSpacingMs-(clock.monotonic()-last));check();}
    requireFact(attempts<cap.maxRequests,'ACQUISITION_REQUEST_BOUND');

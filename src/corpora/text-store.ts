@@ -151,11 +151,13 @@ export function createR2ProvisionTextStore(db: CorpusDatabase, bucket: TextObjec
       const retained = new Map<string, number>();
       for (const row of rows) {
         const reference = refs.get(String(row['id']));
-        if (reference && Number.isSafeInteger(reference.bytes) && reference.bytes > 0) retained.set(reference.objectKey, reference.bytes);
+        if (reference && Number.isSafeInteger(reference.bytes) && reference.bytes > 0) {
+          retained.set(reference.objectKey, Math.max(retained.get(reference.objectKey) ?? 0, reference.bytes));
+        }
         if (typeof row['text'] === 'string' && row['text'].length) retained.set(`d1:${String(row['id'])}`, new TextEncoder().encode(row['text']).byteLength);
       }
       if ([...retained.values()].reduce((sum, bytes) => sum + bytes, 0) > MAX_HYDRATED_TEXT_BYTES) throw new ProvisionTextError('The provision text request exceeds its hydration bound.');
-      const loaded = new Map<string, Promise<string>>();
+      const loaded = new Map<string, { bytes: number; text: Promise<string> }>();
       const output: Record<string, unknown>[] = Array(rows.length);
       let position = 0;
       async function worker() {
@@ -168,8 +170,11 @@ export function createR2ProvisionTextStore(db: CorpusDatabase, bucket: TextObjec
             if (!reference || reference.rowFingerprint !== row['text_hash'] || reference.corpusId !== row['corpus_id']) throw new ProvisionTextError();
             validateReference(reference);
             let pending = loaded.get(reference.objectKey);
-            if (!pending) { pending = readVerifiedProvisionText(bucket, reference); loaded.set(reference.objectKey, pending); }
-            const text = await pending;
+            // A shared content key saves reads only when every reference agrees
+            // on the immutable byte contract checked by that read.
+            if (pending && pending.bytes !== reference.bytes) throw new ProvisionTextError();
+            if (!pending) { pending = { bytes: reference.bytes, text: readVerifiedProvisionText(bucket, reference) }; loaded.set(reference.objectKey, pending); }
+            const text = await pending.text;
             if (rowFingerprintWithText(row, text) !== reference.rowFingerprint ||
                 (mode === 'verify' && text !== fallback)) throw new ProvisionTextError();
             output[at] = { ...row, text: mode === 'verify' ? fallback : text };

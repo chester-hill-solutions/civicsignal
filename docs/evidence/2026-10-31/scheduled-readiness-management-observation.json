@@ -1,0 +1,280 @@
+{
+  "format": 1,
+  "kind": "scheduled-publication-management-readiness-observation",
+  "recordedAt": "2026-10-31T22:10:05.529821+00:00",
+  "finishedAt": "2026-10-31T22:08:56.116Z",
+  "planWorkPackage": "MP-02",
+  "candidateSha256": "9bdb7fd3d322a4076e6f8fed7f5a3bad4af6768c2a2059b0d82c6b62597491cb",
+  "passed": true,
+  "preparation": {
+    "focusedCasesPassed": 27,
+    "optimizedOwnerCasesPassed": 12,
+    "manifestInputs": 34,
+    "rootComparedWithReviewedPredecessor": true,
+    "onlyPacketPathsAndCredentialMetadataChanged": true
+  },
+  "observations": [
+    {
+      "ordinal": 1,
+      "label": "deployments",
+      "method": "GET",
+      "httpStatus": 200,
+      "bytes": 1695,
+      "sha256": "6850d3940a88e786c434ed28a50e4c028d72d638f4672149e4fade3f963d5409",
+      "proof": {
+        "deploymentId": "b2dd1346-e240-4005-9c9d-5c0e33f1bb35",
+        "versionId": "f00194fb-5062-4b0a-930b-b2aa12ded3f5",
+        "soleVersion": true
+      }
+    },
+    {
+      "ordinal": 2,
+      "label": "version",
+      "method": "GET",
+      "httpStatus": 200,
+      "bytes": 2226,
+      "sha256": "2b7e1085615219fcb85ef4f61a2f56f11be4289ed0d7d6232940b77536b3a306",
+      "proof": {
+        "versionId": "f00194fb-5062-4b0a-930b-b2aa12ded3f5",
+        "bindings": [
+          {
+            "name": "CORPUS",
+            "type": "r2_bucket",
+            "bucket_name": "civicsignal-v1-stage-corpus-20261022"
+          },
+          {
+            "name": "SNAPSHOT",
+            "type": "workflow",
+            "workflow_name": "civicsignal-v1-stage-snapshot-20261022",
+            "class_name": "CorpusSnapshot"
+          },
+          {
+            "name": "SNAPSHOT_PINNED_COMMIT",
+            "type": "plain_text",
+            "valueSha256": "13dfa4ce62709cf0bb5d42c6442c84bdb66c971db3863f463b5676075d44bc0f"
+          },
+          {
+            "name": "SNAPSHOT_PINNED_DATE",
+            "type": "plain_text",
+            "valueSha256": "e85c5195b5dcc29e439fdf1a5d3f53644ef01abbdb95edc20ddbf20d215c9711"
+          },
+          {
+            "name": "SNAPSHOT_PROBE_CRON",
+            "type": "plain_text",
+            "valueSha256": "d045e0d02d29d2fe55b5a94d41b8ac16140b4b3644181079b8a6a6ffe2a744c6"
+          },
+          {
+            "name": "SNAPSHOT_PROBE_TIME",
+            "type": "plain_text",
+            "valueSha256": "adba60f2b036532016e9e57cdee19de938b9f2f6af49f327a7f850cecc471f91"
+          },
+          {
+            "name": "SNAPSHOT_STAGE_ID",
+            "type": "plain_text",
+            "valueSha256": "a395b03ab7bbaf313bbaae401bbb68a23dc130f0cd2f4f071815b2d1e055f7ee"
+          }
+        ],
+        "runtime": {
+          "compatibility_date": "2026-10-22",
+          "compatibility_flags": [
+            "nodejs_compat"
+          ],
+          "limits": {
+            "cpu_ms": 300000,
+            "subrequests": 100000
+          }
+        }
+      }
+    },
+    {
+      "ordinal": 3,
+      "label": "settings",
+      "method": "GET",
+      "httpStatus": 200,
+      "bytes": 1784,
+      "sha256": "0d3d8394e047fc17eac085ab42be612a7a0dfe420ca863153e67275443685636",
+      "proof": {
+        "bindings": [
+          {
+            "name": "CORPUS",
+            "type": "r2_bucket",
+            "bucket_name": "civicsignal-v1-stage-corpus-20261022"
+          },
+          {
+            "name": "SNAPSHOT",
+            "type": "workflow",
+            "workflow_name": "civicsignal-v1-stage-snapshot-20261022",
+            "class_name": "CorpusSnapshot"
+          },
+          {
+            "name": "SNAPSHOT_PINNED_COMMIT",
+            "type": "plain_text",
+            "valueSha256": "13dfa4ce62709cf0bb5d42c6442c84bdb66c971db3863f463b5676075d44bc0f"
+          },
+          {
+            "name": "SNAPSHOT_PINNED_DATE",
+            "type": "plain_text",
+            "valueSha256": "e85c5195b5dcc29e439fdf1a5d3f53644ef01abbdb95edc20ddbf20d215c9711"
+          },
+          {
+            "name": "SNAPSHOT_PROBE_CRON",
+            "type": "plain_text",
+            "valueSha256": "d045e0d02d29d2fe55b5a94d41b8ac16140b4b3644181079b8a6a6ffe2a744c6"
+          },
+          {
+            "name": "SNAPSHOT_PROBE_TIME",
+            "type": "plain_text",
+            "valueSha256": "adba60f2b036532016e9e57cdee19de938b9f2f6af49f327a7f850cecc471f91"
+          },
+          {
+            "name": "SNAPSHOT_STAGE_ID",
+            "type": "plain_text",
+            "valueSha256": "a395b03ab7bbaf313bbaae401bbb68a23dc130f0cd2f4f071815b2d1e055f7ee"
+          }
+        ],
+        "runtime": {
+          "compatibility_date": "2026-10-22",
+          "compatibility_flags": [
+            "nodejs_compat"
+          ],
+          "limits": {
+            "cpu_ms": 300000,
+            "subrequests": 100000
+          }
+        }
+      }
+    },
+    {
+      "ordinal": 4,
+      "label": "schedules",
+      "method": "GET",
+      "httpStatus": 200,
+      "bytes": 95,
+      "sha256": "f790ef7bc5987caf4c8a9c8cc045be8bf6ebc5ad92528def368ba7fd3b8ce800",
+      "proof": {
+        "crons": [],
+        "emptyCalendar": true
+      }
+    },
+    {
+      "ordinal": 5,
+      "label": "workflow",
+      "method": "GET",
+      "httpStatus": 200,
+      "bytes": 501,
+      "sha256": "b8446439a96604c25688ac507dc4cb4ed5c1974231644613cd37a2dcbde4f0dc",
+      "proof": {
+        "workflowId": "f69bdbef-2554-44e1-b683-52eed805acc6",
+        "name": "civicsignal-v1-stage-snapshot-20261022",
+        "script_name": "civicsignal-v1-stage-snapshot-20261022",
+        "class_name": "CorpusSnapshot",
+        "nativeScheduleCount": null,
+        "nativeSchedulesObserved": false
+      }
+    },
+    {
+      "ordinal": 6,
+      "label": "bucket",
+      "method": "GET",
+      "httpStatus": 200,
+      "bytes": 212,
+      "sha256": "876e1f9181f43b51e845f0fcb43eaacdc981d04608e7763126737d30deb342f0",
+      "proof": {
+        "name": "civicsignal-v1-stage-corpus-20261022",
+        "creation_date": "2026-10-23T02:05:14.824Z"
+      }
+    }
+  ],
+  "conclusion": {
+    "requests": 6,
+    "wireAttempts": 6,
+    "completedResponses": 6,
+    "responseBytesRead": 6513,
+    "boundedResponseBytesRead": 6513,
+    "responseByteCountComplete": true,
+    "responseBytesReserved": 1572864,
+    "credentialFileReads": 1,
+    "credentialBytesRead": 772,
+    "tokenSelections": 1,
+    "observedExpiry": "2026-10-31T23:05:52.847Z",
+    "managementReadinessObserved": true,
+    "calendarEmpty": true,
+    "nativeWorkflowCalendarEmpty": null,
+    "nativeSchedulesObserved": false,
+    "namespaceAbsenceVerified": false,
+    "instanceAbsenceVerified": false,
+    "sourceFreshnessVerified": false,
+    "scheduledPublicationProven": false,
+    "executionReady": false
+  },
+  "owner": {
+    "passed": true,
+    "exitCode": 0,
+    "ownedProcessSettled": true,
+    "timedOut": false,
+    "logBoundExceeded": false,
+    "localFailure": false,
+    "receiptPersistenceUncertain": false,
+    "sourcePinsRechecked": true
+  },
+  "retainedFiles": [
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/candidate-manifest.json",
+      "bytes": 8844,
+      "sha256": "9bdb7fd3d322a4076e6f8fed7f5a3bad4af6768c2a2059b0d82c6b62597491cb"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/reviewed.json",
+      "bytes": 1029,
+      "sha256": "3e630b84dfc8b696ea09a1e29014c9b6535d7f3f22ed036c478a98d84f0044a5"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/operation.started.json",
+      "bytes": 303,
+      "sha256": "5b61620b3346dac96cdd220a99c0f0d188a6b899bce9703ff01a8222c54d77a8"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/requests.jsonl",
+      "bytes": 5489,
+      "sha256": "d3b4c5ea5fbe5735a869212f3d5afd1821e235874f8480dfca3b984d083f5ee1"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/result.json",
+      "bytes": 4929,
+      "sha256": "4d7afb7902ecb697c1d2d23d23c675dd8393bbf64e36404d6858a9a0f6f87b7e"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/result.accepted.json",
+      "bytes": 160,
+      "sha256": "4e35880285dc5b7970f7f76ea78d6852ec7088c3741ef6ddf3f63635603498e3"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/operation-result.json",
+      "bytes": 1196,
+      "sha256": "4dad0e5be31c2595f4fca6de4457df674e5bc9a722678b25684cca8bb889e40e"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/operation.accepted.json",
+      "bytes": 120,
+      "sha256": "e3df3aba929e008cad39d25f883f6113e63f89eb3f8f392cf55ffc6ab22e1641"
+    },
+    {
+      "path": "dist/release/staging/first-publication-preflight-20261031-v2/operation.log",
+      "bytes": 166,
+      "sha256": "731d6a4107f7a6ad7430c3dc000a82585725d2b0820d5313e9ba3a6eda0606df"
+    }
+  ],
+  "remoteMutations": 0,
+  "sourceRequests": 0,
+  "servingRequests": 0,
+  "generationRequests": 0,
+  "automaticRetry": false,
+  "automaticRefresh": false,
+  "firstPublicationApproved": false,
+  "limitations": [
+    "The six management reads establish only their observed deployment, binding, runtime, Workflow and bucket facts.",
+    "Worker schedules are empty. The optional native Workflow schedule field is absent, so its calendar is unknown.",
+    "Namespace/instance absence, current source admission, canonical backup parity and first publication remain unproved.",
+    "No deployment, event, Workflow creation, source request or production action follows from this read-only observation."
+  ]
+}
