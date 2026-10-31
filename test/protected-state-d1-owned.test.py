@@ -1,6 +1,6 @@
 """Local-only operator/capture tests. All credentials and source files are synthetic."""
 from pathlib import Path
-import datetime,hashlib,importlib.util,json,os,shutil,subprocess,sys,tempfile,time,unittest
+import datetime,errno,hashlib,importlib.util,json,os,shutil,signal,subprocess,sys,tempfile,time,unittest
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parent.parent
 spec=importlib.util.spec_from_file_location('owned_under_test',ROOT/'scripts/protected-state-d1-owned.py');op=importlib.util.module_from_spec(spec);spec.loader.exec_module(op)
@@ -156,13 +156,82 @@ class CaptureTests(unittest.TestCase):
  def test_actual_short_process_and_minimal_environment(self):
   r=self.capture('import os;print(sorted(os.environ))');self.assertTrue(op.successful(r));self.assertNotIn('RESTORE_TOKEN',(self.root/'process.log').read_text());self.assertEqual((self.root/'process.log').stat().st_mode&0o777,0o600)
  def test_actual_deadline_cancels_owned_process(self):
-  r=self.capture('import time;time.sleep(60)',timeout=.1);self.assertTrue(r['timedOut']);self.assertTrue(r['ownedProcessSettled'])
+  r=self.capture('import time;time.sleep(60)',timeout=.1);self.assertTrue(r['timedOut'],r);self.assertTrue(r['ownedProcessSettled'],r)
  def test_actual_log_cap(self):
-  r=self.capture('print("x"*100000)',timeout=2,max_bytes=128);self.assertTrue(r['logBoundExceeded']);self.assertTrue(r['ownedProcessSettled']);self.assertEqual((self.root/'process.log').stat().st_size,128)
+  r=self.capture('print("x"*100000)',timeout=2,max_bytes=128);self.assertTrue(r['logBoundExceeded'],r);self.assertTrue(r['ownedProcessSettled'],r);self.assertEqual((self.root/'process.log').stat().st_size,128)
  def test_actual_log_io_failure_settles_group(self):
   def fail(stream,block):raise OSError('PRIVATE')
-  r=self.capture('import time;print("ready",flush=True);time.sleep(60)',timeout=2,write_chunk=fail);self.assertTrue(r['localFailure']);self.assertTrue(r['ownedProcessSettled'])
+  r=self.capture('import time;print("ready",flush=True);time.sleep(60)',timeout=2,write_chunk=fail);self.assertTrue(r['localFailure'],r);self.assertTrue(r['ownedProcessSettled'],r)
  def test_exclusive_log_is_not_overwritten(self):
   (self.root/'process.log').write_bytes(b'preserved');r=self.capture('print("never")',timeout=2);self.assertTrue(r['localFailure']);self.assertIsNone(r['childPid']);self.assertEqual((self.root/'process.log').read_bytes(),b'preserved')
+ def cleanup_probe_fixture(self,mode):
+  # Real bounded pipe capture with a deterministic process-group syscall seam.
+  # No fake PID ever reaches the operating system's signal implementation.
+  read_fd,write_fd=os.pipe();os.write(write_fd,b'x'*256);os.close(write_fd)
+  stdout=os.fdopen(read_fd,'rb');state={'clock':0.0,'probes':0,'signals':[],'killed':False,'polls':0}
+  class Child:
+   pid=2147483647;args=['synthetic-owned-child'];returncode=None
+   def __init__(self):self.stdout=stdout
+   def poll(self):
+    state['polls']+=1
+    if state['signals']:self.returncode=-signal.SIGTERM
+    return self.returncode
+  child=Child()
+  def killpg(pid,signum):
+   self.assertEqual(pid,child.pid)
+   if signum:
+    state['signals'].append(signum)
+    if signum==signal.SIGKILL:state['killed']=True
+    return
+   state['probes']+=1
+   if mode=='persistent' or mode=='transient' and state['probes']==1:
+    raise PermissionError(errno.EPERM,'PRIVATE synthetic probe details')
+   if mode=='descendant' and not state['killed']:return
+   raise ProcessLookupError(errno.ESRCH,'PRIVATE synthetic absent group')
+  def sleep(seconds):state['clock']+=seconds
+  try:
+   with patch.object(cap.subprocess,'Popen',return_value=child),patch.object(cap.os,'killpg',side_effect=killpg),patch.object(cap.time,'monotonic',side_effect=lambda:state['clock']),patch.object(cap.time,'sleep',side_effect=sleep):
+    result=self.capture('synthetic',timeout=2,max_bytes=128)
+   return result,state,stdout.closed
+  finally:stdout.close()
+ def test_transient_group_probe_permission_error_requires_later_absence(self):
+  r,state,closed=self.cleanup_probe_fixture('transient')
+  self.assertTrue(r['logBoundExceeded'],r);self.assertTrue(r['ownedProcessSettled'],r)
+  self.assertTrue(closed);self.assertGreaterEqual(state['probes'],2)
+  self.assertEqual(r['cleanupFailure'],{'stage':'group-probe','errorClass':'PermissionError','errno':errno.EPERM})
+  self.assertTrue(r['cleanupRecovered']);self.assertNotIn('PRIVATE',json.dumps(r))
+ def test_persistent_group_probe_permission_error_never_means_absence(self):
+  r,state,closed=self.cleanup_probe_fixture('persistent')
+  self.assertTrue(r['logBoundExceeded'],r);self.assertFalse(r['ownedProcessSettled'],r)
+  self.assertTrue(r['localFailure'],r);self.assertEqual(r['localFailureCode'],'owned-process-cleanup-uncertain')
+  self.assertTrue(closed);self.assertIn(signal.SIGKILL,state['signals']);self.assertLessEqual(state['clock'],10)
+  self.assertEqual(r['cleanupFailure']['errno'],errno.EPERM);self.assertNotIn('PRIVATE',json.dumps(r))
+ def test_remaining_descendant_group_is_killed_after_direct_child_reap(self):
+  r,state,closed=self.cleanup_probe_fixture('descendant')
+  self.assertTrue(r['logBoundExceeded'],r);self.assertTrue(r['ownedProcessSettled'],r)
+  self.assertEqual(r['exitCode'],-signal.SIGTERM);self.assertTrue(closed)
+  self.assertEqual(state['signals'],[signal.SIGTERM,signal.SIGKILL]);self.assertGreaterEqual(state['clock'],5)
+  self.assertLessEqual(state['clock'],10)
+ @unittest.skipUnless(hasattr(os,'fork'),'requires POSIX process groups')
+ def test_actual_log_cap_waits_for_term_resistant_descendant(self):
+  program='''import os,signal,time
+read_fd,write_fd=os.pipe()
+pid=os.fork()
+if pid==0:
+ signal.signal(signal.SIGTERM,signal.SIG_IGN)
+ os.close(read_fd)
+ os.write(write_fd,b"ready")
+ os.close(write_fd)
+ time.sleep(.3)
+ os._exit(0)
+os.close(write_fd)
+os.read(read_fd,5)
+os.close(read_fd)
+print("x"*100000,flush=True)
+time.sleep(60)
+'''
+  r=self.capture(program,timeout=2,max_bytes=128)
+  self.assertTrue(r['logBoundExceeded'],r);self.assertTrue(r['ownedProcessSettled'],r)
+  self.assertEqual(r['exitCode'],-signal.SIGTERM);self.assertEqual((self.root/'process.log').stat().st_size,128)
 
 if __name__=='__main__':unittest.main()

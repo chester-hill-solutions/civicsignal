@@ -1,5 +1,5 @@
 """Bounded owned CLI process capture. No credentials, Cloudflare API or retry."""
-import os, selectors, signal, subprocess, time
+import errno, os, selectors, signal, subprocess, time
 
 def capture_owned(argv, cwd, env, log, timeout=180, max_bytes=2097152, write_chunk=None):
     result = {'exitCode': None, 'timedOut': False, 'logBoundExceeded': False, 'localFailure': False,
@@ -45,44 +45,96 @@ def capture_owned(argv, cwd, env, log, timeout=180, max_bytes=2097152, write_chu
         # Any failure after spawn must settle this owned process group. Never
         # leave a new-session Wrangler child outside the finite monitor.
         if child is not None:
-            try:
-                def group_exists():
-                    try:
-                        os.killpg(child.pid, 0)
+            cleanup_failures = []
+            cleanup_failure_count = 0
+            settled = False
+
+            def observe_failure(stage, error):
+                nonlocal cleanup_failure_count
+                cleanup_failure_count = min(255, cleanup_failure_count + 1)
+                metadata = {
+                    'stage': stage,
+                    'errorClass': type(error).__name__ if type(error) in (
+                        PermissionError, ProcessLookupError, InterruptedError,
+                        OSError, RuntimeError, subprocess.TimeoutExpired,
+                    ) else 'OtherError',
+                    'errno': error.errno if isinstance(error, OSError) and isinstance(error.errno, int) and error.errno in errno.errorcode else None,
+                }
+                if metadata not in cleanup_failures and len(cleanup_failures) < 8:
+                    cleanup_failures.append(metadata)
+
+            def poll_child():
+                try:
+                    return child.poll() is not None
+                except Exception as error:
+                    observe_failure('child-poll', error)
+                    return False
+
+            def group_exists():
+                try:
+                    os.killpg(child.pid, 0)
+                    return True
+                except ProcessLookupError:
+                    return False
+                except Exception as error:
+                    # EPERM is unknown, never evidence that the group is absent.
+                    observe_failure('group-probe', error)
+                    return None
+
+            def signal_group(signum, stage):
+                try:
+                    os.killpg(child.pid, signum)
+                except ProcessLookupError:
+                    pass
+                except Exception as error:
+                    observe_failure(stage, error)
+
+            def wait_group(until):
+                while True:
+                    reaped = poll_child()
+                    present = group_exists()
+                    if reaped and present is False:
                         return True
-                    except ProcessLookupError:
+                    remaining = until - time.monotonic()
+                    if remaining <= 0:
                         return False
+                    time.sleep(min(0.05, remaining))
 
-                def wait_group(seconds):
-                    until = time.monotonic() + seconds
-                    while True:
-                        child.poll()  # Reap the direct child before checking.
-                        if not group_exists():
-                            return True
-                        if time.monotonic() >= until:
-                            return False
-                        time.sleep(min(0.05, max(0, until - time.monotonic())))
-
-                if child.poll() is None or result['timedOut'] or result['localFailure'] or result['logBoundExceeded'] or group_exists():
-                    try:
-                        os.killpg(child.pid, signal.SIGTERM)
-                    except ProcessLookupError:
-                        pass
+            try:
+                cleanup_started = time.monotonic()
+                reaped = poll_child()
+                settled = group_exists() is False and reaped
+                if not settled:
+                    signal_group(signal.SIGTERM, 'group-term')
                     # The direct child exiting does not establish that its
                     # descendants exited. Escalate against the remaining owned
-                    # process group even after the direct child was reaped.
-                    if not wait_group(5):
-                        try:
-                            os.killpg(child.pid, signal.SIGKILL)
-                        except ProcessLookupError:
-                            pass
-                        if not wait_group(5):
-                            raise RuntimeError('owned-process-group-not-settled')
+                    # group after reap; observation errors consume these same
+                    # five-second TERM and five-second KILL windows.
+                    settled = wait_group(cleanup_started + 5)
+                    if not settled:
+                        signal_group(signal.SIGKILL, 'group-kill')
+                        settled = wait_group(cleanup_started + 10)
+            except Exception as error:
+                observe_failure('group-settlement', error)
+            finally:
+                # A group-probe/signal failure must not skip the independent
+                # direct-child reap and stdout closure.
+                reaped = poll_child()
                 result['exitCode'] = child.returncode
-                if child.stdout:
-                    child.stdout.close()
-            except Exception:
+                try:
+                    if child.stdout:
+                        child.stdout.close()
+                except Exception as error:
+                    observe_failure('stdout-close', error)
+                    settled = False
+                settled = settled and reaped
+            if not settled:
                 result['localFailure'] = True
                 result['localFailureCode'] = 'owned-process-cleanup-uncertain'
                 result['ownedProcessSettled'] = False
+            if cleanup_failures:
+                result['cleanupFailure'] = cleanup_failures[0]
+                result['cleanupFailures'] = cleanup_failures
+                result['cleanupFailureCount'] = cleanup_failure_count
+                result['cleanupRecovered'] = settled
     return result

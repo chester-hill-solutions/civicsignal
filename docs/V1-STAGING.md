@@ -5,8 +5,9 @@ verification, complete vector backup and manual hosted Workflow parity are
 complete. API v7 passed the native-provider repair and cold/warm recheck; the
 original serving ledger is **159/160**. Positive Zen generation, broad serving
 acceptance, scheduled first publication and production migration remain open.
-The [release crosswalk](V1-RELEASE.md#current-closure-crosswalk--2026-10-24) is the
-current status; the progress paragraphs below retain earlier staging history and
+The [master plan](PLAN.md) defines current scope and next steps.
+The [release crosswalk](V1-RELEASE.md#current-closure-crosswalk--2026-10-24) retains
+dated evidence; the progress paragraphs below retain earlier staging history and
 approved bounds. The [scheduled-publication review](V1-SCHEDULED-PUBLICATION-REVIEW.md)
 explains why the retained existing-publication probe cannot close that gate.
 
@@ -28,7 +29,8 @@ deployment or resume followed. See the
 the [current quota observation](evidence/2026-10-22/stage-source-head-quota-exhausted.json).
 The [setup receipt](evidence/2026-10-22/stage-setup.json) records the isolated resources.
 Hosted acceptance remains incomplete until each phase has its required evidence.
-The production release decision remains [V1-RELEASE.md](V1-RELEASE.md).
+The [master plan](PLAN.md) governs production release work and its decision gates.
+The [release evidence ledger](V1-RELEASE.md) retains required evidence and dated outcomes.
 The completed copy jobs resumed from their preserved checkpoints after five disk samples
 over two minutes all exceeded 5 GiB. Their 1 GiB stop guards have since exited.
 The text client completed a reviewed protocol handoff after its prior owner

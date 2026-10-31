@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "kind": "snapshot-qualification-proposal-local-validation-successor",
+  "recordedAt": "2026-10-31T20:58:10.347117+00:00",
+  "planWorkPackage": "MP-02",
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/6",
+  "sourcePins": [
+    {
+      "path": "scripts/lib/snapshot-qualification-proposal.ts",
+      "bytes": 24148,
+      "sha256": "3b2a89338e6e13be9f2cdffec8af9528c3f28ed37d4be1715972985baac1c26c"
+    },
+    {
+      "path": "scripts/prepare-snapshot-qualification.ts",
+      "bytes": 1166,
+      "sha256": "320df1ff57bf37325ea36b968927165130f636d296e7d4d6149d56665f2ef739"
+    },
+    {
+      "path": "test/snapshot-qualification-proposal.test.ts",
+      "bytes": 17875,
+      "sha256": "ba276fec348685e96bd4315e5d5a1ae632fa4d6d8c3d36e03ebbf199e7b6f661"
+    }
+  ],
+  "unchangedAccountingPin": {
+    "path": "docs/evidence/2026-10-31/snapshot-reference-accounting.json",
+    "bytes": 5006,
+    "sha256": "af9017c33e3f6c29eb71304b69cef617cc4aa6b1b20cfde0fa05d457274c9186"
+  },
+  "predecessor": {
+    "path": "docs/evidence/2026-10-31/snapshot-proposal-local-validation.json",
+    "bytes": 2865,
+    "sha256": "92230cc8507b1b7e9eb717a396999df40377a7b2ebd66ddfab98a42df72eb76b"
+  },
+  "reviewFinding": {
+    "previousUncheckedField": "storage.metadataAccountingBytes",
+    "reproducedAcceptedDeclarationBytes": 1,
+    "fix": "Reject below known UTF8 custom-metadata key/value bytes without treating local JSON sidecars as provider accounting."
+  },
+  "metadata": {
+    "logicalPayloadObjects": 483,
+    "sha256KeyUtf8Bytes": 6,
+    "sha256ValueUtf8Bytes": 64,
+    "knownCustomMetadataUtf8Floor": 33810,
+    "localSidecarRepresentationBytes": 18711,
+    "providerMetadataAccountingQualified": false
+  },
+  "focusedTests": {
+    "passed": 48,
+    "failed": 0,
+    "addedBoundaryCases": 3
+  },
+  "compilerChecks": [
+    "typecheck:bun",
+    "typecheck:tooling"
+  ],
+  "independentReview": {
+    "exactSourcePinsChecked": true,
+    "rejectedDeclarationBytes": [
+      1,
+      33809
+    ],
+    "acceptedKnownFloorBytes": 33810,
+    "verdict": "approved for offline preparation only",
+    "remainingHighConfidenceDefects": 0
+  },
+  "rawLocalReport": {
+    "path": "dist/evaluation/2026-10-31-mp02/proposal-metadata-final.json",
+    "bytes": 17350,
+    "sha256": "b7550d940d79916a43169c14d7598205cdf225e7be1f787f2d00f90276efbf25"
+  },
+  "preparedOnly": true,
+  "executionReady": false,
+  "executionApproved": false,
+  "runtimeBudgetsEnforced": false,
+  "providerMetadataAccountingQualified": false,
+  "capacityQualified": false,
+  "networkRequests": 0,
+  "credentialBytesRead": 0,
+  "limitations": [
+    "The successful-pass baseline does not establish a complete enforceable aggregate execution ceiling.",
+    "Owned operator, retry/duplicate/reconstruction accounting, fresh evidence, guards, verification, and separate concrete execution decision remain required.",
+    "Full integrated successor qualification and clean Linux CI remain pending."
+  ]
+}

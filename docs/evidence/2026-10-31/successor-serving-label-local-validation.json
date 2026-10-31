@@ -1,0 +1,93 @@
+{
+  "format": 1,
+  "kind": "successor-serving-label-local-validation",
+  "recordedAt": "2026-10-31T20:56:09.316344+00:00",
+  "planWorkPackage": "MP-03",
+  "requirementIds": [
+    "V1-07",
+    "V1-08"
+  ],
+  "sourcePins": [
+    {
+      "path": "src/eval/data/v1-successor-questions.json",
+      "bytes": 110980,
+      "sha256": "de26277976dfba63dc6dba1a3454cfed613b68d9e000ea4410cd007e5968d929"
+    },
+    {
+      "path": "test/eval-v1-successor.test.ts",
+      "bytes": 17868,
+      "sha256": "d2a009d27a64723a33244fe9941197d3a5beb91895079528b2ceb46c04cee20a"
+    }
+  ],
+  "datasetVersion": "v1-successor-2026-10-31",
+  "datasetParsedSerializationSha256": "d3f43f117da958f19c3cf1c43314dcd764be7065bc1a58bd7dc4b0857fb94631",
+  "sourceRevision": "0507465393c224c0491fc8c17c88340217acc656",
+  "parserVersion": "statutes-v2",
+  "sourceVerification": {
+    "verified": 48,
+    "rejected": 0,
+    "immutableXmlBlobs": 24
+  },
+  "selection": {
+    "questions": 64,
+    "positiveQuestions": 48,
+    "positiveProvisionPairs": 24,
+    "positiveActGroups": 12,
+    "negativeQuestions": 16,
+    "negativeScopePairs": 8,
+    "split": "holdout",
+    "exactProvisionParserBypasses": 0
+  },
+  "formalPriorSetsExamined": {
+    "v1": 86,
+    "legacyPositive": 36,
+    "legacyNegative": 25
+  },
+  "formalOverlap": {
+    "ids": 0,
+    "normalizedQuestionText": 0,
+    "pairIds": 0,
+    "groups": 0,
+    "goldRowIds": 0,
+    "actTitles": 0
+  },
+  "focusedTests": {
+    "successor": 21,
+    "existingV1": 14,
+    "passed": 35,
+    "failed": 0
+  },
+  "compilerChecks": [
+    "typecheck:bun",
+    "typecheck:tooling"
+  ],
+  "fullSourceVerificationReceipt": {
+    "path": "docs/evidence/2026-10-31/successor-label-source-verification.json",
+    "bytes": 1903,
+    "sha256": "e4ff310d531e3dcbd9fb312d8a81f673ef3f7c0a1687e5f395e7419c0680c270"
+  },
+  "localSelectionArtifact": {
+    "path": "dist/evaluation/2026-10-31-successor-labels/source-selection-final-v2.json",
+    "bytes": 37487,
+    "sha256": "813623a934ff2f0bdd76cbaf835594c3205035450c766a08a2077f4025b4e1f3"
+  },
+  "defaultsChanged": false,
+  "oldLabelsChanged": false,
+  "servingPolicyChanged": false,
+  "thresholdsChanged": false,
+  "hostedCalls": 0,
+  "realProviderCalls": 0,
+  "generatedAnswerReview": false,
+  "productionQualified": false,
+  "limitations": [
+    "Non-overlap is checked against the committed formal development and v1 question sets, not every past ad hoc probe, external corpus, or model training data.",
+    "Negative source categories overlap earlier controls; the requested source/question text differs. Explicit-source negatives do not represent the full difficulty of ambiguous user questions.",
+    "The positive selection is deliberately source-checked, not a random sample or a proof of population accuracy.",
+    "Parser-seam CI fixtures use unchanged real Sections in synthetic small wrappers; the full original XML blob proof is the separate local verify-only report.",
+    "Citation URLs derive from the parser; no website was fetched.",
+    "Labels pin the historical source revision and do not prove deployment presence, freshness, model quality or generated-answer support.",
+    "Acceptance policy and a separately bounded serving execution remain required decisions; use for tuning invalidates holdout independence.",
+    "New numerical acceptance policy, fresh target provenance, and a separately bounded execution decision remain required.",
+    "Exact-source full local and clean Linux qualification remain pending."
+  ]
+}

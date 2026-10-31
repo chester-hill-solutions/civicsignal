@@ -1,4 +1,4 @@
-import type { CorpusItem, CorpusPolicy, RawCorpusItem } from "@chester-hill-solutions/corpus";
+import { emitCorpusItem, type CorpusItem, type CorpusPolicy, type RawCorpusItem } from "@chester-hill-solutions/corpus";
 import { POLICIES_BY_ID } from '../corpora/policies';
 
 import { gdeltCorpus, newsCorpus, statutesCorpus } from '../corpora/adapters';
@@ -200,7 +200,7 @@ export async function buildBrief(
       coverage.status = raw.length ? 'supported' : 'no-results';
       coverage.reason = raw.length ? 'Retrieved from the published corpus.' : 'The configured corpus returned no accepted matches.';
       for (const item of raw) {
-        items.push(sanitize(policy, item));
+        items.push(emitCorpusItem(policy, item));
       }
     }
     sectionItems[section.key] = items;
@@ -221,7 +221,7 @@ export async function buildBrief(
       // the live one wins over a repealed one when both are present.
       const match =
         candidates.find((r) => r.extra?.['inForce'] === true) ?? candidates[0];
-      if (match) item = sanitize(statutePolicy, match);
+      if (match) item = emitCorpusItem(statutePolicy, match);
     }
     citation = {
       act: request.citation.act,
@@ -377,39 +377,6 @@ function bucket(
       share: Math.round((count / total) * 1000) / 1000,
     }))
     .sort((a, b) => b.count - a.count || (a.code < b.code ? -1 : 1));
-}
-
-/**
- * Local sanitiser mirroring `emitCorpusItem`, kept here so the brief never holds a
- * policy-less item even for a moment. Kept deliberately small and mirrored by
- * `src/licensing.ts`; the tests assert both stay in step.
- */
-function sanitize(policy: CorpusPolicy, raw: RawCorpusItem): CorpusItem {
-  const item: CorpusItem = {
-    corpusId: raw.corpusId,
-    kind: raw.kind,
-    id: raw.id,
-    title: raw.title,
-    citationUrl: raw.citationUrl,
-    publishedAt: raw.publishedAt,
-    source: raw.source,
-    language: raw.language,
-    jurisdiction: raw.jurisdiction,
-    topics: raw.topics,
-    entities: raw.entities,
-    sentiment: raw.sentiment,
-    extra: raw.extra,
-    redistribution: policy.redistribution,
-    attribution: policy.attribution,
-  };
-  if (policy.allowFullText && raw.body !== undefined) item.body = raw.body;
-  if (raw.excerpt !== undefined && policy.excerptMaxChars > 0) {
-    item.excerpt =
-      raw.excerpt.length <= policy.excerptMaxChars
-        ? raw.excerpt
-        : `${raw.excerpt.slice(0, policy.excerptMaxChars - 1).trimEnd()}…`;
-  }
-  return item;
 }
 
 export function buildSentimentSeries(items: RawCorpusItem[]): SentimentPoint[] {

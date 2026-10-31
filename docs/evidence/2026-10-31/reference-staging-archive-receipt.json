@@ -1,0 +1,1956 @@
+{
+  "recordedAt": "2026-10-23T03:11:01.024683+00:00",
+  "scope": "Only completed local .snapshot-staging intermediate; final snapshot artifacts and reports unchanged",
+  "files": 486,
+  "originalBytes": 762314144,
+  "archive": "snapshot-staging.tar.gz",
+  "archiveBytes": 130234765,
+  "archiveSha256": "ba24287fd1474b5d419d6fc20af6d225e72582bb146bb87360d212459c41a703",
+  "allDecompressedBytesVerified": true,
+  "entries": {
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-0.jsonl": {
+      "bytes": 8162917,
+      "sha256": "3b69ba818fca858c55d051dfc05795357f6d4e35745ba01eb75025edb5613362"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-0.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5b87586b83d59f378dda352ac5c95b86a4aa3db38d05cce7598428a0e5451866"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-1.jsonl": {
+      "bytes": 8266095,
+      "sha256": "edb44333e338fd59188892b03d25f3c1e1407e36f98eb65efbdc9427839b150d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-1.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "719f7b7c4213c958473e2550d9e011c3c276a3536fb51cdafe06a3f1e0e704fb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-10.jsonl": {
+      "bytes": 6196082,
+      "sha256": "47632ac9f4732c777bd3c8e2f9c41aec463d090b984c8ae67444485efa6d7eee"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-10.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "27f9c4216808ff1f83b547fcaa8b88e218112c00870d9cbc38be1ace949b0021"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-100.jsonl": {
+      "bytes": 3732158,
+      "sha256": "58ddd32ba565f4121607de3c7f3d6ab760888b0e3c02fbd524f7397eef748813"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-100.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4ea67be51639461a2cd04a9c11874d6eabd4b89bf0db0c5c15d3f0228e824fb3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-101.jsonl": {
+      "bytes": 4609113,
+      "sha256": "a613bbaab1015d415a3d099da01390fa5eb0ab8babb1a7e69bd9a472c64f6b5b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-101.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "b8f942f04691ddbf617dba8ec4c8e0825df7b57271ad85a74d41c0fad279f884"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-102.jsonl": {
+      "bytes": 3448975,
+      "sha256": "6b88d6f4a0b62d9e18f5b2f372eae5a605bb3ba0d4509b658f628262cfcd8b3a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-102.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a2f3b8fbb7478ac3c5dd856e929c3051e5e99961013f7f4b4aa73a703fb0fccb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-103.jsonl": {
+      "bytes": 3866479,
+      "sha256": "164be2acd3b435fd9bcb384266437183432d7847967f43dd47c35e486c35f99c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-103.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3eaa6c5cf88e9a4634ca8b064de3afa3522c5105ad54a63eb05d0c0ba07b6d9a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-104.jsonl": {
+      "bytes": 7271561,
+      "sha256": "8a2a63388711d5dd510ed12782b46582a7afbfbcef71ecdefa7de10a802b9bb8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-104.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "ba687f1e15f23b9a40a0b4b9eab4a24d52800534021210d6da221fa39b96c90c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-105.jsonl": {
+      "bytes": 6772092,
+      "sha256": "4cdaf33cc0bbe78a384a1e98343a36193af43d64545a9d2d95d3f97b758de697"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-105.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "e1ec9ce81b0b9eea594cf99242fb1336e521bdf7e6d4f3938b8577063adcfae8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-106.jsonl": {
+      "bytes": 8387905,
+      "sha256": "9705c371a4f8c97305c3b766c3140333376fce1093ae46ee7c4fdf4dffa6794a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-106.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "82ed18dd5ee1bd5e453e274d0076df5eaa24a937b758f92bc4930359fec27f9c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-107.jsonl": {
+      "bytes": 3229455,
+      "sha256": "f52398b0a4d97b9a3027185ff28826b2c1370fa977aeb918466af59ec298203a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-107.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f43d0f50150468b160f3bd843df047014ba29852b73cd9cc4aef76a905d9238d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-108.jsonl": {
+      "bytes": 2404620,
+      "sha256": "cdf74fe63dc44b24368efe875e99aaa7df1182418bb433df0d201d6649ca3a6f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-108.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f07ac72ff10550731b7ae75121cdbd9afb3dd9e6c4963345c4a3ae5c6a4956cc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-109.jsonl": {
+      "bytes": 1580051,
+      "sha256": "031fc86649c252203b5ee11807d9c723d3bd7ed6fb8ce1705f282bf42a51b26b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-109.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9a376ee340adc8c5dda399b3fbec4a13f9a4b326fec060e2c49af85210b233fc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-11.xml": {
+      "bytes": 14082787,
+      "sha256": "29c21e504f774dbece4e3151edd99112ef318dff97942982106c09392b2b9df9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-11.xml.metadata.json": {
+      "bytes": 77,
+      "sha256": "0ae93296c68ec2633a3659f6e9070e83632cc5b4ea3922472ee77cf3d5b0c623"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-110.jsonl": {
+      "bytes": 4494240,
+      "sha256": "5c845cba33f571bde7f030e3b73bef5bbf2abd46eed1231f0341f542aabfb364"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-110.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "45f11f4df13d627f3004806162208e68d48409e3446c15317ae813acccfe580d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-111.jsonl": {
+      "bytes": 2212415,
+      "sha256": "c023660a8e32f4595e1f4524e2c9b63ccd42d8144d7884b9d0c3b306bd742795"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-111.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0ead6c5dcbf5fa0281a70ae93e755763e9e2098421442e2ef154e4509e463ae4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-112.jsonl": {
+      "bytes": 976847,
+      "sha256": "0ac81094e634e9fb456486b3f53c01d6a93a2e1525e439baf2b73041f53a7a47"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-112.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0efc6ed6d01271853cbd329b51cdc6f056ac86285ca7986831d1f93c33997c8d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-113.jsonl": {
+      "bytes": 1854837,
+      "sha256": "76fe3c8782ace2aa4482abee03b651ac75ac7c18db439acd28dd6aa3aa60e5dd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-113.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "511796e1cf997f7f90b86f3d86cbcbe62a3cfd7d3db9a7119cad438428b12cdd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-114.jsonl": {
+      "bytes": 1770361,
+      "sha256": "7444c92a4236a49373d50d54448bbce00466e8bfa6d504ee1d088f93ce58e593"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-114.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "31c5f36b3ff5dc9b2c0fe76b0ad83ed09680b1747382b9a02004d08cfed77e6a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-115.jsonl": {
+      "bytes": 1618379,
+      "sha256": "2e28d86e4b3717429508b913e65f05411ce19549169fe378d8abcd2653e5d0f6"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-115.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "154473d201ff0c42d2ab0258ddb16ec4cd47ecd1d50ea4e3e193265a6c74ef04"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-116.jsonl": {
+      "bytes": 1757831,
+      "sha256": "be113f2b02bebeeef3cbeeff5bf4d2fa006c589e050c7aed1ff08f62176cc08d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-116.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4ed5d92f5da3ce2113facede8480716de2eb1e853d86361cfb648e22b5602ee2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-117.jsonl": {
+      "bytes": 2731061,
+      "sha256": "6111dbafe39e687ee7d76d82c8e945a2ff8769f6376446ba819620cf3a81aa97"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-117.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "c417c584c42432cef176f560b535810dadeadb4745858d5d041d3c7ee9915e54"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-12.jsonl": {
+      "bytes": 8075417,
+      "sha256": "30900753df8a8e3b29bb46a2f701af84edeae444635e1c66fed61647a61b8f19"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-12.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "dad90aaa680317effa3b419a8a772d79e4d10d5f324052653a3b97d51b94a38a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-13.jsonl": {
+      "bytes": 8348068,
+      "sha256": "3c8edfae107b5ad7597d5556f1bd685de90a91eb45bfde1b52c1a477de9b1c90"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-13.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "2d75fcb8a2b03550ef42f73dd1167b91ba679d142d95a2ad88e309cb1be01945"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-14.jsonl": {
+      "bytes": 8376639,
+      "sha256": "20bd869211807a948b680bf8f46ec38059268a6f792ae036ebb75c7996227fc4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-14.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "8d0d98871521f3ebe01ec27006b4a59d4d3dd2ceceeeef0d496fc57b9a7dfeef"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-15.jsonl": {
+      "bytes": 8158209,
+      "sha256": "48dc160a52f0b7631902d367b8d7cd70df984818c792462362ab5e1e1d2fa684"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-15.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "c39aec8bf685b1b9b48dbda29b4261c453c73324124ff570aaa5eead912d363c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-16.jsonl": {
+      "bytes": 8070190,
+      "sha256": "a579e5a6cf8bed1eec7af19e91f8c9754fd1561e1c99de0a56572c92e98c6f36"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-16.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f74ff6c044c335d82ff56a27ccdb8a3ff86a57fc0447354d4e756331b192fdf3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-17.jsonl": {
+      "bytes": 8196262,
+      "sha256": "fc05383895f223405db9281e18995316ddafb3334dc45b802fe4dddf1711f056"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-17.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "60922739a52003c5c35b87ef56de7dc11f5c41ef4ca7eb854cf54d3b8c2e0c46"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-18.jsonl": {
+      "bytes": 5375068,
+      "sha256": "b92b1d5b22e70b57b52d63391a0e83761d15b62e02af0b52b52d177d69ed889c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-18.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0f9fced0faadd4ab651cd35b31e7c0b33928773b188129b8c65844fd060ba527"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-19.jsonl": {
+      "bytes": 6679682,
+      "sha256": "90b2d56ba45821f57abe0bbe8f149606c40fbaade55b1c0477ef06c3947543df"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-19.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0670bb82165fa33196407258e3b035ec3a216447f3e9f52fef634237a10cf487"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-2.jsonl": {
+      "bytes": 8207576,
+      "sha256": "c8b398b6765d790447d4a2dbece626bca961d37d6e8b612eaea1c82fc6ea0d9a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-2.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "30c75c0d10d52ede69823c669c77667210a262e2eae642502d73bf340d661982"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-20.jsonl": {
+      "bytes": 3854076,
+      "sha256": "9d34db3a1c15477e0b65a51d23e05c0ea3f364e738be3999828859c0a5c1c9a8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-20.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "784d3f8b2b5fa87fe2b08be2bc1d461fd95a1da5a9991cacf3a461c7d303cab0"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-21.jsonl": {
+      "bytes": 7394277,
+      "sha256": "b89e2b3efdf5f0d249f494abc64f72dca58b5476cccb081375cc46d841efa13c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-21.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "bd39d6d724b2c6dbad927fa664a4beb343f6a839ffd2cbb335f970b3ce5e8ade"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-22.jsonl": {
+      "bytes": 8212655,
+      "sha256": "549d5010ee00a17be202111d943b78cdaa0e54260c48a66d19b577a3425919d4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-22.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7b4bfd67c5187b28bc53d42a434ce64b77084739202f7482f0feb0a7455a6f9b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-23.jsonl": {
+      "bytes": 2342043,
+      "sha256": "afe6dfe19f20944acaebb3b0a71d6e4259d044800e56b48524975c8413685fe8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-23.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4cb9f0a66838bb991ec64e5f155faa1771743da70f91338f9a8630979815c33f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-24.jsonl": {
+      "bytes": 1901678,
+      "sha256": "7116aa0da7be5c878d5fc5b67cd50d3052fa1afd166585c4fa90c6a70ff9d6e2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-24.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "72f67beb1d8159d936c758257a5482e6195e5812710c2ec1ac1cb151a67d313a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-25.jsonl": {
+      "bytes": 4486752,
+      "sha256": "f64103f57bb7db9167c839ed0b95642444438b53e31c3b63e950cfffc0d2f4a3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-25.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "6891b0d76adc105bccb450d2744b9f5ebd71e3ef935c371f2415cfec0a58077b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-26.jsonl": {
+      "bytes": 1198367,
+      "sha256": "c473373fb0378eecdafd775aee1efc60cc8167df13f2f5f5c158c165463c8241"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-26.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7f3db923f41b0e0c9822f2a507256f3a0b100008817a4e8071640ee86b86d864"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-27.jsonl": {
+      "bytes": 1509639,
+      "sha256": "8acde00d6b9f944e01149e4f3b458d49c463f2d0b74451386514cc4a2b816289"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-27.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "92a7a692af36710401df6cd14725bb200d43835efb485a68e083bfda8a428fe5"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-28.jsonl": {
+      "bytes": 803675,
+      "sha256": "176e89f38a192d84b3ac312523fd42ce0a8d703375ba55bf75ba5bfe45f43744"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-28.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4a9fe5e4a78fc6c746160d778a735fb420a883f3c84871113423b76c716f9091"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-29.jsonl": {
+      "bytes": 2615859,
+      "sha256": "e29433934c60978eb58c291fe2f33f35749d2dbd4ad5d192c9d6bf6c84d8e6fb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-29.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3ea5b4b068d80b60498fcd0920ea5fee08de7cb482d85f9c9438ea4b483ae2d5"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-3.jsonl": {
+      "bytes": 7999609,
+      "sha256": "599086b3edf14c5d96e72a11b004ebdf92262a1236bb68666dee2b412adb0810"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-3.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "ddab0cf1a2053020e278cfc9ecbcc1a6845b56fc3ea5631c7af90533f6de2dba"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-30.jsonl": {
+      "bytes": 1603493,
+      "sha256": "dd5a745275ecd624013595500d8ef5e98c64924de73c2cdc8cb7a128d54c6a2c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-30.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "87969b694f72313613298bb9aff00f4957cc06a2132afa8859ba9c21edb44e0d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-31.jsonl": {
+      "bytes": 1938591,
+      "sha256": "37c3981068a2fa7d29a10f1c0fe35b63654f6ab34e0b8eb66a2fce1c4adeeccb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-31.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "28a618d26df92c5dbf2cec73ce0714768a1db49ee7ac78313c00aef68fc70bfe"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-32.jsonl": {
+      "bytes": 6628112,
+      "sha256": "d40c122455c7fa5017b3bfb6c2a616df3343897da77373f5754fd315dfd0e38b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-32.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "414671db1f1e9040ee686ac4e4cccfd2c4084e6a2a70caba8e817b5da14b9dc6"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-33.jsonl": {
+      "bytes": 7315193,
+      "sha256": "ccb9003c7544798da1abf97373e50f64ce736e6f144a0b69417e92a77f529de0"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-33.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "2020e13c504ea95efa5a25093cbc4f8080d1658f15d8d660b8375deb3b56f1ad"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-34.jsonl": {
+      "bytes": 6647632,
+      "sha256": "b381f7c213ac6e1ca7b0945cd5c85f2fb17028ce42f7f1550705207236525b1e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-34.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3c15c337133ed57ed3e46628563134c42d9d8c73af75b11730073007511851d0"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-35.jsonl": {
+      "bytes": 3827200,
+      "sha256": "9daf16632078b432c7cd87150e7fe2bf58401c1ed6ab222ea825cb3892a686d1"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-35.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "134a28a47db5133fdc37ae82a400dac93a64407216caba68f6905e8715f67cab"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-36.jsonl": {
+      "bytes": 5789547,
+      "sha256": "0f2703bcbf6ff8d3daf759d186621116869e38a4e64e379cd8221e01f826c0a1"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-36.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5ac64ca8946008e1fd5ddc1044af8af05d90f9f3066b7d47b073081104f588e5"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-37.jsonl": {
+      "bytes": 7044971,
+      "sha256": "2f6436cf0b83a9c0967532b1e117d3b3a199eae1870c3bb59f2d69175316d08d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-37.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "57f1f84e958c91aad5c46dcda5613d6a3e9a07e361d06a6adf136ff97e58a190"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-38.jsonl": {
+      "bytes": 5751736,
+      "sha256": "0d9b55aac7df6e4accab8680c841f3c3faf811e3a8f9c771ec6a170598c46801"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-38.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "84040a21dd498645bb7277dd8f1b939c87d2f5d10dad511ea36f833eb2a8fbda"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-39.jsonl": {
+      "bytes": 8151521,
+      "sha256": "da08d90a00ad1f6c4764d35649fd12696c9a02d4e54518543f8b0a0161c3f594"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-39.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "23b7ecf37512f634fbe413560151e6a3244e1e80fb6323775f12b463e365eeca"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-4.jsonl": {
+      "bytes": 8382896,
+      "sha256": "ca1a8ad9a77bc6692dcf88fcb50100ae1f0191005e32a502c2b4b4b65c1adc97"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-4.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3d20d9afcfa08cd1298f515b510beedc3700deeb036a147e8f9061038f710bfd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-40.jsonl": {
+      "bytes": 7257962,
+      "sha256": "00aba4ca0569385f77783616bb37203127536e39c2ba96cf5ffb8974a76a111a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-40.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3713392d2c9cf5516f402863098ab9631444aa0dbe9f518c03ca337e5377e8f6"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-41.jsonl": {
+      "bytes": 8307371,
+      "sha256": "f10e873864402d9c38d6aa2c96e100e4fd53ec8353f00fa32ca7b2d7fa5d5484"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-41.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "b79436daf87b5c8610ffd0dd03447d127579d66aa2f18761d2962e4b8cce3b82"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-42.jsonl": {
+      "bytes": 7841927,
+      "sha256": "f813e8920cf0c97e5298d3384bcdf8d1b3b583b742586d9d829bef4aac4b70e9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-42.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a3e91eebac39acde6161450964373b57dfc46a1f7771c1cdf17b5ef0f233be06"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-43.jsonl": {
+      "bytes": 8375350,
+      "sha256": "57f0d3e8d3e90bf61d6efc658b18b46e947232955b78bd9046fc2f9c5ec68865"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-43.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "b23511beab4d6c3b32898cc6126d988ab6ad7fc59fa0067ec63d21251062d5b4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-44.jsonl": {
+      "bytes": 7110917,
+      "sha256": "4ab849c8af83c3b6501ec6740f2b5ba204808e73c5633161ee75628ae6455739"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-44.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "eb99dd4ed2e1434c870e8aa37386fb6b17713e866a6aa90473c4a49a6c9709c3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-45.jsonl": {
+      "bytes": 6278750,
+      "sha256": "9dde7fadf22bf08d0f96c60da6a194498e4fe9009da08531745ebda2634cf8a0"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-45.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "966b0fa3b1e065c194b242560ae33e01353b450536a3c1032670bcb866908b2a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-46.jsonl": {
+      "bytes": 2615872,
+      "sha256": "ebdf7f9b4f3068fdd18eeb8f3ffa467d815db1f1c42e37f7ea43179f5bf8ed91"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-46.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "ec89b5cbe2bf29ff91c8053c7bafa6f9cae71f05353f45d3adaec01bc86a9f11"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-47.jsonl": {
+      "bytes": 3101697,
+      "sha256": "bb67d310cfb98fcd0dc7cb0e3af9b2b387bc125792591d7270293616879e4143"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-47.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "81a02354fc2f9ffdbce48a69e13bbca315aa81133daa7f54a8f4a6cf9eae05a4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-48.jsonl": {
+      "bytes": 5903791,
+      "sha256": "0318425eccb4cdd6d7b422a6bcb92abbb1e5d9884145c1bd1bed3acadedd903b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-48.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a60d364961ef83fb41a3ab5a91e635913f283f4ba60ea3d269282b5c111b9e40"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-49.jsonl": {
+      "bytes": 3943532,
+      "sha256": "ee3929bd64960de99e109c5a7536e37605ce186efd4d97e9206913ea7b2b5a1c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-49.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "29f83b6b59199f5797b4464a33fc34715d31cbdcd40362b184eb11a366c596ca"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-5.jsonl": {
+      "bytes": 8125990,
+      "sha256": "bfe3298169785bee03d8b18a69de647a4d4d74460b8df0522d971dfb9dd8a249"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-5.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "c687c464b336806bcc56a6cc81c8659f7b6b94e09c5afadd933863e804faad1d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-50.jsonl": {
+      "bytes": 4317822,
+      "sha256": "65b536cdcd843b83dbca05a48e4ec62de1eca9260ec3eaa0339382071fe365ce"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-50.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a5038cfa8060087b66f2075c740f868a9378aec9cd149cf8e567dd9826baa91e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-51.jsonl": {
+      "bytes": 3337595,
+      "sha256": "1c9f298db8fcb6127cfed015e3fc25d0f57333e5d1368b80e3a8561941accdfd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-51.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "90d6cf50942324b6a67d9ece525b4049238ecd4a236ef64d01657dabd2bc588d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-52.jsonl": {
+      "bytes": 4662420,
+      "sha256": "ceacf39704ae1df66fd4b359c4ae0e3db004c22c4878bbe539e4bb6a5fa3a465"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-52.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a60194e69e7914c88b00af2cb556c9e94634bc50f042c16454e4379f11ba3dfc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-53.jsonl": {
+      "bytes": 3185656,
+      "sha256": "475c776bd8d64c828796bebfc85b728a1c8e69719f4ff2ff16ac91022a0421ca"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-53.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3a71d78374ee4a6f7644fe9e76633f200ff647d993ba7db1cda4f0ee087f2024"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-54.jsonl": {
+      "bytes": 5345561,
+      "sha256": "f0e52ac8f4302cfcb8175c41dc3ca2fa1500e549dc858233ab85e30451a70b7b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-54.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "1ea61cfa1afb6e8d1789c6c1a4c335a567736a9a2f5c2b8ec37e16e25b6ae2d2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-55.jsonl": {
+      "bytes": 6440171,
+      "sha256": "c2f417e5c51e870708b9081a4dec70898796097a3d42e69423197b429c251f53"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-55.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "168b31494701a955dcd247a568e4f2d2ae301fa6e1c4cba69de5fc2261e86a1c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-56.jsonl": {
+      "bytes": 8363647,
+      "sha256": "d27f9c88333383f16d532f1d146366f28f256d1a894ffa261ef556ad5c87f2c4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-56.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "8e1153aa54de1401155d933d41cbd5d8193eb0d3bdceba6e580c15d6c3f6d65d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-57.jsonl": {
+      "bytes": 4132069,
+      "sha256": "17bef11c6adac0f4a57b5fddfe6c585c9f0f3620a7e0698f4e25c8e00299a27e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-57.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5bfad6f62540d7f93703629fefc1b517e323d0b370027607cc4bb030c33ee9c9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-58.jsonl": {
+      "bytes": 7610667,
+      "sha256": "999bc97f53afc1fb8ace031bc2f6c52dd85f612502b32a8433302041b4d104d8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-58.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "37fdd9fb9ff0bf1abbcc43418a7ecac7defeb412e8e8130ab95ff7f7796fc54b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-59.jsonl": {
+      "bytes": 8105800,
+      "sha256": "56048dbc8e7d361683901e060fed6e9f3ed6420597d4d3c34cd89b0874f9ce61"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-59.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "89df8e180fd63029a6dec69734ae88a6874aa6beefd24d73f993af717f5cb04e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-6.jsonl": {
+      "bytes": 7615970,
+      "sha256": "54392f06e308a8db969a9849c4301826be39da14d452f0ca2c35d97efdb50b5b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-6.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "8c40753e1612c84d6bc6b21e56f484de3d47dedafd2e08f6bf75c70891493cbb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-60.jsonl": {
+      "bytes": 8304779,
+      "sha256": "1a3bddb9b8fd85297a5435429046f07935298c5fb151e3ef52e409e2fe866d9f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-60.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "b8c717c0447ba2e8dcc5d3e756840332f0a4eb9eb3b4fdbf484270fa6d8a3313"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-61.jsonl": {
+      "bytes": 8074825,
+      "sha256": "a17d95e8566239a46d871cb2f2335bd98069aec48f5565550d6f28e088a5906e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-61.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "b2aad0bcd74126a27c67db9473721a743285afb58bfd46b35c16facca6cec06a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-62.jsonl": {
+      "bytes": 2404041,
+      "sha256": "40f1054627ffd0fefa941bbab2df8937475855d871faf8b0ad58e67012875e18"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-62.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "14c363632dd5b118b0f8805d2e449755815cb5add923b3c3b51b36dc28a1a20c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-63.jsonl": {
+      "bytes": 7785490,
+      "sha256": "86c3e062e6816fe53c08530a858550b35c109fd2e33c89e19e3fff827aa5eeac"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-63.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "e6973dfe2d928ff8160704d48e4080ec2a4a4e963350d2e2e34a54b068384adb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-64.jsonl": {
+      "bytes": 8303879,
+      "sha256": "365ee40a654ffb22d4e109b07cadc5780bee406f23d2b97f654e6d1df2fffec3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-64.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "e5c2152ad95f7fb7660e6f776c53fc8426658ef99821e338fdc2d7d634b3303d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-65.jsonl": {
+      "bytes": 6110947,
+      "sha256": "7a4aed047d5fed05ae112a6df1878ccfc23301ba4346748de45ec05b07f58be8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-65.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "63b4f0e9e96a8675af30410b32a0ea65a7aafd90706c52880e0320e1caf2e53f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-66.jsonl": {
+      "bytes": 8246743,
+      "sha256": "729109be1d0c2088b6f091457d7fb9588976c52fd85345bd8c440961fbf6be49"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-66.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5a5759e76630da7200cb658a7a43e8e5767c8c5c84da6ac3a85481972fc2ba47"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-67.jsonl": {
+      "bytes": 8261321,
+      "sha256": "aeb59977be5297e4b2b1d85c3618324a87375297688e480096b84055ed1d411f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-67.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "dd7525fe0a82bdf1e067d0e38cd83c26a7e1dcc2763ed583b7d52f433587366b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-68.jsonl": {
+      "bytes": 6546052,
+      "sha256": "281081e5084c7a3e805dfd4fd38f843d86c0334a1ed7efe608450de715806aaa"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-68.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "313bceb4f29af01ab6826a9e77f3250aeab9f6789863c9a4372118e2a00a9a10"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-69.jsonl": {
+      "bytes": 6192221,
+      "sha256": "e2daafbb9b697dd2c768fd0f3479c6128cde7c3703b4a1beb41069d9dbae51bb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-69.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "799104e8fed5511d6251d7efad77f3a5af6190c75289fc77d0d5cd14984d8cc9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-7.jsonl": {
+      "bytes": 8239674,
+      "sha256": "9a56a9a21dd334848c5a684e53fc057924c2e4306fec37f595994e7b714d2ce7"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-7.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "efcd1d5197066a083ab22c9e01ede15c463de23a996a9b8b1fa3e173f94209f4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-70.xml": {
+      "bytes": 14877873,
+      "sha256": "36b8465c70f532e1fc1edd890154b07a67721e826f2a1af689014f255bb9c96c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-70.xml.metadata.json": {
+      "bytes": 77,
+      "sha256": "3b59ca798343521a440ecf1024c82e56ee515875dc3cc7544dffcf90875868e2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-71.jsonl": {
+      "bytes": 8346010,
+      "sha256": "a82c589a9b5dfeeb1fcbca67e83b9ed230ba4bb1364bd02098217a519cc6eb0a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-71.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "d716829c8a12dd20cffe2917a94e6e6c790186c155e4384ddf5e5c85557eb368"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-72.jsonl": {
+      "bytes": 8065905,
+      "sha256": "a17b65734a3013d632fa7b9bb11d528810302f7644ccb050038514b1fa9b6a9f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-72.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "39af6498109f09c0d4a72f3441502862cfb8a21661e63c6c0833745460535e14"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-73.jsonl": {
+      "bytes": 8368273,
+      "sha256": "5d67a0bf86c5e4785b8980ec7a39deea9d04b4425b8cddca174b682788e161e1"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-73.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f3ed83d2df5dee09ad1bbf0d3743f6121d8c555ee0524f8324a06a3d14b24a54"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-74.jsonl": {
+      "bytes": 8374937,
+      "sha256": "f5904e0932c6673276e9e6940b41e822cdf729c072a766958a6fe525fa71e449"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-74.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3483f05f8508b231df51a39174e2608ee2beed8c2d066afd4aed6a91ca95ef3c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-75.jsonl": {
+      "bytes": 6926362,
+      "sha256": "fd8fced781b9c31523d0ba001518d8d6e28e2d85e8a1316af90a63c1dd8df3f0"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-75.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "fd1dcaf2269fa8b3db6e50a68e48abf43acc8bb61cc64aa84834d2bb5f58337c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-76.jsonl": {
+      "bytes": 7559986,
+      "sha256": "88337be6e2ede3a3e16b698cddb9814aa79a0df46ae436a8efdfd6bdd6c85a36"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-76.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "2bb457d0ea47a815b513bcb9c295225687422bc04c8b2a70c61c4d9c0883efd0"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-77.jsonl": {
+      "bytes": 6878309,
+      "sha256": "62f23ea709b13b7c2b228bf29dfa697a519a998ec157eeaf9ee762c8f2a23a7e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-77.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0ecdcf739506c68f5ae437e81cc6f01e09a5c83e821248585db28be450c2bcdb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-78.jsonl": {
+      "bytes": 8316382,
+      "sha256": "f6c5e8c1147b3b0328c998e1c622fa650ae6206066480c2183cb541ea91b7dc8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-78.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "2c3384cade0e40272c3c2178aba18c1a5a55570431ed88ddd7fbb84a23e4d17d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-79.jsonl": {
+      "bytes": 3887726,
+      "sha256": "784091c466f9dc1eb711a6a3374e57f894a94d05df8ee8c1eaa3d430c6e6958d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-79.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "31eb9990b5514e7f0b48fbd79f3855a8e0b9f4b34b371eee8df1249fb0424dca"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-8.jsonl": {
+      "bytes": 8360532,
+      "sha256": "ea6b00f015a2edea50ff14de330bcf05a33638a51e58fe36fcb030c1c3281f28"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-8.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f706a22ccbaefc789e981ff5663173d415f5cff4dea054034d8cd88b9e6465ed"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-80.jsonl": {
+      "bytes": 7938986,
+      "sha256": "088b1c0a8e5132632a08b40da995ef5b522bcdb7c5f682400e604cb8a1de88e1"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-80.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "6eb85a0604db632f3fa1905625147dd6122a2f2ba8955f455cc42107d78c57ac"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-81.jsonl": {
+      "bytes": 8355976,
+      "sha256": "42e9a415f15a51be643d855e13b4872c40212bc30ba5ffb5463ae2ad003801fb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-81.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "92b69620a1d14a901fc44bdb9cb6111d82530370de4a8ea135750da0c91775f4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-82.jsonl": {
+      "bytes": 5045028,
+      "sha256": "ab23056af5293a43bb8e96d502adab2f8679d3829c8d3a1f1e74768ad9b3c8c4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-82.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "157d9b9b06bb684b75d82ad727a69e75660131e18ecbee4f187f35e8b51311e8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-83.jsonl": {
+      "bytes": 7141321,
+      "sha256": "603558de2a560c34da8cbc5a16aa427a4d9d6be0b649d6d0326c590d69248ad1"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-83.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0cac70401ec86c6c61807cb6147a767136d77d31b58fddc16425e7a8885fcc37"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-84.jsonl": {
+      "bytes": 6931948,
+      "sha256": "fbee47d640e2a2e00ea943ce9e1c73934c85ec6fb0c8dd4a4a4a1a3bfb25da52"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-84.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9bc3ed9247135f3560b8c82818651434077db3e7871f5b42e86d48a901631317"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-85.jsonl": {
+      "bytes": 3951745,
+      "sha256": "86ed62dca08d630c57c8e00358749c397338fa0fee91a583f1af96b4a6d8af09"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-85.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "36e52755ab90f95e0ee23250f9574051ec74b914a015c0cbfed2de92cab7973e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-86.jsonl": {
+      "bytes": 6122583,
+      "sha256": "39d49df1ebe23984bea35e906151c8fe1958c05fd8c9e621a46d8352307d0a48"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-86.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "ce9c4ccc442b40dffc0f683e3249a89b8e76ee002985d85db8c440b1c2bab276"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-87.jsonl": {
+      "bytes": 7300197,
+      "sha256": "951a9a83f63fa3c59a8f7724157378e8ce8971834679b8d2faa0a449b6eba4a9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-87.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f75514b8b78d906aa82fbc6aa0b7e92df1c58a6efe45a64e96ce827fbfa7bc55"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-88.jsonl": {
+      "bytes": 6262874,
+      "sha256": "4c2b95dbd177db9e1984951f5b3f5106ebb844593e05e3cf7fb51e2a84dc14bc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-88.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3be992a035864f0248173c14c13dcd4bee2e00c5616392a2720b2d4cf4945042"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-89.jsonl": {
+      "bytes": 8206427,
+      "sha256": "94e438a269ffa5ae1ada828390a58524907b525a398fb5652c7e4801acb4295d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-89.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "6e380216ca34bc3443153b3cfad634677d0b3adc87c98bf5998a21810f1f33b9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-9.jsonl": {
+      "bytes": 5908240,
+      "sha256": "fc625617e8998b7afda784b62e396d46c6c7fb07f5f512007c0074cedae131bb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-9.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "ae40a5ebed3ac3c856c413a7a43a0228398cea042057abe048f420c993430ec6"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-90.jsonl": {
+      "bytes": 7700941,
+      "sha256": "5d7a2b3f2010d5d6d8e794af3fb70238f9ffe49a9d9daf522be9e4104bd2c52e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-90.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "64709ad9cedee539f2e5be8584ff6c072fbe1545cc945a24f8b07673cd60cf8f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-91.jsonl": {
+      "bytes": 8030033,
+      "sha256": "8ce549bc7b3f7e36ce4c4188759a4df5638a1c05a5468be8d0d9d04923262dea"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-91.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "172e8350f0822f6c984aeb20d3fb7428dbef21396be574b87bf42def4bb3da64"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-92.jsonl": {
+      "bytes": 7291200,
+      "sha256": "c8215b186f64f4f3f720119c593116ce38af4390b4c31f02ac832d54566b8bfe"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-92.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "100bfad771786f66f156ad9bb4d0598152c4c153ae40fcc5f886ea5ad56a5213"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-93.jsonl": {
+      "bytes": 7809732,
+      "sha256": "9deedd5f1a105b1d2ce9db3401b6984983b4c04a21b44f79a87fc6671ce6ab85"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-93.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9d06e548b18852b7162dd9bd9115a2d5c8b4d0cbe7b7ce0527a6373e60bf10dc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-94.jsonl": {
+      "bytes": 7264606,
+      "sha256": "137788283954b020758263c4a9531319c8ec1e75dcab2eca2106a28d442b5f56"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-94.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0b61513ef30100d62fd058593b80f19fc58b4b2002b7c96350bc8d632c192133"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-95.jsonl": {
+      "bytes": 8360520,
+      "sha256": "eaa0b8e387572e35ac1c2aeaf9c6b1e14c6f6e192159198d31ff17b294ab0d57"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-95.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a82672a8746d38533336cb9dd3d1a1e6435ef7c888d43cc5bdbc49ccde3ec75f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-96.jsonl": {
+      "bytes": 2856755,
+      "sha256": "b0e24ed71d228dfb834c6af2cc4a27c286f378c5b61b5ea1d4f9e90913d4be6d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-96.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "8d292216a006c39bd74f8174e222d86cdd765f1101085f6001b5a4b289b67727"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-97.jsonl": {
+      "bytes": 2846405,
+      "sha256": "39ae1564fc45b7815ffca64da0e1d699863872e4b4eba8d853225d5fc9226c7f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-97.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "58d87c32bd7eebca07ae111901d49e74ba8bd4b39839302fc11597eb10474a57"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-98.jsonl": {
+      "bytes": 5049403,
+      "sha256": "38947b1c18ec37e0d0b5ae8e8a3be209491060fd1959c632feee84e709335e66"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-98.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "c572a260158c42d13dbca5955096e76c11e946951ea4101fa2a348396b6cee6e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-99.jsonl": {
+      "bytes": 4900513,
+      "sha256": "53ff413f988c170499456f78241b128b3cf407c72e8b80d8800e943728c92879"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/group-99.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "559605addd8cc1e0749635b2f98faf396d735dd5d765ab23acc8252a4f52a9cf"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--0.jsonl": {
+      "bytes": 299700,
+      "sha256": "27fde62aab9defa0b3b29b8c274b4b23c8f65eeb6f5c2ecaaa741d3f416310f4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--0.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0e88909b1079a6e0cc9599efac5bdc84add6ba3c677f0f1474e70cbe3d8c34c1"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--1.jsonl": {
+      "bytes": 675940,
+      "sha256": "53dfd99e7c1c46c4ba1372b9b7c046ea953017ed5683600e4b7ca44d54f85585"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--1.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "2461cdb5e1b743fd383c7ffc4d4bfe948d13406111fd3b6aa65bcfd12d95b589"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--10.jsonl": {
+      "bytes": 213952,
+      "sha256": "d4cca95ca2cb998540d77fc6c52544d3aa49b3eb3b05568f8a0feee8feb9bc1b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--10.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5ed367528a71b904d12504862719965af253e5daeef82cc8dc2909cfd1244b9c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--11.jsonl": {
+      "bytes": 68856,
+      "sha256": "bbb0c9ff38ae1f0dff782d4c1fd582cfc5b7d8c7a636819e204d5e577271a85b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--11.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "40ce7acdf0232c2a1450b88c6117e1d38faf12b5eb527fea647c5ffcf49421bf"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--12.jsonl": {
+      "bytes": 318274,
+      "sha256": "0e591e70c14d1e653a1250fc5cad7fc52b1a02f5a93c8c31f9e0402ef671610d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--12.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a36099f2f8873cb69e860ac1d62238fe82c0b40a64c504dc6aabac8b80c6b8b6"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--13.jsonl": {
+      "bytes": 366753,
+      "sha256": "de1128e3d97cecb5ad64494e4c61e397cb99ccf958b5ac16887511212cfa2ca7"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--13.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "44fb38dba66ce27da46e2fcae48c4f5ff27a2fab73c3fe4b15cf790c8a7d24e5"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--14.jsonl": {
+      "bytes": 358472,
+      "sha256": "d4df834d18a82b563b91e76c670cd32c8afed58739321ab94461a02f0b84ff7f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--14.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a96e45f5c4a7bd8d5d3d200068f1b026788a4942293c9dab39651cec08d088d4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--15.jsonl": {
+      "bytes": 357846,
+      "sha256": "cd1a89c144d0ef2401da9c26605f8e6caedf8bd438a47164feb075b862d60e4d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--15.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "2170ce4745d53780aa8942d2494d46cd49662556fe5c8a8b1b8936a85ded3497"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--16.jsonl": {
+      "bytes": 380744,
+      "sha256": "1f118ed4cfe7740adba0705086fc71ff1645fbc7da040a1bdb4eecb92f367a5c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--16.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4cfdf325c3915d4baa44859448afd566bf783405c61411c2d2069ea73e0db462"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--17.jsonl": {
+      "bytes": 252497,
+      "sha256": "095c36dd14511207f8ea1b8452d0e4efe6c69be7d86c267692413fbedd2b041c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--17.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7e9293a2bed3c6673b7e2c0413101a39cbaf3c020ee9f35ab4c6c6a1f624291d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--2.jsonl": {
+      "bytes": 346243,
+      "sha256": "baa8508361dd0d0f35b9352e681947ec0960a5462da19af62eef4295815d0544"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--2.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f7430d5ec2ba945e9fe3b75c5f0ddb7fbec14e51650b0323f64308d1886ae188"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--3.jsonl": {
+      "bytes": 287773,
+      "sha256": "578c2a9ba22b7cbe5c2485555fa210c6b7400ed20345fb152ecfe4e3d67dc619"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--3.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "79e5bcd2acd4ec1b9e36d885a5ede6b55e70c09fb20d6b848f3d2f439fdaeb90"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--4.jsonl": {
+      "bytes": 250436,
+      "sha256": "af1ddcb4f5ab3cdac5b418b448fd45f2b18eb8de0010fa05b8431eeb3a693df4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--4.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "c548e42e856e0b01da02ab54710c0159c4fe655ed458d5f266a84946d1690431"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--5.jsonl": {
+      "bytes": 242777,
+      "sha256": "418181c764b8731afc0f5ee74a79bcd29ea5cc66314f7ffb9223785fe3dcca75"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--5.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5d583ad6548ce1911c0afc2a99d76dd362d1569c3fbf5b0609c32a04773ae0e8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--6.jsonl": {
+      "bytes": 375888,
+      "sha256": "990fdd15db37397210afbb9b11a19dcbfefc3f7654c9bf03a5cd5d76c771e9c2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--6.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "539431f3f15aee9f593937b2374ead7eb4c62b2408ac35cce7bf734c3501cd64"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--7.jsonl": {
+      "bytes": 193068,
+      "sha256": "522ba5ba63f333aaaf5585829b8157c70211d527eeac2d55b2c90c933a71fc8e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--7.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4a7061ba11becbe9f15575e9102de7c56cd6e43973db86812a669582dc911459"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--8.jsonl": {
+      "bytes": 340793,
+      "sha256": "e85c8f5302b798359bfc6b35046899574375613cc2307a4ee259dece33a4c929"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--8.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "eebd305a2a54790cba0043ddfb8cc21f2a984316c8fa4f69a586db5e58414402"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--9.jsonl": {
+      "bytes": 168216,
+      "sha256": "273c2638ca9ed5c7f8e277bef6c2ae4aeb4335f6ea532dcb2b75f8c8a70899fa"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-en--9.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "d679ec50dc3ec4ca2e48f927f18b27dac80e6a0523ed85b4769907ce3bb5d436"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--57.jsonl": {
+      "bytes": 38200,
+      "sha256": "4c01219f9baf4a103add239512b5ef563e8a0f760cbb2d7f01f422d75a7d4e7f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--57.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "eba4417b17d2646afbe0b7bc57c67501d0631d532533936975a929dea4eb1106"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--58.jsonl": {
+      "bytes": 298416,
+      "sha256": "1a90c9753511b393137b295b045e1d8ba35a43627456b885a608f621b2534319"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--58.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "19946990b84d3e93414ce2c008919b1080609ba44648a10247dbd20a56e6658c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--59.jsonl": {
+      "bytes": 663944,
+      "sha256": "5427f14668b9b91fb02f8f4b7c2db96a9976b7a541bb83f4ce0eba08344e4491"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--59.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0bfeba0c6575a3ab3fbf654422e10078929a97f04a86a8b1ef3b1e0c443e7f2c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--60.jsonl": {
+      "bytes": 351910,
+      "sha256": "13ce2278f33c6e187e3b9b1eb086361cb4932b9fa146214287041e87ba2edb95"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--60.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "db5da9de4fd105fc8c51a7cc475eecb4a99db0455acf853850966279af936ac3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--61.jsonl": {
+      "bytes": 291400,
+      "sha256": "a5f8d0430b470ae0834bb22746095ef055bf82b43969bf4f4db67cf7177d2636"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--61.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f3e884475365637a81e05462697741d7bc382bbe5355e6e9f9dabec9d0414517"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--62.jsonl": {
+      "bytes": 90019,
+      "sha256": "fd77264b6dbb675484c285532ac4e33b43118c2319a60f7a8892037daf3274fa"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--62.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3b6ce160a1948851eb772c31721f6eac526a5647ae24e2a0d9a4fde03a2afff5"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--63.jsonl": {
+      "bytes": 213600,
+      "sha256": "7b72d6ec445d77089c0ce249910f53632f0bd7258616d011bed7bef51434c870"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--63.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "fd35c399a55239ae70c5cf87bbbda5c609bcc0a4279746507d5b32c17a7e3dff"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--64.jsonl": {
+      "bytes": 254100,
+      "sha256": "75ee4f9139070b67b35886ebd7a0004547ed23a45f18bd1b7abf6154f681a81d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--64.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "74e5fb78f952fac240118766c0809ad771c0adc249a55365ba33820abc80b42a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--65.jsonl": {
+      "bytes": 322045,
+      "sha256": "9509dbf4c976ddec10867cb9fdeba6f5cf4c670e3adcc299ba2e656077ee450b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--65.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0f5017535cdd6ccf3b5e4a1f49c531d8eb6852bb33dbe4a68de09b482dc4dd94"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--66.jsonl": {
+      "bytes": 187047,
+      "sha256": "195505763de998fb5c714f80beafef3d52895de14cef7bb17cdce6d3960dc5b2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--66.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9cbeefcb63538fe5ce8e430b40ce2a8522e33e0b241ee8f3cf6fb6198e8d0d9d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--67.jsonl": {
+      "bytes": 340759,
+      "sha256": "628246c8ca4242420727835f978df2601b8756c82a5010cbeae4cdfcd04ea997"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--67.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "fc703a23a253e30513ec883899c5931890e2ec2b7806d0711e6a0f22438fa2b2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--68.jsonl": {
+      "bytes": 184175,
+      "sha256": "abd59b732d1de92ddb605446ed1cc5e2229da9d6733f4a07de4019ac3cea78b2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--68.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "baadf5faf60d6786b1058f274b43af1153101863a91b7bc2f0fab3df275ef502"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--69.jsonl": {
+      "bytes": 216607,
+      "sha256": "4e345ffd3f4289c87f534d6a765f489e4f5982a8e03a2ea77854d092ebc41b3b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--69.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "33681cf1c9e5308fb86df6bcc9fb44d48e5b2bf11e4829e5156bf5c239521cde"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--70.jsonl": {
+      "bytes": 69661,
+      "sha256": "1ea8256b1f584ef5383bd2b6d4ddf7fffcd33004e4c935cf13baa8a897dac9f3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--70.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "39383d3f7e7050416120c610e9727c06e55841ea1d8471f3f17d147a5095ffa7"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--71.jsonl": {
+      "bytes": 323296,
+      "sha256": "96d9daef3b978db10c521914319960e6e2f83f2dfb5527d25d4a249b3a68d601"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--71.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "416c40fd9f3418fa4c3b15b73f51278f88e78758dffcc9b6fced76b2ea8f5582"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--72.jsonl": {
+      "bytes": 339925,
+      "sha256": "a6cba379f851c59f3ce9087eab1e78a64adeca3a418a357b3e9431cb296ff33a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--72.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a4e7962883a458c6a927e713ef29325dca166d271ed7feb7d944ad8fde7add5b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--73.jsonl": {
+      "bytes": 356947,
+      "sha256": "5971b817b96830d39bbbcc47c02ac5fd5982633c62096f2f8882ab739218f4e2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--73.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "848e5aaaa4f0c6655d0e4c8736e0e60647bf86174122eb450a31cc10f0526806"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--74.jsonl": {
+      "bytes": 378798,
+      "sha256": "976a12aaa04e9358135c7c55676445954309c247478591070d71bd15760551a7"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--74.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "eaf4cc1858acdd642bc3cea6f50c162d911a361978655fdaf7d36346a71d41ed"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--75.jsonl": {
+      "bytes": 343250,
+      "sha256": "a542274e88db9e33277a33271199e9a7b952bc9bbad28ef8e92fc2665ce20052"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--75.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9c86a45f3872b071eb9f061c4d020ea199a3a639c3b9757c0fb3d55dc33f7170"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--76.jsonl": {
+      "bytes": 325259,
+      "sha256": "0b3e49d85b39456b5cc62ab2a4a43b03e5c23c3a3b63f47e9fffa54896965976"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-acts-fr--76.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7f6aa10d1de36bdd61d942f2f64c10ee405e784f77654714c5369aa582b1a8e3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--17.jsonl": {
+      "bytes": 64994,
+      "sha256": "43bed5818bffbded154f550c0f8a98f2ac2129374fb5e770ad7c84044027d518"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--17.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7355872ac4934611b56c209d76c0896fae73b8209bec93740f68ad573878939c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--18.jsonl": {
+      "bytes": 186467,
+      "sha256": "963c825f4e8e5b2b380b1f984c18fd2cc51a7733a9ed40b6a93f55584a0d724e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--18.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "ac6842e50bb35efe838a7b201f4b30806d069e9f41af191b7fc2b044b45d0687"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--19.jsonl": {
+      "bytes": 304209,
+      "sha256": "118046bca6a41549a6a5b4c8e0fb3bf4db9d13350f69dc4145310bea4e16cb60"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--19.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "b2cba916ddba3a6752165388ef9d54cf19c86ed9238cbc793080a71dd63be89c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--20.jsonl": {
+      "bytes": 193058,
+      "sha256": "8b14a197678c7302e0f43da1fb111a3ed352695a505376eca671e6d3a17c0e35"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--20.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5a6a78197113c751d6e30734f2b5754d6a75fcc8326034339efc31001df4b8fa"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--21.jsonl": {
+      "bytes": 299623,
+      "sha256": "ca50801702152c49e6f4b42ef50af8464ee53dddfc8ea229f64dc6ceebb1e718"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--21.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "954c5c1a5094d7843138812f5ee2d087fc1234aa848a44c34bb39c0d169b6360"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--22.jsonl": {
+      "bytes": 143303,
+      "sha256": "df743f2f6a4eb7d4de40f31d23847f53c3e2bfe35a8610beb2a0b8e68eaabc50"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--22.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3df452699cedb60485d93868c1c158a959a7d3a4564ee6e8e3177382b94229b9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--23.jsonl": {
+      "bytes": 94783,
+      "sha256": "40ee067be6da6c096a801df16e809d525779c3c5993ef20985898839f2fb78af"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--23.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9780388b4739c37b775d6847d9513291747b4de8099cc9e82000c416688ad0cd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--24.jsonl": {
+      "bytes": 74650,
+      "sha256": "2f3bf4d10af8b8e32139db4267ea41693044f35da4e77853ba8e0deaf1389afa"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--24.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "6fa176b81bafb155d4486daf70b87a2f8e5a2b8bd71ed9beb7d33739726138d2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--25.jsonl": {
+      "bytes": 117530,
+      "sha256": "fe31c56fa9e141cc6f47a38f735a43c20a284a02c235f0e15844d01a8c07269d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--25.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "ab2c52784c3c5bdc44d87443e4d630e8873dd3b813e413dd04476390459ba877"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--26.jsonl": {
+      "bytes": 54096,
+      "sha256": "6a0ab8aa37315bc279ace0f46c677ee80fb6473f2030db7a35771466b56a64d2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--26.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "cc6ed50e4628767412e6675fcc5df13331f88968674a0980d47b0b89d9d92fb2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--27.jsonl": {
+      "bytes": 51590,
+      "sha256": "b3488c490adfe77d5558502cbbdd3050795ae3e64a7dcecc1fbd4b6efacdb694"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--27.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4a44f24a9aa5163893c23d3fd48453b6d51bcf49fe2d1b1001de84fab95b05d9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--28.jsonl": {
+      "bytes": 29530,
+      "sha256": "297820d8ca621ccfd4853265b3284f317b39377dd0de487540611981ed5d126e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--28.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7f22b9d952f68dde09dd8857bdc477aaf3fc4e4b3a4119fa5f8960b7ebe550f4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--29.jsonl": {
+      "bytes": 163657,
+      "sha256": "ef9e573e6f4088f4e2325bbc2bcafa6654f9cf65f562f694b0250746de796a46"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--29.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "49573a2bc9b9995068e4cd5fee8c68eec5d12fd99703079a2f5277b7f5881b1a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--30.jsonl": {
+      "bytes": 94285,
+      "sha256": "bbbc57ffca959e21e0e6c543d0c1619f45f1da9f1fe955ba78d0347f8f6c6a2b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--30.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "e342d757ec78b74b53355ce0c88ca183c892cb2b028d9de71ae3c933f85e1a98"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--31.jsonl": {
+      "bytes": 75804,
+      "sha256": "cf0ca9b42df98163fb3192a10c1f4ac0217d19861db7335f73df23e43200b848"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--31.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "ae30369e1e15bc19d58062edd46dccbc9f623bf7d8c1bff0d7b062f1d4942abb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--32.jsonl": {
+      "bytes": 233313,
+      "sha256": "abaaef7bd3de4572b9c6f61cad4829179f783d5d6bd0ef557266e95405171b95"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--32.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "296abf1d6a421e831a179452c2bd3f2b951eca9e17a04261b5031cd7a3e39d94"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--33.jsonl": {
+      "bytes": 177475,
+      "sha256": "193eb4e136f6e04225e7591c3ca184505e27a2ec0997e70cf172fe10ffdfd9cf"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--33.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9aa856410452b6a7f0939acd319fd11e4f1d177a36f4c3cb8c0463e476fdd9c9"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--34.jsonl": {
+      "bytes": 317333,
+      "sha256": "071cb7bdd846e24d3e0e2c8dd5d2c8756464c08f05920cfc0c567684c3fe8902"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--34.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f24e0cf8e68a70803b8bdcface26aa84ba39afa870e29618db9f56e0d7cdadbd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--35.jsonl": {
+      "bytes": 170682,
+      "sha256": "6a77ec1204a2ae2f3fc3e355f961e443561030ad6b469267f01d5ec1bbccbd28"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--35.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "836730b57d65f688aab4f0c07acf415a50d8e218d9303c50b55eb308f9daaaa3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--36.jsonl": {
+      "bytes": 227150,
+      "sha256": "804e8d85802de67737edc36e29cd742ebf0398bf3a62b7f5159393a3de13743c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--36.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "bd12dffe2e9e909998c8cf10ba347e6f6bcffb3fbd90f2fc850d60bd7394e25a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--37.jsonl": {
+      "bytes": 234066,
+      "sha256": "b0fd494c6c77cb73d427de334c1625c04cbd56d782be29a6862fa54de52dc5e6"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--37.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5a5143979eaeb89f3fbbea91a15699ec8d4361e1879735a66a97b4380b0979d8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--38.jsonl": {
+      "bytes": 249259,
+      "sha256": "9923f1fc92e66a93639a4eee14cd7c6d2ecd9eaefe7ae8da4078f8b0c3d32c8c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--38.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "cb5eaa1afcecf981afe6a4e1ffbf88766bb6176371b13373ac6b6f84d6e91050"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--39.jsonl": {
+      "bytes": 249045,
+      "sha256": "68372e6ca6ca9faffc204af11c2aad542b5cee31d08dd676e48af246c4cab7fd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--39.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "93aa849875340257aa257e5a6519a11e60dc3321c77d3cfaf0bbe2754d640c42"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--40.jsonl": {
+      "bytes": 234611,
+      "sha256": "4db0c86bad4f9fdcfdc3706e453dea79e92a20f2ab1b8f1a70f354fc5878917c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--40.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "07f74149a7c2e9c964c9888f15c6fa333e572ea0e64097e3640cfc9a1e2e6681"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--41.jsonl": {
+      "bytes": 310977,
+      "sha256": "eb37019520253543e1d7b26a77cc197d1837223a37712d132fc25017d0a79884"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--41.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "79d13d8e369c373571c6618dfb0b45e9e1eb2b3d64dd69dd2962a8b7ccbd4e6d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--42.jsonl": {
+      "bytes": 257539,
+      "sha256": "07e091c81ef049b611a73443b8b4d7011c4d782eec8682d497aaaeb18173ce11"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--42.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "e537d8829be7d4506b72cac933a677dc240ab18e4d9a3a8fc8c7df5396f96834"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--43.jsonl": {
+      "bytes": 229897,
+      "sha256": "b674e23352ca460e7616f128eb7949f78029e171b69703e5a5e34587b1ce24ba"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--43.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7e25a63c93ebea7b9b8cb52244ad68f33ebd2c4dc1114fe489504a0012fb7f1c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--44.jsonl": {
+      "bytes": 288597,
+      "sha256": "99dd606b25f7ef51573cfe16cfaaab0ba733e685736454e1147012f22400048d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--44.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3d1acf6cd9deb60d22a1102d132f0ddd6512b2952a582c9bb72e255b746f0f97"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--45.jsonl": {
+      "bytes": 224001,
+      "sha256": "5534ac9843a02335eb4725f3fe432c8b3383a0d355dff94029f38cd9fb247e4a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--45.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "affeef72a358969e2d94c7fae17af9d4b0950e17814c5cdbad4e1826d729577e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--46.jsonl": {
+      "bytes": 143314,
+      "sha256": "bbdec916c73eb810997a95f317a7511db74469487eeeb40d87c4742f02e1722f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--46.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0dcbc1321fa77153b4d1106669f18e4cb815f9281d88099268cffd92e53bf8b3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--47.jsonl": {
+      "bytes": 137837,
+      "sha256": "08045396651176e89b006378a187b6978f1633cc84ecf2ad59fa1f92dd3fd26e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--47.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "c546ec1c71077d4fa5acd278895973fa41275d0e30da1991e261ef908654841e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--48.jsonl": {
+      "bytes": 280959,
+      "sha256": "8292ee79a5a460f1181fc54ed04d1badd4a47b9fa89cfa3b7f3928d8eb7c095f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--48.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "296c0f5d2b3705b74fde32bc1e31956e4e2369233c05e6b9ab525d8c93aaf3fe"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--49.jsonl": {
+      "bytes": 203453,
+      "sha256": "5f5a3c9025c09f2ab708c332d8a183bdb475e5e586ba1339f3dce6487514d622"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--49.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "2b87bd479b4f04e887e1f52a069f30388674d82ec24411892c2338ed325c807d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--50.jsonl": {
+      "bytes": 178775,
+      "sha256": "e05b59d9fd98b41998c722a9cd25b8b777d3eac14fd4a92f5c1e170031623a14"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--50.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "dc1dda89b839f89cc2e0bf6cd62cfacddd05d669d6606edca6d174e4dbbccf2b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--51.jsonl": {
+      "bytes": 145734,
+      "sha256": "67bebbb6e341757ba6de788538334eb60f036835c888fa22d7d33aac040ada74"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--51.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a53d551e12888750e612997815bb87af9c28701a607a4e0e6a8c1ef9fd80476f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--52.jsonl": {
+      "bytes": 241595,
+      "sha256": "074af8aa4053861a45ec2e96f2905c9620c6481456e1604df99ef547369583d6"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--52.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "73f30f183f8a5ec1ef302e88a0530af00194fc5a55365bcfd7d24520c19f770c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--53.jsonl": {
+      "bytes": 144210,
+      "sha256": "4d602fe466181f21f51548824683e639647c7474738c7dcc869141ed1a4de7de"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--53.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "dd3b8139a81909f0eb02dd087edb4948e830773278e9b5410de22b01e441a42e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--54.jsonl": {
+      "bytes": 93123,
+      "sha256": "a7213dad47135dd978db15d7a1ac88affdd5b194d3c9f8925167fe6c1206f1b0"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--54.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7a9aaeb4978aec07eac5f8dfb585148a73ccd40a5c67f4bf38bebca081727c6a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--55.jsonl": {
+      "bytes": 208460,
+      "sha256": "9754fb077b446287bc3b7e2f541731f8456f69994a08aa65fc9d8f623ea7431e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--55.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "5b75aee1d3a8f9dd72555fa9e0f2f266d1b88c3e73ac23f4774aaf313630f239"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--56.jsonl": {
+      "bytes": 226432,
+      "sha256": "6fc9438d98c288f63294fe1c07c24c04113c924cd1596fe8c7a9e5f4e1dd6e2f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--56.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "1f4928d9173d067e29cc636c48c3ab3540aa7d0c831dad1c76de2aa8aad41797"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--57.jsonl": {
+      "bytes": 157232,
+      "sha256": "9dd84601e5690fde236756f319565d8baceef0144487339c73d4db8e1ea6b93d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-en--57.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "02925883a801bfb062a30f60369f1d97d391dbd8368b89be015fc005d47aadfb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--100.jsonl": {
+      "bytes": 163664,
+      "sha256": "9812375247e135ecbeec93bb74e1593efbef2f23f96b6309b26da6bd8df8caa2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--100.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "0f4ace673b7402995a79d6c117d83ef2395276ef715f37bb97d1c7d81a4a8f3f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--101.jsonl": {
+      "bytes": 190772,
+      "sha256": "1c21d68be14fc66cba472f04ef29d3dc31b05cf9538823c81b9e610dd1510bfb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--101.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "547532b5b73302abaca86d0d06e44fa5e781c517e5c39b14c863797766cf9472"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--102.jsonl": {
+      "bytes": 219403,
+      "sha256": "84b4a4c6e856f69919d5071098f204d832e4238947202dab9ce9794abf5d1bdd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--102.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "c140d53d20f1911af8cc330e136716f63235867199fe8eb6db741a05025fafd3"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--103.jsonl": {
+      "bytes": 171277,
+      "sha256": "82716679517f903aace3efbdd6885f23bbf7bfd1b2b783d6fc15e07e41de54a8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--103.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4c626d96127c77517a185b4110b37e05e62d7ccdc2f7618d5f20e319caabcca7"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--104.jsonl": {
+      "bytes": 136540,
+      "sha256": "f7363d3cc0498f55f1d81e74506f1b7f351f2b9183cf50148bd12f4f5efcf84f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--104.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "6b25c5ea6e6666587c618851af383a30a42069fe1f0302aaf21fae33f7733afd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--105.jsonl": {
+      "bytes": 208233,
+      "sha256": "3a7d1831459942e407eacc4c3eb7325b1ad81f6bbfdfab630531594abfce4a6c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--105.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "fcbcf7494561db8b92163da6e07889f20288e24ab60780e7bed3e1277c738afa"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--106.jsonl": {
+      "bytes": 215838,
+      "sha256": "4ae2d314cc6829612c2d0dc9a1d9fdedcbe10c4a222c1d7de313a6666f148b7a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--106.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "600670bbe492a894efcc01a62e9608cc287a47143a80962293480c0c59da8c69"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--107.jsonl": {
+      "bytes": 142650,
+      "sha256": "a381da36b8f23a9161f3fd3332fe904c7c4aac87eaf8f11dd2d1380191402281"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--107.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "1dd331dfc1a2b4fd6d4f36432bd2be625fd0374743989822ec11927be794d63b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--108.jsonl": {
+      "bytes": 105115,
+      "sha256": "c22b2b65c12b565dedb9dff7cc4cd8ea58962648cf9a37adb8609ba851e8eea2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--108.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4797736319aee4dcb37c09340bf3b9c9626c0651b055f502b26baf1a33826921"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--109.jsonl": {
+      "bytes": 79938,
+      "sha256": "dfd554ab838cd4c152c5e07b155b6e92f0f1104c17cbe3c1434d358a817f5a34"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--109.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "813e660fc91ad1fdd9d5201b6fea1884e6cbdfda81ecdb943f4adc4da73d6dbd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--110.jsonl": {
+      "bytes": 112410,
+      "sha256": "2617361a99b266c6b579f7da637c1a55def2c2135aea39c794c853e5ebaddcd8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--110.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "2fa265eef16fdba095a3359e57a29b4b0cf7c22c5191a4970ba7bdf44b2ecf68"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--111.jsonl": {
+      "bytes": 94177,
+      "sha256": "e93a4575aae267d7846ecb7e32c1467c78bc7e60f3b4f09600ee9e7f87ba5f78"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--111.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "10d6593f44b63a4c44f8f30e15cbaa69b4b42ceb72d7a57a371e5b2ad7af2079"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--112.jsonl": {
+      "bytes": 51079,
+      "sha256": "f01f0efe2be6aa6ab60a96cfc3d669d9443670ed35816731123df0bca7b81595"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--112.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9fd6dfeab06dfa87a37d161a8ce92a7363d29c79e681d49ca08e201f522ff8d4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--113.jsonl": {
+      "bytes": 51770,
+      "sha256": "975097ce0ddfb2dfb5d5701f53c576ec73af72fb55cfc5c19fb6eb6f2966f1d5"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--113.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "1ce4a68290e7f92da85002b4ac530141ab972495ef80e288eaf7b52da8463024"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--114.jsonl": {
+      "bytes": 125385,
+      "sha256": "8f9a9b3fdc3880a9acb13201db0c927a3312d76238e9f95cd2ba10e3394e4e19"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--114.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "581d5eaa0afc49fc1e19e856bb62c3010234915c19c73263f3055fab7e78ae8a"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--115.jsonl": {
+      "bytes": 70933,
+      "sha256": "16c7db29130bc8d222aecf4f2446fca64658cf71f2f14e7005082b8dd91efa64"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--115.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "1cf2b6c855adc1455e45f38dd38a3e4173083906ab66da8866c1d3ea1a83fccf"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--116.jsonl": {
+      "bytes": 90571,
+      "sha256": "b465d51f2d63d8e0d49acd74b0f11218232a6e19ef8373b25571dc50eeff4f25"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--116.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "e21929d88eea1357ae3e3e3cbd92df3243443ee021c4d988fd5efe890b09413d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--117.jsonl": {
+      "bytes": 106411,
+      "sha256": "0dc3fd805b1db7f3633e2d72c46ccbb651984b9152aa6cd49e4b2ef4e8c7585c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--117.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "637123a583804d72d68808a983da06256c72dfddc4abc497131ce34152c0c0e8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--76.jsonl": {
+      "bytes": 13331,
+      "sha256": "64b699ab148a80966655886018c2d075f799d1d28cc0cf2927880b2fb96137b8"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--76.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9781ab58df960fea4a9707328cc69549b1c03441a55fa654445938542f9241fc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--77.jsonl": {
+      "bytes": 193483,
+      "sha256": "ac081fb36807201268892dbafc7657d7194c13a2390dbd47361cd6a0b52d49dd"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--77.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "7250626b59c62cdeeb2230c652044d7f5e87202dcf1364144fd71068d38eceae"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--78.jsonl": {
+      "bytes": 346524,
+      "sha256": "4eb518ea59de6f80dd753964b11149b5791c9a23cc50fdd0d1cf2331ef460042"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--78.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "6709ee2cdbee941d7bde906878ac4ba31c556b4c97019639ff0fdb24849b356f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--79.jsonl": {
+      "bytes": 182142,
+      "sha256": "bb31175a7edad12e52aa05d633d71343d738ceef5825842648ef19f7ffd4decc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--79.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "45396aedd6ee1aece4e76bf8f4adf1d41955c96b3ee234b603b2d653163716af"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--80.jsonl": {
+      "bytes": 313905,
+      "sha256": "10b30f9ffaa84b846c552f952e763efb857c5c4d4921b690d038a6ae25a6d94c"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--80.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "9e004af7c8ab90197745bc10ad93609b9735caa2a7d1533f9d14184c95ff30db"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--81.jsonl": {
+      "bytes": 152003,
+      "sha256": "921159cf5b43c65efaf254a6fd192dd0867b417d199308217d519359dc4b1b40"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--81.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "90c376165f3e85b7bf588def9f836567525e97350924285e8b1e397b344ffd10"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--82.jsonl": {
+      "bytes": 146573,
+      "sha256": "3962503f8186ec9dc0b8b1162225f5726557ff8ab969d63b990f98ad3ce6ed25"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--82.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "d7187dc8b36c6df3aedcbe706bc927d7493db9548f59be6a2a44636b93e5b493"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--83.jsonl": {
+      "bytes": 176571,
+      "sha256": "742634b2447d7f938ec064a196a91e87adffca5cd4613f13b1c91ed7f7136b53"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--83.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a74d8eb056c254b4b9c7628abfc44dc842cb74547b42eca677cef171f7b82900"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--84.jsonl": {
+      "bytes": 323195,
+      "sha256": "c9a075bdd8cb9a6cf7223001d0db4988c6eeb50f6194bc6b4993475a3059c3aa"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--84.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f9744de57936acfa9b691c58280ea4b5d032fa4b869e8dba112f86ffef65327b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--85.jsonl": {
+      "bytes": 165796,
+      "sha256": "3f359d22eb1c13a533633c64fe845d198e69e257f475e56e727168b7ad0c78fc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--85.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "a050128ea4f2030e67dafefd3f1be4c7131b4bac384618ed1d2241d94d3af91f"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--86.jsonl": {
+      "bytes": 229382,
+      "sha256": "41c8685766015302b6a3844aa57415014753673d61bd784ab62be1b102a91950"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--86.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "e1884abb74183232ab52c3a2a5b904dfa4a21d281c14e29d875f4a01c7240dbc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--87.jsonl": {
+      "bytes": 231249,
+      "sha256": "31cb7be3c6ade841a6f65db7cc0084a5e1676f732681fe52d235663f1a28b82e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--87.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3c3ab20389b661b8bc137b4cb5dc749e18a55c1de747d2f994fc643ee222d5cf"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--88.jsonl": {
+      "bytes": 253308,
+      "sha256": "4dbf8bf24c44ab37c71bdeed1a4786b50cc8d8feab15be83a880bda51fa82771"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--88.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "39f802752731fe959a56a24eba70f2665520fe3283abcfdfa4a61fb69589a5c2"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--89.jsonl": {
+      "bytes": 246883,
+      "sha256": "eed79fa571d978b749657a6758e7596c83188caddcd89ecf02b8d5cc746488ac"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--89.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "6dba5b61d665826ee7110acc9fb915ab58cccb53d683dccc12f9eda66e58b99e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--90.jsonl": {
+      "bytes": 234716,
+      "sha256": "b32452d85569fa639ce2deda7c737ad025f1a896bbedb70811183bc922f4fb49"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--90.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "3cf551d90673b30f2fce363fe638a2dfccb0db8ec598723a1bd638fd37a50717"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--91.jsonl": {
+      "bytes": 307611,
+      "sha256": "275ef7c6e83088b30bd2ec06ef5c7c43dd9335d3d9f5f5ecb93e924086f8ed68"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--91.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "c6bb4ecd22a3e58ba3b32e08c5eb210a7672ccf5526077a1f4540042d4e69d31"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--92.jsonl": {
+      "bytes": 244977,
+      "sha256": "3cc77c14b4aafff4cf2a9fa1d7bf837707b89053e8d8d7c52bdb08d749d718e4"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--92.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f5978d284d00b3d017d670184ed92da63e75a59b740777beda00457b0d24200d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--93.jsonl": {
+      "bytes": 196466,
+      "sha256": "981446efbe3b115651644b9af5d7a8a31cc7da39f1d54bc7f45f15bb928254c1"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--93.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "52754ea56693d2e42ea33dc12edf227bc3b6fb77acbfe2daea67e4b702f8c334"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--94.jsonl": {
+      "bytes": 260414,
+      "sha256": "a4d7a0af325c3ae24658d3192f882c8836a06049b6f37a8bfd40114501e184ba"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--94.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "23e5d7cf976922054ec149aa1cb7507dc72e04a6f956123d23c8b11cd08d894e"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--95.jsonl": {
+      "bytes": 252458,
+      "sha256": "322468e1d6c9d455a8467694fa827cec84f1895d39ccf30590908019615954d5"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--95.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "369a06ff97e21cdb8f374128099382f05b6b7330fb1fd27bdc104729b65666fc"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--96.jsonl": {
+      "bytes": 154454,
+      "sha256": "ced1dec32c26a29df9500be3aee7f18405eb485f87e660a4beff94c06822b0bf"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--96.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "6923aa906d6b5649a739a01545120df9b6ada9edb069c62d63429462777e0c46"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--97.jsonl": {
+      "bytes": 130032,
+      "sha256": "4b37b896642836068e08dd4627e4da47d02cc155290125b9d714041b5c2b8afb"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--97.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "51d49d9f3e9c7ae1cc040678a982b5a8f7a735f291cd7b378d698a81a4fd3122"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--98.jsonl": {
+      "bytes": 200705,
+      "sha256": "0c49644a144312290c2076f68e22a12adb5a81f7b1f162ff92e4eb1eceb71703"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--98.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "4b0db50150a46346f614ae82c7c2db549cf53dc39084fc2b5ed854d994845c23"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--99.jsonl": {
+      "bytes": 254573,
+      "sha256": "506c366e5e09cc628bc8c5e13b49de51bc0f433be8646966fa24f18b24bab72d"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/index-regulations-fr--99.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "d7dbcfbb943643cb46a1700e24742f405381bc59553680d4d3b83b68aaf9d4f6"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/sorted-acts-en-.jsonl": {
+      "bytes": 5498228,
+      "sha256": "f4d53e60eead01b3b78be67dc0bcf08e9f3f78681c4846e716f2b2c4844be8a1"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/sorted-acts-en-.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "58718bf835bd0027d6f6cfc83d7edf3a5d28d7886b8aa08ec4a3f82f3678eb99"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/sorted-acts-fr-.jsonl": {
+      "bytes": 5589358,
+      "sha256": "a6c6d6534ac92b35024b17bf6dacdb20a7e47426a7808186005a98750a949867"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/sorted-acts-fr-.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "be101b09434bd9e149144f953bebac5ce884d3bc7f400726d525e4e6ccfdc609"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/sorted-regulations-en-.jsonl": {
+      "bytes": 7512648,
+      "sha256": "a129ec5ff970dc381cfaa9008790476dfb57976a27f21f8a29dbbee9ed2e29ea"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/sorted-regulations-en-.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "f67ee2bf281cb23add3fd1f7b0887e3570870e4e45b29ab73a25c5f2f7c96f4b"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/sorted-regulations-fr-.jsonl": {
+      "bytes": 7546917,
+      "sha256": "1ee01f8385e23baa2e5100a12af5defc0b5633fb02de672a5ba1556cac838b15"
+    },
+    ".snapshot-staging/statutes-v2/0507465393c224c0491fc8c17c88340217acc656/sorted-regulations-fr-.jsonl.metadata.json": {
+      "bytes": 77,
+      "sha256": "e9249e6167ec9d2afbb7cdb88cab9bd89b3c6f2b8d07c6e1e1bdb0609578f4a1"
+    }
+  }
+}

@@ -1,7 +1,11 @@
-# CivicSignal v1 release plan
+# CivicSignal v1 release evidence ledger
 
-This is the execution checklist for the v1 goal started on 2026-10-22. It reconciles
-the code audit, the CHS package review, `docs/PLAN.md`, and section 9 of
+The [master plan](PLAN.md) defines scope, priorities, dependencies, and next steps.
+This ledger retains the ten requirement checks and dated evidence for the v1 goal started on 2026-10-22.
+Its historical work order and progress entries do not create a separate roadmap.
+
+The original checklist reconciles
+the code audit, the CHS package review, `docs/PLAN-HISTORY.md`, and section 9 of
 `~/.civicsignal/HANDOFF.md`. The checklist records verified outcomes, not intentions.
 Cloudflare is the only v1 deployment target. Keep the existing Vectorize index and vectors.
 Existing Railway services are outside this release. Preserve unrelated work and the Bun/Postgres portability code.
@@ -143,7 +147,23 @@ remain open; no new generation call is approved. See the
 [deployment](evidence/2026-10-24/staging-api-v7-root-observation.json) and
 [cold/warm result](evidence/2026-10-24/staging-api-v7-calibration-recheck-root-observation.json).
 
+The subsequent local snapshot increment adds isolated first-publication
+qualification and repairs a reproduced partial-archive publication defect in
+the shared canonical path. It also adds the fixture-only KV/export/KV acquisition
+core; no live production reader or maintenance control is enabled. Full local
+checks pass **1,689 tests in 97 files**, 23 Python cases, all four compiler
+projects and five Worker dry builds, with 448 unchanged source inputs. See the
+[root validation](evidence/2026-10-24/snapshot-acquisition-local-root-validation.json).
+These changes are not deployed. Hosted Cron proof, complete-corpus qualification,
+safe failure diagnostics/operator preparation and actual production acquisition
+remain pending; the original serving ledger remains 159/160. The prior
+[documentation-only Linux CI](evidence/2026-10-24/release-closure-linux-ci.json)
+passed on `9e2fe17`; it does not qualify this newer source.
+
 ## Release requirements
+
+The status column distinguishes retained results from qualification of the newer working tree.
+Use the dated entries below for source-specific outcomes.
 
 | ID | Outcome | Acceptance evidence | Status |
 | --- | --- | --- | --- |
@@ -151,14 +171,16 @@ remain open; no new generation call is approved. See the
 | V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
 | V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Full hosted metadata, composite changed-text proof and complete vector backup pass |
-| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Full local and hosted Workflow parity passes; scheduled discovery and first publication remain unverified |
+| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Manual hosted parity and new native qualification pass; hosted scheduled discovery/first publication remain unverified |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Local and Linux release gates pass |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full working-tree local gates pass; exact-source clean Linux qualification remains open |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
-## Work order
+## Original work order — 2026-10-22
+
+This list retains the initial sequence. Use the [master work order](PLAN.md#immediate-work-order) for current work.
 
 1. Establish reproducible CHS dependencies and secure the existing retrieval surfaces.
 2. Fix runtime defects and the validation boundary while ingestion recovery is built.
@@ -188,7 +210,10 @@ Append the affected requirement IDs, commands, outcomes and material limitations
 each reviewed implementation increment. Do not replace a failed check with a narrower
 check without recording the reason.
 
-## Current plan dispositions
+## Recorded scope decisions
+
+This table retains the v1 decisions behind the evidence checklist.
+The [master plan](PLAN.md#current-release-scope) owns current scope and future phases.
 
 | Earlier plan | v1 disposition | Reason and owner |
 | --- | --- | --- |
@@ -206,7 +231,7 @@ check without recording the reason.
 | Prepaid checkout and published unit price | Deferred | v1 enforces workspace allowance; paid pricing remains unconfigured |
 | Retrieval experiments and historical price estimates | Historical evidence | Current policy requires new held-out results and measured serving-path performance |
 
-The old plans remain as history. Their opening notices link to this checklist.
+The old plans remain as history. Their opening notices link to the master plan.
 README and live discovery describe the current v1 scope.
 No exclusion removes the snapshot, restore, text migration, evaluation, or recovery gates.
 
@@ -223,11 +248,11 @@ different deployed bundle. The original serving ledger remains **159/160**.
 | V1-02 | Frozen clean-checkout installation, vendored exports and provenance, Worker/Bun/scripts compilation and five dry builds in [Linux CI](evidence/2026-10-24/provider-redirect-linux-ci.json) | Preserve these checks on the final source candidate. |
 | V1-03 | Cache language/decision isolation, no reranking on a warm hit, input limits, Google authentication and browser CORS regressions; native provider redirect repair and [hosted cold/warm recheck](evidence/2026-10-24/staging-api-v7-calibration-recheck-root-observation.json) | Positive OpenCode Zen generation remains unverified. The sealed one-request proposal needs separate approval; the two earlier generation attempts are spent. |
 | V1-04 | Completed non-empty reconciliation, all 277,857 metadata rows, 1,112 changed targets, empty outbox, composite changed-text verification and complete vector backup | Preserve the paused original coordinator and cumulative usage; no recovery replay is required for this completed gate. Legacy vector model provenance remains an explicit limitation. |
-| V1-05 | Manual hosted Workflow: 127 steps and byte parity for all 240 artifacts / 390,423,509 bytes | Qualify actual scheduled discovery and first publication. The existing-publication probe cannot establish first publication. See [qualification review](V1-SCHEDULED-PUBLICATION-REVIEW.md). |
+| V1-05 | Manual hosted Workflow: 127 steps and byte parity for all 240 artifacts / 390,423,509 bytes; isolated native first-publication/restart qualification and shared partial-archive rejection now pass | Prepare the remaining diagnostics/operator and qualify actual hosted scheduled discovery and first publication against the complete corpus. The older existing-publication probe cannot establish first publication. See [qualification review](V1-SCHEDULED-PUBLICATION-REVIEW.md). |
 | V1-06 | Full staging baseline restore, strict text audit, manifest/index/fingerprint enforcement, complete vector backup and local protected-copy schema/sequence admission | Qualify production acquisition, isolated hosted protected copy, the production target adapter and the eventual migration/rollback. Staging rows cannot prove original production schema. |
 | V1-07 | Calibration, held-out bilingual results and bounded latency/cache observations are retained in [evaluation evidence](V1-EVALUATION.md) | Investigate held-out misses, false acceptance and provider/hydration errors; prepare new acceptance/performance validation within separately approved usage. A successful single calibration pair does not replace the failed holdout or benchmark. |
 | V1-08 | Explicit scope exclusions, HTTP/MCP discovery, exact citations, change-feed paging and 21 hosted smokes | Close positive BYOK chat acceptance; repeat affected advertised-route checks on the final candidate if its source or bindings change. |
-| V1-09 | 1,566 tests in 93 files, 23 Linux Python cases, runtime regressions, expanded compilers, invariant checks and dry builds | Keep source-specific receipts and rerun required gates after substantive changes. Preserve the earlier local log-cap failure and its uncertainty rather than rewriting it as a pass. |
+| V1-09 | Prior Linux release checks pass; the latest local snapshot/acquisition increment passes 1,689 tests in 97 files, 23 Python cases, runtime regressions, expanded compilers, invariant checks and dry builds | Keep source-specific receipts and qualify the latest source in clean Linux CI. Preserve the earlier local log-cap failure and its uncertainty rather than rewriting it as a pass. |
 | V1-10 | Current operations, restore/copy tools, scope dispositions and draft PR #1 | Complete the four remaining gates below, reconcile the exact release source/bindings and obtain any required final production approval after the concrete switch/rollback candidate is reviewable. |
 
 The held-out runner fails on request errors or missing responses; it does not
@@ -699,6 +724,96 @@ thresholds by tuning on those held-out answers.
 
 Small evidence files live in the dated `docs/evidence/` directories.
 The large local artifacts remain outside Git. The commands can reproduce them from pinned source.
+
+## October 31 implementation progress
+
+The [candidate inventory](evidence/2026-10-31/v1-candidate-inventory.json) records the worktree, published source, draft PR, and ten requirement dispositions.
+GitHub confirms successful CI for published head `9e2fe17` in run `40064459109`.
+That result does not qualify the newer uncommitted source or establish fresh cloud state.
+
+V1-03 / V1-08: briefs now reuse the shared CHS corpus emitter on both emission paths.
+Before repair, missing required citations and corpus mismatches produced successful HTTP/MCP briefs and consumed one unit each.
+All four serving regressions now fail safely with zero units; 190 focused checks pass.
+The response shape stays unchanged; per-item attribution now includes the shared licence and conditions.
+See [issue 2](https://github.com/chester-hill-solutions/civicsignal/issues/2) and the [local receipt](evidence/2026-10-31/brief-policy-local-validation.json).
+
+V1-05 / V1-09: scheduled qualification retains typed source failure codes and actual observed HTTP status.
+Safe discovery quota facts and archive failure codes survive receipt and Workflow error serialization.
+The three source phases, durable claims, receipt bound, and canonical retry policy stay unchanged.
+The local slice passes 119 pure checks and 11 native checks.
+Its initial socket failure and corrected R2 test assertions remain in the retained reports.
+See [issue 3](https://github.com/chester-hill-solutions/civicsignal/issues/3) and the [local receipt](evidence/2026-10-31/snapshot-diagnostics-local-validation.json).
+
+[Issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) records the generated-answer evidence gap and required compatibility decision.
+It does not change the current chat response or add an unrecorded release criterion.
+Integrated checks and clean Linux CI for this increment remain pending.
+No hosted serving, source, embedding, schedule, or production operation occurred in this increment.
+
+The local Python aggregate failed its deadline/capture case once, then passed all 23 cases after safe assertion diagnostics were added.
+The capture helper remains unchanged; a separate synthetic deadline probe also passed.
+Later exact process reads found the three observed owned test PIDs absent.
+These later results do not qualify the earlier inner capture or establish its cause.
+See [issue 5](https://github.com/chester-hill-solutions/civicsignal/issues/5) and the [retained observation](evidence/2026-10-31/owned-python-qualification-observation.json).
+
+The old Cron operator and evidence reader prove existing publication and cannot qualify a new first publication.
+[Issue 6](https://github.com/chester-hill-solutions/civicsignal/issues/6) tracks the successor operator and complete accounting contract.
+The new acquisition boundary also exposed [settlement](https://github.com/chester-hill-solutions/civicsignal/issues/7) and [saved-byte integrity](https://github.com/chester-hill-solutions/civicsignal/issues/8) defects during review.
+Both local repairs now pass independent review and 124 focused checks across the transport and original capture core.
+The Bun and tooling compiler checks also pass; integrated qualification remains open.
+These fixture results establish no provider authentication, common writer freeze, or production acquisition.
+
+The [latest integrated observation](evidence/2026-10-31/integrated-candidate-local-observation.json) retains both full attempts.
+The first attempt fails six geography fixtures; their news rows carried the wrong corpus identity.
+The fixture repair preserves the stricter shared emission policy, and its 116 focused checks pass.
+The successor passes full validation: **1,780 tests in 98 files**, four compiler projects, native runtime probes, vendor checks, and invariants.
+Its separate Python suite passes **22/23** and fails `ownedProcessSettled` in the actual log-cap case.
+The inner capture reports timeout, log-cap overflow, and `owned-process-cleanup-uncertain`; the outer monitor settles.
+A later exact process read finds the recorded child absent; this does not qualify the failed inner capture.
+The sequence stops before dry builds, and all 462 source pins stay unchanged.
+The capture helper remains unchanged, the cause remains unknown, and issue 5 stays open.
+The final source still needs complete local qualification and clean Linux CI.
+
+The [successor process-owner receipt](evidence/2026-10-31/process-owner-local-repair.json) records a focused reproduction on iteration 13.
+The group probe returns `PermissionError` / `EPERM`; the former broad cleanup handler then skips direct-child completion and stdout closure.
+The repaired helper treats that error as uncertainty and continues within the same five-second TERM and five-second KILL windows.
+It requires affirmative group absence and direct-child reap, and always tries pipe closure.
+Persistent probe failure still returns unsettled status.
+Two of three deterministic regressions fail before repair; all pass afterward.
+A later 20-case exact loop settles every process, including one naturally observed probe error with retained recovery metadata.
+That loop precedes final errno allowlist tightening; the final frozen source separately passes **27/27 Python cases**, without ResourceWarnings.
+The operator pins the new helper; provenance retains the original source and records the successor.
+The historical integrated failures retain unknown causes. Full successor integration and clean Linux CI remain open.
+
+The [snapshot proposal receipt](evidence/2026-10-31/snapshot-proposal-local-validation.json) records **45 passing preparation checks** and passing Bun/tooling compilers.
+The library reuses the qualification identity, checks actual bundle correspondence, and pins configuration, references, resource observations, and named budgets.
+It separates local metadata sidecars from logical R2 objects and rejects reference, storage, verification, and timing undercounts.
+Its exact manifest and staging-receipt copies now reside in tracked evidence for clean-checkout checks.
+Outputs remain private, exclusively new, and unapproved, with an empty calendar and `executionReady:false`.
+No credentials, network requests, runtime changes, actual event, or allowance changes occur.
+This completes a local preparation slice; issue 6 and hosted scheduled first publication remain open.
+
+Independent review then reproduces acceptance of a one-byte metadata allowance.
+The [successor proposal receipt](evidence/2026-10-31/snapshot-proposal-local-validation-v2.json) records its repair and **48 passing checks**.
+The known custom-metadata key/value floor is **483 × (6 + 64) = 33,810 bytes**.
+It remains distinct from **18,711 local sidecar bytes** and unmeasured provider overhead.
+Independent replay rejects one byte and 33,809 bytes, accepts the exact known floor, and retains `executionReady:false`.
+The original 45-case report remains intact. Exact-source integration and clean Linux CI remain open.
+
+The [successor question receipt](evidence/2026-10-31/successor-serving-label-local-validation.json) records **64 new holdout questions**.
+All **48 positive labels** pass the full immutable-source verifier across **24 XML blobs**, with zero rejected labels.
+The set has 24 provision pairs across 12 Acts outside the stored formal question sets, plus eight excluded-source pairs.
+All positive questions avoid an exact-provision parse. Its 21 new tests and 14 existing evaluation tests pass; Bun/tooling compilers pass.
+The original dataset, default selection, serving policy, prompts, and thresholds stay unchanged.
+This source proof establishes no hosted quality, deployment freshness, or generated-answer support.
+Acceptance policy, fresh target provenance, and a separately bounded serving run remain open.
+
+The [full successor local gate](evidence/2026-10-31/integrated-candidate-local-validation-v3.json) now passes all phases.
+It records **1,849 tests in 100 files**, **27 Python cases**, four compiler projects, native runtime probes, invariants, and five dry builds.
+All **470 source and fixture inputs** stay unchanged; each owned phase settles with exit zero and no deadline or log-limit failure.
+The [successor candidate inventory](evidence/2026-10-31/v1-candidate-inventory-v3.json) maps all ten requirements to their local results and remaining evidence.
+The corpus invariant script explicitly skips absent local ingest SQL/JSONL artifacts; separate hosted corpus proofs remain necessary.
+This run inherits no cloud credentials, makes no real provider call, and deploys nothing.
+Earlier failed runs remain intact. Exact-source clean Linux CI and the four hosted/production release gates remain open.
 
 The recovery, full metadata, composite changed-text byte verification and complete
 vector backup gate is closed within the approved limits. Preserve the original

@@ -313,6 +313,31 @@ describe('HTTP and MCP access and metering', () => {
     expect((await fixture.send('/api/statutes?topic=leave&limit=NaN')).status).toBe(400);
     expect(await fixture.count()).toBe(1);
   });
+  it.each((['http', 'mcp'] as const).flatMap(transport =>
+    (['missing-source', 'corpus-mismatch'] as const).map(fault => ({ transport, fault }))))(
+    'rejects $fault before successful $transport brief usage', async ({ transport, fault }) => {
+      const fixture = await setup();
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      if (fault === 'missing-source') fixture.sqlite.exec("UPDATE statute_sections SET source_url = ''");
+      else fixture.sqlite.exec("UPDATE statute_sections SET corpus_id = 'unknown-corpus'");
+
+      if (transport === 'http') {
+        const response = await fixture.send('/api/brief?act=Test+Act&section=1&language=en');
+        expect(response.status, `Usage after malformed brief: ${await fixture.count()}`).toBe(502);
+        expect(await response.json()).toMatchObject({ code: 'UPSTREAM_UNAVAILABLE' });
+      } else {
+        fixture.env.VECTORIZE = { async query() { return { matches: [{ id: 'acts-en-one', score: 0.9 }] }; } };
+        fixture.env.ENCODER_TOKEN = 'fixture-only';
+        fixture.env.ENCODER_SERVICE = { async fetch() { return Response.json({ vectors: [Array(768).fill(0.1)] }); } };
+        const response = await fixture.rpc('tools/call', { name: 'brief_topic', arguments: { topic: 'housing', language: 'en' } });
+        const body = await response.text();
+        expect(response.status).toBe(200);
+        expect(body, `Usage after malformed brief: ${await fixture.count()}`).toMatch(/"isError"\s*:\s*true/);
+        expect(body).toContain('UPSTREAM_UNAVAILABLE');
+      }
+      expect(await fixture.count()).toBe(0);
+    },
+  );
   it('serves a bounded change feed and refuses an unpublished corpus without billing', async () => {
     const fixture = await setup();
     expect((await fixture.send('/api/changes?limit=1')).status).toBe(200);

@@ -10,7 +10,8 @@ The API reports these limits explicitly. It does not claim that an empty result 
 
 ## Current release state
 
-Read [the release checklist](docs/V1-RELEASE.md) for acceptance evidence and open requirements.
+Start with [the master plan](docs/PLAN.md) for scope, priorities, release gates, and future phases.
+Read [the release evidence ledger](docs/V1-RELEASE.md) for requirement checks and dated outcomes.
 Read [the operations procedure](docs/V1-OPERATIONS.md) before any remote migration or deployment.
 Local tests do not establish production accuracy or performance.
 
@@ -86,7 +87,7 @@ The CivicSignal key authorizes corpus access separately.
 
 [The evaluation procedure](docs/V1-EVALUATION.md) describes held-out bilingual labels and measured serving-path checks.
 [The snapshot procedure](docs/SNAPSHOT.md) describes immutable row parts, fingerprints, and recovery.
-The current [release checklist](docs/V1-RELEASE.md) takes precedence over historical plans and measurements.
+The [master plan](docs/PLAN.md) governs current work. The release ledger retains historical measurements and their limits.
 
 The product applies each corpus policy through `@chester-hill-solutions/corpus` before it emits content.
 Read [the licence register](docs/LICENCE-REGISTER.md) for source terms.

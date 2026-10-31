@@ -69,7 +69,7 @@ async function artifactBytes(bucket: BuildBucket, artifact: Artifact): Promise<U
 
 /** Decompress the pinned tar only once; every parsing step reads its own group.
  * One oversized instrument can exceed the group target but never MAX_FILE_BYTES. */
-export async function stageCorpus(bucket: BuildBucket, source: CorpusSource, revision: CorpusRevision,
+export async function stageCorpus(bucket: BuildBucket, source: Pick<CorpusSource, 'instruments'>, revision: CorpusRevision,
   groupBytes = GROUP_BYTES): Promise<StagePlan> {
   const groups: Artifact[] = [];
   let lines: string[] = [];

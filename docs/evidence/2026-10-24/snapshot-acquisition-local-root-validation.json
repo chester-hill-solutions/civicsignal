@@ -1,0 +1,223 @@
+{
+  "format": 1,
+  "kind": "snapshot-qualification-and-acquisition-local-root-validation",
+  "recordedAt": "2026-10-24T05:37:00.158542+00:00",
+  "previousGoalTurnClassification": "progress: published requirement closure crosswalk and corrected completed/open dispositions in9e2fe17",
+  "baseHead": "9e2fe178ff1ebc9ea25dd89a36987e4a07400a01",
+  "sourceChanges": [
+    {
+      "path": "services/snapshot/builder.ts",
+      "bytes": 12024,
+      "sha256": "10076afd5d15ef0a92ba021f684faacfb06deea2ad2ff139889e7300adfa5cb7"
+    },
+    {
+      "path": "services/snapshot/worker.ts",
+      "bytes": 2410,
+      "sha256": "52e7d4013e7e383502faaec674221761cf49162172d535f219d2a15d8b424079"
+    },
+    {
+      "path": "services/snapshot/archive-source.ts",
+      "bytes": 8514,
+      "sha256": "1c8409ade07ea455dc0fe6f726d1c67144d8cf5ea3b6b38da42425856a491c44"
+    },
+    {
+      "path": "services/snapshot/qualification.ts",
+      "bytes": 8776,
+      "sha256": "b703fe4bdf98715433114e9a7d647eedda6fca21159350308987dc7586440b7a"
+    },
+    {
+      "path": "services/snapshot/qualification-store.ts",
+      "bytes": 4895,
+      "sha256": "4c6d868b702ce24c259b5aee20deb4d2c57c1c3444c40928a8d36d2948777006"
+    },
+    {
+      "path": "services/snapshot/qualification-source.ts",
+      "bytes": 3165,
+      "sha256": "ef85e29740fd56d3e5e4a83429fb7871b1387022fb86f41ea1e619bd39150aad"
+    },
+    {
+      "path": "services/snapshot/qualification-worker.ts",
+      "bytes": 2710,
+      "sha256": "157e4e2fedf611efcfd17f88fb68bf7c862e5b1e42b01129c523bfcfb6f84147"
+    },
+    {
+      "path": "services/snapshot/snapshot-workflow.ts",
+      "bytes": 3160,
+      "sha256": "097c1595afc2568e49886c6bbc8627971891caf57224aac0804fce30959de8a6"
+    },
+    {
+      "path": "test/helpers/snapshot-qualification.ts",
+      "bytes": 4428,
+      "sha256": "c9cb09222d6d326cf140600e903db8a9f9f902cf21dd18a1725b029291d588ac"
+    },
+    {
+      "path": "test/snapshot-archive-source.test.ts",
+      "bytes": 6508,
+      "sha256": "ddb614a0e6ac386ddaccc8bdf0a2eab1892dec02ef20d8fd5d6eaade35183ea8"
+    },
+    {
+      "path": "test/snapshot-qualification.test.ts",
+      "bytes": 22437,
+      "sha256": "68f869b61f9490406b44c56cf6d899c34d94acffacb325b7fe8076e827072672"
+    },
+    {
+      "path": "test/snapshot-qualification-workerd.test.ts",
+      "bytes": 13672,
+      "sha256": "8efe8a668ed79fa634a8f0e9a7440d9c0551848ff928d01e3f9ea576e70238c2"
+    },
+    {
+      "path": "scripts/lib/protected-acquisition.ts",
+      "bytes": 17525,
+      "sha256": "8cb8b8a043b02d5b4f9c25d7741171ccc4c44b3df5043baa3e555704a6ac9b52"
+    },
+    {
+      "path": "test/protected-acquisition.test.ts",
+      "bytes": 22409,
+      "sha256": "c389cd3e34411e8f089806479bda6fc00052fe647bafa65261fd76b7b256827e"
+    }
+  ],
+  "rootGate": {
+    "resultSha256": "d5ab1db371cfc714208b48f4728c0953469be43b5511d8be0c20f575d8da8022",
+    "sourcePinsBeforeAndAfter": 448,
+    "sourcePinsUnchanged": true,
+    "tests": 1689,
+    "testFiles": 97,
+    "pythonCases": 23,
+    "compilerProjects": [
+      "worker",
+      "bun",
+      "tooling",
+      "snapshot"
+    ],
+    "vendorFiles": 117,
+    "workerDryBuilds": [
+      "api",
+      "pipeline",
+      "encoder",
+      "snapshot",
+      "restore"
+    ],
+    "startedAt": "2026-10-24T05:32:30.106410+00:00",
+    "finishedAt": "2026-10-24T05:34:52.284711+00:00",
+    "phases": [
+      {
+        "name": "validate",
+        "exitCode": 0,
+        "ownedProcessSettled": true,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "logSha256": "b3270a23f2aa28997d8d7d577dff7e79afbd60d38150ffdc833e2eb09edd57bc",
+        "logBytes": 65658
+      },
+      {
+        "name": "python-owner",
+        "exitCode": 0,
+        "ownedProcessSettled": true,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "logSha256": "1a5c04ed504e5bc128e77e39e005f34df4c8cebd7d41baa50638527440d31060",
+        "logBytes": 122
+      },
+      {
+        "name": "build",
+        "exitCode": 0,
+        "ownedProcessSettled": true,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "logSha256": "94a0f4fc54de6e607c157c35a59848a0c9ba1d67641f4a811c3e3031bfd54e58",
+        "logBytes": 4534
+      }
+    ]
+  },
+  "focusedChecksOverlapFullSuite": {
+    "snapshotPureAndRegression": 100,
+    "snapshotNative": 16,
+    "independentSnapshotPure": 64,
+    "acquisition": 49,
+    "existingAuthCollector": 2,
+    "independentAcquisitionTargeted": 5
+  },
+  "independentReviews": {
+    "snapshot": "clear after ACK/framing/numeric/parser/window/deadline fixes",
+    "acquisition": "clear after bookmark-continuity and HTTP-evidence fixes"
+  },
+  "snapshotRedReproduction": {
+    "artifactSha256": "82bedd20a6e766985d51073a2b97960d4332dec15eaa3d8bc53fd5f60956563c",
+    "originalBehavior": "Valid gzip with truncated second tar entry could publish a partial1-row586-byte manifest.",
+    "fixedBehavior": "Shared canonical/qualification archive guard refuses incomplete framing before any manifest. Canonical4-attempt terminal regression and framing-bypass negative control pass."
+  },
+  "sourceLimits": {
+    "qualificationAttempts": 3,
+    "sourceStartWindowMs": 900000,
+    "headTimeoutMs": 15000,
+    "archiveTimeoutMs": 3600000,
+    "archiveCompressedBytes": 1073741824,
+    "archiveExpandedBytes": 2147483648,
+    "entryBytes": 16777216,
+    "longnameBytes": 4096,
+    "canonicalRetriesUnchanged": 3
+  },
+  "acquisitionLimits": {
+    "fixtureOnly": true,
+    "exchanges": 2080,
+    "wallMs": 1800000,
+    "exchangeMs": 15000,
+    "noLiveEntry": true,
+    "noSqlDownload": true,
+    "providerAuthenticated": false,
+    "globalQuiescenceEstablished": false,
+    "productionAcquisitionQualified": false
+  },
+  "sealedManifests": [
+    {
+      "packet": "generation",
+      "sha256": "eb376e973d653a4a33cbe6321117be670d7bf165b8b9a5a2486a78b589a93042",
+      "exactPins": 178,
+      "historicalLedgerPrefixes": 0
+    },
+    {
+      "packet": "observer",
+      "sha256": "c1757f1f45f872c0ef69ddd3efc64878e2f95fb87e42eaa61a4d2f6e5f878c49",
+      "exactPins": 49,
+      "historicalLedgerPrefixes": 0
+    },
+    {
+      "packet": "api",
+      "sha256": "e0c36a10179871b405b8ce3e5357803b4264829fb56669dc19bf16f7e6613e1e",
+      "exactPins": 1075,
+      "historicalLedgerPrefixes": 0
+    },
+    {
+      "packet": "consumed-api-operator",
+      "sha256": "04c5acf9d0f1849d8570343d62b68393dd800977af33d9d6209710114afb63ea",
+      "exactPins": 127,
+      "historicalLedgerPrefixes": 1
+    }
+  ],
+  "originalLedger": {
+    "reserved": 159,
+    "limit": 160,
+    "bytes": 14010,
+    "sha256": "f84e9ac62d73ff3e5944101e7efd79542eb2d229bde4779b0f47d621b4799e17",
+    "unchanged": true
+  },
+  "cloudResourceCalls": 0,
+  "realSourceRequests": 0,
+  "realProviderCalls": 0,
+  "realServingCalls": 0,
+  "documentEmbeddings": 0,
+  "credentialReads": 0,
+  "deployedSourceChanged": false,
+  "productionChanged": false,
+  "railwayChanged": false,
+  "limitations": [
+    "Local/native fixture qualification, not hosted Cron proof or full-corpus128MiB measurement.",
+    "Hosted namespace/instance absence, resource identity, finite operator/storage budgets and a separately approved calendar event remain required.",
+    "Production maintenance, signed origin/download, D1 facts, credential/transport owner and complete acquisition budget remain pending.",
+    "This new source has not been pushed or qualified by Linux CI at this observation.",
+    "Positive Zen approval remains pending. Original OAuth expiry05:18:30.278UTC has passed; new credential renewal/current identity qualification is required before any future approved execution."
+  ]
+}

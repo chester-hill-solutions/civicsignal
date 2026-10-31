@@ -1,7 +1,8 @@
 # CivicSignal v1 operations
 
 This procedure describes the release candidate. It does not confirm a production deployment.
-The release checklist records the completed checks and remaining gates.
+The [master plan](PLAN.md) defines the work order and release gates.
+The [release evidence ledger](V1-RELEASE.md) records completed checks and dated outcomes.
 
 ## Platform and identity
 
@@ -370,10 +371,12 @@ upstream status 200. Only typed generation failures get this metadata; a retriev
 failure does not imply that a model was called. Raw provider bodies, causes, keys,
 prompts and answers are excluded from failure metadata.
 
-These changes are local source until a separately verified staging deployment.
+The release ledger records the later staging deployment of these provider repairs.
 The two approved hosted checks each supplied `maxTokens:128` and consumed original
-staging-relay reservations 153 and 154; both failed acceptance. Another generation
-attempt needs approval, even while six original serving reservations remain.
+staging-relay reservations 153 and 154; both failed acceptance. Later diagnostics
+and the cold/warm check advanced the original ledger to **159/160** on October 24.
+Another generation request needs separate approval; the remaining slot supplies no authority.
+Use the [master plan](PLAN.md#mp-03-close-serving-acceptance) for the current work queue.
 
 The [local validation](evidence/2026-10-23/opencode-zen-root-validation.json)
 records the original 88 passing focused tests, two compiler projects, independent

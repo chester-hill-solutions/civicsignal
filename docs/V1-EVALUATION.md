@@ -234,6 +234,39 @@ The Canada Health Act source produced a preamble row with section label `8` as w
 
 ## Reproduce label verification
 
+### Successor labels — 2026-10-31
+
+The separate [successor dataset](../src/eval/data/v1-successor-questions.json) contains 64 holdout questions.
+It has 48 positive questions for 24 provisions across 12 Acts, plus 16 excluded-source questions.
+The positive Acts, gold identifiers, question identifiers, groups, and question text do not overlap the stored formal development and v1 sets.
+The shared citation parser resolves no positive question as an exact-provision request.
+Negative source categories overlap earlier controls; their requested sources and question text differ.
+
+Full immutable-source checks pass all 48 positive labels against 24 XML blobs, with zero rejected labels.
+The [source proof](evidence/2026-10-31/successor-label-source-verification.json) pins revision `0507465393c224c0491fc8c17c88340217acc656` and parser `statutes-v2`.
+The [validation receipt](evidence/2026-10-31/successor-serving-label-local-validation.json) records 35 focused checks and the limits of this selection.
+The parsed dataset digest is `d3f43f117da958f19c3cf1c43314dcd764be7065bc1a58bd7dc4b0857fb94631`.
+
+```sh
+bun scripts/eval-v1.ts \
+  --dataset src/eval/data/v1-successor-questions.json \
+  --verify-only true \
+  --verify-sources /path/to/laws-lois-xml \
+  --output dist/evaluation/v1-successor-labels.json
+```
+
+This command makes no network request. Use a new output path to preserve earlier proofs.
+Clean-checkout tests check the parser seam with small wrappers around unchanged source Sections.
+The separate full-blob proof checks every original XML source.
+
+The default runner and historical questions stay unchanged; a future run must select this dataset explicitly.
+No hosted request, threshold, prompt, provider, or policy changes through this work.
+The labels describe a fixed historical source; they do not establish current deployment presence, population accuracy, or generated-answer support.
+Acceptance criteria, fresh target provenance, and a separately bounded serving decision remain required.
+Use for tuning invalidates holdout independence.
+
+### Original label verification
+
 ```sh
 bun scripts/eval-v1.ts \
   --verify-only true \
@@ -336,6 +369,9 @@ Exact query text is preserved. Repeated questions can hit the deployment cache. 
 Freshness reports distinguish corpus timestamp age, last successful run age, upstream observation age, and whether the observed upstream revision is served. If a newer upstream revision is pending, its age is a lower bound on unresolved lag. Historical metadata cannot establish current freshness.
 
 ## Verification status and remaining prerequisites
+
+This section retains the initial local qualification and its original prerequisites.
+Use the dated hosted observations above and the [master plan](PLAN.md#mp-03-close-serving-acceptance) for current acceptance work.
 
 The focused suite has **47 passing tests** for partitioning/provenance exclusions, denominator math, language pairing, threshold separation, percentile math, actual loopback HTTP requests, bounded concurrency, malformed/error responses, credential-safe redirects, freshness calculations, adapter observations, cache provenance/bypass, successful provider fallbacks, source/parser separation, and strict collection of all 20 calibration cases. Source verification passed as recorded above. An additional 20-request loopback integration passes through the actual portability HTTP handler, shared Postgres retrieval adapter, language filter, observation collector, and CHS in-memory usage ledger: all 20 calibration observations qualify, eight refused scores remain visible, and usage is exactly 20. Its embeddings and scores are deterministic fixtures. These tests establish the measurement contract only; their scores and timing are not CivicSignal retrieval-quality or production-performance results. They require local socket permission in restricted environments.
 

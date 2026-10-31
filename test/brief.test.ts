@@ -7,7 +7,7 @@ import {
   STATUTES_CANADA,
 } from '../src/corpora/policies';
 import type { Corpus, CorpusContext } from '../src/corpora/types';
-import type { RawCorpusItem } from '@chester-hill-solutions/corpus';
+import type { CorpusPolicy, RawCorpusItem } from '@chester-hill-solutions/corpus';
 
 const ctx: CorpusContext = { fetch: globalThis.fetch, now: () => new Date('2026-10-20T00:00:00Z') };
 
@@ -98,6 +98,7 @@ describe('brief assembly', () => {
 
   it('enforces each corpus licence inside the assembled brief', async () => {
     const brief = await buildBrief({ topic: 'housing' }, ctx, corpora);
+    expect(brief.legislation[0]?.body).toBe('Definitions.');
     const debate = brief.debate[0]!;
     expect(debate.body).toBeUndefined();
     expect(debate.excerpt).toBe('We must build more homes.');
@@ -121,6 +122,20 @@ describe('brief assembly', () => {
     expect(brief.attribution.length).toBe(4);
     expect(brief.attribution.some((a) => a.includes('Open Government Licence'))).toBe(true);
     expect(brief.attribution.some((a) => a.includes('Crown copyright'))).toBe(true);
+  });
+
+  it('includes the declared licence and conditions on each emitted item', async () => {
+    const brief = await buildBrief({ topic: 'housing' }, ctx, corpora);
+    const emitted = [...brief.legislation, ...brief.debate, ...brief.news];
+    for (const corpus of corpora) {
+      for (const item of emitted.filter((item) => item.corpusId === corpus.id)) {
+        expect(item.attribution).toContain(corpus.policy.attribution);
+        expect(item.attribution).toContain(corpus.policy.licence);
+        for (const condition of corpus.policy.conditions) expect(item.attribution).toContain(condition);
+      }
+    }
+    // The aggregate attribution list retains its existing source-level format.
+    expect(brief.attribution).toEqual(expect.arrayContaining(corpora.map((corpus) => corpus.policy.attribution)));
   });
 
   it('builds a daily tone series and its mean', async () => {
@@ -176,6 +191,8 @@ describe('brief assembly', () => {
     expect(brief.citation?.resolved).toBe(true);
     expect(brief.citation?.item?.id).toBe('s210');
     expect(brief.legislation[0]?.id).toBe('s210');
+    expect(brief.citation?.item).toEqual(brief.legislation[0]);
+    expect(brief.citation?.item?.attribution).toContain('This is not an official version of the law.');
   });
 
   it('reports a citation that names a section the instrument does not have', async () => {
@@ -194,6 +211,49 @@ describe('brief assembly', () => {
     expect(brief.coverage).toHaveLength(5);
     expect(brief.coverage.every((entry) => entry.status === 'unavailable')).toBe(true);
     expect(brief.sentiment.mean).toBeNull();
+  });
+});
+
+describe('brief policy boundary', () => {
+  const source = (corpusId: string): RawCorpusItem => ({
+    corpusId, kind: 'statute', id: 'policy-fixture', title: 'A source item',
+    body: 'Full source text.', excerpt: 'Source excerpt.',
+    citationUrl: 'https://example.invalid/policy-fixture', source: 'Fixture publisher',
+  });
+
+  it.each(['hansard-federal', 'unknown-corpus'])('rejects a statute adapter item attributed to %s', async (corpusId) => {
+    await expect(buildBrief({ topic: 'housing' }, ctx, [
+      fake(STATUTES_CANADA.id, STATUTES_CANADA, [source(corpusId)]),
+    ])).rejects.toThrow('Corpus mismatch');
+  });
+
+  it.each<CorpusPolicy>([STATUTES_CANADA, HANSARD_FEDERAL, NEWS_CANADA])(
+    'rejects a required source link missing from $id', async (policy) => {
+      await expect(buildBrief({ topic: 'housing' }, ctx, [
+        fake(policy.id, policy, [{ ...source(policy.id), citationUrl: '' }]),
+      ])).rejects.toMatchObject({ name: 'LicenceViolation', corpusId: policy.id, field: 'citationUrl' });
+    },
+  );
+
+  it('bounds cite-only excerpts while keeping the full speech out of the brief', async () => {
+    const speech = { ...source(HANSARD_FEDERAL.id), kind: 'debate' as const,
+      excerpt: 'x'.repeat(HANSARD_FEDERAL.excerptMaxChars + 50) };
+    const brief = await buildBrief({ topic: 'housing' }, ctx, [fake(HANSARD_FEDERAL.id, HANSARD_FEDERAL, [speech])]);
+    expect(brief.debate[0]?.body).toBeUndefined();
+    expect(brief.debate[0]?.excerpt?.length).toBe(HANSARD_FEDERAL.excerptMaxChars);
+    expect(brief.debate[0]?.excerpt).toMatch(/^x+…$/);
+  });
+
+  it('does not retrieve or emit an adapter with no declared brief policy', async () => {
+    let reads = 0;
+    const unknown: Corpus = {
+      id: 'unknown-corpus', policy: { ...STATUTES_CANADA, id: 'unknown-corpus' }, supports: () => true,
+      retrieve: async () => { reads++; return [source('unknown-corpus')]; },
+    };
+    const brief = await buildBrief({ topic: 'housing' }, ctx, [unknown]);
+    expect(reads).toBe(0);
+    expect([...brief.legislation, ...brief.debate, ...brief.news, ...brief.bills]).toEqual([]);
+    expect(brief.coverage.every((entry) => entry.status === 'unavailable')).toBe(true);
   });
 });
 

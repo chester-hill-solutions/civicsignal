@@ -9,7 +9,7 @@ preemptible. No accepted marker is issued after an observed review expiry.
 from pathlib import Path
 import datetime,hashlib,importlib.util,json,os,pwd,re,stat,sys,time
 ROOT=Path(__file__).resolve().parent.parent
-CAPTURE_SHA='e262416e5ca9d25b37f869f238b5cbffe3d71c9ac178eb1bc4191b45fd367455'
+CAPTURE_SHA='222640626fa99e8e413d5282c439d11f0c3770c06653e61bce6801a8a79b084a'
 INSPECTION_SECONDS=300
 EXECUTION_SECONDS=330
 VERSION_SECONDS=5
