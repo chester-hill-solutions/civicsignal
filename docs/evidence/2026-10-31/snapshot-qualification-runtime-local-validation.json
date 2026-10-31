@@ -1,0 +1,217 @@
+{
+  "format": 1,
+  "kind": "snapshot-qualification-runtime-local-validation",
+  "recordedAt": "2026-10-31T23:24:53.879854+00:00",
+  "planWorkPackage": "MP-02",
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/6",
+  "status": "focused source qualification only; complete local/Linux and hosted qualification remain open",
+  "sourcePins": [
+    {
+      "path": "scripts/generate-snapshot-qualification-reference.ts",
+      "bytes": 3248,
+      "sha256": "a432f5f3abf1e1645494f20014e997ee36a97972ee2c7142e44563825f206037"
+    },
+    {
+      "path": "scripts/lib/snapshot-qualification-proposal.ts",
+      "bytes": 26740,
+      "sha256": "30e45b9eb7b8d6fd7f2a6aa121a2813b6932d3080a81d9a3e015164071203ba5"
+    },
+    {
+      "path": "scripts/validate-snapshot-workflow.ts",
+      "bytes": 7771,
+      "sha256": "89c7bca4328ebcb844b8f78c5b972836d360d04403073e71990e6f58c8408d0c"
+    },
+    {
+      "path": "services/snapshot/qualification-reference-data.ts",
+      "bytes": 83003,
+      "sha256": "07f42303f4e858d760f8ac84af20d5d91bcb4b4fa6f58306d995cb477d158122"
+    },
+    {
+      "path": "services/snapshot/qualification-reference-policy.ts",
+      "bytes": 20278,
+      "sha256": "278dd4b1c32eb8d0483ccce5a8c144675453db999eff267e8c75a27f05b31c37"
+    },
+    {
+      "path": "services/snapshot/qualification-worker.ts",
+      "bytes": 3284,
+      "sha256": "1a2c5e063c95138ec8b6c38f8736e82097c7f8832be3eb0fc3415b37109fa30c"
+    },
+    {
+      "path": "services/snapshot/qualification.ts",
+      "bytes": 10305,
+      "sha256": "ac87e4f923713c04d74ee5bb629779c8a591a1775c3197e24da2947a86515faa"
+    },
+    {
+      "path": "services/snapshot/qualification-store.ts",
+      "bytes": 4895,
+      "sha256": "4c6d868b702ce24c259b5aee20deb4d2c57c1c3444c40928a8d36d2948777006"
+    },
+    {
+      "path": "services/snapshot/qualification-source.ts",
+      "bytes": 3512,
+      "sha256": "792918507074578960eb916021585798c256dd0ce64481cebab672ec52a2f905"
+    },
+    {
+      "path": "services/snapshot/snapshot-workflow.ts",
+      "bytes": 3976,
+      "sha256": "5b8d0cee8dfc14d24f69294832d2ff5a516e69c3f1b2bdd6fb92d11cf415e6c3"
+    },
+    {
+      "path": "services/snapshot/builder.ts",
+      "bytes": 13024,
+      "sha256": "3ceb14b3da7e8cf5361063fca09c12b13f445868b04ba127b9ff1a91b7d4912e"
+    },
+    {
+      "path": "services/snapshot/archive-source.ts",
+      "bytes": 10194,
+      "sha256": "e2c6e624a5198b3375d602fe8b4cb29b785a4001a9a55140c8d19bdf7c66d6da"
+    },
+    {
+      "path": "src/ingest/source-head.ts",
+      "bytes": 8218,
+      "sha256": "ee238c1211f116e58382f67e179d117b3592b3ffbd886b748eefcab5ac7b673a"
+    },
+    {
+      "path": "test/snapshot-qualification-runtime.test.ts",
+      "bytes": 17041,
+      "sha256": "c5a3a1b69b0d9ebba08ee890470616ea3d9f4cda096d5079a836c25c27246b24"
+    },
+    {
+      "path": "test/snapshot-qualification-workerd.test.ts",
+      "bytes": 19021,
+      "sha256": "f931924a6f1f4bd50c380414f800ce180af2206ff88f3fa7f556a9059c2c5a74"
+    },
+    {
+      "path": "test/snapshot-qualification.test.ts",
+      "bytes": 26557,
+      "sha256": "5344c674c66d88b712da8da9193203a1ed5b7f395c7d81b52bd7367a772bee26"
+    },
+    {
+      "path": "test/helpers/snapshot-qualification.ts",
+      "bytes": 5953,
+      "sha256": "7f513d49a03f21d3136a248019bed4712b8dcecd5c794e6fcc9f5b58a69bfaf8"
+    },
+    {
+      "path": "test/snapshot-qualification-proposal.test.ts",
+      "bytes": 22194,
+      "sha256": "bc3632379e2562fa5df738947c90d050a3e96fdf130b7456a00f1e0466512c4e"
+    }
+  ],
+  "referenceAccounting": {
+    "path": "docs/evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json",
+    "bytes": 73958,
+    "sha256": "a19cceb6318ed4907bce393954410baeaed1c02584137b270869878cbb11ca9f"
+  },
+  "runtimePolicyDefinitionDigest": "7183d45a6534154230b1462a5b8954799b07f61c7b426113587e206f9fe3f02d",
+  "focused": {
+    "tests": 176,
+    "files": 5,
+    "runtimePure": 41,
+    "qualificationPure": 49,
+    "builderPure": 9,
+    "native": 13,
+    "proposal": 64,
+    "exitCodes": [
+      0,
+      0
+    ]
+  },
+  "compilerProjects": {
+    "worker": {
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-qualification-runtime-worker-final-draft.log",
+        "bytes": 140,
+        "sha256": "8a08bfcadd91cdaa135dec7ae9013b1030a32fe8fe77053904c551a2ae2e517d"
+      }
+    },
+    "bun": {
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-qualification-runtime-bun-final-draft.log",
+        "bytes": 137,
+        "sha256": "137233cf0d3c1cacc81f5c561ccd8067935e982264c8a32314186e660a3584c1"
+      }
+    },
+    "tooling": {
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-qualification-runtime-tooling-final-draft.log",
+        "bytes": 141,
+        "sha256": "46b33dc115594175bb52d74c8ff90deddf998a4699a4db244a75917cfbe8b69d"
+      }
+    },
+    "snapshot": {
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-qualification-runtime-snapshot-final-draft.log",
+        "bytes": 151,
+        "sha256": "50552d56eb0be93969a97a8d5acb093e83a9f3c8638ede495845f03acd950542"
+      }
+    }
+  },
+  "independentPeerReview": {
+    "verdict": "approve-source-scope",
+    "reviewer": "planning_operations",
+    "independentlyMatchedSourcePins": 18,
+    "sourcePinsAggregateSha256": "ab52d586189d10315b26b137d6aca052c681ea8c710e3cd677d7f23678578c74",
+    "qualificationLimits": "Does not qualify successor accounting, proposal suite, full integration/Linux or hosted execution."
+  },
+  "retainedEarlierFailures": {
+    "classification": "Earlier draft observations retained: loopback sandbox EPERM plus changed invalid-clock expectation; test-only variable typo; native fixture wrongly expected waiting status, corrected using observed running status and an explicit post-checkpoint marker. These are not hosted failure diagnoses.",
+    "logs": {
+      "civicsignal-qualification-runtime-existing-draft.log": {
+        "path": "/tmp/civicsignal-qualification-runtime-existing-draft.log",
+        "bytes": 24285,
+        "sha256": "651c0794b964692d2a0fb961c5f49a59fe6158943d1c7111248a77000ea166e2"
+      },
+      "civicsignal-qualification-runtime-pure-draft.log": {
+        "path": "/tmp/civicsignal-qualification-runtime-pure-draft.log",
+        "bytes": 18068,
+        "sha256": "2490aa14d9780bfc204dd5b42477667e6b634d55af0f745507f68012cbb819d0"
+      },
+      "civicsignal-qualification-runtime-native-resume.log": {
+        "path": "/tmp/civicsignal-qualification-runtime-native-resume.log",
+        "bytes": 9071,
+        "sha256": "4298c7898038ed9fb5e12791e43ae72f7bdc16041f760e588d6040f630758840"
+      },
+      "civicsignal-qualification-runtime-native-resume2.log": {
+        "path": "/tmp/civicsignal-qualification-runtime-native-resume2.log",
+        "bytes": 1955,
+        "sha256": "45fc0255f8e20451c30ead32807db2b50303a5d66ea538b91bf809f6412433cf"
+      }
+    }
+  },
+  "localLogs": {
+    "focused": {
+      "path": "/tmp/civicsignal-qualification-runtime-focused-final-draft.log",
+      "bytes": 23548,
+      "sha256": "d39c1090651c44427ec9663456e865c2613b39fe6ea695f0714c7d7dbb56dddc"
+    },
+    "proposal": {
+      "path": "/tmp/civicsignal-qualification-runtime-proposal-v2.log",
+      "bytes": 433,
+      "sha256": "e823185f4d28267270e8c51117ea31a86bee4a6bcd5b33f379d34b07c7099e08"
+    }
+  },
+  "sourcePinsUnchanged": true,
+  "limits": {
+    "canonicalDefaultsPreserved": true,
+    "canonicalBundleImportsQualificationReferenceMap": false,
+    "perCallbackAndTraversalBoundsOnly": true,
+    "globalRawR2AggregateEnforced": false,
+    "bindingCancellationGuaranteed": false,
+    "metadataAndProviderAccountingOverheadQualified": false,
+    "platformDeliveryAndReconstructionQualified": false,
+    "executionApproved": false,
+    "eventSelected": false,
+    "realCredentialReads": 0,
+    "accountRequests": 0,
+    "sourceRequests": 0,
+    "modelRequests": 0,
+    "deployed": false,
+    "completeLocalGateQualified": false,
+    "cleanLinuxQualified": false,
+    "hostedFirstPublicationQualified": false
+  }
+}

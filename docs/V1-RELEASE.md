@@ -920,9 +920,38 @@ All 472 source and fixture inputs match the passing local gate and current tree.
 Issues 10 and 11 close for their qualified source repairs. Issues 4 and 6 and all four hosted/production gates remain open.
 The PR remains a draft. No deployment, source, serving, generation, calendar, production, or Railway action follows from this CI result.
 
+A bounded read-only production inventory then completes with settled ownership and no data or writer-control changes.
+Its detailed observation and maintenance finding remain in the private local operation packet under a publication hold.
+No public issue or artifact link carries those details. Deployed-source correspondence, auth authority, common maintenance, and production acquisition remain open.
+
+The private fixed publication preparation passes 47 local cases across controller, owner, and artifact checks, plus compilation and offline inspection.
+Its complete fixture covers 720 captures, 1,171,270,527 bytes, and all 277,857 logical rows in each of three comparison sets.
+The packet remains unapproved and non-live. Its 912 REST slots and four local guard reads do not establish a global provider ceiling.
+Source review identifies default qualification retries and unbounded cleanup as concrete remaining controls in the shared runtime.
+The next increment adds qualification-only retry, deadline, fixed object, and progress limits while retaining canonical behavior.
+This later source still needs full local and clean Linux qualification. No new event, deployment, corpus request, or generation follows from preparation.
+
 The recovery, full metadata, composite changed-text byte verification and complete
 vector backup gate is closed within the approved limits. Preserve the original
 paused coordinator and backup evidence.
+
+The master plan consolidates the current package status and next actions.
+This ledger retains the detailed execution history, including the [acquisition transport receipt](evidence/2026-10-31/acquisition-transport-local-validation.json).
+The original [snapshot reference accounting](evidence/2026-10-31/snapshot-reference-accounting.json) retains its 986-operation successful-path baseline.
+Its older source pins and excluded work do not establish a current runtime ceiling.
+The qualification-runtime increment then passes 176 focused checks and independent source review. All four compiler projects pass.
+The [successor accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) pins all thirteen required runtime sources and both original references.
+It preserves the 986-operation baseline and records separate callback bounds; it claims no global provider ceiling or binding cancellation guarantee.
+All eighteen reviewed source/test pins remain unchanged after the 64-case proposal suite. Full local and clean Linux qualification remain open.
+
+The [focused runtime receipt](evidence/2026-10-31/snapshot-qualification-runtime-local-validation.json) retains the 176-case result, four compiler checks, and eighteen source/test pins.
+The [v6 sandbox observation](evidence/2026-10-31/integrated-candidate-local-observation-v6.json) retains local loopback refusals and an explicit root stop.
+Root checks the exact owned process before SIGTERM; its original capture owner settles. All 477 inputs remain unchanged.
+The separate [v7 complete observation](evidence/2026-10-31/integrated-candidate-local-observation-v7.json) passes installation and all four compiler projects.
+Tests finish with 1,971 passes and one failure across 102 files. Undici reports terminated/EPIPE in the four-frame native restore test.
+Its owner settles with exit one; Python and dry builds do not run. All 477 inputs remain unchanged.
+The exact named test then passes in isolation, with seventeen tests skipped and settled ownership. That result does not qualify the failed aggregate.
+[Issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12) tracks diagnosis; the cause remains unknown. Full source and clean Linux qualification remain open.
 
 ## Remaining release gates
 

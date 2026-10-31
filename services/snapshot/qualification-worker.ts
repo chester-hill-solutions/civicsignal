@@ -6,6 +6,7 @@ import { qualificationIdentity, qualificationRecord, runQualificationScheduled,
   type QualificationControls, type QualificationParams, type QualificationWorkflowBinding } from './qualification';
 import { qualificationSource } from './qualification-source';
 import { runSnapshotWorkflow } from './snapshot-workflow';
+import { qualificationRuntime, QUALIFICATION_ADMISSION_STEP } from './qualification-reference-policy';
 
 type QualificationEnv = QualificationControls & { CORPUS: R2Bucket; SNAPSHOT: QualificationWorkflowBinding };
 
@@ -16,17 +17,22 @@ export class CorpusSnapshot extends WorkflowEntrypoint<QualificationEnv, Qualifi
     const q = await qualificationIdentity(this.env);
     if (event.instanceId !== q.instanceId || event.payload.qualification !== q.digest) throw new Error('Qualification Workflow identity differs.');
     assertSourceRevision(q.identity.revision, event.payload.revision);
-    // No direct/manual Workflow invocation can skip the scheduled admission and
-    // completed discovery checkpoint. Checks repeat on every runtime restart.
-    await assertQualificationReceipt(this.env.CORPUS, q.prefix + 'diagnostics/admitted.json', qualificationRecord(q, 'admitted'));
-    await assertQualificationReceipt(this.env.CORPUS, q.prefix + 'diagnostics/discovered.json', qualificationRecord(q, 'discovered'));
-    const bucket = qualificationBucket(this.env.CORPUS, q.prefix);
-    const source = qualificationSource(this.env.CORPUS, q);
+    const runtime = qualificationRuntime(this.env.CORPUS, q);
+    // No direct/manual invocation can skip scheduled discovery. A completed
+    // admission checkpoint is reused on engine reconstruction, not refetched.
+    await runtime.step(step, QUALIFICATION_ADMISSION_STEP, async () => {
+      await assertQualificationReceipt(runtime.bucket, q.prefix + 'diagnostics/admitted.json', qualificationRecord(q, 'admitted'));
+      await assertQualificationReceipt(runtime.bucket, q.prefix + 'diagnostics/discovered.json', qualificationRecord(q, 'discovered'));
+      return true;
+    });
+    const bucket = qualificationBucket(runtime.bucket, q.prefix);
+    const source = qualificationSource(runtime.bucket, q);
     const result = await runSnapshotWorkflow(q.identity.revision, step, bucket, {
       head: () => source.head('authoritative'), source, sourceRetries: 0,
+      qualificationStep: (name, callback) => runtime.step(step, name, callback), cleanup: runtime.cleanup,
     });
-    await step.do('record qualification publication outcome', async () => {
-      await qualificationReceipt(this.env.CORPUS, q.prefix + 'diagnostics/published.json', {
+    await runtime.step(step, 'record qualification publication outcome', async () => {
+      await qualificationReceipt(runtime.bucket, q.prefix + 'diagnostics/published.json', {
         ...qualificationRecord(q, 'published'), count: result.count, existing: 'existing' in result && result.existing === true,
       });
       return true;
@@ -37,6 +43,9 @@ export class CorpusSnapshot extends WorkflowEntrypoint<QualificationEnv, Qualifi
 
 export default {
   async scheduled(event: ScheduledController, env: QualificationEnv): Promise<void> {
-    await runQualificationScheduled(env, event, q => qualificationSource(env.CORPUS, q).head('discovery'));
+    event.noRetry();
+    const q = await qualificationIdentity(env), runtime = qualificationRuntime(env.CORPUS, q);
+    await runtime.run('scheduled entry', () => runQualificationScheduled({ ...env, CORPUS: runtime.bucket }, event,
+      () => qualificationSource(runtime.bucket, q).head('discovery')));
   },
 };

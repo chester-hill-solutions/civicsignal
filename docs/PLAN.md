@@ -6,6 +6,30 @@ CivicSignal will give applications and agents source-cited Canadian civic inform
 The first release serves Canadian federal statutes and regulations in English and French.
 The immediate objective is to close four release gates: scheduled first publication, serving acceptance, production migration, and the final release audit.
 
+## Immediate work order
+
+1. **Qualify the MP-02 runtime increment.** Diagnose the native restore-frame failure; preserve the reviewed controls and accounting; complete local/Linux checks.
+2. **Prepare the three open evidence paths.** Make the scheduled packet executable; prepare serving acceptance and consistent production acquisition alongside it.
+3. **Close the corresponding hosted gates.** Use fresh target evidence and the reviewed limits for each concrete operation.
+4. **Complete MP-05 after acquisition.** Qualify the protected copy, production target, and authorization-preserving rollback.
+5. **Complete MP-06.** Reconcile all ten requirements, review the production switch, execute its approved checks, and record the actual result.
+
+MP-01 supplies the exact candidate for each operation.
+MP-02, MP-03, and MP-04 preparation can proceed independently.
+MP-04 capture must pass before MP-05's production-derived proof.
+The final production decision waits for MP-02, MP-03, and MP-05 acceptance.
+
+## Release gates at a glance
+
+All four gates remain open. The ten [release requirements](V1-RELEASE.md#release-requirements) retain their individual acceptance checks.
+
+| Gate | Packages | Completion evidence |
+| --- | --- | --- |
+| Scheduled first publication | MP-02 | A scheduled event creates a distinct instance and first complete publication; all artifacts match; canonical state and cleanup pass |
+| Serving acceptance | MP-03 | Accepted bilingual quality and performance reports, positive hosted Zen chat, and advertised route checks |
+| Production migration | MP-04, MP-05 | Consistent production capture, hosted protected-copy proof, compatible switch, and authorization-preserving rollback |
+| Final release | MP-06 | The exact final source passes engineering checks; all requirements reconcile; the approved production switch passes |
+
 ## Plan authority
 
 This is the single master plan for scope, decisions, work order, and future phases.
@@ -34,6 +58,7 @@ The Policorner wire keeps its own brand, accounts, and reader-facing product.
 
 The sequence is: release the federal foundation, test external demand, select a paid use, then expand supported sources and surfaces.
 A portal or hosted agent is a later product decision.
+Phase 1 is the active implementation scope. Phases 2–5 require their stated entry evidence and decisions.
 
 ## Current release scope
 
@@ -102,97 +127,36 @@ Unspent slots do not authorize another operation, reset, retry, or replacement l
 
 ## Implementation progress
 
-The October 31 work uses the current worktree and the existing draft PR.
-The [initial candidate inventory](evidence/2026-10-31/v1-candidate-inventory.json) records all ten requirements and 460 source inputs at its capture point.
-The [successor inventory](evidence/2026-10-31/v1-candidate-inventory-v3.json) pins 470 source and fixture inputs for the complete passing local gate.
-Earlier GitHub reads retain successful CI for source `9e2fe17`; they do not qualify later changes or refresh hosted deployment identities.
-Source `3377cb8` passes its full local gate, then fails its first clean Linux run in proposal source-file metadata admission.
-Implementation source **`08cf10c`** passes [clean Linux qualification](evidence/2026-10-31/candidate-08cf-linux-ci-validation.json).
-That receipt pins all 470 source and fixture inputs and identifies the exact checked-out merge.
-The current implementation, **`26d5049`**, passes [clean Linux qualification](evidence/2026-10-31/candidate-26d-linux-ci-validation.json) with 472 source and fixture inputs.
+The latest qualified implementation is **`26d5049`**.
+Its [complete local gate](evidence/2026-10-31/integrated-candidate-local-validation-v5.json) and [clean Linux gate](evidence/2026-10-31/candidate-26d-linux-ci-validation.json) pass with 472 source and fixture inputs.
+Those checks cover 1,925 tests, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
+Later source changes need their own complete checks.
+The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves earlier candidates, repairs, failed checks, and exact receipts.
 
-| Work | Local result | Next evidence |
+| Package | Current position | Next deliverable |
 | --- | --- | --- |
-| MP-01 candidate inventory | Published source `26d5049` and its 472 inputs pass local and clean Linux gates | Preserve qualification after source changes and complete remaining hosted identity evidence |
-| MP-02 source diagnostics | 119 pure and 11 native checks pass; source code/status facts survive safe serialization | Complete operator/budgets and qualify real scheduled first publication |
-| MP-02 proposal preparation | 60 focused checks and full clean Linux CI pass, including public-hardlink and private-input regressions | Owned execution, enforced limits, fresh evidence, and hosted qualification |
-| MP-02 staging readiness | One refresh preserves 28 scopes; the successor's six management reads pass with an empty Worker calendar | Concrete first-publication operator, budgets, artifact checks, and execution decision |
-| MP-03 brief policy | Local and clean Linux checks pass; malformed HTTP/MCP briefs fail before successful usage consumption | Remaining hosted serving acceptance |
-| MP-03 text hydration | The shared-object length repair passes focused, full local, and clean Linux checks | Hosted acceptance |
-| MP-03 successor questions | 64 new paired questions; all 48 positive labels pass full immutable-source checks; 35 focused checks pass | Acceptance criteria, fresh target provenance, and a separately bounded serving run |
-| MP-04 acquisition transport | Local and clean Linux checks pass; independent review accepts the fixture repairs | Complete budget, source facts, credential owner, and actual maintenance qualification |
-| MP-04 schema and sequence facts | The fixed collector and retained-file repair pass focused review, full local checks, and clean Linux | Complete source facts and actual production acquisition |
-| MP-06 candidate checks | Source `26d5049` passes 1,925 tests, 27 Python cases, and five dry builds locally and in clean Linux | Final release evidence and qualification of future source changes |
+| MP-01 | Qualified source and requirement inventory retained | Refresh the candidate inventory after the current source increment |
+| MP-02 | Runtime controls pass focused checks and source review; successor accounting exists; fixed operator preparation remains non-live | Complete full source checks and the executable operation packet |
+| MP-03 | Brief and text-hydration repairs qualify; successor bilingual labels have full source checks | Record acceptance policy and prepare the bounded serving packet |
+| MP-04 | Fixture acquisition, transport, and schema/sequence collectors qualify | Complete actual authority, writer, maintenance, and acquisition evidence |
+| MP-05 | Local copy, sequence, binding, and rollback mechanisms pass | Qualify production-derived hosted copy and the production target |
+| MP-06 | Engineering checks pass for `26d5049`; the PR remains a draft | Check the final source and reconcile all required release evidence |
 
-Findings live in the repository issue tracker:
+The qualification-runtime increment remains in progress.
+Its reference policies, retry limits, deadlines, and cleanup controls pass focused checks and independent source review.
+The [successor accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records the conditional runtime bounds.
+The [complete local check](evidence/2026-10-31/integrated-candidate-local-observation-v7.json) fails one native restore-frame test after 1,971 passes.
+The named isolated probe passes on unchanged source; the cause remains unknown. Full local and clean Linux checks remain open.
+Caller-enforced bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
+The fixed operator preparation remains non-live until a fresh successor consumes the qualified runtime and its reviewed accounting disposition.
 
-- [Issue 2: shared brief emission](https://github.com/chester-hill-solutions/civicsignal/issues/2) closes after source-specific local and Linux checks.
-- [Issue 3: safe snapshot diagnostics](https://github.com/chester-hill-solutions/civicsignal/issues/3) closes after source-specific native and Linux checks.
-- [Issue 4: chat evidence contract](https://github.com/chester-hill-solutions/civicsignal/issues/4) needs an explicit product/API disposition.
-- [Issue 5: process-owner qualification](https://github.com/chester-hill-solutions/civicsignal/issues/5) closes after cleanup repair and Linux qualification; historical failure causes remain unknown.
-- [Issue 6: scheduled operator accounting](https://github.com/chester-hill-solutions/civicsignal/issues/6) requires a successor operator and complete operation budget.
-- [Issue 7: acquisition settlement](https://github.com/chester-hill-solutions/civicsignal/issues/7) closes with the qualified conservative settlement repair.
-- [Issue 8: SQL download readback](https://github.com/chester-hill-solutions/civicsignal/issues/8) closes with qualified same-descriptor fixture checks.
-- [Issue 9: Linux source admission](https://github.com/chester-hill-solutions/civicsignal/issues/9) closes after the public-hardlink repair passes clean Linux CI.
-- [Issue 10: shared text-object lengths](https://github.com/chester-hill-solutions/civicsignal/issues/10) closes after the integrity and allocation repair passes local and clean Linux checks.
-- [Issue 11: retained facts integrity](https://github.com/chester-hill-solutions/civicsignal/issues/11) closes after the file-drift repair passes independent review, local checks, and clean Linux.
+A bounded read-only production inventory completes; its detailed evidence and maintenance finding remain private.
+Deployed-source correspondence, auth authority, common maintenance, and actual acquisition remain open.
+No new deployment, scheduled event, generation, maintenance interval, or migration follows from these preparations.
 
-The [brief receipt](evidence/2026-10-31/brief-policy-local-validation.json) and [snapshot receipt](evidence/2026-10-31/snapshot-diagnostics-local-validation.json) retain source pins and test limits.
-The [acquisition transport receipt](evidence/2026-10-31/acquisition-transport-local-validation.json) records the fixture repairs, 124 focused checks, and independent review.
-The [snapshot accounting](evidence/2026-10-31/snapshot-reference-accounting.json) records a reference baseline; it does not establish a complete execution ceiling.
-The [proposal receipt](evidence/2026-10-31/snapshot-proposal-local-validation-v2.json) records preparation checks, the metadata-floor repair, and exact tracked references.
-Prepared proposals keep an empty calendar and report `executionReady:false`; they do not establish runtime budget enforcement.
-The [successor label receipt](evidence/2026-10-31/successor-serving-label-local-validation.json) records 24 new provision pairs across 12 Acts and eight excluded-source pairs.
-The new set does not overlap the stored formal question sets; it does not establish hosted quality or generated-answer support.
-The [Python observation](evidence/2026-10-31/owned-python-qualification-observation.json) preserves the failed 23-case aggregate and a later passing aggregate.
-Those earlier observations use the unchanged capture helper; their original causes remain unknown.
-The [earlier integrated observation](evidence/2026-10-31/integrated-candidate-local-observation.json) passes validation: 1,780 tests in 98 files, four compiler projects, runtime probes, and invariants.
-The separate Python suite passes 22 of 23 cases and fails process settlement in its log-cap case.
-The sequence stops before dry builds; the source stays unchanged across the run.
-The [successor cleanup receipt](evidence/2026-10-31/process-owner-local-repair.json) records a new group-probe `EPERM` reproduction and its repair.
-The helper now continues bounded cleanup and requires confirmed group absence plus direct-child reap.
-Persistent uncertainty still fails. The final successor passes all 27 Python cases; it does not replace the earlier failed results.
-The [complete successor local gate](evidence/2026-10-31/integrated-candidate-local-validation-v3.json) passes every phase with all 470 inputs unchanged.
-The [failed Linux run](evidence/2026-10-31/candidate-3377-linux-ci-failure.json) retains 23 proposal failures after successful installation and compilation.
-Its Python and build phases do not run.
-The [local admission repair](evidence/2026-10-31/proposal-public-hardlink-local-repair.json) reproduces the hardlink failure and passes 60 checks.
-Public source reads preserve pinned bytes and stable metadata; private inputs retain strict checks at every read.
-The original CI inode facts remain unknown.
-The [successor Linux run](evidence/2026-10-31/candidate-08cf-linux-ci-validation.json) passes 1,861 tests, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
-The later [hydration repair](evidence/2026-10-31/hydration-contract-local-validation.json) passes 138 focused checks, including nine new regressions, and three compiler projects.
-An actual HTTP cache-hit test preserves usage after a strict text failure. The new source still needs full integration and clean Linux checks.
-The [next full candidate check](evidence/2026-10-31/integrated-candidate-local-observation-v4.json) fails protected-path tests because its temporary directory resides inside the checkout.
-Preserve that result. Keep protected-path admission strict; use external private temporary data for the successor after the facts repair.
-The [facts repair](evidence/2026-10-31/acquisition-facts-local-validation.json) passes 179 focused checks, compiler checks, and independent review.
-Original file identities and complete bounded bytes now govern final acceptance under the same acquisition owner.
-The [corrected full local gate](evidence/2026-10-31/integrated-candidate-local-validation-v5.json) passes frozen installation, 1,925 tests, 27 Python checks, and five dry builds.
-All 472 source and fixture inputs remain unchanged.
-The [clean Linux successor](evidence/2026-10-31/candidate-26d-linux-ci-validation.json) passes the same complete checks for implementation source `26d5049`.
-Its actual checkout is merge `31b1db0` with base `717bf32`. Issues 10 and 11 close; issues 4 and 6 remain open.
-Final release qualification and all four hosted/production gates remain open.
-
-### Immediate work order
-
-1. Complete the concrete first-publication packet from fresh staging facts, existing owned helpers, and the full artifact comparison.
-2. Prepare serving acceptance and bounded production inventory alongside that work. Complete acquisition and common maintenance from actual production facts.
-3. Resolve acceptance criteria and operation budgets before the corresponding hosted work.
-4. Qualify protected copy and rollback after production acquisition. Assemble the final release packet after all required evidence passes.
-5. Preserve exact source qualification after future changes; complete the final production decision and its approved checks.
-
-MP-01 establishes the candidate for every package.
-MP-04 supplies the production capture for MP-05.
-MP-06 requires MP-02, MP-03, and MP-05 acceptance before the production decision.
-
-### Release gates at a glance
-
-All four gates remain open. The ten [release requirements](V1-RELEASE.md#release-requirements) retain their individual acceptance checks.
-
-| Gate | Work packages | Completion evidence | Depends on |
-| --- | --- | --- | --- |
-| Scheduled first publication | MP-02 | One admitted scheduled event creates a new instance and complete publication; all artifacts match; cleanup passes | Exact candidate and reviewed execution packet |
-| Serving acceptance | MP-03 | Accepted bilingual quality and performance reports, positive hosted Zen chat, and advertised route checks | Recorded acceptance criteria and reviewed serving scope |
-| Production migration | MP-04, MP-05 | Consistent production capture, hosted protected-copy proof, and compatible switch and rollback | Actual writer controls and accepted acquisition evidence |
-| Final release | MP-06 | Final source passes engineering checks; all requirements reconcile; approved production switch passes | All preceding gates |
+Open public findings are [chat evidence contract, issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) and [scheduled operation accounting, issue 6](https://github.com/chester-hill-solutions/civicsignal/issues/6).
+The [native restore-frame finding, issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12), tracks the current full-check failure.
+The release ledger retains closed findings and their source-specific qualification.
 
 ## Phase 1 Close the v1 release
 
@@ -215,7 +179,7 @@ Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPER
 
 ### MP-02 Qualify scheduled first publication
 
-**Status:** local implementation and safe source diagnostics pass; operator and hosted qualification remain open. **Requirements:** V1-04, V1-05, V1-09.
+**Status:** runtime controls pass focused checks and source review; full source checks, the executable operator, and hosted qualification remain open. **Requirements:** V1-04, V1-05, V1-09.
 
 - Retain the shared Workflow, parser, builder, archive checks, and manifest-last publication path.
 - Preserve safe source failure diagnostics without raw provider bodies or exception text.
@@ -237,20 +201,12 @@ Use the [qualification review](V1-SCHEDULED-PUBLICATION-REVIEW.md), [shared Work
 The [preparation CLI](../scripts/prepare-snapshot-qualification.ts) checks a pinned proposal; it has no execution mode.
 The retained October 24 existing-publication probe has consumed arming markers and an expired review.
 It cannot authorize another event or prove first publication.
-The [October 31 readiness audit](evidence/2026-10-31/scheduled-readiness-authority-audit.json) found no newer approved first-publication packet.
-Preserve those records. Prepare the bounded successor from existing owned helpers and retain every admission failure.
-The exploratory meter, binding, and generic operator drafts remain held and unvalidated; they are not accepted execution prerequisites.
-The [readiness packet receipt](evidence/2026-10-31/scheduled-readiness-local-validation.json) records 27 passing local checks and independent review of the frozen six-GET scope.
-That local preparation reads no real credential and makes no account request.
-The later [one-time readiness check](evidence/2026-10-31/scheduled-readiness-admission-refusal.json) reads the eligible file and refuses its expired lifetime.
-Its expiry is October 27 at 22:26:55 UTC. Token selections and HTTP requests both remain zero; the owned process settles.
-Preserve the consumed packet.
-The [separately reviewed credential recovery](evidence/2026-10-31/credential-recovery-observation.json) succeeds with one refresh POST and the same 28 scopes.
-The owned process settles without uncertainty. The new access expiry is October 31 at 23:05:52 UTC.
-No account resource call follows that action automatically.
-The [separately reviewed readiness successor](evidence/2026-10-31/scheduled-readiness-management-observation.json) then passes all six management GETs and checks 6,513 response bytes.
-Version and settings bindings and runtime agree. The Worker calendar is empty; the optional native Workflow calendar remains unobserved.
-This result supplies current snapshot management identities only. Namespace and instance absence, source freshness, and first publication remain unproved.
+The [authority audit](evidence/2026-10-31/scheduled-readiness-authority-audit.json) and [readiness observation](evidence/2026-10-31/scheduled-readiness-management-observation.json) retain the later bounded checks.
+The October 31 observation finds an empty Worker calendar; it does not establish the optional native Workflow calendar or first publication.
+Namespace and instance absence, current credentials, source freshness, and final execution admission remain separate checks.
+The exploratory meter, binding, and generic operator drafts remain held and unvalidated.
+The release ledger retains the expired credential refusal, separately reviewed refresh, and consumed readiness packets.
+Prepare a fresh successor from existing owned helpers; preserve every consumed marker and admission failure.
 
 ### MP-03 Close serving acceptance
 
@@ -415,7 +371,7 @@ It does not reopen the v1 platform choice automatically.
 | --- | --- | --- |
 | Numerical search, scope-refusal, language, and latency criteria | Product owner with engineering evidence | The next independent serving acceptance run |
 | Chat grounding scope | Product owner and API owner | Any answer-contract change or new grounding claim |
-| Hosted qualification and acquisition budgets | Operation owner and approving user | The respective hosted execution |
+| Hosted budgets and residual provider-bound uncertainty | Operation owner and approving user | The respective hosted execution |
 | Actual production authority, schema, and maintenance controls | Release engineer | Production acquisition or migration |
 | Initial customer group, demand window, and stop criteria | Product owner | External distribution experiment |
 | Paid surface, price, and payment model | Product owner with cost evidence | Paid automation |
@@ -450,7 +406,9 @@ Their historical status paragraphs do not override a newer source-specific recei
 ## Plan maintenance
 
 Update this plan when scope, priority, dependencies, or requirement disposition changes.
-Append completed execution evidence to the release ledger and link the exact source and receipt.
+Keep scope, priorities, dependencies, and next actions in this file.
+Append detailed execution evidence to the release ledger and link the exact source and receipt.
+Update package status here without copying the execution log.
 Mark a gate complete only from its required evidence.
 Keep local, hosted, and production outcomes distinct.
 

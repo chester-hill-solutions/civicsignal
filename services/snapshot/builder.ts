@@ -234,10 +234,24 @@ export async function publishSnapshot(bucket: BuildBucket, plan: StagePlan, grou
 }
 
 /** Only staging data belonging to this revision is eligible for deletion. */
-export async function cleanupStaging(bucket: BuildBucket, commit: string): Promise<void> {
+export interface CleanupPolicy { maximumLists: number; maximumDeletes: number; allowedKeys: ReadonlySet<string>; check(): void }
+export async function cleanupStaging(bucket: BuildBucket, commit: string, policy?: CleanupPolicy): Promise<void> {
+  let lists = 0, deletes = 0;
+  const removed = new Set<string>();
   for (;;) {
+    if (policy) { policy.check(); if (++lists > policy.maximumLists) throw new Error('Qualification cleanup list bound exceeded.'); }
     const page = await bucket.list({ prefix: stagingPrefix(commit), limit: 500 });
-    if (!page.objects.length) return;
+    if (policy) {
+      policy.check();
+      if (page.objects.some(object => !policy.allowedKeys.has(object.key) || removed.has(object.key)) ||
+        new Set(page.objects.map(object => object.key)).size !== page.objects.length) throw new Error('Qualification cleanup made no known-key progress.');
+    }
+    if (!page.objects.length) {
+      if (policy && page.truncated !== false) throw new Error('Qualification cleanup completion is unknown.');
+      return;
+    }
+    if (policy && ++deletes > policy.maximumDeletes) throw new Error('Qualification cleanup delete bound exceeded.');
     await bucket.delete(page.objects.map((object) => object.key));
+    if (policy) { policy.check(); for (const object of page.objects) removed.add(object.key); }
   }
 }

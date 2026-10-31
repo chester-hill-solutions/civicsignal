@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "kind": "v1-integrated-local-candidate-observation",
+  "recordedAt": "2026-10-31T23:27:27.693537+00:00",
+  "planWorkPackages": [
+    "MP-01",
+    "MP-02",
+    "MP-06"
+  ],
+  "passed": false,
+  "sourceAndFixtureInputCount": 477,
+  "sourceInputsUnchanged": true,
+  "observation": "native loopback test listeners are refused by the filesystem/process sandbox with listen EPERM; root stops this failed validation group after checking its exact owner/child; original owner settles",
+  "frozenInstallation": "pass",
+  "validationAggregateCompleted": false,
+  "validationExitCode": -15,
+  "pythonPerformed": false,
+  "dryBuildsPerformed": false,
+  "ownedProcesses": {
+    "allStartedPhasesSettled": true,
+    "rootStopSignal": "SIGTERM",
+    "timeoutOrLogLimitOrLocalFailure": false
+  },
+  "artifacts": [
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v6/result.json",
+      "bytes": 1180,
+      "sha256": "461cc6fbabece6ca19a7e229892e25f681969a6547843d9d577710513e7f9fdd"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v6/source-before.json",
+      "bytes": 76853,
+      "sha256": "abb758740b8a0eaaaa4328c8ce859e02a353f76cb3c8f8ec29353ee5fba454a9"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v6/source-after.json",
+      "bytes": 76853,
+      "sha256": "abb758740b8a0eaaaa4328c8ce859e02a353f76cb3c8f8ec29353ee5fba454a9"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v6/install.log",
+      "bytes": 96,
+      "sha256": "2e08b83e92ab4a6cc84514c0a2c179e358282ce19b0591c4d5f966d297979027"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v6/install-result.json",
+      "bytes": 201,
+      "sha256": "5a60c388343e38367a0a3b2b695dbb8b78cab4b0a6302e1bd3f494964d16c00b"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v6/validate.log",
+      "bytes": 81002,
+      "sha256": "f273a10dd050b83e7fcd760d9e363e1b33316c8edfb06f7f488ff3a9947de4de"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v6/validate-result.json",
+      "bytes": 203,
+      "sha256": "10d2b9730c68598ee147a76f05250468f1917610866e91ee94af9b0df745943a"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v6/root-stop-after-loopback-refusal.json",
+      "bytes": 265,
+      "sha256": "fe4623361824919a24d8576545c6a66855b8b6b2a38679f08353879ae5253069"
+    }
+  ],
+  "limits": "This is a failed, explicitly stopped local check, not source qualification or a diagnosis of product behavior. The separate v7 permission successor must run unchanged inputs through every phase. No hosted operation, real cloud credential or deployment occurred."
+}

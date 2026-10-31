@@ -24,7 +24,7 @@ vi.mock('node:fs/promises', async original => {
   } };
 });
 
-const ROOT = resolve('.'), NOW = Date.parse('2030-01-01T00:00:00.000Z'), EVENT = '2030-01-01T01:00:00.000Z';
+const ROOT = resolve('.'), NOW = Date.parse('2030-01-01T00:00:00.000Z'), EVENT = '2030-01-01T01:00:00.000Z', DEADLINE = '2030-01-01T03:00:00.000Z';
 const sha = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 const cleanup: string[] = [];
 afterEach(async () => {
@@ -40,7 +40,7 @@ async function fixture() {
     external: ['cloudflare:*', 'node:*'], legalComments: 'none', logLevel: 'silent', tsconfigRaw: {} });
   const bundleFile = join(directory, 'candidate.mjs'); await writeFile(bundleFile, bundled.outputFiles[0]!.contents, { mode: 0o600 });
   const sourceFiles = await Promise.all(Object.keys(bundled.metafile!.inputs).sort().map(path => pin(resolve(ROOT, path))));
-  const accountingFile = join(ROOT, 'docs/evidence/2026-10-31/snapshot-reference-accounting.json');
+  const accountingFile = join(ROOT, 'docs/evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json');
   const accounting = JSON.parse(await readFile(accountingFile, 'utf8'));
   const manifestFile = join(ROOT, accounting.evidencePins[1].path), stagingReceiptFile = join(ROOT, accounting.evidencePins[0].path);
   const resourceFile = join(directory, 'resources.json');
@@ -50,7 +50,7 @@ async function fixture() {
   await writeFile(resourceFile, JSON.stringify(resources), { mode: 0o600 });
   const vars = { SNAPSHOT_STAGE_ID: QUALIFICATION_STAGE_ID, SNAPSHOT_PINNED_COMMIT: STAGING_SOURCE.commit,
     SNAPSHOT_PINNED_DATE: STAGING_SOURCE.date, SNAPSHOT_QUALIFICATION_ID: 'synthetic-proposal',
-    SNAPSHOT_QUALIFICATION_TIME: String(Date.parse(EVENT)), SNAPSHOT_QUALIFICATION_CRON: '0 1 1 1 *' };
+    SNAPSHOT_QUALIFICATION_TIME: String(Date.parse(EVENT)), SNAPSHOT_QUALIFICATION_CRON: '0 1 1 1 *', SNAPSHOT_QUALIFICATION_DEADLINE: String(Date.parse(DEADLINE)) };
   const q = await qualificationIdentity(vars);
   const configFile = join(directory, 'candidate.json');
   const config = { name: QUALIFICATION_STAGE_ID, account_id: STAGING_ACCOUNT, main: bundleFile,
@@ -71,7 +71,7 @@ async function fixture() {
       metadataAccountingBytes: 100000, localDownloadBytes: 390423509 },
     time: { operationMs: 7_200_000, requestMs: 15000, cleanupMs: 60000, observationMs: 7_200_000 } };
   const budgetFile = join(directory, 'budget.json'); await writeFile(budgetFile, JSON.stringify(budget), { mode: 0o600 });
-  const input = { format: 1, qualificationId: 'synthetic-proposal', scheduledAt: EVENT,
+  const input = { format: 1, qualificationId: 'synthetic-proposal', scheduledAt: EVENT, runtimeDeadlineAt: DEADLINE,
     expectedNamespace: q.prefix, expectedInstanceId: q.instanceId, source: STAGING_SOURCE, parser: SNAPSHOT_PARSER_VERSION,
     candidate: { entrypoint: 'services/snapshot/qualification-worker.ts', sourceFiles, bundle: await pin(bundleFile), config: await pin(configFile) },
     resourceEvidence: await pin(resourceFile), accounting: await pin(accountingFile), referenceManifest: await pin(manifestFile),
@@ -135,12 +135,17 @@ describe('offline scheduled snapshot qualification proposal', () => {
     expect(config.triggers).toEqual({ crons: [] }); expect(config.vars).toEqual(f.config.vars);
     expect((await readdir(f.outputDirectory)).sort()).toEqual(['candidate.mjs', 'prepared-config.json', 'proposal.json']);
     expect(result.remainingDependencies).toContain('owned-operator-and-enforced-total-budgets');
+    expect(result.runtimePolicy).toMatchObject({ globalRawR2AggregateEnforced: false, payloadObjects: 483, receiptObjects: 10, runtimeDeadline: Date.parse(DEADLINE) });
     expect(network).not.toHaveBeenCalled();
   });
   it.each([
     ['past event', { scheduledAt: '2029-12-31T23:00:00.000Z' }],
     ['noncanonical event', { scheduledAt: '2030-01-01T01:00:00Z' }],
     ['wrong minute', { scheduledAt: '2030-01-01T01:00:01.000Z' }],
+    ['invalid runtime deadline', { runtimeDeadlineAt: 'not-a-date' }],
+    ['runtime deadline before event', { runtimeDeadlineAt: '2030-01-01T00:59:00.000Z' }],
+    ['runtime deadline beyond maximum', { runtimeDeadlineAt: '2030-01-01T04:00:00.001Z' }],
+    ['runtime deadline identity drift', { runtimeDeadlineAt: '2030-01-01T02:59:00.000Z' }],
     ['namespace', { expectedNamespace: 'snapshots/statutes-v2/' }],
     ['instance', { expectedInstanceId: 'qual-' + '0'.repeat(64) }],
     ['qualification ID', { qualificationId: '../unsafe' }],

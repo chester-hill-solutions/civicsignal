@@ -11,6 +11,18 @@ import { QUALIFICATION_RECEIPT_BYTES } from '../../services/snapshot/qualificati
 import { PARTITIONS, stagingPrefix } from '../../services/snapshot/builder';
 import { parseManifest, SNAPSHOT_PARSER_VERSION } from '../../src/ingest/snapshot-format';
 import { STAGING_ACCOUNT, STAGING_SOURCE, stagingNames } from './staging-config';
+import { qualificationRuntimePolicyDescriptor, qualificationRuntimePolicyDefinition } from '../../services/snapshot/qualification-reference-policy';
+
+/** Required source provenance for successor accounting; never pins itself. */
+export const RUNTIME_POLICY_ACCOUNTING_SOURCES = [
+  'scripts/generate-snapshot-qualification-reference.ts', 'scripts/lib/snapshot-qualification-proposal.ts', 'scripts/validate-snapshot-workflow.ts',
+  'services/snapshot/qualification-reference-data.ts', 'services/snapshot/qualification-reference-policy.ts',
+  'services/snapshot/qualification-worker.ts', 'services/snapshot/qualification.ts', 'services/snapshot/qualification-store.ts',
+  'services/snapshot/qualification-source.ts', 'services/snapshot/snapshot-workflow.ts', 'services/snapshot/builder.ts',
+  'services/snapshot/archive-source.ts', 'src/ingest/source-head.ts',
+] as const;
+const canonical = (value: unknown): string => JSON.stringify(value, (_key, part) => part && typeof part === 'object' && !Array.isArray(part)
+  ? Object.fromEntries(Object.keys(part).sort().map(key => [key, part[key]])) : part);
 
 const integer = z.number().int().nonnegative().safe(), positive = integer.min(1), digest = z.string().regex(/^[a-f0-9]{64}$/);
 const pinSchema = z.object({ path: z.string().min(1), bytes: positive.max(16 * 1024 * 1024), sha256: digest }).strict();
@@ -40,7 +52,7 @@ const budgetSchema = z.object({ format: z.literal(1),
 const resourceSchema = z.object({ format: z.literal(1), evidenceClass: z.enum(['retained-observation', 'synthetic-fixture']),
   observedAt: z.string().datetime(), accountId: z.literal(STAGING_ACCOUNT), worker: z.literal(QUALIFICATION_STAGE_ID),
   workflow: z.literal(QUALIFICATION_STAGE_ID), r2Bucket: z.literal(stagingNames('20261022').corpus), versionId: z.string().uuid() }).strict();
-const inputSchema = z.object({ format: z.literal(1), qualificationId: z.string(), scheduledAt: z.string(),
+const inputSchema = z.object({ format: z.literal(1), qualificationId: z.string(), scheduledAt: z.string(), runtimeDeadlineAt: z.string().optional(),
   expectedNamespace: z.string(), expectedInstanceId: z.string(), source: revisionSchema, parser: z.literal(SNAPSHOT_PARSER_VERSION),
   candidate: z.object({ entrypoint: z.literal('services/snapshot/qualification-worker.ts'),
     sourceFiles: z.array(pinSchema).min(1).max(1024), bundle: pinSchema, config: pinSchema }).strict(),
@@ -103,9 +115,15 @@ async function filePin(path: string): Promise<FilePin> {
 function json(bytes: Uint8Array): unknown { return JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes)); }
 
 async function referenceAccounting(root: string, input: z.infer<typeof inputSchema>) {
-  requireProposal(input.accounting.path === join(root, 'docs/evidence/2026-10-31/snapshot-reference-accounting.json'), 'ACCOUNTING_REFERENCE');
+  const predecessor = join(root, 'docs/evidence/2026-10-31/snapshot-reference-accounting.json');
+  const successor = join(root, 'docs/evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json');
+  requireProposal(input.accounting.path === successor || input.runtimeDeadlineAt === undefined && input.accounting.path === predecessor, 'ACCOUNTING_REFERENCE');
   const accountingBytes = await pinned(input.accounting, 'public');
   const accounting = accountingSchema.parse(json(accountingBytes));
+  if (input.runtimeDeadlineAt !== undefined) {
+    requireProposal(canonical(accounting.runtimePolicyDefinition) === canonical(qualificationRuntimePolicyDefinition()), 'RUNTIME_POLICY_ACCOUNTING');
+    for (const path of RUNTIME_POLICY_ACCOUNTING_SOURCES) requireProposal(accounting.evidencePins.some(pin => pin.path === path), 'RUNTIME_POLICY_SOURCE_LINEAGE');
+  }
   for (const expected of [input.referenceManifest, input.stagingReceipt]) requireProposal(accounting.evidencePins.some(pin =>
     resolve(root, pin.path) === expected.path && pin.bytes === expected.bytes && pin.sha256 === expected.sha256), 'REFERENCE_LINEAGE');
   const [manifestBytes, receiptBytes] = await Promise.all([pinned(input.referenceManifest, 'public'), pinned(input.stagingReceipt, 'public')]);
@@ -161,7 +179,9 @@ export async function inspectSnapshotQualificationProposal(options: { root: stri
   const date = new Date(at), controls = { SNAPSHOT_STAGE_ID: QUALIFICATION_STAGE_ID,
     SNAPSHOT_PINNED_COMMIT: input.source.commit, SNAPSHOT_PINNED_DATE: input.source.date,
     SNAPSHOT_QUALIFICATION_ID: input.qualificationId, SNAPSHOT_QUALIFICATION_TIME: String(at),
-    SNAPSHOT_QUALIFICATION_CRON: `${date.getUTCMinutes()} ${date.getUTCHours()} ${date.getUTCDate()} ${date.getUTCMonth() + 1} *` };
+    SNAPSHOT_QUALIFICATION_CRON: `${date.getUTCMinutes()} ${date.getUTCHours()} ${date.getUTCDate()} ${date.getUTCMonth() + 1} *`,
+    ...(input.runtimeDeadlineAt === undefined ? {} : { SNAPSHOT_QUALIFICATION_DEADLINE: String(Date.parse(input.runtimeDeadlineAt)) }) };
+  if (input.runtimeDeadlineAt !== undefined) requireProposal(Number.isFinite(Date.parse(input.runtimeDeadlineAt)) && new Date(Date.parse(input.runtimeDeadlineAt)).toISOString() === input.runtimeDeadlineAt, 'RUNTIME_DEADLINE');
   const qualification = await qualificationIdentity(controls);
   requireProposal(qualification.prefix === input.expectedNamespace && qualification.instanceId === input.expectedInstanceId, 'QUALIFICATION_IDENTITY');
   const [bundleBytes, configBytes, resourceBytes, budgetBytes] = await Promise.all([
@@ -181,8 +201,6 @@ export async function inspectSnapshotQualificationProposal(options: { root: stri
   const config = json(configBytes);
   // Key order is not contractual. Unknown keys, secrets and extra bindings are
   // rejected rather than copied into the prepared output.
-  const canonical = (value: unknown): string => JSON.stringify(value, (_key, part) => part && typeof part === 'object' && !Array.isArray(part)
-    ? Object.fromEntries(Object.keys(part).sort().map(key => [key, part[key]])) : part);
   requireProposal(canonical(config) === canonical(expectedConfig), 'CONFIG_OR_RUNTIME_DRIFT');
   const bundled = await build({ entryPoints: [join(root, input.candidate.entrypoint)], absWorkingDir: root,
     bundle: true, write: false, metafile: true, format: 'esm', platform: 'browser', target: 'es2022',
@@ -214,6 +232,8 @@ export async function inspectSnapshotQualificationProposal(options: { root: stri
     namespaceAbsenceVerified: false, instanceAbsenceVerified: false, qualification, resources, candidate: input.candidate,
     pins: { resourceEvidence: input.resourceEvidence, accounting: input.accounting, referenceManifest: input.referenceManifest,
       stagingReceipt: input.stagingReceipt, budget: input.budget, sourceRuntimeConfig: sourceConfigPin }, reference,
+    runtimePolicy: input.runtimeDeadlineAt === undefined ? null : qualificationRuntimePolicyDescriptor(qualification),
+    qualificationExecutionRequiresRuntimeDeadline: true,
     declaredBudget: budget, budgetUnits: { maxOperations: 'aggregate-logical-operations-per-class',
       maxResponseBytes: 'aggregate-response-body-bytes-per-class', wallMs: 'proposed-wall-window-per-class',
       combinedStorage: 'intermediate-and-final-payloads; diagnostics-and-metadata-listed-separately',

@@ -147,9 +147,12 @@ describe('stage-only scheduled first-publication qualification', () => {
     const h = memoryBucket(), q = await qualificationIdentity(controls), workflow = binding(), head = vi.fn();
     expect(q.identity.sourceStartWindowMs).toBe(QUALIFICATION_SOURCE_START_WINDOW_MS);
     await expect(runQualificationScheduled({ ...controls, CORPUS: h.bucket, SNAPSHOT: workflow }, event, head, () => event.scheduledTime + offset)).rejects.toThrow('rejected');
-    expect(h.objects.has(q.prefix + 'diagnostics/admitted.json')).toBe(false); expect(h.objects.has(q.prefix + 'diagnostics/rejected.json')).toBe(true);
+    expect(h.objects.has(q.prefix + 'diagnostics/admitted.json')).toBe(false);
+    // An invalid clock cannot establish the new runtime deadline and therefore
+    // cannot authorize even a diagnostic R2 write.
+    expect(h.objects.has(q.prefix + 'diagnostics/rejected.json')).toBe(Number.isFinite(offset));
     expect(head).not.toHaveBeenCalled(); expect(workflow.create).not.toHaveBeenCalled();
-    await expect(reserveSourceAttempt(h.bucket, q, 'authoritative', () => event.scheduledTime + offset)).rejects.toThrow('window');
+    await expect(reserveSourceAttempt(h.bucket, q, 'authoritative', () => event.scheduledTime + offset)).rejects.toThrow(Number.isFinite(offset) ? 'window' : 'deadline');
     expect([...h.objects.keys()].some(key => key.includes('/attempts/'))).toBe(false);
   });
   it.each(['discovery', 'archive'] as const)('refuses %s HTTP when claim readback crosses the source-start boundary', async phase => {

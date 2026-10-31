@@ -13,15 +13,30 @@ import { rowsForFile } from '../src/ingest/corpus-rows';
 import { fingerprint } from '../src/ingest/reconcile';
 import type { BuildBucket } from '../services/snapshot/builder';
 import type { CorpusSnapshot as QualifiedWorkflow } from '../services/snapshot/qualification-worker';
-import { archive, controls, event, files, revision } from './helpers/snapshot-qualification';
+import { archive, controls, event, files, revision, qualificationFixtureData } from './helpers/snapshot-qualification';
 
 const cleanup: (() => Promise<unknown>)[] = [];
 type QualifiedParams = Parameters<QualifiedWorkflow['run']>[0]['payload'];
 afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close(); });
-let script = '', canonicalScript = '', bypassScript = '';
+let script = '', resumeScript = '', canonicalScript = '', bypassScript = '';
 beforeAll(async () => {
+  const reference = await qualificationFixtureData();
   script = (await build({ entryPoints: ['services/snapshot/qualification-worker.ts'], bundle: true,
-    format: 'esm', platform: 'browser', target: 'es2022', external: ['cloudflare:*', 'node:*'], write: false })).outputFiles[0]!.text;
+    format: 'esm', platform: 'browser', target: 'es2022', external: ['cloudflare:*', 'node:*'], write: false,
+    plugins: [{ name: 'synthetic-qualified-reference-only', setup(build) { build.onLoad({ filter: /qualification-reference-data\.ts$/ }, () => ({ contents: reference.module, loader: 'ts' })); } }],
+  })).outputFiles[0]!.text;
+  resumeScript = (await build({ entryPoints: ['services/snapshot/qualification-worker.ts'], bundle: true,
+    format: 'esm', platform: 'browser', target: 'es2022', external: ['cloudflare:*', 'node:*'], write: false,
+    plugins: [{ name: 'native-admission-checkpoint-fixture', setup(build) {
+      build.onLoad({ filter: /qualification-reference-data\.ts$/ }, () => ({ contents: reference.module, loader: 'ts' }));
+      build.onLoad({ filter: /qualification-worker\.ts$/ }, async args => {
+        const source = await readFile(args.path, 'utf8'), wait = 'const bucket = qualificationBucket(runtime.bucket, q.prefix);', marker = 'await assertQualificationReceipt(runtime.bucket,';
+        if (source.split(wait).length !== 2 || source.split(marker).length !== 3) throw new Error('Admission fixture seam changed.');
+        return { contents: source.replace(/(await assertQualificationReceipt\(runtime\.bucket,[^\n]+;)/g, '$1\n      await fetch("https://qualification-fixture.invalid/admission-check");')
+          .replace(wait, 'await fetch("https://qualification-fixture.invalid/admission-checkpoint-complete");\n    await step.waitForEvent("fixture admission checkpoint wait", { type: "fixture-resume", timeout: "1 minute" });\n    ' + wait), loader: 'ts' };
+      });
+    } }],
+  })).outputFiles[0]!.text;
   canonicalScript = (await build({ entryPoints: ['services/snapshot/worker.ts'], bundle: true,
     format: 'esm', platform: 'browser', target: 'es2022', external: ['cloudflare:*', 'node:*'], write: false })).outputFiles[0]!.text;
   bypassScript = (await build({ entryPoints: ['services/snapshot/worker.ts'], bundle: true,
@@ -33,7 +48,7 @@ beforeAll(async () => {
     }); } }],
   })).outputFiles[0]!.text;
 });
-async function fixture(options: { headFailure?: boolean; authoritativeFailure?: boolean; archiveFailure?: boolean; changedHead?: boolean; invalidStage?: boolean; canonicalTruncated?: boolean; truncated?: boolean; bypassFraming?: boolean } = {}) {
+async function fixture(options: { headFailure?: boolean; authoritativeFailure?: boolean; archiveFailure?: boolean; changedHead?: boolean; invalidStage?: boolean; canonicalTruncated?: boolean; truncated?: boolean; bypassFraming?: boolean; admissionResume?: boolean; legacyDeadline?: boolean } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'civicsignal-qualified-snapshot-'));
   cleanup.push(() => rm(directory, { recursive: true, force: true }));
   const name = 'snapshot-qualified-local', outbound: { url: string; redirect: string; authorization: boolean }[] = [];
@@ -44,13 +59,15 @@ async function fixture(options: { headFailure?: boolean; authoritativeFailure?: 
       env: {
         CORPUS: { type: 'r2', name: 'snapshot-qualified-fixture', dev: { remote: false } },
         SNAPSHOT: { type: 'workflow', name, worker: name, exportName: 'CorpusSnapshot' },
-        ...Object.fromEntries(Object.entries({ ...controls, ...(options.invalidStage ? { SNAPSHOT_STAGE_ID: 'production-refused' } : {}) }).map(([key, value]) => [key, { type: 'text' as const, value: value! }])),
+        ...Object.fromEntries(Object.entries({ ...controls, ...(options.invalidStage ? { SNAPSHOT_STAGE_ID: 'production-refused' } : {}),
+          ...(options.legacyDeadline ? { SNAPSHOT_QUALIFICATION_DEADLINE: undefined } : {}) }).filter(([, value]) => value !== undefined).map(([key, value]) => [key, { type: 'text' as const, value: value! }])),
       },
       exports: { CorpusSnapshot: { type: 'workflow', name } },
-      manifest: { mainModule: 'worker.js', modules: { 'worker.js': { type: 'esm', contents: options.canonicalTruncated ? (options.bypassFraming ? bypassScript : canonicalScript) : script } } },
+      manifest: { mainModule: 'worker.js', modules: { 'worker.js': { type: 'esm', contents: options.canonicalTruncated ? (options.bypassFraming ? bypassScript : canonicalScript) : options.admissionResume ? resumeScript : script } } },
     }, dev: { outboundService: { type: 'fetcher', handler: async request => {
       const url = new URL(request.url);
       outbound.push({ url: url.href, redirect: request.redirect, authorization: request.headers.has('authorization') });
+      if (url.origin === 'https://qualification-fixture.invalid') return new LocalResponse('synthetic-checkpoint-marker');
       if (url.origin === 'https://api.github.com' && url.pathname === '/repos/justicecanada/laws-lois-xml/commits' && url.searchParams.get('per_page') === '1' && ['main', revision.commit].includes(url.searchParams.get('sha') ?? '')) {
         const failed = options.headFailure || options.authoritativeFailure && url.searchParams.get('sha') === revision.commit;
         return new LocalResponse(failed ? 'private upstream body' : JSON.stringify([{ sha: options.changedHead ? 'f'.repeat(40) : revision.commit, commit: { committer: { date: revision.date + 'T00:00:00Z' } } }]), { status: failed ? 503 : 200 });
@@ -67,16 +84,34 @@ async function fixture(options: { headFailure?: boolean; authoritativeFailure?: 
   const address = await mf.ready;
   const scheduled = async (actual = event) => {
     const response = await fetch(new URL(`/cdn-cgi/local/scheduled?cron=${encodeURIComponent(actual.cron)}&time=${actual.scheduledTime}&format=json`, address).toString());
-    return await response.json() as { outcome: string };
+    return await response.json() as { outcome: string; noRetry: boolean };
   };
   return { mf, bucket, workflow: bindings.SNAPSHOT, outbound, q, canonical, baseline, scheduled };
 }
 
 describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS'] !== '1')('scheduled first publication in actual local workerd', () => {
+  it('requires a new runtime deadline before R2/source admission and sets native noRetry before refusal', async () => {
+    const f = await fixture({ legacyDeadline: true }), result = await f.scheduled();
+    expect(result.outcome).toBe('exception'); expect(result.noRetry).toBe(true);
+    expect(f.outbound).toEqual([]); expect((await f.bucket.list({ prefix: 'qualifications/' })).objects).toEqual([]);
+    await expect(f.workflow.get(f.q.instanceId)).rejects.toThrow('instance.not_found');
+  }, 30000);
+  it('reuses the durable admission checkpoint across native pause/resume', async () => {
+    const f = await fixture({ admissionResume: true }); expect((await f.scheduled()).outcome).toBe('ok');
+    const instance = await f.workflow.get(f.q.instanceId);
+    // The local implementation reports running while waitForEvent is pending.
+    // This marker occurs only after the admission step's persisted result.
+    await vi.waitFor(() => expect(f.outbound.some(call => call.url.endsWith('/admission-checkpoint-complete'))).toBe(true), { timeout: 10000, interval: 20 });
+    await instance.pause(); expect((await instance.status()).status).toBe('paused'); await instance.resume();
+    await instance.sendEvent({ type: 'fixture-resume', payload: { synthetic: true } });
+    await vi.waitFor(async () => expect((await instance.status()).status).toBe('complete'), { timeout: 15000, interval: 25 });
+    expect(f.outbound.filter(call => call.url === 'https://qualification-fixture.invalid/admission-check')).toHaveLength(2);
+    expect(f.outbound.filter(call => call.url.startsWith('https://api.github.com') || call.url.startsWith('https://codeload.github.com'))).toHaveLength(3);
+  }, 30000);
   it('publishes a fresh qualified snapshot from the native scheduled entry and joins duplicate events without touching canonical bytes', async () => {
     const f = await fixture(), key = f.q.prefix + f.canonical;
     expect(await f.bucket.get(key)).toBeNull();
-    for (const result of await Promise.all([f.scheduled(), f.scheduled()])) expect(result.outcome).toBe('ok');
+    for (const result of await Promise.all([f.scheduled(), f.scheduled()])) { expect(result.outcome).toBe('ok'); expect(result.noRetry).toBe(true); }
     const instance = await f.workflow.get(f.q.instanceId);
     await vi.waitFor(async () => expect((await instance.status()).status).toBe('complete'), { timeout: 15000, interval: 50 });
     const status = await instance.status();

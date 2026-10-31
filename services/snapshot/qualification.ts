@@ -15,11 +15,14 @@ export interface QualificationControls extends SnapshotControlEnv {
   SNAPSHOT_QUALIFICATION_ID?: string;
   SNAPSHOT_QUALIFICATION_CRON?: string;
   SNAPSHOT_QUALIFICATION_TIME?: string;
+  SNAPSHOT_QUALIFICATION_DEADLINE?: string;
 }
 export interface QualificationEvent { cron: string; scheduledTime: number }
 export interface QualificationIdentity {
   format: 1; stageId: string; id: string; revision: CorpusRevision; parser: string;
   event: QualificationEvent; sourceAttempts: 3; sourceStartWindowMs: number;
+  /** Absent only on retained legacy identities; new execution requires it. */
+  runtimeDeadline?: number;
 }
 export interface Qualification {
   identity: QualificationIdentity; digest: string; prefix: string; instanceId: string;
@@ -46,6 +49,12 @@ export async function qualificationIdentity(env: QualificationControls): Promise
     cron !== `${at.getUTCMinutes()} ${at.getUTCHours()} ${at.getUTCDate()} ${at.getUTCMonth() + 1} *`) throw new Error('Qualification calendar is invalid.');
   const identity: QualificationIdentity = { format: 1, stageId: QUALIFICATION_STAGE_ID, id, revision,
     parser: SNAPSHOT_PARSER_VERSION, event: { cron, scheduledTime }, sourceAttempts: 3, sourceStartWindowMs: QUALIFICATION_SOURCE_START_WINDOW_MS };
+  if (env.SNAPSHOT_QUALIFICATION_DEADLINE !== undefined) {
+    const raw = env.SNAPSHOT_QUALIFICATION_DEADLINE, deadline = Number(raw);
+    if (!/^[1-9]\d{0,15}$/.test(raw) || !Number.isSafeInteger(deadline) || deadline <= scheduledTime ||
+      deadline > scheduledTime + 3 * 60 * 60 * 1000) throw new Error('Qualification runtime deadline is invalid.');
+    identity.runtimeDeadline = deadline;
+  }
   const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(identity)))), n => n.toString(16).padStart(2, '0')).join('');
   return { identity, digest, prefix: `qualifications/${id}/${digest}/`, instanceId: `qual-${digest}` };
 }
@@ -61,7 +70,14 @@ export function qualificationSourceWindow(q: Qualification, now: () => number = 
   return at < q.identity.event.scheduledTime + q.identity.sourceStartWindowMs ? 'open' : 'expired';
 }
 export function assertQualificationSourceWindow(q: Qualification, now: () => number = Date.now): void {
-  if (qualificationSourceWindow(q, now) !== 'open') throw new Error('Qualification source-start window is closed.');
+  const at = now();
+  assertQualificationRuntimeDeadline(q, at);
+  if (qualificationSourceWindow(q, () => at) !== 'open') throw new Error('Qualification source-start window is closed.');
+}
+export function assertQualificationRuntimeDeadline(q: Qualification, at: number): void {
+  const deadline = q.identity.runtimeDeadline;
+  if (!Number.isSafeInteger(deadline) || deadline! <= q.identity.event.scheduledTime || deadline! > q.identity.event.scheduledTime + 10800000 ||
+    !Number.isFinite(at) || at >= deadline!) throw new Error('Qualification runtime deadline is missing or closed.');
 }
 
 /** Exactly one acknowledged owner per phase, across isolates, step retries and
@@ -85,7 +101,7 @@ function observedEvent(event: QualificationEvent) {
 export async function runQualificationScheduled(env: QualificationControls & { CORPUS: QualificationBucket; SNAPSHOT: QualificationWorkflowBinding },
   event: QualificationEvent, sourceHead: (q: Qualification) => Promise<CorpusRevision>, now: () => number = Date.now): Promise<void> {
   let q: Qualification;
-  try { q = await qualificationIdentity(env); }
+  try { q = await qualificationIdentity(env); assertQualificationRuntimeDeadline(q, now()); }
   catch { console.log(JSON.stringify({ marker: QUALIFICATION_MARKER, phase: 'configuration-rejected' })); throw new Error('Qualification configuration was rejected.'); }
   const observed = observedEvent(event);
   const window = qualificationSourceWindow(q, now);
