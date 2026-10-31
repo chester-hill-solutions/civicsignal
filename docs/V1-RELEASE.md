@@ -175,7 +175,7 @@ Use the dated entries below for source-specific outcomes.
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full working-tree local gates pass; exact-source clean Linux qualification remains open |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local base and exact-source clean Linux gates pass at `08cf10c`; later source changes need qualification |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Original work order — 2026-10-22
@@ -831,6 +831,15 @@ Private inputs remain single-link and private at both admission and final rechec
 All **60 focused cases** and both Bun/tooling compilers pass.
 Only the proposal library and its tests differ from the 470-input passing local gate; the other 468 inputs match.
 The historical CI inode facts remain unknown. Exact-source clean Linux qualification remains open.
+
+Source **08cf10c** now passes [clean Linux CI](evidence/2026-10-31/candidate-08cf-linux-ci-validation.json).
+Run **41242587226** checks merge **21553a8c10e074f264ded410541cfd226990aaa4**, containing that exact head and base **717bf329**.
+Frozen installation, **1,861 tests in 100 files**, all **27 Python cases**, four compiler projects, runtime checks, invariants, and five dry builds pass.
+The receipt pins all **470 source and fixture inputs** and retains the failed predecessor separately.
+Issues **2, 3, 5, 7, 8, and 9** close for verified source repairs.
+Issue 4 remains a product/API decision; issue 6 retains the owned operator and accounting work.
+No hosted serving, generation, source, calendar, acquisition, production, or Railway operation follows from this CI result.
+All four hosted/production release gates remain open; PR 1 stays a draft.
 
 The recovery, full metadata, composite changed-text byte verification and complete
 vector backup gate is closed within the approved limits. Preserve the original

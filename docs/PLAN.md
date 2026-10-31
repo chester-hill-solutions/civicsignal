@@ -104,31 +104,31 @@ Unspent slots do not authorize another operation, reset, retry, or replacement l
 The October 31 work uses the current worktree and the existing draft PR.
 The [initial candidate inventory](evidence/2026-10-31/v1-candidate-inventory.json) records all ten requirements and 460 source inputs at its capture point.
 The [successor inventory](evidence/2026-10-31/v1-candidate-inventory-v3.json) pins 470 source and fixture inputs for the complete passing local gate.
-Fresh GitHub reads confirm draft PR 1 and successful CI for published head `9e2fe17`.
-That CI result does not qualify newer worktree changes or refresh hosted deployment identities.
-The successor source `3377cb8` now appears in the draft PR and passes its full local gate.
-Its first clean Linux run fails proposal source-file metadata admission; it does not qualify this source.
+Earlier GitHub reads retain successful CI for source `9e2fe17`; they do not qualify later changes or refresh hosted deployment identities.
+Source `3377cb8` passes its full local gate, then fails its first clean Linux run in proposal source-file metadata admission.
+Implementation source **`08cf10c`** passes [clean Linux qualification](evidence/2026-10-31/candidate-08cf-linux-ci-validation.json).
+That receipt pins all 470 source and fixture inputs and identifies the exact checked-out merge.
 
 | Work | Local result | Next evidence |
 | --- | --- | --- |
-| MP-01 candidate inventory | Source inventory and published-head CI state recorded | Freeze the final source and refresh required hosted identity through its bounded packet |
+| MP-01 candidate inventory | Published source `08cf10c` and its 470 inputs pass clean Linux CI | Preserve qualification after future source changes; refresh required hosted identity through its bounded packet |
 | MP-02 source diagnostics | 119 pure and 11 native checks pass; source code/status facts survive safe serialization | Complete operator/budgets and qualify real scheduled first publication |
-| MP-02 proposal preparation | 60 checks and two compiler projects pass, including public-hardlink and private-input regressions | Clean Linux CI, owned execution, enforced limits, fresh evidence, and hosted qualification |
-| MP-03 brief policy | Focused and full local checks pass; malformed HTTP/MCP briefs now fail before successful usage consumption | Clean Linux CI and remaining hosted serving acceptance |
+| MP-02 proposal preparation | 60 focused checks and full clean Linux CI pass, including public-hardlink and private-input regressions | Owned execution, enforced limits, fresh evidence, and hosted qualification |
+| MP-03 brief policy | Local and clean Linux checks pass; malformed HTTP/MCP briefs fail before successful usage consumption | Remaining hosted serving acceptance |
 | MP-03 successor questions | 64 new paired questions; all 48 positive labels pass full immutable-source checks; 35 focused checks pass | Acceptance criteria, fresh target provenance, and a separately bounded serving run |
-| MP-04 acquisition transport | Focused and full local checks pass; independent review accepts the fixture repairs | Clean Linux CI, complete budget, source facts, credential owner, and actual maintenance qualification |
-| MP-06 local candidate | 1,849 tests, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds pass | Clean Linux CI for this source and final release evidence |
+| MP-04 acquisition transport | Local and clean Linux checks pass; independent review accepts the fixture repairs | Complete budget, source facts, credential owner, and actual maintenance qualification |
+| MP-06 candidate checks | Local base: 1,849 tests; successor Linux: 1,861 tests. Both pass 27 Python cases and five dry builds | Qualify later source changes and complete final release evidence |
 
 Findings live in the repository issue tracker:
 
-- [Issue 2: shared brief emission](https://github.com/chester-hill-solutions/civicsignal/issues/2) has a local repair and regression evidence.
-- [Issue 3: safe snapshot diagnostics](https://github.com/chester-hill-solutions/civicsignal/issues/3) has a local repair and native-runtime evidence.
+- [Issue 2: shared brief emission](https://github.com/chester-hill-solutions/civicsignal/issues/2) closes after source-specific local and Linux checks.
+- [Issue 3: safe snapshot diagnostics](https://github.com/chester-hill-solutions/civicsignal/issues/3) closes after source-specific native and Linux checks.
 - [Issue 4: chat evidence contract](https://github.com/chester-hill-solutions/civicsignal/issues/4) needs an explicit product/API disposition.
-- [Issue 5: process-owner qualification](https://github.com/chester-hill-solutions/civicsignal/issues/5) has a local cleanup repair; historical failure causes remain unknown.
+- [Issue 5: process-owner qualification](https://github.com/chester-hill-solutions/civicsignal/issues/5) closes after cleanup repair and Linux qualification; historical failure causes remain unknown.
 - [Issue 6: scheduled operator accounting](https://github.com/chester-hill-solutions/civicsignal/issues/6) requires a successor operator and complete operation budget.
-- [Issue 7: acquisition settlement](https://github.com/chester-hill-solutions/civicsignal/issues/7) tracks incorrect settled state after malformed concurrent input.
-- [Issue 8: SQL download readback](https://github.com/chester-hill-solutions/civicsignal/issues/8) tracks a same-size output rewrite that bypassed the initial checks.
-- [Issue 9: Linux source admission](https://github.com/chester-hill-solutions/civicsignal/issues/9) tracks the failed clean-checkout proposal checks.
+- [Issue 7: acquisition settlement](https://github.com/chester-hill-solutions/civicsignal/issues/7) closes with the qualified conservative settlement repair.
+- [Issue 8: SQL download readback](https://github.com/chester-hill-solutions/civicsignal/issues/8) closes with qualified same-descriptor fixture checks.
+- [Issue 9: Linux source admission](https://github.com/chester-hill-solutions/civicsignal/issues/9) closes after the public-hardlink repair passes clean Linux CI.
 
 The [brief receipt](evidence/2026-10-31/brief-policy-local-validation.json) and [snapshot receipt](evidence/2026-10-31/snapshot-diagnostics-local-validation.json) retain source pins and test limits.
 The [acquisition transport receipt](evidence/2026-10-31/acquisition-transport-local-validation.json) records the fixture repairs, 124 focused checks, and independent review.
@@ -150,13 +150,14 @@ The [failed Linux run](evidence/2026-10-31/candidate-3377-linux-ci-failure.json)
 Its Python and build phases do not run.
 The [local admission repair](evidence/2026-10-31/proposal-public-hardlink-local-repair.json) reproduces the hardlink failure and passes 60 checks.
 Public source reads preserve pinned bytes and stable metadata; private inputs retain strict checks at every read.
-The original CI inode facts remain unknown. The successor still needs clean Linux qualification.
-Clean Linux CI for this source, final release qualification, and all four hosted/production gates remain open.
+The original CI inode facts remain unknown.
+The [successor Linux run](evidence/2026-10-31/candidate-08cf-linux-ci-validation.json) passes 1,861 tests, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
+Final release qualification and all four hosted/production gates remain open.
 
 ### Immediate work order
 
-1. Repair and qualify Linux source admission. Publish the successor, complete clean Linux CI, and link its exact source to the inventory.
-2. Prepare three work packages: scheduled publication, serving acceptance, and production acquisition. Their local preparation can proceed independently.
+1. Use qualified source `08cf10c` as the baseline. Implement the owned publication operator, complete artifact verifier, independent cleanup, and qualification budget controls.
+2. Prepare serving acceptance and production acquisition alongside that work. Their local preparation can proceed independently.
 3. Resolve acceptance criteria, complete operation budgets, and actual production maintenance controls before the corresponding hosted work.
 4. Qualify protected copy and rollback after production acquisition. Assemble the final release packet after all required evidence passes.
 
@@ -189,6 +190,9 @@ Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPER
 
 - Retain the shared Workflow, parser, builder, archive checks, and manifest-last publication path.
 - Preserve safe source failure diagnostics without raw provider bodies or exception text.
+- Build the owned request manifest, durable transport, independent cleanup guards, and complete artifact verifier around the prepared proposal.
+- Set explicit qualification retry, time, and object policies while preserving canonical behavior.
+- Distinguish caller-enforced limits from unqualified platform delivery or reconstruction work.
 - Freeze the qualification bundle, configuration, and owned operator.
 - Use a fresh physical namespace and a distinct Workflow instance; keep the genuine source and parser identity.
 - Budget source, management, R2, storage, and complete artifact checks separately.
