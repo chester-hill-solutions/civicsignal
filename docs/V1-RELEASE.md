@@ -175,7 +175,7 @@ Use the dated entries below for source-specific outcomes.
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local base and exact-source clean Linux gates pass at `08cf10c`; later source changes need qualification |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local and exact-source clean Linux gates pass at `26d5049`; later source changes need qualification |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Original work order — 2026-10-22
@@ -912,6 +912,13 @@ All 27 Python checks, native runtime probes, invariants, and five dry builds pas
 The 472 source and fixture inputs remain unchanged across the complete check; root also rechecks them before the public receipt.
 Temporary protected data stays outside the checkout. The earlier failed aggregate remains intact.
 The source now needs clean Linux qualification. All hosted and production gates remain open; no deployment follows from these local checks.
+
+Source **`26d50490d7213750d360973d9c55b6b75aaeac7b`** then passes [clean Linux run 41247844391](evidence/2026-10-31/candidate-26d-linux-ci-validation.json), job **124674891186**.
+The job checks out merge `31b1db0ea3ce0921677e8db7a43a34372b63a641`, containing that head and base `717bf3299701d06ec6d85add276e1ed546c69387`.
+Frozen installation, 1,925 tests in 101 files, 27 Python checks, four compilers, runtime/invariant checks, and five dry builds pass.
+All 472 source and fixture inputs match the passing local gate and current tree. The actual Node version is v24.22.1; Bun is 1.3.5.
+Issues 10 and 11 close for their qualified source repairs. Issues 4 and 6 and all four hosted/production gates remain open.
+The PR remains a draft. No deployment, source, serving, generation, calendar, production, or Railway action follows from this CI result.
 
 The recovery, full metadata, composite changed-text byte verification and complete
 vector backup gate is closed within the approved limits. Preserve the original

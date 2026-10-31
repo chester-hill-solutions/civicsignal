@@ -109,19 +109,20 @@ Earlier GitHub reads retain successful CI for source `9e2fe17`; they do not qual
 Source `3377cb8` passes its full local gate, then fails its first clean Linux run in proposal source-file metadata admission.
 Implementation source **`08cf10c`** passes [clean Linux qualification](evidence/2026-10-31/candidate-08cf-linux-ci-validation.json).
 That receipt pins all 470 source and fixture inputs and identifies the exact checked-out merge.
+The current implementation, **`26d5049`**, passes [clean Linux qualification](evidence/2026-10-31/candidate-26d-linux-ci-validation.json) with 472 source and fixture inputs.
 
 | Work | Local result | Next evidence |
 | --- | --- | --- |
-| MP-01 candidate inventory | Published source `08cf10c` and its 470 inputs pass clean Linux CI | Preserve qualification after future source changes; refresh required hosted identity through its bounded packet |
+| MP-01 candidate inventory | Published source `26d5049` and its 472 inputs pass local and clean Linux gates | Preserve qualification after source changes and complete remaining hosted identity evidence |
 | MP-02 source diagnostics | 119 pure and 11 native checks pass; source code/status facts survive safe serialization | Complete operator/budgets and qualify real scheduled first publication |
 | MP-02 proposal preparation | 60 focused checks and full clean Linux CI pass, including public-hardlink and private-input regressions | Owned execution, enforced limits, fresh evidence, and hosted qualification |
 | MP-02 staging readiness | One refresh preserves 28 scopes; the successor's six management reads pass with an empty Worker calendar | Concrete first-publication operator, budgets, artifact checks, and execution decision |
 | MP-03 brief policy | Local and clean Linux checks pass; malformed HTTP/MCP briefs fail before successful usage consumption | Remaining hosted serving acceptance |
-| MP-03 text hydration | The shared-object length repair passes focused checks and full local candidate integration | Clean Linux qualification and hosted acceptance |
+| MP-03 text hydration | The shared-object length repair passes focused, full local, and clean Linux checks | Hosted acceptance |
 | MP-03 successor questions | 64 new paired questions; all 48 positive labels pass full immutable-source checks; 35 focused checks pass | Acceptance criteria, fresh target provenance, and a separately bounded serving run |
 | MP-04 acquisition transport | Local and clean Linux checks pass; independent review accepts the fixture repairs | Complete budget, source facts, credential owner, and actual maintenance qualification |
-| MP-04 schema and sequence facts | The fixed collector and retained-file repair pass 179 focused checks, independent review, and full local integration | Clean Linux, complete source facts, and actual production acquisition |
-| MP-06 candidate checks | Current local source passes 1,925 tests, 27 Python cases, and five dry builds with 472 unchanged inputs | Clean Linux qualification and final release evidence |
+| MP-04 schema and sequence facts | The fixed collector and retained-file repair pass focused review, full local checks, and clean Linux | Complete source facts and actual production acquisition |
+| MP-06 candidate checks | Source `26d5049` passes 1,925 tests, 27 Python cases, and five dry builds locally and in clean Linux | Final release evidence and qualification of future source changes |
 
 Findings live in the repository issue tracker:
 
@@ -133,8 +134,8 @@ Findings live in the repository issue tracker:
 - [Issue 7: acquisition settlement](https://github.com/chester-hill-solutions/civicsignal/issues/7) closes with the qualified conservative settlement repair.
 - [Issue 8: SQL download readback](https://github.com/chester-hill-solutions/civicsignal/issues/8) closes with qualified same-descriptor fixture checks.
 - [Issue 9: Linux source admission](https://github.com/chester-hill-solutions/civicsignal/issues/9) closes after the public-hardlink repair passes clean Linux CI.
-- [Issue 10: shared text-object lengths](https://github.com/chester-hill-solutions/civicsignal/issues/10) tracks a reproduced hydration integrity and allocation defect; focused repair checks pass.
-- [Issue 11: retained facts integrity](https://github.com/chester-hill-solutions/civicsignal/issues/11) tracks a reproduced file-drift defect; focused repair checks and independent review pass.
+- [Issue 10: shared text-object lengths](https://github.com/chester-hill-solutions/civicsignal/issues/10) closes after the integrity and allocation repair passes local and clean Linux checks.
+- [Issue 11: retained facts integrity](https://github.com/chester-hill-solutions/civicsignal/issues/11) closes after the file-drift repair passes independent review, local checks, and clean Linux.
 
 The [brief receipt](evidence/2026-10-31/brief-policy-local-validation.json) and [snapshot receipt](evidence/2026-10-31/snapshot-diagnostics-local-validation.json) retain source pins and test limits.
 The [acquisition transport receipt](evidence/2026-10-31/acquisition-transport-local-validation.json) records the fixture repairs, 124 focused checks, and independent review.
@@ -165,16 +166,18 @@ Preserve that result. Keep protected-path admission strict; use external private
 The [facts repair](evidence/2026-10-31/acquisition-facts-local-validation.json) passes 179 focused checks, compiler checks, and independent review.
 Original file identities and complete bounded bytes now govern final acceptance under the same acquisition owner.
 The [corrected full local gate](evidence/2026-10-31/integrated-candidate-local-validation-v5.json) passes frozen installation, 1,925 tests, 27 Python checks, and five dry builds.
-All 472 source and fixture inputs remain unchanged. Clean Linux qualification remains open for this source.
+All 472 source and fixture inputs remain unchanged.
+The [clean Linux successor](evidence/2026-10-31/candidate-26d-linux-ci-validation.json) passes the same complete checks for implementation source `26d5049`.
+Its actual checkout is merge `31b1db0` with base `717bf32`. Issues 10 and 11 close; issues 4 and 6 remain open.
 Final release qualification and all four hosted/production gates remain open.
 
 ### Immediate work order
 
-1. Publish the locally qualified source and complete clean Linux CI.
-2. Use fresh staging management facts and existing owned helpers to prepare the concrete first-publication packet.
-3. Prepare serving acceptance and production acquisition alongside that work. Their local preparation can proceed independently.
-4. Resolve acceptance criteria, complete operation budgets, and actual production maintenance controls before the corresponding hosted work.
-5. Qualify protected copy and rollback after production acquisition. Assemble the final release packet after all required evidence passes.
+1. Complete the concrete first-publication packet from fresh staging facts, existing owned helpers, and the full artifact comparison.
+2. Prepare serving acceptance and bounded production inventory alongside that work. Complete acquisition and common maintenance from actual production facts.
+3. Resolve acceptance criteria and operation budgets before the corresponding hosted work.
+4. Qualify protected copy and rollback after production acquisition. Assemble the final release packet after all required evidence passes.
+5. Preserve exact source qualification after future changes; complete the final production decision and its approved checks.
 
 MP-01 establishes the candidate for every package.
 MP-04 supplies the production capture for MP-05.
