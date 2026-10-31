@@ -106,12 +106,14 @@ The [initial candidate inventory](evidence/2026-10-31/v1-candidate-inventory.jso
 The [successor inventory](evidence/2026-10-31/v1-candidate-inventory-v3.json) pins 470 source and fixture inputs for the complete passing local gate.
 Fresh GitHub reads confirm draft PR 1 and successful CI for published head `9e2fe17`.
 That CI result does not qualify newer worktree changes or refresh hosted deployment identities.
+The successor source `3377cb8` now appears in the draft PR and passes its full local gate.
+Its first clean Linux run fails proposal source-file metadata admission; it does not qualify this source.
 
 | Work | Local result | Next evidence |
 | --- | --- | --- |
 | MP-01 candidate inventory | Source inventory and published-head CI state recorded | Freeze the final source and refresh required hosted identity through its bounded packet |
 | MP-02 source diagnostics | 119 pure and 11 native checks pass; source code/status facts survive safe serialization | Complete operator/budgets and qualify real scheduled first publication |
-| MP-02 proposal preparation | 48 checks, two compiler projects, and independent review pass; one proposal binds source, bundle, configuration, references, and budgets | Owned execution, enforced aggregate limits, fresh evidence, and hosted qualification |
+| MP-02 proposal preparation | 60 checks and two compiler projects pass, including public-hardlink and private-input regressions | Clean Linux CI, owned execution, enforced limits, fresh evidence, and hosted qualification |
 | MP-03 brief policy | Focused and full local checks pass; malformed HTTP/MCP briefs now fail before successful usage consumption | Clean Linux CI and remaining hosted serving acceptance |
 | MP-03 successor questions | 64 new paired questions; all 48 positive labels pass full immutable-source checks; 35 focused checks pass | Acceptance criteria, fresh target provenance, and a separately bounded serving run |
 | MP-04 acquisition transport | Focused and full local checks pass; independent review accepts the fixture repairs | Clean Linux CI, complete budget, source facts, credential owner, and actual maintenance qualification |
@@ -126,6 +128,7 @@ Findings live in the repository issue tracker:
 - [Issue 6: scheduled operator accounting](https://github.com/chester-hill-solutions/civicsignal/issues/6) requires a successor operator and complete operation budget.
 - [Issue 7: acquisition settlement](https://github.com/chester-hill-solutions/civicsignal/issues/7) tracks incorrect settled state after malformed concurrent input.
 - [Issue 8: SQL download readback](https://github.com/chester-hill-solutions/civicsignal/issues/8) tracks a same-size output rewrite that bypassed the initial checks.
+- [Issue 9: Linux source admission](https://github.com/chester-hill-solutions/civicsignal/issues/9) tracks the failed clean-checkout proposal checks.
 
 The [brief receipt](evidence/2026-10-31/brief-policy-local-validation.json) and [snapshot receipt](evidence/2026-10-31/snapshot-diagnostics-local-validation.json) retain source pins and test limits.
 The [acquisition transport receipt](evidence/2026-10-31/acquisition-transport-local-validation.json) records the fixture repairs, 124 focused checks, and independent review.
@@ -143,11 +146,16 @@ The [successor cleanup receipt](evidence/2026-10-31/process-owner-local-repair.j
 The helper now continues bounded cleanup and requires confirmed group absence plus direct-child reap.
 Persistent uncertainty still fails. The final successor passes all 27 Python cases; it does not replace the earlier failed results.
 The [complete successor local gate](evidence/2026-10-31/integrated-candidate-local-validation-v3.json) passes every phase with all 470 inputs unchanged.
+The [failed Linux run](evidence/2026-10-31/candidate-3377-linux-ci-failure.json) retains 23 proposal failures after successful installation and compilation.
+Its Python and build phases do not run.
+The [local admission repair](evidence/2026-10-31/proposal-public-hardlink-local-repair.json) reproduces the hardlink failure and passes 60 checks.
+Public source reads preserve pinned bytes and stable metadata; private inputs retain strict checks at every read.
+The original CI inode facts remain unknown. The successor still needs clean Linux qualification.
 Clean Linux CI for this source, final release qualification, and all four hosted/production gates remain open.
 
 ### Immediate work order
 
-1. Publish the locally qualified candidate to the draft PR. Complete clean Linux CI and link its exact source to the inventory.
+1. Repair and qualify Linux source admission. Publish the successor, complete clean Linux CI, and link its exact source to the inventory.
 2. Prepare three work packages: scheduled publication, serving acceptance, and production acquisition. Their local preparation can proceed independently.
 3. Resolve acceptance criteria, complete operation budgets, and actual production maintenance controls before the corresponding hosted work.
 4. Qualify protected copy and rollback after production acquisition. Assemble the final release packet after all required evidence passes.

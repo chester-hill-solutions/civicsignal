@@ -815,6 +815,23 @@ The corpus invariant script explicitly skips absent local ingest SQL/JSONL artif
 This run inherits no cloud credentials, makes no real provider call, and deploys nothing.
 Earlier failed runs remain intact. Exact-source clean Linux CI and the four hosted/production release gates remain open.
 
+Source **3377cb8** now appears in draft PR 1.
+Its [first clean Linux run](evidence/2026-10-31/candidate-3377-linux-ci-failure.json) passes frozen installation and all four compiler projects, then fails **23/1,849 tests**.
+All failures occur in proposal source metadata admission; 99 other files pass.
+Python and dry builds are skipped after validation fails.
+The reader requires one link per public source file as well as private input.
+[Bun documents](https://bun.com/docs/pm/global-cache) hardlinks as the Linux default and clonefile as the macOS default.
+This suggests the admission cause; the CI log retains no inode facts.
+[Issue 9](https://github.com/chester-hill-solutions/civicsignal/issues/9) tracks a same-seam reproduction and a repair that preserves private-file checks.
+The failed run remains intact. No unchanged rerun occurs.
+
+The [local admission repair](evidence/2026-10-31/proposal-public-hardlink-local-repair.json) reproduces failure by adding a real hardlink to copied dependency bytes.
+The successor permits stable public hardlinks while retaining canonical paths, ownership, bounded bytes, hashes, and descriptor checks.
+Private inputs remain single-link and private at both admission and final recheck.
+All **60 focused cases** and both Bun/tooling compilers pass.
+Only the proposal library and its tests differ from the 470-input passing local gate; the other 468 inputs match.
+The historical CI inode facts remain unknown. Exact-source clean Linux qualification remains open.
+
 The recovery, full metadata, composite changed-text byte verification and complete
 vector backup gate is closed within the approved limits. Preserve the original
 paused coordinator and backup evidence.

@@ -1,19 +1,23 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
-import { chmod, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
+import { chmod, link, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { qualificationIdentity, QUALIFICATION_STAGE_ID } from '../services/snapshot/qualification';
 import { STAGING_ACCOUNT, STAGING_SOURCE, stagingNames } from '../scripts/lib/staging-config';
 import { SNAPSHOT_PARSER_VERSION } from '../src/ingest/snapshot-format';
-import { prepareSnapshotQualificationProposal, inspectSnapshotQualificationProposal } from '../scripts/lib/snapshot-qualification-proposal';
+import { prepareSnapshotQualificationProposal, inspectSnapshotQualificationProposal, readSnapshotProposalPinnedFile } from '../scripts/lib/snapshot-qualification-proposal';
 import { snapshotQualificationProposalMain } from '../scripts/prepare-snapshot-qualification';
 
-const faults = vi.hoisted(() => ({ proposalSync: false }));
+const faults = vi.hoisted(() => ({ proposalSync: false, recheckInput: '', inputOpens: 0, privateMutationPath: '', privateMutationKind: '' }));
 vi.mock('node:fs/promises', async original => {
   const actual = await original<typeof import('node:fs/promises')>();
   return { ...actual, async open(...args: Parameters<typeof actual.open>) {
+    if (String(args[0]) === faults.recheckInput && ++faults.inputOpens === 3) {
+      if (faults.privateMutationKind === 'link') await actual.link(faults.privateMutationPath, faults.privateMutationPath + '.alias');
+      else await actual.chmod(faults.privateMutationPath, 0o644);
+    }
     const file = await actual.open(...args);
     if (faults.proposalSync && String(args[0]).endsWith('/proposal.json')) vi.spyOn(file, 'sync').mockRejectedValue(new Error('Injected persistence failure'));
     return file;
@@ -23,7 +27,11 @@ vi.mock('node:fs/promises', async original => {
 const ROOT = resolve('.'), NOW = Date.parse('2030-01-01T00:00:00.000Z'), EVENT = '2030-01-01T01:00:00.000Z';
 const sha = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 const cleanup: string[] = [];
-afterEach(async () => { for (const path of cleanup.splice(0)) await rm(path, { recursive: true, force: true }); faults.proposalSync = false; vi.restoreAllMocks(); });
+afterEach(async () => {
+  for (const path of cleanup.splice(0)) await rm(path, { recursive: true, force: true });
+  faults.proposalSync = false; faults.recheckInput = ''; faults.inputOpens = 0; faults.privateMutationPath = ''; faults.privateMutationKind = '';
+  vi.restoreAllMocks();
+});
 async function pin(path: string) { const bytes = await readFile(path); return { path, bytes: bytes.length, sha256: sha(bytes) }; }
 async function fixture() {
   const directory = await realpath(await mkdtemp(join(tmpdir(), 'snapshot-proposal-'))); cleanup.push(directory); await chmod(directory, 0o700);
@@ -74,6 +82,47 @@ async function fixture() {
 }
 
 describe('offline scheduled snapshot qualification proposal', () => {
+  it('accepts a stable public source pin shared with a package-cache hardlink', async () => {
+    const f = await fixture(), source = f.input.candidate.sourceFiles.find(value => value.path.includes('/node_modules/'))!;
+    const publicFile = join(f.directory, 'public-source.js'), cacheFile = join(f.directory, 'cache-source.js');
+    const bytes = await readFile(source.path);
+    await writeFile(publicFile, bytes, { mode: 0o644 });
+    const sourcePin = await pin(publicFile);
+    await expect(readSnapshotProposalPinnedFile(sourcePin, 'public')).resolves.toEqual(bytes);
+    await link(publicFile, cacheFile);
+    const facts = await stat(publicFile);
+    expect({ links: facts.nlink, owner: facts.uid, bytes: facts.size }).toEqual({ links: 2, owner: process.getuid?.(), bytes: sourcePin.bytes });
+    await expect(readSnapshotProposalPinnedFile(sourcePin, 'public')).resolves.toEqual(bytes);
+  });
+  it('refuses a hardlinked private candidate before output', async () => {
+    const f = await fixture();
+    await link(f.input.candidate.bundle.path, join(f.directory, 'private-bundle-alias.mjs'));
+    await expect(prepareSnapshotQualificationProposal({ root: ROOT, inputFile: f.inputFile,
+      outputDirectory: f.outputDirectory, nowMs: NOW })).rejects.toThrow('INPUT_METADATA');
+    await expect(readdir(f.outputDirectory)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+  it('refuses byte drift through a public source hardlink even when size and owner match', async () => {
+    const f = await fixture(), publicFile = join(f.directory, 'public-source.js'), cacheFile = join(f.directory, 'cache-source.js');
+    await writeFile(publicFile, 'export const value = 1;\n', { mode: 0o644 });
+    await link(publicFile, cacheFile);
+    const sourcePin = await pin(publicFile);
+    await writeFile(cacheFile, 'export const value = 2;\n');
+    await expect(readSnapshotProposalPinnedFile(sourcePin, 'public')).rejects.toThrow('INPUT_DRIFT');
+  });
+  it('retains private input permission checks', async () => {
+    const f = await fixture(); await chmod(f.input.candidate.bundle.path, 0o644);
+    await expect(inspectSnapshotQualificationProposal({ root: ROOT, input: f.input, nowMs: NOW })).rejects.toThrow('INPUT_METADATA');
+  });
+  it.each((['bundle', 'config', 'resources', 'budget'] as const).flatMap(field => ['link', 'mode'].map(change => ({ field, change }))))(
+    'retains private $field protection against $change changes at the final recheck', async ({ field, change }) => {
+      const f = await fixture(), targets = { bundle: f.input.candidate.bundle, config: f.input.candidate.config,
+        resources: f.input.resourceEvidence, budget: f.input.budget };
+      faults.recheckInput = f.inputFile; faults.privateMutationPath = targets[field].path; faults.privateMutationKind = change;
+      await expect(prepareSnapshotQualificationProposal({ root: ROOT, inputFile: f.inputFile,
+        outputDirectory: f.outputDirectory, nowMs: NOW })).rejects.toThrow('INPUT_METADATA');
+      expect(faults.inputOpens).toBe(3);
+      await expect(readdir(f.outputDirectory)).rejects.toMatchObject({ code: 'ENOENT' });
+    });
   it('uses the real qualification identity and pinned accounting while remaining unapproved and unable to execute', async () => {
     const f = await fixture(), network = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network forbidden'));
     const result = await prepareSnapshotQualificationProposal({ root: ROOT, inputFile: f.inputFile, outputDirectory: f.outputDirectory, nowMs: NOW });

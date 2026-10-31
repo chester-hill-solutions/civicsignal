@@ -70,20 +70,25 @@ async function boundedBytes(file: FileHandle, maximum: number): Promise<Buffer> 
   }
 }
 
-/** Public source/reference pins may be readable, but never symlinked or aliased. */
-async function pinned(pin: FilePin, privateFile = false): Promise<Buffer> {
+/** Public package sources may share a cache inode. Their admitted bytes must
+ * still match the pin and remain stable through the same descriptor read.
+ * Private operator inputs require exclusive inodes and private permissions. */
+export async function readSnapshotProposalPinnedFile(pin: FilePin, privacy: 'public' | 'private'): Promise<Buffer> {
+  const privateFile = privacy === 'private';
   requireProposal(isAbsolute(pin.path) && resolve(pin.path) === pin.path && await realpath(pin.path) === pin.path, 'CANONICAL_INPUT_REQUIRED');
   const file = await open(pin.path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const before = await file.stat({ bigint: true });
-    requireProposal(before.isFile() && before.nlink === 1n && Number(before.size) === pin.bytes && before.uid === BigInt(process.getuid?.() ?? -1) &&
-      (!privateFile || (before.mode & 0o077n) === 0n), 'INPUT_METADATA');
+    requireProposal(before.isFile() && before.nlink >= 1n && Number(before.size) === pin.bytes && before.uid === BigInt(process.getuid?.() ?? -1) &&
+      (!privateFile || (before.nlink === 1n && (before.mode & 0o077n) === 0n)), 'INPUT_METADATA');
     const bytes = await boundedBytes(file, pin.bytes), after = await file.stat({ bigint: true });
     requireProposal(bytes.length === pin.bytes && hash(bytes) === pin.sha256 && before.dev === after.dev && before.ino === after.ino &&
-      before.size === after.size && before.mtimeNs === after.mtimeNs && before.ctimeNs === after.ctimeNs, 'INPUT_DRIFT');
+      before.size === after.size && before.nlink === after.nlink && before.uid === after.uid && before.mode === after.mode &&
+      before.mtimeNs === after.mtimeNs && before.ctimeNs === after.ctimeNs, 'INPUT_DRIFT');
     return bytes;
   } finally { await file.close(); }
 }
+const pinned = readSnapshotProposalPinnedFile;
 async function filePin(path: string): Promise<FilePin> {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
@@ -99,14 +104,14 @@ function json(bytes: Uint8Array): unknown { return JSON.parse(new TextDecoder('u
 
 async function referenceAccounting(root: string, input: z.infer<typeof inputSchema>) {
   requireProposal(input.accounting.path === join(root, 'docs/evidence/2026-10-31/snapshot-reference-accounting.json'), 'ACCOUNTING_REFERENCE');
-  const accountingBytes = await pinned(input.accounting);
+  const accountingBytes = await pinned(input.accounting, 'public');
   const accounting = accountingSchema.parse(json(accountingBytes));
   for (const expected of [input.referenceManifest, input.stagingReceipt]) requireProposal(accounting.evidencePins.some(pin =>
     resolve(root, pin.path) === expected.path && pin.bytes === expected.bytes && pin.sha256 === expected.sha256), 'REFERENCE_LINEAGE');
-  const [manifestBytes, receiptBytes] = await Promise.all([pinned(input.referenceManifest), pinned(input.stagingReceipt)]);
+  const [manifestBytes, receiptBytes] = await Promise.all([pinned(input.referenceManifest, 'public'), pinned(input.stagingReceipt, 'public')]);
   for (const pin of accounting.evidencePins) {
     requireProposal(!isAbsolute(pin.path) && !pin.path.split('/').some(part => part === '..'), 'ACCOUNTING_PIN_PATH');
-    await pinned({ ...pin, path: resolve(root, pin.path) });
+    await pinned({ ...pin, path: resolve(root, pin.path) }, 'public');
   }
   const manifest = parseManifest(manifestBytes.toString('utf8'));
   requireProposal(manifest.commit === input.source.commit && manifest.date === input.source.date && manifest.parser === input.parser, 'REFERENCE_REVISION');
@@ -160,12 +165,12 @@ export async function inspectSnapshotQualificationProposal(options: { root: stri
   const qualification = await qualificationIdentity(controls);
   requireProposal(qualification.prefix === input.expectedNamespace && qualification.instanceId === input.expectedInstanceId, 'QUALIFICATION_IDENTITY');
   const [bundleBytes, configBytes, resourceBytes, budgetBytes] = await Promise.all([
-    pinned(input.candidate.bundle, true), pinned(input.candidate.config, true), pinned(input.resourceEvidence, true), pinned(input.budget, true),
+    pinned(input.candidate.bundle, 'private'), pinned(input.candidate.config, 'private'), pinned(input.resourceEvidence, 'private'), pinned(input.budget, 'private'),
   ]);
   const resources = resourceSchema.parse(json(resourceBytes));
   requireProposal(Date.parse(resources.observedAt) <= options.nowMs, 'RESOURCE_OBSERVATION_TIME');
   const sourceConfigPath = join(root, 'services/snapshot/wrangler.jsonc'), sourceConfigPin = await filePin(sourceConfigPath);
-  const sourceConfig = ts.parseConfigFileTextToJson(sourceConfigPath, (await pinned(sourceConfigPin)).toString('utf8'));
+  const sourceConfig = ts.parseConfigFileTextToJson(sourceConfigPath, (await pinned(sourceConfigPin, 'public')).toString('utf8'));
   requireProposal(!sourceConfig.error, 'RUNTIME_CONFIG');
   const source = sourceConfig.config as { compatibility_date?: unknown; compatibility_flags?: unknown; limits?: unknown; observability?: unknown };
   const expectedConfig = { name: resources.worker, account_id: resources.accountId, main: input.candidate.bundle.path,
@@ -185,7 +190,7 @@ export async function inspectSnapshotQualificationProposal(options: { root: stri
   requireProposal(Buffer.from(bundled.outputFiles[0]!.contents).equals(bundleBytes), 'BUNDLE_CORRESPONDENCE');
   const expectedSources = Object.keys(bundled.metafile!.inputs).map(path => resolve(root, path)).sort();
   requireProposal(equal(input.candidate.sourceFiles.map(pin => pin.path).sort(), expectedSources), 'COMPLETE_SOURCE_MANIFEST');
-  for (const pin of input.candidate.sourceFiles) await pinned(pin);
+  for (const pin of input.candidate.sourceFiles) await pinned(pin, 'public');
   const reference = await referenceAccounting(root, input), budget = budgetSchema.parse(json(budgetBytes));
   for (const name of ['put', 'get', 'head', 'list', 'batchDelete', 'total'] as const) requireProposal(budget.r2.successfulPass[name] >= reference.successfulPass[name], 'R2_BASELINE_UNDERCOUNT');
   requireProposal(budget.r2.successfulPass.total >= sum(Object.entries(budget.r2.successfulPass).filter(([key]) => key !== 'total').map(([, value]) => value)), 'R2_TOTAL_UNDERCOUNT');
@@ -237,13 +242,15 @@ async function syncDirectory(path: string) { const file = await open(path, 'r');
 export async function prepareSnapshotQualificationProposal(options: { root: string; inputFile: string; outputDirectory: string; nowMs: number }) {
   await privateDirectory(dirname(options.inputFile)); await privateDirectory(dirname(options.outputDirectory));
   requireProposal(isAbsolute(options.outputDirectory) && resolve(options.outputDirectory) === options.outputDirectory, 'CANONICAL_OUTPUT_REQUIRED');
-  const inputPin = await filePin(options.inputFile), inputBytes = await pinned(inputPin, true);
+  const inputPin = await filePin(options.inputFile), inputBytes = await pinned(inputPin, 'private');
   const checked = await inspectSnapshotQualificationProposal({ root: options.root, input: json(inputBytes), nowMs: options.nowMs });
   // Complete admission before claiming a new directory. Existing packets cannot
   // be updated, even when all their files would otherwise match.
-  await pinned(inputPin, true);
-  for (const pin of [...checked.input.candidate.sourceFiles, checked.input.candidate.bundle, checked.input.candidate.config,
-    checked.input.resourceEvidence, checked.input.accounting, checked.input.referenceManifest, checked.input.stagingReceipt, checked.input.budget]) await pinned(pin);
+  await pinned(inputPin, 'private');
+  for (const pin of [...checked.input.candidate.sourceFiles, checked.input.accounting,
+    checked.input.referenceManifest, checked.input.stagingReceipt]) await pinned(pin, 'public');
+  for (const pin of [checked.input.candidate.bundle, checked.input.candidate.config,
+    checked.input.resourceEvidence, checked.input.budget]) await pinned(pin, 'private');
   await mkdir(options.outputDirectory, { mode: 0o700 });
   let complete = false;
   try {
