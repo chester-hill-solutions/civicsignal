@@ -1,0 +1,14 @@
+{
+  "receiptSha256": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc",
+  "positions": 356,
+  "requestedEvenSamples": 300,
+  "compared": 329,
+  "exactFloat32": 329,
+  "placeholderPositions": 27,
+  "missingUnexpected": 0,
+  "largestWidenedDifference": 1.488e-08,
+  "method": "check-stored-vectors.ts --parser legacy --sample 300, read-only get_by_ids",
+  "limitation": "Checks sampled live vector values; local receipt scans every backup position. Does not assert all live values were compared.",
+  "recordedAt": "2026-10-23T01:17:50.907329+00:00",
+  "observationWindow": "2026-10-23 01:10–01:17 UTC"
+}

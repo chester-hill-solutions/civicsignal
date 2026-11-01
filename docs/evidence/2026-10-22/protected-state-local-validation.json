@@ -1,0 +1,176 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T13:01:04.999Z",
+  "scope": "Offline protected-state implementation and synthetic fixtures only",
+  "runtime": {
+    "node": "25.9.0",
+    "bun": "1.3.5",
+    "platform": "macOS"
+  },
+  "checks": [
+    {
+      "command": "bun run test -- test/protected-state.test.ts -t 'generated column'",
+      "exitCode": 1,
+      "expectedRed": true,
+      "failed": 4,
+      "skipped": 31,
+      "log": "/private/tmp/civicsignal-protected-generated-red.log"
+    },
+    {
+      "command": "bun run test -- test/protected-state.test.ts test/auth-migration.test.ts test/auth-export.test.ts",
+      "exitCode": 0,
+      "tests": 41,
+      "files": 3,
+      "protectedStateTests": 35,
+      "newGeneratedColumnTests": 4,
+      "log": "/private/tmp/civicsignal-protected-generated-green.log"
+    },
+    {
+      "command": "bun run typecheck:bun",
+      "exitCode": 0,
+      "log": "/private/tmp/civicsignal-protected-generated-bun-types.log"
+    },
+    {
+      "command": "bun run typecheck:tooling",
+      "exitCode": 0,
+      "log": "/private/tmp/civicsignal-protected-generated-tooling-types.log"
+    },
+    {
+      "command": "node --check scripts/lib/protected-sql-import.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "focusedProjects": {
+    "bun": {
+      "extends": "../../tsconfig.bun.json",
+      "include": [
+        "../../scripts/protected-state.ts",
+        "../../test/protected-state.test.ts"
+      ],
+      "exclude": []
+    },
+    "tooling": {
+      "extends": "../../tsconfig.tooling.json",
+      "include": [
+        "../../scripts/protected-state.ts",
+        "../../test/protected-state.test.ts"
+      ],
+      "exclude": []
+    }
+  },
+  "sourceFiles": {
+    "scripts/protected-state.ts": {
+      "bytes": 2244,
+      "sha256": "12e4d6d3138c9fdc3b8fd6319b3ffe1bcf1edea84da7ca6a08b85eea8f1128d5"
+    },
+    "scripts/lib/protected-state.ts": {
+      "bytes": 31574,
+      "sha256": "7782a7acd33249aecae6bd48693c17802c84feba8f8470ad003b5fcbcfde5321"
+    },
+    "scripts/lib/protected-sql-import.mjs": {
+      "bytes": 7451,
+      "sha256": "b5e7c669a6ef2087cb4a23ffc18b15505578092a65a799c7f544ff98cdaebfc2"
+    },
+    "test/protected-state.test.ts": {
+      "bytes": 23041,
+      "sha256": "1a0b8277c40242c95a64c32fc4cc10259ead9a2eef53aca09086848cda636163"
+    },
+    "docs/PROTECTED-STATE-COPY.md": {
+      "bytes": 5938,
+      "sha256": "9b41b76a38a9b0d5acf1f82b51ab3f3e44f2c619c65406d354ee0c933cf6558e"
+    }
+  },
+  "verifiedFixtureContracts": [
+    "Every covered protected table and full-column digest",
+    "Monotonic key revocation and retained CHS capabilities/disabled billing",
+    "Legacy-only and CHS-only inputs; identity/billing/schema/outbox mismatches refused",
+    "Deleted-ID run/change high-water marks preserved; next feed ID advances beyond the source mark",
+    "Atomic page rollback, commit-then-lost-ack replay, row/receipt/conflicting-plan checks",
+    "Whole corpus ID/fingerprint and non-text metadata admission, including on resume",
+    "Owner-only artifacts, symlink/hardlink/sidecar/hash guards and privacy-safe errors",
+    "Restricted streamed SQL with explicit original sequence facts, chunked UTF-8/quote/comment handling",
+    "Hostile SQL attachment/unsafe pragma/VACUUM/extension/trigger/virtual-table/SELECT import refusal",
+    "Missing authorizer and omitted/mismatched SQL sequence facts fail closed",
+    "Actual Bun SQLite and SQL prepare/apply-local/verify-local commands",
+    "Generated VIRTUAL/STORED columns in both source and target fail closed before output creation; ordinary extra-column refusal remains covered."
+  ],
+  "boundaries": {
+    "cloudRequests": 0,
+    "credentialReads": 0,
+    "productionDataReads": 0,
+    "workerOrConfigChanges": 0,
+    "activeStagePacketChanges": 0,
+    "productionApplyImplemented": false,
+    "committed": false
+  },
+  "limits": [
+    "Fixture data only; no actual protected backup was acquired or copied.",
+    "Offline files cannot establish common D1/KV freeze, writer/alarm quiescence or authenticity of acquired sequence history.",
+    "Actual production namespace/counter preservation, R2/Vectorize parity, remote apply and rollback remain separate approval/evidence gates.",
+    "SQL accepts the documented restricted dump subset and requires Node authorizer support; unsupported inputs are refused.",
+    "Full repository and Linux CI gates are not claimed by this focused validation.",
+    "Target text references and compact-text markers are not checked or restored by this helper; the supplied bundle check does not prove target text parity. Use separate text-cutover/compact-restore verification."
+  ],
+  "documentationClarifiedAt": "2026-10-23T12:46:54.598Z",
+  "previousFocusedVerification": {
+    "observedAt": "2026-10-23T12:27:18.050482+00:00",
+    "checks": [
+      {
+        "command": "bun run test test/protected-state.test.ts test/auth-migration.test.ts",
+        "exitCode": 0,
+        "tests": 35,
+        "files": 2,
+        "newProtectedStateTests": 31
+      },
+      {
+        "command": "node node_modules/typescript/bin/tsc -p dist/protected-state-validation/tsconfig.bun.json --noEmit",
+        "exitCode": 0
+      },
+      {
+        "command": "node node_modules/typescript/bin/tsc -p dist/protected-state-validation/tsconfig.tooling.json --noEmit",
+        "exitCode": 0
+      },
+      {
+        "command": "node --check scripts/lib/protected-sql-import.mjs",
+        "exitCode": 0
+      }
+    ],
+    "sourceFiles": {
+      "scripts/protected-state.ts": {
+        "bytes": 2244,
+        "sha256": "12e4d6d3138c9fdc3b8fd6319b3ffe1bcf1edea84da7ca6a08b85eea8f1128d5"
+      },
+      "scripts/lib/protected-state.ts": {
+        "bytes": 31574,
+        "sha256": "7782a7acd33249aecae6bd48693c17802c84feba8f8470ad003b5fcbcfde5321"
+      },
+      "scripts/lib/protected-sql-import.mjs": {
+        "bytes": 7451,
+        "sha256": "b5e7c669a6ef2087cb4a23ffc18b15505578092a65a799c7f544ff98cdaebfc2"
+      },
+      "test/protected-state.test.ts": {
+        "bytes": 23041,
+        "sha256": "1a0b8277c40242c95a64c32fc4cc10259ead9a2eef53aca09086848cda636163"
+      },
+      "docs/PROTECTED-STATE-COPY.md": {
+        "bytes": 5938,
+        "sha256": "9b41b76a38a9b0d5acf1f82b51ab3f3e44f2c619c65406d354ee0c933cf6558e"
+      }
+    }
+  },
+  "schemaReviewFix": {
+    "finding": "table_info omits generated columns, allowing an unknown protected schema to be narrowed silently.",
+    "fix": "table_xinfo includes all columns; nonzero hidden flags and any unexpected column set are rejected.",
+    "redBeforeImplementation": true,
+    "inputHashesUnchangedOnRefusal": true,
+    "scope": [
+      "scripts/lib/protected-state.ts",
+      "test/protected-state.test.ts",
+      "docs/PROTECTED-STATE-COPY.md"
+    ]
+  }
+}

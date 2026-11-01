@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-24T01:28:16.265823+00:00",
+  "scope": "clean-linux-pull-request-merge-candidate-release-gates",
+  "authority": "trusted-root-connector-observation-reconciled-locally",
+  "headCommit": "520c102da791795de7b03577f46c42dfb65cb886",
+  "checkout": {
+    "kind": "github-pull-request-merge-test",
+    "mergeCommitPrefix": "4bce33c",
+    "mergedHeadCommit": "520c102da791795de7b03577f46c42dfb65cb886",
+    "baseCommit": "717bf3299701d06ec6d85add276e1ed546c69387",
+    "standaloneDetachedHeadCheckoutClaimed": false
+  },
+  "runId": 40048032415,
+  "jobId": 120734102196,
+  "url": "https://github.com/chester-hill-solutions/civicsignal/actions/runs/40048032415",
+  "jobUrl": "https://github.com/chester-hill-solutions/civicsignal/actions/runs/40048032415/job/120734102196",
+  "status": "completed",
+  "conclusion": "success",
+  "pullRequest": 1,
+  "checks": {
+    "frozenLockfileInstallation": true,
+    "vitestTests": 1281,
+    "vitestFiles": 89,
+    "pythonTests": 21,
+    "compilerProjects": 4,
+    "vendorFiles": 117,
+    "actualRuntimeProbes": 2,
+    "usageLedgerRuntimeProbe": true,
+    "r2ImmutabilityRuntimeProbe": true,
+    "billingInvariants": true,
+    "corpusInvariants": true,
+    "workerDryRunBuilds": 5
+  },
+  "environment": {
+    "os": "Linux",
+    "node": "24.21.0",
+    "bun": "1.3.5"
+  },
+  "rootObservedAt": "2026-10-24 01:26:38 UTC",
+  "rootObservation": {
+    "path": "dist/release/staging/ci520-root-observation.json",
+    "bytes": 2109,
+    "sha256": "e03cbfb96c259b57f8000b343390b6220a61c188d2d237f068f58d80e1243381"
+  },
+  "workflowInspectedLocally": {
+    "path": ".github/workflows/validate.yml",
+    "bytes": 1035,
+    "sha256": "2f095d06399d55abfda156e3998fae347da3203ed258a2d90911e31d40f8e9e4"
+  },
+  "packageCommandsInspectedLocally": {
+    "path": "package.json",
+    "bytes": 3317,
+    "sha256": "546dc96890c5523ddb671ce143f2ea07ef37b0b2226805a6dea282e895f5205b"
+  },
+  "priorReceipt": {
+    "path": "docs/evidence/2026-10-23/release-linux-ci-57a3222.json",
+    "bytes": 1034,
+    "sha256": "c3ef52e3294a686d9546a41db5b605d9a394411dbe9b579fea50db05d3998d43"
+  },
+  "reconciliationNetworkRequests": 0,
+  "reconciliationCredentialReads": 0,
+  "limitations": [
+    "The successful GitHub pull_request job tested its generated merge candidate including exact head 520c102da791795de7b03577f46c42dfb65cb886, not a detached standalone checkout of that head.",
+    "Status and counts are from the parent held actual GitHub run/job/log observation; this reconciliation made no fresh GitHub request.",
+    "Optional absent historical corpus artifacts remain explicit invariant skips; hosted corpus proofs are separate.",
+    "The newer API diagnostics source was not deployed. CI success does not change failed hosted retrieval or Zen acceptance and performs no production deployment/provider generation."
+  ],
+  "apiDiagnosticsDeploymentUpdated": false
+}

@@ -1,0 +1,59 @@
+{
+  "format": 1,
+  "kind": "staging-api-v6-root-observation",
+  "observedAt": "2026-10-24T04:06:46.142846+00:00",
+  "sourceCommit": "07587e4c1a9236baacf758a455d67b53257c820e",
+  "apiVersionId": "e33f3256-b9be-43c9-a5e3-d7d0bc1451b9",
+  "previousVersionId": "f512cf84-fbcc-4990-bad0-13cdc0678c71",
+  "candidateSha256": "d06e2b9d639a982776caf0d60d1aeb8d355e01e6440b226520d5b9c641513cbf",
+  "candidatePins": 1070,
+  "operatorSha256": "493ac95c4c6325417b4a4e352d035e9bc9e30ef917dd86ec713ade1ad53f228b",
+  "operatorPins": 128,
+  "bundleSha256": "cc987618e547f995e2b0a9110aa8ea0718a474e1a7ba14b66f6b2ff9c46bc6eb",
+  "bundleBytes": 1749342,
+  "configSha256": "058b3944bdcb31a794ae8b5029adb79465ffad965c5c053c0e83c74ed31d8ca6",
+  "postverifySha256": "d797810902e190b1819a31e79cd1e1b0fd2d6c7cac2d9a49b4c0997590ad18e9",
+  "same13BindingsRuntimeUsageAndEmptyCalendar": true,
+  "usageNamespace": "64e06ff739514962a8038d4875bc090c",
+  "explicitManagementProofGETs": 8,
+  "deployCLIInvocations": 1,
+  "internalCLIWireCountIncluded": false,
+  "maximumCLIUploadAttempts": 3,
+  "phaseReceipts": {
+    "preflight": {
+      "startedAt": "2026-10-24T04:05:10.687358+00:00",
+      "finishedAt": "2026-10-24T04:05:16.440152+00:00",
+      "sha256": "4f537b0ce7b1d518210a876fbda44a2e869018c874069fd41f057ede9fb281ed",
+      "ownedProcessSettled": true
+    },
+    "deploy": {
+      "startedAt": "2026-10-24T04:05:23.520410+00:00",
+      "finishedAt": "2026-10-24T04:05:31.176011+00:00",
+      "sha256": "94e7214406c3b82b0984e6d6cf7de628c91190d232214a628a231d5a0735f57c",
+      "ownedProcessSettled": true
+    },
+    "postverify": {
+      "startedAt": "2026-10-24T04:05:39.444636+00:00",
+      "finishedAt": "2026-10-24T04:05:43.574494+00:00",
+      "sha256": "d27c8b1326f7d7fde52dcbf7da79d428fe11d886d2ba52762bc4979736eff9a6",
+      "ownedProcessSettled": true
+    }
+  },
+  "stagingServingCalls": 0,
+  "generationCalls": 0,
+  "embeddingCalls": 0,
+  "ledgerReserved": 156,
+  "ledgerLimit": 160,
+  "ledgerSha256": "38257c2183c8c0bb4b47e953f3ca57420b46b2cdeb1339860bc4799a9c2ce5f5",
+  "diagnosticsOnly": true,
+  "providerFixOrHistoricalCauseClaim": false,
+  "rootValidationReceiptSha256": "de6ecfae9b99bfef79537a7f15d370e2ce4ff86c5edef2ad39b021ad6e931624",
+  "initialLocalRefusal": "Missing private log parent refused before phase intent, capture or credentials; directory created and zero-marker admission rechecked. Original refusal receipt retained.",
+  "productionChanged": false,
+  "railwayChanged": false,
+  "limitations": [
+    "Only deployment identity, bindings, runtime, usage namespace and empty calendar qualified.",
+    "No hosted reranker or generation result is established by this deployment.",
+    "Original intermittent Python capture-test failure remains preserved; separate same-source/same-bounds qualification and actual operations settled."
+  ]
+}

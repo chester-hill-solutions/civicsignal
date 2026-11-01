@@ -1,0 +1,102 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T14:05:19.979611Z",
+  "approval": {
+    "authority": "trusted-user-message",
+    "answer": "Approve bounded recovery",
+    "approvedAt": "2026-10-23T13:53:25.865795Z",
+    "planSha256": "26b6b13a511ac3f55e07bffc08686f8997addc88425838564bbf789d256e5b13",
+    "candidateManifestSha256": "9d3d0fab4b685587ed0f9dbc0108794e54e1bd86c2aa6f27e6c2c768d1234367",
+    "additionalDocuments": 640,
+    "maxCalls": 20
+  },
+  "deployment": {
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "versionId": "573be17a-e46c-4431-a97b-a24a5c2c8b60",
+    "namespaceId": "751026e8a12f46dc87f829d44cef4221",
+    "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "settingsVerified": true,
+    "grantInitiallyPaused": true,
+    "grantInitialSubmitted": 1112,
+    "grantInitialReservedCalls": 0
+  },
+  "attempt": {
+    "finishedAt": "2026-10-23T13:57:06.387Z",
+    "outcome": "failure-paused",
+    "cumulativeCap": 1752,
+    "cumulativeSubmitted": 1304,
+    "additionalSubmitted": 192,
+    "reservedCalls": 6,
+    "remainingDocuments": 448,
+    "remainingCalls": 14,
+    "coordinator": {
+      "format": 1,
+      "revision": 3,
+      "suspended": true,
+      "active": null,
+      "queued": 0,
+      "alarmHandlersActive": 0,
+      "alarmAt": null,
+      "pending": true,
+      "failures": 8,
+      "lastFailure": {
+        "classification": "unknown"
+      },
+      "quiescent": true
+    },
+    "controlOperations": 10,
+    "automaticContingencyResumes": 0,
+    "servingRequests": 0
+  },
+  "dashboard": {
+    "eventType": "alarm",
+    "outcome": "ok",
+    "at": "2026-10-23T13:57:01.340Z",
+    "requestId": "35f5a3543c2042c7ad4c9ecfcc584d9b",
+    "traceId": "bb93045854579c4564de2acea6588073",
+    "cpuTimeMs": 2325,
+    "wallTimeMs": 129790,
+    "lastReportedCycleChanges": 192,
+    "source": "authenticated Cloudflare dashboard visible DOM",
+    "causeEstablished": false
+  },
+  "evidence": {
+    "dist/release/staging/recovery-extension-operations/approved.json": {
+      "bytes": 623,
+      "sha256": "8a8f37242bfb926a8242b88211267bfbff87fd293dd68993d542a19bd5c7f006"
+    },
+    "dist/release/staging/recovery-extension-operations/candidate-manifest.json": {
+      "bytes": 12194,
+      "sha256": "9d3d0fab4b685587ed0f9dbc0108794e54e1bd86c2aa6f27e6c2c768d1234367"
+    },
+    "dist/release/staging/recovery-extension-operations/pre-recovery.json": {
+      "bytes": 5148,
+      "sha256": "b01f4eef3b16e54a149fc633c87f07e1d50d5b5bd08a745b4d260fe607c3debc"
+    },
+    "dist/release/staging/recovery-extension-operations/deploy-recovery.json": {
+      "bytes": 649,
+      "sha256": "24d4044a59dafbdc535218d5aa835766806cd01bb5ad359a2ba1fd51cadc4912"
+    },
+    "dist/release/staging/recovery-extension-operations/grant-ready.json": {
+      "bytes": 6421,
+      "sha256": "fab366654bb584bba5d59b3a4c01848bf61fd464c4751299b3b9651008648a2a"
+    },
+    "dist/release/staging/recovery-extension-operations/monitor-result.json": {
+      "bytes": 2062,
+      "sha256": "dd3de79c875f42ede909187ae8dfe80ed6438c1e791f18eefa50973e3c172039"
+    },
+    "dist/release/staging/recovery-extension-operations/monitor.jsonl": {
+      "bytes": 15397,
+      "sha256": "248fbbf9498d0bb1f72792a36df81ec01319179cdbc82bd234d395585ce5ac81"
+    }
+  },
+  "completionAccepted": false,
+  "originalFailedBoundPreserved": true,
+  "productionChanged": false,
+  "railwayChanged": false,
+  "limits": [
+    "Reported192 new changes await independent D1 identity/fingerprint checks.",
+    "Unknown persisted failure remains unclassified; timing and prior causes do not establish it.",
+    "No additional resume is authorized by an automatic retry; operator failure/state review is required within the same approved cumulative ceilings."
+  ]
+}

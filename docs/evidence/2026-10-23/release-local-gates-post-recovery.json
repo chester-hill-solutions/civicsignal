@@ -1,0 +1,95 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-24T00:01:40.800447+00:00",
+  "scope": "post-recovery-release-local-gates",
+  "baseCommit": "505e5fb",
+  "files": [
+    {
+      "path": "src/byok.ts",
+      "bytes": 13015,
+      "sha256": "b93b1f48515e5bf55fde5ad7aacb1f54fafa57031d6e7d2880844919409d6926"
+    },
+    {
+      "path": "scripts/build-protected-state-d1-owned.mjs",
+      "bytes": 7598,
+      "sha256": "d18a3947c945859fa3900e2103fee2114add2ec638d6d26bb25a6685521976e1"
+    },
+    {
+      "path": "scripts/protected-state-d1-owned.py",
+      "bytes": 20290,
+      "sha256": "700bffb479d90f73e1c15f9c07567e1a0171cc538fc9d400daf037e6bb172dbf"
+    },
+    {
+      "path": "scripts/lib/capture_owned.py",
+      "bytes": 4480,
+      "sha256": "e262416e5ca9d25b37f869f238b5cbffe3d71c9ac178eb1bc4191b45fd367455"
+    },
+    {
+      "path": "scripts/lib/capture_owned.provenance.json",
+      "bytes": 354,
+      "sha256": "1ffa0f4d730dd736612c179f6a4fa8ca25998e3ef58b57e9a776de0be61969b4"
+    },
+    {
+      "path": "test/protected-state-d1-owned.test.py",
+      "bytes": 15284,
+      "sha256": "0c880452c1bfd0626c588c8825b48f14d8babab812077bee905c849ead6999a7"
+    },
+    {
+      "path": "test/protected-state-d1-owned.test.ts",
+      "bytes": 14922,
+      "sha256": "d08ac8569a4cb3e4392c2e3c3e9ad82fbf92a5e5b5142bfb73d6bfeec5d32da2"
+    },
+    {
+      "path": ".github/workflows/validate.yml",
+      "bytes": 1035,
+      "sha256": "2f095d06399d55abfda156e3998fae347da3203ed258a2d90911e31d40f8e9e4"
+    }
+  ],
+  "environment": {
+    "platform": "macOS",
+    "bun": "1.3.5",
+    "node": "25.9.0",
+    "credentialHome": "fresh isolated home",
+    "cloudflareMetrics": false,
+    "workerdFixtures": true
+  },
+  "checks": {
+    "validateCommand": "bun --no-env-file run validate",
+    "validateExitCode": 0,
+    "vendorFiles": 117,
+    "compilerProjects": [
+      "worker",
+      "bun",
+      "tooling",
+      "snapshot"
+    ],
+    "vitestTests": 1233,
+    "vitestFiles": 86,
+    "pythonCommand": "python3 -I -B test/protected-state-d1-owned.test.py",
+    "pythonTests": 21,
+    "pythonExitCode": 0,
+    "actualWorkerdUsageLedgerProbe": true,
+    "actualWorkerdR2ImmutabilityProbe": true,
+    "billingInvariants": true,
+    "corpusInvariants": true,
+    "buildCommand": "bun --no-env-file run build",
+    "dryRunWorkerBuilds": [
+      "api",
+      "pipeline",
+      "encoder",
+      "snapshot",
+      "restore"
+    ],
+    "buildExitCode": 0,
+    "encoderContainerRollout": "none",
+    "gitDiffCheck": true
+  },
+  "limitations": [
+    "Optional historical SQL/JSONL corpus invariant artifacts are absent and were explicitly skipped. Full current staging corpus proofs are separate.",
+    "These local checks do not constitute hosted serving acceptance.",
+    "Fresh Linux CI for these new changes remains pending."
+  ],
+  "cloudMutationsByValidation": 0,
+  "providerRequestsByValidation": 0,
+  "productionDeployment": false
+}

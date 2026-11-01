@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-23T01:26:10.272746+00:00",
+  "source": "wrangler vectorize get civicsignal-statutes-gemma --json, read-only",
+  "descriptor": {
+    "name": "civicsignal-statutes-gemma",
+    "config": {
+      "dimensions": 768,
+      "metric": "cosine"
+    },
+    "created_on": "2026-10-20T20:53:00.567445Z",
+    "modified_on": "2026-10-20T20:53:00.567445Z"
+  }
+}

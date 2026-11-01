@@ -1,38 +1,21 @@
 import type { Env } from '../types';
 
-/**
- * The instrument titles in the corpus, for citation parsing.
- *
- * A citation names an Act, and the Act has to be matched against what the corpus
- * actually contains — "Labour Code" for "Canada Labour Code", and a corpus title
- * that is longer than the citation. The list is a few thousand strings, so it is
- * cached in memory per isolate and held in KV between deployments.
- */
+// Cache only within a database binding and a known published revision. A second
+// binding or revision must never inherit titles from another corpus.
+const cached = new WeakMap<D1Database, { revision: string; titles: string[] }>();
 
-const KV_KEY = 'corpus:act-titles';
-let cached: string[] | null = null;
-
-export function primeActTitles(titles: string[]): void {
-  cached = titles;
-}
-
-/**
- * Load the instrument titles, from memory, then KV.
- *
- * An absent list is not an error: a brief without titles still works, it just cannot
- * resolve a citation structurally and falls back to search.
- */
 export async function loadActTitles(env: Env): Promise<string[]> {
-  if (cached) return cached;
-  if (!env.CIVIC_CACHE) return [];
-  const raw = await env.CIVIC_CACHE.get(KV_KEY, 'json');
-  if (!Array.isArray(raw)) return [];
-  cached = raw as string[];
-  return cached;
-}
-
-export async function storeActTitles(env: Env, titles: string[]): Promise<void> {
-  cached = titles;
-  if (!env.CIVIC_CACHE) return;
-  await env.CIVIC_CACHE.put(KV_KEY, JSON.stringify(titles));
+  const db = env.CIVIC_DB;
+  if (!db) return [];
+  const state = await db.prepare('SELECT commit_sha, parser_version FROM corpus_state WHERE corpus_id = ?')
+    .bind('statutes-canada').first<{ commit_sha: string; parser_version: string | null }>();
+  const revision = state?.commit_sha ? `${state.commit_sha}:${state.parser_version ?? 'legacy'}` : undefined;
+  const known = Boolean(revision && revision !== 'unknown');
+  const previous = cached.get(db);
+  if (known && previous && previous.revision === revision) return previous.titles;
+  const result = await db.prepare('SELECT DISTINCT act FROM statute_sections WHERE corpus_id = ? ORDER BY act')
+    .bind('statutes-canada').all<{ act: string }>();
+  const titles = (result.results ?? []).map((row) => row.act).filter((title) => typeof title === 'string' && title.length > 0);
+  if (known) cached.set(db, { revision: revision!, titles });
+  return titles;
 }

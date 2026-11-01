@@ -1,0 +1,159 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T19:16:45.169Z",
+  "kind": "paused-source-head-primary-rate-limit-observation",
+  "deployment": {
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "namespaceId": "751026e8a12f46dc87f829d44cef4221",
+    "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "versionId": "40110049-9cf5-44c3-b23f-ed39e06da7b7",
+    "settingsVerified": true,
+    "schedules": [],
+    "resumeRefused": true
+  },
+  "control": {
+    "controlled": true,
+    "format": 1,
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2",
+    "cap": 1752,
+    "submitted": 1304,
+    "remaining": 448,
+    "recovery": {
+      "plan": {
+        "format": 1,
+        "id": "v1-stage-recovery-20261023-1112-to-1752",
+        "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-pipeline-20261022",
+        "namespaceId": "751026e8a12f46dc87f829d44cef4221",
+        "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+        "corpusId": "statutes-canada",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2",
+        "initialAdmissionRevision": 1,
+        "originalCap": 1112,
+        "originalSubmitted": 1112,
+        "totalCap": 1752,
+        "maxCalls": 20,
+        "maxDocumentsPerCall": 32,
+        "indexDigest": "b9b9ad97092ae2c5b4a35580f0cafe73"
+      },
+      "planSha256": "26b6b13a511ac3f55e07bffc08686f8997addc88425838564bbf789d256e5b13",
+      "reservedCalls": 6
+    },
+    "corpusId": "statutes-canada",
+    "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "coordinator": {
+      "format": 1,
+      "revision": 3,
+      "suspended": true,
+      "active": null,
+      "queued": 0,
+      "alarmHandlersActive": 0,
+      "alarmAt": null,
+      "pending": true,
+      "failures": 8,
+      "lastFailure": {
+        "classification": "unknown"
+      },
+      "quiescent": true
+    }
+  },
+  "sourceHeadProbe": {
+    "format": 1,
+    "state": "complete",
+    "attemptSha256": "114e53e4a23a1355be7603815e4c4f7e4a75f1687e6e0e510c5970003406283b",
+    "result": {
+      "code": "response",
+      "status": 403,
+      "rateLimit": {
+        "limit": 60,
+        "remaining": 0,
+        "used": 60,
+        "reset": 1792784201,
+        "responseDateSeconds": 1792783005
+      }
+    }
+  },
+  "classification": {
+    "currentProbe": "github-primary-rate-limit-exhausted",
+    "earlierSaved403ReasonEstablished": false,
+    "retryAfterResetUtc": "2026-10-23T19:36:41+00:00",
+    "resetGuaranteesNextRequestSuccess": false
+  },
+  "diskRecovery": {
+    "originalVerificationFailedWith": "ENOSPC",
+    "oldPartialReceiptAndMarkerPreserved": true,
+    "sourcePOSTBeforeDiskRecovery": false,
+    "newReadOnlyVerificationPassed": true
+  },
+  "operatorRequests": {
+    "managementGETs": 4,
+    "controlGETs": 1,
+    "sourceProbeControlPOSTs": 1,
+    "sourceGETs": 1,
+    "postRetries": 0
+  },
+  "continuation": {
+    "preparedManifestSha256": "468975d5af4cf636703cb33579aae12613094e93837d61d6d0f58fee82ae34cc",
+    "preflightAttempted": false,
+    "deployed": false,
+    "resumed": false,
+    "qualificationFailed": "source status403 and remaining0; requires200 and remaining>=16",
+    "consumedProbeMayBeReplayed": false
+  },
+  "evidence": {
+    "dist/release/staging/recovery-source-head-probe-v1/candidate.json": {
+      "bytes": 2793,
+      "sha256": "311222e3a41eab2ff2ee0f458746a3c5d8347866cd5f48dab985e51aeec99682"
+    },
+    "dist/release/staging/recovery-source-head-probe-v1/operations/deploy-diagnostic.json": {
+      "bytes": 902,
+      "sha256": "bb38918221bb2c72aada1d54dc3f9ef8f06c5c61706b3418d49620727d02857f"
+    },
+    "dist/release/staging/recovery-source-head-probe-v1/operations/postverify.json": {
+      "bytes": 962,
+      "sha256": "cda4575101312579a3540fff2b3c1b6e4d1236e5255356814186b3c2c0783418"
+    },
+    "dist/release/staging/recovery-source-head-probe-v1/operations/postverify.json.started": {
+      "bytes": 24,
+      "sha256": "15792ce17b93afd75b111f9af9203c6a6c3d3b79d21097529eef7c715a0ea30c"
+    },
+    "dist/release/staging/recovery-source-head-probe-v1/operations/postverify-local-enospc.json": {
+      "bytes": 1193,
+      "sha256": "1b446dbb44f48f431dd5ed29c3b62df94caa39b6937787c42d0709781ebb1edc"
+    },
+    "dist/release/staging/recovery-source-head-probe-v1/operations-recovery-v1/operations-manifest.json": {
+      "bytes": 9038,
+      "sha256": "7c2af5c889971df878fd6a724cd7e457ad4837378d86543fd8fca824bdf80801"
+    },
+    "dist/release/staging/recovery-source-head-probe-v1/operations-recovery-v1/postverify-recovery.json": {
+      "bytes": 4927,
+      "sha256": "bcdbf0d4f679337fc04177e053d54e6ad1fa89fd23f65498d73fac99afebdc9a"
+    },
+    "dist/release/staging/recovery-source-head-probe-v1/operations-recovery-v1/source-probe.json": {
+      "bytes": 2477,
+      "sha256": "def329e7836ea2028824d17fd1f21c76375fbe2f896bade525fb33cce2b2cbce"
+    },
+    "dist/release/staging/recovery-continuation-2b/candidate-manifest.json": {
+      "bytes": 6131,
+      "sha256": "468975d5af4cf636703cb33579aae12613094e93837d61d6d0f58fee82ae34cc"
+    }
+  },
+  "acceptance": false,
+  "boundaries": {
+    "servingRequests": 0,
+    "embeddingSubmissions": 0,
+    "newEncoderCalls": 0,
+    "productionChanged": false,
+    "railwayChanged": false
+  },
+  "proofLimits": [
+    "This observation establishes primary quota exhaustion for the current probe only. It does not recover headers or prove the cause of the earlier saved HTTP403.",
+    "The reset time is a provider observation. Anonymous quota is shared by source IP; future availability is not guaranteed.",
+    "The original immutable probe claim is consumed and all history remains. No continuation or completed publication is claimed."
+  ]
+}

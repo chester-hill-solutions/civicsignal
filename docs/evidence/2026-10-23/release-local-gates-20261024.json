@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-24T00:51:16.205678+00:00",
+  "kind": "full-local-release-gate",
+  "passed": true,
+  "tests": 1276,
+  "testFiles": 88,
+  "pythonOwnedTests": 21,
+  "compilerProjects": 4,
+  "vendoredFiles": 117,
+  "workerDryRunBuilds": 5,
+  "realRuntimeProbes": 2,
+  "sourceHashesStable": true,
+  "credentialsSupplied": false,
+  "gateResult": {
+    "path": "dist/release/final-hosted-candidate-gate-20261024/result.json",
+    "sha256": "89d683987e60fbf656cac9374ceefb4ca41afd128ee0c4888f78749d1b950e81"
+  },
+  "started": {
+    "path": "dist/release/final-hosted-candidate-gate-20261024/started.json",
+    "sha256": "02685681f84c1e0aaa6c02f7f12d796a7d62483c540e5455b609e10cc57124dd"
+  },
+  "checkLogDigests": {
+    "validate": "cfe530cc4023ad8556238cba9d53d14d03a285b1a2f7bdeaeb71336a294d6332",
+    "python-owned": "fbf2f9368f5592688d5c8118570187e54bab90a5c519f2975e880cff32ca247c",
+    "build-api": "f041f611108b6e6e2aa32f75ce97eeb832bec5d046eaa23dfbf034eba7838538",
+    "build-pipeline": "54d626138950b166d06bc399ceef913125a1786bdbd1b41f7fad3e05d35a5372",
+    "build-encoder": "86f49704fb885970e0adbed1cf1dab7893d5486ecb9dfc0f3129d302cda8fa63",
+    "build-snapshot": "4f1b115fc0b2860192fb82140d6d9b4ccde9a4d195ad37760529ef7b3d55d9ea",
+    "build-restore": "51474247bd6edd3b3858e7e94ef01ad33a901504fde55e8ee912bd79a312bafc"
+  },
+  "limits": [
+    "Localhost runtime tests and explicit dry-run builds only; no cloud/provider credentials supplied.",
+    "Historical absent corpus artifacts are explicitly skipped by invariants; separate full hosted corpus proofs remain required.",
+    "This gate predates the forthcoming cache-error/warmup-observation fixes and is not a hosted acceptance pass."
+  ]
+}

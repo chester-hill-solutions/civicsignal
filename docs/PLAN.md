@@ -1,360 +1,491 @@
-# CivicSignal — plan
-
-> Situational awareness for Canada. One call returns what is in the news about a
-> topic, how coverage tone is moving, which statutes are in force, what bills are
-> moving, and what Parliament has said — every item cited to its official source.
-
-A new product, not an extension of any existing one. It reuses the code and the
-harvested data that already exist: the commercial spine from `riding-and-address`, the
-Canadian news pipeline from the Policorner wire, the global press pipeline from
-`gdelt-feed`, the statute corpus from the sovereign-corpus project, and the electoral
-geography from `riding-and-address` and `electoral-atlas`.
-
-## The thesis
-
-There are six funded Canada-specific products in the civic-intelligence space
-(MediaIQ, HillPulse, Hill Monitor, Gnowit, Dominion Dossier, PoliticalData) and a
-long tail of global media-monitoring suites. Each owns one slice:
-
-| | legislation | news | tone | geography | API | MCP |
-|---|---|---|---|---|---|---|
-| PoliticalData | ✅ | | | | ✅ | ✅ |
-| RidingDesk | | | | ✅ | ✅ | ✅ |
-| MediaIQ | | ✅ | ✅ | pages | | |
-| HillPulse | ✅ | | ✅ | | planned | |
-| Hill Monitor | ✅ | | | | | |
-| GDELT (raw) | | ✅ | ✅ | | | |
-| CanCoder | | | | ✅ | ✅ | ✅ |
-
-**Nobody owns the join.** That is the product. A statute, a bill, a debate passage and
-a news story are four separate documents that nobody has ever put in one answer, each
-cited to its source, scoped to a riding or a province, on a fifteen-minute refresh.
-
-The shape of the business is the shape of the sibling product: a metered HTTP API with
-an embedded widget and an MCP server, prepaid credits, no subscription, and a free
-usage-limited tier. The difference is that the unit of value is a *resolution* — a
-brief — not a row.
-
-## What is already built
-
-Wave 0 of this plan is complete and in the repository.
-
-- **The licence boundary, enforced in code.** It is no longer in this product — it
-  is `@chester-hill-solutions/corpus`, which strips every item to its corpus policy
-  before it can be emitted. `src/corpora/policies.ts` declares eight corpora with the
-  regime each source actually permits. The package's own tests assert the
-  boundaries: a cite-only corpus cannot emit a body, a metadata-only corpus cannot
-  emit an excerpt, an unknown corpus is never emitted.
-- **The corpus layer.** One adapter interface (`src/corpora/types.ts`), five adapters
-  (`src/corpora/adapters.ts`), one registry (`src/corpora/registry.ts`). The statute
-  adapter resolves a citation by `act = ? AND section = ?` — an exact lookup, not a
-  search — and reports whether the provision is in force.
-- **The brief.** `src/routes/brief.ts` fans out across corpora, applies each policy,
-  and reports which corpora contributed under which regime — so a caller can tell "no
-  results" from "not covered".
-- **The commercial spine.** Vendored from `riding-and-address` into `src/spine/`
-  (keys, customer, usage ledger, billing), with provenance headers on every file.
-- **The worker.** `src/index.ts` — authenticate, run, bill, respond. A billable unit
-  is recorded only after a successful query, and the fuse decision gates the response.
-  `scripts/check-billing-invariants.mjs` enforces that as a gate.
-- **The MCP surface.** Three tools — `brief_topic`, `statute_lookup`,
-  `debate_citations` — all `readOnlyHint`, each returning one complete answer.
-- **Discovery.** `/.well-known/civicsignal.json` (capabilities, price, coverage,
-  auth, error codes) and `/llms.txt`.
-
-Also built since: the BYOK chat surface, the bring-your-own-vector surface, the
-statute corpus (138,750 provisions from 5,419 instruments), the retrieval
-evaluation and its verdict, the stateless ingest, the encoder service, and the
-corpus database schema.
-
-`bun run validate` is green: typecheck, 143 tests, billing invariants, corpus
-invariants.
-
-## Decisions taken
-
-**Geography is a framing choice, not a fixed dimension.** (2026-10-20, owner.) It
-depends on the issue and on how the client wants to frame it. So the brief takes an
-optional `scope` — topic-only, or scoped to a riding, municipality, province or
-region — and every corpus is filtered by it. A topic-only brief additionally reports
-*where the topic is actually live*, so the client can see the distribution before
-choosing how to frame the question. Geography is never switched on or off; it is a
-lens the caller picks, and the answer includes the evidence for picking it.
-
-**Retrieval is vector-first, and there is no reranker.** (2026-10-20, measured.)
-The evaluation put 36 questions over 19,021 provisions: the vector arm found 14 of
-18 ordinary-language questions against 3 for the keyword baseline, MRR 0.617 against
-0.310. Equal-weight fusion got 12 and MRR 0.501 — it drags the strong arm down to
-meet the weak one — and a sweep over the constant and the weight found nothing that
-beats pure vector. Reranking the vector candidates *lowers* MRR to 0.560; it is a
-precision tool with a hard ceiling, and the vector stage already returns the answer
-in the top five for every exact question. So the product searches with vectors, does
-not fuse, and resolves citations structurally rather than ranking them.
-
-**The language is a lens, like the geography.** (2026-10-20, measured.) Canada's
-statutes are enacted in two official languages with equal legal force, and the
-two versions of a provision are **separate rows with separate identifiers** —
-the language trees number their provisions from different LIMS id spaces. So a
-corpus that holds both, and cannot be asked about one of them, does not have a
-translation problem: it has an *ambiguity* problem. One provision, two rows, and
-no way for the caller to say which one they meant. `CorpusQuery.language` is the
-fix, parallel to `jurisdiction`, and the surfaces infer it from the question when
-they are not told.
-
-**The product is deployed and serving.** (2026-10-20.) The corpus is in D1, the
-vectors are in Vectorize, and the Worker answers questions with citations. Two
-things had to be true for that, and neither was: the corpus had never been
-loaded, and the retrieval that was measured — vector-first — had never been
-wired into the product, which searched lexically the whole time. The SQL the
-ingest generated did not run either: the `VALUES` clause was missing its
-opening parenthesis, so every statement was a syntax error, and the corpus had
-never been loaded into a database for anyone to notice.
-
-**The model is EmbeddingGemma 2, and the trade is deliberate.** (2026-10-20,
-measured.) The vector arm's numbers were measured on bge-m3, because bge-m3 is
-what Workers AI hosts. The artefact that matters is EmbeddingGemma 2 — the 270M
-text checkpoint, 157 MB, Apache 2.0, ungated — and it is a *different model*
-from the `embeddinggemma-300m` Cloudflare hosts (cosine 0.06 between their
-vectors). All three, on the same 36 questions:
-
-| | hits | MRR | concept |
-|---|---|---|---|
-| EmbeddingGemma 300m (Workers AI) | **34/36** | 0.586 | **16/18** |
-| bge-m3 (Workers AI) | 32/36 | **0.617** | 14/18 |
-| **EmbeddingGemma 2, 270M (the file)** | 28/36 | 0.570 | 10/18 |
-| keyword | 21/36 | 0.310 | 3/18 |
-
-EmbeddingGemma 2 is the **weakest** of the three, and it still finds more than
-three times the keyword baseline's ordinary-language questions. The trade is
-explicit: **34/36 that the browser cannot join, or 28/36 that it can.** The
-artefact's whole purpose is that a client can embed locally and a server can
-embed the corpus and be in *one* vector space by construction rather than by
-approximation — and the 270M file is the one that can run in a browser-sized
-runtime. The cost is six hits and six concept questions, and it is recorded
-rather than discovered later.
-
-The corpus is embedded on the GPU and the product's queries are embedded by the
-Cloudflare Container, which is a CPU — the two backends agree to a cosine of
-0.99647, where two CPUs agree to 0.9995. **Measured, that is below the noise
-floor of the evaluation**: the GPU-corpus-with-CPU-queries configuration scores
-28/36 at MRR 0.574, against 28/36 at 0.570 for the CPU corpus with CPU queries,
-and all four backend combinations find the same 28 provisions, the same 18
-exact answers and the same 10 concept answers. The corpus can be embedded on
-the GPU and the queries on the container, and nothing is lost.
-
-**Railway is the host, and it is up.** (2026-10-20, later.) The deploy pause
-lifted, the project exists, and all four services are Online — the corpus
-database, the customer database, the encoder and the pipeline. The pipeline
-runs the continuous ingest into a pgvector Postgres and applies its own schema
-on start. The Worker on Cloudflare is what serves today; Railway is where the
-product is going, and the extraction that makes the port cheap is the same work
-either way.
-
-**The Policorner wire stays a separate product.** (2026-10-20, owner.) The wire is
-reader-facing and keeps its own brand and audience. This product consumes its output
-as a data source — shared pipeline and shared tables where that is useful, but no
-shared brand, no shared account, and no shared surface. The wire's source policy
-governs what may be republished, and this product's licence register is downstream
-of it.
-
-## The platform
-
-**One host: Railway.** (2026-10-20, owner.) A Bun service, one Postgres, the
-encoder, the pipeline and the harness, all on one private network — one bill, one
-deploy, one failure domain.
-
-The split between Cloudflare and Railway was inherited rather than chosen: the
-spine came from `riding-and-address`, a Workers product, and the corpus could not
-live in a Worker. What the code actually depends on is one KV namespace, one
-Durable Object and `waitUntil`. Everything else is web-standard and native in Bun,
-and the licence gate has no runtime imports at all.
-
-The scale-to-zero argument for keeping the API on Workers is real but small: the
-floor is Postgres, the API and the encoder, and the corpus plane pays that floor
-either way. The decisive argument is the harness — it spawns processes, a Durable
-Object cannot host it, and so the harness and the corpus are on the critical path
-together.
-
-The spine is shared with `riding-and-address`, so this is an extraction, not a
-fork: a runtime-neutral core with a Cloudflare adapter and a Postgres adapter, which
-is the shape the house conventions already call for.
-
-`docs/PLATFORM.md` has the shape, the extraction, the order and the risk.
-
-## Shared code
-
-The licence regimes, the corpus interface and citation resolution are not this
-product's — they are `@chester-hill-solutions/corpus`, upstreamed to the CHS
-monorepo so every product serving public records declares its corpora the same way and
-enforces the same rules. The enforcement lives in one place, so a new endpoint cannot
-forget the rule.
-
-What stays here is what is specific to this product: which corpora exist, their
-fields, their queries, and the policy for each — because whether a given source is
-open, cite-only or metadata-only is a fact about that source, and the package only
-holds you to the conclusion you reached.
-
-The retrieval machinery (BM25, the vector store, rank fusion) is the other candidate
-for upstreaming, and it is deliberately **not** extracted yet: it has one consumer
-and its API will move as the evaluation teaches us things. It goes upstream when the
-evaluation settles and a second consumer appears.
-
-## The waves
-
-Each wave ends with something observable. The order is chosen so that the cheapest
-test of demand happens before the most expensive work.
-
-### Wave 1 — the 20-hour test (do this first)
-
-**Nothing else starts until this does.** The research on this product is unusually
-clear that the cheap kill is the expensive lesson: pull the source data, build three
-endpoints, publish a free tier, list the MCP server, then wait sixty days.
-
-**The statute half is done.** `scripts/ingest-statutes.ts` clones
-`justicecanada/laws-lois-xml` (a git clone — no rate limits, no bot wall), parses it
-into section rows and writes both a `.sql` file for D1 and a `.jsonl` snapshot.
-
-| | |
-|---|---|
-| Documents parsed | 5,868 (971 Acts, 4,897 regulations) |
-| Provisions with text | **138,750** (sections, order provisions, preamble clauses, and schedule chunks) |
-| Of those, in force | 108,082 |
-| Of those, repealed | 19,010 |
-| Of those, a consolidation placeholder | 11,658 — kept in the store, excluded from the index |
-| Distinct instruments | 5,003 |
-| Languages | English (French is a `--lang fr` run) |
-| Licence | Open Government Licence – Canada |
-
-Two things the parser had to get right, both of which are silent failures otherwise:
-
-- **Mixed content.** A provision that reads "cited as the
-  `<XRefExternal>Act</XRefExternal>`." loses the cross-reference if you read the text
-  from a parsed XML tree — the parser merges the child into the parent's text node. The
-  text is therefore taken from the raw XML block, and every cross-reference survives.
-- **Two instrument shapes.** An Act or regulation is a list of `<Section>` elements;
-  an order is a list of `<Provision>` elements with lettered labels, a `<LongTitle>`
-  instead of a `<ShortTitle>`, and no per-section page on the site. Lettered
-  provisions cite the instrument's index page; numeric ones cite their own page.
-
-**Do not fetch `laws-lois.justice.gc.ca` to verify citations.** The site serves 404s
-to an IP that has been making sustained requests — the same failure the Statistics
-Canada hosts exhibit. Every citation URL is *derived* from the corpus, never checked
-by fetching it. The URL scheme was confirmed once, from the site's own regulation
-index, and that is enough.
-
-Still to do in this wave:
-
-1. Ingest a slice of the news corpus into `news_items` from the existing wire.
-2. Seed `hansard_speeches` with a few thousand passages *with excerpts only*.
-3. `GET /api/brief?topic=housing` working end to end against D1.
-4. Publish the free tier, list the MCP server in the official registry, Anthropic's
-   directory, and Apify's pay-per-result store.
-
-**The citation resolver is already written** (`src/citations.ts`). Running the keyword
-baseline against the real corpus showed that "section 210 of the Canada Labour Code"
-put the right answer at rank five, because a bare section number has almost no IDF
-across 191,000 sections. A citation is a key, not a similarity, so it needs a
-structural path ahead of both search arms. The parser reads "section X of the Y Act",
-"s. X of the Y Act", "Y Act s. X" and bracketed subsections; the resolver returns
-nothing rather than a near miss, because a citation naming a section the instrument
-does not have is wrong, and the nearest section would be worse than no answer.
-
-**Kill criterion:** if nobody calls it in sixty days, the gap was a data gap, not a
-demand gap. Stop.
-
-### Wave 2 — the ingest pipeline
-
-Everything above is manual. This is where the product becomes real.
-
-- `scripts/ingest-statutes.ts` — statutes and regulations → `statute_sections`.
-  Section-level, bilingual, with `in_force` flags.
-- `scripts/ingest-hansard.ts` — the existing XML archive → `hansard_speeches`.
-  **Extracts an excerpt and a citation, never the full speech.** The full text stays
-  in the research corpus.
-- `scripts/ingest-news.ts` — reads the wire's output → `news_items`.
-- `scripts/ingest-gdelt.ts` — polls GDELT on a fifteen-minute schedule → `gdelt_events`,
-  with the tone metric.
-- `scripts/ingest-bills.ts` — bill status and identifiers → `bills`. Status is a fact;
-  bill text is not republished.
-- A scheduled Worker handler drives the recurring ingests; a Queue absorbs backfill.
-
-### Wave 3 — geography
-
-- Join the corpora to riding and province. The machinery exists: `electoral-atlas` has
-  validated areal-weighted joins, `riding-and-address` has the boundary registry.
-- `GET /api/brief?riding=35047` scopes the news and debate to that riding.
-- **Licence check first.** The Ontario poll-division shapefiles are Limited Use and
-  cannot be used to derive a commercial data product. Riding boundaries are Open Use
-  and are fine. Do not reach for poll-level geometry in Ontario.
-
-### Wave 4 — the second layer
-
-This is where the money is, and the research is unambiguous: **the free API is the
-lead magnet; the revenue is one layer above it.** A data API with no second layer is
-giving away its only asset.
-
-Candidates, in order of fit:
-
-1. **A briefing product.** A daily or on-demand brief for a defined policy area —
-   the thing a government-affairs team, a think tank, or a campaign actually pays for.
-   The API is the same infrastructure underneath.
-2. **An embeddable widget.** A one-line `<script>` that renders "what is happening on
-   this topic in your riding" for a campaign site, a newsroom, or a ministry. The
-   cheapest distribution in the market is a widget a customer pastes into fifty sites.
-3. **A bulk snapshot licence.** A per-election or per-quarter snapshot of everything,
-   for organisations that would rather run their own analysis.
-
-### Wave 5 — the MCP and agent surface
-
-Already built; this wave is distribution.
-
-- Submit the connector to Anthropic's directory (remote HTTPS, OAuth 2.0, a test
-  account, `readOnlyHint` and `destructiveHint` on every tool).
-- Publish to the official MCP Registry, and to the discovery directories.
-- Publish an Apify Actor with pay-per-result pricing. Pay-per-result is the most
-  reliable agent-adjacent revenue channel — the buyer is a developer with a card, and
-  the unit is a result rather than a subscription.
-- Keep the tool surface at three. Cloudflare's own MCP server uses search-and-execute
-  Code Mode because 2,594 native tools cost ~1.17M tokens against ~1,000 for two.
-
-### Wave 6 — the portal, if it is still wanted
-
-Only after waves 1–5 have a customer. The portal is the crowded part of the market;
-the API is the open part. If the portal is built, it is the lead magnet for the API,
-not a competitor to it.
-
-## The economics, stated plainly
-
-- Marginal cost per request is about **$0.0004** — a vector search over 127,092
-  provisions, a licence gate, and a response. At a $0.005 unit price that is roughly
-  92% gross margin. Infrastructure is not the constraint, and after the move to a
-  single host it is not even the *shape* of the constraint: the floor is Postgres,
-  the API and the encoder, and it does not scale with traffic.
-- Stripe Canada charges 2.9% **plus CA$0.30** per card transaction, so a $0.01 call
-  cannot be sold one card charge at a time. Prepaid credits or Stripe Billing
-  pay-as-you-go (0.7% of volume) only. The spine already does prepaid credits.
-- A single-purpose Canadian civic API realistically caps at **$2k–15k MRR** unless
-  there is a second layer. That is the number to plan against.
-- The free tier must be **usage-limited, not time-limited**. A developer who searches
-  two hundred times should not hit a wall.
-
-## Open questions
-
-1. ~~Is the geography a first-class dimension or a filter?~~ **Decided.** Geography is
-   a framing choice the caller makes; see *Decisions taken*.
-2. **Which is the first province beyond federal?** Ontario is the obvious one — the
-   corpus, the wire and the geography all exist — but provincial legislative terms
-   vary and each needs its own licence check.
-3. ~~Does the news wire stay a separate product?~~ **Decided.** It stays separate; see
-   *Decisions taken*.
-4. **What is the name?** The working name in this repository is provisional.
-5. **What is the second layer?** The candidates are listed in wave 4. The choice
-   depends on the answer to the twenty-hour test: who calls, and what they call for.
-
-## What would change the plan
-
-- A licence question that turns out to be narrower than the register assumes — in
-  particular, whether the Reproduction of Federal Law Order extends to the right to
-  communicate to the public. That would let statutes be served with less ceremony.
-- A competitor moving into the join. HillPulse has an API planned; PoliticalData has
-  the statute graph and an agent surface. The join is open today, not open forever.
-- Sixty days of no calls on the free tier. Then stop.
+# CivicSignal master plan
+
+Updated 2026-11-01. Status: v1 remains incomplete.
+
+CivicSignal will give applications and agents source-cited Canadian civic information.
+The first release serves Canadian federal statutes and regulations in English and French.
+The immediate objective is to close four release gates: scheduled first publication, serving acceptance, production migration, and the final release audit.
+
+This file owns scope, priorities, dependencies, decisions, and next actions.
+The [release evidence ledger](V1-RELEASE.md) owns detailed results and source-specific receipts.
+Supporting documents supply contracts, procedures, historical evidence, or future designs.
+They do not create another work order.
+
+## Immediate work order
+
+1. **Finish operation source linkage under MP-01.** Retain the chat candidate's local/Linux passes and independent review; bind each operation to them.
+2. **Rebind operation preparation.** Connect the changed API artifact and source receipts to the reviewed mechanisms; complete Zen integration under MP-03.
+3. **Resolve execution inputs.** Record the numerical policy, wider chat disposition, operation budgets, fresh target facts, and production writer authorities.
+4. **Close the first three gates.** Complete MP-02 and MP-03; acquire a consistent production capture through MP-04 before MP-05's copy proof.
+5. **Complete MP-06.** Audit all ten requirements, review the production switch and rollback, then record the approved operation's actual result.
+
+MP-01 supplies the exact candidate for each operation.
+MP-02, MP-03, and MP-04 preparation can proceed independently.
+MP-04 capture must pass before MP-05's production-derived proof.
+The final production decision waits for MP-02, MP-03, and MP-05 acceptance.
+Named operators and approvers remain execution prerequisites; role assignments below do not select them.
+
+## Release gates at a glance
+
+All four gates remain open. The ten [release requirements](V1-RELEASE.md#release-requirements) retain their individual acceptance checks.
+
+| Gate | Packages | Completion evidence |
+| --- | --- | --- |
+| Scheduled first publication | MP-02 | A scheduled event creates a distinct instance and first complete publication; all artifacts match; canonical state and cleanup pass |
+| Serving acceptance | MP-03 | Accepted bilingual quality and performance reports, positive hosted Zen chat, and advertised route checks |
+| Production migration | MP-04, MP-05 | Consistent production capture, hosted protected-copy proof, compatible switch, and authorization-preserving rollback |
+| Final release | MP-06 | The exact final source passes engineering checks; all requirements reconcile; the approved production switch passes |
+
+## Plan authority
+
+The former product plan remains in [PLAN-HISTORY.md](PLAN-HISTORY.md).
+The following dispositions resolve conflicts among the planning documents.
+
+| Earlier proposal | Current disposition |
+| --- | --- |
+| Move the API to Railway and remove Cloudflare services | Use Cloudflare for v1; preserve Railway services and portability code |
+| Drop reranking after the early retrieval experiment | Retain the current Jev authority policy and vector fallback; require new serving evidence for changes |
+| Add news, debates, bills, tone, and geography in the first product wave | Defer expansion until the federal release and external demand supply entry evidence |
+| Ship a hosted OpenCode harness or portal | Defer both; v1 exposes HTTP, MCP, and BYOK chat |
+| Publish public snapshots, paid credits, or a fixed unit price immediately | Make separate distribution and commercial decisions after the release |
+| Treat old local or hosted passes as current release acceptance | Bind each accepted result to its actual source, target, and scope |
+
+The [reference map](#reference-map) identifies each document's role.
+Existing execution constraints still apply; a newer priority does not renew an expired approval or consumed marker.
+
+The latest corpus and serving observations date from October 24.
+This document does not establish fresh remote state, credential validity, or a new request allowance.
+Engineering must reconcile actual state before any separately authorized hosted work.
+
+## Product direction
+
+The product's value is a maintained, cited corpus with usable search, exact provisions, language control, revision evidence, and observed changes.
+Customers can use their existing applications and agent tools through HTTP and the Model Context Protocol, or MCP.
+Bring your own key, or BYOK, chat uses the customer's generation provider.
+
+The longer-term direction joins legislation, bills, debates, news, and geography into a cited brief.
+Candidate users include developers, government-affairs teams, researchers, campaigns, and newsrooms.
+Demand must determine the first customer group and the next paid surface.
+The Policorner wire keeps its own brand, accounts, and reader-facing product.
+
+The sequence is: release the federal foundation, test external demand, select a paid use, then expand supported sources and surfaces.
+A portal or hosted agent is a later product decision.
+Phase 1 is the active implementation scope. Phases 2–5 require their stated entry evidence and decisions.
+
+## Current release scope
+
+| Included in v1 | Required behavior |
+| --- | --- |
+| Federal statutes and regulations | Exact provisions and semantic search in English and French; explicit status and source links |
+| HTTP and MCP | Authenticated retrieval, live capability discovery, exact citation tools, and explicit unsupported coverage |
+| Observed change feed | Bounded pagination over additions, changes, and removals; distinguish source dates from legal commencement |
+| BYOK chat | Existing Anthropic, OpenAI, Google, and OpenCode Zen adapters; provider validation before successful usage consumption |
+| Bring your own vector | `POST /api/match` accepts the published encoder contract; nearest matches do not establish answerability |
+| Workspace authorization and usage | Shared CHS capability checks, key lifecycle, monthly allowance, and operation receipts |
+| Corpus operations | Immutable snapshots, recoverable ingestion, verified provision text, complete backups, and a safe restore path |
+| Production migration | Preserve current authorization, history, usage identities, vectors, and a compatible corpus rollback |
+
+V1 excludes news, GDELT, debates, bills, provincial law, and riding, municipal, regional, or provincial filters.
+It also excludes coverage tone and geographic distribution.
+Requests and discovery must state these limits.
+
+The following work remains deferred: external web answers, the hosted OpenCode harness, a portal, widgets, daily briefs, and commercial bulk licences.
+OAuth, directory submissions, an Apify Actor, prepaid checkout, and a published unit price also remain deferred.
+These exclusions do not remove snapshot, restore, migration, recovery, or serving-quality requirements.
+
+## Decisions and invariants
+
+1. **Use Cloudflare for v1.** Keep the API, corpus pipeline, D1, R2, Vectorize, and encoder container in the existing account.
+2. **Preserve Railway services.** Keep the Bun/Postgres portability implementation; this release does not migrate to Railway or decommission it.
+3. **Preserve the encoder and index.** Keep the existing 768-dimension index and pinned encoder artifact, templates, and vector ordering.
+4. **Separate exact citations from search.** Resolve named provisions structurally; a nearby provision cannot replace a missing exact provision.
+5. **Keep language in identity and search.** English and French rows have distinct identifiers; apply the language filter before candidate selection.
+6. **Keep the current rerank policy.** Jev authority decisions and the observed vector-floor fallback supersede the historical no-reranker proposal.
+7. **Version semantic changes.** Bind cache entries and snapshots to source, parser, language, and decision contracts; retain immutable historical artifacts.
+8. **Reuse CHS packages.** Extend shared auth, auth-d1, api-billing, and corpus emission paths instead of creating parallel implementations.
+9. **Keep authorization independent of corpus rollback.** Retain the authoritative `AUTH_DB`, current keys and billing, and the original usage namespace.
+10. **Preserve uncertain outcomes.** A usage acknowledgement failure can coexist with a committed unit; retain its operation ID and month.
+11. **Separate faults from refusals.** Provider errors, unsupported coverage, and successful empty results require distinct evidence.
+12. **Keep evidence claims narrow.** Local checks do not prove hosted behavior; a manual Workflow does not prove scheduled first publication.
+
+Existing licence policies govern every source before emission.
+A new source needs its own terms check and policy tests.
+Historical legal, competitor, price, and margin statements do not establish current facts.
+
+## Recorded baseline
+
+Preserve these completed checks; do not repeat them merely to simplify the plan.
+The [October 24 crosswalk](V1-RELEASE.md#current-closure-crosswalk--2026-10-24) retains their exact evidence and limitations.
+
+- Shared identity, HTTP/MCP metering, key lifecycle, quota, and receipt checks pass locally.
+- Staging reconciliation checks all 277,857 metadata rows, including 1,112 changes, and an empty pending outbox.
+- The full staging text baseline, composite changed-text proof, and complete vector backup pass their retained checks.
+- Manual hosted Workflow publication and all 240 artifacts pass parity; scheduled first publication remains open.
+- Twenty-one serving smokes and the later cold/warm calibration pair pass; broad serving acceptance remains open.
+- Protected-copy, schema, sequence, binding, client, and rollback mechanisms pass local checks; production-derived hosted proof remains open.
+
+The retained holdout records 63/64 valid responses, Hit@5 of 40/48, and one false accept among 15 completed unsupported questions.
+The benchmark retains a hydration failure and failed warm-ups.
+Both failed runs remain evidence; later calibration does not replace them.
+Composite text checks do not establish a fresh full-store byte audit.
+The complete vector backup does not establish legacy embedding-model provenance.
+
+The recorded serving ledger is **159/160**, with no new generation approval.
+The recorded reconciliation use is **1,624 document attempts and 16 extension calls**, under cumulative limits of 1,752 and 20.
+These balances describe the original bounded operations only.
+Unspent slots do not authorize another operation, reset, retry, or replacement ledger.
+
+## Implementation progress
+
+The latest qualified implementation is **`5d4915c`**.
+Its [complete local gate](evidence/2026-10-31/integrated-candidate-local-validation-v9.json) and [clean Linux gate](evidence/2026-10-31/candidate-5d4915c-linux-ci-validation.json) pass with 477 source and fixture inputs.
+Those checks cover 1,975 tests, 31 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
+Later source changes need their own complete checks.
+The qualified [source-loader repair closes issue 14](https://github.com/chester-hill-solutions/civicsignal/issues/14).
+It compiles the exact checked source bytes; Python cache flags alone do not establish that identity.
+The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves earlier candidates, repairs, failed checks, and exact receipts.
+
+| Package | Responsible role | Dependency | Current position and next deliverable |
+| --- | --- | --- | --- |
+| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Current source | Chat candidate passes local/Linux checks and review; finish operation source linkage and fresh hosted identities |
+| [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | Current-source operator preparation passes; calendar facts, event, budgets, and hosted first publication remain open |
+| [MP-03](#mp-03-close-serving-acceptance) | API engineer and evaluation owner | MP-01 and product acceptance decisions | Local citation checks pass; complete candidate qualification, operation rebinding, Zen preparation, and hosted acceptance |
+| [MP-04](#mp-04-qualify-consistent-production-acquisition) | Release engineer and writer owners | Actual authority and common maintenance | Fixture mechanisms pass; establish writer control and acquire consistent production inputs |
+| [MP-05](#mp-05-qualify-protected-copy-and-production-rollback) | Migration engineer | MP-04 capture for production-derived proof | Local mechanisms pass; qualify hosted copy, production target, and rollback |
+| [MP-06](#mp-06-qualify-the-final-source-and-release-packet) | Release engineer and product owner | MP-02, MP-03, and MP-05 acceptance | Draft candidate; complete final checks, requirement audit, and production decision |
+
+The [runtime accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records conditional callback bounds.
+Those bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
+
+The first-publication and staging API operator successors pass local checks, source admission, and independent review for the current candidate.
+The earlier serving successor corrects a fixture-admission defect; its targeted checks and independent review pass for its recorded source.
+Its unchanged mechanisms retain ten owned fixture cases and four lease checks; the successor does not repeat them.
+The changed chat candidate passes the full local gate, matching clean Linux checks, and independent review.
+All 477 inputs match the committed source and CI's actual merge checkout.
+The reviewed publication and API preparation qualify their current inputs.
+Serving and Zen need complete producer linkage before execution.
+
+Serving source binding passes; its policy checks and freeze await the numerical and freshness decisions under D-01.
+Zen has the current source wrapper and a skipped-generation regression; final bundles, checks, freeze, and review await the serving producer.
+Earlier fixture passes do not qualify later draft edits.
+Scheduled-publication acceptance must inspect all nine settled owner chains and both completed cleanup guards.
+Canonical artifact proof alone is insufficient.
+The retained native Workflow calendar remains unknown; current admission refuses before deployment until an actual empty observation exists.
+
+The [earlier local EPIPE failure](evidence/2026-10-31/integrated-candidate-local-observation-v7.json) and [inconclusive diagnostic](evidence/2026-10-31/restore-frame-diagnostic-observation.json) remain intact.
+Later full passes do not explain that failure. [Issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12) remains open.
+The repair, independent review, and complete local/Linux checks close the reproduced [relay abort defect, issue 13](https://github.com/chester-hill-solutions/civicsignal/issues/13).
+Open public decisions also include [chat evidence, issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) and [scheduled operation accounting, issue 6](https://github.com/chester-hill-solutions/civicsignal/issues/6).
+The release ledger retains closed findings and their source-specific qualification.
+
+A bounded read-only production inventory completes; its detailed evidence and maintenance finding remain private.
+Deployed-source correspondence, auth authority, common maintenance, and actual acquisition remain open.
+Source qualification supplies no new deployment, scheduled event, generation, maintenance interval, or migration approval.
+Local storage headroom later recovers; the earlier storage refusal remains intact.
+Preserve verified fixture archives, passing logs, failed observations, and unfinished candidates through continuation.
+
+## Phase 1 Close the v1 release
+
+Engineering owns implementation, source pins, checks, and the evidence packet.
+The product owner decides acceptance policy, material scope changes, and separately bounded hosted or production actions.
+Local preparation for MP-02, MP-03, and MP-04 can proceed independently after MP-01.
+Production cutover waits for all required evidence and the final decision.
+
+### MP-01 Reconcile the exact candidate
+
+**Status:** the chat candidate passes local/Linux checks and independent review; operation linkage and fresh hosted identity remain open.
+**Requirements:** V1-02, V1-09, V1-10.
+
+- [x] Retain the earlier source's complete local and clean Linux receipts.
+- [x] Repair the helper loader and pass the complete successor local gate.
+- [x] Retain matching clean Linux evidence for the successor's exact source and fixture inputs.
+- [x] Pass the complete local gate and independent review for the changed chat candidate.
+- [x] Retain matching clean Linux checks for the changed chat candidate.
+- [ ] Bind each operator, bundle, dependency, and source receipt to that qualified candidate.
+- [ ] Connect actual deployed identities and current requirement dispositions to the operation packet.
+
+Preserve unrelated work, failed receipts, accepted artifacts, and consumed execution markers.
+Distinguish deployed provider repairs from newer local code and unfinished private drafts.
+
+**Exit evidence:** one source-specific inventory connects the ten release requirements to their current receipts and remaining tasks.
+Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPERATIONS.md), and [writing rules](WRITING.md).
+
+### MP-02 Qualify scheduled first publication
+
+**Status:** shared runtime controls and operator preparation pass; concrete execution inputs and hosted qualification remain open.
+**Requirements:** V1-04, V1-05, V1-09.
+
+- [x] Reuse the Workflow, parser, builder, archive checks, and manifest-last publication path.
+- [x] Qualify safe diagnostics and qualification-only retry, time, object, and progress controls.
+- [x] Retain the predecessor operator's fixture and full-artifact comparison evidence.
+- [x] Finish the operator successor's fixture repairs, complete checks, source linkage, and independent review.
+- [x] Rebind the reviewed publication mechanisms to the changed chat candidate's source receipts and complete independent preparation review.
+- [ ] Freeze its bundle and configuration with a fresh namespace and distinct instance.
+- [ ] Resolve calendar facts and residual platform uncertainty before selecting the executable event and budgets.
+- [ ] Prepare finite admission windows, credential checks, stop conditions, and independent cleanup guards.
+- [ ] Execute the separately reviewed event and complete all publication, artifact, canonical-state, and cleanup checks.
+
+Keep the genuine source and parser identity.
+Budget source, management, R2, storage, and full artifact checks separately.
+Caller-enforced bounds do not establish a global provider ceiling or cancellation of stalled requests.
+
+**Exit evidence:** connect the scheduled event to the new instance and its first complete publication.
+Compare the full corpus and every artifact with the pinned reference.
+Show the canonical backup unchanged and the calendar empty.
+Health requests, manual creation, existing-publication no-ops, and absent metrics cannot substitute for this result.
+
+Use the [qualification review](V1-SCHEDULED-PUBLICATION-REVIEW.md), [shared Workflow](../services/snapshot/snapshot-workflow.ts), and [snapshot operations](../services/snapshot/OPERATIONS.md).
+The [preparation CLI](../scripts/prepare-snapshot-qualification.ts) checks a pinned proposal; it has no execution mode.
+The retained October 24 existing-publication probe has consumed arming markers and an expired review.
+It cannot authorize another event or prove first publication.
+The [authority audit](evidence/2026-10-31/scheduled-readiness-authority-audit.json) and [readiness observation](evidence/2026-10-31/scheduled-readiness-management-observation.json) retain the later bounded checks.
+The October 31 observation finds an empty Worker calendar; it does not establish the optional native Workflow calendar or first publication.
+Namespace and instance absence, current credentials, source freshness, and final execution admission remain separate checks.
+The exploratory meter, binding, and generic operator drafts remain held and unvalidated.
+The release ledger retains the expired credential refusal, separately reviewed refresh, and consumed readiness packets.
+Prepare a fresh successor from existing owned helpers; preserve every consumed marker and admission failure.
+
+### MP-03 Close serving acceptance
+
+**Status:** local chat checks and earlier repairs qualify; broad serving, independent answer support, and positive Zen acceptance remain open.
+**Requirements:** V1-03, V1-07, V1-08.
+
+- [x] Qualify provider dispatch, brief policy, shared-object byte checks, allocation limits, and relay abort handling.
+- [x] Check the new [bilingual questions](../src/eval/data/v1-successor-questions.json) against their full immutable source proof.
+- [ ] Finish and independently review the API deployment, serving, and Zen operators on the common qualified source.
+- [x] Add chat citation-link checks before successful usage; preserve the response shape and check all four provider adapters.
+- [x] Return a fixed insufficient-evidence answer for empty retrieval, with zero generation calls and one successful retrieval unit.
+- [ ] Record numerical acceptance criteria and the chat-contract disposition before the next independent run.
+- [ ] Prepare fresh target provenance, reviewed request scopes, and any required label checks for that revision.
+- [ ] Deploy and check the reviewed staging API; complete the independent bilingual holdout and bounded benchmark.
+- [ ] Review broad acceptance, refresh management target evidence, then qualify the separately reviewed positive Zen chat.
+- [ ] Recheck affected advertised HTTP/MCP routes and reconcile serving and usage receipts.
+
+Preserve the held-out and benchmark failures; do not tune against their answers.
+Separate misses, wrong results, scope errors, false refusals, provider errors, and text-hydration failures.
+State cache behavior, language splits, provider observations, latency, throughput, and freshness.
+Extend the existing eval, benchmark, relay, and CHS emission paths.
+Operator fixture passes do not establish actual target provenance or serving acceptance.
+
+The sealed [one-request Zen proposal](V1-ZEN-RECHECK.md) remains a separate decision.
+Its previous generation approvals are spent; the final recorded serving slot does not grant a new approval.
+The relay repair changes a file pinned by the retained packet. Preserve it and qualify a fresh source-bound successor before execution.
+New broad measurements need their own reviewed usage scope.
+
+**Exit evidence:** accepted bilingual retrieval and performance reports, positive hosted chat, and complete route checks for the exact candidate.
+Retrieval labels do not grade generated claims; any answer-support claim needs separate reviewed evidence.
+The reproduced byte-length defect does not establish the cause of the historical hosted hydration failure.
+Use the existing [evaluation procedure](V1-EVALUATION.md), [runner](../scripts/eval-v1.ts), and [request ledger procedure](STAGING-REQUEST-BUDGET.md).
+
+### MP-04 Qualify consistent production acquisition
+
+**Status:** fixture mechanisms and private preparation pass their retained checks; actual maintenance and production capture remain open.
+**Requirements:** V1-01, V1-04, V1-06.
+
+- [x] Qualify the fixture capture core, transport, schema and sequence checks, and final file-integrity checks.
+- [x] Retain bounded inventory observations and private maintenance preparation without claiming a production freeze.
+- [ ] Identify actual versions, bindings, auth authority, source schema, writer owners, and active work.
+- [ ] Define common maintenance, drain evidence, stop conditions, and explicit reconciliation or resume authority.
+- [ ] Complete the owned acquisition client around KV view A, continued D1 export, and KV view B.
+- [ ] Include source facts, signed download, private persistence, and complete request, storage, time, and cleanup budgets.
+- [ ] Acquire and check the consistent capture under the separately reviewed maintenance and execution packet.
+
+Do not substitute the staging coordinator for production writer control.
+Keep provider credentials separate from the signed-download origin.
+Keep detailed production observations and held findings private until their publication decision permits disclosure.
+
+The fixture core's 2,080-exchange bound covers only its partial protocol.
+It does not establish that a complete acquisition fits the older 2,200-call proposal.
+Matching KV views alone do not prove a common writer freeze.
+
+**Exit evidence:** authentic raw inputs, declared source schema, original sequence highwaters, and a consistent production capture.
+Absent sequence values and explicit zero must remain distinct.
+Never reconstruct deleted highwaters from surviving row IDs.
+Use the [acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md) and [existing capture core](../scripts/lib/protected-acquisition.ts).
+
+### MP-05 Qualify protected copy and production rollback
+
+**Status:** local copy mechanisms pass; production-derived hosted qualification remains open.
+**Requirements:** V1-01, V1-06, V1-08. **Dependency:** MP-04 capture for production-derived proof.
+
+- [x] Qualify the local codec, restricted importer, source-schema admission, sequence bridge, D1 binding, client, and rollback behavior.
+- [ ] Recheck the owned operator's source loader and final source qualification before execution.
+- [ ] Check corpus, parser, text, vector, publication, and source-schema compatibility against MP-04's authentic capture.
+- [ ] Complete the isolated hosted protected copy with identity, revocation, capability, billing, history, and sequence checks.
+- [ ] Prepare and qualify the production target adapter as a separate change.
+- [ ] Check the actual production switch and rollback targets; preserve authoritative authorization and usage throughout.
+
+Retain staging-only admission until the production adapter qualifies.
+Earlier production use does not establish the rollback target's current compatibility.
+
+**Exit evidence:** qualified hosted copy and a concrete production switch/rollback procedure that preserves identities and usage history.
+Use [protected copy](PROTECTED-STATE-COPY.md), [D1 admission](PROTECTED-D1-BINDING.md), and [corpus rollback](CORPUS-ROLLBACK.md).
+
+### MP-06 Qualify the final source and release packet
+
+**Status:** open for the final candidate. **Requirements:** V1-01 through V1-10.
+**Dependencies:** MP-02, MP-03, and MP-05 acceptance before production release.
+
+- [ ] Pass frozen installation, all compilers, full tests, Python checks, runtime probes, invariants, and five dry builds on the final source.
+- [ ] Retain matching clean Linux CI; earlier source receipts cannot qualify later changes.
+- [ ] Reconcile all ten requirements with accepted evidence, limitations, and actual source and binding identities.
+- [ ] Complete production commands, maintenance, post-switch checks, stop conditions, and authorization-preserving rollback.
+- [ ] Present the complete candidate for the final production decision.
+- [ ] Execute that approved scope and record actual outcomes before declaring v1 complete.
+
+**Exit evidence:** the exact source passes local and clean CI checks, required hosted gates close, and the approved production switch passes its checks.
+Use the [release evidence ledger](V1-RELEASE.md) and [operations procedure](V1-OPERATIONS.md).
+
+## Phase 2 Test external demand
+
+**Entry:** the federal v1 release qualifies. Distribution and publication need an explicit scope.
+
+- Choose one initial customer group and one repeatable task.
+- Confirm the public product name before distribution; the historical naming question remains open.
+- Give a small external cohort a working key, a copyable HTTP example, and an MCP configuration.
+- Keep the free allowance usage-limited rather than time-limited; manual pilot provisioning can remain sufficient.
+- Measure time to a useful result, failed requests, repeat workspace use, and willingness to pay.
+- Select relevant discovery channels; prepare directory or Apify work only after checking each channel's current requirements.
+- Set an experiment start, review date, and decision before launch.
+
+The earlier snapshot design also proposes public row/index artifacts on Hugging Face.
+Treat that as a separate publication decision after artifact and source-policy checks.
+Public dataset distribution and a commercial bulk licence are distinct choices.
+
+The historical plan proposed a 60-day demand test and a stop decision if nobody used the API.
+Reconfirm that window and success criteria before launch; no experiment clock starts through this consolidation.
+
+**Exit decision:** continue a repeatable use, change the audience or task, or stop expansion.
+More infrastructure cannot substitute for this decision.
+
+## Phase 3 Select and qualify the paid use
+
+**Entry:** external use identifies a repeatable job and a buyer.
+
+Measure actual encoder, rerank, storage, cache, and support costs before setting prices.
+The original direction favors metered use and prepaid credits; v1 does not configure checkout or a public unit price.
+Decide the paid model explicitly rather than assuming subscriptions or reusing historical margin estimates.
+
+Select one initial paid surface from the established candidates:
+
+| Candidate | Evidence needed before implementation |
+| --- | --- |
+| Paid API use | Integrators repeat a useful task and accept a measured price |
+| Policy briefing | A defined audience needs a recurring or on-demand cited brief |
+| Embeddable widget | Customers need a supported publishing surface with source and browser-key rules |
+| Commercial bulk snapshot | Buyers need a reproducible artifact and clear licence, update, and support terms |
+
+Extend shared billing and operation receipts for the selected model.
+Qualify payment, usage visibility, event delivery, and reconciliation before relying on paid automation.
+Stripe delivery is currently best effort; there is no durable Stripe outbox or product-result journal.
+Later delivery work must preserve the existing operation and month identities.
+
+**Exit evidence:** a buyer completes the selected paid workflow, and support can reconcile usage and payment failures.
+
+## Phase 4 Expand the civic brief from demand
+
+**Entry:** repeat use supports a specific source or workflow expansion.
+
+- Select the next corpus from news, debates, bills, or another licensed source.
+- Reuse existing source products and CHS corpus policies where appropriate.
+- Check source terms, attribution, permitted text, freshness, provenance, and failure behavior before ingestion.
+- Add source-specific tests and explicit coverage states before advertising support.
+- Add caller-selected geography only where source joins and permitted boundary data support it.
+- Measure the complete brief across supported sources and languages.
+
+The broader product joins cited sources into one useful answer.
+It must preserve source-specific limits and distinguish no results from unavailable coverage.
+Provincial expansion needs its own source and terms review.
+
+## Phase 5 Add optional customer surfaces
+
+**Entry:** a customer need justifies the surface and its ongoing cost.
+
+| Surface | Direction and condition |
+| --- | --- |
+| Developer console | Add workspace access, key lifecycle, usage, and payment controls when manual operation blocks demand |
+| Hosted OpenCode harness | Reuse OpenCode and the existing plugin; qualify customer isolation, credentials, process cost, and host choice |
+| External web answers | Keep search in the harness; fetch publisher passages with provenance and source policy checks |
+| Portal and research sessions | Use the existing design studies as references; define an approved product contract before implementation |
+| Watches and notifications | Build only for an observed recurring workflow, with delivery and subscription semantics |
+
+Customers can continue to use their own agent harness through MCP.
+A hosted harness needs a separate runtime and pricing decision.
+It does not reopen the v1 platform choice automatically.
+
+## Decisions still required
+
+No numerical serving policy, new generation allowance, or production maintenance authority follows from this consolidation.
+Record each decision and its supporting evidence before the dependent work.
+
+The proposed serving criteria and freshness rule await the product owner's selections.
+Source commit age and last successful ingestion age do not measure the latest upstream check.
+Record whether acceptance requires the observed upstream head or a bounded historical snapshot before applying age limits.
+The current operator enforces three age caps; the upstream-head option requires an explicit policy-contract change.
+
+| ID | Decision and next action | Responsible role | Blocks |
+| --- | --- | --- | --- |
+| D-01 | Select numerical bilingual search, refusal, error, fallback, latency, and freshness criteria before the run | Product owner with evaluation owner | MP-03 execution |
+| D-02 | Record the chat-grounding disposition and compatible verification scope | Product owner and API owner | MP-03 chat acceptance and any answer-contract change |
+| D-03 | Accept concrete budgets, finite windows, and residual provider uncertainty for each operation | Operator and approving user | The respective hosted execution |
+| D-04 | Identify writer authorities and approve actual maintenance, capture, reconciliation, and resume controls | Release engineer and writer owners | MP-04 acquisition and MP-05 migration |
+| D-05 | Review the complete release evidence and production switch/rollback candidate | Product owner and release engineer | MP-06 production release |
+| D-06 | Select audience, task, public name, experiment window, and stop criteria | Product owner | Phase 2 distribution |
+| D-07 | Select the paid surface, price, payment model, and reconciliation requirements | Product owner with cost evidence | Phase 3 paid automation |
+| D-08 | Select the next corpus, geography, harness, or portal from observed demand | Product owner | Phase 4 or 5 implementation |
+
+The October 31 code review found that chat can accept an uncited, nonempty model answer.
+The current response exposes `answer: string` and a separate `cited` array.
+
+Keep any added validator inside the successful-usage boundary.
+Preserve the response contract through internal checks or additive metadata; a new structured response needs an explicit compatibility decision.
+A matching source ID or quotation does not alone establish factual support.
+
+The chat candidate checks generated links against retrieved source links.
+The product owner selects a fixed insufficient-evidence answer when no material remains after the licence gate.
+This response skips generation and consumes one successful retrieval unit.
+Additive response metadata identifies skipped generation; the existing answer text, source list, provider, model, and scope fields remain.
+
+Independent factual-support acceptance and the wider evidence contract remain open under D-02.
+This finding needs a recorded disposition; it does not silently replace the existing release requirements.
+
+## Reference map
+
+This map accounts for the repository's planning documents and related procedures.
+Use each reference for its stated role; use this file for the next task.
+
+| Role | Documents |
+| --- | --- |
+| Entry point and history | [README](../README.md), [former product plan](PLAN-HISTORY.md) |
+| Requirement evidence and operations | [release ledger](V1-RELEASE.md), [v1 operations](V1-OPERATIONS.md), [evaluation](V1-EVALUATION.md) |
+| Scheduled publication | [qualification review](V1-SCHEDULED-PUBLICATION-REVIEW.md), [snapshot operations](../services/snapshot/OPERATIONS.md) |
+| Production acquisition and copy | [acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md), [offline copy](PROTECTED-STATE-COPY.md), [D1 binding](PROTECTED-D1-BINDING.md), [rollback](CORPUS-ROLLBACK.md) |
+| Staging procedures and chronology | [staging](V1-STAGING.md), [recovery](V1-STAGING-RECOVERY.md), [binding recovery](V1-STAGING-BINDING-RECOVERY.md), [source access](V1-STAGING-SOURCE-ACCESS.md) |
+| Bounded serving work | [request budget](STAGING-REQUEST-BUDGET.md), [sealed Zen proposal](V1-ZEN-RECHECK.md) |
+| Data and prior checks | [corpus model](CORPUS.md), [snapshot format history](SNAPSHOT.md), [snapshot checks](SNAPSHOT-VALIDATION.md), [text-cutover checks](TEXT-CUTOVER-VALIDATION.md), [evidence index](evidence/2026-10-22/README.md) |
+| Shared policy and encoder | [licence register](LICENCE-REGISTER.md), [encoder contract](../services/encoder/README.md) |
+| Historical architecture and future designs | [retrieval studies](RETRIEVAL-OPTIONS.md), [platform history](PLATFORM.md), [harness](HARNESS.md), [web fallback](WEB-FALLBACK.md) |
+| Proposed interfaces | [mockups](design/mockups/2026-10-20/README.md), [art directions](design/mockups/2026-10-20/art-directions/README.md) |
+| Document conventions | [writing rules](WRITING.md) |
+
+Reference procedures retain their exact operational constraints and evidence.
+Their historical status paragraphs do not override a newer source-specific receipt or this plan's current scope.
+
+## Plan maintenance
+
+Update this plan when scope, priority, dependencies, or requirement disposition changes.
+Keep scope, priorities, dependencies, and next actions in this file.
+Append detailed execution evidence to the release ledger and link the exact source and receipt.
+Update package status here without copying the execution log.
+Mark a gate complete only from its required evidence.
+Keep local, hosted, and production outcomes distinct.
+
+Preserve historical failures and completed proofs.
+Do not replay completed recovery or backup work merely to simplify the narrative.
+Keep exact execution packets and accepted receipts intact.
+If an edit changes an input pinned by an unconsumed packet, prepare a reviewed successor before execution.
+Check completed boxes only for their stated local or hosted scope.
+A later draft edit needs its own final checks before it inherits any preparation status.
+
+A documentation change supplies no new deployment, source request, generation, maintenance, acquisition, or production approval.
+Record each future execution decision against its concrete packet and cumulative limits.

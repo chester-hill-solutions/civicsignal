@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "startedAt": "2026-10-23T11:09:25.047455+00:00",
+  "observedAt": "2026-10-23T11:09:27.239429+00:00",
+  "exitCode": 0,
+  "timedOut": false,
+  "approvedAccountListed": true,
+  "beforeExpiry": "2026-10-23T08:08:44.233Z",
+  "afterExpiry": "2026-10-23T12:09:25.319Z",
+  "forcedLogin": false,
+  "productionProbe": false,
+  "scope": "one read-only whoami using explicit staging config/account"
+}

@@ -1,0 +1,131 @@
+{
+  "format": 1,
+  "kind": "staging-api-v6-reranker-diagnosis-root-observation",
+  "observedAt": "2026-10-24T04:10:45.868767+00:00",
+  "apiVersionId": "e33f3256-b9be-43c9-a5e3-d7d0bc1451b9",
+  "candidateSha256": "aaa714b6cf22133bf6801f9d8e3aa4a63c7a2015e206e2db263f902ff3d415c1",
+  "pins": 141,
+  "postverifySha256": "d797810902e190b1819a31e79cd1e1b0fd2d6c7cac2d9a49b4c0997590ad18e9",
+  "managementGETsForThisProbe": 0,
+  "immediateAcceptedPostverifyUsed": true,
+  "servingRequests": 1,
+  "generationRequests": 0,
+  "ledgerReservedBefore": 156,
+  "ledgerReservedAfter": 157,
+  "ledgerLimit": 160,
+  "ledgerRemaining": 3,
+  "ledgerAfterSha256": "ccff0f669e1336c6d1eb7d218279eaeab9a0d9ff2e39561b62eb43a2efdb1a96",
+  "prefix156Unchanged": true,
+  "prefix154Unchanged": true,
+  "prefix14Unchanged": true,
+  "ledgerClosedAndLockAbsent": true,
+  "ownedProcessSettled": true,
+  "timedOut": false,
+  "operationAccepted": true,
+  "diagnosticCollected": true,
+  "retrievalOrQualityAcceptanceClaim": false,
+  "summary": {
+    "format": 1,
+    "job": "P-21-4-en-fresh-reranker-diagnosis",
+    "httpStatus": 200,
+    "stageHeaderMatched": true,
+    "correlationId": "req_mvlvofd7ssup1szjtu",
+    "apiCode": null,
+    "retrieval": [
+      {
+        "version": 1,
+        "corpusId": "statutes-canada",
+        "backend": "vectorize",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "parserVersion": "statutes-v2",
+        "policy": "vectorize:federal-authority-v3-observed",
+        "encoderModel": "embeddinggemma-2-270m",
+        "languageFilter": "en",
+        "provenanceMatched": true,
+        "mode": "vector-floor",
+        "decision": "answer",
+        "cache": "bypass",
+        "fallback": true,
+        "providers": {
+          "encoder": "ok",
+          "vector": "ok",
+          "reranker": "error",
+          "rows": "ok"
+        },
+        "candidateCount": 100,
+        "resultCount": 10,
+        "preRefusalTopScore": 0.6629009,
+        "vectorFloor": 0.62,
+        "scoreSource": "computed",
+        "scoredAt": "2026-10-24T04:07:41.036Z",
+        "elapsedMs": 1799,
+        "rerankerFailure": {
+          "phase": "transport"
+        }
+      }
+    ],
+    "rows": [
+      {
+        "id": "acts-en-397240",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-5.html"
+      },
+      {
+        "id": "acts-en-397504",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-22.4.html"
+      },
+      {
+        "id": "acts-en-397500",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-22.3.html"
+      },
+      {
+        "id": "acts-en-417086",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-7.3.html"
+      },
+      {
+        "id": "acts-en-397545",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-29.html"
+      },
+      {
+        "id": "acts-en-397236",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-4.html"
+      },
+      {
+        "id": "acts-en-397332",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-10.html"
+      },
+      {
+        "id": "acts-en-416970",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-5.html"
+      },
+      {
+        "id": "acts-en-416935",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-4.html"
+      },
+      {
+        "id": "acts-en-416983",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-7.html"
+      }
+    ],
+    "briefResolved": false,
+    "goldRank": 6,
+    "ledgerReservedBefore": 156,
+    "ledgerReservedAfter": 157,
+    "evaluation": "fresh",
+    "diagnosticOnly": true,
+    "qualityAcceptanceClaim": false,
+    "recoveryAcceptanceClaim": false,
+    "generationRequests": 0,
+    "rawResponsePersisted": false,
+    "queryTextPersisted": false,
+    "credentialValuesPersisted": false,
+    "automaticRetry": false
+  },
+  "operationResultSha256": "9f723539cfa19f4ab8bc7f410a2f3c58f23ed6b2090fdd8ffc81b9961a63feda",
+  "completedSha256": "676d78dceef307eb7256ed84e676f603458664464caf145fc2647cd3fcef41cc",
+  "automaticRetry": false,
+  "safeConclusion": "Current request reranker failed during transport without observed upstream HTTP status; encoder/vector/rows succeeded.",
+  "sourceInvestigation": "A subsequent local workerd reproduction confirms the currently deployed provider wrapper rejects unsupported redirect:error before outbound I/O. The minimal manual/no-follow repair is in preparation; not yet deployed or hosted-validated. This does not establish the cause of historical Zen153/154 failures.",
+  "rawAnswerProviderBodyQueryVectorsFlagsKeysOrKeyHashesPersisted": false,
+  "productionChanged": false,
+  "railwayChanged": false
+}

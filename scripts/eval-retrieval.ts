@@ -345,7 +345,7 @@ async function main(): Promise<void> {
     const truncated = goldRow.text.length > 24000;
     console.log(`  ${question.id}`);
     console.log(`    Q: ${question.question}`);
-    console.log(`    gold: ${describe(gold)}  (${goldRow.text.length} chars${truncated ? ', TRUNCATED in the embedding' : ''})`);
+    console.log(`    gold: ${gold.map(describe).join('; ')}  (${goldRow.text.length} chars${truncated ? ', TRUNCATED in the embedding' : ''})`);
     const missedBy = inVector ? 'keyword' : 'vector';
     const outranked = inVector ? b.keyword : b.vector;
     console.log(`    missed by the ${missedBy} arm; its top hits were:`);

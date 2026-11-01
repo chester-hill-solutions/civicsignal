@@ -33,7 +33,7 @@ import { join } from 'node:path';
 import { fetchWithAuth } from './lib/cloudflare-auth';
 import { query } from './lib/d1-load';
 import { fingerprint } from '../src/ingest/reconcile';
-import { buildRows, parseStatuteXml } from '../src/ingest/statutes';
+import { buildRows, parseStatuteXml, statusOf } from '../src/ingest/statutes';
 
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? 'ad5ec479b9a421faa2ed06c3d1c2b23a';
 const DATABASE_ID = process.env.D1_DATABASE_ID ?? '8056b1a0-f858-4f89-a332-91f7f350eb7b';
@@ -71,15 +71,24 @@ interface StoredRow {
 
 /** The fingerprint of a row, as the store holds it. */
 function storedFingerprint(row: StoredRow): string {
+  const status = row.status ?? statusOf(row.text);
+  if (status !== 'in-force' && status !== 'repealed' && status !== 'placeholder') {
+    throw new Error(`invalid stored status for ${row.id}: ${status}`);
+  }
+  const part = row.part === null ? null : Number(row.part);
+  if (part !== null && (!Number.isInteger(part) || part < 1)) {
+    throw new Error(`invalid stored part for ${row.id}: ${row.part}`);
+  }
   return fingerprint({
+    id: row.id,
     instrument: row.act,
     text: row.text,
     heading: row.heading,
     section: row.section,
-    status: row.status,
+    status,
     schedule: row.schedule,
-    part: row.part,
-    source_url: row.source_url,
+    part,
+    source_url: row.source_url ?? '',
     in_force: row.in_force,
     citation: row.citation,
   });
@@ -155,6 +164,7 @@ function corpusHashes(): Map<string, string> {
         hashes.set(
           row.id,
           fingerprint({
+            id: row.id,
             instrument: row.act,
             text: row.text,
             heading: row.heading,

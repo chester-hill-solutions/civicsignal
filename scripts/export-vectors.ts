@@ -1,253 +1,98 @@
 #!/usr/bin/env bun
-/**
- * Export the index's vectors into the snapshot.
- *
- * The vectors are the one part of the corpus that cannot be re-derived by
- * copying — they need the model, and a quarter of a million embeddings is
- * about four hours of GPU. So a snapshot that does not carry them leaves a
- * rebuild costing four hours, and one that carries them makes it a file copy.
- *
- * ## It cannot be a script, so it is a script and a Worker
- *
- * The vectors come **out of Vectorize**, not out of the model: the index
- * already holds them, in the space the product serves from, and exporting is
- * exact — the index stores float32, and float32 → JSON → float64 → float32
- * loses nothing.
- *
- * But the Vectorize **REST** list endpoint returns ids and no values, and no
- * combination of `include_values`, `return_values` or `include=values` changes
- * that. The *binding* returns them, and a binding only exists inside a Worker.
- * So this drives `POST /vectors` on the pipeline Worker, one part at a time,
- * and the Worker packs each part and writes it to R2.
- *
- * ## Why it is in parts, and why it verifies
- *
- * 853 MB cannot be published in one object — that is the same 300 MB ceiling
- * that made the rows parts — so the vectors are parts too, and their manifest
- * says what they are.
- *
- * And a vector that is missing has to be *proved* to belong to a provision
- * that was deliberately not embedded. This used to pre-allocate the whole file
- * and fill it in, which meant a failure half way through left 853 MB of zeroes
- * that looked exactly like a finished export. It was found by reading the file
- * and discovering that every float in it was zero. So now a part is written
- * only when its vectors are all there, and every provision with no vector is
- * checked against the snapshot's own rows.
- *
- *     bun scripts/export-vectors.ts --revision 0507465
- *     bun scripts/export-vectors.ts --revision 0507465 --per-part 10000
- */
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { ENCODER_CONTRACT } from '../src/encoder';
-import {
-  indexDigest,
-  indexKey,
-  parseManifest,
-  vectorsManifestKey,
-  vectorsPartKey,
-  type VectorsManifest,
-} from '../src/ingest/snapshot-format';
-import { SnapshotReader, type SnapshotBucket } from '../src/ingest/snapshot-source';
-import type { SnapshotIndexEntry } from '../src/ingest/snapshot-diff';
+/** Existing-vector backup only. Live execution requires a completed, drained
+ * suspension and a new local journal; dry-run never reads a credential. */
+import { closeSync, fsyncSync, lstatSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { SNAPSHOT_PARSER_VERSION, vectorsManifestKey } from '../src/ingest/snapshot-format';
+import { SnapshotReader } from '../src/ingest/snapshot-source';
+import { VECTOR_EXPORT_PART_COUNT } from '../services/pipeline/vector-export';
 import { FileSnapshotBucket } from './lib/file-snapshot';
-import { token } from './lib/cloudflare-auth';
+import { exportPausedVectors, planVectorBackup, VectorBackupError, VECTOR_BACKUP_LIMITS,
+  vectorBackupIdentity, vectorBackupOrigin, type VectorBackupSend } from './lib/vector-export-client';
 
-const BUCKET = 'civicsignal-corpus';
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? 'ad5ec479b9a421faa2ed06c3d1c2b23a';
-const WORKER = process.env.PIPELINE_URL ?? 'https://civicsignal-pipeline.chester-hill-solutions.workers.dev';
-const SECRET = process.env.PIPELINE_SECRET ?? readFileSync(join(process.env.HOME ?? '.', '.civicsignal', 'pipeline-secret'), 'utf8').trim();
-
-const DIMENSIONS = ENCODER_CONTRACT.dimensions;
-
-const args = process.argv.slice(2);
-function arg(flag: string): string | undefined {
-  const index = args.indexOf(flag);
-  return index === -1 ? undefined : args[index + 1];
-}
-
-const revision = arg('--revision');
-const dir = arg('--dir') ?? join('dist', 'snapshot');
-const perPart = Number(arg('--per-part') ?? 10_000);
-if (!revision) {
-  console.error('usage: bun scripts/export-vectors.ts --revision <sha> [--dir dist/snapshot] [--per-part 10000]');
-  process.exit(2);
-}
-
-const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-
-/**
- * The snapshot's index, in the order it has it.
- *
- * The ids are the export's work list and the **fingerprints** are what say
- * which corpus the file belongs to: `indexDigest` hashes both, so a vectors
- * file cannot be mistaken for one exported from a different revision.
- */
-function indexEntries(): SnapshotIndexEntry[] {
-  const entries: SnapshotIndexEntry[] = [];
-  for (const line of readFileSync(join(dir, indexKey(revision!)), 'utf8').split('\n')) {
-    if (!line.trim()) continue;
-    entries.push(JSON.parse(line) as SnapshotIndexEntry);
+function argumentsFor(argv: string[]) {
+  const values = new Map<string, string>(); let dryRun = false;
+  const allowed = ['--revision', '--parser', '--dir', '--per-part', '--url', '--coordinator-id', '--suspension-revision', '--journal'];
+  for (let n = 0; n < argv.length; n++) {
+    const flag = argv[n]!;
+    if (flag === '--dry-run' && !dryRun) { dryRun = true; continue; }
+    const value = argv[++n];
+    if (!allowed.includes(flag) || values.has(flag) || !value || value.startsWith('--')) throw new VectorBackupError('INVALID_ARGUMENTS');
+    values.set(flag, value);
   }
-  return entries;
+  const commit = values.get('--revision'), parser = values.get('--parser') ?? SNAPSHOT_PARSER_VERSION, directory = values.get('--dir');
+  if (!commit || !/^[a-f0-9]{40}$/.test(commit) || parser !== SNAPSHOT_PARSER_VERSION || !directory ||
+      values.has('--per-part') && values.get('--per-part') !== String(VECTOR_EXPORT_PART_COUNT)) throw new VectorBackupError('INVALID_ARGUMENTS');
+  const url = values.get('--url'), coordinatorId = values.get('--coordinator-id'), revisionText = values.get('--suspension-revision'), journal = values.get('--journal');
+  if (url !== undefined) vectorBackupOrigin(url);
+  if (!dryRun && (!url || !coordinatorId || !revisionText || !journal)) throw new VectorBackupError('EXPLICIT_LIVE_ARGUMENTS_REQUIRED');
+  if (coordinatorId !== undefined || revisionText !== undefined) {
+    if (!coordinatorId || !revisionText || !/^[1-9]\d*$/.test(revisionText)) throw new VectorBackupError('INVALID_SUSPENSION_IDENTITY');
+    vectorBackupIdentity(coordinatorId, Number(revisionText));
+  }
+  return { commit, parser, directory: resolve(directory), dryRun, url, coordinatorId, suspensionRevision: Number(revisionText), journal };
 }
-
-/** The parts as the bucket has them. */
-async function bucketSizes(prefix: string): Promise<Map<string, number>> {
-  const sizes = new Map<string, number>();
-  let cursor = '';
-  for (;;) {
-    const url =
-      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/r2/buckets/${BUCKET}/objects` +
-      `?prefix=${encodeURIComponent(prefix)}&per_page=1000` +
-      (cursor ? `&cursor=${encodeURIComponent(cursor)}` : '');
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${token()}` } });
-    const body = (await response.json()) as {
-      success: boolean;
-      result?: { key: string; size: number }[];
-      result_info?: { is_truncated: boolean; cursor: string };
-    };
-    if (!body.success) throw new Error(`the bucket could not be listed`);
-    for (const object of body.result ?? []) sizes.set(object.key, object.size);
-    if (!body.result_info?.is_truncated) return sizes;
-    cursor = body.result_info.cursor;
+function absent(path: string): boolean {
+  try { lstatSync(path); return false; } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') return true;
+    throw error;
   }
 }
-
-/** One part, exported by the Worker. */
-async function exportPart(
-  part: number,
-  ids: string[],
-): Promise<{ key: string; bytes: number; embedded: number; missing: string[] }> {
-  const response = await fetch(`${WORKER}/vectors`, {
-    method: 'POST',
-    headers: { 'x-pipeline-secret': SECRET, 'content-type': 'application/json' },
-    body: JSON.stringify({ commit: revision, part, ids }),
+function syncDirectory(path: string) { const fd = openSync(path, 'r'); try { fsyncSync(fd); } finally { closeSync(fd); } }
+function requireJournalParent(path: string) {
+  let parent;
+  try { parent = lstatSync(path); }
+  catch { throw new VectorBackupError('JOURNAL_PARENT_REQUIRED'); }
+  const uid = process.getuid?.();
+  if (!parent.isDirectory() || parent.isSymbolicLink() || uid === undefined || parent.uid !== uid ||
+      (parent.mode & 0o777) !== 0o700) throw new VectorBackupError('JOURNAL_PARENT_NOT_PRIVATE');
+}
+/** Injected tests use only synthetic snapshots and a local fake transport. */
+export async function exportVectorsCli(argv: string[], dependencies: { getSecret?(): string | undefined; send?: VectorBackupSend } = {}) {
+  let ledger: number | undefined;
+  const record = (event: unknown) => { writeFileSync(ledger!, JSON.stringify(event) + '\n'); fsyncSync(ledger!); };
+  try {
+    const args = argumentsFor(argv);
+    const plan = await planVectorBackup(new SnapshotReader(new FileSnapshotBucket(args.directory), args.commit, { parser: args.parser }));
+    const planned = { commit: plan.commit, parser: plan.parser, indexDigest: plan.indexDigest, count: plan.count, parts: plan.parts.length,
+      bytes: plan.bytes, maxRequests: plan.parts.length + 3, limits: VECTOR_BACKUP_LIMITS, modelProvenance: 'not-attested' as const };
+    if (args.dryRun) return { ...planned, dryRun: true, writes: false };
+    const output = resolve(args.directory, vectorsManifestKey(plan.commit, plan.parser)), journal = resolve(args.journal!);
+    if (output === journal) throw new VectorBackupError('JOURNAL_PATH_CONFLICT');
+    if (!absent(output)) throw new VectorBackupError('LOCAL_MANIFEST_EXISTS');
+    // The operator supplies a durable existing parent; creating an ancestor
+    // here would require syncing its own parent before any remote request.
+    requireJournalParent(dirname(journal));
+    try { ledger = openSync(journal, 'wx', 0o600); }
+    catch (error) { if (error && typeof error === 'object' && 'code' in error && error.code === 'EEXIST') throw new VectorBackupError('JOURNAL_ALREADY_EXISTS'); throw error; }
+    syncDirectory(dirname(journal));
+    // Persist identity and every intent before transport. The secret is absent
+    // from this journal, from result normalization, and from thrown messages.
+    record({ kind: 'plan', format: 1, plan, origin: vectorBackupOrigin(args.url!), coordinatorId: args.coordinatorId,
+      suspensionRevision: args.suspensionRevision, maxRequests: planned.maxRequests });
+    const secret = (dependencies.getSecret ?? (() => process.env.PIPELINE_SECRET))();
+    if (!secret) throw new VectorBackupError('PIPELINE_SECRET_ENV_REQUIRED');
+    const result = await exportPausedVectors(plan, { url: args.url!, coordinatorId: args.coordinatorId!,
+      suspensionRevision: args.suspensionRevision, secret, send: dependencies.send, record });
+    const text = JSON.stringify(result.manifest, null, 2) + '\n';
+    mkdirSync(dirname(output), { recursive: true, mode: 0o700 });
+    let fd: number;
+    try { fd = openSync(output, 'wx', 0o600); }
+    catch (error) { if (error && typeof error === 'object' && 'code' in error && error.code === 'EEXIST') throw new VectorBackupError('LOCAL_MANIFEST_EXISTS'); throw error; }
+    try { writeFileSync(fd, text); fsyncSync(fd); } finally { closeSync(fd); }
+    syncDirectory(dirname(output));
+    record({ kind: 'complete', requests: result.requests, manifestSha256: createHash('sha256').update(text).digest('hex'), modelProvenance: result.modelProvenance });
+    return { ...planned, dryRun: false, writes: true, requests: result.requests, suspensionRevision: args.suspensionRevision, coordinatorId: args.coordinatorId };
+  } catch (error) {
+    const safe = error instanceof VectorBackupError ? error : new VectorBackupError('LOCAL_VECTOR_BACKUP_FAILED');
+    if (ledger !== undefined) { try { record({ kind: 'failed', code: safe.code }); } catch { /* Retain the exclusive journal and all prior intents. */ } }
+    throw safe;
+  } finally { if (ledger !== undefined) closeSync(ledger); }
+}
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  exportVectorsCli(process.argv.slice(2)).then(value => console.log(JSON.stringify(value))).catch(error => {
+    console.error(JSON.stringify({ failed: true, code: error instanceof VectorBackupError ? error.code : 'LOCAL_VECTOR_BACKUP_FAILED' })); process.exitCode = 1;
   });
-  const body = (await response.json()) as {
-    key?: string;
-    bytes?: number;
-    embedded?: number;
-    missing?: string[];
-    error?: string;
-  };
-  if (!response.ok || body.error) {
-    throw new Error(`part ${part} failed: ${body.error ?? response.status}`);
-  }
-  return {
-    key: body.key!,
-    bytes: body.bytes!,
-    embedded: body.embedded!,
-    missing: body.missing ?? [],
-  };
 }
-
-async function main(): Promise<void> {
-  const index = indexEntries();
-  const ids = index.map((entry) => entry.id);
-  const digest = indexDigest(index);
-  const expected = ids.length * DIMENSIONS * 4;
-  console.log(
-    `${ids.length} provision(s), ${DIMENSIONS} dimensions — ${mb(expected)} of vectors in ` +
-      `${Math.ceil(ids.length / perPart)} part(s)\n` +
-      `  the index they belong to is ${digest.slice(0, 16)}…`,
-  );
-
-  // The snapshot's own rows, for the one check that makes zero vectors honest.
-  const snapshot: SnapshotReader = new SnapshotReader(
-    new FileSnapshotBucket(dir) as unknown as SnapshotBucket,
-    revision!,
-  );
-  const manifest = parseManifest(
-    readFileSync(join(dir, `${revision}.manifest.json`), 'utf8'),
-    `${revision}.manifest.json`,
-  );
-  const byId = await snapshot.index();
-
-  const parts: VectorsManifest['parts'] = [];
-  let embedded = 0;
-  const missing: string[] = [];
-
-  for (let from = 0; from < ids.length; from += perPart) {
-    const slice = ids.slice(from, from + perPart);
-    const part = parts.length;
-    const result = await exportPart(part, slice);
-
-    if (result.bytes !== slice.length * DIMENSIONS * 4) {
-      throw new Error(
-        `part ${part} came back as ${result.bytes} bytes for ${slice.length} vector(s), ` +
-          `which should be ${slice.length * DIMENSIONS * 4}`,
-      );
-    }
-    parts.push({ key: result.key, bytes: result.bytes, count: slice.length, from });
-    embedded += result.embedded;
-    missing.push(...result.missing);
-
-    console.log(
-      `  ${result.key} — ${slice.length} vector(s), ${mb(result.bytes)}, ` +
-        `${result.missing.length} without a vector`,
-    );
-  }
-
-  // **The check.** A provision with no vector is a provision that was not
-  // embedded, and the only ones that are not embedded are the placeholders.
-  // Anything else is a hole in the export that would become a hole in the
-  // index, and a hole in the index is a provision that can never be found.
-  if (missing.length > 0) {
-    const rows = await snapshot.rows(
-      missing.map((id) => {
-        const entry = byId.get(id);
-        if (!entry) throw new Error(`${id} has no vector and is not in the snapshot's index`);
-        return entry;
-      }),
-    );
-    const wrong = rows.filter((row) => row.status !== 'placeholder');
-    if (wrong.length > 0) {
-      throw new Error(
-        `${wrong.length} of ${missing.length} provision(s) have no vector in the index and are ` +
-          `not placeholders — the export would leave them unfindable. First: ` +
-          wrong.slice(0, 3).map((row) => `${row.id} (${row.status})`).join(', '),
-      );
-    }
-    console.log(`  ${missing.length} provision(s) have no vector — all of them placeholders`);
-  }
-
-  const manifestOut: VectorsManifest = {
-    format: 1,
-    commit: revision!,
-    dims: DIMENSIONS,
-    count: ids.length,
-    bytes: expected,
-    parts,
-    index: { entries: index.length, digest },
-    embedded,
-    notEmbedded: ids.length - embedded,
-  };
-
-  // The bucket's own answer, not the Worker's: every part has to be there at
-  // the size it says, and the total has to be the file the manifest describes.
-  const sizes = await bucketSizes(`${revision}.vectors.`);
-  const absent = parts.filter((part) => sizes.get(part.key) !== part.bytes);
-  const onDisk = parts.reduce((sum, part) => sum + (sizes.get(part.key) ?? 0), 0);
-  if (absent.length > 0 || onDisk !== expected) {
-    throw new Error(
-      `${absent.length} part(s) are not in the bucket as the export wrote them, and the bucket ` +
-        `holds ${mb(onDisk)} against ${mb(expected)}. The export is not published.`,
-    );
-  }
-
-  const path = join(dir, vectorsManifestKey(revision!));
-  writeFileSync(path, `${JSON.stringify(manifestOut, null, 2)}\n`);
-
-  console.log(
-    `\n${revision!.slice(0, 9)}: ${ids.length} vector(s), ${mb(onDisk)} in ${parts.length} part(s) — ` +
-      `${embedded} embedded, ${ids.length - embedded} not (the placeholders)`,
-  );
-  console.log(`  ${path}`);
-  console.log(
-    `  the manifest is not published yet: upload it with ` +
-      `\`bun scripts/publish-snapshot.ts --commit ${revision!.slice(0, 9)} --vectors\``,
-  );
-}
-
-await main();

@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T23:59:06.222176+00:00",
+  "scope": "opencode-zen-bun-reader-typing",
+  "file": {
+    "path": "src/byok.ts",
+    "bytes": 13015,
+    "sha256": "b93b1f48515e5bf55fde5ad7aacb1f54fafa57031d6e7d2880844919409d6926"
+  },
+  "previousValidation": "docs/evidence/2026-10-23/opencode-zen-root-validation.json",
+  "change": "Use a structural Pick of read, cancel and releaseLock for the response reader. Bun declares additional readMany; the runtime uses only these three methods.",
+  "runtimeBehaviorChanges": 0,
+  "checks": {
+    "focusedTests": 88,
+    "focusedRerunByAuthor": true,
+    "rootTypecheckCommand": "bun --no-env-file run typecheck",
+    "rootCompilerProjects": [
+      "worker",
+      "bun",
+      "tooling",
+      "snapshot"
+    ],
+    "rootCompilerProjectsPassed": true,
+    "runtimePinsIndependentlyVerified": 829,
+    "operatorPinsIndependentlyVerified": 35,
+    "operatorNodeCasesRootRerun": 71,
+    "operatorPythonCasesRootRerun": 6,
+    "operatorInMemoryBundlesIdentical": 2,
+    "operatorBuildInputsVerified": 11
+  },
+  "history": {
+    "priorCandidate": "c7588966afb1685e17b9ba01897e5062ffceb5caef9cae46f75ba65afe99e1ea",
+    "bunCompilerFailure": "Explicit full reader annotation required Bun readMany. Prior receipt claimed Worker and tooling checks only.",
+    "preserved": true
+  },
+  "stagingRuntimeCandidateSha256": "36cbd09cc926b9a68a79cd8b35a5a9228b2c03b53130eac64bca92d83123f7e8",
+  "stagingBundleSha256": "69e8bcb0b0553b74622008e8b470d052a38973ef0150166a568d08e4af2738be",
+  "runtimeByteIdenticalToPriorCandidate": true,
+  "realProviderRequests": 0,
+  "hostedChatVerified": false,
+  "productionDeployment": false
+}

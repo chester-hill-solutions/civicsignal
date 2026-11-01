@@ -16,7 +16,7 @@
  * and the store holds only its SHA-256. The hash is what the index is on, so
  * the lookup is an index seek rather than a scan of every key.
  */
-import type { SqlRunner } from '@chester-hill-solutions/api-billing/postgres';
+import { USAGE_COUNTERS_DDL, USAGE_OPERATIONS_DDL, type SqlRunner } from '@chester-hill-solutions/api-billing/postgres';
 import type { ApiKeyRecord, ApiKeyKind } from '../../src/spine/api-keys';
 import type { CustomerRecord, CustomerPlan } from '../../src/spine/customer';
 
@@ -231,4 +231,6 @@ export class PostgresCustomerStore {
 /** Apply the customer schema. Idempotent. */
 export async function ensureCustomerSchema(sql: SqlRunner): Promise<void> {
   await sql.unsafe(CUSTOMER_DB_DDL);
+  await sql.unsafe(USAGE_COUNTERS_DDL);
+  await sql.unsafe(USAGE_OPERATIONS_DDL);
 }

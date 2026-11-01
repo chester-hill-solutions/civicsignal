@@ -1,0 +1,10 @@
+{
+  "0001_init.sql": "cf3e1c9f2f358439a82fb240f2263e238d4f8cf16b2e2aa3e6da245048c5816c",
+  "0002_statute_citation_columns.sql": "e0d2362396be60fab3c118f7c5ccc065ad64a8057692983d0d2fc8432541c9f0",
+  "0003_pipeline.sql": "8f35e8efaca22f8d1c242460a5f9244c34e0abb7d935881a3425b70f372bb572",
+  "0004_drop_search_text.sql": "1333474a9893ad6d143b94fbb0ffdcf385651c2e4f725f24d95c2171b99852da",
+  "0005_workspace_auth.sql": "7c23dc6b153af407fcc40d710ee43f71b3b84d2e1849c1ae57ac3b60aad89250",
+  "0006_corpus_mutations.sql": "befee68966a3c39eb15e32a45283aba51bbf06dc5a76eaf44feda4dbe05a0ab5",
+  "0007_provision_text_refs.sql": "c67980d39cb3d96c3dd58308b300f0bceb0d8d7a7afbd96d4ad1a2820fb97c1e",
+  "0008_corpus_parser.sql": "3b02c91da370634a46b2befaedc8a3dda8b83b069a7b99c490538b0e1de3bd3d"
+}

@@ -1,0 +1,163 @@
+{
+  "format": 1,
+  "kind": "staging-api-v5-root-observation",
+  "observedAt": "2026-10-24T03:30:05.913178+00:00",
+  "apiSourceCommit": "f4960c373efd54423000ceb743071a935f679782",
+  "localToolsHead": "638303af586658a2cf00f0ffbceea3456c5ba18f",
+  "candidateSha256": "0b80f923fb28a03550de62b57a5a73a426c85a846ef7000b6d97988c0e1118c0",
+  "bundleSha256": "8c9a5e96cec447df37b9ae85b252aed55aae9e4cfdf9a09a25b21f7b1307b7f5",
+  "operatorManifestSha256": "c91ebc85d9e43eead02a0d148c68c1efc730363e4926c67721c69ffd3663e6d7",
+  "priorApiVersion": "02dd9821-6bac-481d-89a4-5dfdf977bc6e",
+  "actualApiVersion": "f512cf84-fbcc-4990-bad0-13cdc0678c71",
+  "stageOnly": true,
+  "productionChanged": false,
+  "railwayChanged": false,
+  "sameBindingInventory": [
+    {
+      "name": "API_KEY_USAGE",
+      "type": "durable_object_namespace",
+      "namespace_id": "64e06ff739514962a8038d4875bc090c",
+      "class_name": "ApiKeyUsageDO"
+    },
+    {
+      "name": "AUTH_DB",
+      "type": "d1",
+      "database_id": "e0fa8e43-82f9-4864-b237-6e82d77a860c"
+    },
+    {
+      "name": "CIVIC_CACHE",
+      "type": "kv_namespace",
+      "namespace_id": "46eabd7a195049d3b66d4d0fd3637f11"
+    },
+    {
+      "name": "CIVIC_DB",
+      "type": "d1",
+      "database_id": "e0fa8e43-82f9-4864-b237-6e82d77a860c"
+    },
+    {
+      "name": "CORPORA",
+      "type": "r2_bucket",
+      "bucket_name": "civicsignal-v1-stage-corpus-20261022"
+    },
+    {
+      "name": "CORPUS_TEXT_MODE",
+      "type": "plain_text",
+      "text": "r2"
+    },
+    {
+      "name": "ENCODER_SERVICE",
+      "type": "service",
+      "service": "civicsignal-v1-stage-encoder-20261022",
+      "environment": "production"
+    },
+    {
+      "name": "ENCODER_TOKEN",
+      "type": "secret_text"
+    },
+    {
+      "name": "FREE_MONTHLY_ALLOWANCE",
+      "type": "plain_text",
+      "text": "1000"
+    },
+    {
+      "name": "JEV_KEY",
+      "type": "secret_text"
+    },
+    {
+      "name": "PRODUCT_NAME",
+      "type": "plain_text",
+      "text": "CivicSignal v1 staging"
+    },
+    {
+      "name": "PUBLIC_API_BASE_URL",
+      "type": "plain_text",
+      "text": "https://civicsignal-v1-stage-api-20261022.chester-hill-solutions.workers.dev"
+    },
+    {
+      "name": "VECTORIZE",
+      "type": "vectorize",
+      "index_name": "civicsignal-v1-stage-statutes-20261022"
+    }
+  ],
+  "sameRuntime": {
+    "compatibility_date": "2026-10-22",
+    "compatibility_flags": [
+      "nodejs_compat"
+    ],
+    "limits": {}
+  },
+  "usageNamespace": "64e06ff739514962a8038d4875bc090c",
+  "schedules": [],
+  "explicitManagementProofGETs": 8,
+  "cliInvocations": 1,
+  "totalCliProtocolRequestsAttested": false,
+  "cliUploadMaximumAttempts": 3,
+  "servingRequests": 0,
+  "generationRequests": 0,
+  "embeddingSubmissions": 0,
+  "ledgerReserved": 154,
+  "ledgerLimit": 160,
+  "ledgerSha256": "b4056b7f7a683d603e915395a84affa632236c7db952f1d6ac22b6030144006f",
+  "postverifyResultSha256": "65ca07a948bac3635d51fe8ad72116f84023c2fa65d807f2361a72e7fad3e664",
+  "phases": [
+    {
+      "phase": "preflight",
+      "processSha256": "630286ee48d9ed46c1c61b50dd04b591300e6743499a30ab0ce94eab2a1e4289",
+      "finishedAt": "2026-10-24T03:27:27.887030+00:00",
+      "ownedProcessSettled": true,
+      "exitCode": 0,
+      "explicitProofGETs": 4,
+      "reportedVersionId": null
+    },
+    {
+      "phase": "deploy",
+      "processSha256": "8949ca0135e8c5ee8f4797f57a2bc846db7faa99cff5e67f5a97fdec3420506c",
+      "finishedAt": "2026-10-24T03:27:50.702163+00:00",
+      "ownedProcessSettled": true,
+      "exitCode": 0,
+      "explicitProofGETs": 0,
+      "reportedVersionId": "f512cf84-fbcc-4990-bad0-13cdc0678c71"
+    },
+    {
+      "phase": "postverify",
+      "processSha256": "1bdd82e34846e0f903bd8a6242a1d022e9ee30d749eb71c072e9590b31ff54a1",
+      "finishedAt": "2026-10-24T03:28:25.317198+00:00",
+      "ownedProcessSettled": true,
+      "exitCode": 0,
+      "explicitProofGETs": 4,
+      "reportedVersionId": null
+    }
+  ],
+  "oauthRecovery": {
+    "refreshGrantPosts": 1,
+    "httpStatus": 200,
+    "replyExpiresInSeconds": 3599,
+    "originalRenewalAccepted": false,
+    "originalFailureCode": "reply-expiry",
+    "originalConfigReplacementAttempted": false,
+    "separateLocalPersistenceAccepted": true,
+    "localRecoveryNetworkRequests": 0,
+    "localRecoveryNewGrantPosts": 0,
+    "scopeCount": 28,
+    "scopeSetUnchanged": true,
+    "conservativeExpiry": "2026-10-24T04:11:07.659Z",
+    "privateRecoveryCopiesRetained": true,
+    "secretValuesOrConfigResponseDigestsPublished": false
+  },
+  "qualification": {
+    "rootCandidatePins": 1101,
+    "rootOperatorPins": 127,
+    "operatorNodeCases": 75,
+    "localRecoveryNodeCases": 36,
+    "localRecoveryPythonCases": 20,
+    "independentSourceReviewPassed": true,
+    "optimizedCaptureFailurePreserved": true,
+    "initialCaptureFailureCause": "unknown; inner trace discarded by qualification harness",
+    "separateUnmodifiedOptimizedAndInstrumentedCaptureChecksPassed": true
+  },
+  "limits": [
+    "Management identity, bindings, runtime and empty calendar are point-in-time observations.",
+    "No serving check or generation is included in this deployment receipt.",
+    "Held-out retrieval, benchmark, positive BYOK, scheduled snapshot and production acquisition/copy gates remain open."
+  ]
+}

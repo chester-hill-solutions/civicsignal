@@ -1,0 +1,115 @@
+{
+  "format": 1,
+  "kind": "v1-integrated-local-candidate-observation",
+  "recordedAt": "2026-10-31T20:37:38.984909+00:00",
+  "planWorkPackages": [
+    "MP-01",
+    "MP-06"
+  ],
+  "publishedHead": "9e2fe178ff1ebc9ea25dd89a36987e4a07400a01",
+  "sourceFileCount": 462,
+  "versions": {
+    "bun": "1.3.5",
+    "node": "v25.9.0",
+    "python": "3.10.11"
+  },
+  "sourcePinsUnchanged": true,
+  "validation": {
+    "passed": true,
+    "tests": 1780,
+    "testFiles": 98,
+    "compilerProjects": 4,
+    "vendorCheck": "passed",
+    "nativeRuntimeProbes": "passed",
+    "billingInvariants": "passed",
+    "corpusInvariants": "exit 0; ingest SQL/JSONL inputs absent and their checks explicitly skipped"
+  },
+  "python": {
+    "tests": 23,
+    "passed": 22,
+    "failed": 1,
+    "case": "CaptureTests.test_actual_log_cap",
+    "failedPredicate": "ownedProcessSettled",
+    "observed": {
+      "exitCode": null,
+      "timedOut": true,
+      "logBoundExceeded": true,
+      "localFailure": true,
+      "localFailureCode": "owned-process-cleanup-uncertain",
+      "ownedProcessSettled": false
+    },
+    "outerMonitorSettled": true,
+    "captureHelperChanged": false,
+    "cause": "unknown",
+    "laterRead": {
+      "pid": 16599,
+      "observedAt": "2026-10-31T20:37:38.985142+00:00",
+      "psExitCode": 1,
+      "matchingRows": 0,
+      "qualifiesOriginalCapture": false
+    },
+    "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/5"
+  },
+  "build": {
+    "ran": false,
+    "reason": "Integrated sequence stops after failed Python qualification."
+  },
+  "predecessor": {
+    "result": {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v1/result.json",
+      "bytes": 1089,
+      "sha256": "24cc9aa7b7ce6d5f69fdbf93a4232feaaec3b27f0c7db6cc0f662ccd2136bb54"
+    },
+    "passed": false,
+    "failure": "Six geography fixture failures from mismatched corpus identities; fixture corrected without relaxing the emission policy.",
+    "laterFocusedBriefEndpointSpreadTests": 116,
+    "laterFocusedBriefEndpointSpreadPassed": 116
+  },
+  "artifacts": [
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v2/result.json",
+      "bytes": 1728,
+      "sha256": "be0a4656a41df29fea8b3055d4b272004ca81c1876892620b86b6de3ada652b8"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v2/source-before.json",
+      "bytes": 68690,
+      "sha256": "f27546e365c440fa05935bba708c6a818bf2036c705fd52c830b19d4c2eaf3bf"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v2/source-after.json",
+      "bytes": 68690,
+      "sha256": "f27546e365c440fa05935bba708c6a818bf2036c705fd52c830b19d4c2eaf3bf"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v2/validate.log",
+      "bytes": 91305,
+      "sha256": "572a6e7ffec1999138940a9e7688fbb8a53ce8e5888a841eaf05aff44b4332a3"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v2/validate-result.json",
+      "bytes": 507,
+      "sha256": "765f0369671a17221c28a0dea37f55b9a27d5a4705fbe40318f2ff836e82567f"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v2/python.log",
+      "bytes": 1581,
+      "sha256": "139632eda69d191c622e8c26e8700db8aee1b55cea2ed4dd516c9caa205aad56"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v2/python-result.json",
+      "bytes": 558,
+      "sha256": "6af48b74a790a1e747444da1a5921b85f0dd0ac0fbc5f9c2b5f0aab1cb3ab6e6"
+    }
+  ],
+  "cloudCredentialsInherited": false,
+  "realProviderCalls": 0,
+  "deploymentPerformed": false,
+  "exactSourceCleanLinuxCi": "pending",
+  "allLocalCandidateGatesPassed": false,
+  "limitations": [
+    "The passing validation does not replace failed Python process-owner qualification or the unrun build phase.",
+    "Neither local results nor published-head CI qualifies hosted serving, scheduled first publication, production acquisition, or production cutover.",
+    "Earlier failed runs and later passing narrower runs remain distinct evidence."
+  ]
+}

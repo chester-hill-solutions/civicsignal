@@ -1,0 +1,51 @@
+{
+  "format": 1,
+  "kind": "zen-final-request-preparation-root-review",
+  "observedAt": "2026-10-24T04:40:49.134153+00:00",
+  "generationCandidateSha256": "eb376e973d653a4a33cbe6321117be670d7bf165b8b9a5a2486a78b589a93042",
+  "generationPins": 178,
+  "identityCandidateSha256": "c1757f1f45f872c0ef69ddd3efc64878e2f95fb87e42eaa61a4d2f6e5f878c49",
+  "identityPins": 49,
+  "targetApiVersion": "3efd1935-39ea-41da-b19c-e8bbf495b50d",
+  "originalLedgerBefore": 159,
+  "originalLedgerLimit": 160,
+  "originalLedgerBeforeSha256": "f84e9ac62d73ff3e5944101e7efd79542eb2d229bde4779b0f47d621b4799e17",
+  "plannedLedgerSlot": 160,
+  "maximumServingRequests": 1,
+  "maximumGenerationRequests": 1,
+  "provider": "opencode-zen",
+  "model": "claude-haiku-4-5",
+  "maxOutputTokens": 128,
+  "rootIndependentCodeReview": "Clear after post-reservation deadline gap fixed before sealing.",
+  "rootIndependentChecks": {
+    "zenNodeCases": 16,
+    "zenOwnerCases": 8,
+    "observerNodeCases": 14,
+    "observerOwnerCases": 13,
+    "pinsVerified": 227,
+    "bunSourceOnlyInspectionPassed": true,
+    "sourceOnlyInspectionMs": [
+      145.018292,
+      88.616625,
+      84.185375
+    ],
+    "ownedProcessSettled": true
+  },
+  "fullAuthorChecks": {
+    "normalAndOptimizedOwnerTests": true,
+    "types": true,
+    "bundleCorrespondence": true,
+    "ownedObserverRuntimeInspection": true
+  },
+  "proposalDocumentSha256": "9dfc5929e002acb47844cab8420580297b143955258449b3143ce471788f0484",
+  "humanApproval": "Requested; not yet received at this observation. Previous153/154 approvals are consumed.",
+  "freshIdentityExecution": "Must follow new human approval; no execution yet.",
+  "credentialReads": 0,
+  "cloudRequests": 0,
+  "providerRequests": 0,
+  "originalLedgerWrites": 0,
+  "retryAuthorized": false,
+  "allowanceExtension": false,
+  "productionChanged": false,
+  "railwayChanged": false
+}

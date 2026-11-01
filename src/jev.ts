@@ -14,10 +14,10 @@
  * and changeable.
  *
  * The candidate ranking uses one Noul for each candidate, in the same call.
- * Jev evaluates every question against the same state and in isolation, so more
- * questions cost tokens and do not cost time.
+ * The candidate and authority questions share one request and the same state.
  */
 import { ENCODER_CONTRACT } from './encoder';
+import { ProviderJsonError, providerJsonOnce, type ProviderJsonPhase } from './provider-json';
 
 /** The endpoint of the inference gateway. */
 export const JEV_ENDPOINT = 'https://opencode.ai/inference/systemone/v1/systemone';
@@ -25,11 +25,24 @@ export const JEV_ENDPOINT = 'https://opencode.ai/inference/systemone/v1/systemon
 /** The model. */
 export const JEV_MODEL = 'jev-1.13';
 
+/** Responses cached under an older transport/schema contract must be re-evaluated. */
+export const JEV_CONTRACT_VERSION = 'jev-noul-complete-15s-v1';
+
 /** How many characters of a provision Jev reads. */
 export const EXCERPT_CHARS = 250;
 
-/** How many candidates to send. The limit for one call is 250. */
+/** The candidate budget used by this product's retrieval policy. */
 export const CANDIDATE_COUNT = 250;
+
+/** Saturated diagnostic counts, never provider answer names or values. */
+export const MAX_JEV_FAILURE_COUNT = CANDIDATE_COUNT + 7;
+export interface JevFailure {
+  phase: ProviderJsonPhase;
+  upstreamStatus?: number;
+  schemaReason?: 'response-shape' | 'answers-shape' | 'requested-answers';
+  rejectedCount?: number;
+  missingCount?: number;
+}
 
 /** The limit on the relevance, inside a question that passed the authority test. */
 export const RELEVANCE_FLOOR = 0.5;
@@ -117,9 +130,13 @@ function candidateQuestion(at: number): string {
 export async function rankWithJev(
   query: string,
   candidates: Candidate[],
-  options: { key: string; endpoint?: string; model?: string; send?: typeof fetch },
+  options: { key: string; endpoint?: string; model?: string; send?: typeof fetch; onFailure?: (failure: JevFailure) => void | PromiseLike<void> },
 ): Promise<JevResult | null> {
   if (candidates.length === 0) return null;
+  const candidateCount = candidates.length;
+  let onFailure: typeof options.onFailure;
+  try { onFailure = options.onFailure; } catch { /* Optional observer access is isolated too. */ }
+  let schemaFailure: Pick<JevFailure, 'schemaReason' | 'rejectedCount' | 'missingCount'> | undefined;
 
   const questions: Record<string, { type: string; instructions: string }> = {};
   candidates.forEach((_, at) => {
@@ -141,35 +158,66 @@ export async function rankWithJev(
     `question: ${query}`,
   ].join('\n\n');
 
-  const send = options.send ?? fetch;
-  let body: { answers?: Record<string, { noul?: number }> };
   try {
-    const response = await send(options.endpoint ?? JEV_ENDPOINT, {
-      method: 'POST',
+    return await providerJsonOnce({
+      url: options.endpoint ?? JEV_ENDPOINT,
       headers: {
         authorization: `Bearer ${options.key}`,
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ model: options.model ?? JEV_MODEL, state, questions }),
+      body: { model: options.model ?? JEV_MODEL, state, questions },
+      timeoutMs: 15_000,
+      responseBytes: 256 * 1024,
+      requestBytes: 1024 * 1024,
+      send: options.send,
+      parse: (value) => {
+        if (!record(value)) {
+          schemaFailure = { schemaReason: 'response-shape' };
+          throw new Error('Invalid Jev response.');
+        }
+        if (!record(value.answers)) {
+          schemaFailure = { schemaReason: 'answers-shape' };
+          throw new Error('Invalid Jev response.');
+        }
+        const answers = value.answers;
+        const scores: Record<string, number> = {};
+        let rejected = 0, missing = 0;
+        for (const name of Object.keys(questions)) {
+          if (!Object.hasOwn(answers, name)) { missing++; continue; }
+          const answer = answers[name];
+          if (!record(answer) || answer.type !== 'noul' ||
+            typeof answer.noul !== 'number' || !Number.isFinite(answer.noul) ||
+            answer.noul < 0 || answer.noul > 1) { rejected++; continue; }
+          scores[name] = answer.noul;
+        }
+        if (rejected || missing) {
+          schemaFailure = { schemaReason: 'requested-answers',
+            rejectedCount: Math.min(rejected, MAX_JEV_FAILURE_COUNT), missingCount: Math.min(missing, MAX_JEV_FAILURE_COUNT) };
+          throw new Error('Invalid Jev response.');
+        }
+        const flags = {} as AuthorityFlags;
+        for (const name of Object.keys(ATOMIC_QUESTIONS) as AtomicQuestion[]) flags[name] = scores[name]!;
+        return {
+          relevance: Array.from({ length: candidateCount }, (_, at) => scores[`c${at}`]!),
+          flags,
+          anyRelevant: scores.any_relevant!,
+        };
+      },
     });
-    if (!response.ok) return null;
-    body = (await response.json()) as typeof body;
-  } catch {
+  } catch (error) {
+    const phase = error instanceof ProviderJsonError ? error.phase : 'transport';
+    const failure: JevFailure = { phase };
+    if (error instanceof ProviderJsonError && error.httpStatus !== undefined) failure.upstreamStatus = error.httpStatus;
+    if (phase === 'response-validation' && schemaFailure) Object.assign(failure, schemaFailure);
+    // Diagnostics cannot change the existing null/fallback contract.
+    try { void Promise.resolve(onFailure?.(failure)).catch(() => {}); }
+    catch { /* No raw observer exception or awaited diagnostics work. */ }
     return null;
   }
+}
 
-  const answers = body.answers;
-  if (!answers) return null;
-
-  const flags = {} as AuthorityFlags;
-  for (const name of Object.keys(ATOMIC_QUESTIONS) as AtomicQuestion[]) {
-    flags[name] = answers[name]?.noul ?? 0;
-  }
-  return {
-    relevance: candidates.map((_, at) => answers[`c${at}`]?.noul ?? 0),
-    flags,
-    anyRelevant: answers['any_relevant']?.noul ?? 0,
-  };
+function record(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 /**

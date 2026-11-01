@@ -1,0 +1,58 @@
+{
+  "prepared": true,
+  "hostedExecuted": false,
+  "revision": "0507465393c224c0491fc8c17c88340217acc656:legacy",
+  "sourceReceiptSha256": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc",
+  "source": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "legacy",
+    "indexDigest": "1d24eb747cf7dd9db4a35580f0cafe73",
+    "rows": 277857,
+    "embedded": 254671,
+    "placeholders": 23186,
+    "dimensions": 768
+  },
+  "verifiedRows": 277857,
+  "verifiedTextBytes": 250978206,
+  "objects": 208396,
+  "packedBytes": 244470986,
+  "packSha256": "d8fb8d76d1d7e3b9aace9f289417df2cf67659b80524b4914873abebf8537d5b",
+  "metadataPages": 17367,
+  "restorePlan": {
+    "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6",
+    "plan": {
+      "format": 1,
+      "bundleManifestSha256": "e018fdd638031f99b03a220513b4e3f1e62f96b91a2fd884ec57a0b84c619dec",
+      "pagesSha256": "1f5e07779a6eaf29ca9cce3665e3e466254de52e48d2d5fd57eed72bce152aae",
+      "pagesChainSha256": "eebbf2bf61f71e184f311e19e9e4e175c8abaf70620642506133a72c71d9bf44",
+      "schemaSha256": "a53abc16d891e07977838f8746cc610956f7df8ead66ae1ce40016e665c9496f",
+      "revision": "0507465393c224c0491fc8c17c88340217acc656:legacy",
+      "rowCount": 277857,
+      "objectCount": 208396,
+      "textBytes": 250978206,
+      "objectBytes": 244470986,
+      "pageCount": 17367,
+      "publication": {
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "parser": null,
+        "date": "2026-10-15",
+        "asOf": "2026-10-15",
+        "lastRunAt": "2026-10-23T01:21:03.985Z",
+        "rows": 277857
+      },
+      "sourceReceiptSha256": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc"
+    }
+  },
+  "localWorkerd": {
+    "passed": 4,
+    "total": 4,
+    "isolatedBindings": true,
+    "legacyParserNull": true
+  },
+  "focusedTests": {
+    "passed": 24,
+    "total": 24
+  },
+  "protectedState": "No synthetic production auth/history; protected copy remains pending."
+}

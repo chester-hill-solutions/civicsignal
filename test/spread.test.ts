@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildBrief } from '../src/routes/brief';
 import { GDELT, NEWS_CANADA } from '../src/corpora/policies';
 import type { Corpus, CorpusContext } from '../src/corpora/types';
-import type { RawCorpusItem } from '@chester-hill-solutions/corpus';
+import type { CorpusPolicy, RawCorpusItem } from '@chester-hill-solutions/corpus';
 
 const ctx: CorpusContext = { fetch: globalThis.fetch, now: () => new Date('2026-10-20T00:00:00Z') };
 
@@ -10,10 +10,10 @@ const ctx: CorpusContext = { fetch: globalThis.fetch, now: () => new Date('2026-
  * A fake geography-bearing corpus that honours the jurisdiction filter, so the
  * difference between a scoped brief and the spread can actually be observed.
  */
-function geoCorpus(items: RawCorpusItem[]): Corpus {
+function geoCorpus(items: RawCorpusItem[], policy: CorpusPolicy = NEWS_CANADA): Corpus {
   return {
-    id: NEWS_CANADA.id,
-    policy: NEWS_CANADA,
+    id: policy.id,
+    policy,
     supports: () => true,
     retrieve: async (query) => {
       if (!query.jurisdiction) return items;
@@ -49,7 +49,7 @@ const ITEMS: RawCorpusItem[] = [
 ];
 
 describe('geography as framing', () => {
-  const corpora: Corpus[] = [geoCorpus(ITEMS), { ...geoCorpus(ITEMS), id: GDELT.id, policy: GDELT }];
+  const corpora: Corpus[] = [geoCorpus(ITEMS), geoCorpus(ITEMS.map(item => ({ ...item, corpusId: GDELT.id })), GDELT)];
 
   it('narrows the brief to the scope the caller asked for', async () => {
     const brief = await buildBrief(
@@ -59,6 +59,7 @@ describe('geography as framing', () => {
     );
     // Three Ontario items per corpus, twice.
     expect(brief.news).toHaveLength(6);
+    expect(new Set(brief.news.map(item => item.corpusId))).toEqual(new Set([NEWS_CANADA.id, GDELT.id]));
     expect(brief.news.every((n) => n.jurisdiction === 'ON')).toBe(true);
     expect(brief.scope).toEqual({ type: 'jurisdiction', code: 'ON' });
   });

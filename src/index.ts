@@ -1,36 +1,28 @@
-import { authorizeServerKey, httpStatusForKeyDenial } from "./spine/api-keys";
-import { billableDenialResponse, recordSuccessfulBillable, type BillableAuthContext } from './spine/billing';
+import { authenticateRequest, AccessError } from './access';
+import { runBillableRetrieval, BillableDenied } from './metering';
+import { billableDenialResponse } from '@chester-hill-solutions/api-billing';
 import { buildBrief, type BriefRequest } from './routes/brief';
 import { CORPUS_ID } from './ingest/corpus-rows';
-import { CORPUSES_BY_ID } from './corpora/registry';
-import { emitCorpusItem } from "@chester-hill-solutions/corpus";
+import { CORPUSES_BY_ID, assertV1StatuteQuery, loadCorpusAvailability, UnsupportedCoverageError } from './corpora/registry';
+import { emitCorpusItem, parseCitation } from '@chester-hill-solutions/corpus';
 import { policyFor } from './corpora/policies';
 import { capabilitiesResponse, llmsTxt } from './routes/capabilities';
 import { createCivicSignalMcpHandler } from './mcp/server';
-import { corsHeaders, errorResponse, jsonResponse, newCorrelationId } from './http';
+import { corsHeaders, errorResponse, jsonResponse, newCorrelationId, readJsonBody, RequestInputError } from './http';
 import type { Env } from './types';
-import { parseScope, ScopeParseError } from './corpora/scope';
+import { ScopeParseError } from './corpora/scope';
 import { parseQuery } from './routes/query';
-import {
-  BYOK_KEY_HEADER,
-  BYOK_PROVIDER_HEADER,
-  chatErrorResponse,
-  parseChatRequest,
-  parseMatchRequest,
-  runChat,
-} from './routes/chat';
-import { VectorizeIndex, type VectorIndex, type VectorizeBinding } from './vector-index';
+import { BYOK_KEY_HEADER, BYOK_PROVIDER_HEADER, parseChatRequest, parseMatchRequest, runChat } from './routes/chat';
+import { VectorizeIndex } from './vector-index';
 import { loadActTitles } from './corpora/act-titles';
-import { parseCitation } from '@chester-hill-solutions/corpus';
+import { ENCODER_CONTRACT } from './encoder';
 import type { CorpusContext, CorpusQuery } from './corpora/types';
+import { parseChangesQuery, readStatuteChanges } from './routes/changes';
+import type { RetrievalObservation } from './corpora/retrieval-observation';
+import { createR2ProvisionTextStore, parseCorpusTextMode } from './corpora/text-store';
+import { GenerationFailureError } from './byok';
 
-/**
- * The worker entry.
- *
- * One shape for every route: authenticate the key, run the query, and only then
- * record a billable unit. A request that fails is never billed; a request that
- * succeeds is billed exactly once.
- */
+export { ApiKeyUsageDO } from '@chester-hill-solutions/api-billing/durable-object';
 
 const CORPUS_ROUTES: Record<string, string> = {
   '/api/statutes': 'statutes-canada',
@@ -38,497 +30,186 @@ const CORPUS_ROUTES: Record<string, string> = {
   '/api/bills': 'bills-canada',
 };
 
-/**
- * The usage counter, as a Durable Object.
- *
- * It has to be a Durable Object rather than a key-value store, because the
- * counter has to be exact. KV is eventually consistent and rate-limits writes
- * to about one a second per key, so under real traffic a KV counter would both
- * undercount and throttle.
- *
- * The class comes from the house's metering package rather than being written
- * here, so the fuse's behaviour is the same in every product that uses it. The
- * spine's client calls `/usage/consume` and `/usage/peek`, and the object's
- * `POST` and `GET` are exactly those two operations.
- */
-export { ApiKeyUsageDO } from '@chester-hill-solutions/api-billing/durable-object';
-
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const correlationId = newCorrelationId();
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
-
+    const retrieval: RetrievalObservation[] = [];
+    const observe = (observation: RetrievalObservation) => { retrieval.push(observation); };
+    const fresh = request.headers.get('X-CivicSignal-Evaluation') === 'fresh';
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(env, origin, correlationId) });
     }
-
     try {
-      if (url.pathname === '/health') {
-        return jsonResponse({ ok: true, product: env.PRODUCT_NAME ?? 'CivicSignal' }, env, origin, correlationId);
-      }
-
-      if (url.pathname === '/.well-known/civicsignal.json') {
-        return capabilitiesResponse(env, url.origin, correlationId);
-      }
-
-      if (url.pathname === '/llms.txt') {
+      if (['/health', '/.well-known/civicsignal.json', '/llms.txt'].includes(url.pathname)) {
+        requireMethod(request, 'GET');
+        if (url.pathname === '/health') return jsonResponse({ ok: true, product: env.PRODUCT_NAME ?? 'CivicSignal' }, env, origin, correlationId);
+        if (url.pathname === '/.well-known/civicsignal.json') return capabilitiesResponse(env, url.origin, correlationId);
         return new Response(llmsTxt(env, url.origin), {
           headers: { 'content-type': 'text/plain; charset=UTF-8', ...corsHeaders(env, origin, correlationId) },
         });
       }
-
       if (url.pathname === '/mcp') {
+        const identity = await authenticateRequest(env, request);
         const handler = createCivicSignalMcpHandler({
-          request,
-          env,
-          ctx: corpusContext(env),
+          request, env, ctx: corpusContext(env, observe, fresh),
+          runRetrieval: (work) => runBillableRetrieval(env, identity, work, {
+            waitUntil: (task) => ctx.waitUntil(task),
+          }),
         });
         return await handler.fetch(request);
       }
-
+      const isApi = url.pathname === '/api/brief' || url.pathname === '/api/news' || url.pathname === '/api/changes' || Object.hasOwn(CORPUS_ROUTES, url.pathname);
+      if (!isApi && url.pathname !== '/api/chat' && url.pathname !== '/api/match') {
+        return errorResponse('NOT_FOUND', `No route for ${url.pathname}`, env, origin, correlationId, 404);
+      }
+      requireMethod(request, isApi ? 'GET' : 'POST');
+      const identity = await authenticateRequest(env, request);
+      const waitUntil = (task: Promise<unknown>) => ctx.waitUntil(task);
+      let body: unknown;
       if (url.pathname === '/api/chat') {
-        return await handleChat(request, env, ctx, url, correlationId, origin);
+        const parsed = parseChatRequest(await readJsonBody(request));
+        const byokKey = request.headers.get(BYOK_KEY_HEADER) ?? '';
+        const byokProvider = request.headers.get(BYOK_PROVIDER_HEADER) ?? parsed.provider ?? 'anthropic';
+        body = await runBillableRetrieval(env, identity, () => runChat({
+          env, byokKey, byokProvider,
+          retrieve: (briefRequest) => briefFor(briefRequest, env, observe, fresh),
+        }, parsed), { waitUntil });
+      } else if (url.pathname === '/api/match') {
+        const parsed = parseMatchRequest(await readJsonBody(request));
+        if (!env.VECTORIZE) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Vector retrieval is unavailable.', 503);
+        await requirePublishedStatutes(corpusContext(env));
+        const index = new VectorizeIndex(env.VECTORIZE);
+        const matches = await runBillableRetrieval(env, identity,
+          () => index.query(parsed.vector, parsed.topK ?? 10), { waitUntil });
+        body = { matches, count: matches.length, corpus: parsed.corpus ?? 'statutes-canada' };
+      } else if (url.pathname === '/api/changes') {
+        const query = parseChangesQuery(url);
+        const context = corpusContext(env);
+        await requirePublishedStatutes(context);
+        body = await runBillableRetrieval(env, identity, () => readStatuteChanges(query, context), { waitUntil });
+      } else {
+        const query = parseQuery(url);
+        body = await runBillableRetrieval(env, identity, () => runQuery(url.pathname, query, env, observe, fresh), { waitUntil });
       }
-
-      if (url.pathname === '/api/match') {
-        return await handleMatch(request, env, ctx, url, correlationId, origin);
+      return jsonResponse({ ...(body as Record<string, unknown>), retrieval }, env, origin, correlationId);
+    } catch (error: unknown) {
+      if (error instanceof BillableDenied) {
+        return billableDenialResponse({ ...error.outcome, body: { ...error.outcome.body, retrieval } }, correlationId, corsHeaders(env, origin, correlationId));
       }
-
-      if (url.pathname === '/api/brief' || url.pathname === '/api/news' || Object.hasOwn(CORPUS_ROUTES, url.pathname)) {
-        return await handleApi(request, env, ctx, url, correlationId, origin);
+      if (error instanceof AccessError || error instanceof UnsupportedCoverageError) {
+        const response = errorResponse(error.code, error.message, env, origin, correlationId, error.status, retrieval);
+        if (error.status === 401) response.headers.set('WWW-Authenticate', 'Bearer realm="CivicSignal"');
+        return response;
       }
-
-      return errorResponse('NOT_FOUND', `No route for ${url.pathname}`, env, origin, correlationId, 404);
-    } catch (err: unknown) {
-      console.error(`[${correlationId}] unhandled error`, err);
-      return errorResponse('UNEXPECTED_ERROR', 'Unexpected error', env, origin, correlationId, 500);
+      if (error instanceof RequestInputError || error instanceof ScopeParseError) {
+        return errorResponse('INVALID_ARGUMENT', error.message, env, origin, correlationId,
+          error instanceof RequestInputError ? error.status : 400, retrieval);
+      }
+      console.error(JSON.stringify({ correlationId, event: 'request_failed', route: url.pathname,
+        errorType: error instanceof Error ? error.name : 'unknown' }));
+      return errorResponse('UPSTREAM_UNAVAILABLE', 'The request could not complete. Retry later.', env, origin, correlationId, 502, retrieval,
+        error instanceof GenerationFailureError ? error : undefined);
     }
   },
 };
 
-/**
- * The BYOK chat surface.
- *
- * The caller's key arrives in a header, goes to the caller's provider, and is
- * nowhere else: not logged, not persisted, not in the usage ledger, not in an error.
- * The CivicSignal key still authorises and bills the *retrieval*.
- */
-async function handleChat(
-  request: Request,
-  env: Env,
-  ctx: ExecutionContext,
-  url: URL,
-  correlationId: string,
-  origin: string | null,
-): Promise<Response> {
-  const auth = await authorizeServerKey(env, request);
-  if (!auth.ok) {
-    const status = auth.reason ? httpStatusForKeyDenial(auth.reason) : 401;
-    return errorResponse(
-      auth.reason ?? 'KEY_REQUIRED',
-      auth.message ?? 'A Server API key is required.',
-      env,
-      origin,
-      correlationId,
-      status,
-    );
-  }
-  if (!auth.key || !auth.customer) {
-    return errorResponse('KEY_INVALID', 'The key is not recognised.', env, origin, correlationId, 401);
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return errorResponse('INVALID_ARGUMENT', 'The body must be JSON.', env, origin, correlationId, 400);
-  }
-
-  const byokKey = request.headers.get(BYOK_KEY_HEADER) ?? '';
-  const byokProvider = request.headers.get(BYOK_PROVIDER_HEADER) ?? 'anthropic';
-
-  try {
-    const result = await runChat(
-      {
-        env,
-        byokKey,
-        byokProvider,
-        retrieve: async (briefRequest) => {
-          const titles = await loadActTitles(env);
-          const citation =
-            briefRequest.topic && titles.length > 0
-              ? parseCitation(briefRequest.topic, titles)?.citation
-              : undefined;
-          return buildBrief({ ...briefRequest, citation }, corpusContext(env));
-        },
-      },
-      parseChatRequest(body),
-    );
-
-    // The retrieval is billable; the generation is the caller's.
-    const billed = await recordSuccessfulBillable(env, { key: auth.key, customer: auth.customer }, {
-      waitUntil: (task) => ctx.waitUntil(task),
-    });
-    if (!billed.allowed) {
-      return billableDenialResponse(billed, correlationId, corsHeaders(env, origin, correlationId));
-    }
-
-    return jsonResponse(
-      {
-        answer: result.answer,
-        provider: result.provider,
-        model: result.model,
-        scope: result.scope,
-        cited: result.cited,
-      },
-      env,
-      origin,
-      correlationId,
-    );
-  } catch (err: unknown) {
-    return chatErrorResponse(err, env, origin, correlationId);
-  }
+function requireMethod(request: Request, expected: string): void {
+  if (request.method !== expected) throw new AccessError('METHOD_NOT_ALLOWED', `Use ${expected} for this route.`, 405);
 }
 
-/**
- * Bring your own vector.
- *
- * The client embeds the query — in a browser, with a public Apache 2.0 model — and
- * sends the vector. The server never sees the text. What comes back is the cited
- * rows, passed through the licence gate on the way out.
- */
-async function handleMatch(
-  request: Request,
-  env: Env,
-  ctx: ExecutionContext,
-  url: URL,
-  correlationId: string,
-  origin: string | null,
-): Promise<Response> {
-  const auth = await authorizeServerKey(env, request);
-  if (!auth.ok) {
-    const status = auth.reason ? httpStatusForKeyDenial(auth.reason) : 401;
-    return errorResponse(
-      auth.reason ?? 'KEY_REQUIRED',
-      auth.message ?? 'A Server API key is required.',
-      env,
-      origin,
-      correlationId,
-      status,
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return errorResponse('INVALID_ARGUMENT', 'The body must be JSON.', env, origin, correlationId, 400);
-  }
-  const parsed = parseMatchRequest(body);
-  if (parsed.vector.length === 0) {
-    return errorResponse('INVALID_ARGUMENT', 'A query vector is required.', env, origin, correlationId, 400);
-  }
-
-  const index = vectorIndexFor(env);
-  if (!index) {
-    return errorResponse(
-      'UNSUPPORTED_COVERAGE',
-      'Vector search is not configured for this deployment.',
-      env,
-      origin,
-      correlationId,
-      501,
-    );
-  }
-
-  const topK = Math.min(Math.max(parsed.topK ?? 10, 1), 50);
-  const matches = await index.query(parsed.vector, topK);
-
-  const billed = await recordSuccessfulBillable(env, { key: auth.key!, customer: auth.customer! }, {
-    waitUntil: (task) => ctx.waitUntil(task),
-  });
-  if (!billed.allowed) {
-    return billableDenialResponse(billed, correlationId, corsHeaders(env, origin, correlationId));
-  }
-
-  return jsonResponse(
-    { matches, count: matches.length, corpus: parsed.corpus ?? 'statutes-canada' },
-    env,
-    origin,
-    correlationId,
-  );
-}
-
-function vectorIndexFor(env: Env): VectorIndex | undefined {
-  const binding = (env as { VECTORIZE?: VectorizeBinding }).VECTORIZE;
-  return binding ? new VectorizeIndex(binding) : undefined;
-}
-
-/**
- * The revision of the corpus that the search reads, for the cache key.
- *
- * The cache key holds the revision, so a new revision clears the cache by
- * itself. The value comes from `corpus_state`, which the cycle already writes.
- * Nothing new is needed: no binding, and no change to the pipeline.
- *
- * **The function returns a promise, and the search awaits it.** The first
- * version read the row in the background and returned a plain string. That never
- * worked: a Worker drops a pending promise when the response returns, so the
- * read was cancelled and every cache key said `unknown`. The promise belongs to
- * the request that awaits it, and then it always completes.
- *
- * The promise is remembered for five minutes, so a busy isolate reads the row
- * once and not once per request. The state is module state, which a Worker does
- * not promise to keep. That is acceptable here: a lost value costs one more
- * database read.
- */
-let revisionPromise: { at: number; value: Promise<string> } | undefined;
-
-function corpusRevisionFor(env: Env): Promise<string> {
-  const now = Date.now();
-  if (revisionPromise && now - revisionPromise.at < 5 * 60 * 1000) {
-    return revisionPromise.value;
-  }
-  const value = env.CIVIC_DB
-    ? env.CIVIC_DB.prepare('SELECT commit_sha FROM corpus_state WHERE corpus_id = ?')
-        .bind(CORPUS_ID)
-        .first<{ commit_sha: string }>()
-        .then((row) => row?.commit_sha ?? 'unknown')
-        .catch(() => 'unknown')
-    : Promise.resolve('unknown');
-  revisionPromise = { at: now, value };
-  return value;
-}
-
-function corpusContext(env: Env): CorpusContext {
-  const vector = vectorIndexFor(env);
+function corpusContext(env: Env, onRetrieval?: (observation: RetrievalObservation) => void, fresh = false): CorpusContext {
   const embedQuery = queryEmbedderFor(env);
+  const textMode = parseCorpusTextMode(env.CORPUS_TEXT_MODE);
+  if (textMode !== 'd1' && (!env.CIVIC_DB || !env.CORPORA)) {
+    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Verified provision text storage is unavailable.', 503);
+  }
   return {
     db: env.CIVIC_DB,
     fetch,
     now: () => new Date(),
-    ...(vector ? { vector } : {}),
+    onRetrieval,
+    ...(fresh ? { retrievalCacheMode: 'bypass' as const } : {}),
+    ...(textMode !== 'd1' ? { provisionTexts: createR2ProvisionTextStore(env.CIVIC_DB!, env.CORPORA!, textMode) } : {}),
+    ...(env.VECTORIZE ? { vector: new VectorizeIndex(env.VECTORIZE) } : {}),
     ...(embedQuery ? { embedQuery } : {}),
-    // The key for the inference gateway. Without it the search keeps the cosine
-    // order and the floor, which is the behaviour of every deployment before
-    // this one.
     ...(env.JEV_KEY ? { jev: { key: env.JEV_KEY } } : {}),
-    // The revision enters the cache key, so a new revision clears the cache.
-    corpusRevision: corpusRevisionFor(env),
-    // The cache, when the namespace is bound. The signature carries no KV, so
-    // the retrieval code stays free of Cloudflare and the tests supply a Map.
-    // `act-titles.ts` uses the same namespace for the same reason.
-    ...(env.CIVIC_CACHE
-      ? {
-          cache: {
-            get: (key: string) => env.CIVIC_CACHE!.get(key, 'json'),
-            put: (key: string, value: unknown, ttlSeconds: number) =>
-              env.CIVIC_CACHE!.put(key, JSON.stringify(value), { expirationTtl: ttlSeconds }),
-          },
-        }
-      : {}),
+    // Read the revision within this request. A global promise can belong to a
+    // different binding or request, and can preserve an obsolete revision.
+    corpusRevision: env.CIVIC_DB
+      ? env.CIVIC_DB.prepare('SELECT commit_sha, parser_version FROM corpus_state WHERE corpus_id = ?').bind(CORPUS_ID)
+          .first<{ commit_sha: string; parser_version: string | null }>()
+          .then((row) => row ? `${row.commit_sha}:${row.parser_version ?? 'legacy'}` : 'unknown').catch(() => 'unknown')
+      : Promise.resolve('unknown'),
+    ...(env.CIVIC_CACHE ? { cache: {
+      get: (key: string) => env.CIVIC_CACHE!.get(key, 'json'),
+      put: (key: string, value: unknown, ttlSeconds: number) => env.CIVIC_CACHE!.put(key, JSON.stringify(value), { expirationTtl: ttlSeconds }),
+    } } : {}),
   };
 }
 
-/**
- * The embedder for a question, in the corpus's vector space.
- *
- * The corpus is embedded with **EmbeddingGemma 2**, served from the
- * `.litertlm` artefact — the same file the browser runs — so a question is
- * embedded by that same service, and the two are in the same space by
- * construction rather than approximately.
- *
- * The model and its instruction travel together, and this is the only place
- * that decides. A hosted model would be a second decision: bge-m3 takes no task
- * instruction, and the `task: search result` prefix belongs to EmbeddingGemma,
- * so putting one in front of the other would put the query in a slightly
- * different place from every document in the index.
- */
 function queryEmbedderFor(env: Env): ((text: string) => Promise<number[]>) | undefined {
   const encoderUrl = env.ENCODER_URL;
   const encoderToken = env.ENCODER_TOKEN;
-  if (encoderToken && (env.ENCODER_SERVICE || encoderUrl)) {
-    return async (text: string) => {
-      const url = encoderUrl ? `${encoderUrl.replace(/\/$/, '')}/embed-query` : 'https://encoder/embed-query';
-      const request = new Request(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${encoderToken}`,
-        },
-        body: JSON.stringify({ texts: [text] }),
-      });
-      // The service binding is the direct call; the address is the fallback for
-      // a deployment that has one and not the other.
-      const response = env.ENCODER_SERVICE
-        ? await env.ENCODER_SERVICE.fetch(request)
-        : await fetch(request);
-      if (!response.ok) {
-        // The URL and the body, because "the encoder refused: 404" is not a
-        // diagnosis. A 404 from the wrong address and a 404 from the wrong path
-        // look identical until the address is in the message.
-        throw new Error(
-          `the encoder refused ${response.status} at ${url}: ${(await response.text()).slice(0, 200)}`,
-        );
-      }
-      const body = (await response.json()) as { vectors?: number[][] };
-      const vector = body.vectors?.[0];
-      if (!vector) throw new Error('the encoder returned no vector');
-      return vector;
-    };
-  }
-
-  // The hosted model, for a deployment that has no encoder service. It is a
-  // different model in a different space, so it is only ever right when the
-  // corpus was embedded with it too.
-  const ai = env.AI;
-  if (!ai) return undefined;
+  if (!encoderToken || (!env.ENCODER_SERVICE && !encoderUrl)) return undefined;
   return async (text: string) => {
-    const result = await ai.run(QUERY_EMBEDDING_MODEL, { text: [text] });
-    const vector = await firstVector(result);
-    if (!vector) {
-      throw new Error('the embedding model returned no vector');
+    const request = new Request(encoderUrl ? `${encoderUrl.replace(/\/$/, '')}/embed-query` : 'https://encoder/embed-query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${encoderToken}` },
+      body: JSON.stringify({ texts: [text] }),
+      signal: AbortSignal.timeout(60_000),
+    });
+    const response = env.ENCODER_SERVICE ? await env.ENCODER_SERVICE.fetch(request) : await fetch(request);
+    if (!response.ok) throw new Error('The encoder refused the request.');
+    const body = (await response.json()) as { vectors?: unknown[] };
+    const vector = body.vectors?.[0];
+    if (!Array.isArray(vector) || vector.length !== ENCODER_CONTRACT.dimensions ||
+      !vector.every((value) => typeof value === 'number' && Number.isFinite(value))) {
+      throw new Error('The encoder returned an invalid vector.');
     }
-    return vector;
+    return vector as number[];
   };
 }
 
-/**
- * The vector, whatever shape the model answered in.
- *
- * **The Workers AI binding and the REST API do not answer in the same shape,
- * and neither does every model.** For a text-embedding model the binding
- * returns the raw result — `{ data: [[…]] }` — rather than a `Response`, so
- * there is nothing to call `.json()` on. The REST API wraps the same thing in
- * `{ result: { data: [[…]] } }`, and some models answer with
- * `{ data: [{ embedding: […] }] }` instead.
- *
- * So all three shapes are accepted, and a `Response` is read as JSON first.
- * The error this prevents is a confusing one: `response.json is not a
- * function`, in the middle of a search, with nothing in the message to say
- * which of the shapes was expected.
- */
-async function firstVector(result: unknown): Promise<number[] | undefined> {
-  let payload: unknown = result;
-  if (result && typeof (result as { json?: unknown }).json === 'function') {
-    payload = await (result as Response).json();
+async function briefFor(query: BriefRequest, env: Env, onRetrieval?: (observation: RetrievalObservation) => void, fresh = false) {
+  assertV1StatuteQuery(query);
+  const context = corpusContext(env, onRetrieval, fresh);
+  await requirePublishedStatutes(context);
+  if (!query.topic && !query.keywords?.length && !query.citation && !(query.act && query.section)) {
+    throw new RequestInputError('Supply a topic, keywords or an exact act and section.');
   }
-  const candidate = payload as { data?: unknown; result?: { data?: unknown } };
-  const data = candidate?.data ?? candidate?.result?.data;
-  if (!Array.isArray(data) || data.length === 0) return undefined;
-  const first = data[0];
-  if (Array.isArray(first)) return first as number[];
-  if (first && typeof first === 'object' && 'embedding' in first) {
-    return (first as { embedding: number[] }).embedding;
-  }
-  return undefined;
-}
-
-/** The model the corpus's vectors were made with. */
-const QUERY_EMBEDDING_MODEL = '@cf/baai/bge-m3';
-
-async function handleApi(
-  request: Request,
-  env: Env,
-  ctx: ExecutionContext,
-  url: URL,
-  correlationId: string,
-  origin: string | null,
-): Promise<Response> {
-  const auth = await authorizeServerKey(env, request);
-  if (!auth.ok) {
-    const status = auth.reason ? httpStatusForKeyDenial(auth.reason) : 401;
-    return errorResponse(
-      auth.reason ?? 'KEY_REQUIRED',
-      auth.message ?? 'A Server API key is required.',
-      env,
-      origin,
-      correlationId,
-      status,
-    );
-  }
-  if (!auth.key || !auth.customer) {
-    return errorResponse('KEY_INVALID', 'The key is not recognised.', env, origin, correlationId, 401);
-  }
-
-  const billing: BillableAuthContext = { key: auth.key, customer: auth.customer };
-  const query = parseQuery(url);
-  let body: unknown;
-  try {
-    // A citation is a key, not a similarity. If the question names a section, it is
-    // resolved structurally and that provision leads the answer, rather than being
-    // ranked against 191,000 sections by a search index.
-    const citation = await resolveCitationFromTopic(query.topic, env);
-    body = await runQuery(url.pathname, query, env, citation);
-  } catch (err: unknown) {
-    if (err instanceof ScopeParseError) {
-      return errorResponse('INVALID_ARGUMENT', err.message, env, origin, correlationId, 400);
-    }
-    throw err;
-  }
-
-  const billed = await recordSuccessfulBillable(env, billing, {
-    waitUntil: (task) => ctx.waitUntil(task),
-  });
-  if (!billed.allowed) {
-    return billableDenialResponse(billed, correlationId, corsHeaders(env, origin, correlationId));
-  }
-
-  return jsonResponse(body, env, origin, correlationId);
-}
-
-/**
- * Resolve a citation out of the question, if the question names one.
- *
- * Returns undefined when there is no citation, or when the section does not exist —
- * a citation that names a section the instrument does not have is wrong, and the
- * nearest section would be worse than no answer.
- */
-async function resolveCitationFromTopic(
-  topic: string | undefined,
-  env: Env,
-): Promise<{ act: string; section: string } | undefined> {
-  if (!topic) return undefined;
   const titles = await loadActTitles(env);
-  if (titles.length === 0) return undefined;
-  const match = parseCitation(topic, titles);
-  if (!match) return undefined;
-  return { act: match.citation.act, section: match.citation.section };
+  const citation = query.citation ?? (query.act && query.section ? { act: query.act, section: query.section } : undefined)
+    ?? (query.topic && titles.length ? parseCitation(query.topic, titles)?.citation : undefined);
+  if (!citation && (query.topic || query.keywords?.length) && (!context.vector || !context.embedQuery)) {
+    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Semantic retrieval is unavailable.', 503);
+  }
+  return buildBrief({ ...query, citation }, context);
 }
 
-async function runQuery(
-  pathname: string,
-  query: CorpusQuery,
-  env: Env,
-  citation?: { act: string; section: string },
-): Promise<unknown> {
-  const corpusContextValue = corpusContext(env);
-
-  if (pathname === '/api/brief') {
-    const brief = await buildBrief({ ...(query as BriefRequest), citation }, corpusContextValue);
-    return brief;
-  }
-
+async function runQuery(pathname: string, query: CorpusQuery, env: Env, onRetrieval?: (observation: RetrievalObservation) => void, fresh = false): Promise<unknown> {
+  if (pathname === '/api/brief') return briefFor(query, env, onRetrieval, fresh);
   if (pathname === '/api/news') {
-    const brief = await buildBrief(
-      { ...(query as BriefRequest), include: ['news-canada', 'gdelt'] },
-      corpusContextValue,
-    );
-    return { news: brief.news, sentiment: brief.sentiment, coverage: brief.coverage, attribution: brief.attribution };
+    throw new UnsupportedCoverageError('News retrieval is unavailable in v1.');
   }
-
-  const corpusId = CORPUS_ROUTES[pathname];
-  if (!corpusId) {
-    return { error: 'NOT_FOUND' };
+  const corpus = CORPUSES_BY_ID.get(CORPUS_ROUTES[pathname]!);
+  if (!corpus) throw new AccessError('UNSUPPORTED_COVERAGE', 'The requested corpus is unavailable.', 501);
+  const context = corpusContext(env, onRetrieval, fresh);
+  assertV1StatuteQuery(query);
+  await requirePublishedStatutes(context);
+  if (!corpus.supports(query)) throw new RequestInputError('Supply a topic, keywords or an exact act and section.');
+  if (corpus.id === 'statutes-canada' && !query.act && (!context.vector || !context.embedQuery)) {
+    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Semantic retrieval is unavailable.', 503);
   }
-  const corpus = CORPUSES_BY_ID.get(corpusId);
-  if (!corpus) {
-    return { error: 'UNSUPPORTED_COVERAGE', corpusId };
-  }
-  const raw = await corpus.retrieve(query, corpusContextValue);
+  const raw = await corpus.retrieve(query, context);
   const policy = policyFor(corpus.id);
-  const items = policy ? raw.map((r) => emitCorpusItem(policy, r)) : [];
-  return { items, attribution: policy?.attribution ?? '' };
+  return { items: policy ? raw.map((item) => emitCorpusItem(policy, item)) : [], attribution: policy?.attribution ?? '' };
 }
 
+async function requirePublishedStatutes(context: CorpusContext): Promise<void> {
+  const availability = await loadCorpusAvailability(context);
+  if (!availability['statutes-canada']?.available) {
+    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'No non-empty statute revision is available.', 503);
+  }
+}

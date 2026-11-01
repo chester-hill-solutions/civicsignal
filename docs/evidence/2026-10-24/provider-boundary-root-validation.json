@@ -1,0 +1,356 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-24T02:27:19.997775+00:00",
+  "scope": "local-provider-response-boundary-and-safe-generation-failure-metadata",
+  "sourceBaseCommit": "35c55e61265a967c1aaa29a043c50cbebb0a74c4",
+  "sourceState": "Reviewed working-tree source; exact file digests identify the tested candidate. No deployed-version claim.",
+  "files": [
+    {
+      "path": "src/provider-json.ts",
+      "bytes": 6695,
+      "sha256": "64a53e2b703fd2f04f87b9e906c458f03736bcdfc714d01f0b25331d5fca13d9"
+    },
+    {
+      "path": "src/byok.ts",
+      "bytes": 11067,
+      "sha256": "77da274b432c43f70fbaac35e6e48d916636b5de11c1a586fa399b28e0635b16"
+    },
+    {
+      "path": "src/http.ts",
+      "bytes": 4918,
+      "sha256": "06e0946ff58b25dc5e65433a04fc6936e81a14289459ea79562bdb3fb7fd02c5"
+    },
+    {
+      "path": "src/index.ts",
+      "bytes": 12553,
+      "sha256": "f0b502d35d858b6044426ea1af00d8b8d8a486d2c776b0200bd8c4d31a321730"
+    },
+    {
+      "path": "src/jev.ts",
+      "bytes": 7710,
+      "sha256": "933d37f5ddf8152f94658870ee3044ae353317c807620ad26d72ef4269988523"
+    },
+    {
+      "path": "src/corpora/adapters.ts",
+      "bytes": 27736,
+      "sha256": "7929713ecb4eddc06e611640c60e1fe527f81b4094bc8c9c0a5cc90e8c9a7e2e"
+    },
+    {
+      "path": "test/provider-json.test.ts",
+      "bytes": 14235,
+      "sha256": "11d398a69f5bf804a270c34cb60ae91c0142a8f01abf57132174f28da010029a"
+    },
+    {
+      "path": "test/byok.test.ts",
+      "bytes": 11078,
+      "sha256": "411bfbec98bfef28633aa4aef263dcd8a511bf5a701399a18dd074cc38cace76"
+    },
+    {
+      "path": "test/chat.test.ts",
+      "bytes": 13648,
+      "sha256": "61bdb6090e6a9b5c0df491de7459d33e576030a0c7cf9913d01b93fb06779a1e"
+    },
+    {
+      "path": "test/endpoints.test.ts",
+      "bytes": 28432,
+      "sha256": "ab15c176eb70a1b012059daba05d91a4a14605c348a3e28fcb08a00b6658a32f"
+    },
+    {
+      "path": "test/http.test.ts",
+      "bytes": 3590,
+      "sha256": "942eadecfe3b2e705360ef5768572e2102b99e62612a83ca3d3291a0deebb1f3"
+    },
+    {
+      "path": "test/jev-response-boundary.test.ts",
+      "bytes": 10005,
+      "sha256": "967a2365b0f630083df56e02814e80babc1ccbc5d4aad8062f101bfd9724fa40"
+    },
+    {
+      "path": "test/jev-cache-contract.test.ts",
+      "bytes": 849,
+      "sha256": "0cc95edd18d751546d52b9653386035aaee8d37bd2accf041e3557aec1cf7a8d"
+    },
+    {
+      "path": "test/jev.test.ts",
+      "bytes": 6478,
+      "sha256": "521ae970c3990fc877d7f95e59fccbbe7c3d76fa816ce314d22a28a6ec1043a9"
+    },
+    {
+      "path": "test/retrieval-contract.test.ts",
+      "bytes": 4549,
+      "sha256": "a8cd52fe589a456575734e744f2861e20a510ac1670620907df1c3466d3bd35c"
+    },
+    {
+      "path": "test/retrieval-observation.test.ts",
+      "bytes": 9671,
+      "sha256": "6573adab5d0f018feed8151974983082dc88541c176adac89e10956986faec42"
+    },
+    {
+      "path": "test/vector-arm.test.ts",
+      "bytes": 24266,
+      "sha256": "20b072e790e0859e3ed4c4d4dc23e9991b732b11690d5ef80f057d532e0cd2a5"
+    }
+  ],
+  "reproducedBeforeRepair": [
+    "Jev JSON null at HTTP200 threw outside the previous response catch.",
+    "Partial Jev answers fabricated zero and malformed probability values were accepted.",
+    "Missing or blank generation answers returned HTTP200 and consumed one usage unit across all four providers.",
+    "Three non-Zen providers accepted synthetic key echoes.",
+    "Numeric/object Google text, mixed malformed declared text and object-indexed response arrays could produce billable answers."
+  ],
+  "sharedExchange": {
+    "method": "POST",
+    "requestsPerInvocationMaximum": 1,
+    "redirects": 0,
+    "retries": 0,
+    "deadlineCovers": [
+      "serialization",
+      "transport",
+      "streamed bytes",
+      "UTF8 and JSON parsing",
+      "domain validation",
+      "cleanup"
+    ],
+    "synchronousWorkPreemptible": false,
+    "synchronousOverrunResultRejected": true,
+    "lateResponseDisposedWithoutAnotherRequest": true,
+    "safeErrorFields": [
+      "phase",
+      "httpStatus when actual response observed"
+    ],
+    "rawCauseRetained": false
+  },
+  "byok": {
+    "providers": [
+      "anthropic",
+      "openai",
+      "google",
+      "opencode-zen"
+    ],
+    "timeoutMs": 30000,
+    "responseBytes": 262144,
+    "providerEndpointsAuthenticationModelsUnchanged": true,
+    "invalidAnswerUsageUnits": 0,
+    "successfulAnswerUsageUnits": 1,
+    "emptyMalformedAndKeyEchoAnswersRejected": true,
+    "legitimateNontextPartsPreserved": true,
+    "httpStatus": 502,
+    "errorCode": "UPSTREAM_UNAVAILABLE",
+    "optionalGenerationMetadata": [
+      "provider",
+      "phase",
+      "upstreamStatus when response observed"
+    ],
+    "generationPhases": [
+      "request-serialization",
+      "transport",
+      "upstream-http",
+      "response-body",
+      "response-parse",
+      "timeout",
+      "cancelled",
+      "response-validation"
+    ],
+    "generationTagOnlyForByok": true,
+    "retrievalErrorsDoNotImplyGenerationAttempt": true,
+    "noFailureMetadata": [
+      "raw error or cause",
+      "provider response body",
+      "key",
+      "prompt",
+      "answer",
+      "model",
+      "endpoint"
+    ]
+  },
+  "jev": {
+    "contract": "jev-noul-complete-15s-v1",
+    "timeoutMs": 15000,
+    "responseBytes": 262144,
+    "requestBytes": 1048576,
+    "requiredAnswers": "Every requested candidate, six authority flags and any_relevant",
+    "requiredAnswerType": "noul",
+    "probabilities": "Finite numeric values in [0,1], including actual zero",
+    "invalidResponse": "Existing null/vector-floor fallback",
+    "modelPromptAuthorityRuleThresholdsCandidateBudgetUnchanged": true,
+    "jevCacheIdentityChanged": true,
+    "vectorOnlyCacheIdentityUnchanged": true,
+    "oldCacheCannotQualify": "Old cache entries lack raw authority flags for stricter validation"
+  },
+  "independentReviews": {
+    "rootReadAllChangedProductFiles": "clear",
+    "sharedHelperPeerReview": "clear",
+    "callerSchemaPrivacyMeteringPeerReview": "clear"
+  },
+  "checks": {
+    "focusedProviderSuite": {
+      "tests": 207,
+      "files": 5,
+      "passed": true
+    },
+    "jevFocusedSuite": {
+      "tests": 150,
+      "files": 6,
+      "passed": true
+    },
+    "rootCacheRegressionTests": 2,
+    "fullRelease": {
+      "tests": 1492,
+      "testFiles": 92,
+      "pythonTests": 21,
+      "compilerProjects": [
+        "worker",
+        "bun",
+        "tooling",
+        "snapshot"
+      ],
+      "vendorFiles": 117,
+      "runtimeProbes": [
+        "real local workerd SQLite Durable Object",
+        "real local workerd R2 conditional immutability"
+      ],
+      "invariants": [
+        "billing",
+        "corpus"
+      ],
+      "dryRunWorkerBuilds": 5,
+      "sourcePinsBeforeAndAfter": 433,
+      "sourcePinsUnchanged": true,
+      "passed": true
+    },
+    "latestWorkersTypeReference": {
+      "package": "@cloudflare/workers-types",
+      "version": "5.20261024.1",
+      "indexSha256": "bfb7e842bb5252852de6a8f45bc831a37120db4a4a9a2ce77d6cd41f7d77a2ec",
+      "helperIsolatedCompilePassed": true,
+      "projectDependenciesUpgraded": false
+    }
+  },
+  "preservedFailedRuns": [
+    {
+      "scope": "root focused run while newly added malformed-response cases were red",
+      "tests": 322,
+      "passed": 312,
+      "failed": 10,
+      "meaning": "Independent reproduction of the malformed response billing defects; superseded by the final guarded source."
+    },
+    {
+      "scope": "first full local gate",
+      "tests": 1492,
+      "passed": 1491,
+      "failed": 1,
+      "failure": "Obsolete test expected parse({}) to return an empty answer.",
+      "changedFileDuringRun": "test/chat.test.ts",
+      "sourcesUnchanged": false,
+      "ownedProcessSettled": true,
+      "acceptanceClaim": false,
+      "result": {
+        "path": "dist/release/provider-boundary-20261024/result.json",
+        "bytes": 148948,
+        "sha256": "770174602ebb83234a2ddbbf9db9051d6a109583a33053db0eb5b732e71a907b"
+      },
+      "log": {
+        "path": "dist/release/provider-boundary-20261024/validate.log",
+        "bytes": 40380,
+        "sha256": "e0fc08a9def2fa40f87fa7ad3d5c994598fa2e67d6938a77d4ba94d1731d99f9"
+      }
+    },
+    {
+      "scope": "early shared helper combined timer fixture",
+      "failed": 1,
+      "failure": "A 5ms real monotonic deadline could fire before the fixture response status was observed.",
+      "correction": "Timer-only tests now use a fixed monotonic clock plus phase-entry rendezvous; separate monotonic-overrun and pre-response status-absence cases remain.",
+      "helperSourceChangeRequired": false
+    }
+  ],
+  "ownedLocalValidation": {
+    "result": {
+      "path": "dist/release/provider-boundary-20261024-v2/result.json",
+      "bytes": 150272,
+      "sha256": "bfb7fa3430fb48593d97d9cdae81083f8d71d5b4093082772de3ca55230004d9"
+    },
+    "runner": {
+      "path": "dist/release/provider-boundary-20261024-v2/run.py",
+      "bytes": 3063,
+      "sha256": "1348f0890fe816f84c9cb9a205aa9a4673ad2e2fb4da489389ba441278b81bd2"
+    },
+    "phases": [
+      {
+        "name": "validate",
+        "timeoutSeconds": 900,
+        "startedAt": "2026-10-24T02:24:14.073021+00:00",
+        "finishedAt": "2026-10-24T02:25:56.643605+00:00",
+        "exitCode": 0,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "localFailureCode": null,
+        "maxLogBytes": 4194304,
+        "ownedProcessSettled": true,
+        "logSha256": "be3b9399364dec54587b377e29a1206b5e1b170058337b5d4fd705f0ac4d2b1a",
+        "logBytes": 37956
+      },
+      {
+        "name": "python",
+        "timeoutSeconds": 120,
+        "startedAt": "2026-10-24T02:25:56.645880+00:00",
+        "finishedAt": "2026-10-24T02:26:02.565079+00:00",
+        "exitCode": 0,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "localFailureCode": null,
+        "maxLogBytes": 4194304,
+        "ownedProcessSettled": true,
+        "logSha256": "cb16379d4b49be7ba8525b2f626efcee40f84731d1dad45e05129ab9cd27b0d9",
+        "logBytes": 120
+      },
+      {
+        "name": "build",
+        "timeoutSeconds": 300,
+        "startedAt": "2026-10-24T02:26:02.569660+00:00",
+        "finishedAt": "2026-10-24T02:26:05.706086+00:00",
+        "exitCode": 0,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "localFailureCode": null,
+        "maxLogBytes": 4194304,
+        "ownedProcessSettled": true,
+        "logSha256": "a49cb93bb003ee71e4a1eeb9dedf30ef58b03f45e72dc5caaac708d92a2e4c36",
+        "logBytes": 4534
+      }
+    ],
+    "allProcessesSettled": true
+  },
+  "servingLedger": {
+    "path": "dist/release/staging/serving-requests.jsonl",
+    "bytes": 13573,
+    "sha256": "b4056b7f7a683d603e915395a84affa632236c7db952f1d6ac22b6030144006f",
+    "headerRecords": 1,
+    "reservations": 154,
+    "limit": 160,
+    "remaining": 6,
+    "unchanged": true,
+    "reset": false
+  },
+  "officialSources": [
+    "https://docs.typesafe.ai/api/system-one",
+    "https://docs.typesafe.ai/primitives"
+  ],
+  "limitations": [
+    "No live retrieval or generation request, provider key validation or deployment occurred for this repair.",
+    "The current staging API remains02dd9821-6bac-481d-89a4-5dfdf977bc6e; the repaired source is not deployed.",
+    "These code defects do not attribute the historical hosted502s or held-out misses.",
+    "The shared deadline bounds one provider exchange, not total retrieval-plus-generation HTTP lifetime.",
+    "Full clean-checkout Linux CI for the new commit is separate from this guarded local source check.",
+    "The original holdout, benchmark, Cron dispatch, positive BYOK and production acquisition/copy gates remain open.",
+    "No extra generation approval exists. Six remaining serving slots do not authorize generation.",
+    "Corpus artifact invariants explicitly skip absent dist/statutes.sql,dist/statutes.jsonl,dist/statutes-fr.jsonl; hosted corpus proof is separate."
+  ],
+  "approvedByokKeyRead": false,
+  "realProviderCalls": 0,
+  "newStagingServingRequests": 0,
+  "cloudDeployment": false,
+  "productionOrRailwayChanges": false
+}

@@ -7,7 +7,11 @@
   // `Buffer` — `nodejs_compat` is what puts it there.
   "compatibility_flags": ["nodejs_compat"],
   "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "vars": { "CORPUS_RETAIN_D1_TEXT": "true" },
   "observability": { "enabled": true },
+  "limits": { "cpu_ms": 300000, "subrequests": 10000 },
+  "durable_objects": { "bindings": [{ "name": "PIPELINE_COORDINATOR", "class_name": "PipelineCoordinator" }] },
+  "migrations": [{ "tag": "v1-pipeline-coordinator", "new_sqlite_classes": ["PipelineCoordinator"] }],
   "d1_databases": [
     {
       "binding": "CIVIC_DB",

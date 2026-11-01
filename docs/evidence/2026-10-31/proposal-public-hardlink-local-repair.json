@@ -1,0 +1,92 @@
+{
+  "format": 1,
+  "kind": "snapshot-proposal-public-hardlink-local-repair",
+  "recordedAt": "2026-10-31T21:12:58.631649+00:00",
+  "planWorkPackages": [
+    "MP-02",
+    "MP-06"
+  ],
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/9",
+  "failedCiReceipt": "docs/evidence/2026-10-31/candidate-3377-linux-ci-failure.json",
+  "sourcePins": [
+    {
+      "path": "scripts/lib/snapshot-qualification-proposal.ts",
+      "bytes": 24705,
+      "sha256": "c22750b7f72b0f00e2c1b7bd6bd6ebdbf9c9923014ece82d163aff9c78a731b2"
+    },
+    {
+      "path": "test/snapshot-qualification-proposal.test.ts",
+      "bytes": 21538,
+      "sha256": "8755124142c4b6a6c0d61fc0ba32bb2e7de4bc0a2651299c89a1c187f7a9ccf0"
+    }
+  ],
+  "sourceDifferenceFromPassingLocalGate": {
+    "totalInputs": 470,
+    "changedInputs": [
+      "scripts/lib/snapshot-qualification-proposal.ts",
+      "test/snapshot-qualification-proposal.test.ts"
+    ],
+    "otherInputsUnchanged": 468
+  },
+  "reproduction": {
+    "realDependencyBytesCopiedToCanonicalTempPath": true,
+    "sameUidSizeAndBytes": true,
+    "singleLinkReadPassed": true,
+    "addedHardlinkCount": 2,
+    "hardlinkReadBeforeRepair": "SNAPSHOT_PROPOSAL_INPUT_METADATA",
+    "focusedRedCases": 12,
+    "focusedRedFailed": 6,
+    "focusedRedPassed": 6,
+    "liveDependencyLinkCountsChanged": false
+  },
+  "repair": [
+    "Public source and reference reads accept stable hardlinks only with exact bytes/hash, canonical path, O_NOFOLLOW, owner, size and before/after descriptor identity checks.",
+    "Private operator input reads retain single-link and private-mode requirements.",
+    "Every real call explicitly classifies privacy, including the final recheck of private bundle, config, resource evidence and budget.",
+    "Reads remain bounded by pinned byte length; descriptor checks include link count, UID, mode and times."
+  ],
+  "validation": {
+    "focusedTests": 60,
+    "passed": 60,
+    "failed": 0,
+    "compilerChecks": [
+      "typecheck:bun",
+      "typecheck:tooling"
+    ],
+    "rootReview": "no remaining high-confidence defect in the reviewed repair"
+  },
+  "rawLocalArtifacts": [
+    {
+      "path": "/tmp/civicsignal-proposal-hardlinks-red.log",
+      "bytes": 22769,
+      "sha256": "a9086e91a45fa8ebbc1a6ca6ee3d0264fb40d294965757ba1b4d608b145e0ca2"
+    },
+    {
+      "path": "/tmp/civicsignal-proposal-hardlinks-green.log",
+      "bytes": 576,
+      "sha256": "2b20b139c7ef33f800ec8ed28278934ea1446ef5bc0a07c952e867e977c5605e"
+    },
+    {
+      "path": "/tmp/civicsignal-proposal-hardlinks-focused.log",
+      "bytes": 474,
+      "sha256": "b1de98f07549fa4fe6fc6bb9dc24a5d42ff14000b702e74c6e7bfe7db8642ce5"
+    },
+    {
+      "path": "/tmp/civicsignal-proposal-hardlinks-bun-types.log",
+      "bytes": 137,
+      "sha256": "137233cf0d3c1cacc81f5c561ccd8067935e982264c8a32314186e660a3584c1"
+    },
+    {
+      "path": "/tmp/civicsignal-proposal-hardlinks-tooling-types.log",
+      "bytes": 141,
+      "sha256": "46b33dc115594175bb52d74c8ff90deddf998a4699a4db244a75917cfbe8b69d"
+    }
+  ],
+  "primaryDocumentation": "https://bun.com/docs/pm/global-cache",
+  "ciCauseLimit": "A real hardlink reproduces the admission failure and matches the documented Linux installer backend. The earlier CI log does not retain its actual inode metadata.",
+  "fullSuccessorQualification": "clean Linux CI pending",
+  "priorFullLocalQualification": "docs/evidence/2026-10-31/integrated-candidate-local-validation-v3.json",
+  "credentialBytesRead": 0,
+  "realProviderCalls": 0,
+  "deploymentPerformed": false
+}

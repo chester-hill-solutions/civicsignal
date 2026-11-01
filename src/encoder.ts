@@ -31,6 +31,10 @@ export interface EncoderContract {
   artefact: string;
   /** The file name, which is the artefact. */
   file: string;
+  /** Immutable publisher revision and SHA-256, checked by the image build. */
+  revision: string;
+  sha256: string;
+  bytes: number;
   /** The dimension of the vectors. */
   dimensions: number;
   /**
@@ -59,6 +63,9 @@ export const ENCODER_CONTRACT: EncoderContract = {
   model: 'embeddinggemma-2-270m',
   artefact: 'litert-community/embeddinggemma-2-text-270m-litert-lm',
   file: 'embeddinggemma-2-text-270m.litertlm',
+  revision: '9be6e8b90982095dc05c2bd162e4b954ee4dbac7',
+  sha256: '2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb',
+  bytes: 164626432,
   dimensions: 768,
   queryTemplate: 'task: search result | query: {query}',
   documentTemplate: 'title: {title} | text: {content}',

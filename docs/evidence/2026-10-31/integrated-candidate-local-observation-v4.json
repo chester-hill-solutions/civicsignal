@@ -1,0 +1,79 @@
+{
+  "format": 1,
+  "kind": "v1-full-candidate-local-failed-observation",
+  "recordedAt": "2026-10-31T22:11:24.727797+00:00",
+  "planWorkPackages": [
+    "MP-01",
+    "MP-06"
+  ],
+  "passed": false,
+  "sourceInputs": 472,
+  "sourceInputsUnchanged": true,
+  "installFrozenLockfilePassed": true,
+  "compilerProjectsPassed": 4,
+  "testFiles": 101,
+  "testFilesPassed": 94,
+  "testFilesFailed": 7,
+  "testsPassed": 1556,
+  "testsFailed": 356,
+  "testsTotal": 1912,
+  "ownedProcessesSettled": true,
+  "timeoutOrLogBoundFailure": false,
+  "pythonPhaseRun": false,
+  "dryBuildPhaseRun": false,
+  "environmentFinding": {
+    "configuredTmpdir": "/Users/ladmin/WebProjects/civicsignal/dist/evaluation/2026-10-31-full-candidate-v4/tmp",
+    "insideRepository": true,
+    "protectedInputContract": "Protected inputs and outputs must remain outside the repository.",
+    "observedAdmissionFailures": [
+      "PRIVATE_PATH_REQUIRED",
+      "PRIVATE_SEQUENCE_INPUT"
+    ],
+    "disposition": "Root supplied an invalid temporary-data location. Preserve this run; use a new private directory under /private/tmp in the successor. Do not weaken protected-path admission."
+  },
+  "artifacts": [
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v4/result.json",
+      "bytes": 1057,
+      "sha256": "909e321cf16c6af52598138a1a470ff0ecc0dbaccbfdab6d0d8b00ce053666ef"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v4/source-before.json",
+      "bytes": 75958,
+      "sha256": "18a66362d8da407e21ffe5f6d080179da441c7c0a6f24ce7f614f6be300a6344"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v4/source-after.json",
+      "bytes": 75958,
+      "sha256": "18a66362d8da407e21ffe5f6d080179da441c7c0a6f24ce7f614f6be300a6344"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v4/install.log",
+      "bytes": 96,
+      "sha256": "56608ff8d7a95af93a89541ff950e43eece1f11d90da6c1123f76a3104951be6"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v4/install-result.json",
+      "bytes": 201,
+      "sha256": "0ce6b3eb4c69f09502b7d20cb9ac912cf37a1444e1970f24af90bb11641de5dd"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v4/validate.log",
+      "bytes": 473085,
+      "sha256": "dffef665940a9ccb5f9541d4735866bfdca09babd02e6e50d0326a66c8cf4a06"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-full-candidate-v4/validate-result.json",
+      "bytes": 201,
+      "sha256": "a3cd5bf4580175c1f43067475b96667b4aa9c1b2e3e4072cbe6feee9bf670047"
+    }
+  ],
+  "realCloudCredentialsInherited": false,
+  "syntheticNoPermissionTokenUsed": true,
+  "deploymentPerformed": false,
+  "limitations": [
+    "This failed aggregate does not qualify the candidate.",
+    "A separate independent review also found a retained facts-file drift defect in this source; its repair needs new source qualification.",
+    "All source inputs remain unchanged across the recorded run; the successor needs its own receipt."
+  ]
+}

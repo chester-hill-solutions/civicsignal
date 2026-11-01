@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "types": ["@cloudflare/workers-types", "node"] },
+  "include": ["./worker.ts", "./builder.ts", "./staging-probe.ts", "./staging-probe-receipts.ts", "./env.d.ts"]
+}

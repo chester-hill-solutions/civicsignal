@@ -1,0 +1,73 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T11:14:39.953246+00:00",
+  "status": "all240_hosted_artifacts_exactly_match_source_verified_local_reference",
+  "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "r2Bucket": "civicsignal-v1-stage-corpus-20261022",
+  "commit": "0507465393c224c0491fc8c17c88340217acc656",
+  "parser": "statutes-v2",
+  "date": "2026-10-15",
+  "packetSha256": "a3bce14a176a2ba0ca1ccf59f6c637829e07402d9e9ca944b513627edb43e102",
+  "downloaderSha256": "e94527f6c3f0be308d4bb841dc873bdf47e3e389f75a45efaca8e63f120fcb2c",
+  "localSourceParityReceipt": "docs/evidence/2026-10-22/snapshot-parity.json",
+  "localSourceParityReceiptSha256": "b884b9cb8bebfdf7a9abbac7963efec7dfb4f13b45f1d83286735c8b4155476f",
+  "output": "dist/release/staging/hosted-snapshot-v2-20261023",
+  "successfulGets": 240,
+  "downloadReceiptSha256": "c4d6ddbc01814fabeb8e1558f4d9171e6f4868c429e7d8c278111f4b5e867f19",
+  "firstObjectVerifiedAt": "2026-10-23T11:10:46.013Z",
+  "lastObjectVerifiedAt": "2026-10-23T11:13:34.642Z",
+  "artifactBytes": 390423509,
+  "rows": 277857,
+  "rowBytes": 364231731,
+  "rowParts": 238,
+  "maximumRowPartBytes": 2097096,
+  "manifest": {
+    "key": "snapshots/statutes-v2/0507465393c224c0491fc8c17c88340217acc656.manifest.json",
+    "bytes": 44627,
+    "sha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e"
+  },
+  "index": {
+    "key": "snapshots/statutes-v2/0507465393c224c0491fc8c17c88340217acc656.index.jsonl",
+    "bytes": 26147151,
+    "sha256": "24fc30cfc427d5231c24fce911de198e92b7ada8b429aa4c6341ccb4f0159feb",
+    "entries": 277857,
+    "digest": "b9b9ad97092ae2c5b4a35580f0cafe73"
+  },
+  "postDownloadDiskRehashAllObjects": true,
+  "existingLocalVerifier": {
+    "command": [
+      "bun",
+      "scripts/publish-snapshot.ts",
+      "--commit",
+      "0507465393c224c0491fc8c17c88340217acc656",
+      "--dir",
+      "dist/release/staging/hosted-snapshot-v2-20261023",
+      "--parser",
+      "statutes-v2"
+    ],
+    "exitCode": 0,
+    "observation": "The unchanged downloader waited for this subprocess and emitted its exact-hosted-reference-match result only after successful local verification.",
+    "observedStdout": "Verified local statutes-v2/0507465393c224c0491fc8c17c88340217acc656: 277857 rows. No remote reads or writes. Publish snapshots with the Workflow; export-vectors.ts publishes vector backups."
+  },
+  "sourceParityMeaning": "Exact hosted artifact equality links to the existing local reference, for which all 277,857 rows were checked against source. This download is not a new raw-source parity run.",
+  "canonicalWorkflowProof": "stage-snapshot-canonical-start.json",
+  "automatedCronGateMet": false,
+  "manualCanonicalWorkflowCompleted": true,
+  "artifactParityVerified": true,
+  "retryCount": 0,
+  "authRefreshes": 0,
+  "redirects": 0,
+  "servingCalls": 0,
+  "documentEmbeddingSubmissions": 0,
+  "remoteWrites": 0,
+  "productionChanges": false,
+  "diskGuard": {
+    "initialFreeBytesObserved": 13626253312,
+    "startMinimumBytes": 5368709120,
+    "streamFloorBytes": 1073741824,
+    "finalFreeBytesObserved": 12795269120
+  },
+  "fullObjectProofPath": "dist/release/staging/hosted-snapshot-v2-20261023/artifact-parity-proof.json",
+  "fullObjectProofSha256": "b2397ecd5afbcee6a879e022186856c30a8fcf7f3d7658e58ac0888ea8bdb096",
+  "artifactIdentityListSha256": "a60e5375c42f37767db79bd887d389a4dedce3fff56555d4262c021458526709"
+}

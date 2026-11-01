@@ -1,0 +1,89 @@
+{
+  "sourceDigests": {
+    "services/snapshot/builder.ts": "8a0a663423453b6bb936fbb0c875e66606341c56d85f1cfa55277b5af43e2adc",
+    "src/ingest/statutes.ts": "3fa48710fca608f6f09489f7dce474029cd3f88f15f47c36599228214127f043",
+    "src/ingest/corpus-rows.ts": "f30f9bef944daa1aed1e4806f8f8a33b5229d5093ec4638f77eb163efee53dd7",
+    "src/ingest/reconcile.ts": "6c4e581fa32aab7a6574e4757542c8cb59605ca3b8181bf11e7fa79e116cac8b"
+  },
+  "status": 200,
+  "sourcePath": "fra/lois/I-3.3.xml",
+  "inputBytes": 14877873,
+  "result": {
+    "count": 764,
+    "bytes": 8204883
+  },
+  "samples": 11,
+  "maxUsed": 86797684,
+  "maxBacking": 17163185,
+  "maxCombined": 104218517,
+  "provenHostedMemoryLimit": false,
+  "methodology": "Runtime.getHeapUsage sampled every 5ms during actual buildGroup in local workerd. Includes the synthetic input buffer; does not guarantee capture of every instantaneous peak. node:v8/process memory APIs return zeroes in Workers and are unusable for this measurement.",
+  "values": [
+    {
+      "usedSize": 963324,
+      "totalSize": 1572864,
+      "embedderHeapUsedSize": 515872,
+      "backingStorageSize": 227577
+    },
+    {
+      "usedSize": 963324,
+      "totalSize": 1572864,
+      "embedderHeapUsedSize": 515872,
+      "backingStorageSize": 227577
+    },
+    {
+      "usedSize": 963324,
+      "totalSize": 1572864,
+      "embedderHeapUsedSize": 515872,
+      "backingStorageSize": 227577
+    },
+    {
+      "usedSize": 963324,
+      "totalSize": 1572864,
+      "embedderHeapUsedSize": 515872,
+      "backingStorageSize": 227577
+    },
+    {
+      "usedSize": 963324,
+      "totalSize": 1572864,
+      "embedderHeapUsedSize": 515872,
+      "backingStorageSize": 227577
+    },
+    {
+      "usedSize": 963324,
+      "totalSize": 1572864,
+      "embedderHeapUsedSize": 515872,
+      "backingStorageSize": 227577
+    },
+    {
+      "usedSize": 963324,
+      "totalSize": 1572864,
+      "embedderHeapUsedSize": 515872,
+      "backingStorageSize": 227577
+    },
+    {
+      "usedSize": 963324,
+      "totalSize": 1572864,
+      "embedderHeapUsedSize": 515872,
+      "backingStorageSize": 227577
+    },
+    {
+      "usedSize": 86797684,
+      "totalSize": 153272320,
+      "embedderHeapUsedSize": 257648,
+      "backingStorageSize": 17163185
+    },
+    {
+      "usedSize": 86797684,
+      "totalSize": 153272320,
+      "embedderHeapUsedSize": 257648,
+      "backingStorageSize": 17163185
+    },
+    {
+      "usedSize": 86797684,
+      "totalSize": 153272320,
+      "embedderHeapUsedSize": 257648,
+      "backingStorageSize": 17163185
+    }
+  ]
+}

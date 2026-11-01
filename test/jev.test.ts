@@ -86,8 +86,12 @@ describe('the client', () => {
   ];
 
   function answer(answers: Record<string, { noul: number }>): typeof fetch {
+    const complete = Object.fromEntries([
+      ...Object.keys(ATOMIC_QUESTIONS).map(name => [name, { type: 'noul', noul: 0 }]),
+      ...Object.entries(answers).map(([name, value]) => [name, { type: 'noul', ...value }]),
+    ]);
     return (async () =>
-      new Response(JSON.stringify({ model: 'jev-1.13', answers }), { status: 200 })) as typeof fetch;
+      new Response(JSON.stringify({ model: 'jev-1.13', answers: complete }), { status: 200 })) as typeof fetch;
   }
 
   it('asks one question for each candidate, and the six, and any_relevant', async () => {
@@ -134,7 +138,7 @@ describe('the client', () => {
     expect(result?.relevance).toEqual([0.9, 0.1]);
     expect(result?.anyRelevant).toBe(0.95);
     expect(result?.flags.needs_federal_statute).toBe(0.93);
-    // A question the gateway did not answer is zero, which is the safe value.
+    // An actual zero remains zero; the complete fixture answered every question.
     expect(result?.flags.needs_provincial).toBe(0);
   });
 

@@ -1,0 +1,80 @@
+{
+  "format": 1,
+  "checkedAt": "2026-10-24T01:32:15.833901+00:00",
+  "scope": "Explicit offline original-sequence evidence bridge; no production acquisition",
+  "rootFocusedTests": {
+    "passed": 94,
+    "files": 2,
+    "optionalLocalWorkerdEnabled": true,
+    "node": "25.9.0",
+    "exitCode": 0
+  },
+  "rootToolingTypeScript": "passed",
+  "rootToolingExitCode": 0,
+  "authorChecks": {
+    "testsPassed": 93,
+    "optionalExistingWorkerdSkipped": 1,
+    "workerBunToolingTypeScript": "passed"
+  },
+  "independentPeerReview": {
+    "verdict": "clear",
+    "targetedTestsPassed": 10,
+    "qualifiedSequenceWriteConflictReproducedThenFixed": true
+  },
+  "failedRootRunPreserved": {
+    "testsPassed": 92,
+    "testsFailed": 2,
+    "reason": "Root clean PATH omitted Bun, so two existing CLI integration tests could not spawn it. No cloud or provider call.",
+    "correctedRunUsesSeparateLog": true
+  },
+  "propertiesVerified": [
+    "Original strict two-argument importer and four-argument CLI remain unchanged.",
+    "Seven separate bounded private canonical evidence files pin fixed source, freeze/export, before/after facts and original raw query responses.",
+    "Original highwaters120/1000 survive above remaining IDs2/10; absent differs from explicit zero.",
+    "Consumed SQL bytes are hashed before COMMIT; wrong hashes and late FK failures roll back imported DDL/data.",
+    "Conflicting literal facts and unrecognized qualified/comment-separated sequence writes are refused.",
+    "Unrelated imported rows/sequence entries survive; existing copier accepts derived SQLite.",
+    "Default SQL authorizer restrictions remain enforced."
+  ],
+  "artifacts": {
+    "scripts/lib/protected-sql-import.mjs": {
+      "bytes": 18540,
+      "sha256": "2eeb766709ed345fe73fea07b7735687a804e33aff5054bf8f5d29633788b289"
+    },
+    "test/protected-state.test.ts": {
+      "bytes": 41180,
+      "sha256": "6ec7d5f7dccc9a9aed08e5f70466a2a00fa438b6c4304db4b5511be32679432f"
+    },
+    "test/protected-state-format.test.ts": {
+      "bytes": 12661,
+      "sha256": "e129f84971d9d5047fd5747b2ee4a1f12aed302b4748c82902a8c516f5e66937"
+    },
+    "dist/release/staging/protected-sequence-root-tests-20261024.log": {
+      "bytes": 2003,
+      "sha256": "2cb3461e6fef4327286838e23bddb1a73af8f3ccc5d734b7c087328bec78e327"
+    },
+    "dist/release/staging/protected-sequence-root-tests-v2-20261024.log": {
+      "bytes": 3657,
+      "sha256": "54a77383457f52d85706d64e94302fd779101575ff3acbc582efc6983536ed58"
+    },
+    "dist/release/staging/protected-sequence-root-tooling-20261024.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "providerAuthenticated": false,
+  "globalQuiescenceEstablished": false,
+  "productionAcquisitionQualified": false,
+  "sourceSchemaAdmissionQualified": false,
+  "newHostedResources": 0,
+  "credentialReads": 0,
+  "cloudCalls": 0,
+  "modelCalls": 0,
+  "productionWrites": false,
+  "limitations": [
+    "This local consistency check cannot authenticate upstream private attestations or implement the missing common production maintenance/freeze.",
+    "Post-COMMIT close/hash failure refuses acceptance and retains the private file; it cannot roll back a committed database.",
+    "The library has no owned execution deadline; callers must supply a finite process owner.",
+    "Production schema admission and actual hosted protected-copy gates remain unresolved."
+  ]
+}

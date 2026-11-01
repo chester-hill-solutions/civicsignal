@@ -1,0 +1,1543 @@
+{
+  "version": "v1-successor-2026-10-31",
+  "revision": "0507465393c224c0491fc8c17c88340217acc656",
+  "sourceRepository": "https://github.com/justicecanada/laws-lois-xml",
+  "questions": [
+    {
+      "id": "successor-A-2-6.71-en",
+      "pairId": "successor-A-2-6.71",
+      "group": "act:A-2",
+      "split": "holdout",
+      "language": "en",
+      "question": "Under Canada’s aeronautics law, on what grounds may the Minister refuse to issue or amend a Canadian aviation document?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-8182"
+        ],
+        "act": "Aeronautics Act",
+        "section": "6.71"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/A-2.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/A-2.xml",
+        "sourceSha256": "7a35c14e7721a0935f0be35d2f6b19a2d01e040f1de798c9c679a3027c657a04",
+        "rowSha256": "271ceab7bbc5f2ce9fbfff6219ff3d81ce22ba58dc5b190bb587149b4b2905d9",
+        "evidence": "(1) The Minister may refuse to issue or amend a Canadian aviation document on the grounds that(a) the applicant is incompetent;(b) the applicant or any aircraft, aerodrome, airport or other facility in respect of which the application is made does not meet the qualifications or fulfil the conditions necessary for the issuance or amendment of the document; or(c) the Minister is of the opinion that the public interest and, in particular, the aviation record of the applicant or of any principal of the applicant, as defined in regulations made under paragraph (3)(a), warrant the refusal.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Minister may refuse to issue or amend Canadian aviation document. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-A-2-6.71-fr",
+      "pairId": "successor-A-2-6.71",
+      "group": "act:A-2",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Selon la loi fédérale sur l’aéronautique, pour quels motifs le ministre peut-il refuser de délivrer ou de modifier un document d’aviation canadien?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-8062"
+        ],
+        "act": "Loi sur l’aéronautique",
+        "section": "6.71"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/A-2.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/A-2.xml",
+        "sourceSha256": "458597ec1bb82c4ef7967c2f1f43be0ada62ed27cd6ebdab7105540e1f71a57a",
+        "rowSha256": "5d6be85ecc7ed4789d1b689b1ffbf6a89cf6fe6c9871336a0a95c7861c6f8399",
+        "evidence": "(1) Le ministre peut refuser de délivrer ou de modifier un document d’aviation canadien pour l’un des motifs suivants :a) le demandeur est inapte;b) le demandeur ou l’aéronef, l’aérodrome, l’aéroport ou autre installation que vise la demande ne répond pas aux conditions de délivrance ou de modification du document;c) le ministre estime que l’intérêt public, notamment en raison des antécédents aériens du demandeur ou de tel de ses dirigeants — au sens du règlement pris en vertu de l’alinéa (3) a) —, le requiert.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Refus de délivrer ou de modifier un document d’aviation canadien. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-A-2-6.9-en",
+      "pairId": "successor-A-2-6.9",
+      "group": "act:A-2",
+      "split": "holdout",
+      "language": "en",
+      "question": "When a Canadian aviation document is suspended or cancelled for contravening aviation rules, how much advance notice is required and what review deadline must the notice state?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-8215"
+        ],
+        "act": "Aeronautics Act",
+        "section": "6.9"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/A-2.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/A-2.xml",
+        "sourceSha256": "7a35c14e7721a0935f0be35d2f6b19a2d01e040f1de798c9c679a3027c657a04",
+        "rowSha256": "c9807783fe9709fc86ecd2310f4602b4397cfbeac4d3427d0d85675f1a961894",
+        "evidence": "(1) If the Minister decides to suspend or cancel a Canadian aviation document on the grounds that its holder or the owner or operator of any aircraft, airport or other facility in respect of which it was issued has contravened any provision of this Part or of any regulation, notice, order, security measure or emergency direction made under this Part, the Minister shall by personal service or by registered or certified mail sent to the holder, owner or operator, as the case may be, at that person’s latest known address notify the holder, owner or operator of that decision and of the effective date of the suspension or cancellation, but no suspension or cancellation shall take effect earlier than the date that is thirty days after the notice under this subsection is served or sent.(2) The notice must be in the form that the Governor in Council may by regulation prescribe and must, in addition to any other information that may be so prescribed,(a) indicate the provision of this Part or of the regulation, notice, order, security measure or emergency direction made under this Part that the Minister believes has been contravened; and(b) state the date, being thirty days after the notice is served or sent, on or before which and the address at which a request for a review of the decision of the Minister is to be filed in the event that the holder of the document or the owner or operator concerned wishes to have the decision reviewed.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Suspension, etc., if contravention. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-A-2-6.9-fr",
+      "pairId": "successor-A-2-6.9",
+      "group": "act:A-2",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quand un document d’aviation canadien est suspendu ou annulé pour contravention aux règles aéronautiques, quel préavis faut-il donner et quel délai de révision doit figurer dans l’avis?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-8095"
+        ],
+        "act": "Loi sur l’aéronautique",
+        "section": "6.9"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/A-2.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/A-2.xml",
+        "sourceSha256": "458597ec1bb82c4ef7967c2f1f43be0ada62ed27cd6ebdab7105540e1f71a57a",
+        "rowSha256": "f6cccbded1412f008c4b441ac8825e54d69fec420825b97fd63ae0b963c25e4c",
+        "evidence": "(1) Lorsqu’il décide de suspendre ou d’annuler un document d’aviation canadien parce que l’intéressé — titulaire du document ou propriétaire, exploitant ou utilisateur d’aéronefs, d’aéroports ou d’autres installations que vise le document — a contrevenu à la présente partie ou à un règlement, un avis, un arrêté, une mesure de sûreté ou une directive d’urgence pris sous son régime, le ministre expédie par courrier recommandé ou certifié à la dernière adresse connue de l’intéressé, ou par signification à personne, un avis de la mesure et de la date de sa prise d’effet, laquelle ne peut survenir moins de trente jours après l’expédition ou la signification de l’avis.(2) L’avis est établi en la forme que le gouverneur en conseil peut fixer par règlement. Y sont en outre indiqués :a) la disposition de la présente partie ou du règlement, de l’avis, de l’arrêté, de la mesure de sûreté ou de la directive d’urgence pris sous son régime à laquelle il a été, selon le ministre, contrevenu;b) le lieu et la date limite, à savoir trente jours après l’expédition ou la signification de l’avis, du dépôt d’une éventuelle requête en révision.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Contravention à la présente partie. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-B-3-4.2-en",
+      "pairId": "successor-B-3-4.2",
+      "group": "act:B-3",
+      "split": "holdout",
+      "language": "en",
+      "question": "Under the Bankruptcy and Insolvency Act, what conduct is required of interested persons in proceedings under that Act, and what may the court do if that duty is breached?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-1204922"
+        ],
+        "act": "Bankruptcy and Insolvency Act",
+        "section": "4.2"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/B-3.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/B-3.xml",
+        "sourceSha256": "4dabd032b1bfda6cd942834ce46732d7a7cbb74845d9058377bb93c2cb58dcc8",
+        "rowSha256": "7e429eee623543d300ae966f0e961ec1eb92f82d8c85fae870646f987f36c5d6",
+        "evidence": "(1) Any interested person in any proceedings under this Act shall act in good faith with respect to those proceedings.(2) If the court is satisfied that an interested person fails to act in good faith, on application by any interested person, the court may make any order that it considers appropriate in the circumstances.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Good faith. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-B-3-4.2-fr",
+      "pairId": "successor-B-3-4.2",
+      "group": "act:B-3",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Selon la Loi sur la faillite et l’insolvabilité, quelle conduite est exigée des intéressés dans une procédure prévue par cette loi, et que peut faire le tribunal en cas de manquement?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-1191219"
+        ],
+        "act": "Loi sur la faillite et l’insolvabilité",
+        "section": "4.2"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/B-3.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/B-3.xml",
+        "sourceSha256": "f28367fe27d210f48d3d2c499b762e7ab691cda45c0e856661d57693b98532f0",
+        "rowSha256": "f94336902e38e7473eda46d3c8327e234133bec1355857553ae133970d37dfde",
+        "evidence": "(1) Tout intéressé est tenu d’agir de bonne foi dans le cadre d’une procédure intentée au titre de la présente loi.(2) S’il est convaincu que l’intéressé n’agit pas de bonne foi, le tribunal peut, à la demande de tout intéressé, rendre toute ordonnance qu’il estime indiquée.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Bonne foi. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-B-3-71-en",
+      "pairId": "successor-B-3-71",
+      "group": "act:B-3",
+      "split": "holdout",
+      "language": "en",
+      "question": "When a bankruptcy order is made or an assignment is filed with the official receiver, what happens to the bankrupt’s ability to deal with property and to the property itself?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-26539"
+        ],
+        "act": "Bankruptcy and Insolvency Act",
+        "section": "71"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/B-3.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/B-3.xml",
+        "sourceSha256": "4dabd032b1bfda6cd942834ce46732d7a7cbb74845d9058377bb93c2cb58dcc8",
+        "rowSha256": "d1c5b1b1c2ba01fc6f1c21dd763bec5cc5ff9d35a661e41729e6bc5351113cc2",
+        "evidence": "On a bankruptcy order being made or an assignment being filed with an official receiver, a bankrupt ceases to have any capacity to dispose of or otherwise deal with their property, which shall, subject to this Act and to the rights of secured creditors, immediately pass to and vest in the trustee named in the bankruptcy order or assignment, and in any case of change of trustee the property shall pass from trustee to trustee without any assignment or transfer.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Vesting of property in trustee. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-B-3-71-fr",
+      "pairId": "successor-B-3-71",
+      "group": "act:B-3",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Lorsqu’une ordonnance de faillite est rendue ou qu’une cession est produite auprès du séquestre officiel, qu’advient-il des biens du failli et de sa capacité de les aliéner?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-25732"
+        ],
+        "act": "Loi sur la faillite et l’insolvabilité",
+        "section": "71"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/B-3.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/B-3.xml",
+        "sourceSha256": "f28367fe27d210f48d3d2c499b762e7ab691cda45c0e856661d57693b98532f0",
+        "rowSha256": "a4e471330588a2e48aaa583a02ae7ea248917830f665ad73ec78d6b4ecdf8da6",
+        "evidence": "Lorsqu’une ordonnance de faillite est rendue, ou qu’une cession est produite auprès d’un séquestre officiel, le failli cesse d’être habile à céder ou autrement aliéner ses biens qui doivent, sous réserve des autres dispositions de la présente loi et des droits des créanciers garantis, immédiatement passer et être dévolus au syndic nommé dans l’ordonnance de faillite ou dans la cession, et advenant un changement de syndic, les biens passent de syndic à syndic sans cession ni transfert quelconque.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Dévolution des biens au syndic. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-1.68-14-en",
+      "pairId": "successor-C-1.68-14",
+      "group": "act:C-1.68",
+      "split": "holdout",
+      "language": "en",
+      "question": "How soon must a business that manufactures, imports or sells a consumer product send the federal minister its initial incident information after becoming aware of the incident?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-44374"
+        ],
+        "act": "Canada Consumer Product Safety Act",
+        "section": "14"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-1.68.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-1.68.xml",
+        "sourceSha256": "e5575ff1320ac81f1989c34ab6e3644ac73d7e6eaa4b21bcd145225604b2acfc",
+        "rowSha256": "97a44f7be53459000406698123534287633b5003166ab176751cd4f288894b37",
+        "evidence": "(2) A person who manufactures, imports or sells a consumer product for commercial purposes shall provide the Minister and, if applicable, the person from whom they received the consumer product with all the information in their control regarding any incident related to the product within two days after the day on which they become aware of the incident.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Definition of incident. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-1.68-14-fr",
+      "pairId": "successor-C-1.68-14",
+      "group": "act:C-1.68",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Dans quel délai une entreprise qui fabrique, importe ou vend un produit de consommation doit-elle transmettre au ministre fédéral les premiers renseignements sur un incident après en avoir pris connaissance?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-43338"
+        ],
+        "act": "Loi canadienne sur la sécurité des produits de consommation",
+        "section": "14"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-1.68.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-1.68.xml",
+        "sourceSha256": "0c425e6d6382230f6acbc2f63cace6a1557353aaf2fc9a8d64bf41172e724282",
+        "rowSha256": "4e05409184e3c976125994d0068f88796129e480269a7d44774980fd5504b968",
+        "evidence": "(2) Toute personne qui fabrique, importe ou vend tout produit de consommation à des fins commerciales communique au ministre et, le cas échéant, à la personne de qui elle a obtenu le produit tout renseignement relevant d’elle concernant un incident lié au produit, dans les deux jours suivant la date où l’incident est venu à sa connaissance.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Définition de incident. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-1.68-7-en",
+      "pairId": "successor-C-1.68-7",
+      "group": "act:C-1.68",
+      "split": "holdout",
+      "language": "en",
+      "question": "What restrictions does the federal consumer-product safety law place on manufacturers and importers when a product threatens health or safety or is under recall?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-44333"
+        ],
+        "act": "Canada Consumer Product Safety Act",
+        "section": "7"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-1.68.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-1.68.xml",
+        "sourceSha256": "e5575ff1320ac81f1989c34ab6e3644ac73d7e6eaa4b21bcd145225604b2acfc",
+        "rowSha256": "b61ca8e18074d9ccaf9f26f9a036ac1c572bee584324a511e483f8413f4c23de",
+        "evidence": "No manufacturer or importer shall manufacture, import, advertise or sell a consumer product that(a) is a danger to human health or safety;(b) is the subject of a recall order made under section 31 or such an order that is reviewed under section 35 or is the subject of a voluntary recall in Canada because the product is a danger to human health or safety; or(c) is the subject of a measure that the manufacturer or importer has not carried out but is required to carry out under an order made under section 32 or such an order that is reviewed under section 35.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Manufacturer and importer. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-1.68-7-fr",
+      "pairId": "successor-C-1.68-7",
+      "group": "act:C-1.68",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles restrictions la loi fédérale sur la sécurité des produits de consommation impose-t-elle aux fabricants et aux importateurs lorsqu’un produit présente un danger pour la santé ou la sécurité ou fait l’objet d’un rappel?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-43297"
+        ],
+        "act": "Loi canadienne sur la sécurité des produits de consommation",
+        "section": "7"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-1.68.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-1.68.xml",
+        "sourceSha256": "0c425e6d6382230f6acbc2f63cace6a1557353aaf2fc9a8d64bf41172e724282",
+        "rowSha256": "6bfaf64bc2fed838e1a130c8040819f798fde6e80e0d544d863d5a5554977009",
+        "evidence": "Il est interdit au fabricant ou à l’importateur de fabriquer, d’importer ou de vendre tout produit de consommation, ou d’en faire la publicité, si le produit, selon le cas :a) présente un danger pour la santé ou la sécurité humaines;b) est visé par un rappel soit fait en conformité avec un ordre donné en vertu de l’article 31 ou un tel ordre révisé au titre de l’article 35, soit fait volontairement au Canada pour cause de danger pour la santé ou la sécurité humaines;c) est visé par une mesure que le fabricant ou l’importateur est tenu de prendre en conformité avec un ordre donné en vertu de l’article 32 ou un tel ordre révisé au titre de l’article 35 et qu’il n’a pas prise.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Fabricant et importateur. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-10.4-5-en",
+      "pairId": "successor-C-10.4-5",
+      "group": "act:C-10.4",
+      "split": "holdout",
+      "language": "en",
+      "question": "What role do competition and market forces play in the federal declaration of national transportation policy?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-54124"
+        ],
+        "act": "Canada Transportation Act",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-10.4.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-10.4.xml",
+        "sourceSha256": "96e0e9b266b6dbdbb866f8a75731e89feee4b943c07721aa91f642b27f2722c1",
+        "rowSha256": "3b6b38e391a37aa3fb6ae691823c10c61c31f0efd2d5758a6588f37c8261cc76",
+        "evidence": "It is declared that a competitive, economic and efficient national transportation system that meets the highest practicable safety and security standards and contributes to a sustainable environment and makes the best use of all modes of transportation at the lowest total cost is essential to serve the needs of its users, advance the well-being of Canadians and enable competitiveness and economic growth in both urban and rural areas throughout Canada. Those objectives are most likely to be achieved when(a) competition and market forces, both within and among the various modes of transportation, are the prime agents in providing viable and effective transportation services;(b) regulation and strategic public intervention are used to achieve economic, safety, security, environmental or social outcomes that cannot be achieved satisfactorily by competition and market forces and do not unduly favour, or reduce the inherent advantages of, any particular mode of transportation;(c) rates and conditions do not constitute an undue obstacle to the movement of traffic within Canada or to the export of goods from Canada;(d) the transportation system is accessible without undue obstacle to the mobility of all persons;(d.1) the transportation system is accessible without barriers to persons with disabilities; and(e) governments and the private sector work together for an integrated transportation system.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Declaration. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-10.4-5-fr",
+      "pairId": "successor-C-10.4-5",
+      "group": "act:C-10.4",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quel rôle la concurrence et les forces du marché jouent-elles dans la déclaration fédérale de politique nationale des transports?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-52951"
+        ],
+        "act": "Loi sur les transports au Canada",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-10.4.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-10.4.xml",
+        "sourceSha256": "1cda5705050ac0386fa573b013ee567411f836d87559dc544979f13e07db0e65",
+        "rowSha256": "afa1ddf8a7c6c28c472f20f218f909203649e8fa9f3f2bda524a843c56fb1be2",
+        "evidence": "Il est déclaré qu’un système de transport national compétitif et rentable qui respecte les plus hautes normes possibles de sûreté et de sécurité, qui favorise un environnement durable et qui utilise tous les modes de transport au mieux et au coût le plus bas possible est essentiel à la satisfaction des besoins de ses usagers et au bien-être des Canadiens et favorise la compétitivité et la croissance économique dans les régions rurales et urbaines partout au Canada. Ces objectifs sont plus susceptibles d’être atteints si :a) la concurrence et les forces du marché, au sein des divers modes de transport et entre eux, sont les principaux facteurs en jeu dans la prestation de services de transport viables et efficaces;b) la réglementation et les mesures publiques stratégiques sont utilisées pour l’obtention de résultats de nature économique, environnementale ou sociale ou de résultats dans le domaine de la sûreté et de la sécurité que la concurrence et les forces du marché ne permettent pas d’atteindre de manière satisfaisante, sans pour autant favoriser indûment un mode de transport donné ou en réduire les avantages inhérents;c) les prix et modalités ne constituent pas un obstacle abusif au trafic à l’intérieur du Canada ou à l’exportation des marchandises du Canada;d) le système de transport est accessible sans obstacle abusif à la circulation de tous;d.1) le système de transport est accessible sans obstacle aux personnes handicapées;e) les secteurs public et privé travaillent ensemble pour le maintien d’un système de transport intégré.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Déclaration. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-10.4-57-en",
+      "pairId": "successor-C-10.4-57",
+      "group": "act:C-10.4",
+      "split": "holdout",
+      "language": "en",
+      "question": "What three requirements must a person meet before operating an air service under federal transportation law?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-54783"
+        ],
+        "act": "Canada Transportation Act",
+        "section": "57"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-10.4.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-10.4.xml",
+        "sourceSha256": "96e0e9b266b6dbdbb866f8a75731e89feee4b943c07721aa91f642b27f2722c1",
+        "rowSha256": "f903b0fe99c94e748a4f5717a869555d6e7441618d411c1b68ff61c1aea2a090",
+        "evidence": "No person shall operate an air service unless, in respect of that service, the person(a) holds a licence issued under this Part;(b) holds a Canadian aviation document; and(c) has the prescribed liability insurance coverage.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Prohibition re operation. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-10.4-57-fr",
+      "pairId": "successor-C-10.4-57",
+      "group": "act:C-10.4",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles sont les trois conditions à remplir pour exploiter un service aérien selon la loi fédérale sur les transports?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-53597"
+        ],
+        "act": "Loi sur les transports au Canada",
+        "section": "57"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-10.4.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-10.4.xml",
+        "sourceSha256": "1cda5705050ac0386fa573b013ee567411f836d87559dc544979f13e07db0e65",
+        "rowSha256": "9d0d3b2028804f240c046a4900d5fce02c4cf5e7a2575c19433a6b9123335a55",
+        "evidence": "L’exploitation d’un service aérien est subordonnée à la détention, pour celui-ci, de la licence prévue par la présente partie, d’un document d’aviation canadien et de la police d’assurance responsabilité réglementaire.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Conditions d’exploitation. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-15.31-46-en",
+      "pairId": "successor-C-15.31-46",
+      "group": "act:C-15.31",
+      "split": "holdout",
+      "language": "en",
+      "question": "How may the federal environment minister require people to supply information they hold for environmental research or a data inventory?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-63688"
+        ],
+        "act": "Canadian Environmental Protection Act, 1999",
+        "section": "46"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-15.31.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-15.31.xml",
+        "sourceSha256": "7892e94a412edfe0d5ae2d56dbab3b5804f777466690cb3974b16315609e482d",
+        "rowSha256": "7e45215ea24f74b2d8cc182e2df618c8b0477613c42d0607a6ef52c44056f4b0",
+        "evidence": "(1) The Minister may, for the purpose of conducting research, creating an inventory of data, formulating objectives and codes of practice, issuing guidelines or assessing or reporting on the state of the environment, publish in the Canada Gazette and in any other manner that the Minister considers appropriate a notice requiring any person described in the notice to provide the Minister with any information that may be in the possession of that person or to which the person may reasonably be expected to have access, including information regarding the following:",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Notice requiring information. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-15.31-46-fr",
+      "pairId": "successor-C-15.31-46",
+      "group": "act:C-15.31",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Comment le ministre fédéral de l’Environnement peut-il exiger des personnes qu’elles communiquent les renseignements dont elles disposent pour des recherches environnementales ou un inventaire de données?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-62365"
+        ],
+        "act": "Loi canadienne sur la protection de l’environnement (1999)",
+        "section": "46"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-15.31.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-15.31.xml",
+        "sourceSha256": "3468897866ca8b328e28c8043a40450a77331111ef734e75f495a85d0d85a2f0",
+        "rowSha256": "1c04dcf6c35a677b6e9089b52994e67e9296b3bc441bbec75edb1f89b8429ea4",
+        "evidence": "(1) Le ministre peut, par un avis publié dans la Gazette du Canada et, s’il l’estime indiqué, de toute autre façon, exiger de toute personne qu’elle lui communique les renseignements dont elle dispose ou auxquels elle peut normalement avoir accès pour lui permettre d’effectuer des recherches, d’établir un inventaire de données, des objectifs et des codes de pratique, de formuler des directives, de déterminer l’état de l’environnement ou de faire rapport sur cet état, notamment les renseignements concernant :",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Demande de renseignements. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-15.31-64-en",
+      "pairId": "successor-C-15.31-64",
+      "group": "act:C-15.31",
+      "split": "holdout",
+      "language": "en",
+      "question": "Which three kinds of environmental or human-health harm appear in the federal environmental-protection definition of a toxic substance?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-63851"
+        ],
+        "act": "Canadian Environmental Protection Act, 1999",
+        "section": "64"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-15.31.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-15.31.xml",
+        "sourceSha256": "7892e94a412edfe0d5ae2d56dbab3b5804f777466690cb3974b16315609e482d",
+        "rowSha256": "201c6d9af6a34d506cf9d5a59409838612e25ca1e5e1d9f105576747ff5f4677",
+        "evidence": "For the purposes of this Part and Part 6, except where the expression “inherently toxic” appears, a substance is toxic if it is entering or may enter the environment in a quantity or concentration or under conditions that(a) have or may have an immediate or long-term harmful effect on the environment or its biological diversity;(b) constitute or may constitute a danger to the environment on which life depends; or(c) constitute or may constitute a danger in Canada to human life or health.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Toxic substances. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-15.31-64-fr",
+      "pairId": "successor-C-15.31-64",
+      "group": "act:C-15.31",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles sont les trois formes de danger pour l’environnement ou la santé humaine qui figurent dans la définition fédérale d’une substance toxique?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-62516"
+        ],
+        "act": "Loi canadienne sur la protection de l’environnement (1999)",
+        "section": "64"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-15.31.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-15.31.xml",
+        "sourceSha256": "3468897866ca8b328e28c8043a40450a77331111ef734e75f495a85d0d85a2f0",
+        "rowSha256": "15bd939363604bdbdbe612c624d357813040fb19aae0221ce575a2d517da90e5",
+        "evidence": "Pour l’application de la présente partie et de la partie 6, mais non dans le contexte de l’expression « toxicité intrinsèque », est toxique toute substance qui pénètre ou peut pénétrer dans l’environnement en une quantité ou concentration ou dans des conditions de nature à :a) avoir, immédiatement ou à long terme, un effet nocif sur l’environnement ou sur la diversité biologique;b) mettre en danger l’environnement essentiel pour la vie;c) constituer un danger au Canada pour la vie ou la santé humaines.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Substance toxique. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-44-133-en",
+      "pairId": "successor-C-44-133",
+      "group": "act:C-44",
+      "split": "holdout",
+      "language": "en",
+      "question": "Under the Canada Business Corporations Act, what ordinary statutory deadlines govern the first and later annual shareholder meetings?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-110169"
+        ],
+        "act": "Canada Business Corporations Act",
+        "section": "133"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-44.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-44.xml",
+        "sourceSha256": "698d6002af7b8d69aaa5c5820fd53c4fd4e9e2d627d92cdaae0f8e54628aa1f8",
+        "rowSha256": "cabbbd39a54da34e795513d0225994d361a7bc29de8028b4365e1bf17c9e3cf3",
+        "evidence": "(1) The directors of a corporation shall call an annual meeting of shareholders(a) not later than eighteen months after the corporation comes into existence; and(b) subsequently, not later than fifteen months after holding the last preceding annual meeting but no later than six months after the end of the corporation’s preceding financial year.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Calling annual meetings. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-44-133-fr",
+      "pairId": "successor-C-44-133",
+      "group": "act:C-44",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Selon la Loi canadienne sur les sociétés par actions, quels délais légaux ordinaires s’appliquent à la première assemblée annuelle des actionnaires et aux assemblées annuelles suivantes?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-107178"
+        ],
+        "act": "Loi canadienne sur les sociétés par actions",
+        "section": "133"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-44.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-44.xml",
+        "sourceSha256": "2fdcbd6f7f34f98dfae18b3d13d0b66fa0ef12c1d4e2b4f50f2eb45deac14e80",
+        "rowSha256": "fe2213ff5bde4214801de26f9f93c695e418e4a777a51a26da509101dd58f726",
+        "evidence": "(1) Les administrateurs doivent convoquer une assemblée annuelle :a) dans les dix-huit mois suivant la création de la société;b) par la suite, dans les quinze mois suivant l’assemblée annuelle précédente mais au plus tard dans les six mois suivant la fin de chaque exercice.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Convocation de l’assemblée annuelle. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-44-20-en",
+      "pairId": "successor-C-44-20",
+      "group": "act:C-44",
+      "split": "holdout",
+      "language": "en",
+      "question": "Subject to laws requiring a longer retention period, how long must a corporation under the Canada Business Corporations Act keep its accounting records after the financial year ends?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-108639"
+        ],
+        "act": "Canada Business Corporations Act",
+        "section": "20"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-44.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-44.xml",
+        "sourceSha256": "698d6002af7b8d69aaa5c5820fd53c4fd4e9e2d627d92cdaae0f8e54628aa1f8",
+        "rowSha256": "46aaea5483b51d729e603a3433c8e5f09fca86292826b584b9f55d1f634dd821",
+        "evidence": "(2.1) Subject to any other Act of Parliament and to any Act of the legislature of a province that provides for a longer retention period, a corporation shall retain the accounting records referred to in subsection (2) for a period of six years after the end of the financial year to which the records relate.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Corporate records. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-44-20-fr",
+      "pairId": "successor-C-44-20",
+      "group": "act:C-44",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Sous réserve des lois exigeant une période plus longue, combien de temps une société régie par la Loi canadienne sur les sociétés par actions doit-elle conserver ses livres comptables après la fin de l’exercice?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-105668"
+        ],
+        "act": "Loi canadienne sur les sociétés par actions",
+        "section": "20"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-44.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-44.xml",
+        "sourceSha256": "2fdcbd6f7f34f98dfae18b3d13d0b66fa0ef12c1d4e2b4f50f2eb45deac14e80",
+        "rowSha256": "8273b576adb7ba30332e36aa4436d6952602b1122e25b177ab0cd6ade1e5ad50",
+        "evidence": "(2.1) Sous réserve de toute autre loi fédérale, ou de toute loi provinciale, prévoyant une période de rétention plus longue, la société est tenue de conserver les livres comptables visés au paragraphe (2) pendant une période de six ans suivant la fin de l’exercice auquel ils se rapportent.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Livres. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-5-10-en",
+      "pairId": "successor-C-5-10",
+      "group": "act:C-5",
+      "split": "holdout",
+      "language": "en",
+      "question": "Under federal evidence law, what must a witness’s attention be drawn to before an earlier written statement is used to contradict that witness at trial?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-137509"
+        ],
+        "act": "Canada Evidence Act",
+        "section": "10"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-5.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-5.xml",
+        "sourceSha256": "f0eb666d4871fb0c7eb3ea940d334c7b8a65f233d90d052fa83c5adb14a12a40",
+        "rowSha256": "35b442eea0f7da171634a2f892e1a4e07d2239d1d309819ebcf0cb093f8ff50e",
+        "evidence": "(1) On any trial a witness may be cross-examined as to previous statements that the witness made in writing, or that have been reduced to writing, or recorded on audio tape or video tape or otherwise, relative to the subject-matter of the case, without the writing being shown to the witness or the witness being given the opportunity to listen to the audio tape or view the video tape or otherwise take cognizance of the statements, but, if it is intended to contradict the witness, the witness’ attention must, before the contradictory proof can be given, be called to those parts of the statement that are to be used for the purpose of so contradicting the witness, and the judge, at any time during the trial, may require the production of the writing or tape or other medium for inspection, and thereupon make such use of it for the purposes of the trial as the judge thinks fit.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Cross-examination as to previous statements. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-5-10-fr",
+      "pairId": "successor-C-5-10",
+      "group": "act:C-5",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Selon le droit fédéral de la preuve, que faut-il porter à l’attention d’un témoin avant d’utiliser une déclaration écrite antérieure pour le contredire au procès?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-134052"
+        ],
+        "act": "Loi sur la preuve au Canada",
+        "section": "10"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-5.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-5.xml",
+        "sourceSha256": "f9411d3f9790c271b2a00a0e0d9edb2ffc9e2ce06d8211cd1e206d512d82f309",
+        "rowSha256": "1a621595301a97786f80a0feb8855a119abe99e15d218eb225c769fddb3316d8",
+        "evidence": "(1) Lors de tout procès, un témoin peut être contre-interrogé au sujet des déclarations antérieures qu’il a faites par écrit, qui ont été prises par écrit ou qui ont été enregistrées sur bande audio ou vidéo, ou autrement, relativement au sujet de la cause, sans qu’il lui soit permis d’en prendre connaissance. Cependant, si l’on entend mettre le témoin en contradiction avec lui-même au moyen de cette pièce, l’on doit, avant de pouvoir établir cette preuve contradictoire, appeler son attention sur les parties de celle-ci qui doivent servir à le mettre ainsi en contradiction. Le juge peut toujours, au cours du procès, exiger la production de la pièce dans le but de l’examiner et en faire, dans la poursuite de la cause, l’usage qu’il croit convenable.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Contre-interrogatoire au sujet de déclarations antérieures. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-5-4-en",
+      "pairId": "successor-C-5-4",
+      "group": "act:C-5",
+      "split": "holdout",
+      "language": "en",
+      "question": "Under the federal evidence rule, does marriage to the accused alone make a witness incompetent or uncompellable for the prosecution?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-137462"
+        ],
+        "act": "Canada Evidence Act",
+        "section": "4"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/C-5.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/C-5.xml",
+        "sourceSha256": "f0eb666d4871fb0c7eb3ea940d334c7b8a65f233d90d052fa83c5adb14a12a40",
+        "rowSha256": "1a686bcfe5339d283da10a9b3d6c00f72b2c8dfbbc8e928f15ca251749505535",
+        "evidence": "(2) No person is incompetent, or uncompellable, to testify for the prosecution by reason only that they are married to the accused.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Accused and spouse. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-C-5-4-fr",
+      "pairId": "successor-C-5-4",
+      "group": "act:C-5",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Selon la règle fédérale de preuve, le seul fait d’être marié à l’accusé rend-il une personne inhabile à témoigner ou non contraignable pour le poursuivant?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-134005"
+        ],
+        "act": "Loi sur la preuve au Canada",
+        "section": "4"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/C-5.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/C-5.xml",
+        "sourceSha256": "f9411d3f9790c271b2a00a0e0d9edb2ffc9e2ce06d8211cd1e206d512d82f309",
+        "rowSha256": "e934ce49d0bf83a798d24e82f6cf1fcb95d7c6e21b5802e1d739e7b8a19e86c9",
+        "evidence": "(2) Une personne n’est pas inhabile à témoigner ni non contraignable pour le poursuivant pour la seule raison qu’elle est mariée à l’accusé.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Accusé et conjoint. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-E-5.401-10-en",
+      "pairId": "successor-E-5.401-10",
+      "group": "act:E-5.401",
+      "split": "holdout",
+      "language": "en",
+      "question": "What must an employer’s federal employment-equity plan contain about barrier removal, hiring and promotion goals, and implementation timetables?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-215239"
+        ],
+        "act": "Employment Equity Act",
+        "section": "10"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/E-5.401.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/E-5.401.xml",
+        "sourceSha256": "527099a21b7bbb5553cf5b549fd483e4d7944f5bbe88aba31fde41e60064dbfd",
+        "rowSha256": "a75a1e71ac53a5179f05c7c861496f55f5cb4c3c705567058452e584d4e76808",
+        "evidence": "(1) The employer shall prepare an employment equity plan that(a) specifies the positive policies and practices that are to be instituted by the employer in the short term for the hiring, training, promotion and retention of persons in designated groups and for the making of reasonable accommodations for those persons, to correct the underrepresentation of those persons identified by the analysis under paragraph 9(1)(a);(b) specifies the measures to be taken by the employer in the short term for the elimination of any employment barriers identified by the review under paragraph 9(1)(b);(c) establishes a timetable for the implementation of the matters referred to in paragraphs (a) and (b);(d) where underrepresentation has been identified by the analysis, establishes short term numerical goals for the hiring and promotion of persons in designated groups in order to increase their representation in each occupational group in the workforce in which underrepresentation has been identified and sets out measures to be taken in each year to meet those goals;(e) sets out the employer’s longer term goals for increasing the representation of persons in designated groups in the employer’s workforce and the employer’s strategy for achieving those goals; and(f) provides for any other matter that may be prescribed.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Employment equity plan. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-E-5.401-10-fr",
+      "pairId": "successor-E-5.401-10",
+      "group": "act:E-5.401",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Que doit contenir le plan fédéral d’équité en matière d’emploi d’un employeur concernant la suppression des obstacles, les objectifs de recrutement et d’avancement, et le calendrier de mise en œuvre?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-209823"
+        ],
+        "act": "Loi sur l’équité en matière d’emploi",
+        "section": "10"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/E-5.401.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/E-5.401.xml",
+        "sourceSha256": "8388d1b8544f64d620a67642bff2b7d3d5185407850c4f16479125d62d8a14a2",
+        "rowSha256": "4ce7c0855d74b3310f45528ff63ab13be260ab96ecbe6536c0165f0a75c16bb9",
+        "evidence": "(1) L’employeur est tenu d’élaborer un plan d’équité en matière d’emploi comportant les éléments suivants :a) les règles et usages positifs à instituer à court terme d’une part en matière de recrutement, de formation, d’avancement et de maintien en fonction des membres des groupes désignés et, d’autre part, pour la prise de mesures d’adaptation raisonnables à leur égard, afin de corriger la sous-représentation constatée par l’analyse visée à l’alinéa 9(1)a);b) les mesures à prendre à court terme en vue de la suppression des obstacles déterminés par l’étude visée à l’alinéa 9(1)b);c) le calendrier de mise en oeuvre des mesures et des règles et usages;d) si l’analyse révèle une sous-représentation au sein de son effectif, les objectifs quantitatifs à court terme de recrutement et d’avancement des membres des groupes désignés visant à la corriger dans chaque catégorie professionnelle où il existe une sous-représentation, de même que les mesures à prendre chaque année en vue d’atteindre ces objectifs;e) ses objectifs à long terme en vue de l’augmentation de la représentation des membres des groupes désignés dans son effectif et sa stratégie pour atteindre ces objectifs;f) tout autre élément prévu par règlement.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Plan. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-E-5.401-5-en",
+      "pairId": "successor-E-5.401-5",
+      "group": "act:E-5.401",
+      "split": "holdout",
+      "language": "en",
+      "question": "What two kinds of action does federal employment-equity legislation require from an employer to address barriers and underrepresentation of designated groups?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-215197"
+        ],
+        "act": "Employment Equity Act",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/E-5.401.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/E-5.401.xml",
+        "sourceSha256": "527099a21b7bbb5553cf5b549fd483e4d7944f5bbe88aba31fde41e60064dbfd",
+        "rowSha256": "166b0d17281885c97a2bc04354c6d7d3469577a8ec37edf2a07a14149dfc33a0",
+        "evidence": "Every employer shall implement employment equity by(a) identifying and eliminating employment barriers against persons in designated groups that result from the employer’s employment systems, policies and practices that are not authorized by law; and(b) instituting such positive policies and practices and making such reasonable accommodations as will ensure that persons in designated groups achieve a degree of representation in each occupational group in the employer’s workforce that reflects their representation in(i) the Canadian workforce, or(ii) those segments of the Canadian workforce that are identifiable by qualification, eligibility or geography and from which the employer may reasonably be expected to draw employees.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Employer’s duty. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-E-5.401-5-fr",
+      "pairId": "successor-E-5.401-5",
+      "group": "act:E-5.401",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Quelles sont les deux catégories d’actions que la loi fédérale sur l’équité en matière d’emploi exige d’un employeur pour éliminer les obstacles et corriger la sous-représentation des groupes désignés?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-209778"
+        ],
+        "act": "Loi sur l’équité en matière d’emploi",
+        "section": "5"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/E-5.401.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/E-5.401.xml",
+        "sourceSha256": "8388d1b8544f64d620a67642bff2b7d3d5185407850c4f16479125d62d8a14a2",
+        "rowSha256": "3fa6d0f96270135502a1b38d96b6be96f2c78b23931d80d4e009a39276170bd9",
+        "evidence": "L’employeur est tenu de réaliser l’équité en matière d’emploi par les actions suivantes :a) détermination et suppression des obstacles à la carrière des membres des groupes désignés découlant de ses systèmes, règles et usages en matière d’emploi non autorisés par une règle de droit;b) instauration de règles et d’usages positifs et prise de mesures raisonnables d’adaptation pour que le nombre de membres de ces groupes dans chaque catégorie professionnelle de son effectif reflète leur représentation :(i) au sein de la population apte au travail,(ii) dans les secteurs de la population apte au travail susceptibles d’être distingués en fonction de critères de compétence, d’admissibilité ou d’ordre géographique où il serait fondé à choisir ses salariés.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Obligations de l’employeur. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-F-11-32-en",
+      "pairId": "successor-F-11-32",
+      "group": "act:F-11",
+      "split": "holdout",
+      "language": "en",
+      "question": "Before entering a federal spending commitment that will create a debt in the same fiscal year, what condition applies to the available funding balance?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-228636"
+        ],
+        "act": "Financial Administration Act",
+        "section": "32"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/F-11.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/F-11.xml",
+        "sourceSha256": "0d3ee418f8bea52e9e4fb728716b55a04f9bc34551b121ee5910f1b08742876d",
+        "rowSha256": "02866d527204141864ea5a9ffda8fc175c8ae035d5c4201f50c0e105a45d3c05",
+        "evidence": "(1) No contract or other arrangement providing for a payment shall be entered into unless, to discharge any debt that will be due under the contract or other arrangement during the fiscal year in which the contract or other arrangement is entered into, there is a sufficient unencumbered balance available out of(a) an appropriation by Parliament to which the payment will be charged;(b) an item included in estimates then before the House of Commons to which the payment will relate;(c) a commitment limit in an appropriation Act to which the payment will relate; or(d) revenues received or estimated revenues set out in estimates, in the case of a payment that will be charged to an authority — under an appropriation Act or any other Act of Parliament — to expend revenues.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Control of commitments. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-F-11-32-fr",
+      "pairId": "successor-F-11-32",
+      "group": "act:F-11",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Avant de prendre un engagement financier fédéral créant une dette exigible pendant le même exercice, quelle condition doit remplir le solde disponible?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-222889"
+        ],
+        "act": "Loi sur la gestion des finances publiques",
+        "section": "32"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/F-11.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/F-11.xml",
+        "sourceSha256": "aafc6049ca1439c98bc3eeefa13778878dbbfd22d2a0bcfa80a196c0b5326f98",
+        "rowSha256": "7fe4e69cd75c272da1d7d65438b0d71dcdb2f84f43c7203439b7e1bbc5167185",
+        "evidence": "(1) Il ne peut être passé de marché ou autre entente prévoyant un paiement que si l’un ou l’autre des soldes ci-après — disponible et non grevé — est suffisant pour l’acquittement de toutes les dettes contractées à cette occasion et exigibles pendant l’exercice au cours duquel a lieu la passation :a) le solde du crédit sur lequel le paiement sera imputé;b) le solde du poste, figurant dans les prévisions de dépenses alors déposées devant la Chambre des communes, à l’égard duquel le paiement se rapportera;c) le solde du montant des engagements, autorisés au titre d’une loi de crédits, à l’égard desquels le paiement se rapportera;d) le solde des recettes perçues ou des recettes estimatives, figurant dans les prévisions de dépenses, sur lesquelles le paiement — autorisé au titre d’une loi de crédits ou de toute autre loi fédérale — sera imputé.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Contrôle des engagements. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-F-11-34-en",
+      "pairId": "successor-F-11-34",
+      "group": "act:F-11",
+      "split": "holdout",
+      "language": "en",
+      "question": "What must an authorized official certify before federal public-administration money is paid for completed work, delivered goods or rendered services?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-228661"
+        ],
+        "act": "Financial Administration Act",
+        "section": "34"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/F-11.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/F-11.xml",
+        "sourceSha256": "0d3ee418f8bea52e9e4fb728716b55a04f9bc34551b121ee5910f1b08742876d",
+        "rowSha256": "08e347c99c9c42d6372ba8006121c0c7df9c6f9be66857e4a9c3af05a901eb75",
+        "evidence": "(1) No payment shall be made in respect of any part of the federal public administration unless, in addition to any other voucher or certificate that is required, the deputy of the appropriate Minister, or another person authorized by that Minister, certifies(a) in the case of a payment for the performance of work, the supply of goods or the rendering of services,(i) that the work has been performed, the goods supplied or the service rendered, as the case may be, and that the price charged is according to the contract, or if not specified by the contract, is reasonable,(ii) where, pursuant to the contract, a payment is to be made before the completion of the work, delivery of the goods or rendering of the service, as the case may be, that the payment is according to the contract, or(iii) where, in accordance with the policies and procedures prescribed under subsection (2), payment is to be made in advance of verification, that the claim for payment is reasonable; or(b) in the case of any other payment, that the payee is eligible for or entitled to the payment.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Payment for work, goods or services. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-F-11-34-fr",
+      "pairId": "successor-F-11-34",
+      "group": "act:F-11",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Que doit attester une personne autorisée avant que l’administration publique fédérale paie des travaux exécutés, des fournitures livrées ou des services rendus?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-222914"
+        ],
+        "act": "Loi sur la gestion des finances publiques",
+        "section": "34"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/F-11.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/F-11.xml",
+        "sourceSha256": "aafc6049ca1439c98bc3eeefa13778878dbbfd22d2a0bcfa80a196c0b5326f98",
+        "rowSha256": "8bce3e1b46edb4344f968da3a5ceea6c8e6cbde5d2a4a864174672853126d214",
+        "evidence": "(1) Tout paiement d’un secteur de l’administration publique fédérale est subordonné à la remise des pièces justificatives et à une attestation de l’adjoint ou du délégué du ministre compétent selon laquelle :a) en cas de fournitures, de services ou de travaux :(i) d’une part, les fournitures ont été livrées, les services rendus ou les travaux exécutés, d’autre part, le prix demandé est conforme au marché ou, à défaut, est raisonnable,(ii) tout paiement anticipé est conforme au marché,(iii) si le paiement est à effectuer antérieurement à la détermination de l’admissibilité selon les règles et méthodes prévues au paragraphe (2), la demande de paiement est raisonnable;b) en tout autre cas, le bénéficiaire est admissible au paiement.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Marchés de fournitures, de services ou de travaux. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-F-14-35-en",
+      "pairId": "successor-F-14-35",
+      "group": "act:F-14",
+      "split": "holdout",
+      "language": "en",
+      "question": "What general prohibition does federal fisheries law impose on works or activities that damage fish habitat, subject to its listed exceptions?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-231462"
+        ],
+        "act": "Fisheries Act",
+        "section": "35"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/F-14.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/F-14.xml",
+        "sourceSha256": "86e59550009eb0df72958bbd83ac2e93c0deca4da7e19afb4d2b2f73d037cb88",
+        "rowSha256": "14129b0ae1734c5e112086ce01691d6d4fc7e50c2dbb827bbdd482681f4b02c0",
+        "evidence": "(1) No person shall carry on any work, undertaking or activity that results in the harmful alteration, disruption or destruction of fish habitat.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Harmful alteration, disruption or destruction of fish habitat. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-F-14-35-fr",
+      "pairId": "successor-F-14-35",
+      "group": "act:F-14",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Sous réserve des exceptions prévues, quelle interdiction générale la loi fédérale sur les pêches impose-t-elle aux ouvrages ou activités qui détériorent l’habitat du poisson?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-225674"
+        ],
+        "act": "Loi sur les pêches",
+        "section": "35"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/F-14.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/F-14.xml",
+        "sourceSha256": "023e10776bac17a9ac46e648f2df9166590a2a761825d0316f750488044e86b9",
+        "rowSha256": "69f5bd440bde1caa5656a9fba6a1765e4300a1d77911458d35ac7179e246c1a7",
+        "evidence": "(1) Il est interdit d’exploiter un ouvrage ou une entreprise ou d’exercer une activité entraînant la détérioration, la destruction ou la perturbation de l’habitat du poisson.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Détérioration, destruction ou perturbation de l’habitat. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-F-14-36-en",
+      "pairId": "successor-F-14-36",
+      "group": "act:F-14",
+      "split": "holdout",
+      "language": "en",
+      "question": "Apart from authorized exceptions, what does federal fisheries law prohibit about releasing a harmful substance into water where fish live or into a place from which it may reach that water?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-231478"
+        ],
+        "act": "Fisheries Act",
+        "section": "36"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/F-14.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/F-14.xml",
+        "sourceSha256": "86e59550009eb0df72958bbd83ac2e93c0deca4da7e19afb4d2b2f73d037cb88",
+        "rowSha256": "4b643cd8114f566a04c77f99285ec574d25c786dbc41cef859e73df43e56e34e",
+        "evidence": "(3) Subject to subsection (4), no person shall deposit or permit the deposit of a deleterious substance of any type in water frequented by fish or in any place under any conditions where the deleterious substance or any other deleterious substance that results from the deposit of the deleterious substance may enter any such water.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Throwing overboard of certain substances prohibited. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-F-14-36-fr",
+      "pairId": "successor-F-14-36",
+      "group": "act:F-14",
+      "split": "holdout",
+      "language": "fr",
+      "question": "En dehors des exceptions autorisées, que prohibe la loi fédérale sur les pêches concernant le rejet d’une substance nocive dans des eaux où vivent des poissons ou dans un lieu d’où elle pourrait y pénétrer?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-225690"
+        ],
+        "act": "Loi sur les pêches",
+        "section": "36"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/F-14.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/F-14.xml",
+        "sourceSha256": "023e10776bac17a9ac46e648f2df9166590a2a761825d0316f750488044e86b9",
+        "rowSha256": "d8ed883d8e367c08d52cdb257cf9111e18399ad2dc35f57c27cb715b7172519b",
+        "evidence": "(3) Sous réserve du paragraphe (4), il est interdit d’immerger ou de rejeter une substance nocive — ou d’en permettre l’immersion ou le rejet — dans des eaux où vivent des poissons, ou en quelque autre lieu si le risque existe que la substance ou toute autre substance nocive provenant de son immersion ou rejet pénètre dans ces eaux.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Interdiction de rejet. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-I-21-12-en",
+      "pairId": "successor-I-21-12",
+      "group": "act:I-21",
+      "split": "holdout",
+      "language": "en",
+      "question": "How does federal interpretation legislation direct an enactment to be read so that its purposes are achieved?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-279254"
+        ],
+        "act": "Interpretation Act",
+        "section": "12"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/I-21.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/I-21.xml",
+        "sourceSha256": "1e0d75e708e8f79751c982ba2ba48a1da3215885ee74adc41d5601ec87df0097",
+        "rowSha256": "136df72fbd8486e2026a04e779a54da99018279087b3d41d908b950c70d320c6",
+        "evidence": "Every enactment is deemed remedial, and shall be given such fair, large and liberal construction and interpretation as best ensures the attainment of its objects.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Enactments deemed remedial. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-I-21-12-fr",
+      "pairId": "successor-I-21-12",
+      "group": "act:I-21",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Comment le droit fédéral de l’interprétation demande-t-il de lire un texte pour réaliser son objet?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-272479"
+        ],
+        "act": "Loi d’interprétation",
+        "section": "12"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/I-21.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/I-21.xml",
+        "sourceSha256": "775b35dd6f631b5164181c817d8df0beba833a17b95f22a4a2662eaf17a0402b",
+        "rowSha256": "d8b8c65084c6cdf6d6e5f9d28804fc369762788e81aebf24e68539fa259361ad",
+        "evidence": "Tout texte est censé apporter une solution de droit et s’interprète de la manière la plus équitable et la plus large qui soit compatible avec la réalisation de son objet.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Principe et interprétation. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-I-21-26-en",
+      "pairId": "successor-I-21-26",
+      "group": "act:I-21",
+      "split": "holdout",
+      "language": "en",
+      "question": "Under the federal rule for computing time, when may an act be done if its deadline falls on a holiday?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-279383"
+        ],
+        "act": "Interpretation Act",
+        "section": "26"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/I-21.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/I-21.xml",
+        "sourceSha256": "1e0d75e708e8f79751c982ba2ba48a1da3215885ee74adc41d5601ec87df0097",
+        "rowSha256": "96f710acd85932c8662c896c170db908bba6e4b473271e802019a826a1a2509d",
+        "evidence": "Where the time limited for the doing of a thing expires or falls on a holiday, the thing may be done on the day next following that is not a holiday.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Time limits and holidays. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-I-21-26-fr",
+      "pairId": "successor-I-21-26",
+      "group": "act:I-21",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Selon la règle fédérale de calcul des délais, quand peut-on accomplir un acte si le délai expire un jour férié?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-272605"
+        ],
+        "act": "Loi d’interprétation",
+        "section": "26"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/I-21.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/I-21.xml",
+        "sourceSha256": "775b35dd6f631b5164181c817d8df0beba833a17b95f22a4a2662eaf17a0402b",
+        "rowSha256": "396835e8808720a64be3cdfe716fbd4fbe6dfa41a8a11b0f693bc05dc0484042",
+        "evidence": "Tout acte ou formalité peut être accompli le premier jour ouvrable suivant lorsque le délai fixé pour son accomplissement expire un jour férié.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Jour férié. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-P-8.6-10.3-en",
+      "pairId": "successor-P-8.6-10.3",
+      "group": "act:P-8.6",
+      "split": "holdout",
+      "language": "en",
+      "question": "Must an organization covered by the federal private-sector privacy law record every breach of security safeguards, and what access must it give the Commissioner?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-417210"
+        ],
+        "act": "Personal Information Protection and Electronic Documents Act",
+        "section": "10.3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/P-8.6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/P-8.6.xml",
+        "sourceSha256": "4ffd5d846583ed3322b4de5819d97bd2e2f0c28fe50832e005946cb79c0f3ca3",
+        "rowSha256": "6082e7b5ef686a5758c419cb12ca8f216212390becf5f76c9aca7681c3d948fc",
+        "evidence": "(1) An organization shall, in accordance with any prescribed requirements, keep and maintain a record of every breach of security safeguards involving personal information under its control.(2) An organization shall, on request, provide the Commissioner with access to, or a copy of, a record.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Records. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-P-8.6-10.3-fr",
+      "pairId": "successor-P-8.6-10.3",
+      "group": "act:P-8.6",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Une organisation assujettie au régime fédéral de protection des renseignements personnels dans le secteur privé doit-elle consigner toutes les atteintes aux mesures de sécurité, et quel accès doit-elle donner au commissaire?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-407374"
+        ],
+        "act": "Loi sur la protection des renseignements personnels et les documents électroniques",
+        "section": "10.3"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/P-8.6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/P-8.6.xml",
+        "sourceSha256": "3de27cf496326774043f7f1d1686da426853dc9e47d91728658efba99db1c205",
+        "rowSha256": "fa88523a11d5b02e667d66eda4c1e3fb42313bf243824ce4530c5f88b4a78c0e",
+        "evidence": "(1) L’organisation tient et conserve, conformément aux règlements, un registre de toutes les atteintes aux mesures de sécurité qui ont trait à des renseignements personnels dont elle a la gestion.(2) Sur demande du commissaire, l’organisation lui donne accès à son registre ou lui en remet copie.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Registre. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-P-8.6-6.1-en",
+      "pairId": "successor-P-8.6-6.1",
+      "group": "act:P-8.6",
+      "split": "holdout",
+      "language": "en",
+      "question": "For organizations governed by Canada’s federal private-sector privacy law, what must an individual be able to understand for consent to the handling of personal information to be valid?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-en-416979"
+        ],
+        "act": "Personal Information Protection and Electronic Documents Act",
+        "section": "6.1"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "eng/acts/P-8.6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/P-8.6.xml",
+        "sourceSha256": "4ffd5d846583ed3322b4de5819d97bd2e2f0c28fe50832e005946cb79c0f3ca3",
+        "rowSha256": "b3c5c3c6b4904c93128de1559bd6ca8a30b58b1bada474833ebe95d017aff53d",
+        "evidence": "For the purposes of clause 4.3 of Schedule 1, the consent of an individual is only valid if it is reasonable to expect that an individual to whom the organization’s activities are directed would understand the nature, purpose and consequences of the collection, use or disclosure of the personal information to which they are consenting.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Valid consent. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-P-8.6-6.1-fr",
+      "pairId": "successor-P-8.6-6.1",
+      "group": "act:P-8.6",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Pour les organisations assujetties au régime fédéral de protection des renseignements personnels dans le secteur privé, que doit pouvoir comprendre une personne pour que son consentement soit valable?",
+      "answerable": true,
+      "status": "verified-source",
+      "gold": {
+        "rowIds": [
+          "acts-fr-407156"
+        ],
+        "act": "Loi sur la protection des renseignements personnels et les documents électroniques",
+        "section": "6.1"
+      },
+      "provenance": {
+        "kind": "corpus-provision",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "sourcePath": "fra/lois/P-8.6.xml",
+        "sourceUrl": "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/P-8.6.xml",
+        "sourceSha256": "3de27cf496326774043f7f1d1686da426853dc9e47d91728658efba99db1c205",
+        "rowSha256": "0cfae15ddc0f3d5d049327cb1908275503ebbd276d982552d2cfcb183c6ff6df",
+        "evidence": "Pour l’application de l’article 4.3 de l’annexe 1, le consentement de l’intéressé n’est valable que s’il est raisonnable de s’attendre à ce qu’un individu visé par les activités de l’organisation comprenne la nature, les fins et les conséquences de la collecte, de l’utilisation ou de la communication des renseignements personnels auxquelles il a consenti.",
+        "annotation": "Headed in-force Section inspected in both language blobs; heading: Validité du consentement. Parser: statutes-v2. Fixed-snapshot source label only; no hosted execution, model-training novelty, generated-answer support or legal-review claim. Target corpus presence remains unmeasured. Use for tuning invalidates independent holdout use."
+      }
+    },
+    {
+      "id": "successor-unsupported-bc-meal-breaks-en",
+      "pairId": "successor-unsupported-bc-meal-breaks",
+      "group": "successor-scope:bc-meal-breaks",
+      "split": "holdout",
+      "language": "en",
+      "question": "Quote the British Columbia Employment Standards Act provision about meal breaks; I want the provincial statute itself.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a British Columbia provincial statute rather than Canadian federal legislation.",
+        "annotation": "Scope category: provincial-law. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-bc-meal-breaks-fr",
+      "pairId": "successor-unsupported-bc-meal-breaks",
+      "group": "successor-scope:bc-meal-breaks",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Citez la disposition de la Employment Standards Act de la Colombie-Britannique sur les pauses-repas; je veux le texte de la loi provinciale elle-même.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a British Columbia provincial statute rather than Canadian federal legislation.",
+        "annotation": "Scope category: provincial-law. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-c11-recorded-division-en",
+      "pairId": "successor-unsupported-c11-recorded-division",
+      "group": "successor-scope:c11-recorded-division",
+      "split": "holdout",
+      "language": "en",
+      "question": "Give the House of Commons recorded division for the third-reading vote on Bill C-11, showing how each member voted; cite the parliamentary voting record.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a parliamentary recorded division, not the text of an enacted federal statute or regulation.",
+        "annotation": "Scope category: parliamentary-vote. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-c11-recorded-division-fr",
+      "pairId": "successor-unsupported-c11-recorded-division",
+      "group": "successor-scope:c11-recorded-division",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Donnez le vote par appel nominal de la Chambre des communes à la troisième lecture du projet de loi C-11, en indiquant le vote de chaque député; citez le relevé parlementaire du vote.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a parliamentary recorded division, not the text of an enacted federal statute or regulation.",
+        "annotation": "Scope category: parliamentary-vote. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-c18-hansard-passage-en",
+      "pairId": "successor-unsupported-c18-hansard-passage",
+      "group": "successor-scope:c18-hansard-passage",
+      "split": "holdout",
+      "language": "en",
+      "question": "Find a verbatim House of Commons debate passage on Bill C-18, including the speaker and sitting date; cite Hansard.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a Hansard debate passage, a source excluded from v1 statute retrieval.",
+        "annotation": "Scope category: parliamentary-debate. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-c18-hansard-passage-fr",
+      "pairId": "successor-unsupported-c18-hansard-passage",
+      "group": "successor-scope:c18-hansard-passage",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Trouvez un passage intégral des débats de la Chambre des communes sur le projet de loi C-18, avec le nom de l’intervenant et la date de séance; citez le hansard.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a Hansard debate passage, a source excluded from v1 statute retrieval.",
+        "annotation": "Scope category: parliamentary-debate. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-calgary-noise-bylaw-en",
+      "pairId": "successor-unsupported-calgary-noise-bylaw",
+      "group": "successor-scope:calgary-noise-bylaw",
+      "split": "holdout",
+      "language": "en",
+      "question": "Find the City of Calgary municipal bylaw wording about residential construction noise, and cite the municipal bylaw itself.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a Calgary municipal bylaw rather than Canadian federal legislation.",
+        "annotation": "Scope category: municipal-law. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-calgary-noise-bylaw-fr",
+      "pairId": "successor-unsupported-calgary-noise-bylaw",
+      "group": "successor-scope:calgary-noise-bylaw",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Trouvez le texte du règlement municipal de la Ville de Calgary sur le bruit des travaux de construction résidentielle, et citez ce règlement municipal lui-même.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a Calgary municipal bylaw rather than Canadian federal legislation.",
+        "annotation": "Scope category: municipal-law. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-election-newspaper-en",
+      "pairId": "successor-unsupported-election-newspaper",
+      "group": "successor-scope:election-newspaper",
+      "split": "holdout",
+      "language": "en",
+      "question": "Find a newspaper report on the 2025 Canadian federal election and give its publisher, headline and publication date; cite the newspaper article.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a newspaper article, a news source excluded from v1 statute retrieval.",
+        "annotation": "Scope category: news-report. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-election-newspaper-fr",
+      "pairId": "successor-unsupported-election-newspaper",
+      "group": "successor-scope:election-newspaper",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Trouvez un article de journal sur l’élection fédérale canadienne de 2025 et donnez son éditeur, son titre et sa date de publication; citez l’article du journal.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a newspaper article, a news source excluded from v1 statute retrieval.",
+        "annotation": "Scope category: news-report. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-eu-digital-services-en",
+      "pairId": "successor-unsupported-eu-digital-services",
+      "group": "successor-scope:eu-digital-services",
+      "split": "holdout",
+      "language": "en",
+      "question": "Quote the European Union Digital Services Act provision on transparency of online advertisements, citing the EU regulation itself.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires an EU regulation, a foreign-law source outside the Canadian federal statute corpus.",
+        "annotation": "Scope category: foreign-law. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-eu-digital-services-fr",
+      "pairId": "successor-unsupported-eu-digital-services",
+      "group": "successor-scope:eu-digital-services",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Citez le passage du règlement de l’Union européenne sur les services numériques concernant la transparence des publicités en ligne, avec une référence au règlement européen lui-même.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires an EU regulation, a foreign-law source outside the Canadian federal statute corpus.",
+        "annotation": "Scope category: foreign-law. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-nz-tenancies-en",
+      "pairId": "successor-unsupported-nz-tenancies",
+      "group": "successor-scope:nz-tenancies",
+      "split": "holdout",
+      "language": "en",
+      "question": "Show the wording in New Zealand’s Residential Tenancies Act about a landlord entering a rental home; cite that New Zealand statute.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a New Zealand statute, a foreign-law source outside the Canadian federal statute corpus.",
+        "annotation": "Scope category: foreign-law. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-nz-tenancies-fr",
+      "pairId": "successor-unsupported-nz-tenancies",
+      "group": "successor-scope:nz-tenancies",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Donnez le texte de la Residential Tenancies Act de Nouvelle-Zélande sur l’entrée du propriétaire dans un logement loué; citez cette loi néo-zélandaise.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires a New Zealand statute, a foreign-law source outside the Canadian federal statute corpus.",
+        "annotation": "Scope category: foreign-law. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-roncarelli-reasons-en",
+      "pairId": "successor-unsupported-roncarelli-reasons",
+      "group": "successor-scope:roncarelli-reasons",
+      "split": "holdout",
+      "language": "en",
+      "question": "Explain the court’s reasoning in Roncarelli v. Duplessis using the judgment itself; I need the judicial reasons rather than statutory text.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires judicial reasons. Court decisions are outside the statute-and-regulation source corpus.",
+        "annotation": "Scope category: court-reasons. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    },
+    {
+      "id": "successor-unsupported-roncarelli-reasons-fr",
+      "pairId": "successor-unsupported-roncarelli-reasons",
+      "group": "successor-scope:roncarelli-reasons",
+      "split": "holdout",
+      "language": "fr",
+      "question": "Expliquez le raisonnement du tribunal dans Roncarelli c. Duplessis à partir du jugement lui-même; je veux les motifs judiciaires plutôt que le texte d’une loi.",
+      "answerable": false,
+      "status": "verified-scope",
+      "provenance": {
+        "kind": "scope-exclusion",
+        "evidence": "The request explicitly requires judicial reasons. Court decisions are outside the statute-and-regulation source corpus.",
+        "annotation": "Scope category: court-reasons. Label follows the expressly requested source. No external-law, administrative-amount, source-content, legal-applicability or generated-answer finding is asserted."
+      }
+    }
+  ]
+}

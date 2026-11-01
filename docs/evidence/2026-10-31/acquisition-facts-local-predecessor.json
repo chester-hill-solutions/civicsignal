@@ -1,0 +1,140 @@
+{
+  "format": 1,
+  "kind": "mp04-fixed-source-facts-local-validation",
+  "recordedAt": "2026-10-31T22:06:37.412423+00:00",
+  "passed": true,
+  "scope": "Import-only fixed SQLite schema inventory and original sequence observations under the existing cumulative fixture acquisition owner. No generic SQL or live CLI.",
+  "sourcePins": [
+    {
+      "path": "scripts/lib/protected-acquisition.ts",
+      "bytes": 17659,
+      "sha256": "e23ec00a8790d759dc0b4e482f96e05f5ff692bde4e6715284a5eb652538632e"
+    },
+    {
+      "path": "scripts/lib/protected-acquisition-transport.ts",
+      "bytes": 25503,
+      "sha256": "73242d38d2ed51d2a315d4ccf5d3c027ac0d84f68341c74e46832e35f524fe57"
+    },
+    {
+      "path": "scripts/lib/protected-acquisition-facts.ts",
+      "bytes": 11575,
+      "sha256": "753eb7735da0d9be177457728c97ea083fca36e3b988f5183b677e7b9c19f0b3"
+    },
+    {
+      "path": "test/protected-acquisition-facts.test.ts",
+      "bytes": 17764,
+      "sha256": "31f71ebcb6cc766bfa231d86c6b128a65ac8360ae51d9157c9ae3c1c328dff03"
+    }
+  ],
+  "unchangedReusePins": [
+    {
+      "path": "scripts/lib/protected-state.ts",
+      "bytes": 29252,
+      "sha256": "1e3b71510e9341fd4b8e1ad9d37d742b29138f5449d992cf98ca591ecafac1b0"
+    },
+    {
+      "path": "scripts/lib/protected-sql-import.mjs",
+      "bytes": 19248,
+      "sha256": "e2d58a31f36a64da2315a15352f94c5940b386aa74dd76707c78013a2cf6cda5"
+    },
+    {
+      "path": "scripts/lib/capture_owned.py",
+      "bytes": 6738,
+      "sha256": "222640626fa99e8e413d5282c439d11f0c3770c06653e61bce6801a8a79b084a"
+    },
+    {
+      "path": "src/auth-export.ts",
+      "bytes": 2569,
+      "sha256": "b73de7b6a5592fc70be3775bb2bfd083d99a2c2a903d73a3b5472451a5b4c9a5"
+    },
+    {
+      "path": "src/auth-migration.ts",
+      "bytes": 4244,
+      "sha256": "9331438cf8f128976176b8855186bec495bfe79bfcf02d137664c023c0b8ac0a"
+    }
+  ],
+  "checks": [
+    {
+      "name": "focused-acquisition-core-transport-facts",
+      "exitCode": 0,
+      "files": 3,
+      "tests": 166,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-final-focused.log",
+        "bytes": 3857,
+        "sha256": "aab82b369d55b8343256f55c54a0117cf1245149ade5697c484d0b01fa597905"
+      }
+    },
+    {
+      "name": "typecheck:bun",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-bun-types.log",
+        "bytes": 137,
+        "sha256": "137233cf0d3c1cacc81f5c561ccd8067935e982264c8a32314186e660a3584c1"
+      }
+    },
+    {
+      "name": "typecheck:tooling",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-tooling-types.log",
+        "bytes": 141,
+        "sha256": "46b33dc115594175bb52d74c8ff90deddf998a4699a4db244a75917cfbe8b69d"
+      }
+    },
+    {
+      "name": "scoped-diff-check",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-diff-check.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "focusedBreakdown": {
+    "facts": 42,
+    "captureCore": 49,
+    "transport": 75
+  },
+  "developmentFailureRetained": {
+    "log": {
+      "path": "/tmp/civicsignal-acquisition-facts-first.log",
+      "bytes": 1753,
+      "sha256": "70dc90f5d31c135636bdd343eeb6111f0680735cf22e3dd8bf83ed46313ebd32"
+    },
+    "testsPassed": 41,
+    "testsFailed": 1,
+    "reason": "Fake timer advanced before async filesystem setup reached the request timer; corrected the fixture to use its real bounded 20ms ignored-ack timeout. Not a provider or process-settlement failure."
+  },
+  "coverage": [
+    "Actual local SQLite fixed query/response shapes",
+    "Absent table and absent sequence entry differ from present zero",
+    "UTF-8 BINARY order including non-BMP names",
+    "Shared owner across facts, KV/export/KV/auth normalization and token-free download",
+    "Fixed endpoint/query admission before credential selection",
+    "Schema sentinel, malformed API/sequence rows, raw HTTP refusal retention",
+    "Shared request caps and lost-ack conservative unsettled state",
+    "Exclusive private files, same-descriptor readback hashes and fsync/deadline refusal",
+    "Facts directory, symlink and parent replacement refusal",
+    "Consumed directories and terminal owner after semantic/persistence failure"
+  ],
+  "realCredentialReads": 0,
+  "networkRequests": 0,
+  "productionWriterChanges": 0,
+  "cliAutoExecution": false,
+  "fixtureOnly": true,
+  "providerAuthenticated": false,
+  "globalQuiescenceEstablished": false,
+  "productionAcquisitionQualified": false,
+  "sourceSchemaClassified": false,
+  "standaloneAcceptance": false,
+  "remaining": [
+    "Actual production identity/auth authority and schema profile admission",
+    "Publication, row-count, outbox and complete schema/constraint facts",
+    "Finite credential/process owner and complete acquisition budget",
+    "Independently established common writer freeze and authentic source acquisition",
+    "Hosted protected copy, production target and migration/rollback qualification"
+  ]
+}

@@ -28,7 +28,7 @@ function contextWith(rows: Record<string, unknown>[]): {
 describe('the statutes corpus on Postgres', () => {
   it('reads the Postgres table, and the instrument column is named instrument', async () => {
     const { ctx, calls } = contextWith([]);
-    await postgresStatutesCorpus.retrieve({ topic: 'labour' }, ctx);
+    await postgresStatutesCorpus.retrieve({ act: 'Labour Act', section: '1' }, ctx);
     expect(calls[0]?.query).toContain('FROM statute_provisions');
     expect(calls[0]?.query).toContain('instrument');
     expect(calls[0]?.query).not.toContain('statute_sections');
@@ -36,17 +36,17 @@ describe('the statutes corpus on Postgres', () => {
 
   it('filters on the language, as a lens', async () => {
     const { ctx, calls } = contextWith([]);
-    await postgresStatutesCorpus.retrieve({ topic: 'labour', language: 'fr' }, ctx);
+    await postgresStatutesCorpus.retrieve({ act: 'Labour Act', section: '1', language: 'fr' }, ctx);
     // The driver has already translated the placeholders, so the query that
     // reaches Postgres says `$n`.
     expect(calls[0]?.query).toContain('AND language = $');
     expect(calls[0]?.values).toContain('fr');
   });
 
-  it('asks for live law only on a topic search, not on a citation', async () => {
+  it('keeps exact citations usable without semantic backends and does not manufacture a lexical fallback', async () => {
     const { ctx, calls } = contextWith([]);
     await postgresStatutesCorpus.retrieve({ topic: 'labour' }, ctx);
-    expect(calls[0]?.query).toContain('AND in_force');
+    expect(calls).toHaveLength(0);
 
     const citation = contextWith([]);
     await postgresStatutesCorpus.retrieve(

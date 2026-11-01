@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "kind": "staging-api-v7-root-observation",
+  "observedAt": "2026-10-24T04:22:29.734088+00:00",
+  "sourceCommit": "78e0c2faaeb6103c22de911a165cd6a08b043f7a",
+  "apiVersionId": "3efd1935-39ea-41da-b19c-e8bbf495b50d",
+  "previousVersionId": "e33f3256-b9be-43c9-a5e3-d7d0bc1451b9",
+  "candidateSha256": "e0c36a10179871b405b8ce3e5357803b4264829fb56669dc19bf16f7e6613e1e",
+  "candidatePins": 1075,
+  "operatorSha256": "04c5acf9d0f1849d8570343d62b68393dd800977af33d9d6209710114afb63ea",
+  "operatorPins": 128,
+  "bundleSha256": "674aa039feb8e8e29539cfd50f9d57788b3c2e7839f064c8333d6ef9157b1b6b",
+  "bundleBytes": 1749343,
+  "configSha256": "e2bc09d4f4d114d4622119ac4dee18e76d74e014e669f36a393c10ce754aac2e",
+  "postverifySha256": "145617d350dcd59d4afe232e637f4341747d5198b6afdc0bf66c587b533841f3",
+  "same13BindingsRuntimeUsageAndEmptyCalendar": true,
+  "usageNamespace": "64e06ff739514962a8038d4875bc090c",
+  "explicitManagementProofGETs": 8,
+  "deployCLIInvocations": 1,
+  "internalCLIWireCountIncluded": false,
+  "maximumCLIUploadAttempts": 3,
+  "phaseReceipts": {
+    "preflight": {
+      "startedAt": "2026-10-24T04:19:17.933838+00:00",
+      "finishedAt": "2026-10-24T04:19:21.985482+00:00",
+      "sha256": "4061a27a32be3fe0959a5a80ccd62989f7c0af2ab6f54fc2626d550db219d8e1",
+      "ownedProcessSettled": true
+    },
+    "deploy": {
+      "startedAt": "2026-10-24T04:19:31.374260+00:00",
+      "finishedAt": "2026-10-24T04:19:40.552355+00:00",
+      "sha256": "8ac3482207f1b96ff475007fbb8bac4b785a061880fdd9979c296a431a642552",
+      "ownedProcessSettled": true
+    },
+    "postverify": {
+      "startedAt": "2026-10-24T04:20:06.029492+00:00",
+      "finishedAt": "2026-10-24T04:20:11.893106+00:00",
+      "sha256": "a2cc4a22df12b6440e47b751d0667cb3ae3b9595ac68e22da898ca85ece609ff",
+      "ownedProcessSettled": true
+    }
+  },
+  "servingRequestsForDeployment": 0,
+  "generationRequestsForDeployment": 0,
+  "embeddingRequestsForDeployment": 0,
+  "ledgerReservedAtPostverify": 157,
+  "ledgerSha256AtPostverify": "ccff0f669e1336c6d1eb7d218279eaeab9a0d9ff2e39561b62eb43a2efdb1a96",
+  "oauthRenewal": {
+    "newGrantPOSTs": 1,
+    "oldExpiry": "2026-10-24T04:11:07.659Z",
+    "newConservativeExpiry": "2026-10-24T05:18:30.278Z",
+    "actualExpiresInSeconds": 3599,
+    "effectiveLifetimeSeconds": 3598,
+    "sameScopeCount": 28,
+    "atomicConfigReplaceAndReadbackPassed": true,
+    "ownedProcessSettled": true,
+    "automaticRetry": false,
+    "candidateSha256": "8232730d7cc6a5376577ea3c763e8eac7449e61cb0a78c5c2b4650feb2fa0ecd",
+    "responseAndCredentialHashesPublished": false
+  },
+  "rootValidationReceiptSha256": "2845ec23a955c1576e6c7d0fafc20a61dc8ba69db2965edecbb70bed38710b7f",
+  "providerOrRetrievalAcceptanceClaimFromDeployment": false,
+  "productionChanged": false,
+  "railwayChanged": false
+}

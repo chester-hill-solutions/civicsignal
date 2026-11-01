@@ -1,0 +1,99 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T12:42:45.930283+00:00",
+  "outcome": "13:00 candidate skipped; never armed because confirmed readiness missed the reviewed arming margin",
+  "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "worker": "civicsignal-v1-stage-snapshot-20261022",
+  "workerVersionId": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+  "proposedCron": "0 13 * * *",
+  "proposedScheduledAt": "2026-10-23T13:00:00Z",
+  "hardArmDeadline": "2026-10-23T12:40:00Z",
+  "driverStartCutoff": "2026-10-23T12:39:15Z",
+  "lastParentLiveRead": {
+    "observedAt": "2026-10-23T12:39:48.505Z",
+    "bothReady": true,
+    "pids": [
+      60168,
+      60162
+    ],
+    "evidence": "dist/release/staging/snapshot-dedup-1300-v2/parent-live-states-before-arm.json",
+    "sha256": "aa0eac3710dcd244c693f80f39b0c75eaf5500a8f8747f4f5f2b36faaaf1b3b0"
+  },
+  "armingRefusal": {
+    "source": "parent execution report: first driver deadline guard refused before any provider call",
+    "armingAttemptMarkerAbsent": true,
+    "armedReceiptAbsent": true,
+    "armingAbortedReceiptAbsent": true,
+    "mutationOutcomeUncertain": false,
+    "noArmingMutationClaimBasis": "parent execution report, fail-before-provider driver branch and independent absence of all mutation markers; file absence alone is not remote proof"
+  },
+  "shutdown": {
+    "onlySignals": "SIGINT to identity-verified guard PIDs60168 and60162; owned tail60169 exited via guard handler",
+    "signalAt": [
+      {
+        "pid": 60168,
+        "signal": "SIGINT",
+        "sentAt": "2026-10-23T12:41:35.564094+00:00"
+      },
+      {
+        "pid": 60162,
+        "signal": "SIGINT",
+        "sentAt": "2026-10-23T12:41:35.564112+00:00"
+      }
+    ],
+    "primaryCleanup": {
+      "reason": "operator-signal",
+      "observedAt": "2026-10-23T12:41:36.267Z",
+      "putStatus": 200,
+      "getStatus": 200,
+      "schedules": []
+    },
+    "backupCleanup": {
+      "reason": "operator-signal",
+      "observedAt": "2026-10-23T12:41:36.406Z",
+      "putStatus": 200,
+      "getStatus": 200,
+      "schedules": []
+    },
+    "cleanupTransport": "built-in exact stage schedules PUT[] then GET[] only; no triggers deploy",
+    "additionalProviderReadsByShutdownVerifier": 0,
+    "finalLocalVerification": {
+      "observedAt": "2026-10-23T12:42:05.574048Z",
+      "guardPidsAbsent": [
+        60168,
+        60162
+      ],
+      "ownedTailPidAbsent": 60169,
+      "portsClosed": [
+        52171,
+        52172
+      ]
+    },
+    "rootExecHandles": {
+      "primary": 3656,
+      "backup": 63855,
+      "exitCodes": {
+        "primary": 0,
+        "backup": 0
+      },
+      "reapedAt": "2026-10-23T12:43:06Z",
+      "source": "Parent reaped both owned exec sessions and reported actual completion."
+    }
+  },
+  "newScheduledEventObserved": false,
+  "newWorkflowInvoked": false,
+  "secondPublicationAuthorized": false,
+  "publicationAttribution": "Existing full publication remains the prior canonical API manual recovery; no new calendar success is claimed.",
+  "noAlternateScheduleOrObserverStarted": true,
+  "runtimeFilesFrozen": true,
+  "proofs": {
+    "review": {
+      "path": "dist/release/staging/snapshot-dedup-1300-v2/review.json",
+      "sha256": "49e1d03c710bf5ed74b528e521fcab22b5cb1d725b12f87121d408326d3356af"
+    },
+    "signals": {
+      "path": "dist/release/staging/snapshot-dedup-1300-v2/shutdown-signal-proof.json",
+      "sha256": "82b09c0a9511ef8d07966558d1084bdd22b340eb5a2d36fc0429a957cac1c77f"
+    }
+  }
+}

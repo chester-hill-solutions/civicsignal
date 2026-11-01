@@ -1,0 +1,88 @@
+{
+  "format": 1,
+  "kind": "release-closure-document-audit",
+  "observedAt": "2026-10-24T04:58:16.636292+00:00",
+  "documentationOnly": true,
+  "documents": [
+    {
+      "path": "docs/PROTECTED-STATE-COPY.md",
+      "bytes": 7467,
+      "sha256": "5276422bbc925a7d5c8e0db99c1e0c62969a2d71edbc737c6dac31a4e499d194"
+    },
+    {
+      "path": "docs/V1-RELEASE.md",
+      "bytes": 59107,
+      "sha256": "e93b0faf3ab5ea9eec7e9884f2f48436a05aa91eac6794c56b1df46e80336985"
+    },
+    {
+      "path": "docs/V1-STAGING.md",
+      "bytes": 40190,
+      "sha256": "24ac398ffc9beae33a01ea1dedca881e69117228fcd45d3283fb2e4cbb4f87ba"
+    },
+    {
+      "path": "docs/V1-SCHEDULED-PUBLICATION-REVIEW.md",
+      "bytes": 5615,
+      "sha256": "f560bc382df3b3fc0832dffa3c1567b9e354cb9d77382d72c8c33b1466380a35"
+    }
+  ],
+  "localMarkdownTargetsVerified": 109,
+  "sealedManifests": [
+    {
+      "packet": "generation",
+      "sha256": "eb376e973d653a4a33cbe6321117be670d7bf165b8b9a5a2486a78b589a93042",
+      "exactContentPinsVerified": 178,
+      "historicalLedgerPrefixesVerified": 0
+    },
+    {
+      "packet": "observer",
+      "sha256": "c1757f1f45f872c0ef69ddd3efc64878e2f95fb87e42eaa61a4d2f6e5f878c49",
+      "exactContentPinsVerified": 49,
+      "historicalLedgerPrefixesVerified": 0
+    },
+    {
+      "packet": "api",
+      "sha256": "e0c36a10179871b405b8ce3e5357803b4264829fb56669dc19bf16f7e6613e1e",
+      "exactContentPinsVerified": 1075,
+      "historicalLedgerPrefixesVerified": 0
+    },
+    {
+      "packet": "consumed-api-operator",
+      "sha256": "04c5acf9d0f1849d8570343d62b68393dd800977af33d9d6209710114afb63ea",
+      "exactContentPinsVerified": 127,
+      "historicalLedgerPrefixesVerified": 1
+    }
+  ],
+  "exactContentPinsVerified": 1429,
+  "preservedHistoricalLedgerPrefixes": [
+    {
+      "packet": "consumed-api-operator",
+      "path": "dist/release/staging/serving-requests.jsonl",
+      "prefixBytes": 13834,
+      "prefixSha256": "ccff0f669e1336c6d1eb7d218279eaeab9a0d9ff2e39561b62eb43a2efdb1a96",
+      "reservedBefore": 157,
+      "reservedNow": 159,
+      "appendMeaning": "Two accepted calibration cold/warm attempts158/159; this deploy operator is consumed and cannot replay."
+    }
+  ],
+  "initialAudit": "A blanket byte-equality audit declined the consumed deployment operator ledger pin. Its157 prefix remains exact; accepted158/159 appends explain the entire difference. No check rewrote a manifest or ledger.",
+  "ledger": {
+    "reserved": 159,
+    "limit": 160,
+    "bytes": 14010,
+    "sha256": "f84e9ac62d73ff3e5944101e7efd79542eb2d229bde4779b0f47d621b4799e17",
+    "unchangedByDocumentAudit": true
+  },
+  "generationProposal": "New approval remains pending. Previous153/154 approvals are spent.",
+  "cloudRequests": 0,
+  "servingRequests": 0,
+  "providerRequests": 0,
+  "credentialReads": 0,
+  "sourceChanges": 0,
+  "productionChanged": false,
+  "railwayChanged": false,
+  "limitations": [
+    "This reconciles existing evidence; it does not close the four remaining release gates.",
+    "Scheduled qualification remains a proposal without implementation or a new event.",
+    "The retained held-out runner has no numeric Hit@5 or false-acceptance acceptance gate."
+  ]
+}

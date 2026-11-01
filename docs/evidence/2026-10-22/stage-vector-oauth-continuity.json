@@ -1,0 +1,61 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T04:10:13.620Z",
+  "scope": "OAuth refresh continuity during the existing bounded stage Vectorize copy",
+  "ownedPid": 20323,
+  "execSession": 6748,
+  "previousExpiry": "2026-10-23T04:08:40.261Z",
+  "renewedExpiry": "2026-10-23T05:08:41.234Z",
+  "checks": [
+    {
+      "phase": "checked",
+      "number": 1,
+      "scheduledAt": "2026-10-23T04:04:00Z",
+      "observedAt": "2026-10-23T04:04:04.967Z",
+      "exitCode": 0,
+      "timedOut": false,
+      "approvedAccountListed": true,
+      "oauthReported": true,
+      "unknownArgument": false,
+      "beforeExpiry": "2026-10-23T04:08:40.261Z",
+      "afterExpiry": "2026-10-23T04:08:40.261Z",
+      "expiryAdvanced": false,
+      "inFlightCopyAltered": false,
+      "credentialValuesPrinted": false
+    },
+    {
+      "phase": "checked",
+      "number": 2,
+      "scheduledAt": "2026-10-23T04:08:41Z",
+      "observedAt": "2026-10-23T04:08:43.679Z",
+      "exitCode": 0,
+      "timedOut": false,
+      "approvedAccountListed": true,
+      "oauthReported": true,
+      "unknownArgument": false,
+      "beforeExpiry": "2026-10-23T04:08:40.261Z",
+      "afterExpiry": "2026-10-23T05:08:41.234Z",
+      "expiryAdvanced": true,
+      "inFlightCopyAltered": false,
+      "credentialValuesPrinted": false
+    }
+  ],
+  "preBoundaryCheckpoint": {
+    "observedAt": "2026-10-23T04:08:37.608Z",
+    "nextPosition": 147900,
+    "verifiedVectors": 126134
+  },
+  "postBoundaryCheckpoint": {
+    "identity": "265590b800471325614871da6ac4f813fb4b4ab0a1ebfa40077a3530efe20fda",
+    "nextPosition": 151000,
+    "verifiedVectors": 129206,
+    "pendingBatches": 100
+  },
+  "copyContinuedWithoutRestart": true,
+  "processPaused": false,
+  "credentialsEdited": false,
+  "forcedLogin": false,
+  "helperChanged": false,
+  "documentEmbeddings": 0,
+  "servingCalls": 0
+}

@@ -1,0 +1,492 @@
+{
+  "format": 1,
+  "scope": "Completed isolated staging baseline copy from the verified legacy backup; not a production cutover or retrieval-quality result",
+  "observedAt": "2026-10-23T04:56:01.587Z",
+  "completedAt": "2026-10-23T04:54:15.889Z",
+  "target": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "createdOn": "2026-10-23T02:06:42.218162Z",
+    "dimensions": 768,
+    "metric": "cosine"
+  },
+  "source": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "legacy",
+    "indexDigest": "1d24eb747cf7dd9db4a35580f0cafe73",
+    "rows": 277857,
+    "embedded": 254671,
+    "placeholders": 23186,
+    "dimensions": 768,
+    "receiptSha256": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc",
+    "receiptPath": "docs/evidence/2026-10-22/legacy-backup-receipt.json",
+    "storeBytes": 853576720,
+    "storeSha256": "f3bd33d13f662ed01eb219e579d8b3d8daf9ad189bbf5705c78e7ef386a29611",
+    "modelProvenance": {
+      "status": "not_attested_by_legacy_manifest",
+      "note": "Existing float32 values were copied without document embedding; the legacy vector manifest does not identify a model version."
+    }
+  },
+  "sourceFiles": {
+    "0507465393c224c0491fc8c17c88340217acc656.manifest.json": {
+      "bytes": 1039,
+      "sha256": "0599e8e56270457f653a8bc9a3bbeb75e47e178d2c1e7a56340de2ad087cd8e6"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.vectors.manifest.json": {
+      "bytes": 4580,
+      "sha256": "7c5cc3520bb22b1b1f0fc3826a16abe4464e312991658347571a0016be4be461"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.index.jsonl": {
+      "bytes": 26147135,
+      "sha256": "70c4744a00c15ac352fa833e0841cee733da973a2483a76d618190407ef618aa"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.000.jsonl": {
+      "bytes": 67108058,
+      "sha256": "7989b140b3101e5f333cb5a405f3c716d65ba8de8bb13031362956927f411aa1"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.001.jsonl": {
+      "bytes": 67108504,
+      "sha256": "f46ac1f8bff236a9ed3b05a68258c713e05e0597070c46392a5fa18e1d6b8c0c"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.002.jsonl": {
+      "bytes": 67094506,
+      "sha256": "3ad9ac0993c666e4446c75e09bbb764f162075658d58fdd5275681a49294f1fe"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.003.jsonl": {
+      "bytes": 67108502,
+      "sha256": "158bc2580a9d2e008a3373be49849ceb3c8b25204922aa6e0c5c5832f8f8564d"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.004.jsonl": {
+      "bytes": 67108721,
+      "sha256": "3cb9c011f2239c42551d687d62ff178ea4e57a27d10a800359eb0afbc0dbe5d7"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.005.jsonl": {
+      "bytes": 28685748,
+      "sha256": "c2ba628fb2bbe51fa277154f7cdbe05340fe0b271c6f28628527e07f00430fa5"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.store.emb": {
+      "bytes": 853576720,
+      "sha256": "f3bd33d13f662ed01eb219e579d8b3d8daf9ad189bbf5705c78e7ef386a29611"
+    }
+  },
+  "result": {
+    "identity": "265590b800471325614871da6ac4f813fb4b4ab0a1ebfa40077a3530efe20fda",
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "createdOn": "2026-10-23T02:06:42.218162Z",
+    "nextPosition": 277857,
+    "verifiedVectors": 254671,
+    "complete": true,
+    "format": 2,
+    "pending": [],
+    "newLogicalSubmissionsInFinalDrain": 0,
+    "verifiedBatchesInFinalDrain": 3
+  },
+  "independentFinalRead": {
+    "observedAt": "2026-10-23T04:56:01.587Z",
+    "descriptor": {
+      "created_on": "2026-10-23T02:06:42.218162Z",
+      "modified_on": "2026-10-23T02:06:42.218162Z",
+      "name": "civicsignal-v1-stage-statutes-20261022",
+      "description": "",
+      "config": {
+        "dimensions": 768,
+        "metric": "cosine"
+      }
+    },
+    "info": {
+      "dimensions": 768,
+      "vectorCount": 254671,
+      "processedUpToDatetime": "2026-10-23T04:47:46.618Z",
+      "processedUpToMutation": "22d143ab-96b7-4079-adb1-bf2d17b76f4c"
+    },
+    "requests": [
+      {
+        "path": "descriptor",
+        "status": 200,
+        "success": true
+      },
+      {
+        "path": "/info",
+        "status": 200,
+        "success": true
+      }
+    ]
+  },
+  "verification": {
+    "allSourceFilesHashVerified": true,
+    "allSourceRowsAndFingerprintsVerified": true,
+    "allSourceVectorPositionsFinite": true,
+    "verifiedZeroPlaceholdersSkipped": 23186,
+    "remoteVectorsReadBack": 254671,
+    "comparison": "Every substantive ID and all768 float32 values, language, jurisdiction and fingerprint passed exact readback before its durable verified checkpoint advanced.",
+    "floatComparison": "Math.fround(remoteValue) === sourceFloat32",
+    "verifiedCursorManuallyChanged": false
+  },
+  "bounds": {
+    "sourcePositionsPerBatch": 100,
+    "pendingWindow": 100,
+    "concurrentReadbackChunks": 4,
+    "idsPerReadbackChunk": 20,
+    "transportAttemptsPerRequest": 3,
+    "visibilityPollsPerChunk": 12,
+    "visibilityPauseMs": 5000,
+    "finalDrainMaxNewLogicalSubmissions": 1,
+    "finalDrainActualNewLogicalSubmissions": 0,
+    "logicalSubmissionAccounting": "Logical upsert calls exclude internal identical REST transport retries. Exact aggregate HTTP attempts were not instrumented.",
+    "diskFloorBytes": 1073741824
+  },
+  "finalDrain": [
+    {
+      "phase": "start",
+      "observedAt": "2026-10-23T04:53:32.197Z",
+      "reason": "parent-approved single final visibility drain",
+      "arguments": [
+        "scripts/restore-stage-vectors.ts",
+        "--dir",
+        "dist/legacy-preflight",
+        "--revision",
+        "0507465393c224c0491fc8c17c88340217acc656",
+        "--receipt",
+        "dist/legacy-preflight/legacy-receipt.json",
+        "--receipt-sha256",
+        "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc",
+        "--account",
+        "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "--index",
+        "civicsignal-v1-stage-statutes-20261022",
+        "--metric",
+        "cosine",
+        "--apply",
+        "--journal",
+        "dist/release/staging/legacy-vector-restore.json",
+        "--max-batches",
+        "1",
+        "--pending-window",
+        "100"
+      ],
+      "hashes": {
+        "helper": "228007585f4d8a6ef3987a174b2e49c2eec2c99aa21695f136420c2e850f01a9",
+        "cli": "24c22d38caf4e20265f34c4491bb9ba7461cd80e4f14f63f6fd8f85fd4e16a5c",
+        "receipt": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc",
+        "journal": "f79a0bafb3c5621c1fd4103a01de27d3c135a2a47a9503b76057d390cf4d3f20"
+      },
+      "descriptor": {
+        "created_on": "2026-10-23T02:06:42.218162Z",
+        "modified_on": "2026-10-23T02:06:42.218162Z",
+        "name": "civicsignal-v1-stage-statutes-20261022",
+        "description": "",
+        "config": {
+          "dimensions": 768,
+          "metric": "cosine"
+        }
+      },
+      "availableBytes": 14733398016,
+      "expectedUpserts": 0,
+      "remainingAcknowledgedBatches": 3,
+      "diskStopBelowBytes": 1073741824
+    },
+    {
+      "phase": "process",
+      "observedAt": "2026-10-23T04:53:32.200Z",
+      "pid": 91407
+    },
+    {
+      "phase": "end",
+      "observedAt": "2026-10-23T04:54:15.889Z",
+      "exitCode": 0,
+      "guardFired": false,
+      "minimumAvailableBytes": 14256635904,
+      "journalSha256": "f5843c7b10f453c88ad33849b358b52e5718b0d825d21f24bafb137a149db416",
+      "nextPosition": 277857,
+      "verifiedVectors": 254671,
+      "pendingBatches": 0,
+      "complete": true
+    }
+  ],
+  "finalVisibilityStop": {
+    "stoppedAt": "2026-10-23T04:49:00.669Z",
+    "exitCode": 1,
+    "errorClass": "Error",
+    "error": "Stage vector readback did not match values/IDs/fingerprints/language/jurisdiction within the bounded visibility window.",
+    "verifiedPositions": 277600,
+    "verifiedVectors": 254414,
+    "pendingBatches": 3,
+    "stoppedJournalSha256": "f79a0bafb3c5621c1fd4103a01de27d3c135a2a47a9503b76057d390cf4d3f20",
+    "ownedPid20323ConfirmedDead": true,
+    "lockAbsentBeforeFinalDrain": true,
+    "diagnostic": {
+      "format": 1,
+      "observedAt": "2026-10-23T04:52:26.061Z",
+      "journalSha256": "f79a0bafb3c5621c1fd4103a01de27d3c135a2a47a9503b76057d390cf4d3f20",
+      "target": {
+        "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "index": "civicsignal-v1-stage-statutes-20261022",
+        "createdOn": "2026-10-23T02:06:42.218162Z",
+        "dimensions": 768,
+        "metric": "cosine"
+      },
+      "descriptor": {
+        "created_on": "2026-10-23T02:06:42.218162Z",
+        "modified_on": "2026-10-23T02:06:42.218162Z",
+        "name": "civicsignal-v1-stage-statutes-20261022",
+        "description": "",
+        "config": {
+          "dimensions": 768,
+          "metric": "cosine"
+        }
+      },
+      "infoBefore": {
+        "dimensions": 768,
+        "vectorCount": 254671,
+        "processedUpToDatetime": "2026-10-23T04:47:46.618Z",
+        "processedUpToMutation": "22d143ab-96b7-4079-adb1-bf2d17b76f4c"
+      },
+      "infoAfter": {
+        "dimensions": 768,
+        "vectorCount": 254671,
+        "processedUpToDatetime": "2026-10-23T04:47:46.618Z",
+        "processedUpToMutation": "22d143ab-96b7-4079-adb1-bf2d17b76f4c"
+      },
+      "batches": [
+        {
+          "from": 277600,
+          "through": 277700,
+          "mutationId": "8019316a-4b39-4357-8c8f-be009eada5bb",
+          "acknowledgedAt": "2026-10-23T04:46:08.591Z",
+          "elapsedSinceAckMs": 371719,
+          "found": 100,
+          "missing": 0,
+          "extra": 0,
+          "duplicates": 0,
+          "valueMismatch": 0,
+          "dimensionsMismatch": 0,
+          "nonfinite": 0,
+          "maxFloat32Diff": 0,
+          "differingMetadataFields": []
+        },
+        {
+          "from": 277700,
+          "through": 277800,
+          "mutationId": "9a7b8582-1add-4b45-810d-61a0baa3b301",
+          "acknowledgedAt": "2026-10-23T04:46:10.130Z",
+          "elapsedSinceAckMs": 374107,
+          "found": 100,
+          "missing": 0,
+          "extra": 0,
+          "duplicates": 0,
+          "valueMismatch": 0,
+          "dimensionsMismatch": 0,
+          "nonfinite": 0,
+          "maxFloat32Diff": 0,
+          "differingMetadataFields": []
+        },
+        {
+          "from": 277800,
+          "through": 277857,
+          "mutationId": "5e94ab1f-ee87-41d8-a288-bb7d95e571cd",
+          "acknowledgedAt": "2026-10-23T04:46:11.622Z",
+          "elapsedSinceAckMs": 374231,
+          "found": 57,
+          "missing": 0,
+          "extra": 0,
+          "duplicates": 0,
+          "valueMismatch": 0,
+          "dimensionsMismatch": 0,
+          "nonfinite": 0,
+          "maxFloat32Diff": 0,
+          "differingMetadataFields": []
+        }
+      ],
+      "requests": [
+        {
+          "path": "descriptor",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/info",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/get_by_ids",
+          "status": 200,
+          "success": true,
+          "codes": []
+        },
+        {
+          "path": "/info",
+          "status": 200,
+          "success": true,
+          "codes": []
+        }
+      ],
+      "writes": 0,
+      "documentEmbeddings": 0,
+      "servingCalls": 0
+    },
+    "resolution": "All257 pending vectors independently matched after the stop; one explicit parent-reviewed same-journal drain verified them again, performed zero upserts and completed."
+  },
+  "priorStops": [
+    {
+      "reason": "Initial sandbox transport refusal",
+      "writesBeforeRefusal": 0
+    },
+    {
+      "reason": "Early bounded readback visibility timeout",
+      "evidence": "dist/release/staging/vector-pending-diagnostic-20261023.json",
+      "resolution": "Acknowledged batch later matched exactly; same-journal pending-window implementation was reviewed before resuming."
+    },
+    {
+      "reason": "ENOSPC while opening a durable journal temporary file",
+      "evidence": "docs/evidence/2026-10-22/stage-vector-restore-enospc.json"
+    },
+    {
+      "reason": "HTTP401 during bounded readback",
+      "evidence": "docs/evidence/2026-10-22/stage-vector-restore-auth-stop.json"
+    },
+    {
+      "reason": "Owned-process1GiB disk guard",
+      "evidence": "docs/evidence/2026-10-22/stage-vector-restore-disk-floor-stop.json",
+      "resolution": "One authorized resume followed two continuous minutes above5GiB;46 acknowledged batches drained without replay, one uncertain batch replayed identically."
+    }
+  ],
+  "code": {
+    "helper": {
+      "path": "scripts/lib/stage-vector-restore.ts",
+      "sha256": "228007585f4d8a6ef3987a174b2e49c2eec2c99aa21695f136420c2e850f01a9"
+    },
+    "cli": {
+      "path": "scripts/restore-stage-vectors.ts",
+      "sha256": "24c22d38caf4e20265f34c4491bb9ba7461cd80e4f14f63f6fd8f85fd4e16a5c"
+    },
+    "validation": {
+      "focusedRestoreTestsPassed": 21,
+      "bunTypecheckPassed": true,
+      "toolingTypecheckPassed": true,
+      "note": "These checks preceded the frozen live-copy invocation; no implementation edits occurred during copy."
+    }
+  },
+  "artifacts": [
+    {
+      "path": "dist/release/staging/legacy-vector-restore.json",
+      "bytes": 340,
+      "sha256": "f5843c7b10f453c88ad33849b358b52e5718b0d825d21f24bafb137a149db416"
+    },
+    {
+      "path": "dist/release/staging/legacy-vector-restore.log",
+      "bytes": 413545,
+      "sha256": "1460f344ea117b0647fba640ebcab92c2dd97b0319891c08b1adb9c487e943d6"
+    },
+    {
+      "path": "dist/release/staging/legacy-vector-final-drain-20261023.jsonl",
+      "bytes": 1631,
+      "sha256": "0e0ea96a02f723acdcdc4adaa7d947e494e84cff232b78f58fa6f07fd7164b18"
+    },
+    {
+      "path": "dist/release/staging/vector-final-pending-diagnostic-20261023.json",
+      "bytes": 4076,
+      "sha256": "14e86fff23eab7439324358c994c89144bf78b98f375fb97d7de7c3c4e1a4029"
+    },
+    {
+      "path": "dist/release/staging/legacy-vector-restore-checkpoint-final-visibility-20261023.json",
+      "bytes": 1108,
+      "sha256": "f79a0bafb3c5621c1fd4103a01de27d3c135a2a47a9503b76057d390cf4d3f20"
+    },
+    {
+      "path": "dist/release/staging/legacy-vector-resume-stable-20261023.jsonl",
+      "bytes": 1353,
+      "sha256": "bf3671b17fc14f082d62b94e0dd87b5d8c1f565f12143b66edeb9792b6a7dcca"
+    }
+  ],
+  "operations": {
+    "indexResets": 0,
+    "indexDeletes": 0,
+    "productionIndexWrites": 0,
+    "documentEmbeddingSubmissions": 0,
+    "servingCalls": 0,
+    "sourceEditsDuringCopy": false,
+    "committed": false
+  },
+  "limits": [
+    "This proves the isolated stage baseline equals the pinned backup, not that every original production vector was independently downloaded byID. Original live-source comparison is separately limited to329 substantive sampled vectors.",
+    "The baseline is legacy parser state; the approved1112-submission statutes-v2 reconciliation remains a separate parent-controlled step.",
+    "This receipt is a point-in-time observation before any subsequent stage pipeline mutation."
+  ]
+}

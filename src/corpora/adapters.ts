@@ -8,8 +8,11 @@ import {
   STATUTES_ONTARIO,
 } from './policies';
 import { hash128 } from '../ingest/reconcile';
-import { CANDIDATE_COUNT, decide, rankWithJev, reorder } from '../jev';
+import { ATOMIC_QUESTIONS, CANDIDATE_COUNT, decide, EXCERPT_CHARS, JEV_CONTRACT_VERSION, JEV_MODEL, rankWithJev, RELEVANCE_FLOOR, reorder } from '../jev';
+import { ENCODER_CONTRACT } from '../encoder';
 import { normalizeForSearch } from '../text';
+import { RETRIEVAL_POLICY_VERSION, retrievalTrace, type RetrievalBackend } from './retrieval-observation';
+import { loadExactProvisionRows } from './provision-lookup';
 import {
   escapeLike,
   likePatterns,
@@ -70,88 +73,55 @@ async function queryRows(
 /* -------------------------------------------------------------------------- */
 
 /**
- * How similar the best match has to be before the product answers.
+ * Existing Vectorize acceptance floor for vector-only retrieval and reranker
+ * failure fallback. Successful reranking uses its own authority decision.
  *
- * A vector search over a quarter of a million provisions never returns
- * *nothing*: ask for fifty and it returns fifty, ranked. So the honest way to
- * say "I don't have information on that" is not an empty result — it is a
- * threshold on the score, below which the product says so.
- *
- * ## The threshold is a number in the index's own scale
- *
- * **The score Vectorize returns is not a cosine.** It is near one for a good
- * match and it orders the results correctly, so it is easy to treat as a cosine
- * and to calibrate as one. It is not:
- *
- * - scaling the query vector leaves the score unchanged, so the index normalises
- *   the query;
- * - the **negative** of a vector the index holds scores −0.229, where a cosine
- *   gives −0.83;
- * - a vector the index holds scores **0.826** against itself, and not 1.
- *
- * Over the labelled questions the live score is about **0.79 of the cosine** the
- * same vectors have locally — 0.8840 local against 0.7287 live, 0.8196 against
- * 0.6278, 0.8643 against 0.7088, and so on.
- *
- * ## What that did to the first threshold
- *
- * The first threshold was **0.81**, and it was measured as a cosine on the
- * evaluation corpus. Every number in that measurement was a cosine. On the live
- * index 0.81 is above *every* answerable question — the maximum is 0.7390 — so a
- * deployment with no key for the rerank refused the whole corpus. Not because
- * the corpus was empty: because the threshold was written in a scale the index
- * does not use.
- *
- * ## The two sides, measured on the live index
- *
- * `scripts/production-floor.ts` embeds each labelled question with the
- * production encoder and reads the live score back:
- *
- * | | live score |
- * |---|---|
- * | 36 questions the corpus can answer | 0.4730 to 0.7390 |
- * | 12 it cannot answer | 0.4249 to **0.6079** |
- *
- * The two sides keep the same shape they had on the evaluation corpus: the
- * unanswerable twelve sit in a block below the answerable half, and none of them
- * reaches the top of it.
- *
- * ## The value
- *
- * **0.62** translates 0.81 into the live scale, and it keeps the same trade: 20
- * of the 36 answerable questions, and **0 of the 12 unanswerable**. 0.81 did
- * exactly that on the evaluation corpus.
- *
- * The margin over the unanswerable ceiling is 0.012, which is thin, and it is
- * the honest number. The twelve are not a tight bound, and a question whose
- * nearest provision is genuinely close sits nearer to the line than they do.
- *
- * ## The index is not the fault, and it must not be rebuilt
- *
- * The obvious reading of a compressed score is "the index holds the wrong
- * vectors, so rebuild it". It does not, and a rebuild would be wasted work.
- * `get_by_ids` returns the stored vector itself, and
- * `scripts/diagnose-stored-vectors.ts` compares it with the export:
- *
- *     the stored vector and the exported one agree at 1.000000
- *
- * So the index holds exactly the vectors the corpus produced, and the export to
- * R2 is a faithful copy of it. The measured 0.826 is the score of a vector
- * against **itself**. The compression is in how the index scores a comparison,
- * and that is not something this repository can change.
- *
- * ## What would move it
- *
- * A question the corpus cannot answer that scores above 0.62 is the failure to
- * watch for, and the twelve above are the whole of what is known about it. Every
- * measurement in this repository that compares a live score with a local cosine
- * is wrong by about a fifth. That is worth remembering before the next
- * threshold is chosen.
+ * Historical probes selected this value; they do not validate it for a new
+ * encoder, corpus revision or held-out question set. Do not rescale this value
+ * into a Postgres cosine threshold. Measure each backend through the serving
+ * route and retain the calibration/holdout evidence in docs/V1-EVALUATION.md.
+ * Changing the floor also changes the retrieval cache identity below.
  */
 export const VECTOR_FLOOR = 0.62;
 
 /** How long a cached retrieval lives. The corpus moves every three to eight days. */
 export const CACHE_SECONDS = 6 * 60 * 60;
+
+/** Every input that can change either the authority decision or the returned rows. */
+export function retrievalCacheKey(query: CorpusQuery, revision: string, useJev: boolean,
+  backend: { id: string; floor: number } = { id: 'vectorize', floor: VECTOR_FLOOR }): string {
+  const topic = (query.topic ?? '').trim();
+  const keywords = (query.keywords ?? []).map((keyword) => keyword.trim()).filter(Boolean);
+  const contract = {
+    corpus: STATUTES_CANADA.id,
+    revision,
+    question: topic || keywords.join(' '),
+    keywords,
+    language: query.language?.trim().toLowerCase() ?? null,
+    jurisdiction: query.jurisdiction ?? null,
+    riding: query.riding ?? null,
+    since: query.since ?? null,
+    until: query.until ?? null,
+    scope: query.scope ?? null,
+    limit: resolveLimit(query.limit),
+    encoder: ENCODER_CONTRACT,
+    policy: RETRIEVAL_POLICY_VERSION,
+    backend: backend.id,
+    floor: backend.floor,
+    reranker: useJev ? { contract: JEV_CONTRACT_VERSION, model: JEV_MODEL, questions: ATOMIC_QUESTIONS, excerptChars: EXCERPT_CHARS, candidates: CANDIDATE_COUNT, relevanceFloor: RELEVANCE_FLOOR } : null,
+  };
+  return `retrieval:v2:${hash128(JSON.stringify(contract))}`;
+}
+
+function cachedRetrieval(value: unknown): CachedRetrieval | undefined {
+  if (value === null || typeof value !== 'object') return undefined;
+  const entry = value as Partial<CachedRetrieval>;
+  if (!['answer', 'web', 'refuse'].includes(entry.decision ?? '') ||
+      typeof entry.anyRelevant !== 'number' || !Number.isFinite(entry.anyRelevant) ||
+      !Array.isArray(entry.order) || entry.order.length > CANDIDATE_COUNT ||
+      !entry.order.every((id) => typeof id === 'string' && id.length > 0)) return undefined;
+  return entry as CachedRetrieval;
+}
 
 export const statutesCorpus: Corpus = {
   id: STATUTES_CANADA.id,
@@ -174,7 +144,10 @@ export const statutesCorpus: Corpus = {
     // section 9 say" is sometimes "it was repealed in 2010", and a corpus that
     // cannot say so has thrown the answer away.
     if (query.act && query.section) {
-      return retrieveProvision(query, ctx);
+      const trace = await retrievalTrace(ctx, query, 'vectorize', 'exact', null);
+      try { return trace.result(await trace.provider('rows', () => retrieveProvision(query, ctx))); }
+      catch (error) { trace.observation.decision = 'error'; throw error; }
+      finally { trace.emit(); }
     }
 
     // **The vector arm, and nothing after it.**
@@ -198,7 +171,7 @@ export const statutesCorpus: Corpus = {
     // A deployment with no index and no embedder cannot answer a text search
     // at all, and says so by returning nothing rather than by scanning a
     // quarter of a million provisions one LIKE at a time.
-    return (await retrieveByVector(query, ctx)) ?? [];
+    return (await retrieveStatutesByVector(query, ctx)) ?? [];
   },
 };
 
@@ -238,156 +211,105 @@ export const statutesCorpus: Corpus = {
  * else to embed — and they are not also a filter, because filtering a search
  * by the words it searches for is a no-op that costs a scan.
  */
-async function retrieveByVector(
+export async function retrieveStatutesByVector(
   query: CorpusQuery,
   ctx: CorpusContext,
+  backend: { id: RetrievalBackend; floor: number; loadRows: typeof rowsById } = { id: 'vectorize', floor: VECTOR_FLOOR, loadRows: rowsById },
 ): Promise<RawCorpusItem[] | null> {
-  if (!ctx.vector || !ctx.embedQuery) return null;
-
-  const topic = (query.topic ?? '').trim();
-  const keywords = (query.keywords ?? []).map((k) => k.trim()).filter(Boolean);
-  const question = topic || keywords.join(' ');
-  if (!question) return null;
-
-  const limit = resolveLimit(query.limit);
-  const constrained = topic !== '' && keywords.length > 0;
-
-  // **The cache, before anything expensive.**
-  //
-  // The decision is a property of the question, not of the candidates, so a
-  // question the product refuses costs nothing on the second ask: no embedding,
-  // no index query, no rerank. That matters, because the questions a legal
-  // product cannot answer are the ones users repeat.
-  //
-  // The key holds the corpus revision, so a new revision clears the cache by
-  // itself. The question is normalised by hand: lower case, spaces collapsed,
-  // and the closing punctuation removed. No stems and no synonyms, because two
-  // questions that differ in law must not share a key.
-  //
-  // **The revision is awaited here.** A Worker drops a pending promise when the
-  // response returns, so a value that a background task reads never arrives, and
-  // every key says `unknown`. This search is asynchronous already, so the read
-  // belongs to this request, where it always completes.
-  //
-  // The key is built only when a cache is bound, because the read costs a
-  // database round trip and an unbound deployment does not need the key.
-  let cacheKey = '';
-  let cached: CachedRetrieval | null | undefined;
-  if (ctx.cache) {
-    const normalised = question.toLowerCase().replace(/\s+/g, ' ').replace(/[.?!]+$/, '').trim();
-    const revision = (await ctx.corpusRevision) ?? 'unknown';
-    cacheKey = `retrieval:${hash128(normalised)}:${revision}:${limit}`;
-    cached = (await ctx.cache.get(cacheKey)) as CachedRetrieval | null | undefined;
-    if (cached && cached.decision !== 'answer') return [];
-  }
-
-  const vector = await ctx.embedQuery(question);
-  const filter = query.language ? { language: query.language.toLowerCase() } : undefined;
-
-  // How deep to look.
-  //
-  // With Jev the candidate set is deep. The measurement showed why: the answers
-  // that a cosine sorts badly arrive between rank 50 and rank 250, and Jev
-  // lifts them — five provisions came from below rank 60 and went into the top
-  // 5, decided from a heading and 250 characters. Without Jev, the over-fetch
-  // is only for the keyword filter.
-  const depth = ctx.jev?.key
-    ? CANDIDATE_COUNT
-    : constrained
-      ? Math.min(limit * 4, MAX_LIMIT)
-      : limit;
-  const matches = await ctx.vector.query(vector, depth, filter);
-  if (matches.length === 0) return [];
-
-  // **The floor, without Jev.**
-  //
-  // A vector search always returns the k it was asked for, so "nothing found"
-  // is not something it can say. The floor is the cheaper refusal for a
-  // deployment with no key, and it is less accurate: it refuses eight of the
-  // twenty-two questions that the corpus can answer, where the atomic questions
-  // refuse none of them.
-  //
-  // It stays **before the rows are fetched**, so a question the corpus cannot
-  // answer costs one index query and no database reads. Moving it after the
-  // fetch is easy to do by accident and a test now catches it.
-  if (!ctx.jev?.key && matches[0]!.score < VECTOR_FLOOR) return [];
-
-  // The index holds no text. The rows come from the database, in the order the
-  // index ranked them, and a row the index names but the database does not have
-  // is a row that has been removed since the index was written.
-  const rows = await rowsById(
-    ctx,
-    matches.map((m) => m.id),
-  );
-  const byId = new Map(rows.map((row) => [String(row['id']), row]));
-  let ordered = matches
-    .map((match) => byId.get(match.id))
-    .filter((row): row is Record<string, unknown> => row !== undefined);
-
-  if (ctx.jev?.key) {
-    // **The decision, from the atomic answers.**
-    //
-    // One relevance score cannot make this decision. For a question about
-    // Quebec tenancy the relevance is high and correct, because the corpus does
-    // hold a federal tenancy regulation, and the answer the product needs is
-    // "not here, this is provincial". The six questions in `src/jev.ts` answer
-    // the parts of that decision, and `decide` combines them.
-    const ranked = await rankWithJev(
-      question,
-      ordered.map((row) => ({
-        id: String(row['id']),
-        title: `${String(row['act'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
-        text: String(row['text'] ?? ''),
-      })),
-      { key: ctx.jev.key },
-    );
-
-    if (cached?.order && cached.order.length > 0) {
-      // The order is cached, so the rerank does not run again. This is the
-      // saving that the second entry exists for. A provision the cache names
-      // and the search no longer returns goes to the end, which is the right
-      // answer for a row that has gone.
-      const position = new Map(cached.order.map((id, at) => [id, at]));
-      ordered = [...ordered].sort(
-        (left, right) =>
-          (position.get(String(left['id'])) ?? Number.MAX_SAFE_INTEGER) -
-          (position.get(String(right['id'])) ?? Number.MAX_SAFE_INTEGER),
-      );
-    } else if (ranked) {
-      const decision = decide(ranked.flags, ranked.anyRelevant);
-
-      // Cache the decision whether the product answers or refuses. The refusal
-      // is the cheaper half to store and the more valuable one to reuse.
-      if (decision !== 'answer') {
-        if (ctx.cache) {
-          const refusal: CachedRetrieval = { decision, anyRelevant: ranked.anyRelevant, order: [] };
-          await ctx.cache.put(cacheKey, refusal, CACHE_SECONDS);
-        }
-        return [];
-      }
-      ordered = reorder(ordered, ranked.relevance);
-      if (ctx.cache) {
-        const answer: CachedRetrieval = {
-          decision,
-          anyRelevant: ranked.anyRelevant,
-          order: ordered.map((row) => String(row['id'])).slice(0, CANDIDATE_COUNT),
-        };
-        await ctx.cache.put(cacheKey, answer, CACHE_SECONDS);
-      }
-    } else {
-      // **The rerank did not answer.** The fallback keeps the search alive, and
-      // it must keep the failure visible as well: an empty result from the
-      // floor and an empty result from the authority decision look identical to
-      // a caller, and they are not the same thing at all. Without this line the
-      // product can serve the fallback for weeks and nobody knows.
-      console.error(
-        `the rerank did not answer; the cosine order and the floor stand (best score ${matches[0]!.score.toFixed(3)})`,
-      );
-      if (matches[0]!.score < VECTOR_FLOOR) return [];
+  const trace = await retrievalTrace(ctx, query, backend.id, 'vector-floor', backend.floor);
+  const observation = trace.observation;
+  try {
+    if (!ctx.vector || !ctx.embedQuery) {
+      observation.mode = 'unavailable';
+      return null;
     }
-  }
+    const topic = (query.topic ?? '').trim();
+    const keywords = (query.keywords ?? []).map((k) => k.trim()).filter(Boolean);
+    const question = topic || keywords.join(' ');
+    if (!question) { observation.mode = 'unavailable'; return null; }
+    const limit = resolveLimit(query.limit);
+    const constrained = topic !== '' && keywords.length > 0;
 
-  if (constrained) {
+    // Cache reuse happens before embedding. Store the original safe observation
+    // so a warm response never pretends that its raw score was computed now.
+    let cacheKey = '';
+    if (ctx.cache && ctx.retrievalCacheMode !== 'bypass') {
+      if (trace.revisionKey) cacheKey = retrievalCacheKey(query, trace.revisionKey, Boolean(ctx.jev?.key), backend);
+      else observation.cache = 'bypass';
+      const cached = cacheKey ? cachedRetrieval(await ctx.cache.get(cacheKey)) : undefined;
+      if (cached && cached.decision !== 'answer') {
+        trace.cached(cached.observation);
+        return trace.result([], cached.decision);
+      }
+      if (cached?.order.length) {
+        // A hit records selection of this cached order, even if D1/R2 loading
+        // fails. Cached scores are copied only after all rows hydrate; missing
+        // rows still mark the entry stale and run the existing fresh search.
+        observation.cache = 'hit';
+        const rows = await trace.provider('rows', () => backend.loadRows(ctx, cached.order));
+        const byId = new Map(rows.map((row) => [String(row['id']), row]));
+        if (cached.order.every((id) => byId.has(id))) {
+          trace.cached(cached.observation);
+          return trace.result(statuteItems(cached.order.map((id) => byId.get(id)!), query));
+        }
+        observation.cache = 'stale';
+      }
+    }
+
+    const vector = await trace.provider('encoder', () => ctx.embedQuery!(question));
+    const filter = query.language ? { language: query.language.toLowerCase() } : undefined;
+    const depth = ctx.jev?.key ? CANDIDATE_COUNT : constrained ? Math.min(limit * 4, MAX_LIMIT) : limit;
+    const matches = await trace.provider('vector', () => ctx.vector!.query(vector, depth, filter));
+    observation.candidateCount = matches.length;
+    observation.preRefusalTopScore = matches[0]?.score ?? null;
+    observation.scoreSource = matches.length ? 'computed' : 'none';
+    observation.scoredAt = matches.length ? new Date().toISOString() : null;
+    if (observation.preRefusalTopScore !== null && !Number.isFinite(observation.preRefusalTopScore)) throw new Error('The vector backend returned an invalid score.');
+    if (!matches.length) return trace.result([]);
+
+    // The score is captured after the actual language-filtered query and before
+    // any acceptance decision, including a floor that refuses the response.
+    if (!ctx.jev?.key && matches[0]!.score < backend.floor) return trace.result([]);
+    const rows = await trace.provider('rows', () => backend.loadRows(ctx, matches.map((m) => m.id)));
+    const byId = new Map(rows.map((row) => [String(row['id']), row]));
+    let ordered = matches.map((match) => byId.get(match.id)).filter((row): row is Record<string, unknown> => row !== undefined);
+    if (!ordered.length) return trace.result([]);
+
+    if (ctx.jev?.key) {
+      const ranked = await trace.provider('reranker', () => rankWithJev(question, ordered.map((row) => ({
+        id: String(row['id']), title: `${String(row['act'])} s. ${String(row['section'])}${row['heading'] ? ` — ${String(row['heading'])}` : ''}`,
+        text: String(row['text'] ?? ''),
+      })), { key: ctx.jev!.key, onFailure: (failure) => { observation.rerankerFailure = failure; } }));
+      if (ranked) {
+        observation.mode = 'rerank';
+        const decision = decide(ranked.flags, ranked.anyRelevant);
+        if (decision !== 'answer') {
+          trace.result([], decision);
+          if (ctx.cache && cacheKey) await ctx.cache.put(cacheKey, { decision, anyRelevant: ranked.anyRelevant, order: [], observation: { ...observation } } satisfies CachedRetrieval, CACHE_SECONDS);
+          return [];
+        }
+        ordered = reorder(ordered, ranked.relevance);
+        const items = trace.result(statuteItems(ordered, query));
+        if (ctx.cache && cacheKey) await ctx.cache.put(cacheKey, {
+          decision, anyRelevant: ranked.anyRelevant, order: ordered.map((row) => String(row['id'])).slice(0, CANDIDATE_COUNT), observation: { ...observation },
+        } satisfies CachedRetrieval, CACHE_SECONDS);
+        return items;
+      }
+      observation.providers.reranker = 'error';
+      observation.fallback = true;
+      if (matches[0]!.score < backend.floor) return trace.result([]);
+    }
+    return trace.result(statuteItems(ordered, query));
+  } catch (error) {
+    observation.decision = 'error';
+    throw error;
+  } finally { trace.emit(); }
+}
+
+/** Apply the same constraints to both fresh candidates and cached order. */
+export function statuteItems(ordered: Record<string, unknown>[], query: CorpusQuery): RawCorpusItem[] {
+  const keywords = (query.keywords ?? []).map((keyword) => keyword.trim()).filter(Boolean);
+  if ((query.topic ?? '').trim() && keywords.length > 0) {
     const wanted = keywords.map((keyword) => normalizeForSearch(keyword));
     ordered = ordered
       .filter((row) => {
@@ -399,7 +321,7 @@ async function retrieveByVector(
         return wanted.every((keyword) => folded.includes(keyword));
       })
   }
-  ordered = ordered.slice(0, limit);
+  ordered = ordered.slice(0, resolveLimit(query.limit));
 
   return ordered.map((row) => ({
     corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),
@@ -436,14 +358,14 @@ async function rowsById(ctx: CorpusContext, ids: string[]): Promise<Record<strin
     const placeholders = chunk.map(() => '?').join(', ');
     const rows = await queryRows(
       ctx,
-      `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
+      `SELECT id, corpus_id, act, citation, section, status, schedule, part, heading, text, text_hash, source_url, jurisdiction, in_force, topics, language
          FROM statute_sections
         WHERE id IN (${placeholders})`,
       chunk,
     );
     found.push(...rows);
   }
-  return found;
+  return ctx.provisionTexts ? ctx.provisionTexts.hydrate(found) : found;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -475,15 +397,16 @@ async function retrieveProvision(
     ? { sql: ' AND language = ?', binds: [query.language.toLowerCase()] }
     : { sql: '', binds: [] as string[] };
 
-  const rows = await queryRows(
+  const stored = await loadExactProvisionRows(query.section!, (canonical) => queryRows(
     ctx,
-    `SELECT id, corpus_id, act, citation, section, status, heading, text, source_url, jurisdiction, in_force, topics, language
+    `SELECT id, corpus_id, act, citation, section, status, schedule, part, heading, text, text_hash, source_url, jurisdiction, in_force, topics, language
        FROM statute_sections
-      WHERE act = ? AND section = ?${lang.sql}
+      WHERE act = ? AND section = ?${lang.sql}${canonical}
       ORDER BY in_force DESC, id
       LIMIT ?`,
     [query.act!, query.section!, ...lang.binds, String(resolveLimit(query.limit))],
-  );
+  ));
+  const rows = ctx.provisionTexts ? await ctx.provisionTexts.hydrate(stored) : stored;
 
   return rows.map((row) => ({
     corpusId: String(row['corpus_id'] ?? STATUTES_CANADA.id),

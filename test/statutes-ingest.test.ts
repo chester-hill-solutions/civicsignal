@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { XMLParser } from 'fast-xml-parser';
 import { buildRows, parseStatuteXml, statusOf as statusOfText, toInsertStatements } from '../src/ingest/statutes';
 
 /** A trimmed excerpt of the real shape in `justicecanada/laws-lois-xml`. */
@@ -76,6 +77,40 @@ const REGULATION_WITH_SCHEDULE = `<?xml version="1.0" encoding="utf-8"?>
 </Regulation>`;
 
 describe('statute XML parsing', () => {
+  it('limits DOM parsing to instrument metadata while preserving a large mixed-content body', () => {
+    const text = 'An obligation with a cross-reference. '.repeat(30_000);
+    const xml = FIXTURE.replace('This Act may be cited as the <XRefExternal reference-type="act" link="A-1">Access to Information Act</XRefExternal>.', text);
+    const parse = vi.spyOn(XMLParser.prototype, 'parse');
+    try {
+      const parsed = parseStatuteXml(xml)!;
+      expect(parsed.shortTitle).toBe('Access to Information Act');
+      expect(parsed.units[0]?.text).toBe(text.trim());
+      expect(parse).toHaveBeenCalledTimes(1);
+      expect(String(parse.mock.calls[0]?.[0]).length).toBeLessThan(2_000);
+    } finally {
+      parse.mockRestore();
+    }
+  });
+
+  it.each([
+    { language: 'en' as const, title: 'Canada Health Act', enactsId: '151434', sectionId: '151510', enacts: 'NOW, THEREFORE, Her Majesty enacts as follows:', heading: 'Public administration' },
+    { language: 'fr' as const, title: 'Loi canadienne sur la santé', enactsId: '147824', sectionId: '147900', enacts: 'Sa Majesté édicte :', heading: 'Gestion publique' },
+  ])('keeps an unnumbered enacting clause separate from section8 in $language', ({ language, title, enactsId, sectionId, enacts, heading }) => {
+    // Reduced from pinned C-6.xml: seven preamble clauses precede an unlabelled
+    // Enacts/Provision. Its global ordinal used to become a second section8.
+    const xml = `<Statute in-force="yes" xmlns:lims="http://justice.gc.ca/lims"><Identification>
+      <ShortTitle>${title}</ShortTitle><Chapter><ConsolidatedNumber>C-6</ConsolidatedNumber></Chapter>
+      </Identification><Introduction><Preamble>${Array.from({ length: 7 }, (_, at) => `<Provision><Text>Whereas ${at}.</Text></Provision>`).join('')}</Preamble>
+      <Enacts><Provision lims:id="${enactsId}"><Text>${enacts}</Text></Provision></Enacts></Introduction>
+      <Body><Section lims:id="${sectionId}"><MarginalNote>${heading}</MarginalNote><Label>8</Label><Text>The actual administration requirement.</Text></Section></Body></Statute>`;
+    const rows = buildRows(parseStatuteXml(xml)!, { kind: 'acts', language });
+    expect(rows.filter((row) => row.section === '8').map((row) => row.id)).toEqual([`acts-${language}-${sectionId}`]);
+    const introductory = rows.find((row) => row.id === `acts-${language}-${enactsId}`)!;
+    expect(introductory.section).toBe('Enacting clause 1');
+    expect(introductory.text).toBe(enacts);
+    expect(introductory.source_url).toContain(`/FullText.html#h-${enactsId}`);
+  });
+
   it('reads the short title and the consolidated number', () => {
     const parsed = parseStatuteXml(FIXTURE)!;
     expect(parsed.shortTitle).toBe('Access to Information Act');

@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T12:34:35.786612Z",
+  "source": {
+    "kind": "authenticated Cloudflare dashboard visible DOM",
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "traceId": "b3f7730e5e15b4e3aabceee79ec93453",
+    "requestId": "5165ba5204b0df93f5c5df903c2a8639",
+    "eventId": "01M5MAF5ZD0000000000000007"
+  },
+  "event": {
+    "scriptVersion": "c891a4aa-0ad1-4b76-9045-d2527815a047",
+    "eventType": "scheduled",
+    "entrypoint": "default",
+    "cron": "0 12 * * *",
+    "scheduledTimeTelemetrySeconds": 1792756845.909,
+    "reportedScheduledTimeUtc": "2026-10-23T12:00:45.909000Z",
+    "errorAt": "2026-10-23T12:06:16.301Z",
+    "errorName": "Error",
+    "message": "Durable Object reset because its code was updated.",
+    "stackLocation": "services/pipeline/worker.ts:107:7"
+  },
+  "sameDashboardProgress": [
+    {
+      "at": "2026-10-23T12:02:55.677Z",
+      "changed": 200
+    },
+    {
+      "at": "2026-10-23T12:04:55.420Z",
+      "changed": 400
+    }
+  ],
+  "sameDashboardRediffStarts": [
+    "2026-10-23T12:10:49.592Z",
+    "2026-10-23T12:11:41.897Z",
+    "2026-10-23T12:15:16.494Z",
+    "2026-10-23T12:19:40.013Z"
+  ],
+  "independentD1AndBudget": [
+    {
+      "path": "dist/release/staging/pipeline-calendar-1200/post-window-observation.json",
+      "submitted": 528,
+      "changes": 400,
+      "sha256": "e8325c8ce8e4158ba013c9ad40d8f21167f45d84045836891a51a10aaf141a5c"
+    },
+    {
+      "path": "dist/release/staging/pipeline-calendar-1200/completion-observation.json",
+      "submitted": 688,
+      "changes": 400,
+      "sha256": "b6857d2d7177f25a8cb5e319538a1c2155f197251341b3121b3184c98c25d9dd"
+    },
+    {
+      "path": "dist/release/staging/pipeline-calendar-1200/progress-1225.json",
+      "submitted": 784,
+      "changes": 400,
+      "sha256": "3a88222c5d71e20bdc8741eba8067cffc52fd8094f1a127882f1cc284390623f"
+    }
+  ],
+  "historicalTelemetryKeyApi": {
+    "httpStatus": 403,
+    "code": 10000,
+    "path": "dist/release/staging/pipeline-calendar-1200/telemetry-keys.json",
+    "automaticApprovalRejection": false
+  },
+  "earlyScheduledAnalytics": {
+    "httpStatus": 200,
+    "errors": null,
+    "scheduledRows": 0,
+    "path": "dist/release/staging/pipeline-calendar-1200/early-analytics-1221.json"
+  },
+  "conclusions": {
+    "scheduledDispatchObserved": true,
+    "completedReconciliation": false,
+    "underlyingResetOperationProven": false,
+    "budgetResetOrIncreased": false
+  },
+  "limits": [
+    "Dashboard directly proves a scheduled invocation and a code-update reset exception; prior empty GraphQL observations are not evidence that no event occurred.",
+    "The cleanup CLI additionally POSTs unchanged subdomain settings before schedules PUT. This is an unnecessary mutation, but temporal correlation does not prove it caused the reset.",
+    "The raw scheduled telemetry timestamp is retained separately from nominal calendar minute and from ScheduledController milliseconds.",
+    "No private request headers, raw keys or protected customer data are retained."
+  ]
+}

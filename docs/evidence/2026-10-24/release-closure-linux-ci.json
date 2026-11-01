@@ -1,0 +1,45 @@
+{
+  "format": 1,
+  "kind": "release-closure-linux-ci-observation",
+  "observedAt": "2026-10-24T05:09:38.049606+00:00",
+  "repository": "chester-hill-solutions/civicsignal",
+  "pr": 1,
+  "sourceHead": "9e2fe178ff1ebc9ea25dd89a36987e4a07400a01",
+  "baseHead": "717bf3299701d06ec6d85add276e1ed546c69387",
+  "testedGeneratedMerge": "e8c3e75931b13736a814a8bc8a47bf5c7da895bc",
+  "runId": 40064459109,
+  "jobId": 120784672577,
+  "conclusion": "success",
+  "jobStepsAllSucceeded": true,
+  "tests": {
+    "files": 93,
+    "cases": 1566,
+    "pythonCases": 23
+  },
+  "compilerProjects": [
+    "worker",
+    "bun",
+    "tooling",
+    "snapshot"
+  ],
+  "vendorFilesVerified": 117,
+  "workerDryBuilds": [
+    "api",
+    "pipeline",
+    "encoder",
+    "snapshot",
+    "restore"
+  ],
+  "logSha256": "d735aaecdc69ce62906bdcd0acf33e6c33a1ce2fb8be4be348514eaae76b6c4a",
+  "logBytes": 95653,
+  "limits": [
+    "Generated pull-request merge containing this exact head; not a detached standalone head checkout.",
+    "The head changes documentation only; deployed API source remains78e0c2f.",
+    "This does not qualify later uncommitted snapshot/acquisition work or close hosted release gates."
+  ],
+  "cloudChanges": 0,
+  "servingCalls": 0,
+  "generationCalls": 0,
+  "productionChanged": false,
+  "railwayChanged": false
+}

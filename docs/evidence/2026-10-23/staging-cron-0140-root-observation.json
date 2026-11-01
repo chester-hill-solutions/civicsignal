@@ -1,0 +1,451 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-24T01:49:08.775284+00:00",
+  "scope": "actual-staging-0140-claimed-cron-experiment-and-postevent-read",
+  "observationPassed": true,
+  "scheduledDiscoveryProven": false,
+  "scheduledPublicationProven": false,
+  "releaseCronGate": "open",
+  "productionChanged": false,
+  "railwayChanged": false,
+  "event": {
+    "scheduledAt": "2026-10-24T01:40:00.000Z",
+    "scheduledTime": 1792806000000,
+    "cron": "40 1 24 10 *",
+    "cleanupDueAt": "2026-10-24T01:45:00.000Z",
+    "eventSha256": "a40c908ae92afa5fcb82814e49c3306f1bbbc5feafef119edb50330f2e701879",
+    "configSha256": "97c881911689b1f448d1e34b9cff94d6f0783b43bcf2bb4dbcd6a390a0b3c9f4"
+  },
+  "runtime": {
+    "worker": "civicsignal-v1-stage-snapshot-20261022",
+    "deployedVersionId": "f00194fb-5062-4b0a-930b-b2aa12ded3f5",
+    "deploymentId": "b2dd1346-e240-4005-9c9d-5c0e33f1bb35",
+    "runtimeCandidateSha256": "fcaf6d4b97b21389e5905407369934de6a4053a9c9d18e01ce3fafc36999c6e2",
+    "bundleSha256": "051b75c0109fd8fd0ca4401cec0568a194a33ee6c24437d573256923d8fed405",
+    "opsCandidateSha256": "908f0e1b29f8e6b654c09ead378bda8ca666e5af352aef45d76f0f6f479eba64",
+    "identityVerifiedAt": "2026-10-24T01:03:48.583Z",
+    "identityMeaning": "Actual successful deployment and independent pre-event postverify; the final seven-request read did not repeat version/settings inventory reads.",
+    "preflightCalendarEmpty": true,
+    "deployedCalendarConfiguredEmpty": true,
+    "postverifyCalendarEmpty": true,
+    "postverifyExactBindings": 7,
+    "postverifyRuntime": {
+      "compatibility_date": "2026-10-22",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "limits": {
+        "cpu_ms": 300000,
+        "subrequests": 100000
+      }
+    },
+    "prearmClaimReceiptsAbsent": true,
+    "wireUploadMaximumAttempts": 3
+  },
+  "arming": {
+    "passed": true,
+    "confirmedAt": "2026-10-24T01:05:21.558Z",
+    "confirmedMarginBeforeEventMs": 2078442,
+    "oneArmAttempt": true,
+    "requests": 3,
+    "twoIndependentOwnedGuardsReady": true,
+    "initialCalendarPairs": [
+      "PUT[]",
+      "GET[]"
+    ]
+  },
+  "cleanup": {
+    "bothGuardsPassed": true,
+    "bothOwnedProcessesSettled": true,
+    "bothOuterCommandsExitZeroReportedByParent": true,
+    "primary": {
+      "reason": "Tplus5-unconditional",
+      "enteredReceiptObservations": 20,
+      "confirmedAt": "2026-10-24T01:45:03.580Z",
+      "finishedAt": "2026-10-24T01:45:03.762Z",
+      "emptyCalendar": true
+    },
+    "backup": {
+      "reason": "Tplus5-unconditional",
+      "enteredReceiptObservations": 0,
+      "watchdogUnconditional": true,
+      "confirmedAt": "2026-10-24T01:45:04.617Z",
+      "finishedAt": "2026-10-24T01:45:04.761Z",
+      "emptyCalendar": true
+    },
+    "eachGuardFinalPair": [
+      "PUT[]",
+      "GET[]"
+    ],
+    "calendarConfirmationMeaning": "Point-in-time empty-calendar readbacks, followed by the independent final reader calendar GET. Final cleanup journal entries were buffered until both wire operations finished; their journal flush timestamps are not wire-start timestamps."
+  },
+  "posteventReader": {
+    "candidateSha256": "ddb0a05b444f688f28f1d192f6c1eaf6820159423f20622c8f90f5649846de60",
+    "startedAt": "2026-10-24T01:45:34.387786+00:00",
+    "finishedAt": "2026-10-24T01:45:38.207Z",
+    "requests": 7,
+    "requestScope": "One fixed read-only GraphQL POST, three exact R2 receipt GETs, calendar GET, canonical instance GET and prior manifest GET.",
+    "outerCommandExitCodeReportedByParent": 0,
+    "ownedExitCode": 0,
+    "ownedProcessSettled": true,
+    "offlineReceiptChainQualified": true,
+    "scheduledMetricWindow": {
+      "from": "2026-10-24T01:39:00.000Z",
+      "to": "2026-10-24T01:45:00.000Z"
+    },
+    "scheduledMetricRows": 0,
+    "historicalHealthWindow": {
+      "from": "2026-10-24T01:03:00.000Z",
+      "to": "2026-10-24T01:04:00.000Z",
+      "healthIntentAt": "2026-10-24T01:03:45.985Z",
+      "healthResponseAt": "2026-10-24T01:03:46.186Z"
+    },
+    "historicalHealth": [
+      {
+        "datetime": "2026-10-24T01:03:46Z",
+        "scriptName": "civicsignal-v1-stage-snapshot-20261022",
+        "status": "success",
+        "requests": 1,
+        "errors": 0
+      }
+    ],
+    "receiptReads": {
+      "entered": {
+        "httpStatus": 404,
+        "present": false,
+        "errorCodes": [
+          10007
+        ],
+        "observedAt": "2026-10-24T01:45:35.836Z"
+      },
+      "completed": {
+        "httpStatus": 404,
+        "present": false,
+        "errorCodes": [
+          10007
+        ],
+        "observedAt": "2026-10-24T01:45:36.239Z"
+      },
+      "failed": {
+        "httpStatus": 404,
+        "present": false,
+        "errorCodes": [
+          10007
+        ],
+        "observedAt": "2026-10-24T01:45:36.847Z"
+      }
+    },
+    "emptyCalendar": {
+      "observed": true,
+      "at": "2026-10-24T01:45:37.126Z",
+      "pointInTimeOnly": true
+    },
+    "canonicalInstance": {
+      "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+      "workflowVersionId": "69a34c03-cc72-4692-9663-ccd9da23ac2b",
+      "triggerSource": "api",
+      "queued": "2026-10-23T06:31:56.733Z",
+      "start": "2026-10-23T06:31:58.499Z",
+      "end": "2026-10-23T06:40:42.294Z",
+      "status": "complete",
+      "stepCount": 127,
+      "publicationAttribution": "Existing canonical API-created instance; never Cron proof."
+    },
+    "manifestSha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e",
+    "manifestUnchanged": true,
+    "readerNewSourceRequests": 0,
+    "readerNewModelRequests": 0,
+    "readerNewServingRequests": 0,
+    "readerRemoteMutations": 0,
+    "retries": 0,
+    "redirects": 0,
+    "refreshes": 0
+  },
+  "scheduledSourceBudget": {
+    "maximumRequestsForExactRuntimeEvent": 1,
+    "actualRuntimeSourceCallAttested": false,
+    "actualRuntimeSourceCallCount": null,
+    "meaning": "The frozen runtime bounds one possible source metadata attempt; the read returned no handler receipts and does not attest whether it occurred."
+  },
+  "priorHistoricalReceipt": {
+    "path": "docs/evidence/2026-10-23/staging-cron-historical-root-observation.json",
+    "bytes": 1956,
+    "sha256": "671e7716b5f06494a3ef554ebe0de008ab9e9ac4f8f1f64894bedc2b5bd59baf"
+  },
+  "phaseEvidence": {
+    "preflight": {
+      "result": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/preflight.result.json",
+        "bytes": 1196,
+        "sha256": "1ab495fb777e9a05ae6ee038fb618e3209241ee8a301fb5f97d7425151a966c1"
+      },
+      "ownedResult": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/preflight.owner-result.json",
+        "bytes": 1050,
+        "sha256": "0f5bcc0b62f86346705c45bbd298a956a3cd1e747153e890c533addeda59a3a5"
+      },
+      "childAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/preflight.accepted.json",
+        "bytes": 95,
+        "sha256": "60c3d9d210777e7cfbe4888a7ccf15197909f4d536dcf1aa35ef0e53cd2be01a"
+      },
+      "ownedAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/preflight.owner-accepted.json",
+        "bytes": 95,
+        "sha256": "2e42c92d1a1bdf71a321e1ac2ae4d31a0585a20a98f08b126e87412c82f2bceb"
+      },
+      "ownedIntent": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/preflight.owner.started.json",
+        "bytes": 368,
+        "sha256": "c0c1c5a16fe3f84bc823cbaf38e6a25efd3a4c6925c55a591e78f1f28e524ae5"
+      },
+      "journal": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/preflight.journal.jsonl",
+        "bytes": 1818,
+        "sha256": "75bf4d08bab205e8eb15a3f0290407ce540a2fce97bb054ccaef8fc9b8cbb7a2"
+      },
+      "log": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/preflight.owner.log",
+        "bytes": 1196,
+        "sha256": "1ab495fb777e9a05ae6ee038fb618e3209241ee8a301fb5f97d7425151a966c1"
+      }
+    },
+    "deploy": {
+      "result": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/deploy.result.json",
+        "bytes": 753,
+        "sha256": "42ec81f193f1017e6c1d25485fd15c8260821107b620c0a7b182c264a0bbd5f7"
+      },
+      "ownedResult": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/deploy.owner-result.json",
+        "bytes": 1047,
+        "sha256": "1732505d0f545aaa45592d4c85acb9569a2c15a076c35164788863dd0876c0be"
+      },
+      "childAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/deploy.accepted.json",
+        "bytes": 95,
+        "sha256": "fb44749563d078f70fd524c965d5af72a34de46dac853e5845bac799247a282c"
+      },
+      "ownedAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/deploy.owner-accepted.json",
+        "bytes": 95,
+        "sha256": "2cc80a4f1afef5620c36848c9359fc18a610bb5bdafc82f890ce554fde361d8a"
+      },
+      "ownedIntent": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/deploy.owner.started.json",
+        "bytes": 365,
+        "sha256": "248c03e7a9cb852f4afb413aa5746a527ccdf9bbc10b65732d862156a0e3babb"
+      },
+      "journal": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/deploy.journal.jsonl",
+        "bytes": 408,
+        "sha256": "0f39b49d52a036798c4ab4ff4ff8a6e342f8e80b7dadc6e6d6a88e2335eb0a73"
+      },
+      "log": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/deploy.owner.log",
+        "bytes": 753,
+        "sha256": "42ec81f193f1017e6c1d25485fd15c8260821107b620c0a7b182c264a0bbd5f7"
+      }
+    },
+    "postverify": {
+      "result": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/postverify.result.json",
+        "bytes": 1785,
+        "sha256": "4e6c0030e5d289df40d2b04b56784f80dd2cf37a5ee4ad35a11b9d5b9bba8af2"
+      },
+      "ownedResult": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/postverify.owner-result.json",
+        "bytes": 1051,
+        "sha256": "5b4d8a6e3bab4ce3c430fd559fd747a928105b035c4f2b73b52ee77af3140d35"
+      },
+      "childAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/postverify.accepted.json",
+        "bytes": 95,
+        "sha256": "2d25c8dcfe488443f6ae73a12c0e88b06333ac086c5eeeb619e34c9bf1cf89ba"
+      },
+      "ownedAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/postverify.owner-accepted.json",
+        "bytes": 95,
+        "sha256": "048e65c7f91b6bc5df7171dbdac9c2cdfd776f7140a71d1dab897e8522c2e03a"
+      },
+      "ownedIntent": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/postverify.owner.started.json",
+        "bytes": 369,
+        "sha256": "2dd8d8cb83ce09e2927d3a86bf2d886d56552b32e2d2cfce1c276afc4524ac81"
+      },
+      "journal": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/postverify.journal.jsonl",
+        "bytes": 4318,
+        "sha256": "0076f13dfc2060f6dbaf012d8305e3b783877fb03b2ff98040c124d37958ab92"
+      },
+      "log": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/postverify.owner.log",
+        "bytes": 1785,
+        "sha256": "4e6c0030e5d289df40d2b04b56784f80dd2cf37a5ee4ad35a11b9d5b9bba8af2"
+      }
+    },
+    "arm": {
+      "result": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/arm.result.json",
+        "bytes": 731,
+        "sha256": "d8774f4c6f233d09e4585705da8a024a24bd04768cd12b981285fad55d6a433a"
+      },
+      "ownedResult": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/arm.owner-result.json",
+        "bytes": 1044,
+        "sha256": "5f24aa1335a06b19cdc41eebe033381f6865181409774c84c64fe50bdc1659c2"
+      },
+      "childAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/arm.accepted.json",
+        "bytes": 95,
+        "sha256": "15d3d898cc44d6352e89137c6e8b121b71bd5fef5f43b8fe14b8c433e716a0d0"
+      },
+      "ownedAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/arm.owner-accepted.json",
+        "bytes": 95,
+        "sha256": "e7ebbfbb706a4d5def519bbad56a2c8ad4bea5581f986263d96a2a7c588237ff"
+      },
+      "ownedIntent": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/arm.owner.started.json",
+        "bytes": 362,
+        "sha256": "49b0bd65e6e5044b2f0cc84312f3c1bce9845b4a5c77244d761f761a1eb6474f"
+      },
+      "journal": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/arm.journal.jsonl",
+        "bytes": 1650,
+        "sha256": "fa1085c1a6ed059b72476495df8a2d8929ccaa54f491a73d8133ade9a85ac1db"
+      },
+      "log": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/arm.owner.log",
+        "bytes": 731,
+        "sha256": "d8774f4c6f233d09e4585705da8a024a24bd04768cd12b981285fad55d6a433a"
+      }
+    },
+    "guard-primary": {
+      "result": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-primary.result.json",
+        "bytes": 832,
+        "sha256": "6dcc87755ccd7da2ab9e36fb80c905c6993b54c7b4ccf22fef6d11a0e013f0d7"
+      },
+      "ownedResult": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-primary.owner-result.json",
+        "bytes": 1054,
+        "sha256": "d0815f549df2e0cd7df29a79318d43c5edceb72797e846cf73119bcd2dc0afd9"
+      },
+      "childAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-primary.accepted.json",
+        "bytes": 95,
+        "sha256": "e62165e575776c695d2b764c78379c4198b30c3cb0b5c279b518b2fc43fb0ecb"
+      },
+      "ownedAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-primary.owner-accepted.json",
+        "bytes": 95,
+        "sha256": "7d2137faafc35be33aea268dc9312a027c8a2aa66459ce78c222d6aa4c11d2d6"
+      },
+      "ownedIntent": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-primary.owner.started.json",
+        "bytes": 371,
+        "sha256": "f4029f8716c97249787effb23a7985c5f1aec7a343968de0250b301d0f455952"
+      },
+      "journal": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-primary.journal.jsonl",
+        "bytes": 12679,
+        "sha256": "51d0d5c0974fdb32b971ba30c712c4caf868679cb0a20de4f4ab29c0be0d4408"
+      },
+      "log": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-primary.owner.log",
+        "bytes": 832,
+        "sha256": "6dcc87755ccd7da2ab9e36fb80c905c6993b54c7b4ccf22fef6d11a0e013f0d7"
+      }
+    },
+    "guard-backup": {
+      "result": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-backup.result.json",
+        "bytes": 828,
+        "sha256": "25c6b4045bd481d0173e8333dfbeea2b4bc1b4778f4d1e07eaa6bf178c13a3cf"
+      },
+      "ownedResult": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-backup.owner-result.json",
+        "bytes": 1054,
+        "sha256": "88cbc56debda9a7b92768759aeb8eadcb60220a6c1d52ad96f7b137699f0361e"
+      },
+      "childAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-backup.accepted.json",
+        "bytes": 95,
+        "sha256": "b519894dc06c09926485a04d565ed6a862d4333ea937ea852b11a526c10fe622"
+      },
+      "ownedAcceptance": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-backup.owner-accepted.json",
+        "bytes": 95,
+        "sha256": "54c8bf5a2aa33c29f21d3d644ed149534c55944d80d1f3d3978ec01336478924"
+      },
+      "ownedIntent": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-backup.owner.started.json",
+        "bytes": 371,
+        "sha256": "0d713e9dee6429a92e18277a97dfd19ef0a28c5aa904cd7b21ba9e1b097a707a"
+      },
+      "journal": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-backup.journal.jsonl",
+        "bytes": 1799,
+        "sha256": "2a1fba182489ef7341fe38d9d0bbcf1a3e83a5e7f2ea3dcf7beae0cfe9cbc8d7"
+      },
+      "log": {
+        "path": "dist/release/staging/snapshot-claimed-cron-ops-v1/guard-backup.owner.log",
+        "bytes": 828,
+        "sha256": "25c6b4045bd481d0173e8333dfbeea2b4bc1b4778f4d1e07eaa6bf178c13a3cf"
+      }
+    }
+  },
+  "readerEvidence": {
+    "result": {
+      "path": "dist/release/staging/snapshot-claimed-cron-evidence-v1/observe.result.json",
+      "bytes": 6085,
+      "sha256": "42526af900bfa0524702c78864b602bd5944f5ec2a6bde5ecdea81246c8647e1"
+    },
+    "ownedResult": {
+      "path": "dist/release/staging/snapshot-claimed-cron-evidence-v1/observe.owner-result.json",
+      "bytes": 1048,
+      "sha256": "1545d7eda25f4530e59e0a0227fed0580fed2932409bc754806dccba7377f0ab"
+    },
+    "childAcceptance": {
+      "path": "dist/release/staging/snapshot-claimed-cron-evidence-v1/observe.accepted.json",
+      "bytes": 95,
+      "sha256": "edde72bba8f4d6b5cb3f77d05564af70d45a7f7394599278ea95a3f8eaed16dd"
+    },
+    "ownedAcceptance": {
+      "path": "dist/release/staging/snapshot-claimed-cron-evidence-v1/observe.owner-accepted.json",
+      "bytes": 95,
+      "sha256": "518632521bffde53d1c9fc85bbc411b5ca4bee02fae8f9a178079b5cfe19172a"
+    },
+    "ownedIntent": {
+      "path": "dist/release/staging/snapshot-claimed-cron-evidence-v1/observe.owner.started.json",
+      "bytes": 366,
+      "sha256": "beeb180b38980180b4649a5e7c9f9d2b990973cda936aaf6e6d6e250c1a4c987"
+    },
+    "journal": {
+      "path": "dist/release/staging/snapshot-claimed-cron-evidence-v1/observe.journal.jsonl",
+      "bytes": 5435,
+      "sha256": "8c990e4ca88979ec02a3bd65bf7d1aa196eb4b4f4b50c3bbf128a1c8fb0daa53"
+    },
+    "log": {
+      "path": "dist/release/staging/snapshot-claimed-cron-evidence-v1/observe.owner.log",
+      "bytes": 164,
+      "sha256": "6ae44572f2aede724afa7bf21fc8bb38b32847ac8d95c9684886079a53e026e3"
+    }
+  },
+  "privacy": {
+    "credentialValuesIncluded": false,
+    "credentialHashesIncluded": false,
+    "rawResponseBodiesIncluded": false,
+    "onlyNoncredentialArtifactAndResponseDigestsIncluded": true
+  },
+  "reconciliationNetworkRequests": 0,
+  "reconciliationCredentialReads": 0,
+  "limitations": [
+    "No matching scheduled metric row or entered/completed/failed event receipt was returned in the fixed scope. This does not establish non-dispatch, complete visibility/retention or a platform/provider cause.",
+    "The historical health control verifies visibility of that prior invocation; it does not establish scheduled execution.",
+    "The canonical127-step Workflow and unchanged manifest remain attributed to prior API creation, not this Cron event.",
+    "Scheduled source execution remains unattested. Reader source/model/serving counts are zero; the frozen runtime event ceiling remains one potential source call.",
+    "Cleanup and final calendar[] are point-in-time observations. The release Cron discovery/publication gate remains open; no automatic retry, later event or allowance extension is authorized."
+  ]
+}

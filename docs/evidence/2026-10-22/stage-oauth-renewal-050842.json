@@ -1,0 +1,33 @@
+{
+  "format": 1,
+  "scope": "One explicitly authorized read-only stage-account Wrangler whoami after the previous OAuth expiry",
+  "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "config": "dist/release/staging/resources.json",
+  "command": "CI=true WRANGLER_SEND_METRICS=false CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a wrangler whoami --account ad5ec479b9a421faa2ed06c3d1c2b23a --config dist/release/staging/resources.json",
+  "check": {
+    "phase": "checked",
+    "scheduledAt": "2026-10-23T05:08:42Z",
+    "observedAt": "2026-10-23T05:08:45.177Z",
+    "exitCode": 0,
+    "timedOut": false,
+    "approvedAccountListed": true,
+    "oauthReported": true,
+    "unknownArgument": false,
+    "beforeExpiry": "2026-10-23T05:08:41.234Z",
+    "afterExpiry": "2026-10-23T06:08:42.390Z",
+    "expiryAdvanced": true,
+    "validPast0600": true,
+    "inFlightCopyAltered": false,
+    "credentialValuesPrinted": false
+  },
+  "rawProof": {
+    "path": "dist/release/staging/vector-oauth-check-050842-20261023.jsonl",
+    "sha256": "279cb1f076ec481a682c56f63d1617c19220229844de1116269023943b3ea82c"
+  },
+  "forcedLogin": false,
+  "manualCredentialOrExpiryEdit": false,
+  "productionProbe": false,
+  "servingCalls": 0,
+  "documentEmbeddings": 0,
+  "indexWrites": 0
+}

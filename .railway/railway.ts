@@ -92,7 +92,9 @@ export default defineRailway((ctx) => {
    * say. The corpus is rebuildable — the upstream repository is its backup —
    * but rebuilding it costs two hours of embedding, which is not nothing.
    */
-  const corpusVolume = volume('corpus-volume', { mountPath: '/var/lib/postgresql/data' });
+  // Mounts belong to the service, not VolumeConfig. Keep the existing volume
+  // declaration; changing its live attachment requires a separately reviewed plan.
+  const corpusVolume = volume('corpus-volume');
 
   /**
    * The corpus database.

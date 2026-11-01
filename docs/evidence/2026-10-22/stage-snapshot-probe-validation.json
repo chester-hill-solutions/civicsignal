@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T04:08:26.932988+00:00",
+  "status": "Local diagnostic validation complete; hosted diagnostic deployment remains pending",
+  "sourceSha256": {
+    "services/snapshot/staging-probe.ts": "c923ca4d5479315e9fca0d37fddc16bb079ae487f0a459c05ad35a64c532444a",
+    "services/snapshot/staging-probe-receipts.ts": "e551ad31bfbf852f22db39f423a33ce986cb93140ec98d96a42788398e78682b",
+    "services/snapshot/tsconfig.json": "473b658317e9d98ab9551f92f26ea98fc9f65cc77739c075fba0486eae28cca3",
+    "test/snapshot-staging-probe.test.ts": "e79a00bb276ea3699322975c1527bc2fb3b9cc23f25474a94737d1f8fdffb134",
+    "test/snapshot-staging-probe-workerd.test.ts": "a9ade5a0208ed6a06c98e6ebed8cadebcdd870c631ddda7bef148e1f8bba3435",
+    "services/snapshot/worker.ts": "c611302bf8947fe20d38fced359b55565e5aa4f80bc014c4e667c31249181360"
+  },
+  "unchangedProductionSnapshotEntrypoint": true,
+  "fullValidation": {
+    "command": "bun run validate",
+    "exitCode": 0,
+    "tests": 755,
+    "files": 72,
+    "compilerProjects": 4,
+    "vendorFiles": 117,
+    "realWorkerdRuntimeProbes": 2,
+    "billingInvariants": true,
+    "corpusInvariants": true,
+    "log": "/private/tmp/civicsignal-stage-snapshot-probe-validate.log",
+    "logSha256": "86019266e0a3bd907f809f08bfd002ed065a723bd009699a5022315c87c54f94"
+  },
+  "focusedProbeValidation": {
+    "tests": 19,
+    "pureFaultReplayPrivacyGuardTests": 16,
+    "realWorkerdIntegrationTests": 3,
+    "integration": "Actual local scheduled dispatch with concurrent events, unchanged native Workflow class, mocked GitHub source, two-language publication, source failure, wrong-stage rejection and immutable replay"
+  },
+  "isolatedConfigReview": {
+    "generatedAt": "2026-10-23T04:05:55.764Z",
+    "config": "dist/release/staging/snapshot-diagnosis/staging-probe.json",
+    "sha256": "70c964847ed91a852a01987c02746e7df06f0a4612809e06889c51e6d6fa5c14",
+    "diff": [
+      {
+        "path": "main",
+        "before": "/Users/ladmin/WebProjects/civicsignal/services/snapshot/worker.ts",
+        "after": "/Users/ladmin/WebProjects/civicsignal/services/snapshot/staging-probe.ts"
+      },
+      {
+        "path": "vars.SNAPSHOT_STAGE_ID",
+        "before": null,
+        "after": "civicsignal-v1-stage-snapshot-20261022"
+      }
+    ],
+    "unchangedOriginalWorkerSha256": "c611302bf8947fe20d38fced359b55565e5aa4f80bc014c4e667c31249181360",
+    "triggers": {
+      "crons": []
+    },
+    "hostedActionsAuthorized": false
+  },
+  "probeDryRun": {
+    "wranglerVersion": "4.151.3",
+    "exitCode": 0,
+    "uploadKiB": 134.1,
+    "gzipKiB": 29.71,
+    "log": "/private/tmp/civicsignal-stage-snapshot-probe-dry-run.log",
+    "logSha256": "ccaf3f82f7ecd88473980eddb40d033edc0dfadd42d47118134f56619ee58472"
+  },
+  "bounds": {
+    "healthStorageSourceWorkflowCalls": 0,
+    "ordinaryScheduledR2Operations": 4,
+    "maximumScheduledR2Operations": 6,
+    "maximumReceiptObjectsPerEventIdentity": 3,
+    "maximumBytesPerReceipt": 1024,
+    "replayedRequestsMayRepeat": true,
+    "workflowCompletionSeparateFromScheduledHandlerReturn": true
+  },
+  "hostedAcceptance": false,
+  "servingApiRequests": 0,
+  "documentEmbeddingSubmissions": 0,
+  "productionChanges": false,
+  "railwayServiceChanges": false
+}

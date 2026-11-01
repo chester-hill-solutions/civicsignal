@@ -4,6 +4,8 @@ import type {
   CorpusQuery as BaseCorpusQuery,
 } from "@chester-hill-solutions/corpus";
 import { normalizeForSearch } from '../text';
+import type { RetrievalObservation } from './retrieval-observation';
+import type { ProvisionTextReader } from './text-store';
 
 export type { Corpus };
 
@@ -14,7 +16,15 @@ export type { Corpus };
  * uses the cosine order and the floor, and nothing else changes.
  */
 export interface CorpusContext extends BaseCorpusContext {
+  /** Optional, verified text hydration during the D1-to-R2 storage cutover. */
+  provisionTexts?: ProvisionTextReader;
+  /** Request-scoped, metadata-only observation of the actual retrieval path. */
+  onRetrieval?: (observation: RetrievalObservation) => void;
+  /** Explicit authenticated evaluation requests may measure the uncached path. */
+  retrievalCacheMode?: 'default' | 'bypass';
   jev?: { key: string };
+  /** Verified corpus state; callers may share one metadata read across surfaces. */
+  corpusAvailability?: CorpusAvailabilityMap | Promise<CorpusAvailabilityMap>;
   /**
    * The cache, when the deployment has one.
    *
@@ -30,7 +40,7 @@ export interface CorpusContext extends BaseCorpusContext {
    *
    * The cache key holds it, so a new revision clears the cache by itself. The
    * value comes from the corpus state, which the cycle writes. When the value is
-   * absent, the lifetime is the only guard.
+   * absent, unknown or fails to load, retrieval bypasses the cache.
    *
    * **It may be a promise, and the search awaits it.** A Worker drops a pending
    * promise when the response returns, so a revision that is read in the
@@ -40,12 +50,26 @@ export interface CorpusContext extends BaseCorpusContext {
   corpusRevision?: string | Promise<string>;
 }
 
+export interface CorpusAvailability {
+  available: boolean;
+  reason: string;
+  rowCount?: number;
+  revision?: string;
+  parserVersion?: string;
+  asOf?: string;
+  lastRunAt?: string;
+}
+
+export type CorpusAvailabilityMap = Record<string, CorpusAvailability>;
+
 /** One cached retrieval. */
 export interface CachedRetrieval {
   decision: 'answer' | 'web' | 'refuse';
   anyRelevant: number;
   /** The provision ids, in the order that the rerank put them. */
   order: string[];
+  /** Safe originating score/policy provenance; cache hits disclose its age. */
+  observation?: RetrievalObservation;
 }
 
 /**

@@ -1,0 +1,1121 @@
+From 9abf87ed3f47c83d1ddf9547d28bac979cd0c478 Mon Sep 17 00:00:00 2001
+From: Nathaniel Arfin <info@nathanielarfin.com>
+Date: Thu, 22 Oct 2026 20:40:50 -0400
+Subject: [PATCH] fix(api-billing): acknowledge idempotent usage consumption
+
+---
+ bun.lock                                      |   2 +-
+ packages/api-billing/README.md                |  93 +++++++
+ packages/api-billing/package.json             |   2 +-
+ .../api-billing/src/durable-object.test.ts    | 240 ++++++++++++++++++
+ packages/api-billing/src/durable-object.ts    | 197 +++++++-------
+ packages/api-billing/src/index.ts             |   1 +
+ packages/api-billing/src/meter.ts             |  29 ++-
+ packages/api-billing/src/operation.ts         |  11 +
+ packages/api-billing/src/postgres.test.ts     | 126 ++++++++-
+ packages/api-billing/src/postgres.ts          |  86 ++++++-
+ packages/api-billing/src/types.ts             |  15 ++
+ packages/api-billing/src/usage-ledger.ts      |  19 +-
+ 12 files changed, 713 insertions(+), 108 deletions(-)
+ create mode 100644 packages/api-billing/src/durable-object.test.ts
+ create mode 100644 packages/api-billing/src/operation.ts
+
+diff --git a/bun.lock b/bun.lock
+index 79e8c2d..ee16191 100644
+--- a/bun.lock
++++ b/bun.lock
+@@ -45,7 +45,7 @@
+     },
+     "packages/api-billing": {
+       "name": "@chester-hill-solutions/api-billing",
+-      "version": "0.1.0",
++      "version": "0.1.1",
+       "devDependencies": {
+         "@cloudflare/workers-types": "^4.20250109.0",
+         "@electric-sql/pglite": "^0.2.0",
+diff --git a/packages/api-billing/README.md b/packages/api-billing/README.md
+index 23bf566..66bda6b 100644
+--- a/packages/api-billing/README.md
++++ b/packages/api-billing/README.md
+@@ -100,3 +100,96 @@ bun run --cwd packages/api-billing build
+ 
+ The core is runtime-neutral: no `node:*`, no `Buffer`, no `process.env`, no SQL. The
+ stores are subpath exports, so a consumer that never touches Postgres never loads it.
++
++## Confirmed usage and idempotent acknowledgements
++
++Products that require every served result to have a confirmed ledger write can
++opt out of the historical soft-fuse availability policy. This changes storage
++failure handling, while `fuseSoftWarn` still allows usage above the quota.
++
++```ts
++import { DurableObjectUsageLedger } from '@chester-hill-solutions/api-billing/durable-object';
++
++const ledger = new DurableObjectUsageLedger(env.API_KEY_USAGE, {
++  failureMode: 'closed',
++  acknowledgementRetries: 2,
++  requestTimeoutMs: 5000,
++});
++const operationId = crypto.randomUUID(); // One trusted ID for this logical operation.
++const nowMs = Date.now();               // Keep its original UTC billing month.
++const outcome = await recordSuccessfulBillable(customer, config, {
++  ledger, operationId, nowMs, usageFailureMode: 'closed',
++});
++```
++
++`usageFailureMode: 'closed'` refuses any explicitly unavailable ledger result,
++including a fail-open result from an unlimited or soft-fuse ledger. Confirmed
++exhaustion returns `429/FUSE_EXCEEDED`. An unavailable or unacknowledged store
++returns `503/USAGE_UNAVAILABLE`, with `operationId`, `month` and `uncertain` when
++an operation ID was supplied. A store that throws also produces an unavailable
++outcome. A store must advertise `supportsOperationIds` before the policy passes
++it an operation ID; unsupported stores return 503 before consumption.
++
++The DO client checks receipt-protocol support with GET before sending an
++operation-aware POST. The DO atomically stores the counter and the operation's
++receipt in a storage transaction. A lost POST response is recovered by reading
++that receipt; an absent receipt permits another POST with the **same** ID.
++Retries are bounded (two additional attempts by default, at most four), and each
++DO request has a timeout. No POST without an operation ID is retried.
++
++Existing `customer:<customerId>` object names and `month:<YYYY-MM>` counter keys
++are preserved. Receipts use additional `operation:month:<YYYY-MM>:<operationId>`
++keys. Old clients still use their original GET/POST contract. New clients refuse
++an old DO's missing protocol acknowledgement before sending any POST, avoiding
++repeated increments during a mixed-version rollout.
++
++Operation IDs are scoped to customer and month. Reuse the same ID **and original
++billing month** when reconciling one operation. Use a different ID for different
++work; never accept arbitrary client IDs without binding them to the authenticated
++logical operation. A receipt preserves the original decision even if the fuse
++later changes. The InMemory adapter follows the same deduplication contract.
++
++To reconcile a 503, call `ledger.consumeMonthly(customerId, enforcedLimit,
++originalNowMs, { operationId })` directly after connectivity recovers. It returns
++an existing receipt, or atomically records the operation if no receipt exists.
++This operation does not rerun the product's retrieval work. An exhausted quota
++precheck must not prevent receipt reconciliation. Report any recovered Stripe
++copy using the same operation ID: its hashed Stripe event identifier is stable
++for the customer, month and operation. Stripe delivery remains best effort; this
++package does not provide an outbox or guarantee provider-side receipt retention.
++
++**A permanent partition cannot make the HTTP response and storage commit atomic.**
++An uncertain 503 can coexist with a committed unit. `uncertain: true` means a
++consumption was attempted but acknowledgement could not be recovered within the
++retry budget. It never promises that the counter was unchanged. Recovering the
++receipt can establish the outcome later; delivering the product result later
++requires a product-level result journal. Retrying the whole product request with
++a fresh operation ID is distinct work and may consume another unit. Receipt
++records are retained; any operator retention policy must preserve the required
++reconciliation window. Do not delete receipts or reset counters during rollback.
++
++### Postgres operation receipts
++
++Apply the additive `USAGE_OPERATIONS_DDL` from the `./postgres` export before
++using operation IDs with an existing database. `USAGE_COUNTERS_DDL` continues to
++create only the existing counter table. The runner must expose transactions on
++a single connection:
++
++```ts
++const runner = {
++  unsafe: (query, params) => sql.unsafe(query, params),
++  transaction: (work) => sql.begin((transaction) => work({
++    unsafe: (query, params) => transaction.unsafe(query, params),
++  })),
++};
++const ledger = new PostgresUsageLedger(runner);
++```
++
++The transaction locks the existing customer/month counter row, reads the receipt,
++then updates the count and inserts the receipt together. Failed transactions
++roll back both writes. A lost COMMIT acknowledgement is retried with the same
++ID, so a committed receipt prevents a second increment. Existing no-operation
++calls keep their single-statement path and share the same counter/row lock.
++`acknowledgementRetries` and `operationTable` are optional third-constructor
++options. The SQL driver's connection/query/transaction timeouts must bound each
++attempt; this adapter does not cancel database transactions itself.
+diff --git a/packages/api-billing/package.json b/packages/api-billing/package.json
+index e45f78f..fa6325a 100644
+--- a/packages/api-billing/package.json
++++ b/packages/api-billing/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@chester-hill-solutions/api-billing",
+-  "version": "0.1.0",
++  "version": "0.1.1",
+   "type": "module",
+   "exports": {
+     ".": {
+diff --git a/packages/api-billing/src/durable-object.test.ts b/packages/api-billing/src/durable-object.test.ts
+new file mode 100644
+index 0000000..2bc2fd9
+--- /dev/null
++++ b/packages/api-billing/src/durable-object.test.ts
+@@ -0,0 +1,240 @@
++import { afterEach, describe, expect, test } from 'bun:test';
++import type { DurableObjectState } from '@cloudflare/workers-types';
++import { ApiKeyUsageDO, DurableObjectUsageLedger, type DurableObjectNamespaceLike } from './durable-object.js';
++import { recordSuccessfulBillable, reportStripeMeter } from './meter.js';
++import { InMemoryUsageLedger } from './usage-ledger.js';
++import type { MeteredCustomer, UsageLedgerResult } from './types.js';
++
++const NOW = Date.UTC(2026, 9, 22);
++const MONTH_KEY = 'month:2026-10';
++const CONFIG = { freeFuseLimit: 5, meterEventName: 'test-retrieval' };
++const customer = (overrides: Partial<MeteredCustomer> = {}): MeteredCustomer => ({
++  id: 'existing-customer', plan: 'free', fuseLimit: 5, fuseSoftWarn: false, ...overrides,
++});
++
++/** Persistent transactional storage adapter; serializes commits and rolls back failures. */
++function objectFixture(seed = 0) {
++  let data = new Map<string, unknown>([[MONTH_KEY, seed]]);
++  let tail = Promise.resolve();
++  let failCommit = false;
++  const storage = {
++    async get<T>(key: string): Promise<T | undefined> { return data.get(key) as T | undefined; },
++    async put(key: string, value: unknown) { data.set(key, value); },
++    async transaction<T>(work: (transaction: {
++      get<U>(key: string): Promise<U | undefined>;
++      put(entries: Record<string, unknown>): Promise<void>;
++    }) => Promise<T>): Promise<T> {
++      const result = tail.then(async () => {
++        const pending = new Map(data);
++        const result = await work({
++          async get<U>(key: string) { return pending.get(key) as U | undefined; },
++          async put(entries) { for (const [key, value] of Object.entries(entries)) pending.set(key, value); },
++        });
++        if (failCommit) { failCommit = false; throw new Error('Synthetic transaction rollback'); }
++        data = pending;
++        return result;
++      });
++      tail = result.then(() => {}, () => {});
++      return result;
++    },
++  };
++  // The class needs only this storage subset. Cloudflare provides the runtime's
++  // transaction implementation; this fixture tests the actual DO protocol/code.
++  const state = { storage } as unknown as DurableObjectState;
++  const object = new ApiKeyUsageDO(state);
++  const names: string[] = [];
++  let requests = 0;
++  let posts = 0;
++  let failBeforePost = 0;
++  let losePostResponse = 0;
++  let partitionAfterPost = false;
++  let partitioned = false;
++  const namespace: DurableObjectNamespaceLike = {
++    idFromName(name) { names.push(name); return name; },
++    get() { return { async fetch(input, init) {
++      requests++;
++      if (partitioned) throw new Error('Synthetic permanent partition');
++      const request = new Request(input, init);
++      if (request.method === 'POST') {
++        posts++;
++        if (failBeforePost-- > 0) throw new Error('Synthetic transport failure before delivery');
++      }
++      const response = await object.fetch(request);
++      if (request.method === 'POST' && partitionAfterPost) { partitioned = true; throw new Error('Synthetic lost acknowledgement'); }
++      if (request.method === 'POST' && losePostResponse-- > 0) throw new Error('Synthetic lost acknowledgement');
++      return response;
++    } }; },
++  };
++  return {
++    namespace, object, names,
++    count: () => data.get(MONTH_KEY),
++    stats: () => ({ requests, posts }),
++    receiptCount: () => [...data.keys()].filter((key) => key.startsWith('operation:')).length,
++    loseResponse: () => { losePostResponse = 1; },
++    failBeforeDelivery: () => { failBeforePost = 1; },
++    failNextCommit: () => { failCommit = true; },
++    partitionAfterCommit: () => { partitionAfterPost = true; },
++    restore: () => { partitioned = false; partitionAfterPost = false; },
++  };
++}
++
++function ledger(fixture: ReturnType<typeof objectFixture>) {
++  return new DurableObjectUsageLedger(fixture.namespace, { failureMode: 'closed', acknowledgementRetries: 2 });
++}
++
++describe('idempotent Durable Object consumption', () => {
++  test('retains existing namespace/month count and acknowledges a receipt across clients', async () => {
++    const fixture = objectFixture(7);
++    const first = await ledger(fixture).consumeMonthly(customer().id, 10, NOW, { operationId: 'operation-one' });
++    const duplicate = await ledger(fixture).consumeMonthly(customer().id, 10, NOW, { operationId: 'operation-one' });
++    expect(first.allowed).toBe(true);
++    expect(first.count).toBe(8);
++    expect(duplicate).toEqual(first);
++    expect(fixture.count()).toBe(8);
++    expect(fixture.receiptCount()).toBe(1);
++    expect(new Set(fixture.names)).toEqual(new Set(['customer:existing-customer']));
++    // A subsequent policy change must not make an acknowledged operation charge again.
++    expect((await ledger(fixture).consumeMonthly(customer().id, 1, NOW, { operationId: 'operation-one' })).count).toBe(8);
++  });
++
++  test('recovers a committed POST whose response was lost with one increment', async () => {
++    const fixture = objectFixture();
++    fixture.loseResponse();
++    const result = await recordSuccessfulBillable(customer(), CONFIG, {
++      ledger: ledger(fixture), nowMs: NOW, operationId: 'lost-ack', usageFailureMode: 'closed',
++    });
++    expect(result).toEqual({ allowed: true, status: 200 });
++    expect(fixture.count()).toBe(1);
++    expect(fixture.stats()).toEqual({ requests: 3, posts: 1 });
++  });
++
++  test('retries a POST that never arrived using the same identity', async () => {
++    const fixture = objectFixture();
++    fixture.failBeforeDelivery();
++    expect((await ledger(fixture).consumeMonthly('c', 5, NOW, { operationId: 'not-delivered' })).allowed).toBe(true);
++    expect(fixture.count()).toBe(1);
++    expect(fixture.stats()).toEqual({ requests: 4, posts: 2 });
++  });
++
++  test('rolls back counter and receipt together before retrying', async () => {
++    const fixture = objectFixture(2);
++    fixture.failNextCommit();
++    expect((await ledger(fixture).consumeMonthly('c', 5, NOW, { operationId: 'rollback' })).count).toBe(3);
++    expect(fixture.count()).toBe(3);
++    expect(fixture.receiptCount()).toBe(1);
++  });
++
++  test('returns truthful uncertain 503 during a permanent post-commit partition, then reconciles', async () => {
++    const fixture = objectFixture();
++    fixture.partitionAfterCommit();
++    const result = await recordSuccessfulBillable(customer(), CONFIG, {
++      ledger: ledger(fixture), nowMs: NOW, operationId: 'partitioned', usageFailureMode: 'closed',
++    });
++    expect(result.status).toBe(503);
++    expect(result.body).toMatchObject({ code: 'USAGE_UNAVAILABLE', operationId: 'partitioned', uncertain: true, month: '2026-10' });
++    expect(fixture.count()).toBe(1);
++    expect(fixture.stats().requests).toBe(4);
++    fixture.restore();
++    const recovered = await ledger(fixture).consumeMonthly(customer().id, 5, NOW, { operationId: 'partitioned' });
++    expect(recovered.allowed).toBe(true);
++    expect(fixture.count()).toBe(1);
++  });
++
++  test('refuses an old protocol before POST instead of silently counting each retry', async () => {
++    let posts = 0;
++    const client = new DurableObjectUsageLedger({ idFromName: (name) => name, get: () => ({
++      async fetch(_url, init) {
++        if (init?.method === 'POST') posts++;
++        return Response.json({ allowed: true, count: posts, limit: 5, month: '2026-10' });
++      },
++    }) }, { failureMode: 'closed' });
++    const result = await client.consumeMonthly('c', 5, NOW, { operationId: 'requires-v2' });
++    expect(result).toMatchObject({ allowed: false, unavailable: true });
++    expect(posts).toBe(0);
++  });
++
++  test('exhausted quota remains 429 and refusals never increment', async () => {
++    const fixture = objectFixture(4);
++    const client = ledger(fixture);
++    expect((await recordSuccessfulBillable(customer(), CONFIG, { ledger: client, nowMs: NOW, operationId: 'last' })).allowed).toBe(true);
++    const refused = await recordSuccessfulBillable(customer(), CONFIG, { ledger: client, nowMs: NOW, operationId: 'refused' });
++    expect(refused).toMatchObject({ allowed: false, status: 429, body: { code: 'FUSE_EXCEEDED', count: 5 } });
++    expect((await client.consumeMonthly('existing-customer', 5, NOW, { operationId: 'refused' })).allowed).toBe(false);
++    expect(fixture.count()).toBe(5);
++  });
++
++  test('concurrent duplicate operations count once, while distinct operations respect the last unit', async () => {
++    const fixture = objectFixture();
++    const client = ledger(fixture);
++    const same = await Promise.all(Array.from({ length: 8 }, () => client.consumeMonthly('c', 3, NOW, { operationId: 'same' })));
++    expect(same.every((result) => result.allowed && result.count === 1)).toBe(true);
++    const distinct = await Promise.all(Array.from({ length: 8 }, (_, index) => client.consumeMonthly('c', 3, NOW, { operationId: `distinct-${index}` })));
++    expect(distinct.filter((result) => result.allowed)).toHaveLength(2);
++    expect(fixture.count()).toBe(3);
++  });
++
++  test('an unlabelled legacy POST is never retried after a lost response', async () => {
++    const fixture = objectFixture();
++    fixture.loseResponse();
++    const result = await ledger(fixture).consumeMonthly('c', 5, NOW);
++    expect(result).toMatchObject({ allowed: false, unavailable: true, uncertain: true });
++    expect(fixture.count()).toBe(1);
++    expect(fixture.stats()).toEqual({ requests: 1, posts: 1 });
++  });
++});
++
++describe('closed usage policy', () => {
++  const offline: DurableObjectNamespaceLike = { idFromName: (name) => name, get: () => ({ async fetch() { throw new Error('Offline'); } }) };
++  for (const overrides of [{ plan: 'metered' as const, fuseLimit: 0 }, { plan: 'enterprise' as const, fuseLimit: 0 }, { fuseSoftWarn: true }]) {
++    test(`fails closed for ${JSON.stringify(overrides)} without pretending quota is exhausted`, async () => {
++      const client = new DurableObjectUsageLedger(offline, { failureMode: 'closed' });
++      expect(await client.peekMonthly('c', 0, NOW)).toMatchObject({ allowed: false, unavailable: true });
++      const result = await recordSuccessfulBillable(customer(overrides), CONFIG, {
++        ledger: client, nowMs: NOW, operationId: 'offline', usageFailureMode: 'closed',
++      });
++      expect(result).toMatchObject({ allowed: false, status: 503, body: { code: 'USAGE_UNAVAILABLE', uncertain: false } });
++    });
++  }
++
++  test('product closed policy also rejects an explicitly unavailable fail-open ledger result', async () => {
++    const client = new DurableObjectUsageLedger(offline);
++    expect((await client.peekMonthly('c', 0, NOW)).allowed).toBe(true); // Compatibility default.
++    const result = await recordSuccessfulBillable(customer({ plan: 'enterprise', fuseLimit: 0 }), CONFIG, {
++      ledger: client, nowMs: NOW, usageFailureMode: 'closed',
++    });
++    expect(result.status).toBe(503);
++  });
++
++  test('does not claim operation support for an arbitrary legacy ledger', async () => {
++    let calls = 0;
++    const legacy = { async consumeMonthly(): Promise<UsageLedgerResult> { calls++; return { allowed: true, count: 1, limit: 0, month: '2026-10' }; },
++      async peekMonthly(): Promise<UsageLedgerResult> { throw new Error('Unused'); } };
++    expect((await recordSuccessfulBillable(customer(), CONFIG, { ledger: legacy, nowMs: NOW, operationId: 'unsupported' })).status).toBe(503);
++    expect(calls).toBe(0);
++  });
++
++  test('the in-memory adapter uses the same operation semantics', async () => {
++    const client = new InMemoryUsageLedger();
++    await client.consumeMonthly('c', 5, NOW, { operationId: 'one' });
++    await client.consumeMonthly('c', 5, NOW, { operationId: 'one' });
++    expect((await client.peekMonthly('c', 5, NOW)).count).toBe(1);
++  });
++});
++
++const realFetch = globalThis.fetch;
++afterEach(() => { globalThis.fetch = realFetch; });
++test('Stripe event identifier is stable for the same customer, month and operation', async () => {
++  const identifiers: string[] = [];
++  globalThis.fetch = (async (_input, init) => {
++    identifiers.push(new URLSearchParams(String(init?.body)).get('identifier')!);
++    return Response.json({});
++  }) as typeof fetch;
++  const config = { ...CONFIG, stripeSecretKey: 'synthetic-test-secret' };
++  const billed = customer({ plan: 'metered', stripeCustomerId: 'stripe-test-customer' });
++  await reportStripeMeter(billed, config, 1, NOW, 'same-operation');
++  await reportStripeMeter(billed, config, 1, NOW, 'same-operation');
++  await reportStripeMeter(billed, config, 1, NOW, 'other-operation');
++  expect(identifiers[0]).toBe(identifiers[1]);
++  expect(identifiers[0]).not.toBe(identifiers[2]);
++  expect(identifiers[0]).not.toContain(billed.id);
++});
+diff --git a/packages/api-billing/src/durable-object.ts b/packages/api-billing/src/durable-object.ts
+index 0e06829..90aa2f8 100644
+--- a/packages/api-billing/src/durable-object.ts
++++ b/packages/api-billing/src/durable-object.ts
+@@ -1,149 +1,152 @@
+ import type { DurableObjectState } from '@cloudflare/workers-types';
+ import { dayBefore, utcDay, utcMonth } from './time.js';
+-import type { UsageLedger, UsageLedgerResult } from './types.js';
++import { validateOperationId } from './operation.js';
++import type { UsageConsumeOptions, UsageLedger, UsageLedgerResult } from './types.js';
+ 
+-/**
+- * The ledger in a Durable Object.
+- *
+- * A Durable Object rather than a key-value store because the counter has to be
+- * exact. A KV counter is eventually consistent and rate-limits writes to about
+- * one a second, so under real traffic it would both undercount and throttle.
+- *
+- * The object is per customer, so its own storage is the counter and the read and
+- * the write happen under the object's single-threaded guarantee.
+- *
+- * The API is two routes: `GET` reads the count, `POST` counts one.
+- */
++/** Existing customer objects and month/count keys remain compatible. */
+ export class ApiKeyUsageDO {
+   constructor(private readonly state: DurableObjectState) {}
+ 
+   async fetch(request: Request): Promise<Response> {
+     const url = new URL(request.url);
+-    const period =
+-      url.searchParams.get('month') ||
+-      url.searchParams.get('day') ||
+-      utcMonth();
+-    // A monthly counter and a daily counter live side by side in one object.
++    const period = url.searchParams.get('month') || url.searchParams.get('day') || utcMonth();
+     const prefix = url.searchParams.has('month') ? 'month' : 'count';
+     const limit = parseInt(url.searchParams.get('limit') || '0', 10);
+     const storageKey = `${prefix}:${period}`;
++    const operationId = request.headers.get('X-Usage-Operation') ?? undefined;
++    if (operationId !== undefined) {
++      try { validateOperationId(operationId); } catch { return this.json({ error: 'Invalid operation ID' }, 400); }
++    }
++    const receiptKey = operationId === undefined ? undefined : `operation:${storageKey}:${operationId}`;
+ 
+     if (request.method === 'GET') {
++      if (receiptKey !== undefined) {
++        const receipt = await this.state.storage.get<UsageLedgerResult>(receiptKey);
++        if (receipt) return this.json({ ...receipt, recorded: true });
++      }
+       const count = (await this.state.storage.get<number>(storageKey)) || 0;
+-      return this.json({ day: period, month: period, count, limit, allowed: limit <= 0 || count < limit });
++      return this.json({ day: period, month: period, count, limit, allowed: limit <= 0 || count < limit,
++        ...(operationId === undefined ? {} : { operationId, recorded: false }) });
++    }
++    if (request.method !== 'POST') return this.json({ error: 'Use GET or POST' }, 405);
++
++    // The receipt and counter must commit together, including refused decisions.
++    // Retrying a transaction can never cause a second increment for the same ID.
++    if (receiptKey !== undefined) {
++      const result = await this.state.storage.transaction(async (transaction) => {
++        const receipt = await transaction.get<UsageLedgerResult>(receiptKey);
++        if (receipt) return receipt;
++        const current = (await transaction.get<number>(storageKey)) || 0;
++        const allowed = limit <= 0 || current < limit;
++        const count = allowed ? current + 1 : current;
++        const result = { day: period, month: period, count, limit, allowed, operationId };
++        await transaction.put({ ...(allowed ? { [storageKey]: count } : {}), [receiptKey]: result });
++        return result;
++      });
++      return this.json({ ...result, recorded: true });
+     }
+ 
++    // Legacy clients keep their existing single-consumption wire contract.
+     const current = (await this.state.storage.get<number>(storageKey)) || 0;
+     if (limit > 0 && current >= limit) {
+-      // Refused, and deliberately not counted: the counter must not be pushed up
+-      // by an attempt that was refused.
+       return this.json({ day: period, month: period, count: current, limit, allowed: false });
+     }
+-
+     const next = current + 1;
+     await this.state.storage.put(storageKey, next);
+-    if (prefix === 'count') {
+-      await this.pruneOldDays(utcDay());
+-    }
++    if (prefix === 'count') await this.pruneOldDays(utcDay());
+     return this.json({ day: period, month: period, count: next, limit, allowed: true });
+   }
+ 
+-  /** Keep only a short window; without this every customer accretes a row per day forever. */
+   private async pruneOldDays(currentDay: string): Promise<void> {
+     const cutoff = dayBefore(currentDay, 7);
+     const entries = await this.state.storage.list<number>({ prefix: 'count:' });
+-    await this.state.storage.delete(
+-      Object.keys(entries).filter((key) => key.slice('count:'.length) < cutoff),
+-    );
++    await this.state.storage.delete([...entries.keys()].filter((key) => key.slice('count:'.length) < cutoff));
+   }
+ 
+-  private json(body: Record<string, unknown>): Response {
+-    return new Response(JSON.stringify(body), {
+-      headers: { 'content-type': 'application/json; charset=UTF-8' },
+-    });
++  private json(body: Record<string, unknown>, status = 200): Response {
++    return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=UTF-8' } });
+   }
+ }
+ 
+-/** The namespace a Durable Object ledger needs. */
+ export interface DurableObjectNamespaceLike {
+   idFromName(name: string): unknown;
+   get(id: unknown): { fetch(input: string, init?: RequestInit): Promise<Response> };
+ }
+ 
+-/**
+- * The ledger, talking to a Durable Object.
+- *
+- * The failure policy is the fuse's: a hard fuse fails **closed** when the object
+- * cannot be reached, so free-tier abuse stays bounded during an outage, and a
+- * soft one fails **open**, so availability never depends on the counter.
+- */
++export interface DurableObjectLedgerOptions {
++  /** Default 'fuse' preserves the historical soft-fuse fail-open policy. */
++  failureMode?: 'fuse' | 'closed';
++  /** Additional acknowledgement attempts after the first, from zero to four. */
++  acknowledgementRetries?: number;
++  /** Bound each acknowledgement request. Defaults to five seconds. */
++  requestTimeoutMs?: number;
++}
++
++type OperationResult = UsageLedgerResult & { recorded: boolean };
++
++/** A client that can reconcile an uncertain POST using its durable receipt. */
+ export class DurableObjectUsageLedger implements UsageLedger {
+-  constructor(private readonly namespace: DurableObjectNamespaceLike) {}
++  readonly supportsOperationIds = true;
++  private readonly retries: number;
++  private readonly timeoutMs: number;
++
++  constructor(private readonly namespace: DurableObjectNamespaceLike, private readonly options: DurableObjectLedgerOptions = {}) {
++    this.retries = options.acknowledgementRetries ?? 2;
++    this.timeoutMs = options.requestTimeoutMs ?? 5000;
++    if (!Number.isInteger(this.retries) || this.retries < 0 || this.retries > 4) throw new TypeError('acknowledgementRetries must be from zero to four.');
++    if (!Number.isSafeInteger(this.timeoutMs) || this.timeoutMs < 1 || this.timeoutMs > 60_000) throw new TypeError('requestTimeoutMs must be from one to 60000.');
++  }
+ 
+-  async consumeMonthly(
+-    customerId: string,
+-    monthlyLimit: number,
+-    nowMs: number = Date.now(),
+-  ): Promise<UsageLedgerResult> {
++  async consumeMonthly(customerId: string, monthlyLimit: number, nowMs = Date.now(), options: UsageConsumeOptions = {}): Promise<UsageLedgerResult> {
+     const month = utcMonth(nowMs);
+-    if (monthlyLimit > 0) {
+-      // A hard fuse: if the counter cannot be read, the call is refused.
++    const operationId = options.operationId;
++    if (operationId !== undefined) validateOperationId(operationId);
++    let uncertain = false;
++    const attempts = operationId === undefined ? 1 : this.retries + 1;
++    for (let attempt = 0; attempt < attempts; attempt++) {
+       try {
+-        return await this.call(customerId, month, monthlyLimit, 'POST', nowMs);
+-      } catch (error) {
+-        console.warn(`[ApiKeyUsage] the monthly counter is unavailable for ${customerId}:`, error);
+-        return { allowed: false, count: 0, limit: monthlyLimit, month, day: utcDay(nowMs) };
++        if (operationId !== undefined) {
++          // Also verifies protocol support before any write: an old DO must not
++          // ignore the operation ID and charge once per acknowledgement retry.
++          const receipt = await this.call(customerId, month, monthlyLimit, 'GET', nowMs, operationId);
++          if (receipt.recorded) return receipt;
++        }
++        uncertain = true;
++        return await this.call(customerId, month, monthlyLimit, 'POST', nowMs, operationId);
++      } catch {
++        // Never retry a POST without an operation ID. With one, the next GET
++        // recovers its receipt; an absent receipt permits the same safe POST.
+       }
+     }
+-    try {
+-      return await this.call(customerId, month, 0, 'POST', nowMs);
+-    } catch (error) {
+-      console.warn(`[ApiKeyUsage] the monthly counter is unavailable for ${customerId}:`, error);
+-      return { allowed: true, count: 0, limit: 0, month, day: utcDay(nowMs) };
+-    }
++    return { allowed: this.options.failureMode !== 'closed' && monthlyLimit <= 0,
++      count: 0, limit: monthlyLimit, month, day: utcDay(nowMs), unavailable: true,
++      ...(uncertain ? { uncertain: true } : {}), ...(operationId === undefined ? {} : { operationId }) };
+   }
+ 
+-  async peekMonthly(
+-    customerId: string,
+-    monthlyLimit: number,
+-    nowMs: number = Date.now(),
+-  ): Promise<UsageLedgerResult> {
++  async peekMonthly(customerId: string, monthlyLimit: number, nowMs = Date.now()): Promise<UsageLedgerResult> {
+     const month = utcMonth(nowMs);
+-    try {
+-      return await this.call(customerId, month, monthlyLimit, 'GET', nowMs);
+-    } catch (error) {
+-      console.warn(`[ApiKeyUsage] the monthly counter is unavailable for ${customerId}:`, error);
+-      return {
+-        allowed: monthlyLimit <= 0,
+-        count: 0,
+-        limit: monthlyLimit,
+-        month,
+-        day: utcDay(nowMs),
+-      };
++    try { return await this.call(customerId, month, monthlyLimit, 'GET', nowMs); }
++    catch {
++      return { allowed: this.options.failureMode !== 'closed' && monthlyLimit <= 0,
++        count: 0, limit: monthlyLimit, month, day: utcDay(nowMs), unavailable: true };
+     }
+   }
+ 
+-  private async call(
+-    customerId: string,
+-    month: string,
+-    limit: number,
+-    method: 'GET' | 'POST',
+-    nowMs: number,
+-  ): Promise<UsageLedgerResult> {
+-    const id = this.namespace.idFromName(`customer:${customerId}`);
+-    const stub = this.namespace.get(id);
+-    const response = await stub.fetch(
+-      `https://usage/consume?month=${month}&limit=${limit}`,
+-      { method },
+-    );
+-    if (!response.ok) throw new Error(`the usage object returned ${response.status}`);
+-    const result = (await response.json()) as Partial<UsageLedgerResult>;
+-    return {
+-      allowed: result.allowed ?? true,
+-      count: result.count ?? 0,
+-      limit: result.limit ?? limit,
+-      month: result.month || month,
+-      day: result.day ?? utcDay(nowMs),
+-    };
++  private async call(customerId: string, month: string, limit: number, method: 'GET' | 'POST', nowMs: number, operationId?: string): Promise<OperationResult> {
++    const stub = this.namespace.get(this.namespace.idFromName(`customer:${customerId}`));
++    const response = await stub.fetch(`https://usage/consume?month=${month}&limit=${limit}`, {
++      method, signal: AbortSignal.timeout(this.timeoutMs),
++      ...(operationId === undefined ? {} : { headers: { 'X-Usage-Operation': operationId } }),
++    });
++    if (!response.ok) throw new Error('The usage object is unavailable.');
++    const result: Partial<OperationResult> = await response.json();
++    if (typeof result.allowed !== 'boolean' || !Number.isSafeInteger(result.count) || result.count! < 0 ||
++      result.month !== month || !Number.isSafeInteger(result.limit) || result.limit! < 0 ||
++      (!result.recorded && result.limit !== limit) ||
++      (operationId !== undefined && (result.operationId !== operationId || typeof result.recorded !== 'boolean' || (method === 'POST' && !result.recorded)))) {
++      throw new Error('The usage object returned an invalid acknowledgement.');
++    }
++    return { allowed: result.allowed, count: result.count!, limit: result.limit!, month, day: result.day ?? utcDay(nowMs),
++      recorded: result.recorded ?? false, ...(operationId === undefined ? {} : { operationId }) };
+   }
+ }
+diff --git a/packages/api-billing/src/index.ts b/packages/api-billing/src/index.ts
+index f5332ad..1e7b70b 100644
+--- a/packages/api-billing/src/index.ts
++++ b/packages/api-billing/src/index.ts
+@@ -30,5 +30,6 @@ export type {
+   MeterConfig,
+   MeteredCustomer,
+   UsageLedger,
++  UsageConsumeOptions,
+   UsageLedgerResult,
+ } from './types.js';
+diff --git a/packages/api-billing/src/meter.ts b/packages/api-billing/src/meter.ts
+index 888bf46..584cb76 100644
+--- a/packages/api-billing/src/meter.ts
++++ b/packages/api-billing/src/meter.ts
+@@ -1,4 +1,5 @@
+ import { effectiveFuseLimit, enforcementLimit } from './fuse.js';
++import { operationDigest, validateOperationId } from './operation.js';
+ import { utcMonth } from './time.js';
+ import type { MeterConfig, MeteredCustomer, UsageLedger } from './types.js';
+ 
+@@ -24,6 +25,10 @@ export interface BillableOutcome {
+ }
+ 
+ export interface RecordBillableOptions {
++  /** Stable identity for this consumption, scoped to customer and nowMs's UTC month. */
++  operationId?: string;
++  /** Require a confirmed ledger write for every plan, including unlimited/soft fuses. */
++  usageFailureMode?: 'fuse' | 'closed';
+   nowMs?: number;
+   /**
+    * Where to put the Stripe event so its delivery outlives the response.
+@@ -54,7 +59,23 @@ export async function recordSuccessfulBillable(
+   // every ledger reads as "count it and allow it".
+   const enforced = enforcementLimit(customer, config.freeFuseLimit);
+ 
+-  const usage = await options.ledger.consumeMonthly(customer.id, enforced, nowMs);
++  const unavailable = (uncertain = false): BillableOutcome => ({
++    allowed: false, status: 503,
++    body: { code: 'USAGE_UNAVAILABLE', error: 'The usage ledger could not confirm this operation.',
++      month: utcMonth(nowMs), uncertain,
++      ...(options.operationId === undefined ? {} : { operationId: options.operationId }) },
++  });
++  if (options.operationId !== undefined) {
++    validateOperationId(options.operationId);
++    if (!options.ledger.supportsOperationIds) return unavailable();
++  }
++  let usage;
++  try {
++    usage = await options.ledger.consumeMonthly(customer.id, enforced, nowMs, { operationId: options.operationId });
++  } catch {
++    return unavailable(true);
++  }
++  if (usage.unavailable && (options.usageFailureMode === 'closed' || !usage.allowed)) return unavailable(usage.uncertain);
+   if (!usage.allowed) {
+     return {
+       allowed: false,
+@@ -74,7 +95,7 @@ export async function recordSuccessfulBillable(
+   }
+ 
+   if (customer.plan === 'metered' || customer.plan === 'enterprise') {
+-    const task = reportStripeMeter(customer, config, 1, nowMs);
++    const task = reportStripeMeter(customer, config, 1, nowMs, options.operationId);
+     if (options.waitUntil) options.waitUntil(task);
+     else await task;
+   }
+@@ -105,6 +126,7 @@ export async function reportStripeMeter(
+   config: MeterConfig,
+   quantity: number,
+   nowMs: number = Date.now(),
++  operationId?: string,
+ ): Promise<void> {
+   const secret = config.stripeSecretKey;
+   if (!secret || !customer.stripeCustomerId) return;
+@@ -114,7 +136,8 @@ export async function reportStripeMeter(
+     body.set('event_name', config.meterEventName);
+     body.set('payload[stripe_customer_id]', customer.stripeCustomerId);
+     body.set('payload[value]', String(quantity));
+-    body.set('identifier', `${customer.id}:${utcMonth(nowMs)}:${crypto.randomUUID()}`);
++    body.set('identifier', operationId === undefined ? `${customer.id}:${utcMonth(nowMs)}:${crypto.randomUUID()}`
++      : `chs:${await operationDigest(JSON.stringify([customer.id, utcMonth(nowMs), operationId]))}`);
+ 
+     const res = await fetch('https://api.stripe.com/v1/billing/meter_events', {
+       method: 'POST',
+diff --git a/packages/api-billing/src/operation.ts b/packages/api-billing/src/operation.ts
+new file mode 100644
+index 0000000..0eb0945
+--- /dev/null
++++ b/packages/api-billing/src/operation.ts
+@@ -0,0 +1,11 @@
++/** IDs are opaque identifiers, never raw API keys or request bodies. */
++export function validateOperationId(value: string): void {
++  if (!/^[a-zA-Z0-9._:-]{1,128}$/.test(value)) {
++    throw new TypeError('An operation ID must contain 1 to 128 letters, digits, dots, underscores, colons or hyphens.');
++  }
++}
++
++export async function operationDigest(value: string): Promise<string> {
++  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
++  return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('');
++}
+diff --git a/packages/api-billing/src/postgres.test.ts b/packages/api-billing/src/postgres.test.ts
+index fb2c07b..1b436c6 100644
+--- a/packages/api-billing/src/postgres.test.ts
++++ b/packages/api-billing/src/postgres.test.ts
+@@ -1,6 +1,6 @@
+ import { describe, expect, test } from 'bun:test';
+ import { PGlite } from '@electric-sql/pglite';
+-import { PostgresUsageLedger, USAGE_COUNTERS_DDL, type SqlRunner } from './postgres.js';
++import { PostgresUsageLedger, USAGE_COUNTERS_DDL, USAGE_OPERATIONS_DDL, type SqlRunner } from './postgres.js';
+ import { utcMonth } from './time.js';
+ 
+ /**
+@@ -76,3 +76,127 @@ describe('the Postgres ledger', () => {
+     expect((await l.peekMonthly('c', 1)).count).toBe(1);
+   });
+ });
++
++async function idempotentFixture() {
++  const pg = new PGlite();
++  await pg.exec(USAGE_COUNTERS_DDL + USAGE_OPERATIONS_DDL);
++  let loseCommitResponse = false;
++  let failReceiptInsert = false;
++  let transactions = 0;
++  const sql: SqlRunner = {
++    async unsafe(query, params) { return (await pg.query(query, params)).rows; },
++    async transaction<T>(work: (transaction: SqlRunner) => Promise<T>): Promise<T> {
++      transactions++;
++      const value = await pg.transaction(async (connection) => work({
++        async unsafe(query, params) {
++          if (failReceiptInsert && query.includes('INSERT INTO usage_operations')) {
++            failReceiptInsert = false;
++            throw new Error('Synthetic failure between counter update and receipt insert');
++          }
++          return (await connection.query(query, params)).rows;
++        },
++      }));
++      if (loseCommitResponse) { loseCommitResponse = false; throw new Error('Synthetic lost COMMIT acknowledgement'); }
++      return value;
++    },
++  };
++  return {
++    pg, sql, ledger: new PostgresUsageLedger(sql),
++    loseResponse() { loseCommitResponse = true; },
++    failReceipt() { failReceiptInsert = true; },
++    transactions: () => transactions,
++  };
++}
++
++const OPERATION_NOW = Date.UTC(2026, 9, 22);
++describe('Postgres operation receipts', () => {
++  test('reconciles a lost COMMIT acknowledgement without counting twice', async () => {
++    const fixture = await idempotentFixture();
++    try {
++      fixture.loseResponse();
++      const result = await fixture.ledger.consumeMonthly('existing-customer', 5, OPERATION_NOW, { operationId: 'lost-commit' });
++      expect(result).toMatchObject({ allowed: true, count: 1, operationId: 'lost-commit' });
++      expect(fixture.transactions()).toBe(2);
++      expect((await fixture.ledger.peekMonthly('existing-customer', 5, OPERATION_NOW)).count).toBe(1);
++      expect((await fixture.pg.query('SELECT count(*)::int AS count FROM usage_operations')).rows).toEqual([{ count: 1 }]);
++    } finally { await fixture.pg.close(); }
++  });
++
++  test('rolls back counter updates if the receipt cannot be committed', async () => {
++    const fixture = await idempotentFixture();
++    try {
++      await fixture.ledger.consumeMonthly('existing-customer', 5, OPERATION_NOW);
++      fixture.failReceipt();
++      const result = await fixture.ledger.consumeMonthly('existing-customer', 5, OPERATION_NOW, { operationId: 'rollback' });
++      expect(result).toMatchObject({ allowed: true, count: 2 });
++      expect((await fixture.ledger.peekMonthly('existing-customer', 5, OPERATION_NOW)).count).toBe(2);
++      expect((await fixture.pg.query('SELECT count(*)::int AS count FROM usage_operations')).rows).toEqual([{ count: 1 }]);
++    } finally { await fixture.pg.close(); }
++  });
++
++  test('deduplicates concurrent operations and shares the existing quota with legacy calls', async () => {
++    const fixture = await idempotentFixture();
++    try {
++      await fixture.ledger.consumeMonthly('existing-customer', 3, OPERATION_NOW);
++      const duplicates = await Promise.all(Array.from({ length: 6 }, () =>
++        fixture.ledger.consumeMonthly('existing-customer', 3, OPERATION_NOW, { operationId: 'same' })));
++      expect(duplicates.every((result) => result.allowed && result.count === 2)).toBe(true);
++      const distinct = await Promise.all(Array.from({ length: 4 }, (_, index) =>
++        fixture.ledger.consumeMonthly('existing-customer', 3, OPERATION_NOW, { operationId: `distinct-${index}` })));
++      expect(distinct.filter((result) => result.allowed)).toHaveLength(1);
++      expect((await fixture.ledger.peekMonthly('existing-customer', 3, OPERATION_NOW)).count).toBe(3);
++      expect((await fixture.ledger.consumeMonthly('existing-customer', 3, OPERATION_NOW, { operationId: 'same' })).allowed).toBe(true);
++    } finally { await fixture.pg.close(); }
++  });
++
++  test('keeps identical operation IDs isolated by customer and month', async () => {
++    const fixture = await idempotentFixture();
++    try {
++      for (const id of ['a', 'b']) for (const now of [OPERATION_NOW, Date.UTC(2026, 10, 1)]) {
++        expect((await fixture.ledger.consumeMonthly(id, 5, now, { operationId: 'shared-id' })).count).toBe(1);
++      }
++      expect((await fixture.pg.query('SELECT count(*)::int AS count FROM usage_operations')).rows).toEqual([{ count: 4 }]);
++    } finally { await fixture.pg.close(); }
++  });
++});
++
++test('Postgres permanent post-commit partition is uncertain and can be reconciled later', async () => {
++  const fixture = await idempotentFixture();
++  let committed = false;
++  let partitioned = false;
++  const runner: SqlRunner = {
++    unsafe: fixture.sql.unsafe,
++    async transaction<T>(work: (transaction: SqlRunner) => Promise<T>): Promise<T> {
++      if (partitioned) throw new Error('Synthetic partition');
++      const result = await fixture.sql.transaction!(work);
++      if (!committed) { committed = true; partitioned = true; throw new Error('Synthetic lost COMMIT response'); }
++      return result;
++    },
++  };
++  try {
++    const client = new PostgresUsageLedger(runner);
++    const result = await client.consumeMonthly('c', 0, OPERATION_NOW, { operationId: 'partitioned-pg' });
++    expect(result).toMatchObject({ allowed: false, unavailable: true, uncertain: true, operationId: 'partitioned-pg' });
++    expect((await fixture.ledger.peekMonthly('c', 0, OPERATION_NOW)).count).toBe(1);
++    partitioned = false;
++    expect(await client.consumeMonthly('c', 0, OPERATION_NOW, { operationId: 'partitioned-pg' })).toMatchObject({ allowed: true, count: 1 });
++    expect((await fixture.ledger.peekMonthly('c', 0, OPERATION_NOW)).count).toBe(1);
++  } finally { await fixture.pg.close(); }
++});
++
++test('Postgres missing receipt migration rolls back the existing counter', async () => {
++  const pg = new PGlite();
++  await pg.exec(USAGE_COUNTERS_DDL);
++  const runner: SqlRunner = {
++    async unsafe(query, params) { return (await pg.query(query, params)).rows; },
++    async transaction<T>(work: (transaction: SqlRunner) => Promise<T>): Promise<T> {
++      return pg.transaction(async (connection) => work({ async unsafe(query, params) { return (await connection.query(query, params)).rows; } }));
++    },
++  };
++  try {
++    const client = new PostgresUsageLedger(runner);
++    await client.consumeMonthly('c', 0, OPERATION_NOW);
++    expect(await client.consumeMonthly('c', 0, OPERATION_NOW, { operationId: 'requires-migration' })).toMatchObject({ allowed: false, unavailable: true });
++    expect((await client.peekMonthly('c', 0, OPERATION_NOW)).count).toBe(1);
++  } finally { await pg.close(); }
++});
+diff --git a/packages/api-billing/src/postgres.ts b/packages/api-billing/src/postgres.ts
+index e20ff88..beebec4 100644
+--- a/packages/api-billing/src/postgres.ts
++++ b/packages/api-billing/src/postgres.ts
+@@ -1,5 +1,6 @@
+ import { utcDay, utcMonth } from './time.js';
+-import type { UsageLedger, UsageLedgerResult } from './types.js';
++import { validateOperationId } from './operation.js';
++import type { UsageConsumeOptions, UsageLedger, UsageLedgerResult } from './types.js';
+ 
+ /**
+  * The slice of a SQL client this adapter needs.
+@@ -11,6 +12,20 @@ import type { UsageLedger, UsageLedgerResult } from './types.js';
+  */
+ export interface SqlRunner {
+   unsafe(query: string, params?: unknown[]): Promise<unknown[]>;
++  /** Execute work on the same connection inside one database transaction. */
++  transaction?<T>(work: (transaction: SqlRunner) => Promise<T>): Promise<T>;
++}
++
++export interface PostgresLedgerOptions {
++  /** Additive receipt table; defaults to usage_operations. */
++  operationTable?: string;
++  /** Additional attempts after an uncertain transaction acknowledgement, zero to four. */
++  acknowledgementRetries?: number;
++}
++
++function identifier(value: string): string {
++  if (!/^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?$/.test(value)) throw new TypeError('Invalid usage table identifier.');
++  return value;
+ }
+ 
+ /**
+@@ -27,17 +42,31 @@ export interface SqlRunner {
+  * meaningless.
+  */
+ export class PostgresUsageLedger implements UsageLedger {
++  private readonly operationTable: string;
++  private readonly retries: number;
++  get supportsOperationIds(): boolean { return this.sql.transaction !== undefined; }
+   constructor(
+     private readonly sql: SqlRunner,
+     /** The table holding the counters. */
+     private readonly table: string = 'usage_counters',
+-  ) {}
++    options: PostgresLedgerOptions = {},
++  ) {
++    identifier(table);
++    this.operationTable = identifier(options.operationTable ?? 'usage_operations');
++    this.retries = options.acknowledgementRetries ?? 2;
++    if (!Number.isInteger(this.retries) || this.retries < 0 || this.retries > 4) throw new TypeError('acknowledgementRetries must be from zero to four.');
++  }
+ 
+   async consumeMonthly(
+     customerId: string,
+     monthlyLimit: number,
+     nowMs: number = Date.now(),
++    options: UsageConsumeOptions = {},
+   ): Promise<UsageLedgerResult> {
++    if (options.operationId !== undefined) {
++      validateOperationId(options.operationId);
++      return this.consumeOperation(customerId, monthlyLimit, nowMs, options.operationId);
++    }
+     const month = utcMonth(nowMs);
+     const day = utcDay(nowMs);
+ 
+@@ -76,6 +105,45 @@ export class PostgresUsageLedger implements UsageLedger {
+     };
+   }
+ 
++  private async consumeOperation(customerId: string, limit: number, nowMs: number, operationId: string): Promise<UsageLedgerResult> {
++    const month = utcMonth(nowMs);
++    const day = utcDay(nowMs);
++    const unavailable = (uncertain: boolean): UsageLedgerResult => ({
++      allowed: false, count: 0, limit, month, day, unavailable: true, uncertain, operationId,
++    });
++    if (!this.sql.transaction) return unavailable(false);
++    for (let attempt = 0; attempt <= this.retries; attempt++) {
++      try {
++        return await this.sql.transaction(async (transaction) => {
++          // The existing counter row is the serialization point for both legacy
++          // upserts and operation-aware calls. Read the receipt AFTER locking it.
++          await transaction.unsafe(`INSERT INTO ${this.table}(customer_id,period,count) VALUES($1,$2,0)
++            ON CONFLICT(customer_id,period) DO NOTHING`, [customerId, month]);
++          const counters = await transaction.unsafe(`SELECT count FROM ${this.table}
++            WHERE customer_id=$1 AND period=$2 FOR UPDATE`, [customerId, month]) as { count: number }[];
++          const receipts = await transaction.unsafe(`SELECT allowed,count,enforced_limit FROM ${this.operationTable}
++            WHERE customer_id=$1 AND period=$2 AND operation_id=$3`, [customerId, month, operationId]) as { allowed: boolean; count: number; enforced_limit: number }[];
++          const existing = receipts[0];
++          if (existing) return { allowed: existing.allowed, count: Number(existing.count),
++            limit: Number(existing.enforced_limit), month, day, operationId };
++          const current = Number(counters[0]!.count);
++          const allowed = limit <= 0 || current < limit;
++          const count = allowed ? current + 1 : current;
++          if (allowed) await transaction.unsafe(`UPDATE ${this.table} SET count=$3
++            WHERE customer_id=$1 AND period=$2`, [customerId, month, count]);
++          await transaction.unsafe(`INSERT INTO ${this.operationTable}
++            (customer_id,period,operation_id,allowed,count,enforced_limit) VALUES($1,$2,$3,$4,$5,$6)`,
++            [customerId, month, operationId, allowed, count, limit]);
++          return { allowed, count, limit, month, day, operationId };
++        });
++      } catch {
++        // The prior transaction may have committed. The same operation ID and
++        // locked receipt lookup make another acknowledgement attempt safe.
++      }
++    }
++    return unavailable(true);
++  }
++
+   async peekMonthly(
+     customerId: string,
+     monthlyLimit: number,
+@@ -112,3 +180,17 @@ CREATE TABLE IF NOT EXISTS usage_counters (
+   PRIMARY KEY (customer_id, period)
+ );
+ `;
++
++/** Apply this additive DDL before using operation IDs with an existing ledger. */
++export const USAGE_OPERATIONS_DDL = `
++CREATE TABLE IF NOT EXISTS usage_operations (
++  customer_id TEXT NOT NULL,
++  period TEXT NOT NULL,
++  operation_id TEXT NOT NULL,
++  allowed BOOLEAN NOT NULL,
++  count INTEGER NOT NULL,
++  enforced_limit INTEGER NOT NULL,
++  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
++  PRIMARY KEY (customer_id, period, operation_id)
++);
++`;
+diff --git a/packages/api-billing/src/types.ts b/packages/api-billing/src/types.ts
+index 4726cf4..f606e7c 100644
+--- a/packages/api-billing/src/types.ts
++++ b/packages/api-billing/src/types.ts
+@@ -38,6 +38,12 @@ export interface MeteredCustomer {
+   stripeCustomerId?: string;
+ }
+ 
++/** Optional identity for one consumption, scoped to a customer and UTC month. */
++export interface UsageConsumeOptions {
++  /** Reuse this ID and the same nowMs when acknowledging/reconciling one operation. */
++  operationId?: string;
++}
++
+ /** The result of asking the ledger whether a call is allowed. */
+ export interface UsageLedgerResult {
+   /** Whether the call may proceed. */
+@@ -50,6 +56,12 @@ export interface UsageLedgerResult {
+   month: string;
+   /** The daily period, `YYYY-MM-DD`, when the ledger counts days as well. */
+   day?: string;
++  /** The store could not confirm its state; this is not an exhausted fuse. */
++  unavailable?: boolean;
++  /** A consumption may have committed, but could not be acknowledged. */
++  uncertain?: boolean;
++  /** Present only when the store acknowledges an idempotent operation. */
++  operationId?: string;
+ }
+ 
+ /**
+@@ -60,6 +72,8 @@ export interface UsageLedgerResult {
+  * in-memory map all satisfy it, and the fuse behaves identically in all three.
+  */
+ export interface UsageLedger {
++  /** True only when operation IDs are atomically deduplicated by this store. */
++  readonly supportsOperationIds?: boolean;
+   /**
+    * Count one call and say whether it was allowed.
+    *
+@@ -70,6 +84,7 @@ export interface UsageLedger {
+     customerId: string,
+     monthlyLimit: number,
+     nowMs?: number,
++    options?: UsageConsumeOptions,
+   ): Promise<UsageLedgerResult>;
+   /** Read the count without changing it. */
+   peekMonthly(
+diff --git a/packages/api-billing/src/usage-ledger.ts b/packages/api-billing/src/usage-ledger.ts
+index 3594853..ec02d2b 100644
+--- a/packages/api-billing/src/usage-ledger.ts
++++ b/packages/api-billing/src/usage-ledger.ts
+@@ -1,5 +1,6 @@
+ import { utcDay, utcMonth } from './time.js';
+-import type { UsageLedger, UsageLedgerResult } from './types.js';
++import { validateOperationId } from './operation.js';
++import type { UsageConsumeOptions, UsageLedger, UsageLedgerResult } from './types.js';
+ 
+ /**
+  * An in-memory ledger.
+@@ -9,7 +10,9 @@ import type { UsageLedger, UsageLedgerResult } from './types.js';
+  * it means something about the policy rather than about the double.
+  */
+ export class InMemoryUsageLedger implements UsageLedger {
++  readonly supportsOperationIds = true;
+   private readonly counts = new Map<string, number>();
++  private readonly receipts = new Map<string, UsageLedgerResult>();
+ 
+   constructor(private readonly seed?: Map<string, number>) {
+     if (seed) for (const [key, value] of seed) this.counts.set(key, value);
+@@ -23,17 +26,27 @@ export class InMemoryUsageLedger implements UsageLedger {
+     customerId: string,
+     monthlyLimit: number,
+     nowMs: number = Date.now(),
++    options: UsageConsumeOptions = {},
+   ): Promise<UsageLedgerResult> {
+     const month = utcMonth(nowMs);
++    const operationId = options.operationId;
++    if (operationId !== undefined) validateOperationId(operationId);
++    const receiptKey = operationId === undefined ? undefined : JSON.stringify([customerId, month, operationId]);
++    const receipt = receiptKey === undefined ? undefined : this.receipts.get(receiptKey);
++    if (receipt) return { ...receipt };
+     const key = this.key(customerId, month);
+     const current = this.counts.get(key) ?? 0;
+     if (monthlyLimit > 0 && current >= monthlyLimit) {
+       // Refused, and deliberately not counted.
+-      return { allowed: false, count: current, limit: monthlyLimit, month, day: utcDay(nowMs) };
++      const result = { allowed: false, count: current, limit: monthlyLimit, month, day: utcDay(nowMs), ...(operationId === undefined ? {} : { operationId }) };
++      if (receiptKey !== undefined) this.receipts.set(receiptKey, result);
++      return result;
+     }
+     const next = current + 1;
+     this.counts.set(key, next);
+-    return { allowed: true, count: next, limit: monthlyLimit, month, day: utcDay(nowMs) };
++    const result = { allowed: true, count: next, limit: monthlyLimit, month, day: utcDay(nowMs), ...(operationId === undefined ? {} : { operationId }) };
++    if (receiptKey !== undefined) this.receipts.set(receiptKey, result);
++    return result;
+   }
+ 
+   async peekMonthly(
+-- 
+2.40.1
+

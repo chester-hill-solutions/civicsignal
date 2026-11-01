@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T23:40:13.240232+00:00",
+  "scope": "opencode-zen-byok-adapter",
+  "files": [
+    {
+      "path": "src/byok.ts",
+      "bytes": 12974,
+      "sha256": "4c8a33ff36937e17290bb2c8b71573894b4539cbbef83c743139d4cac3dfa3cd"
+    },
+    {
+      "path": "src/routes/chat.ts",
+      "bytes": 10503,
+      "sha256": "1c964ed0d08c764923d34ca5e432b3125be0e8b94f7bcdee51759a33d42639cd"
+    },
+    {
+      "path": "test/byok.test.ts",
+      "bytes": 8501,
+      "sha256": "bd8ed59075ff29616f99382c7cc4c745206c6abe6709c58c8bbe8e0c01c691cf"
+    },
+    {
+      "path": "test/chat.test.ts",
+      "bytes": 13611,
+      "sha256": "986ed0c7904d81bf68db8672358686e3a6bd355a4da97fc0db91060bdfc2c04d"
+    },
+    {
+      "path": "test/endpoints.test.ts",
+      "bytes": 18843,
+      "sha256": "93bbc8ee1809b5fdf411106da5c731d5b3d53e8385323fc0d5f72a10b7ac7509"
+    }
+  ],
+  "provider": "opencode-zen",
+  "supportedModel": "claude-haiku-4-5",
+  "endpoint": "https://opencode.ai/inference/anthropic/v1/messages",
+  "authentication": "Bearer caller-supplied BYOK key",
+  "sharedAnthropicSerializerAndParser": true,
+  "existingProvidersPreserved": [
+    "anthropic",
+    "openai",
+    "google"
+  ],
+  "productMaxTokens": 4096,
+  "hostedSmokeMaxTokens": 128,
+  "limits": {
+    "generationRequestsPerChat": 1,
+    "timeoutMs": 30000,
+    "responseBytes": 262144,
+    "redirects": 0,
+    "retries": 0,
+    "fallbacks": 0
+  },
+  "checks": {
+    "focusedTests": 88,
+    "testFiles": 4,
+    "rootRerunPassed": true,
+    "compilerProjects": [
+      "worker",
+      "tooling"
+    ],
+    "independentReview": "clear",
+    "lateFulfilledFetchCancellationRegression": true,
+    "ParserAndPrivacyCheckInsideDeadlineRegression": true,
+    "providerDisagreementBeforeRetrieval": true,
+    "unsupportedZenModelBeforeRetrieval": true,
+    "authenticatedWorkerChatWith128Tokens": true,
+    "providerBodyAndEchoedKeyPrivacy": true
+  },
+  "stagingRuntimeCandidateSha256": "c7588966afb1685e17b9ba01897e5062ffceb5caef9cae46f75ba65afe99e1ea",
+  "stagingBundleSha256": "69e8bcb0b0553b74622008e8b470d052a38973ef0150166a568d08e4af2738be",
+  "runtimePinsVerified": 827,
+  "frozenBuildAndNoBundleDryOutputIdentical": true,
+  "officialSources": [
+    "https://opencode.ai/v2/docs/console/api/inference",
+    "https://opencode.ai/v2/docs/console/models/"
+  ],
+  "realProviderRequests": 0,
+  "realGenerationKeyRead": false,
+  "hostedChatVerified": false,
+  "productionDeployment": false,
+  "limitations": [
+    "Only the reviewed Claude Haiku 4.5 Messages model is accepted for this provider.",
+    "Positive hosted BYOK acceptance remains pending the coherent staging API deployment and the one approved generation check."
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T11:35:14.856662+00:00",
+  "stageOnly": true,
+  "api": {
+    "origin": "https://civicsignal-v1-stage-api-20261022.chester-hill-solutions.workers.dev",
+    "version": "e1bd0145-88bd-42b3-8de7-8f22694535e2",
+    "configSha256": "719258c00f8249d5302135deba5ea8bc2425700bcc23d29e021cb1e5b880193e",
+    "strictR2": true,
+    "usageNamespaceId": "64e06ff739514962a8038d4875bc090c",
+    "approvedSecretNames": [
+      "ENCODER_TOKEN",
+      "JEV_KEY"
+    ]
+  },
+  "syntheticAuth": {
+    "workspaces": 2,
+    "keys": 4,
+    "billingProfiles": 2,
+    "allPrivateKeyHashesMatch": true,
+    "foreignKeyViolations": 0,
+    "hardFuses": [
+      1000,
+      1
+    ],
+    "publicationUnchanged": true,
+    "parser": null,
+    "mutations": 0,
+    "pendingOutbox": 0,
+    "allQueryRowsWritten": 0,
+    "migrationSha256": "7c23dc6b153af407fcc40d710ee43f71b3b84d2e1849c1ae57ac3b60aad89250",
+    "privateFixtureSqlSha256": "01328f582fd0afa8e587d44bf5515af90277dfa90970d8d443b9998231f6e961"
+  },
+  "initialUsageNamespace": {
+    "format": 1,
+    "kind": "fresh-stage-usage-namespace-empty",
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "namespaceId": "64e06ff739514962a8038d4875bc090c",
+    "httpStatus": 200,
+    "objectCount": 0,
+    "observedBeforeFirstServingCall": true,
+    "observedAt": "2026-10-23T11:26:35.594Z"
+  },
+  "baselineSmoke": {
+    "completed": true,
+    "slots": 14,
+    "servingRequests": 14,
+    "automaticRetries": 0,
+    "cases": [
+      {
+        "ordinal": 1,
+        "id": "health",
+        "ok": true,
+        "status": 200,
+        "relaySequence": 1,
+        "correlationId": "req_mvkvxv1tg91ixv16uq"
+      },
+      {
+        "ordinal": 2,
+        "id": "discovery",
+        "ok": true,
+        "status": 200,
+        "relaySequence": 2,
+        "correlationId": "req_mvkvxv2sm3nln6odcq"
+      },
+      {
+        "ordinal": 3,
+        "id": "byok-cors",
+        "ok": true,
+        "status": 204,
+        "relaySequence": 3,
+        "correlationId": "req_mvkvxv7m1tc016ypvu"
+      },
+      {
+        "ordinal": 4,
+        "id": "missing-key",
+        "ok": true,
+        "status": 401,
+        "relaySequence": 4,
+        "correlationId": "req_mvkvxv9888ee3632pq"
+      },
+      {
+        "ordinal": 5,
+        "id": "unknown-key",
+        "ok": true,
+        "status": 401,
+        "relaySequence": 5,
+        "correlationId": "req_mvkvxvbf17kbi9c9wb"
+      },
+      {
+        "ordinal": 6,
+        "id": "revoked-key",
+        "ok": true,
+        "status": 401,
+        "relaySequence": 6,
+        "correlationId": "req_mvkvxvdtl8fl4usoov"
+      },
+      {
+        "ordinal": 7,
+        "id": "capability-key",
+        "ok": true,
+        "status": 403,
+        "relaySequence": 7,
+        "correlationId": "req_mvkvxvf393v9kq4dkx"
+      },
+      {
+        "ordinal": 8,
+        "id": "exact-en",
+        "ok": true,
+        "status": 200,
+        "relaySequence": 8,
+        "correlationId": "req_mvkvxviigoohurywmo",
+        "retrieval": {
+          "revision": "0507465393c224c0491fc8c17c88340217acc656",
+          "parser": "legacy",
+          "language": "en",
+          "cache": "bypass",
+          "mode": "exact",
+          "providers": {
+            "encoder": "not-called",
+            "vector": "not-called",
+            "reranker": "not-called",
+            "rows": "ok"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "id": "exact-fr",
+        "ok": true,
+        "status": 200,
+        "relaySequence": 9,
+        "correlationId": "req_mvkvxw0akd0esyi78w",
+        "retrieval": {
+          "revision": "0507465393c224c0491fc8c17c88340217acc656",
+          "parser": "legacy",
+          "language": "fr",
+          "cache": "bypass",
+          "mode": "exact",
+          "providers": {
+            "encoder": "not-called",
+            "vector": "not-called",
+            "reranker": "not-called",
+            "rows": "ok"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "id": "encoder-semantic",
+        "ok": true,
+        "status": 200,
+        "relaySequence": 10,
+        "correlationId": "req_mvkvxw8cqf3xkeruy3",
+        "retrieval": {
+          "revision": "0507465393c224c0491fc8c17c88340217acc656",
+          "parser": "legacy",
+          "language": "en",
+          "cache": "bypass",
+          "mode": "rerank",
+          "providers": {
+            "encoder": "ok",
+            "vector": "ok",
+            "reranker": "ok",
+            "rows": "ok"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "id": "mcp-initialize",
+        "ok": true,
+        "status": 200,
+        "relaySequence": 11,
+        "correlationId": null
+      },
+      {
+        "ordinal": 12,
+        "id": "mcp-notify",
+        "ok": true,
+        "status": 202,
+        "relaySequence": 12,
+        "correlationId": null
+      },
+      {
+        "ordinal": 13,
+        "id": "mcp-tools",
+        "ok": true,
+        "status": 200,
+        "relaySequence": 13,
+        "correlationId": null
+      },
+      {
+        "ordinal": 14,
+        "id": "mcp-citation",
+        "ok": true,
+        "status": 200,
+        "relaySequence": 14,
+        "correlationId": null,
+        "retrieval": {
+          "revision": "0507465393c224c0491fc8c17c88340217acc656",
+          "parser": "legacy",
+          "language": "en",
+          "cache": "bypass",
+          "mode": "exact",
+          "providers": {
+            "encoder": "not-called",
+            "vector": "not-called",
+            "reranker": "not-called",
+            "rows": "ok"
+          }
+        }
+      }
+    ]
+  },
+  "servingBudget": {
+    "limit": 160,
+    "reserved": 14,
+    "remaining": 146
+  },
+  "documentEmbeddingBudget": {
+    "cap": 1112,
+    "submitted": 0
+  },
+  "namespaceReadHistory": "Requests with limit1 and limit10 returned400. A diagnostic read retained10077/limit too low; documented maximum10000 returned200/empty result/no cursor. Earlier refusals remain in evidence.",
+  "evidence": [
+    {
+      "path": "dist/release/staging/stage-auth-ready-proof.json",
+      "sha256": "5090eee4c48e970f53a05d2582d8493fce537e326ae30d172c7f9a9e0b5c2e4e"
+    },
+    {
+      "path": "dist/release/staging/api-deployment-identity-proof.json",
+      "sha256": "09490acd2fc89f1ab4fbc1e148b06bb3027e83bb97fd505e736939d622883e04"
+    },
+    {
+      "path": "dist/release/staging/namespace-diagnostic-20261023.json",
+      "sha256": "89bd13194a350bf05153615fabecc5bb11e4283aae2cc780833c8333fdd63822"
+    },
+    {
+      "path": "dist/release/staging/namespace-empty-read-20261023.json",
+      "sha256": "bf51fbc6f7ab7925b198ebc0440efbafb099df3cd0a108d535c1dd49ae98a135"
+    },
+    {
+      "path": "dist/release/staging/quota-zero-evidence.json",
+      "sha256": "edd4db0c969ad746d254f908f3788eebbf8b5df068f666b7a69d279bdae964e5"
+    },
+    {
+      "path": "dist/release/staging/manual-smoke-observations/baseline.completed.json",
+      "sha256": "bf20174c2a9579d5deb8ea002e839731085913114de17f412ada74e84985f2cf"
+    }
+  ],
+  "limits": [
+    "These are baseline auth/protocol/inference smokes, not held-out retrieval-quality or throughput results.",
+    "Baseline publication parser is legacy. Pipeline reconciliation and all post-reconciliation tests remain pending.",
+    "Synthetic stage identities do not prove production auth/history migration."
+  ],
+  "productionChanges": false
+}
