@@ -1,10 +1,14 @@
 """Local-only operator/capture tests. All credentials and source files are synthetic."""
 from pathlib import Path
-import datetime,errno,hashlib,importlib.util,json,os,shutil,signal,subprocess,sys,tempfile,time,unittest
+import datetime,errno,hashlib,json,os,py_compile,shutil,signal,subprocess,sys,tempfile,time,types,unittest
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parent.parent
-spec=importlib.util.spec_from_file_location('owned_under_test',ROOT/'scripts/protected-state-d1-owned.py');op=importlib.util.module_from_spec(spec);spec.loader.exec_module(op)
-spec=importlib.util.spec_from_file_location('capture_under_test',ROOT/'scripts/lib/capture_owned.py');cap=importlib.util.module_from_spec(spec);spec.loader.exec_module(cap)
+def source_module(name,path):
+ module=types.ModuleType(name);module.__file__=str(path)
+ exec(compile(path.read_bytes(),str(path),'exec',dont_inherit=True,optimize=0),module.__dict__)
+ return module
+op=source_module('owned_under_test',ROOT/'scripts/protected-state-d1-owned.py')
+cap=source_module('capture_under_test',ROOT/'scripts/lib/capture_owned.py')
 NODE=shutil.which('node')
 TEMP_ROOT=str(Path(tempfile.gettempdir()).resolve())
 TOKEN='SYNTHETIC-RESTORE-TOKEN-'*3
@@ -57,6 +61,10 @@ class OperatorTests(unittest.TestCase):
   raw=''.join(p.read_text() for p in (self.registry/'window-000001').iterdir() if p.is_file());self.assertNotIn(TOKEN,raw);self.assertTrue((self.registry/'window-000001/accepted.json').exists())
   with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
   self.assertEqual(self.selected,1)
+ def test_default_capture_uses_checked_source_loader(self):
+  with patch.object(op,'load_capture',return_value=self.capture) as loader:
+   result=op.execute(self.review,select_credential=self.select)
+  self.assertTrue(result['passed']);loader.assert_called_once_with();self.assertEqual(self.calls,['runtime','inspection','execution']);self.assertEqual(self.selected,1)
  def test_inspection_failure_never_selects_key_or_creates_execution_intent(self):
   def capture(*args,**kwargs):r=self.capture(*args,**kwargs);r['exitCode']=1 if self.calls[-1]=='inspection' else 0;return r
   self.assertFalse(op.execute(self.review,capture,self.select)['passed']);self.assertEqual(self.selected,0);self.assertEqual(self.calls,['runtime','inspection']);self.assertFalse((self.registry/'window-000001/execution.intent.json').exists())
@@ -148,6 +156,32 @@ class OperatorTests(unittest.TestCase):
   with patch.object(op,'sync_dir',side_effect=fail):result=op.execute(self.review,self.capture,self.select)
   self.assertFalse(result['passed']);self.assertTrue(result['receiptPersistenceUncertain']);self.assertTrue((own/'accepted.json').exists());self.assertTrue((own/'receipt-uncertain.json').exists())
   with self.assertRaisesRegex(ValueError,'PROTECTED_OWNED_PRIOR_UNCERTAINTY'):op.prior_windows({**self.r,'window':2},self.registry)
+
+class PinnedCaptureLoaderTests(unittest.TestCase):
+ def setUp(self):
+  self.root=Path(tempfile.mkdtemp(prefix='protected-helper-source-',dir=TEMP_ROOT));self.helper=self.root/'scripts/lib/capture_owned.py';self.helper.parent.mkdir(mode=0o700,parents=True)
+  self.pinned=b"def capture_owned():\n return 'pinned'\n";self.cached=b"def capture_owned():\n return 'cached'\n";self.expected=op.digest(self.pinned);self.helper.write_bytes(self.pinned);self.helper.chmod(0o600)
+ def tearDown(self):shutil.rmtree(self.root)
+ def load(self):
+  with patch.object(op,'ROOT',self.root),patch.object(op,'CAPTURE_SHA',self.expected):return op.load_capture()
+ def test_executes_pinned_bytes_even_with_timestamp_valid_stale_cache(self):
+  self.assertEqual(len(self.pinned),len(self.cached));self.helper.write_bytes(self.cached);before=self.helper.stat();cache=Path(py_compile.compile(str(self.helper),doraise=True));cache_before=cache.read_bytes()
+  self.helper.write_bytes(self.pinned);os.utime(self.helper,ns=(before.st_atime_ns,before.st_mtime_ns));self.assertEqual(op.sha_file(self.helper),op.digest(self.pinned))
+  self.assertEqual(self.load()(),'pinned');self.assertEqual(cache.read_bytes(),cache_before)
+ def test_compiles_same_checked_buffer_when_file_changes_after_read(self):
+  original=hashlib.sha256;mutations=[];helper=self.helper;cached=self.cached;expected=self.expected
+  class HashThenChangeFile:
+   def __init__(self,*args,**kwargs):self.inner=original(*args,**kwargs)
+   def update(self,value):return self.inner.update(value)
+   def hexdigest(self):
+    value=self.inner.hexdigest()
+    if value==expected and not mutations:helper.write_bytes(cached);mutations.append(True)
+    return value
+  with patch.object(hashlib,'sha256',HashThenChangeFile):capture=self.load()
+  self.assertEqual(capture(),'pinned');self.assertEqual(mutations,[True]);self.assertEqual(self.helper.read_bytes(),self.cached)
+ def test_refuses_unpinned_source_before_execution(self):
+  self.helper.write_text("raise AssertionError('UNPINNED_HELPER_EXECUTED')\n")
+  with self.assertRaisesRegex(ValueError,'PROTECTED_OWNED_CODE_DRIFT'):self.load()
 
 class CaptureTests(unittest.TestCase):
  def setUp(self):self.root=Path(tempfile.mkdtemp(prefix='protected-capture-',dir=TEMP_ROOT));self.root.chmod(0o700)

@@ -7,7 +7,7 @@ at most ten seconds of owned-group cleanup. Local filesystem calls are not
 preemptible. No accepted marker is issued after an observed review expiry.
 """
 from pathlib import Path
-import datetime,hashlib,importlib.util,json,os,pwd,re,stat,sys,time
+import datetime,hashlib,json,os,pwd,re,stat,sys,time
 ROOT=Path(__file__).resolve().parent.parent
 CAPTURE_SHA='222640626fa99e8e413d5282c439d11f0c3770c06653e61bce6801a8a79b084a'
 INSPECTION_SECONDS=300
@@ -135,6 +135,17 @@ def captured(capture,argv,registry,directory,name,env,timeout,json_output=True,l
  value={**value,'startedAt':started,'finishedAt':stamp(),'logSha256':digest(raw) if raw is not None else None,'deadlineSeconds':timeout,'cleanupSeconds':10}
  exclusive(directory/(name+'-process.json'),value);require(successful(value),'PROTECTED_OWNED_CHILD');return value,json.loads(raw) if json_output else raw.decode('utf8').strip()
 
+def load_capture():
+ helper=ROOT/'scripts/lib/capture_owned.py'
+ with os.fdopen(os.open(helper,os.O_RDONLY|os.O_NOFOLLOW),'rb') as stream:
+  require(stat.S_ISREG(os.fstat(stream.fileno()).st_mode),'PROTECTED_OWNED_CODE_DRIFT');source=stream.read(65537)
+ require(len(source)<=65536 and digest(source)==CAPTURE_SHA,'PROTECTED_OWNED_CODE_DRIFT')
+ # Compile the same checked buffer. -B does not stop SourceFileLoader reading
+ # an existing timestamp-valid .pyc or reopening changed source after hashing.
+ namespace={'__name__':'protected_owned_capture','__file__':str(helper)}
+ exec(compile(source,str(helper),'exec',dont_inherit=True,optimize=0),namespace)
+ return namespace['capture_owned']
+
 def execute(review_path,capture=None,select_credential=None):
  """Injected callables are local test seams; the command line exposes neither."""
  review_path=Path(review_path);original=private_bytes(review_path);r,registry=validate_current(review_path,original,700)
@@ -146,7 +157,7 @@ def execute(review_path,capture=None,select_credential=None):
  target=checked_target(r['target']);require(digest(private_bytes(Path(i['targetFile']),16384))==i['targetFileSha256'],'PROTECTED_OWNED_TARGET_DRIFT');require(credential_metadata(Path(r['credential']['path']))==r['credential'],'PROTECTED_OWNED_CREDENTIAL_DRIFT')
  prior_windows(r,registry)
  if capture is None:
-  spec=importlib.util.spec_from_file_location('protected_owned_capture',ROOT/'scripts/lib/capture_owned.py');module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);capture=module.capture_owned
+  capture=load_capture()
  directory=registry/('window-%06d'%r['window']);directory.mkdir(mode=0o700);sync_dir(registry);started=time.monotonic();result={'format':1,'phase':'protected-d1-owned-window','window':r['window'],'mode':r['mode'],'planSha256':r['planSha256'],'reviewSha256':digest(original),'startedAt':stamp(),'passed':False,'receiptPersistenceUncertain':False,'acceptanceRequiresSeparateMarker':True,'automaticNextWindow':False,'versionSeconds':5,'inspectionSeconds':300,'executionSeconds':330,'cleanupSecondsPerChild':10,'maxLogBytesTotal':LOG_BYTES};token=None
  try:
   exclusive(directory/'started.json',{'format':1,'reviewSha256':digest(original),'planSha256':r['planSha256'],'window':r['window'],'mode':r['mode'],'startedAt':result['startedAt'],'automaticNextWindow':False})

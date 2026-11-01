@@ -8,7 +8,7 @@ The immediate objective is to close four release gates: scheduled first publicat
 
 ## Immediate work order
 
-1. **Complete the operation launchers.** Bind the qualified source to the staged API update, serving measurements, and Zen recheck packets.
+1. **Qualify the source-loader repair and finish the launchers.** Bind their exact source to the staged API, serving, and Zen packets.
 2. **Prepare the three open evidence paths.** Make the scheduled packet executable; prepare serving acceptance and consistent production acquisition alongside it.
 3. **Close the corresponding hosted gates.** Use fresh target evidence and the reviewed limits for each concrete operation.
 4. **Complete MP-05 after acquisition.** Qualify the protected copy, production target, and authorization-preserving rollback.
@@ -131,6 +131,9 @@ The latest qualified implementation is **`eee91b2`**.
 Its [complete local gate](evidence/2026-10-31/integrated-candidate-local-validation-v8.json) and [clean Linux gate](evidence/2026-10-31/candidate-eee91b2-linux-ci-validation.json) pass with 477 source and fixture inputs.
 Those checks cover 1,975 tests, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
 Later source changes need their own complete checks.
+The later [source-loader repair, issue 14](https://github.com/chester-hill-solutions/civicsignal/issues/14), passes [complete local checks](evidence/2026-10-31/integrated-candidate-local-validation-v9.json).
+That source passes 1,975 tests and 31 Python checks; exact successor Linux qualification remains open.
+Its helper must execute the exact checked source bytes; Python cache flags alone do not establish that identity.
 The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves earlier candidates, repairs, failed checks, and exact receipts.
 
 | Package | Current position | Next deliverable |

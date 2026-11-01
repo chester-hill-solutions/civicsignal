@@ -989,6 +989,21 @@ Credential reads and network calls remain zero. Execution, event, fresh calendar
 Independent preparation review requires final acceptance of all nine settled owner chains and both actual cleanup completions, beyond canonical artifact proof.
 The staged API update, broad serving launcher, and exact-source Zen successor remain in local implementation. Their real execution inputs remain absent.
 
+A local source-integrity probe then reproduces a Python helper-loader gap under `-I -B`.
+A timestamp-valid bytecode cache executes older fixture code after the current source hash passes. No actual workspace cache is executed by the probe.
+[Issue 14](https://github.com/chester-hill-solutions/civicsignal/issues/14) records the source defect; the [local repair receipt](evidence/2026-10-31/pinned-python-helper-local-repair.json) retains its proof.
+Two targeted regressions fail before repair: stale cached code and a source change after hashing. The hash-mismatch control passes.
+The repaired operator reads a bounded regular file, checks that buffer, then compiles the same bytes without a cache lookup or source reopen.
+Its default execution path uses that loader. The test bootstrap also compiles source directly.
+Independent review accepts the final pins. Three sharp regressions pass; the complete successor gate remains in progress.
+The shared capture helper stays unchanged. New private owners adopt the same checked-buffer rule; frozen predecessors remain intact for historical evidence.
+
+The [complete v9 local gate](evidence/2026-10-31/integrated-candidate-local-validation-v9.json) passes frozen installation, 1,975 tests in 102 files, and all four compiler projects.
+All 31 Python cases, runtime/invariant checks, and five dry builds pass. All four owned phases settle with exit zero.
+All 477 source/fixture inputs stay unchanged. The driver, production helper loader, and final test bootstrap execute checked source buffers without cache loaders.
+The capture helper retains its original source bytes. Issue 14 remains open until exact successor Linux qualification completes.
+The API JavaScript artifact remains unchanged; shared operation packets must bind the newly qualified source before execution.
+
 ## Remaining release gates
 
 1. Verify scheduled snapshot discovery and first publication. The manually recovered hosted Workflow and complete artifact parity already pass. The claimed probe requires an already published revision; its existing-publication no-op cannot establish scheduled first publication.
