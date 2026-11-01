@@ -6,18 +6,24 @@ CivicSignal will give applications and agents source-cited Canadian civic inform
 The first release serves Canadian federal statutes and regulations in English and French.
 The immediate objective is to close four release gates: scheduled first publication, serving acceptance, production migration, and the final release audit.
 
+This file owns scope, priorities, dependencies, decisions, and next actions.
+The [release evidence ledger](V1-RELEASE.md) owns detailed results and source-specific receipts.
+Supporting documents supply contracts, procedures, historical evidence, or future designs.
+They do not create another work order.
+
 ## Immediate work order
 
-1. **Qualify the source-loader repair and finish the launchers.** Bind their exact source to the staged API, serving, and Zen packets.
-2. **Prepare the three open evidence paths.** Make the scheduled packet executable; prepare serving acceptance and consistent production acquisition alongside it.
-3. **Close the corresponding hosted gates.** Use fresh target evidence and the reviewed limits for each concrete operation.
-4. **Complete MP-05 after acquisition.** Qualify the protected copy, production target, and authorization-preserving rollback.
-5. **Complete MP-06.** Reconcile all ten requirements, review the production switch, execute its approved checks, and record the actual result.
+1. **Finish operation source linkage under MP-01.** Connect the qualified source-loader repair and its receipts to each operator.
+2. **Finish local preparation.** Complete, check, and review the scheduled-publication, API, serving, and Zen operators under MP-02 and MP-03.
+3. **Resolve execution inputs.** Record the acceptance policy, chat disposition, operation budgets, fresh target facts, and production writer authorities.
+4. **Close the first three gates.** Complete MP-02 and MP-03; acquire a consistent production capture through MP-04 before MP-05's copy proof.
+5. **Complete MP-06.** Audit all ten requirements, review the production switch and rollback, then record the approved operation's actual result.
 
 MP-01 supplies the exact candidate for each operation.
 MP-02, MP-03, and MP-04 preparation can proceed independently.
 MP-04 capture must pass before MP-05's production-derived proof.
 The final production decision waits for MP-02, MP-03, and MP-05 acceptance.
+Named operators and approvers remain execution prerequisites; role assignments below do not select them.
 
 ## Release gates at a glance
 
@@ -32,14 +38,20 @@ All four gates remain open. The ten [release requirements](V1-RELEASE.md#release
 
 ## Plan authority
 
-This is the single master plan for scope, decisions, work order, and future phases.
-The [release evidence ledger](V1-RELEASE.md) retains requirement checks, completed results, failures, and source-specific receipts.
-Detailed procedures and reviews remain references for their respective work packages.
-They do not create separate product roadmaps or authorize execution.
-
 The former product plan remains in [PLAN-HISTORY.md](PLAN-HISTORY.md).
-Earlier Railway, model, rerank, pricing, and product-wave discussions remain history where they conflict with this plan.
+The following dispositions resolve conflicts among the planning documents.
+
+| Earlier proposal | Current disposition |
+| --- | --- |
+| Move the API to Railway and remove Cloudflare services | Use Cloudflare for v1; preserve Railway services and portability code |
+| Drop reranking after the early retrieval experiment | Retain the current Jev authority policy and vector fallback; require new serving evidence for changes |
+| Add news, debates, bills, tone, and geography in the first product wave | Defer expansion until the federal release and external demand supply entry evidence |
+| Ship a hosted OpenCode harness or portal | Defer both; v1 exposes HTTP, MCP, and BYOK chat |
+| Publish public snapshots, paid credits, or a fixed unit price immediately | Make separate distribution and commercial decisions after the release |
+| Treat old local or hosted passes as current release acceptance | Bind each accepted result to its actual source, target, and scope |
+
 The [reference map](#reference-map) identifies each document's role.
+Existing execution constraints still apply; a newer priority does not renew an expired approval or consumed marker.
 
 The latest corpus and serving observations date from October 24.
 This document does not establish fresh remote state, credential validity, or a new request allowance.
@@ -102,23 +114,21 @@ Historical legal, competitor, price, and margin statements do not establish curr
 
 ## Recorded baseline
 
-This table retains the October 24 baseline without qualifying today's working tree or production.
-The [release crosswalk](V1-RELEASE.md#current-closure-crosswalk--2026-10-24) links the underlying evidence.
-The [implementation progress](#implementation-progress) records later source checks.
+Preserve these completed checks; do not repeat them merely to simplify the plan.
+The [October 24 crosswalk](V1-RELEASE.md#current-closure-crosswalk--2026-10-24) retains their exact evidence and limitations.
 
-| Area | Recorded outcome | Remaining limit |
-| --- | --- | --- |
-| Shared identity and metering | Local HTTP/MCP, key, quota, and receipt checks pass | Hosted production identity/history preservation remains open |
-| Reproducible builds | Prior clean Linux installation, compiler, runtime, invariant, and build checks pass | These earlier receipts do not qualify later source changes |
-| Non-empty reconciliation | All 277,857 metadata rows agree; 1,112 changed and 276,745 unchanged; pending outbox is empty | Preserve the original paused coordinator and completed evidence |
-| Provision text | Full staging baseline audit and later composite changed-text proof pass | The composite proof is not a fresh full-store byte audit |
-| Vector backup | All 277,857 positions, including 254,671 substantive vectors and 23,186 placeholders, pass the retained backup checks | Legacy embedding-model provenance remains unattested |
-| Manual snapshot publication | Hosted Workflow and all 240 artifacts pass parity | Scheduled discovery and first publication remain open |
-| Snapshot/acquisition increment | Local receipt records 1,689 tests in 97 files, 23 Python cases, four compiler projects, and five dry builds | Source is undeployed; fixture proofs do not establish full hosted operation |
-| Serving surfaces | 21 hosted smokes and a later cold/warm calibration pair pass | Positive Zen generation and broad quality/performance acceptance remain open |
-| Held-out retrieval | 63/64 valid responses; Hit@5 is 40/48; one false accept among 15 completed unsupported questions | Preserve the failed run; later calibration does not replace it |
-| Performance | Benchmark retains a hydration failure and failed warm-ups | Different cache populations do not establish capacity or uncached latency |
-| Protected production copy | Local codec, schema admission, sequence bridge, binding, client, and owned operator checks pass | Actual production acquisition, hosted copy, and production target support remain open |
+- Shared identity, HTTP/MCP metering, key lifecycle, quota, and receipt checks pass locally.
+- Staging reconciliation checks all 277,857 metadata rows, including 1,112 changes, and an empty pending outbox.
+- The full staging text baseline, composite changed-text proof, and complete vector backup pass their retained checks.
+- Manual hosted Workflow publication and all 240 artifacts pass parity; scheduled first publication remains open.
+- Twenty-one serving smokes and the later cold/warm calibration pair pass; broad serving acceptance remains open.
+- Protected-copy, schema, sequence, binding, client, and rollback mechanisms pass local checks; production-derived hosted proof remains open.
+
+The retained holdout records 63/64 valid responses, Hit@5 of 40/48, and one false accept among 15 completed unsupported questions.
+The benchmark retains a hydration failure and failed warm-ups.
+Both failed runs remain evidence; later calibration does not replace them.
+Composite text checks do not establish a fresh full-store byte audit.
+The complete vector backup does not establish legacy embedding-model provenance.
 
 The recorded serving ledger is **159/160**, with no new generation approval.
 The recorded reconciliation use is **1,624 document attempts and 16 extension calls**, under cumulative limits of 1,752 and 20.
@@ -127,33 +137,35 @@ Unspent slots do not authorize another operation, reset, retry, or replacement l
 
 ## Implementation progress
 
-The latest qualified implementation is **`eee91b2`**.
-Its [complete local gate](evidence/2026-10-31/integrated-candidate-local-validation-v8.json) and [clean Linux gate](evidence/2026-10-31/candidate-eee91b2-linux-ci-validation.json) pass with 477 source and fixture inputs.
-Those checks cover 1,975 tests, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
+The latest qualified implementation is **`5d4915c`**.
+Its [complete local gate](evidence/2026-10-31/integrated-candidate-local-validation-v9.json) and [clean Linux gate](evidence/2026-10-31/candidate-5d4915c-linux-ci-validation.json) pass with 477 source and fixture inputs.
+Those checks cover 1,975 tests, 31 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
 Later source changes need their own complete checks.
-The later [source-loader repair, issue 14](https://github.com/chester-hill-solutions/civicsignal/issues/14), passes [complete local checks](evidence/2026-10-31/integrated-candidate-local-validation-v9.json).
-That source passes 1,975 tests and 31 Python checks; exact successor Linux qualification remains open.
-Its helper must execute the exact checked source bytes; Python cache flags alone do not establish that identity.
+The qualified [source-loader repair closes issue 14](https://github.com/chester-hill-solutions/civicsignal/issues/14).
+It compiles the exact checked source bytes; Python cache flags alone do not establish that identity.
 The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves earlier candidates, repairs, failed checks, and exact receipts.
 
-| Package | Current position | Next deliverable |
-| --- | --- | --- |
-| MP-01 | Source `eee91b2` and all 477 inputs pass complete local and Linux checks | Fresh hosted identities and exact operation-specific source linkage |
-| MP-02 | Runtime controls qualify; the fixed operator passes preparation review and accepts the real source receipts | Native-calendar evidence, concrete event/budgets, and actual scheduled first publication |
-| MP-03 | Brief, hydration, and relay repairs qualify; successor labels pass source checks | Owned API/serving/Zen launchers, acceptance policy, fresh target proof, and hosted acceptance |
-| MP-04 | Fixture acquisition mechanisms qualify; private preparation receives local review | Actual authority, writer holds, maintenance, and consistent acquisition evidence |
-| MP-05 | Local copy, sequence, binding, and rollback mechanisms pass | Production-derived hosted copy and the production target |
-| MP-06 | Current source passes engineering checks; the PR remains a draft | Final requirement audit, complete release evidence, and production decision |
+| Package | Responsible role | Dependency | Current position and next deliverable |
+| --- | --- | --- | --- |
+| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Current source | Complete local and Linux gates pass; finish operation source linkage and fresh hosted identities |
+| [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | Runtime controls qualify; finish the operator successor, calendar facts, event, budgets, and hosted first publication |
+| [MP-03](#mp-03-close-serving-acceptance) | API engineer and evaluation owner | MP-01 and product acceptance decisions | Repairs and labels qualify; finish API/serving/Zen operators, then complete hosted acceptance |
+| [MP-04](#mp-04-qualify-consistent-production-acquisition) | Release engineer and writer owners | Actual authority and common maintenance | Fixture mechanisms pass; establish writer control and acquire consistent production inputs |
+| [MP-05](#mp-05-qualify-protected-copy-and-production-rollback) | Migration engineer | MP-04 capture for production-derived proof | Local mechanisms pass; qualify hosted copy, production target, and rollback |
+| [MP-06](#mp-06-qualify-the-final-source-and-release-packet) | Release engineer and product owner | MP-02, MP-03, and MP-05 acceptance | Draft candidate; complete final checks, requirement audit, and production decision |
 
 The [runtime accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records conditional callback bounds.
 Those bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
-The first-publication operator now links actual local/Linux source proof; event, budget, credential, and fresh resource admission remain separate.
-Its final acceptance must inspect all nine settled owner chains and both completed cleanup guards. Canonical artifact proof alone is insufficient.
+The predecessor first-publication operator links actual local/Linux source proof; its owner requires a source-loader successor before execution.
+The API, serving, Zen, and publication operator successors remain drafts until their final checks, source linkage, and reviews pass.
+Earlier fixture passes do not qualify later draft edits.
+Scheduled-publication acceptance must inspect all nine settled owner chains and both completed cleanup guards.
+Canonical artifact proof alone is insufficient.
 The retained native Workflow calendar remains unknown; current admission refuses before deployment until an actual empty observation exists.
 
 The [earlier local EPIPE failure](evidence/2026-10-31/integrated-candidate-local-observation-v7.json) and [inconclusive diagnostic](evidence/2026-10-31/restore-frame-diagnostic-observation.json) remain intact.
 Later full passes do not explain that failure. [Issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12) remains open.
-The reproduced [relay abort defect, issue 13](https://github.com/chester-hill-solutions/civicsignal/issues/13), closes after source repair, independent review, and complete local/Linux qualification.
+The repair, independent review, and complete local/Linux checks close the reproduced [relay abort defect, issue 13](https://github.com/chester-hill-solutions/civicsignal/issues/13).
 Open public decisions also include [chat evidence, issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) and [scheduled operation accounting, issue 6](https://github.com/chester-hill-solutions/civicsignal/issues/6).
 The release ledger retains closed findings and their source-specific qualification.
 
@@ -170,30 +182,38 @@ Production cutover waits for all required evidence and the final decision.
 
 ### MP-01 Reconcile the exact candidate
 
-**Status:** local inventory recorded; final candidate and fresh hosted identity remain open. **Requirements:** V1-02, V1-09, V1-10.
+**Status:** exact successor local and Linux checks pass; operator linkage and fresh hosted identity remain open.
+**Requirements:** V1-02, V1-09, V1-10.
 
-- Record the candidate source, working-tree changes, dependencies, bindings, and deployed versions.
-- Preserve unrelated work, failed receipts, accepted artifacts, and consumed execution markers.
-- Distinguish previously deployed provider repairs from newer local snapshot and acquisition code.
-- Record each requirement as locally checked, hosted checked, pending, or explicitly excluded.
+- [x] Retain the earlier source's complete local and clean Linux receipts.
+- [x] Repair the helper loader and pass the complete successor local gate.
+- [x] Retain matching clean Linux evidence for the successor's exact source and fixture inputs.
+- [ ] Bind each operator, bundle, dependency, and source receipt to that qualified candidate.
+- [ ] Connect actual deployed identities and current requirement dispositions to the operation packet.
+
+Preserve unrelated work, failed receipts, accepted artifacts, and consumed execution markers.
+Distinguish deployed provider repairs from newer local code and unfinished private drafts.
 
 **Exit evidence:** one source-specific inventory connects the ten release requirements to their current receipts and remaining tasks.
 Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPERATIONS.md), and [writing rules](WRITING.md).
 
 ### MP-02 Qualify scheduled first publication
 
-**Status:** runtime controls pass focused checks and source review; full source checks, the executable operator, and hosted qualification remain open. **Requirements:** V1-04, V1-05, V1-09.
+**Status:** shared runtime controls and predecessor preparation pass; the operator successor and hosted qualification remain open.
+**Requirements:** V1-04, V1-05, V1-09.
 
-- Retain the shared Workflow, parser, builder, archive checks, and manifest-last publication path.
-- Preserve safe source failure diagnostics without raw provider bodies or exception text.
-- Extend existing owned request manifests, transport, cleanup guards, and artifact checks to cover the prepared proposal.
-- Set explicit qualification retry, time, and object policies while preserving canonical behavior.
-- Distinguish caller-enforced limits from unqualified platform delivery or reconstruction work.
-- Freeze the qualification bundle, configuration, and owned operator.
-- Use a fresh physical namespace and a distinct Workflow instance; keep the genuine source and parser identity.
-- Budget source, management, R2, storage, and complete artifact checks separately.
-- Prepare one future event, finite admission windows, valid credentials, stop conditions, and independent cleanup guards.
-- Execute only within the separately approved packet.
+- [x] Reuse the Workflow, parser, builder, archive checks, and manifest-last publication path.
+- [x] Qualify safe diagnostics and qualification-only retry, time, object, and progress controls.
+- [x] Retain the predecessor operator's fixture and full-artifact comparison evidence.
+- [ ] Finish the operator successor's fixture repairs, complete checks, source linkage, and independent review.
+- [ ] Freeze its bundle and configuration with a fresh namespace and distinct instance.
+- [ ] Resolve calendar facts and residual platform uncertainty before selecting the executable event and budgets.
+- [ ] Prepare finite admission windows, credential checks, stop conditions, and independent cleanup guards.
+- [ ] Execute the separately reviewed event and complete all publication, artifact, canonical-state, and cleanup checks.
+
+Keep the genuine source and parser identity.
+Budget source, management, R2, storage, and full artifact checks separately.
+Caller-enforced bounds do not establish a global provider ceiling or cancellation of stalled requests.
 
 **Exit evidence:** connect the scheduled event to the new instance and its first complete publication.
 Compare the full corpus and every artifact with the pinned reference.
@@ -213,21 +233,23 @@ Prepare a fresh successor from existing owned helpers; preserve every consumed m
 
 ### MP-03 Close serving acceptance
 
-**Status:** local provider and brief-policy repairs pass; the earlier hosted calibration pair passes; broad acceptance remains open.
+**Status:** provider, brief, hydration, and relay repairs qualify; broad serving and positive Zen acceptance remain open.
 **Requirements:** V1-03, V1-07, V1-08.
 
-- Preserve the held-out and benchmark failures and investigate their retained evidence.
-- Separate candidate misses, wrong-result acceptance, scope errors, false refusals, provider errors, and text-hydration failures.
-- Repair the reproduced shared-object byte-length mismatch and allocation undercount; qualify its serving and usage regressions.
-- Define the next run's acceptance criteria before execution; do not tune against the retained holdout answers.
-- Record numerical criteria as an explicit policy decision before adding automatic quality gates to the existing runner.
-- Retain the new [bilingual questions](../src/eval/data/v1-successor-questions.json) and their full source proof.
-- Prepare fresh target provenance for the next independent acceptance run; recheck labels if its source revision changes.
-- Repair the reproduced relay abort-promise defect through its actual caller; retain a regression for the spent reservation and failed response.
-- State request budgets, cache behavior, language splits, provider observations, latency, throughput, and freshness.
-- Qualify positive Zen chat through the existing authenticated retrieval, generation, citation, and metering path.
-- Check brief emission against the shared CHS corpus policy gate; extend existing checks where response paths diverge.
-- Recheck affected advertised HTTP/MCP routes when their source or bindings change.
+- [x] Qualify provider dispatch, brief policy, shared-object byte checks, allocation limits, and relay abort handling.
+- [x] Check the new [bilingual questions](../src/eval/data/v1-successor-questions.json) against their full immutable source proof.
+- [ ] Finish and independently review the API deployment, serving, and Zen operators on the common qualified source.
+- [ ] Record numerical acceptance criteria and the chat-contract disposition before the next independent run.
+- [ ] Prepare fresh target provenance, reviewed request scopes, and any required label checks for that revision.
+- [ ] Deploy and check the reviewed staging API; complete the independent bilingual holdout and bounded benchmark.
+- [ ] Review broad acceptance, refresh management target evidence, then qualify the separately reviewed positive Zen chat.
+- [ ] Recheck affected advertised HTTP/MCP routes and reconcile serving and usage receipts.
+
+Preserve the held-out and benchmark failures; do not tune against their answers.
+Separate misses, wrong results, scope errors, false refusals, provider errors, and text-hydration failures.
+State cache behavior, language splits, provider observations, latency, throughput, and freshness.
+Extend the existing eval, benchmark, relay, and CHS emission paths.
+Operator fixture passes do not establish actual target provenance or serving acceptance.
 
 The sealed [one-request Zen proposal](V1-ZEN-RECHECK.md) remains a separate decision.
 Its previous generation approvals are spent; the final recorded serving slot does not grant a new approval.
@@ -241,18 +263,20 @@ Use the existing [evaluation procedure](V1-EVALUATION.md), [runner](../scripts/e
 
 ### MP-04 Qualify consistent production acquisition
 
-**Status:** fixture capture core and injected transport pass focused and clean Linux checks; live acquisition and common maintenance remain open.
+**Status:** fixture mechanisms and private preparation pass their retained checks; actual maintenance and production capture remain open.
 **Requirements:** V1-01, V1-04, V1-06.
 
-- Retain the locally checked fixed schema and sequence collector, its shared owner, and final file-integrity checks.
-- Establish actual production versions, bindings, auth authority, schema, and every relevant writer.
-- Define a common maintenance interval for ingestion, auth, billing, and covered timestamp writes.
-- Do not substitute the staging coordinator for production writer control.
-- Extend the existing KV view A, continued D1 export, and KV view B capture protocol.
-- Complete credential ownership, bounded transport, signed download, schema and sequence facts, and durable private capture.
-- Keep provider credentials separate from the signed-download origin.
-- Enumerate the complete request, storage, time, and cleanup budgets before the acquisition proposal.
-- Acquire only under the separately reviewed maintenance and execution packet.
+- [x] Qualify the fixture capture core, transport, schema and sequence checks, and final file-integrity checks.
+- [x] Retain bounded inventory observations and private maintenance preparation without claiming a production freeze.
+- [ ] Identify actual versions, bindings, auth authority, source schema, writer owners, and active work.
+- [ ] Define common maintenance, drain evidence, stop conditions, and explicit reconciliation or resume authority.
+- [ ] Complete the owned acquisition client around KV view A, continued D1 export, and KV view B.
+- [ ] Include source facts, signed download, private persistence, and complete request, storage, time, and cleanup budgets.
+- [ ] Acquire and check the consistent capture under the separately reviewed maintenance and execution packet.
+
+Do not substitute the staging coordinator for production writer control.
+Keep provider credentials separate from the signed-download origin.
+Keep detailed production observations and held findings private until their publication decision permits disclosure.
 
 The fixture core's 2,080-exchange bound covers only its partial protocol.
 It does not establish that a complete acquisition fits the older 2,200-call proposal.
@@ -268,13 +292,15 @@ Use the [acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md) and [ex
 **Status:** local copy mechanisms pass; production-derived hosted qualification remains open.
 **Requirements:** V1-01, V1-06, V1-08. **Dependency:** MP-04 capture for production-derived proof.
 
-- Reuse the codec, restricted SQL importer, source-schema admission, sequence bridge, D1 binding, client, and owned operator.
-- Check corpus, parser, text, vector, publication, and source-schema compatibility before copy admission.
-- Complete the isolated hosted protected-copy checks with the qualified source.
-- Check key hashes, revocation, capabilities, billing limits, history, and sequence highwaters.
-- Prepare and review the production target adapter separately; retain staging-only checks until that change qualifies.
-- Keep authoritative authorization and usage fixed through corpus migration and rollback.
-- Check the rollback target's actual compatibility; its earlier production use does not establish current readiness.
+- [x] Qualify the local codec, restricted importer, source-schema admission, sequence bridge, D1 binding, client, and rollback behavior.
+- [ ] Recheck the owned operator's source loader and final source qualification before execution.
+- [ ] Check corpus, parser, text, vector, publication, and source-schema compatibility against MP-04's authentic capture.
+- [ ] Complete the isolated hosted protected copy with identity, revocation, capability, billing, history, and sequence checks.
+- [ ] Prepare and qualify the production target adapter as a separate change.
+- [ ] Check the actual production switch and rollback targets; preserve authoritative authorization and usage throughout.
+
+Retain staging-only admission until the production adapter qualifies.
+Earlier production use does not establish the rollback target's current compatibility.
 
 **Exit evidence:** qualified hosted copy and a concrete production switch/rollback procedure that preserves identities and usage history.
 Use [protected copy](PROTECTED-STATE-COPY.md), [D1 admission](PROTECTED-D1-BINDING.md), and [corpus rollback](CORPUS-ROLLBACK.md).
@@ -284,12 +310,12 @@ Use [protected copy](PROTECTED-STATE-COPY.md), [D1 admission](PROTECTED-D1-BINDI
 **Status:** open for the final candidate. **Requirements:** V1-01 through V1-10.
 **Dependencies:** MP-02, MP-03, and MP-05 acceptance before production release.
 
-- Run the frozen installation, all compiler projects, full tests, Python checks, runtime probes, invariants, and five dry builds.
-- Run clean Linux CI for the exact final source; earlier source receipts cannot qualify later changes.
-- Reconcile all ten requirements with their accepted evidence, limitations, and source/binding identities.
-- Prepare production commands, maintenance, post-switch checks, stop conditions, and authorization-preserving rollback.
-- Present the complete candidate for the required final production decision.
-- Execute only that approved scope; retain actual outcomes before declaring v1 complete.
+- [ ] Pass frozen installation, all compilers, full tests, Python checks, runtime probes, invariants, and five dry builds on the final source.
+- [ ] Retain matching clean Linux CI; earlier source receipts cannot qualify later changes.
+- [ ] Reconcile all ten requirements with accepted evidence, limitations, and actual source and binding identities.
+- [ ] Complete production commands, maintenance, post-switch checks, stop conditions, and authorization-preserving rollback.
+- [ ] Present the complete candidate for the final production decision.
+- [ ] Execute that approved scope and record actual outcomes before declaring v1 complete.
 
 **Exit evidence:** the exact source passes local and clean CI checks, required hosted gates close, and the approved production switch passes its checks.
 Use the [release evidence ledger](V1-RELEASE.md) and [operations procedure](V1-OPERATIONS.md).
@@ -299,6 +325,7 @@ Use the [release evidence ledger](V1-RELEASE.md) and [operations procedure](V1-O
 **Entry:** the federal v1 release qualifies. Distribution and publication need an explicit scope.
 
 - Choose one initial customer group and one repeatable task.
+- Confirm the public product name before distribution; the historical naming question remains open.
 - Give a small external cohort a working key, a copyable HTTP example, and an MCP configuration.
 - Keep the free allowance usage-limited rather than time-limited; manual pilot provisioning can remain sufficient.
 - Measure time to a useful result, failed requests, repeat workspace use, and willingness to pay.
@@ -372,15 +399,19 @@ It does not reopen the v1 platform choice automatically.
 
 ## Decisions still required
 
-| Decision | Owner | Needed before |
-| --- | --- | --- |
-| Numerical search, scope-refusal, language, and latency criteria | Product owner with engineering evidence | The next independent serving acceptance run |
-| Chat grounding scope | Product owner and API owner | Any answer-contract change or new grounding claim |
-| Hosted budgets and residual provider-bound uncertainty | Operation owner and approving user | The respective hosted execution |
-| Actual production authority, schema, and maintenance controls | Release engineer | Production acquisition or migration |
-| Initial customer group, demand window, and stop criteria | Product owner | External distribution experiment |
-| Paid surface, price, and payment model | Product owner with cost evidence | Paid automation |
-| Next corpus, geography, harness, or portal | Product owner | Expansion implementation |
+No numerical serving policy, new generation allowance, or production maintenance authority follows from this consolidation.
+Record each decision and its supporting evidence before the dependent work.
+
+| ID | Decision and next action | Responsible role | Blocks |
+| --- | --- | --- | --- |
+| D-01 | Select numerical bilingual search, refusal, error, fallback, latency, and freshness criteria before the run | Product owner with evaluation owner | MP-03 execution |
+| D-02 | Record the chat-grounding disposition and compatible verification scope | Product owner and API owner | MP-03 chat acceptance and any answer-contract change |
+| D-03 | Accept concrete budgets, finite windows, and residual provider uncertainty for each operation | Operator and approving user | The respective hosted execution |
+| D-04 | Identify writer authorities and approve actual maintenance, capture, reconciliation, and resume controls | Release engineer and writer owners | MP-04 acquisition and MP-05 migration |
+| D-05 | Review the complete release evidence and production switch/rollback candidate | Product owner and release engineer | MP-06 production release |
+| D-06 | Select audience, task, public name, experiment window, and stop criteria | Product owner | Phase 2 distribution |
+| D-07 | Select the paid surface, price, payment model, and reconciliation requirements | Product owner with cost evidence | Phase 3 paid automation |
+| D-08 | Select the next corpus, geography, harness, or portal from observed demand | Product owner | Phase 4 or 5 implementation |
 
 The October 31 code review found that chat can accept an uncited, nonempty model answer.
 The current response exposes `answer: string` and a separate `cited` array.
@@ -390,6 +421,9 @@ A matching source ID or quotation does not alone establish factual support.
 This finding needs a recorded disposition; it does not silently replace the existing release requirements.
 
 ## Reference map
+
+This map accounts for the repository's planning documents and related procedures.
+Use each reference for its stated role; use this file for the next task.
 
 | Role | Documents |
 | --- | --- |
@@ -421,6 +455,8 @@ Preserve historical failures and completed proofs.
 Do not replay completed recovery or backup work merely to simplify the narrative.
 Keep exact execution packets and accepted receipts intact.
 If an edit changes an input pinned by an unconsumed packet, prepare a reviewed successor before execution.
+Check completed boxes only for their stated local or hosted scope.
+A later draft edit needs its own final checks before it inherits any preparation status.
 
 A documentation change supplies no new deployment, source request, generation, maintenance, acquisition, or production approval.
 Record each future execution decision against its concrete packet and cumulative limits.

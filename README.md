@@ -11,6 +11,7 @@ The API reports these limits explicitly. It does not claim that an empty result 
 ## Current release state
 
 Start with [the master plan](docs/PLAN.md) for scope, priorities, release gates, and future phases.
+Use its [work order](docs/PLAN.md#immediate-work-order), [package checklist](docs/PLAN.md#phase-1-close-the-v1-release), and [decision register](docs/PLAN.md#decisions-still-required).
 Read [the release evidence ledger](docs/V1-RELEASE.md) for requirement checks and dated outcomes.
 Read [the operations procedure](docs/V1-OPERATIONS.md) before any remote migration or deployment.
 Local tests do not establish production accuracy or performance.
@@ -49,7 +50,7 @@ The local source patch is not a published upstream release.
 
 Every search route requires `Authorization: Bearer <workspace API key>` with capability `civicsignal.retrieve`.
 A successful search consumes one workspace unit. Validation and retrieval failures, plus MCP protocol messages, consume none.
-A lost usage acknowledgement can return `503/USAGE_UNAVAILABLE` with `uncertain:true` after a unit was committed.
+A lost usage acknowledgement can return `503/USAGE_UNAVAILABLE` with `uncertain:true` after the usage ledger commits a unit.
 Retain `operationId` and `month` for [reconciliation](docs/V1-OPERATIONS.md#uncertain-usage-acknowledgements); a new request starts a new operation.
 Keep API keys in server code. Public `pk_` keys cannot authorize v1 calls.
 
@@ -79,7 +80,7 @@ BYOK chat also requires `X-CivicSignal-BYOK-Provider` and `X-CivicSignal-BYOK-Ke
 Supported providers are Anthropic, OpenAI, Google, and OpenCode Zen (`opencode-zen`).
 The initial Zen adapter supports `claude-haiku-4-5` through the
 [OpenCode Messages API](https://opencode.ai/v2/docs/console/api/inference).
-That model is listed in the [paid model table](https://opencode.ai/v2/docs/console/models/).
+The [paid model table](https://opencode.ai/v2/docs/console/models/) lists that model.
 The generation key goes only to the selected provider.
 The CivicSignal key authorizes corpus access separately.
 

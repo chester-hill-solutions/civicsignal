@@ -1004,11 +1004,21 @@ All 477 source/fixture inputs stay unchanged. The driver, production helper load
 The capture helper retains its original source bytes. Issue 14 remains open until exact successor Linux qualification completes.
 The API JavaScript artifact remains unchanged; shared operation packets must bind the newly qualified source before execution.
 
+Source **`5d4915c1fd2ed16aba4d550aaf4ac367366b95b7`** then passes [exact clean Linux qualification](evidence/2026-10-31/candidate-5d4915c-linux-ci-validation.json).
+Run 41258949605, job 124708002957, checks out merge `fccbb74e74a7eb057bb4c4794abbb262060b9dbd` against base `717bf32`.
+All 1,975 tests in 102 files, 31 Python cases, four compilers, vendor/runtime/invariant checks, and five dry builds pass.
+All 477 source and fixture inputs match local v9, the exact committed source, and current files.
+Root also checks all eleven retained local artifacts. Node is v24.22.1; Bun is 1.3.5.
+The exact checked-buffer repair closes [issue 14](https://github.com/chester-hill-solutions/civicsignal/issues/14).
+The shared capture helper stays unchanged. Operator successors must use the current source and both complete receipts.
+Issue 12 remains open; the earlier EPIPE cause remains unknown. All four hosted and production gates remain open.
+
 ## Remaining release gates
 
-1. Verify scheduled snapshot discovery and first publication. The manually recovered hosted Workflow and complete artifact parity already pass. The claimed probe requires an already published revision; its existing-publication no-op cannot establish scheduled first publication.
-2. Investigate the retained retrieval/scope/provider/hydration failures and both failed Zen attempts. Post-reconciliation flows pass; calibration, holdout and benchmark attempts are complete, with acceptance unresolved. Do not silently retry, tune on holdout, or extend the approved generation/request limits.
-3. Check text migration and the protected-table copy against a consistent production backup. The D1 binding helper, staging-only HTTP adapter, initial/full-phase client and single-window process operator are locally verified. Consistent production acquisition, actual hosted application and a separately reviewed production target adapter remain pending. The [production acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md) and [binding metadata receipt](evidence/2026-10-23/production-binding-metadata-root-validation.json) record preparation and remaining acquisition limits.
-4. Finish the migration/deploy/rollback candidate and item-by-item release audit before requesting required production approval.
+All four gates remain open: scheduled first publication, serving acceptance, production migration, and the final release audit.
+The [master gate table](PLAN.md#release-gates-at-a-glance) defines completion evidence.
+The [master package checklist](PLAN.md#phase-1-close-the-v1-release) defines remaining work, dependencies, and responsible roles.
+The [decision register](PLAN.md#decisions-still-required) records the required dispositions before execution.
 
-See [V1-OPERATIONS.md](V1-OPERATIONS.md) and [V1-EVALUATION.md](V1-EVALUATION.md) for procedures.
+Keep dated observations and failures in this ledger; update priorities and next actions only in the master plan.
+Use [v1 operations](V1-OPERATIONS.md), [evaluation](V1-EVALUATION.md), and the [acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md) for their detailed procedures.
