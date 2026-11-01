@@ -14,7 +14,7 @@ They do not create another work order.
 ## Immediate work order
 
 1. **Finish operation source linkage under MP-01.** Connect the qualified source-loader repair and its receipts to each operator.
-2. **Finish local preparation.** Complete, check, and review the scheduled-publication, API, serving, and Zen operators under MP-02 and MP-03.
+2. **Finish local preparation.** Complete serving and Zen qualification; retain the reviewed publication and API operator preparation under MP-02 and MP-03.
 3. **Resolve execution inputs.** Record the acceptance policy, chat disposition, operation budgets, fresh target facts, and production writer authorities.
 4. **Close the first three gates.** Complete MP-02 and MP-03; acquire a consistent production capture through MP-04 before MP-05's copy proof.
 5. **Complete MP-06.** Audit all ten requirements, review the production switch and rollback, then record the approved operation's actual result.
@@ -148,16 +148,17 @@ The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves
 | Package | Responsible role | Dependency | Current position and next deliverable |
 | --- | --- | --- | --- |
 | [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Current source | Complete local and Linux gates pass; finish operation source linkage and fresh hosted identities |
-| [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | Runtime controls qualify; finish the operator successor, calendar facts, event, budgets, and hosted first publication |
-| [MP-03](#mp-03-close-serving-acceptance) | API engineer and evaluation owner | MP-01 and product acceptance decisions | Repairs and labels qualify; finish API/serving/Zen operators, then complete hosted acceptance |
+| [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | Runtime and operator preparation pass; calendar facts, event, budgets, and hosted first publication remain open |
+| [MP-03](#mp-03-close-serving-acceptance) | API engineer and evaluation owner | MP-01 and product acceptance decisions | Repairs, labels, and API operator preparation qualify; finish serving/Zen preparation, then hosted acceptance |
 | [MP-04](#mp-04-qualify-consistent-production-acquisition) | Release engineer and writer owners | Actual authority and common maintenance | Fixture mechanisms pass; establish writer control and acquire consistent production inputs |
 | [MP-05](#mp-05-qualify-protected-copy-and-production-rollback) | Migration engineer | MP-04 capture for production-derived proof | Local mechanisms pass; qualify hosted copy, production target, and rollback |
 | [MP-06](#mp-06-qualify-the-final-source-and-release-packet) | Release engineer and product owner | MP-02, MP-03, and MP-05 acceptance | Draft candidate; complete final checks, requirement audit, and production decision |
 
 The [runtime accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records conditional callback bounds.
 Those bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
-The predecessor first-publication operator links actual local/Linux source proof; its owner requires a source-loader successor before execution.
-The API, serving, Zen, and publication operator successors remain drafts until their final checks, source linkage, and reviews pass.
+The first-publication and staging API operator successors pass local checks, current source admission, and independent review.
+The latest serving logs record ten owned fixture cases and four lease checks; final packaging and independent review remain open.
+The Zen successor still needs final integration, complete checks, and review.
 Earlier fixture passes do not qualify later draft edits.
 Scheduled-publication acceptance must inspect all nine settled owner chains and both completed cleanup guards.
 Canonical artifact proof alone is insufficient.
@@ -172,6 +173,8 @@ The release ledger retains closed findings and their source-specific qualificati
 A bounded read-only production inventory completes; its detailed evidence and maintenance finding remain private.
 Deployed-source correspondence, auth authority, common maintenance, and actual acquisition remain open.
 Source qualification supplies no new deployment, scheduled event, generation, maintenance interval, or migration approval.
+Current local disk headroom does not support further full operation checks.
+Preserve verified fixture archives, passing logs, failed observations, and unfinished candidates for the next work session.
 
 ## Phase 1 Close the v1 release
 
@@ -199,13 +202,13 @@ Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPER
 
 ### MP-02 Qualify scheduled first publication
 
-**Status:** shared runtime controls and predecessor preparation pass; the operator successor and hosted qualification remain open.
+**Status:** shared runtime controls and operator preparation pass; concrete execution inputs and hosted qualification remain open.
 **Requirements:** V1-04, V1-05, V1-09.
 
 - [x] Reuse the Workflow, parser, builder, archive checks, and manifest-last publication path.
 - [x] Qualify safe diagnostics and qualification-only retry, time, object, and progress controls.
 - [x] Retain the predecessor operator's fixture and full-artifact comparison evidence.
-- [ ] Finish the operator successor's fixture repairs, complete checks, source linkage, and independent review.
+- [x] Finish the operator successor's fixture repairs, complete checks, source linkage, and independent review.
 - [ ] Freeze its bundle and configuration with a fresh namespace and distinct instance.
 - [ ] Resolve calendar facts and residual platform uncertainty before selecting the executable event and budgets.
 - [ ] Prepare finite admission windows, credential checks, stop conditions, and independent cleanup guards.

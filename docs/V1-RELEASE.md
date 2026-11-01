@@ -175,7 +175,7 @@ Use the dated entries below for source-specific outcomes.
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local and exact-source clean Linux gates pass at `26d5049`; later source changes need qualification |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local and exact-source clean Linux gates pass at `5d4915c`; later source changes need qualification |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Original work order — 2026-10-22
@@ -1012,6 +1012,14 @@ Root also checks all eleven retained local artifacts. Node is v24.22.1; Bun is 1
 The exact checked-buffer repair closes [issue 14](https://github.com/chester-hill-solutions/civicsignal/issues/14).
 The shared capture helper stays unchanged. Operator successors must use the current source and both complete receipts.
 Issue 12 remains open; the earlier EPIPE cause remains unknown. All four hosted and production gates remain open.
+
+The publication and staging API operator successors then pass local preparation and independent review.
+Their source admission uses the actual current local and Linux receipts; neither result supplies execution approval.
+Private API review records and repairs freshness and binding-order defects in unexecuted drafts.
+The latest serving logs record ten owned fixture cases and four lease checks; final packaging and independent review remain open.
+Zen final integration remains incomplete. No actual serving, generation, source, deployment, or production operation follows.
+Verified lossless archives retain closed synthetic fixtures and their metadata without altering frozen source or accepted evidence files.
+Local storage and workspace credits constrain further work; preserve the unfinished candidates and exact logs for continuation.
 
 ## Remaining release gates
 
