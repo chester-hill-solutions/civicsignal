@@ -175,7 +175,7 @@ Use the dated entries below for source-specific outcomes.
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Changed chat candidate passes the complete local gate and independent review; matching clean Linux checks remain open |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local and exact-source clean Linux gates pass at `9771a8b`; independent review accepts the scoped chat changes |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Original work order — 2026-10-22
@@ -1039,10 +1039,17 @@ The [complete successor local gate](evidence/2026-10-31/integrated-candidate-loc
 Vendor checks, native runtime probes, and invariants pass; all 477 source inputs remain unchanged and all four owned phases settle.
 The corpus invariant command still skips absent local ingest files; this result supplies no new corpus proof.
 
-Matching clean Linux checks and operation source rebinding remain open.
 The [chat receipt](evidence/2026-10-31/chat-citation-binding-local-validation.json) records the scoped behavior, regressions, source pins, and independent review.
 [Issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) remains open for independent factual-support evidence and the wider answer contract.
 All four release gates remain open. No hosted generation, serving, deployment, source, or production operation follows from this increment.
+
+Source **`9771a8bad2b8a2321ed3f43f7629af4040a39c1c`** then passes [matching clean Linux qualification](evidence/2026-10-31/candidate-9771a8b-linux-ci-validation.json).
+Run 41269877038, job 124740273155, checks out merge `2036385dbbe564cd4ccafca40ad8c178748068ad` against base `717bf32`.
+All 2,192 tests, 31 Python cases, four compilers, vendor/runtime/invariant checks, and five dry builds pass.
+Root checks all 477 inputs against the local receipt, committed source, current files, and actual CI merge blobs.
+
+Node is v24.22.1; Bun is 1.3.5.
+Operation source and artifact rebinding remains open; the earlier EPIPE cause and independent factual-support acceptance remain unresolved.
 
 ## Remaining release gates
 

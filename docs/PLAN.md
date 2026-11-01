@@ -13,7 +13,7 @@ They do not create another work order.
 
 ## Immediate work order
 
-1. **Qualify the chat candidate under MP-01.** Retain independent review and the full local pass; complete matching clean Linux checks.
+1. **Finish operation source linkage under MP-01.** Retain the chat candidate's local/Linux passes and independent review; bind each operation to them.
 2. **Rebind operation preparation.** Connect the changed API artifact and source receipts to the reviewed mechanisms; complete Zen integration under MP-03.
 3. **Resolve execution inputs.** Record the numerical policy, wider chat disposition, operation budgets, fresh target facts, and production writer authorities.
 4. **Close the first three gates.** Complete MP-02 and MP-03; acquire a consistent production capture through MP-04 before MP-05's copy proof.
@@ -147,7 +147,7 @@ The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves
 
 | Package | Responsible role | Dependency | Current position and next deliverable |
 | --- | --- | --- | --- |
-| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Current source | Chat candidate passes local checks and review; complete clean Linux, operation source linkage, and fresh hosted identities |
+| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Current source | Chat candidate passes local/Linux checks and review; finish operation source linkage and fresh hosted identities |
 | [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | Runtime and operator preparation pass; calendar facts, event, budgets, and hosted first publication remain open |
 | [MP-03](#mp-03-close-serving-acceptance) | API engineer and evaluation owner | MP-01 and product acceptance decisions | Local citation checks pass; complete candidate qualification, operation rebinding, Zen preparation, and hosted acceptance |
 | [MP-04](#mp-04-qualify-consistent-production-acquisition) | Release engineer and writer owners | Actual authority and common maintenance | Fixture mechanisms pass; establish writer control and acquire consistent production inputs |
@@ -160,8 +160,9 @@ Those bounds do not establish a global provider ceiling or guarantee cancellatio
 The first-publication and staging API operator successors pass local checks, source admission, and independent review for the earlier candidate.
 The serving successor corrects a fixture-admission defect; its targeted checks and independent review pass for that source.
 Its unchanged mechanisms retain ten owned fixture cases and four lease checks; the successor does not repeat them.
-The changed chat candidate passes the full local gate and independent review.
-It needs matching clean Linux checks and new source/API artifact linkage before any operation uses it.
+The changed chat candidate passes the full local gate, matching clean Linux checks, and independent review.
+All 477 inputs match the committed source and CI's actual merge checkout.
+It needs new source/API artifact linkage before any operation uses it.
 
 Zen final integration waits for that candidate's qualification, then complete checks and review.
 Earlier fixture passes do not qualify later draft edits.
@@ -190,14 +191,14 @@ Production cutover waits for all required evidence and the final decision.
 
 ### MP-01 Reconcile the exact candidate
 
-**Status:** the chat candidate passes local checks and independent review; matching Linux, operation linkage, and fresh hosted identity remain open.
+**Status:** the chat candidate passes local/Linux checks and independent review; operation linkage and fresh hosted identity remain open.
 **Requirements:** V1-02, V1-09, V1-10.
 
 - [x] Retain the earlier source's complete local and clean Linux receipts.
 - [x] Repair the helper loader and pass the complete successor local gate.
 - [x] Retain matching clean Linux evidence for the successor's exact source and fixture inputs.
 - [x] Pass the complete local gate and independent review for the changed chat candidate.
-- [ ] Retain matching clean Linux checks for the changed chat candidate.
+- [x] Retain matching clean Linux checks for the changed chat candidate.
 - [ ] Bind each operator, bundle, dependency, and source receipt to that qualified candidate.
 - [ ] Connect actual deployed identities and current requirement dispositions to the operation packet.
 
@@ -216,6 +217,7 @@ Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPER
 - [x] Qualify safe diagnostics and qualification-only retry, time, object, and progress controls.
 - [x] Retain the predecessor operator's fixture and full-artifact comparison evidence.
 - [x] Finish the operator successor's fixture repairs, complete checks, source linkage, and independent review.
+- [ ] Rebind the reviewed publication mechanisms to the changed chat candidate's source receipts.
 - [ ] Freeze its bundle and configuration with a fresh namespace and distinct instance.
 - [ ] Resolve calendar facts and residual platform uncertainty before selecting the executable event and budgets.
 - [ ] Prepare finite admission windows, credential checks, stop conditions, and independent cleanup guards.
