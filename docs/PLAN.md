@@ -8,7 +8,7 @@ The immediate objective is to close four release gates: scheduled first publicat
 
 ## Immediate work order
 
-1. **Qualify the relay successor in Linux.** Retain its complete local proof and the unresolved native restore finding.
+1. **Complete the operation launchers.** Bind the qualified source to the staged API update, serving measurements, and Zen recheck packets.
 2. **Prepare the three open evidence paths.** Make the scheduled packet executable; prepare serving acceptance and consistent production acquisition alongside it.
 3. **Close the corresponding hosted gates.** Use fresh target evidence and the reviewed limits for each concrete operation.
 4. **Complete MP-05 after acquisition.** Qualify the protected copy, production target, and authorization-preserving rollback.
@@ -127,41 +127,36 @@ Unspent slots do not authorize another operation, reset, retry, or replacement l
 
 ## Implementation progress
 
-The latest qualified implementation is **`26d5049`**.
-Its [complete local gate](evidence/2026-10-31/integrated-candidate-local-validation-v5.json) and [clean Linux gate](evidence/2026-10-31/candidate-26d-linux-ci-validation.json) pass with 472 source and fixture inputs.
-Those checks cover 1,925 tests, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
+The latest qualified implementation is **`eee91b2`**.
+Its [complete local gate](evidence/2026-10-31/integrated-candidate-local-validation-v8.json) and [clean Linux gate](evidence/2026-10-31/candidate-eee91b2-linux-ci-validation.json) pass with 477 source and fixture inputs.
+Those checks cover 1,975 tests, 27 Python cases, four compiler projects, runtime checks, invariants, and five dry builds.
 Later source changes need their own complete checks.
 The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves earlier candidates, repairs, failed checks, and exact receipts.
 
 | Package | Current position | Next deliverable |
 | --- | --- | --- |
-| MP-01 | Qualified source and requirement inventory retained | Refresh the candidate inventory after the current source increment |
-| MP-02 | Runtime controls and the relay successor pass complete local checks; fixed operator preparation remains non-live | Complete exact Linux qualification and concrete operation admission |
-| MP-03 | Brief and text-hydration repairs qualify; successor bilingual labels have full source checks | Record acceptance policy and prepare the bounded serving packet |
-| MP-04 | Fixture acquisition, transport, and schema/sequence collectors qualify | Complete actual authority, writer, maintenance, and acquisition evidence |
-| MP-05 | Local copy, sequence, binding, and rollback mechanisms pass | Qualify production-derived hosted copy and the production target |
-| MP-06 | Full local checks pass for the relay successor; exact Linux and final release evidence remain open | Qualify the exact source and reconcile all required release evidence |
+| MP-01 | Source `eee91b2` and all 477 inputs pass complete local and Linux checks | Fresh hosted identities and exact operation-specific source linkage |
+| MP-02 | Runtime controls qualify; the fixed operator passes preparation review and accepts the real source receipts | Native-calendar evidence, concrete event/budgets, and actual scheduled first publication |
+| MP-03 | Brief, hydration, and relay repairs qualify; successor labels pass source checks | Owned API/serving/Zen launchers, acceptance policy, fresh target proof, and hosted acceptance |
+| MP-04 | Fixture acquisition mechanisms qualify; private preparation receives local review | Actual authority, writer holds, maintenance, and consistent acquisition evidence |
+| MP-05 | Local copy, sequence, binding, and rollback mechanisms pass | Production-derived hosted copy and the production target |
+| MP-06 | Current source passes engineering checks; the PR remains a draft | Final requirement audit, complete release evidence, and production decision |
 
-The qualification-runtime increment remains in progress.
-Its reference policies, retry limits, deadlines, and cleanup controls pass focused checks and independent source review.
-The [successor accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records the conditional runtime bounds.
-The [complete local check](evidence/2026-10-31/integrated-candidate-local-observation-v7.json) fails one native restore-frame test after 1,971 passes.
-The named isolated probe passes on unchanged source; the cause remains unknown.
-Source `dba19d3` then passes [clean Linux comparison](evidence/2026-10-31/candidate-dba19d3-linux-ci-observation.json): 1,972 tests, 27 Python cases, and five dry builds.
-That comparison does not repair the failed local check. The relay successor then passes [complete local validation](evidence/2026-10-31/integrated-candidate-local-validation-v8.json): 1,975 tests, 27 Python cases, and five dry builds.
-All 477 inputs stay unchanged. Exact successor Linux qualification remains open.
-Caller-enforced bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
-The fixed operator preparation remains non-live until a fresh successor consumes the qualified runtime and its reviewed accounting disposition.
+The [runtime accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records conditional callback bounds.
+Those bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
+The first-publication operator now links actual local/Linux source proof; event, budget, credential, and fresh resource admission remain separate.
+Its final acceptance must inspect all nine settled owner chains and both completed cleanup guards. Canonical artifact proof alone is insufficient.
+The retained native Workflow calendar remains unknown; current admission refuses before deployment until an actual empty observation exists.
+
+The [earlier local EPIPE failure](evidence/2026-10-31/integrated-candidate-local-observation-v7.json) and [inconclusive diagnostic](evidence/2026-10-31/restore-frame-diagnostic-observation.json) remain intact.
+Later full passes do not explain that failure. [Issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12) remains open.
+The reproduced [relay abort defect, issue 13](https://github.com/chester-hill-solutions/civicsignal/issues/13), closes after source repair, independent review, and complete local/Linux qualification.
+Open public decisions also include [chat evidence, issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) and [scheduled operation accounting, issue 6](https://github.com/chester-hill-solutions/civicsignal/issues/6).
+The release ledger retains closed findings and their source-specific qualification.
 
 A bounded read-only production inventory completes; its detailed evidence and maintenance finding remain private.
 Deployed-source correspondence, auth authority, common maintenance, and actual acquisition remain open.
-No new deployment, scheduled event, generation, maintenance interval, or migration follows from these preparations.
-
-Open public findings are [chat evidence contract, issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) and [scheduled operation accounting, issue 6](https://github.com/chester-hill-solutions/civicsignal/issues/6).
-The [native restore-frame finding, issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12), tracks the current full-check failure.
-The [relay abort finding, issue 13](https://github.com/chester-hill-solutions/civicsignal/issues/13), reproduces an unhandled send rejection after synchronous abort.
-The repair preserves the failed response, spent reservation, and no-retry behavior. Its failing/passing regression and source review pass locally.
-The release ledger retains closed findings and their source-specific qualification.
+Source qualification supplies no new deployment, scheduled event, generation, maintenance interval, or migration approval.
 
 ## Phase 1 Close the v1 release
 

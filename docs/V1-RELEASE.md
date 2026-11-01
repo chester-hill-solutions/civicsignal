@@ -978,6 +978,17 @@ All 27 Python cases, runtime/invariant checks, and five dry builds pass. All fou
 All 477 source/fixture inputs stay unchanged. The original native restore test passes here; its earlier EPIPE cause remains unknown.
 Exact successor clean Linux and all hosted/production gates remain open. The earlier failed aggregates remain intact.
 
+Source **`eee91b2db9eef3dde8b6d0a404eba1256434debc`** then passes [exact clean Linux qualification](evidence/2026-10-31/candidate-eee91b2-linux-ci-validation.json).
+Run 41254554237, job 124694845357, checks out merge `3e4acb7496613c4034a26002f074f57882760f7f` against base `717bf32`.
+All 1,975 tests in 102 files, 27 Python cases, four compiler projects, runtime/invariant checks, and five dry builds pass.
+All 477 inputs match the committed source and passing local v8 gate. The compiler/runtime builds use no production secrets or deployment.
+[Issue 13](https://github.com/chester-hill-solutions/civicsignal/issues/13) closes for the qualified relay repair. Issue 12 remains open with no EPIPE cause or repair claim.
+
+The first-publication successor receives the actual local/Linux source wrapper. Its real offline admission accepts all 25 required source/accounting/reference pins.
+Credential reads and network calls remain zero. Execution, event, fresh calendar/resource facts, and operation admission remain absent.
+Independent preparation review requires final acceptance of all nine settled owner chains and both actual cleanup completions, beyond canonical artifact proof.
+The staged API update, broad serving launcher, and exact-source Zen successor remain in local implementation. Their real execution inputs remain absent.
+
 ## Remaining release gates
 
 1. Verify scheduled snapshot discovery and first publication. The manually recovered hosted Workflow and complete artifact parity already pass. The claimed probe requires an already published revision; its existing-publication no-op cannot establish scheduled first publication.
