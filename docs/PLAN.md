@@ -1,6 +1,6 @@
 # CivicSignal master plan
 
-Updated 2026-10-31. Status: v1 remains incomplete.
+Updated 2026-11-01. Status: v1 remains incomplete.
 
 CivicSignal will give applications and agents source-cited Canadian civic information.
 The first release serves Canadian federal statutes and regulations in English and French.
@@ -148,7 +148,7 @@ The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves
 | Package | Responsible role | Dependency | Current position and next deliverable |
 | --- | --- | --- | --- |
 | [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Current source | Chat candidate passes local/Linux checks and review; finish operation source linkage and fresh hosted identities |
-| [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | Runtime and operator preparation pass; calendar facts, event, budgets, and hosted first publication remain open |
+| [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | Current-source operator preparation passes; calendar facts, event, budgets, and hosted first publication remain open |
 | [MP-03](#mp-03-close-serving-acceptance) | API engineer and evaluation owner | MP-01 and product acceptance decisions | Local citation checks pass; complete candidate qualification, operation rebinding, Zen preparation, and hosted acceptance |
 | [MP-04](#mp-04-qualify-consistent-production-acquisition) | Release engineer and writer owners | Actual authority and common maintenance | Fixture mechanisms pass; establish writer control and acquire consistent production inputs |
 | [MP-05](#mp-05-qualify-protected-copy-and-production-rollback) | Migration engineer | MP-04 capture for production-derived proof | Local mechanisms pass; qualify hosted copy, production target, and rollback |
@@ -157,14 +157,16 @@ The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves
 The [runtime accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records conditional callback bounds.
 Those bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
 
-The first-publication and staging API operator successors pass local checks, source admission, and independent review for the earlier candidate.
-The serving successor corrects a fixture-admission defect; its targeted checks and independent review pass for that source.
+The first-publication and staging API operator successors pass local checks, source admission, and independent review for the current candidate.
+The earlier serving successor corrects a fixture-admission defect; its targeted checks and independent review pass for its recorded source.
 Its unchanged mechanisms retain ten owned fixture cases and four lease checks; the successor does not repeat them.
 The changed chat candidate passes the full local gate, matching clean Linux checks, and independent review.
 All 477 inputs match the committed source and CI's actual merge checkout.
-It needs new source/API artifact linkage before any operation uses it.
+The reviewed publication and API preparation qualify their current inputs.
+Serving and Zen need complete producer linkage before execution.
 
-Zen final integration waits for that candidate's qualification, then complete checks and review.
+Serving source binding passes; its policy checks and freeze await the numerical and freshness decisions under D-01.
+Zen has the current source wrapper and a skipped-generation regression; final bundles, checks, freeze, and review await the serving producer.
 Earlier fixture passes do not qualify later draft edits.
 Scheduled-publication acceptance must inspect all nine settled owner chains and both completed cleanup guards.
 Canonical artifact proof alone is insufficient.
@@ -217,7 +219,7 @@ Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPER
 - [x] Qualify safe diagnostics and qualification-only retry, time, object, and progress controls.
 - [x] Retain the predecessor operator's fixture and full-artifact comparison evidence.
 - [x] Finish the operator successor's fixture repairs, complete checks, source linkage, and independent review.
-- [ ] Rebind the reviewed publication mechanisms to the changed chat candidate's source receipts.
+- [x] Rebind the reviewed publication mechanisms to the changed chat candidate's source receipts and complete independent preparation review.
 - [ ] Freeze its bundle and configuration with a fresh namespace and distinct instance.
 - [ ] Resolve calendar facts and residual platform uncertainty before selecting the executable event and budgets.
 - [ ] Prepare finite admission windows, credential checks, stop conditions, and independent cleanup guards.
@@ -415,6 +417,11 @@ It does not reopen the v1 platform choice automatically.
 
 No numerical serving policy, new generation allowance, or production maintenance authority follows from this consolidation.
 Record each decision and its supporting evidence before the dependent work.
+
+The proposed serving criteria and freshness rule await the product owner's selections.
+Source commit age and last successful ingestion age do not measure the latest upstream check.
+Record whether acceptance requires the observed upstream head or a bounded historical snapshot before applying age limits.
+The current operator enforces three age caps; the upstream-head option requires an explicit policy-contract change.
 
 | ID | Decision and next action | Responsible role | Blocks |
 | --- | --- | --- | --- |

@@ -1051,6 +1051,12 @@ Root checks all 477 inputs against the local receipt, committed source, current 
 Node is v24.22.1; Bun is 1.3.5.
 Operation source and artifact rebinding remains open; the earlier EPIPE cause and independent factual-support acceptance remain unresolved.
 
+The publication and API operator successors then bind the current source wrapper and pass their local checks and independent reviews.
+Exact source and compiled comparisons retain unchanged predecessor mechanisms without a new full artifact or protocol replay.
+Serving source binding, types, and unchanged evaluation/benchmark graph checks pass; final policy checks and freeze await D-01.
+Zen contains the current source wrapper and a skipped-generation regression; its final integration remains pending.
+No execution approval or current hosted target proof follows. All four release gates remain open.
+
 ## Remaining release gates
 
 All four gates remain open: scheduled first publication, serving acceptance, production migration, and the final release audit.
