@@ -135,3 +135,46 @@ describe('OpenCode Zen Messages adapter', () => {
     await vi.advanceTimersByTimeAsync(1);expect(cancelled).toBe(1);expect(send).toHaveBeenCalledTimes(1);
   });
 });
+
+
+describe('answer validation inside the one provider exchange', () => {
+  const providers = ['anthropic', 'openai', 'google', 'opencode-zen'] as const;
+  function reply(provider: typeof providers[number], answer: string) {
+    return provider === 'openai' ? { choices: [{ message: { content: answer } }] } :
+      provider === 'google' ? { candidates: [{ content: { parts: [{ text: answer }] } }] } :
+      { content: [{ type: 'text', text: answer }] };
+  }
+  it.each(providers)('turns a %s validation exception into safe actual-200 metadata with one send', async (provider) => {
+    const secret = 'fixture-validation-detail-must-stay-private';
+    const send = vi.fn(async (_url: string, _init?: RequestInit) => Response.json(reply(provider, 'A nonempty answer.')));
+    vi.stubGlobal('fetch', send);
+    const validateAnswer = vi.fn(() => { throw new Error(secret); });
+    const pending = chatByok({ provider, apiKey: 'fixture-only-key', system: 'Keep the prompt unchanged.',
+      messages: [{ role: 'user', content: 'A fixture question.' }], maxTokens: 128, validateAnswer });
+    await expect(pending).rejects.toMatchObject({ name: 'GenerationFailureError', provider, phase: 'response-validation', upstreamStatus: 200 });
+    await expect(pending).rejects.not.toThrow(secret);
+    expect(validateAnswer).toHaveBeenCalledTimes(1); expect(validateAnswer).toHaveBeenCalledWith('A nonempty answer.');
+    expect(send).toHaveBeenCalledTimes(1);
+    const [, init] = send.mock.calls[0]!;
+    expect(init?.redirect).toBe('manual');
+    expect(String(init?.body)).not.toContain('validateAnswer');
+  });
+  it.each(['', 'fixture-only-key'])('checks empty text and key echo before the callback: %j', async (answer) => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json(reply('anthropic', answer))));
+    const validateAnswer = vi.fn();
+    await expect(chatByok({ provider: 'anthropic', apiKey: 'fixture-only-key', system: '',
+      messages: [{ role: 'user', content: 'Question' }], validateAnswer })).rejects.toMatchObject({ phase: 'response-validation', upstreamStatus: 200 });
+    expect(validateAnswer).not.toHaveBeenCalled();
+  });
+  it('refuses callback deadline overrun without another provider send', async () => {
+    let clock = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => clock);
+    const send = vi.fn(async () => Response.json(reply('google', 'A nonempty answer.')));
+    vi.stubGlobal('fetch', send);
+    await expect(chatByok({ provider: 'google', apiKey: 'fixture-only-key', system: '',
+      messages: [{ role: 'user', content: 'Question' }],
+      validateAnswer() { clock = OPENCODE_ZEN_LIMITS.timeoutMs + 1; },
+    })).rejects.toMatchObject({ phase: 'timeout', upstreamStatus: 200 });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+});

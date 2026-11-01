@@ -252,6 +252,8 @@ export async function chatByok(options: {
   messages: { role: string; content: string }[];
   maxTokens?: number;
   signal?: AbortSignal;
+  /** Runs within the provider exchange deadline; exceptions refuse the response. */
+  validateAnswer?: (answer: string) => void;
 }): Promise<ByokChatResult> {
   const provider = options.provider, apiKey = options.apiKey;
   const spec = PROVIDERS[provider], parse = spec.parse;
@@ -268,6 +270,7 @@ export async function chatByok(options: {
         if (typeof answer !== 'string' || !answer.trim() || apiKey && answer.includes(apiKey)) {
           throw invalidGenerationResponse();
         }
+        options.validateAnswer?.(answer);
         return answer;
       },
     });

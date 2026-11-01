@@ -175,7 +175,7 @@ Use the dated entries below for source-specific outcomes.
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
 | V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local and exact-source clean Linux gates pass at `5d4915c`; later source changes need qualification |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Changed chat candidate passes the complete local gate and independent review; matching clean Linux checks remain open |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Original work order — 2026-10-22
@@ -1020,6 +1020,29 @@ The latest serving logs record ten owned fixture cases and four lease checks; fi
 Zen final integration remains incomplete. No actual serving, generation, source, deployment, or production operation follows.
 Verified lossless archives retain closed synthetic fixtures and their metadata without altering frozen source or accepted evidence files.
 Local storage and workspace credits constrain further work; preserve the unfinished candidates and exact logs for continuation.
+
+Continuation restores local storage headroom and completes the serving successor's independent preparation review on the earlier qualified source.
+That successor refuses fixture-only inputs during live admission and completed-proof checks.
+It retains earlier owned-runner evidence through exact mechanism comparisons; it does not claim new hosted serving results.
+
+The next product increment checks generated citation destinations before successful usage consumption.
+It preserves the answer text and retrieved source list; link equality does not establish factual support.
+The user selects a fixed insufficient-evidence answer for empty retrieval, with zero generation calls and one successful retrieval unit.
+Additive response metadata identifies skipped generation and retains the selected provider and model.
+
+The first chat candidate passes 2,129 tests, but independent review reproduces a reference-definition bypass inside quote and list containers.
+Its [v10 observation](evidence/2026-10-31/integrated-candidate-local-observation-v10.json) remains review-blocked and cannot qualify the repaired source.
+
+The repaired source adds actual endpoint regressions for all four providers and refuses those reference forms before usage consumption.
+Independent review accepts all five final source/test pins after 52 pure checks.
+The [complete successor local gate](evidence/2026-10-31/integrated-candidate-local-validation-v11.json) passes 2,192 tests in 102 files, 31 Python cases, four compilers, and five dry builds.
+Vendor checks, native runtime probes, and invariants pass; all 477 source inputs remain unchanged and all four owned phases settle.
+The corpus invariant command still skips absent local ingest files; this result supplies no new corpus proof.
+
+Matching clean Linux checks and operation source rebinding remain open.
+The [chat receipt](evidence/2026-10-31/chat-citation-binding-local-validation.json) records the scoped behavior, regressions, source pins, and independent review.
+[Issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) remains open for independent factual-support evidence and the wider answer contract.
+All four release gates remain open. No hosted generation, serving, deployment, source, or production operation follows from this increment.
 
 ## Remaining release gates
 

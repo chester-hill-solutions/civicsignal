@@ -13,9 +13,9 @@ They do not create another work order.
 
 ## Immediate work order
 
-1. **Finish operation source linkage under MP-01.** Connect the qualified source-loader repair and its receipts to each operator.
-2. **Finish local preparation.** Complete serving and Zen qualification; retain the reviewed publication and API operator preparation under MP-02 and MP-03.
-3. **Resolve execution inputs.** Record the acceptance policy, chat disposition, operation budgets, fresh target facts, and production writer authorities.
+1. **Qualify the chat candidate under MP-01.** Retain independent review and the full local pass; complete matching clean Linux checks.
+2. **Rebind operation preparation.** Connect the changed API artifact and source receipts to the reviewed mechanisms; complete Zen integration under MP-03.
+3. **Resolve execution inputs.** Record the numerical policy, wider chat disposition, operation budgets, fresh target facts, and production writer authorities.
 4. **Close the first three gates.** Complete MP-02 and MP-03; acquire a consistent production capture through MP-04 before MP-05's copy proof.
 5. **Complete MP-06.** Audit all ten requirements, review the production switch and rollback, then record the approved operation's actual result.
 
@@ -147,18 +147,23 @@ The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves
 
 | Package | Responsible role | Dependency | Current position and next deliverable |
 | --- | --- | --- | --- |
-| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Current source | Complete local and Linux gates pass; finish operation source linkage and fresh hosted identities |
+| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Current source | Chat candidate passes local checks and review; complete clean Linux, operation source linkage, and fresh hosted identities |
 | [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | Runtime and operator preparation pass; calendar facts, event, budgets, and hosted first publication remain open |
-| [MP-03](#mp-03-close-serving-acceptance) | API engineer and evaluation owner | MP-01 and product acceptance decisions | Repairs, labels, and API operator preparation qualify; finish serving/Zen preparation, then hosted acceptance |
+| [MP-03](#mp-03-close-serving-acceptance) | API engineer and evaluation owner | MP-01 and product acceptance decisions | Local citation checks pass; complete candidate qualification, operation rebinding, Zen preparation, and hosted acceptance |
 | [MP-04](#mp-04-qualify-consistent-production-acquisition) | Release engineer and writer owners | Actual authority and common maintenance | Fixture mechanisms pass; establish writer control and acquire consistent production inputs |
 | [MP-05](#mp-05-qualify-protected-copy-and-production-rollback) | Migration engineer | MP-04 capture for production-derived proof | Local mechanisms pass; qualify hosted copy, production target, and rollback |
 | [MP-06](#mp-06-qualify-the-final-source-and-release-packet) | Release engineer and product owner | MP-02, MP-03, and MP-05 acceptance | Draft candidate; complete final checks, requirement audit, and production decision |
 
 The [runtime accounting](evidence/2026-10-31/snapshot-reference-accounting-runtime-v2.json) preserves the original successful-path baseline and records conditional callback bounds.
 Those bounds do not establish a global provider ceiling or guarantee cancellation of stalled binding requests.
-The first-publication and staging API operator successors pass local checks, current source admission, and independent review.
-The latest serving logs record ten owned fixture cases and four lease checks; final packaging and independent review remain open.
-The Zen successor still needs final integration, complete checks, and review.
+
+The first-publication and staging API operator successors pass local checks, source admission, and independent review for the earlier candidate.
+The serving successor corrects a fixture-admission defect; its targeted checks and independent review pass for that source.
+Its unchanged mechanisms retain ten owned fixture cases and four lease checks; the successor does not repeat them.
+The changed chat candidate passes the full local gate and independent review.
+It needs matching clean Linux checks and new source/API artifact linkage before any operation uses it.
+
+Zen final integration waits for that candidate's qualification, then complete checks and review.
 Earlier fixture passes do not qualify later draft edits.
 Scheduled-publication acceptance must inspect all nine settled owner chains and both completed cleanup guards.
 Canonical artifact proof alone is insufficient.
@@ -173,8 +178,8 @@ The release ledger retains closed findings and their source-specific qualificati
 A bounded read-only production inventory completes; its detailed evidence and maintenance finding remain private.
 Deployed-source correspondence, auth authority, common maintenance, and actual acquisition remain open.
 Source qualification supplies no new deployment, scheduled event, generation, maintenance interval, or migration approval.
-Current local disk headroom does not support further full operation checks.
-Preserve verified fixture archives, passing logs, failed observations, and unfinished candidates for the next work session.
+Local storage headroom later recovers; the earlier storage refusal remains intact.
+Preserve verified fixture archives, passing logs, failed observations, and unfinished candidates through continuation.
 
 ## Phase 1 Close the v1 release
 
@@ -185,12 +190,14 @@ Production cutover waits for all required evidence and the final decision.
 
 ### MP-01 Reconcile the exact candidate
 
-**Status:** exact successor local and Linux checks pass; operator linkage and fresh hosted identity remain open.
+**Status:** the chat candidate passes local checks and independent review; matching Linux, operation linkage, and fresh hosted identity remain open.
 **Requirements:** V1-02, V1-09, V1-10.
 
 - [x] Retain the earlier source's complete local and clean Linux receipts.
 - [x] Repair the helper loader and pass the complete successor local gate.
 - [x] Retain matching clean Linux evidence for the successor's exact source and fixture inputs.
+- [x] Pass the complete local gate and independent review for the changed chat candidate.
+- [ ] Retain matching clean Linux checks for the changed chat candidate.
 - [ ] Bind each operator, bundle, dependency, and source receipt to that qualified candidate.
 - [ ] Connect actual deployed identities and current requirement dispositions to the operation packet.
 
@@ -236,12 +243,14 @@ Prepare a fresh successor from existing owned helpers; preserve every consumed m
 
 ### MP-03 Close serving acceptance
 
-**Status:** provider, brief, hydration, and relay repairs qualify; broad serving and positive Zen acceptance remain open.
+**Status:** local chat checks and earlier repairs qualify; broad serving, independent answer support, and positive Zen acceptance remain open.
 **Requirements:** V1-03, V1-07, V1-08.
 
 - [x] Qualify provider dispatch, brief policy, shared-object byte checks, allocation limits, and relay abort handling.
 - [x] Check the new [bilingual questions](../src/eval/data/v1-successor-questions.json) against their full immutable source proof.
 - [ ] Finish and independently review the API deployment, serving, and Zen operators on the common qualified source.
+- [x] Add chat citation-link checks before successful usage; preserve the response shape and check all four provider adapters.
+- [x] Return a fixed insufficient-evidence answer for empty retrieval, with zero generation calls and one successful retrieval unit.
 - [ ] Record numerical acceptance criteria and the chat-contract disposition before the next independent run.
 - [ ] Prepare fresh target provenance, reviewed request scopes, and any required label checks for that revision.
 - [ ] Deploy and check the reviewed staging API; complete the independent bilingual holdout and bounded benchmark.
@@ -418,9 +427,17 @@ Record each decision and its supporting evidence before the dependent work.
 
 The October 31 code review found that chat can accept an uncited, nonempty model answer.
 The current response exposes `answer: string` and a separate `cited` array.
+
 Keep any added validator inside the successful-usage boundary.
 Preserve the response contract through internal checks or additive metadata; a new structured response needs an explicit compatibility decision.
 A matching source ID or quotation does not alone establish factual support.
+
+The chat candidate checks generated links against retrieved source links.
+The product owner selects a fixed insufficient-evidence answer when no material remains after the licence gate.
+This response skips generation and consumes one successful retrieval unit.
+Additive response metadata identifies skipped generation; the existing answer text, source list, provider, model, and scope fields remain.
+
+Independent factual-support acceptance and the wider evidence contract remain open under D-02.
 This finding needs a recorded disposition; it does not silently replace the existing release requirements.
 
 ## Reference map

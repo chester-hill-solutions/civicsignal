@@ -212,7 +212,7 @@ describe('HTTP and MCP access and metering', () => {
     expect(await response.json()).toMatchObject({generation:{provider,phase:'response-validation',upstreamStatus:200}});expect(send).toHaveBeenCalledTimes(1);
   });
   it.each(['google','anthropic','opencode-zen'] as const)('preserves legitimate nontext %s parts beside valid text',async provider=>{
-    const fixture=await setup(),answer='A verified cited answer.';
+    const fixture=await setup(),answer='A verified cited answer: https://example.test/act/1';
     const reply=provider==='google'?{candidates:[{content:{parts:[{inlineData:{mimeType:'image/png',data:'fixture'}},{text:answer}]}}]}:
       {content:[{type:'tool_use',id:'fixture',name:'fixture',input:{}},{type:'text',text:answer}]};
     const send=vi.spyOn(globalThis,'fetch').mockResolvedValue(Response.json(reply));
@@ -221,10 +221,69 @@ describe('HTTP and MCP access and metering', () => {
     expect(response.status).toBe(200);expect(await response.json()).toMatchObject({answer});expect(await fixture.count()).toBe(1);expect(send).toHaveBeenCalledTimes(1);
   });
   it.each(generationProviders)('bills one valid %s generation exactly once',async provider=>{
-    const fixture=await setup(),send=vi.spyOn(globalThis,'fetch').mockResolvedValue(Response.json(providerText(provider,'A verified cited answer.')));
+    const fixture=await setup(),send=vi.spyOn(globalThis,'fetch').mockResolvedValue(Response.json(providerText(provider,'A verified cited answer: https://example.test/act/1')));
     const response=await fixture.send('/api/chat',{method:'POST',headers:{'content-type':'application/json','x-civicsignal-byok-provider':provider,'x-civicsignal-byok-key':'fixture-private-key'},
       body:JSON.stringify({provider,topic:'Test Act section 1',maxTokens:128,messages:[{role:'user',content:'Give the citation.'}]})});
-    expect(response.status).toBe(200);expect(await response.json()).toMatchObject({provider,answer:'A verified cited answer.'});expect(await fixture.count()).toBe(1);expect(send).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(200);expect(await response.json()).toMatchObject({provider,answer:'A verified cited answer: https://example.test/act/1'});expect(await fixture.count()).toBe(1);expect(send).toHaveBeenCalledTimes(1);
+  });
+  it.each(generationProviders)('returns empty-material %s chat as one retrieval unit with zero generation fetches', async provider => {
+    const fixture = await setup(), send = vi.spyOn(globalThis, 'fetch');
+    const response = await fixture.send('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json',
+      'x-civicsignal-byok-provider': provider, 'x-civicsignal-byok-key': 'fixture-private-key' }, body: JSON.stringify({ provider,
+        topic: 'Test Act section 999999', maxTokens: 128, messages: [{ role: 'user', content: 'Give the provision.' }] }) });
+    expect({ status: response.status, usage: await fixture.count(), providerCalls: send.mock.calls.length }).toEqual({ status: 200, usage: 1, providerCalls: 0 });
+    const models = { anthropic: 'claude-sonnet-4-5', openai: 'gpt-4.1-mini', google: 'gemini-2.5-flash', 'opencode-zen': 'claude-haiku-4-5' };
+    expect(await response.json()).toMatchObject({ answer: 'The retrieved material does not contain an answer to this question.',
+      provider, model: models[provider], cited: [], generation: { status: 'skipped', reason: 'no-retrieved-material' },
+      retrieval: [expect.objectContaining({ mode: 'exact', decision: 'refuse' })] });
+    expect(await fixture.count()).toBe(1); expect(send).not.toHaveBeenCalled();
+  });
+  it.each(generationProviders.flatMap(provider => ['missing', 'unretrieved', 'query', 'fragment', 'reference', 'html', 'nested', 'escaped', 'prefix', 'unicode-prefix', 'numeric-prefix', 'userinfo', 'url-label', 'wrong-path', 'suffix'].map(kind => ({ provider, kind }))))('refuses actual-200 $provider $kind links before successful usage', async ({ provider, kind }) => {
+    const fixture = await setup(), key = 'fixture-private-generation-key', url = 'https://example.test/act/1';
+    const answers: Record<string, string> = { missing: 'A private uncited answer.', unretrieved: `${url} https://unretrieved.invalid/private`,
+      prefix: 'prefix' + url, 'unicode-prefix': 'é' + url, 'numeric-prefix': '1' + url, userinfo: url.replace('https://', 'https://user@'),
+      'url-label': `[${url}](https://unretrieved.invalid)`, 'wrong-path': url + '/other', suffix: url + '.evil',
+      query: url + '?altered=1', fragment: url + '#altered', reference: `[source][ref]\n[ref]: ${url}`,
+      html: `<a href="${url}">source</a>`, nested: `[source](${url}(altered))`, escaped: `[source](${url.replace('/act/', '/act/\\')})` };
+    const answer = answers[kind]!, logs = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const send = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(providerText(provider, answer), { status: 200 }));
+    const response = await fixture.send('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json',
+      'x-civicsignal-byok-provider': provider, 'x-civicsignal-byok-key': key }, body: JSON.stringify({ provider,
+        topic: 'Test Act section 1', maxTokens: 128, messages: [{ role: 'user', content: 'fixture-private-prompt' }] }) });
+    const body = await response.json() as Record<string, unknown>;
+    expect({ status: response.status, usage: await fixture.count() }).toEqual({ status: 502, usage: 0 });
+    expect(body).toMatchObject({ code: 'UPSTREAM_UNAVAILABLE', generation: { provider, phase: 'response-validation', upstreamStatus: 200 } });
+    expect(send).toHaveBeenCalledTimes(1); expect(send.mock.calls[0]![1]?.redirect).toBe('manual');
+    for (const value of [answer, key, 'fixture-private-prompt']) {
+      expect(JSON.stringify(body)).not.toContain(value); expect(JSON.stringify(logs.mock.calls)).not.toContain(value);
+    }
+  });
+  it.each(generationProviders.flatMap(provider => ['> ', '- ', '> 2) > - '].flatMap(prefix =>
+    ['//unretrieved.invalid/private-path', '/private-relative-path', 'https://unretrieved.invalid/private-absolute'].map(target => ({ provider, prefix, target })))))('refuses actual-200 $provider container reference $prefix $target before usage', async ({ provider, prefix, target }) => {
+    const fixture = await setup(), key = 'fixture-private-generation-key', url = 'https://example.test/act/1';
+    const answer = `${prefix}[r]: ${target}\n\n[r]\n\nSee <${url}>`;
+    const logs = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const send = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(providerText(provider, answer), { status: 200 }));
+    const response = await fixture.send('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json',
+      'x-civicsignal-byok-provider': provider, 'x-civicsignal-byok-key': key }, body: JSON.stringify({ provider,
+        topic: 'Test Act section 1', maxTokens: 128, messages: [{ role: 'user', content: 'fixture-private-prompt' }] }) });
+    const body = await response.json() as Record<string, unknown>;
+    expect({ status: response.status, usage: await fixture.count() }).toEqual({ status: 502, usage: 0 });
+    expect(body).toMatchObject({ code: 'UPSTREAM_UNAVAILABLE', generation: { provider, phase: 'response-validation', upstreamStatus: 200 } });
+    expect(send).toHaveBeenCalledTimes(1); expect(send.mock.calls[0]![1]?.redirect).toBe('manual');
+    for (const value of [answer, target, key, 'fixture-private-prompt']) {
+      expect(JSON.stringify(body)).not.toContain(value); expect(JSON.stringify(logs.mock.calls)).not.toContain(value);
+    }
+  });
+  it.each(generationProviders.flatMap(provider => ['bare', 'markdown', 'autolink'].map(form => ({ provider, form }))))('bills one exact retrieved $provider $form citation exactly once', async ({ provider, form }) => {
+    const fixture = await setup(), url = 'https://example.test/act/1';
+    const answer = form === 'bare' ? `A provision: ${url}` : form === 'markdown' ? `A [provision](${url}).` : `A provision: <${url}>.`;
+    const send = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(providerText(provider, answer)));
+    const response = await fixture.send('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json',
+      'x-civicsignal-byok-provider': provider, 'x-civicsignal-byok-key': 'fixture-private-key' }, body: JSON.stringify({ provider,
+        topic: 'Test Act section 1', maxTokens: 128, messages: [{ role: 'user', content: 'Give the citation.' }] }) });
+    expect(response.status).toBe(200); expect(await response.json()).toMatchObject({ provider, answer, cited: [expect.objectContaining({ citationUrl: url })] });
+    expect(await fixture.count()).toBe(1); expect(send).toHaveBeenCalledTimes(1);
   });
   it('keeps a failed retrieval distinct from generation and never calls or bills a model',async()=>{
     const fixture=await setup(),send=vi.spyOn(globalThis,'fetch').mockRejectedValue(new Error('Unexpected external call'));

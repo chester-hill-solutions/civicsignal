@@ -23,6 +23,7 @@ Use Bun 1.3.5 and Node 24 or later.
 ```sh
 bun install --frozen-lockfile
 bun run validate
+python3 -I -B test/protected-state-d1-owned.test.py
 bun run build
 ```
 
@@ -83,6 +84,22 @@ The initial Zen adapter supports `claude-haiku-4-5` through the
 The [paid model table](https://opencode.ai/v2/docs/console/models/) lists that model.
 The generation key goes only to the selected provider.
 The CivicSignal key authorizes corpus access separately.
+
+The chat response keeps `answer` as text and lists retrieved material in `cited`.
+That list does not establish factual support for each generated statement.
+Independent answer-support acceptance remains open under [the chat evidence decision](docs/PLAN.md#decisions-still-required).
+
+For nonempty material, answers must contain at least one retrieved HTTP(S) source link.
+Every recognized destination must match a retrieved source link exactly.
+Supported forms are bare URLs, inline Markdown links, and angle autolinks.
+Reference-style links, HTML, images, nested links, and multiline code fall outside the supported format.
+Unsupported or ambiguous link forms fail before successful usage consumption.
+Simple inline code can surround a separate citation, but code text supplies no citation.
+
+When retrieval returns no material, chat gives a fixed insufficient-evidence answer and skips generation.
+This successful retrieval consumes one unit.
+The response includes `generation: {"status":"skipped","reason":"no-retrieved-material"}`.
+The `provider` and `model` fields identify the selection, even when chat skips generation.
 
 ## Corpus and search checks
 

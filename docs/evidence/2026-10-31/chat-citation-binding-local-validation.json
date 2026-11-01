@@ -1,0 +1,85 @@
+{
+  "format": 1,
+  "kind": "chat-citation-link-binding-and-empty-material-local-validation",
+  "passed": true,
+  "scope": "Local chat behavior and engineering checks only",
+  "relatedIssue": 4,
+  "issueRemainsOpen": true,
+  "sourceInputs": [
+    {
+      "path": "src/byok.ts",
+      "bytes": 11239,
+      "sha256": "1eaace5ba5820c0024d7b328da128a0535fdaf30bb38a085546736863a035c4b"
+    },
+    {
+      "path": "src/routes/chat.ts",
+      "bytes": 15086,
+      "sha256": "00fd31a3e22164ee27f256a6064774f3d35e3845e8b6649c1df5f54f5aafc577"
+    },
+    {
+      "path": "test/byok.test.ts",
+      "bytes": 13863,
+      "sha256": "bd1f73552ba3b14381933ac556e6e888ce3b0f4ab8f5f10fe44c8e4f487fb63f"
+    },
+    {
+      "path": "test/chat.test.ts",
+      "bytes": 21489,
+      "sha256": "c70df5a040edfc53c65fd491176ca120453c6c1ee86dae97c1a40afd237e8a03"
+    },
+    {
+      "path": "test/endpoints.test.ts",
+      "bytes": 39514,
+      "sha256": "7dfb1577a01cabe44a80ad70b4c7f4fae50a845f47271f353a8a22c9f2cceb6d"
+    }
+  ],
+  "behavior": {
+    "nonemptyMaterial": "At least one exact retrieved HTTP(S) citation destination; every recognized destination binds to retrieved material. Unsupported reference/HTML/nested/escaped forms refuse.",
+    "emptyMaterial": {
+      "decision": "User selected fixed insufficient-evidence response",
+      "answer": "The retrieved material does not contain an answer to this question.",
+      "providerCalls": 0,
+      "successfulRetrievalUnits": 1,
+      "generation": {
+        "status": "skipped",
+        "reason": "no-retrieved-material"
+      }
+    }
+  },
+  "baselineRegressionEvidence": {
+    "firstIncrementEndpointFailures": 64,
+    "containerReferenceBypassFailures": 24,
+    "containerAbsoluteControlsPassed": 12
+  },
+  "finalCandidate": {
+    "tests": 2192,
+    "testFiles": 102,
+    "pythonCases": 31,
+    "compilerProjects": 4,
+    "dryBuilds": 5,
+    "sourceAndFixtureInputs": 477,
+    "sourceInputsUnchanged": true,
+    "ownedPhasesSettled": 4,
+    "localReceipt": "docs/evidence/2026-10-31/integrated-candidate-local-validation-v11.json"
+  },
+  "independentReview": {
+    "verdict": "approve",
+    "pureChecksPassed": 52,
+    "artifact": {
+      "path": "dist/evaluation/2026-10-31-chat-independent-review-v1/review-final.private.json",
+      "bytes": 4858,
+      "sha256": "c055e3b9b6f85dbe4691d2d4a2517fcda5c5c7b3fa119c9710848946d6538ad1"
+    }
+  },
+  "qualificationLimits": [
+    "Destination binding does not establish factual support or output licence compliance.",
+    "Clean Linux qualification remains a separate source-bound check.",
+    "The earlier v10 aggregate remains review-blocked; it does not qualify the corrected source.",
+    "Earlier API/serving/Zen packets need new source and artifact linkage.",
+    "No hosted, provider, legal-quality or production acceptance follows."
+  ],
+  "actualHostedRequests": 0,
+  "actualModelRequests": 0,
+  "realCredentialsInherited": false,
+  "responseContract": "answer:string and retrieved cited[] preserved; skipped generation metadata is additive",
+  "providerProtocolChanges": false
+}

@@ -165,17 +165,108 @@ export function buildSystemPrompt(cited: CitedItem[]): string {
   ].join('\n');
 }
 
+/** Check link destinations only. This does not check whether the text supports a claim. */
+export function validateAnswerCitationLinks(answer: string, citationUrls: readonly string[]): void {
+  const invalid = () => { throw new Error('Invalid generation response.'); };
+  const urls = new Set(citationUrls.filter((url) => {
+    try {
+      const parsed = new URL(url);
+      return (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+        !parsed.username && !parsed.password && !/[\s\\<>\x00-\x1f\x7f]/u.test(url);
+    } catch { return false; }
+  }));
+  let links = 0;
+  const destination = (value: string) => {
+    // Compare the original spelling. URL parsing must not normalize any destination.
+    if (!/^https?:\/\//i.test(value) || /[\s\\<>()[\]"'`]/u.test(value) || /[\x00-\x1f\x7f]/u.test(value) || /&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]+);/i.test(value) || !urls.has(value)) invalid();
+    links++;
+  };
+  // Reference definitions can sit inside list or quote containers.
+  // Each line prefix permits only horizontal whitespace and container marks.
+  if (/^[ \t>+*().\d-]*\[[^\]\r\n]+\]:/m.test(answer)) invalid();
+  for (let at = 0; at < answer.length;) {
+    const char = answer[at]!;
+    if (char === '`') {
+      const end = answer.indexOf('`', at + 1);
+      if (end <= at + 1 || answer[end + 1] === '`' || /[\r\n]/u.test(answer.slice(at + 1, end))) invalid();
+      // Code text supplies no link destination, even when it spells a URL.
+      at = end + 1;
+      continue;
+    }
+    if (char === '\\') {
+      if (answer[at + 1] === '[' || answer[at + 1] === ']' ||
+        /^<?https?:\/\//i.test(answer.slice(at + 1, at + 10))) invalid();
+      // Ordinary escaped notation needs no search for a closing bracket.
+      at += 2;
+      continue;
+    }
+    if (char === '[') {
+      const end = answer.indexOf(']', at + 1);
+      if (end < 0) invalid();
+      const label = answer.slice(at + 1, end);
+      if (/[\[\\\r\n<>`]|https?:\/\//iu.test(label) || /:\S/u.test(label)) invalid();
+      let following = end + 1;
+      while (following < answer.length && /\s/u.test(answer[following]!)) following++;
+      if (answer[following] === '[') invalid();
+      if (answer[end + 1] === '(') {
+        if (answer[at - 1] === '!') invalid();
+        const close = answer.indexOf(')', end + 2);
+        if (close < 0) invalid();
+        destination(answer.slice(end + 2, close));
+        at = close + 1;
+        continue;
+      }
+      // A plain bracket, such as section [1], supplies no destination.
+      // Consume its complete span, so each long scan advances or refuses.
+      at = end + 1;
+      continue;
+    }
+    if (char === ']' && (answer[at + 1] === '(' || answer[at + 1] === '[')) invalid();
+    if (char === '<') {
+      const end = answer.indexOf('>', at + 1);
+      if (end < 0) invalid();
+      destination(answer.slice(at + 1, end));
+      at = end + 1;
+      continue;
+    }
+    if (/[a-z]/i.test(char)) {
+      let end = at + 1;
+      while (end < answer.length && /[a-z\d+.-]/i.test(answer[end]!)) end++;
+      const scheme = answer.slice(at, end);
+      if (answer[end] === ':' && (answer.slice(end + 1, end + 3) === '//' || /^(?:mailto|javascript|data)$/i.test(scheme) && /\S/u.test(answer[end + 1] ?? ''))) {
+        if (!/^https?$/i.test(scheme) || /[\p{L}\p{N}\p{M}+._/-]$/u.test(answer.slice(Math.max(0, at - 2), at))) invalid();
+        const rest = answer.slice(at);
+        const boundary = rest.search(/[\s<>()[\]\\"'`]/u);
+        const length = boundary < 0 ? rest.length : boundary;
+        if (rest[length] === '(') invalid();
+        let value = rest.slice(0, length);
+        // One sentence mark can follow an already exact retrieved URL.
+        if (!urls.has(value) && /[.,;!]$/u.test(value) && urls.has(value.slice(0, -1))) value = value.slice(0, -1);
+        destination(value);
+        at += length;
+        continue;
+      }
+      at = end;
+      continue;
+    }
+    at++;
+  }
+  if (links === 0) invalid();
+}
+
 export interface ChatResult {
   answer: string;
   provider: ByokProvider;
   model: string;
   cited: CitedItem[];
   scope: BriefRequest['scope'];
+  /** The selected model was not used when retrieval returned no material. */
+  generation?: { status: 'skipped'; reason: 'no-retrieved-material' };
 }
 
 export interface ChatDeps {
   env: Env;
-  /** Retrieves the brief the answer is grounded in. */
+  /** Retrieves the material supplied to generation. */
   retrieve: (request: BriefRequest) => Promise<BriefResponse>;
   /** The caller's provider key. Never stored, never logged. */
   byokKey: string;
@@ -183,9 +274,9 @@ export interface ChatDeps {
 }
 
 /**
- * Answer a question with the caller's own model, grounded in the index.
+ * Retrieve material, then use the caller's model when material exists.
  *
- * The key is used for exactly one upstream call and goes nowhere else.
+ * Generation uses the key for at most one upstream call.
  */
 export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<ChatResult> {
   request = parseChatRequest(request);
@@ -214,6 +305,16 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
   } as BriefRequest);
 
   const cited = citedItemsFromBrief(brief);
+  if (cited.length === 0) {
+    return {
+      answer: 'The retrieved material does not contain an answer to this question.',
+      provider: deps.byokProvider,
+      model: request.model?.trim() || PROVIDERS[deps.byokProvider].defaultModel,
+      cited,
+      scope: brief.scope,
+      generation: { status: 'skipped', reason: 'no-retrieved-material' },
+    };
+  }
   const result = await chatByok({
     provider: deps.byokProvider,
     apiKey: deps.byokKey,
@@ -221,6 +322,7 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
     system: buildSystemPrompt(cited),
     messages: request.messages,
     maxTokens: request.maxTokens,
+    validateAnswer: (answer) => validateAnswerCitationLinks(answer, cited.map((item) => item.citationUrl)),
   });
 
   return {
