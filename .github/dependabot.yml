@@ -1,0 +1,67 @@
+# Draft rollout: Activation is held until the owner-managed v1 PR #1 supplies the application qualification gates; main currently has Railway configuration checks only. No corpus, data, shared access or deployment changes.
+version: 2
+updates:
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "09:40"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    groups:
+      react-router:
+        applies-to: version-updates
+        patterns:
+          - "react-router"
+          - "@react-router/*"
+        update-types: [minor, patch]
+      react:
+        applies-to: version-updates
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+        update-types: [minor, patch]
+      better-auth:
+        applies-to: version-updates
+        patterns:
+          - "better-auth"
+          - "@better-auth/*"
+        update-types: [minor, patch]
+      test-tools:
+        applies-to: version-updates
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+        update-types: [minor, patch]
+      vite-worker-tools:
+        applies-to: version-updates
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "@cloudflare/vite-plugin"
+          - "wrangler"
+          - "miniflare"
+          - "@cloudflare/workers-types"
+        update-types: [minor, patch]
+      aws-sdk:
+        applies-to: version-updates
+        patterns:
+          - "@aws-sdk/*"
+        update-types: [minor, patch]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: monthly
+      time: "09:40"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
