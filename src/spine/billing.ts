@@ -98,11 +98,16 @@ export async function reportStripeMeter(
   ctx: BillableAuthContext,
   quantity: number
 ): Promise<void> {
-  await reportSharedStripeMeter({ ...ctx.customer, fuseSoftWarn: Boolean(ctx.customer.fuseSoftWarn) }, {
-    freeFuseLimit: defaultFuseLimit('free', env),
-    stripeSecretKey: env.STRIPE_SECRET_KEY,
-    meterEventName: env.STRIPE_METER_EVENT_NAME || 'riding_lookup_api_call',
-  }, quantity);
+  if (!env.STRIPE_SECRET_KEY || !ctx.customer.stripeCustomerId) return;
+  try {
+    await reportSharedStripeMeter({ ...ctx.customer, fuseSoftWarn: Boolean(ctx.customer.fuseSoftWarn) }, {
+      freeFuseLimit: defaultFuseLimit('free', env),
+      stripeSecretKey: env.STRIPE_SECRET_KEY,
+      meterEventName: env.STRIPE_METER_EVENT_NAME || 'riding_lookup_api_call',
+    }, quantity);
+  } catch (error) {
+    console.warn('[StripeMeter] unavailable:', error);
+  }
 }
 
 /**
