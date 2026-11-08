@@ -1,8 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// VENDORED FROM: chester-hill-solutions/riding-and-address  src/billing.ts
-// Do not edit here. Change upstream and re-vendor.
-// Extraction target: @chester-hill-solutions/api-billing (see docs/PLAN.md, step 1).
-// ─────────────────────────────────────────────────────────────────────────────
+import { reportStripeMeter as reportSharedStripeMeter } from '@chester-hill-solutions/api-billing';
 import { Env } from './env';
 import { CustomerRecord, defaultFuseLimit, loadCustomer } from './customer';
 import { ApiKeyRecord } from './api-keys';
@@ -102,28 +98,13 @@ export async function reportStripeMeter(
   ctx: BillableAuthContext,
   quantity: number
 ): Promise<void> {
-  const secret = env.STRIPE_SECRET_KEY;
-  const eventName = env.STRIPE_METER_EVENT_NAME || 'riding_lookup_api_call';
-  if (!secret || !ctx.customer.stripeCustomerId) return;
-
+  if (!env.STRIPE_SECRET_KEY || !ctx.customer.stripeCustomerId) return;
   try {
-    const body = new URLSearchParams();
-    body.set('event_name', eventName);
-    body.set('payload[stripe_customer_id]', ctx.customer.stripeCustomerId);
-    body.set('payload[value]', String(quantity));
-    body.set('identifier', `${ctx.customer.id}:${utcMonth(Date.now())}:${crypto.randomUUID()}`);
-
-    const res = await fetch('https://api.stripe.com/v1/billing/meter_events', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body,
-    });
-    if (!res.ok) {
-      console.warn('[StripeMeter] event failed:', res.status, await res.text());
-    }
+    await reportSharedStripeMeter({ ...ctx.customer, fuseSoftWarn: Boolean(ctx.customer.fuseSoftWarn) }, {
+      freeFuseLimit: defaultFuseLimit('free', env),
+      stripeSecretKey: env.STRIPE_SECRET_KEY,
+      meterEventName: env.STRIPE_METER_EVENT_NAME || 'riding_lookup_api_call',
+    }, quantity);
   } catch (error) {
     console.warn('[StripeMeter] unavailable:', error);
   }

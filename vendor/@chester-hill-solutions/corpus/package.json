@@ -24,14 +24,5 @@
       "default": "./dist/index.js"
     }
   },
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test src/",
-    "prepublishOnly": "npm run build"
-  },
-  "devDependencies": {
-    "bun-types": "^1.3.5",
-    "typescript": "^5.9.2"
-  }
+  "gitHead": "3dba6c56bc50cb89bca0346e211329c1fb7e1885"
 }

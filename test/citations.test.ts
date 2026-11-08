@@ -36,18 +36,16 @@ describe('citation parsing', () => {
     expect(parseCitation('section 210 of some other statute', ACTS)).toBeNull();
   });
 
-  it('falls back to a partial Act match and marks it as such', () => {
-    const match = parseCitation('what does section 8 of the Labour Code say', ACTS)!;
-    expect(match.citation.act).toBe('Canada Labour Code');
-    expect(match.actConfidence).toBe('partial');
+  it('leaves shortened titles to retrieval rather than claiming an exact citation', () => {
+    expect(parseCitation('what does section 8 of the Labour Code say', ACTS)).toBeNull();
   });
 
-  it('prefers the longest Act title when several appear', () => {
-    const match = parseCitation('section 2 of the Canada Labour Code and the Criminal Code', [
-      'Criminal Code',
-      'Canada Labour Code',
-    ])!;
-    expect(match.citation.act).toBe('Canada Labour Code');
+  it('does not attach a shared section to an ambiguous list of instruments', () => {
+    expect(parseCitation('section 2 of the Canada Labour Code and the Criminal Code', ACTS)).toBeNull();
+  });
+
+  it('rejects multiple distinct citations instead of choosing one', () => {
+    expect(parseCitation('section 2 of the Canada Labour Code and section 3 of the Criminal Code', ACTS)).toBeNull();
   });
 });
 
@@ -74,9 +72,8 @@ describe('citation resolution', () => {
     expect(resolveCitation(match.citation, rows)).toBeNull();
   });
 
-  it('tolerates a title that is a prefix of the corpus title', () => {
-    const match = parseCitation('section 210 of the Canada Labour', ACTS)!;
-    expect(match.citation.act).toBe('Canada Labour Code');
+  it('does not resolve an incomplete instrument title', () => {
+    expect(parseCitation('section 210 of the Canada Labour', ACTS)).toBeNull();
   });
 });
 

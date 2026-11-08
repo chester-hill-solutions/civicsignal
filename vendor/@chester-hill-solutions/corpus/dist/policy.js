@@ -27,11 +27,13 @@ export class LicenceViolation extends Error {
 /**
  * Apply a corpus policy to a raw item, producing what may legally be returned.
  *
- * Throws rather than silently dropping fields when a caller asks for something the
- * regime forbids — that is a programming error, and it should fail loudly in tests
- * rather than quietly produce a less useful answer in production.
+ * The declared regime is an upper bound; flags may restrict it further, never widen
+ * it. Invalid policy caps and missing required source links fail closed.
  */
 export function emitCorpusItem(policy, raw) {
+    if (!Number.isSafeInteger(policy.excerptMaxChars) || policy.excerptMaxChars < 0) {
+        throw new RangeError("excerptMaxChars must be a finite, nonnegative safe integer.");
+    }
     if (raw.corpusId !== policy.id) {
         throw new Error(`Corpus mismatch: policy "${policy.id}" cannot emit an item from "${raw.corpusId}".`);
     }
@@ -45,29 +47,20 @@ export function emitCorpusItem(policy, raw) {
         source: raw.source,
         language: raw.language,
         jurisdiction: raw.jurisdiction,
-        topics: raw.topics,
-        entities: raw.entities,
-        sentiment: raw.sentiment,
-        extra: raw.extra,
+        topics: policy.redistribution === "metadata-only" ? undefined : raw.topics,
+        entities: policy.redistribution === "metadata-only" ? undefined : raw.entities,
+        sentiment: policy.redistribution === "metadata-only" ? undefined : raw.sentiment,
+        extra: policy.redistribution === "open" ? raw.extra : undefined,
         redistribution: policy.redistribution,
         attribution: attributionFor(policy),
     };
-    if (policy.allowFullText && raw.body !== undefined) {
+    if (policy.redistribution === "open" && policy.allowFullText && raw.body !== undefined) {
         item.body = raw.body;
     }
-    else if (raw.body !== undefined) {
-        // The body exists upstream but this corpus does not permit it. Drop it here — the
-        // excerpt path below is the sanctioned substitute — and leave the regime visible
-        // in the output so consumers know what they are holding.
-        delete item.body;
-    }
-    if (raw.excerpt !== undefined) {
-        if (policy.excerptMaxChars === 0) {
-            delete item.excerpt;
-        }
-        else {
-            item.excerpt = truncate(raw.excerpt, policy.excerptMaxChars);
-        }
+    if ((policy.redistribution === "open" || policy.redistribution === "cite-only") &&
+        policy.excerptMaxChars > 0 &&
+        raw.excerpt !== undefined) {
+        item.excerpt = truncate(raw.excerpt, policy.excerptMaxChars);
     }
     if (policy.requireSourceLink && !raw.citationUrl) {
         throw new LicenceViolation(policy.id, "citationUrl", policy.redistribution);
@@ -75,9 +68,8 @@ export function emitCorpusItem(policy, raw) {
     return item;
 }
 /**
- * Emit a batch, skipping items whose policy forbids the requested field rather than
- * failing the whole response. Used for mixed-corpus responses where one corpus may
- * legitimately carry less than another.
+ * Emit a mixed-corpus batch through the same gate. Unknown corpora are skipped;
+ * invalid known policies or missing required source links still fail the batch.
  */
 export function emitCorpusItems(policies, raws) {
     const out = [];
