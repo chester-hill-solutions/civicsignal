@@ -81,7 +81,7 @@ export interface RawCorpusItem {
         score: number;
         magnitude?: number;
     };
-    /** Corpus-specific fields, passed through untouched. */
+    /** Corpus-specific data. Emitted only for open corpora; restricted regimes discard it. */
     extra?: Record<string, unknown>;
 }
 /** What actually leaves the building. */
@@ -115,15 +115,13 @@ export interface CorpusItem {
 /**
  * Apply a corpus policy to a raw item, producing what may legally be returned.
  *
- * Throws rather than silently dropping fields when a caller asks for something the
- * regime forbids — that is a programming error, and it should fail loudly in tests
- * rather than quietly produce a less useful answer in production.
+ * The declared regime is an upper bound; flags may restrict it further, never widen
+ * it. Invalid policy caps and missing required source links fail closed.
  */
 export declare function emitCorpusItem(policy: CorpusPolicy, raw: RawCorpusItem): CorpusItem;
 /**
- * Emit a batch, skipping items whose policy forbids the requested field rather than
- * failing the whole response. Used for mixed-corpus responses where one corpus may
- * legitimately carry less than another.
+ * Emit a mixed-corpus batch through the same gate. Unknown corpora are skipped;
+ * invalid known policies or missing required source links still fail the batch.
  */
 export declare function emitCorpusItems(policies: Map<string, CorpusPolicy>, raws: RawCorpusItem[]): CorpusItem[];
 export declare function truncate(value: string, maxChars: number): string;

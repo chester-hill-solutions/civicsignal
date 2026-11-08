@@ -1,8 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// VENDORED FROM: chester-hill-solutions/riding-and-address  src/usage-ledger.ts
-// Do not edit here. Change upstream and re-vendor.
-// Extraction target: @chester-hill-solutions/api-billing (see docs/PLAN.md, step 1).
-// ─────────────────────────────────────────────────────────────────────────────
+import { DurableObjectUsageLedger } from '@chester-hill-solutions/api-billing/durable-object';
 import { Env } from './env';
 import { utcMonth } from './time';
 
@@ -20,7 +16,7 @@ export type UsageLedgerResult = {
  *
  * Implementations own their unavailability policy:
  * - the Durable Object adapter fails CLOSED on a hard fuse (limit > 0) so
- *   free-tier abuse is unbounded during outages, and fails OPEN when the
+ *   free-tier abuse is bounded during outages, and fails OPEN when the
  *   limit is 0 / soft-warn so availability never depends on the counter
  *   (Stripe sync stays eventual per ADR-0002);
  * - the in-memory fake is a test double implementing intent, not wire format.
@@ -43,41 +39,19 @@ export class DurableUsageLedger implements UsageLedger {
   constructor(private env: Env) {}
 
   async consumeMonthly(customerId: string, monthlyLimit: number, nowMs: number = Date.now()): Promise<UsageLedgerResult> {
+    if (this.env.API_KEY_USAGE) {
+      return new DurableObjectUsageLedger(this.env.API_KEY_USAGE).consumeMonthly(customerId, monthlyLimit, nowMs);
+    }
     const month = utcMonth(nowMs);
-    if (!this.env.API_KEY_USAGE) {
-      return monthlyLimit > 0 ? failClosed(monthlyLimit, month) : failOpen(monthlyLimit, month);
-    }
-
-    try {
-      const id = this.env.API_KEY_USAGE.idFromName(`customer:${customerId}`);
-      const stub = this.env.API_KEY_USAGE.get(id);
-      const response = await stub.fetch(
-        `https://usage/consume?month=${month}&limit=${monthlyLimit}`,
-        { method: 'POST' }
-      );
-      const result = (await response.json()) as UsageLedgerResult;
-      return { ...result, month: result.month || month };
-    } catch (error) {
-      console.warn(`[ApiKeyUsage] monthly counter unavailable for ${customerId}:`, error);
-      return monthlyLimit > 0 ? failClosed(monthlyLimit, month) : failOpen(monthlyLimit, month);
-    }
+    return monthlyLimit > 0 ? failClosed(monthlyLimit, month) : failOpen(monthlyLimit, month);
   }
 
   async peekMonthly(customerId: string, monthlyLimit: number, nowMs: number = Date.now()): Promise<UsageLedgerResult> {
+    if (this.env.API_KEY_USAGE) {
+      return new DurableObjectUsageLedger(this.env.API_KEY_USAGE).peekMonthly(customerId, monthlyLimit, nowMs);
+    }
     const month = utcMonth(nowMs);
-    if (!this.env.API_KEY_USAGE) {
-      return monthlyLimit > 0 ? failClosed(monthlyLimit, month) : failOpen(monthlyLimit, month);
-    }
-
-    try {
-      const id = this.env.API_KEY_USAGE.idFromName(`customer:${customerId}`);
-      const stub = this.env.API_KEY_USAGE.get(id);
-      const response = await stub.fetch(`https://usage/peek?month=${month}&limit=${monthlyLimit}`);
-      const result = (await response.json()) as UsageLedgerResult;
-      return { ...result, month: result.month || month };
-    } catch {
-      return monthlyLimit > 0 ? failClosed(monthlyLimit, month) : failOpen(monthlyLimit, month);
-    }
+    return monthlyLimit > 0 ? failClosed(monthlyLimit, month) : failOpen(monthlyLimit, month);
   }
 }
 

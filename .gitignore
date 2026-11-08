@@ -12,3 +12,7 @@ dist/
 # does not exist for anyone who clones the repository.
 !vendor/@chester-hill-solutions/corpus/dist/
 !vendor/@chester-hill-solutions/corpus/dist/**
+
+# Billing uses the same committed runtime-artifact delivery as corpus.
+!vendor/@chester-hill-solutions/api-billing/dist/
+!vendor/@chester-hill-solutions/api-billing/dist/**
