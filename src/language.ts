@@ -92,7 +92,10 @@ function countMarkers(text: string, markers: string[]): number {
  * A tie goes to English, because English is the corpus's default and a wrong
  * guess that keeps the default is less surprising than one that does not.
  */
-export function detectLanguage(text: string | undefined | null): CorpusLanguage {
+export function detectLanguage(
+  text: string | undefined | null,
+  options: { accentsBreakTies?: boolean } = {},
+): CorpusLanguage {
   if (!text) return "en";
   const folded = fold(text);
   if (!folded.trim()) return "en";
@@ -100,8 +103,9 @@ export function detectLanguage(text: string | undefined | null): CorpusLanguage 
   const french = countMarkers(folded, FRENCH_MARKERS);
   const english = countMarkers(folded, ENGLISH_MARKERS);
 
-  // An accented character is decisive on its own: no English sentence has one.
-  if (FRENCH_CHARACTERS.test(text)) return "fr";
+  // An accented title can choose the French corpus. For a reply, clear
+  // sentence-level evidence takes precedence over accents in a proper name.
+  if ((!options.accentsBreakTies || french === english) && FRENCH_CHARACTERS.test(text)) return "fr";
 
   return french > english ? "fr" : "en";
 }

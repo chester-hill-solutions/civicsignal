@@ -1,0 +1,22 @@
+{
+  "format": 1,
+  "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "worker": "civicsignal-v1-stage-nov16-snapshot",
+  "absentBeforeDeployment": {
+    "workerHttpStatus": 404,
+    "workflowHttpStatus": 404
+  },
+  "bootstrap": {
+    "bundleBytes": 259948,
+    "bundleSha256": "79fffe09dad44a47dc78568f52af9fc7ec83ffc889d40ebef8d8218fb3aa38c8",
+    "configSha256": "900d2be16bb66ab8c03f700efbcf12cbeabfb8debf2ff0635cde6ca5f79b9908",
+    "deploymentId": "f538622c-74d8-4d50-93c6-7e27b9481b0a",
+    "versionId": "4f24cb2f-cbf9-46d0-85ee-7749282ebd84",
+    "nativeSchedulesConfigured": 0
+  },
+  "workflow": {
+    "id": "c8ba63d3-a002-4c62-8669-45c7c4c2bf40",
+    "createdOn": "2026-11-23T02:29:06.701Z",
+    "modifiedOn": "2026-11-23T02:29:06.701Z"
+  }
+}

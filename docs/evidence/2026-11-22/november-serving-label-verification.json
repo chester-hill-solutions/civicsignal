@@ -1,0 +1,27 @@
+{
+  "dataset": {
+    "version": "v1-november-2026-11-16",
+    "sha256": "f72aa8b860034405cdbc178261b037fdaac59563d039ec54920339f515f85f39"
+  },
+  "inputDatasets": {
+    "calibration": {
+      "version": "v1-2026-10-22",
+      "sha256": "5947e2417cebd4883df368a4aeca1dccdb79bd0329056155d7420016431f8cf9"
+    },
+    "holdout": {
+      "version": "v1-successor-2026-10-31",
+      "sha256": "d3f43f117da958f19c3cf1c43314dcd764be7065bc1a58bd7dc4b0857fb94631"
+    }
+  },
+  "revision": "855cdfc65207a6906c414e09a77d7f93267c5356",
+  "parserVersion": "statutes-v2",
+  "sourceBlobs": 30,
+  "changedSourceBlobsComparedWithOctober": 4,
+  "verifiedPositiveRowEvidence": 60,
+  "rejected": 0,
+  "calibration": 20,
+  "independentHoldout": 64,
+  "scopeLabelsPreserved": 24,
+  "promptsGoldAndRowDigestsPreserved": true,
+  "servedMeasurement": false
+}

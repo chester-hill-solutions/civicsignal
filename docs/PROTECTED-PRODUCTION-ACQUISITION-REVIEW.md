@@ -73,6 +73,12 @@ No actual credential owner, provider authentication, source-facts capture, produ
 The complete acquisition budget and live operator remain open.
 `providerAuthenticated`, `globalQuiescenceEstablished`, and `productionAcquisitionQualified` remain false.
 
+## Offline session seal checks — 2026-11-22
+
+The [composed fixture session](../scripts/lib/protected-acquisition-session.ts) checks the source facts before and after the complete KV and export sequence and then downloads the signed SQL. The [capture producer](../scripts/lib/protected-acquisition.ts) supplies the exact sizes and digests for the bytes it writes. The session checks those pins when sealing the capture, then reopens the fixed inputs and checks their identities and digests before receipt under the original owner deadline. The [regressions](../test/protected-acquisition-session.test.ts) reject same-size edits during and after capture, including to the signed descriptor, exchange receipts, facts, raw KV, normalized auth, and downloaded SQL.
+
+The production owner still needs to authenticate the source, confirm maintenance and drain across the actual writers, and revalidate approved input seals at consumption. Budget time and storage for the additional local file reads alongside the transport budget.
+
 ## Gaps, conflicts, or redundancies to fix
 
 1. **Production maintenance is unresolved.** Eight read-only management requests observed API version `4c06fcd8-db2e-47b9-92ad-fc214522e73e` and pipeline version `7394930d-13a2-4aad-9b20-0de60b8ccf8c`. The API has `API_KEYS` and `CIVIC_DB`, with no `AUTH_DB` or `CORPORA`; the pipeline has no Durable Object/coordinator binding. These are binding observations, not proof of the deployed auth schema or data authority. Do not substitute the staging coordinator or treat Cron removal as a complete writer freeze. Define maintenance for the actual deployed versions and every auth, billing and ingestion writer before implementing a live acquisition operator.

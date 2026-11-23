@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';
+import { chmodSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -20,10 +20,13 @@ const credential = 'SYNTHETIC_MANAGEMENT_CREDENTIAL_0123456789';
 const hash = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
 const envelope = (results: unknown[]) => Response.json({ success: true, result: [{ success: true, results }] });
 
-function fixture({ drift, maxRequests = 11, signedUrl = signed }: {
+function fixture({ drift, maxRequests = 11, signedUrl = signed, duringSecondView, duringDownload, afterDownloadAck }: {
   drift?: 'facts' | 'kv';
   maxRequests?: number;
   signedUrl?: string;
+  duringSecondView?: (root: string) => void;
+  duringDownload?: (root: string) => void;
+  afterDownloadAck?: (root: string) => void;
 } = {}) {
   const parent = realpathSync(mkdtempSync(join(tmpdir(), 'civic-acquisition-session-')));
   roots.push(parent);
@@ -32,6 +35,14 @@ function fixture({ drift, maxRequests = 11, signedUrl = signed }: {
   const calls: string[] = [];
   const wall = Date.UTC(2026, 9, 31);
   let monotonic = 0, facts = 0, values = 0, polls = 0;
+  let downloadAcknowledged = false;
+  const readMonotonic = () => {
+    if (afterDownloadAck && !downloadAcknowledged && existsSync(join(root, 'transport', 'exchange-0011.ack.json'))) {
+      downloadAcknowledged = true;
+      afterDownloadAck(root);
+    }
+    return monotonic;
+  };
   const select = vi.fn(() => ({ fixtureOnly: true as const, value: credential, expiresAt: wall + 60_000 }));
   const send = async (url: string, init: AcquisitionSendInit) => {
     expect(init.redirect).toBe('manual');
@@ -40,6 +51,7 @@ function fixture({ drift, maxRequests = 11, signedUrl = signed }: {
       calls.push('download');
       expect(init.method).toBe('GET');
       expect(init.headers).toEqual({});
+      duringDownload?.(root);
       return new Response(sql);
     }
     expect(init.headers.authorization).toBe(`Bearer ${credential}`);
@@ -68,6 +80,7 @@ function fixture({ drift, maxRequests = 11, signedUrl = signed }: {
     }
     if (url === kv + '/keys?limit=100') {
       calls.push('keys');
+      if (values === 1) duringSecondView?.(root);
       return Response.json({ success: true, result: [{ name: 'customer:fixture' }] });
     }
     expect(url).toBe(kv + '/values/customer%3Afixture');
@@ -82,7 +95,7 @@ function fixture({ drift, maxRequests = 11, signedUrl = signed }: {
       validUntil: wall + 60_000, signedDownloadOrigin: downloadOrigin,
       limits: { maxRequests, wallMs: 10_000, managementMs: 1000, downloadMs: 1000, responseBytes: 262_144,
         downloadBytes: 1024, aggregateResponseBytes: 1_000_000, minStartSpacingMs: 1 },
-      clock: { monotonic: () => monotonic, wall: () => wall, sleep: async (ms) => { monotonic += ms; } },
+      clock: { monotonic: readMonotonic, wall: () => wall, sleep: async (ms) => { monotonic += ms; } },
       syntheticCredential: select,
       send,
     },
@@ -138,6 +151,61 @@ describe('owned offline composition of the protected capture', () => {
     expect(f.calls).toHaveLength(10);
     expect(f.calls).not.toContain('download');
     expect(existsSync(join(f.root, 'transport', 'source.private.sql'))).toBe(false);
+  });
+
+  it.each([
+    ['signed-export-descriptor.private.json', 'PRIVATE_SIGNED_VALUE', 'CHANGED_SIGNED_VALUE'],
+    ['capture.intent.json', '"wallMs":10000', '"wallMs":10001'],
+    ['request-0002.intent.json', '"ordinal":2', '"ordinal":9'],
+    ['request-0002.ack.json', '"status":200', '"status":201'],
+  ])('checks %s against its original producer bytes after a valid later response', async (name, from, to) => {
+    const f = fixture({ duringSecondView(root) {
+      const path = join(root, 'capture', name);
+      const original = readFileSync(path, 'utf8');
+      expect(original).toContain(from);
+      expect(Buffer.byteLength(from)).toBe(Buffer.byteLength(to));
+      writeFileSync(path, original.replace(from, to));
+    } });
+    await expect(f.run()).rejects.toMatchObject({ code: 'ACQUISITION_SESSION_INPUT_DRIFT', ioSettled: true });
+    expect(f.calls).toEqual(['schema', 'sequences', 'keys', 'value', 'export', 'export', 'keys', 'value']);
+    expect(readFileSync(join(f.root, 'capture', name), 'utf8')).toContain(to);
+    expect(existsSync(join(f.root, 'transport', 'owner.failure.json'))).toBe(true);
+    expect(existsSync(join(f.root, 'transport', 'source.private.sql'))).toBe(false);
+    expect(existsSync(join(f.root, 'transport', 'session.result.json'))).toBe(false);
+  });
+
+  it.each([
+    ['before', 'd1-sequences.raw.json'],
+    ['after', 'source-facts.json'],
+    ['capture', 'request-0002.raw'],
+    ['capture', 'legacy-auth.private.json'],
+  ])('rejects same-size post-phase changes to %s/%s before issuing a receipt', async (directory, name) => {
+    const f = fixture({ duringDownload(root) {
+      const path = join(root, directory, name);
+      const bytes = readFileSync(path);
+      bytes[0] = bytes[0]! ^ 1;
+      writeFileSync(path, bytes);
+    } });
+    await expect(f.run()).rejects.toMatchObject({ code: 'ACQUISITION_SESSION_INPUT_DRIFT', ioSettled: true });
+    expect(f.calls).toHaveLength(11);
+    expect(f.calls.at(-1)).toBe('download');
+    expect(existsSync(join(f.root, directory, name))).toBe(true);
+    expect(readFileSync(join(f.root, 'transport', 'source.private.sql'), 'utf8')).toBe(sql);
+    expect(existsSync(join(f.root, 'transport', 'owner.failure.json'))).toBe(true);
+    expect(existsSync(join(f.root, 'transport', 'session.result.json'))).toBe(false);
+  });
+
+  it('checks the SQL bytes again after the download acknowledgement', async () => {
+    const tampered = sql.replace('captured', 'modified');
+    const f = fixture({ afterDownloadAck(root) {
+      writeFileSync(join(root, 'transport', 'source.private.sql'), tampered);
+    } });
+    await expect(f.run()).rejects.toMatchObject({ code: 'ACQUISITION_SESSION_INPUT_DRIFT', ioSettled: true });
+    const directory = join(f.root, 'transport');
+    expect(readFileSync(join(directory, 'source.private.sql'), 'utf8')).toBe(tampered);
+    expect(existsSync(join(directory, 'exchange-0011.ack.json'))).toBe(true);
+    expect(existsSync(join(directory, 'owner.failure.json'))).toBe(true);
+    expect(existsSync(join(directory, 'session.result.json'))).toBe(false);
   });
 
   it('retains the descriptor but refuses download outside the pinned origin', async () => {

@@ -7,6 +7,8 @@ import {dirname,join} from 'node:path';
 import {parseCitation} from '@chester-hill-solutions/corpus';
 import raw from '../src/eval/data/v1-successor-questions.json';
 import priorRaw from '../src/eval/data/v1-questions.json';
+import novemberRaw from '../src/eval/data/v1-november-questions.json';
+import novemberProof from '../docs/evidence/2026-11-22/november-serving-label-verification.json';
 import {QUESTIONS,UNANSWERABLE_QUESTIONS} from '../src/eval/questions';
 import {eligibleQuestions,goldRank,scoreV1,validateV1Dataset,type V1Dataset,type V1Observation,type V1Question} from '../src/eval/v1';
 import {inputDataset,selection} from '../src/eval/v1-cli';
@@ -94,6 +96,32 @@ describe('separate successor serving holdout',()=>{
  it('excludes all positive labels at another source revision while retaining the scope controls',()=>{
   const selected=eligibleQuestions(dataset,'f'.repeat(40));expect(selected.eligible).toHaveLength(16);expect(selected.eligible.every(q=>!q.answerable)).toBe(true);expect(selected.excluded).toHaveLength(48);expect(selected.excluded.every(q=>q.reason==='label source revision differs from target corpus')).toBe(true);
  });
+});
+
+it('rebinds only source proof for the November calibration and independent holdout', () => {
+  const november = validateV1Dataset(novemberRaw);
+  const sourceQuestions = [...prior.questions.filter((q) => q.split === 'calibration'), ...dataset.questions];
+  const rebound = november.questions.map((question, index) => {
+    const original = sourceQuestions[index]!;
+    if (question.status !== 'verified-source') return question;
+    expect(question.provenance.revision).toBe(novemberProof.revision);
+    expect(question.provenance.sourceUrl).toBe(
+      `${november.sourceRepository}/blob/${novemberProof.revision}/${question.provenance.sourcePath}`,
+    );
+    return { ...question, provenance: {
+      ...question.provenance,
+      revision: original.provenance.revision,
+      sourceUrl: original.provenance.sourceUrl,
+      sourceSha256: original.provenance.sourceSha256,
+    } };
+  });
+  expect(rebound).toEqual(sourceQuestions);
+  expect(sha(JSON.stringify(november))).toBe(novemberProof.dataset.sha256);
+  const calibration = selection(november, novemberProof.revision, 'calibration');
+  const holdout = selection(november, novemberProof.revision, 'holdout');
+  expect(calibration.eligible).toHaveLength(20);
+  expect(holdout.eligible).toHaveLength(64);
+  expect([...calibration.excluded, ...holdout.excluded]).toEqual([]);
 });
 
 describe('successor denominator contract, with synthetic observations only',()=>{

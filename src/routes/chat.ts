@@ -15,6 +15,7 @@ import { parseCitation } from '@chester-hill-solutions/corpus';
 import { errorResponse, RequestInputError } from '../http';
 import type { CorpusItem } from '@chester-hill-solutions/corpus';
 import type { Env } from '../types';
+import { detectLanguage } from '../language';
 
 /**
  * The chat and match surfaces.
@@ -296,7 +297,8 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
   if (!deps.byokKey.trim() || deps.byokKey.length > 4096) {
     throw new ChatInputError('A generation key is required. Send it in the ' + BYOK_KEY_HEADER + ' header.');
   }
-  const topic = request.topic ?? request.messages.at(-1)!.content;
+  const question = request.messages.at(-1)!.content;
+  const topic = request.topic ?? question;
   if (topic.length > CHAT_LIMITS.topicChars) {
     throw new ChatInputError(`The retrieval question must not exceed ${CHAT_LIMITS.topicChars} characters. Supply a shorter topic.`);
   }
@@ -309,7 +311,9 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
   const cited = citedItemsFromBrief(brief);
   if (cited.length === 0) {
     return {
-      answer: 'The retrieved material does not contain an answer to this question.',
+      answer: detectLanguage(question, { accentsBreakTies: true }) === 'fr'
+        ? 'Les sources consultées ne contiennent pas de réponse à cette question.'
+        : 'The retrieved material does not contain an answer to this question.',
       provider: deps.byokProvider,
       model: request.model?.trim() || PROVIDERS[deps.byokProvider].defaultModel,
       cited,

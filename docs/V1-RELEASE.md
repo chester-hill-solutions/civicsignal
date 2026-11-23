@@ -168,14 +168,14 @@ Use the dated entries below for source-specific outcomes.
 | ID | Outcome | Acceptance evidence | Status |
 | --- | --- | --- | --- |
 | V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local counter, receipt, and pre-generation admission checks pass. Hosted migration remains open. |
-| V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Worktree package and build checks pass. Exact candidate qualification is open under MP-01. |
+| V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Clean Linux install, package checks, and dry-run builds pass for `3f16f93`. |
 | V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries. Warm hits avoid reranking. Search survives a cache fault. Chat checks input and citation links and admits provider work within the hard limit. Check input bounds, Google credentials, and browser CORS. | Search, cache, and concurrent BYOK admission regressions pass locally. Hosted acceptance remains open. |
 | V1-04 | Recoverable ingestion | Injected faults between row, vector, feed, and state writes recover with complete change history and unique events. Serving reads a coherent revision or reports unavailability during the transition. | Local publication, interrupted serving, and watermark retry checks pass. Hosted vector visibility and coherent serving remain open for this candidate. |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Earlier manual hosted parity and local native qualification pass. The exact-reference verifier passes locally. Hosted scheduled discovery and first publication remain open. |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
-| V1-07 | Broad, measured retrieval quality | Test held-out English and French answerable and unsupported cases. Calibrate the Cloudflare serving backend and report false accepts, false refusals, latency, throughput, and freshness. | The November 22 floor repair passes local regressions. The earlier calibration and failed holdout retain their original policy. D-01 and hosted acceptance remain open. |
+| V1-07 | Broad, measured retrieval quality | Test held-out English and French answerable and unsupported cases. Calibrate the Cloudflare serving backend and report false accepts, false refusals, latency, throughput, and freshness. | The November 22 floor repair passes local regressions. The earlier calibration and failed holdout retain their original policy. The product owner approved D-01. Hosted acceptance remains open. |
 | V1-08 | Honest, complete v1 surfaces | Every advertised route and tool works and states coverage limits. Check change-feed and exact citation flows. Verify every factual claim in the predeclared chat cases under D-02. | The offline claim evidence checker passes. Both earlier hosted Zen attempts failed acceptance. Positive hosted chat and independent claim reviews remain open. |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | The latest matching full local and clean Linux receipts are for `9771a8b`. The November 22 work has separate local receipts. Exact candidate qualification is open under MP-01. |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | The complete clean Linux gate and affected local checks pass for `3f16f93`. |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Original work order — 2026-10-22
@@ -1140,13 +1140,115 @@ No hosted operation ran. Existing hosted measurements and consumed budgets retai
 The affected suites passed 213 tests in 11 files, with local workerd enabled.
 Four TypeScript projects, five Worker dry-run builds, vendor checks, and both invariant commands passed.
 The corpus invariant check skipped the three absent local ingest artifacts.
-The exact candidate still needs a clean Linux CI receipt.
+The exact candidate still needed a clean Linux CI receipt at this checkpoint.
 Hosted publication and serving acceptance still need their own execution evidence.
+
+## November 22 draft candidate qualification
+
+Draft PR #1 is pinned to [`711b4f8`](https://github.com/chester-hill-solutions/civicsignal/commit/711b4f8c80ce60a6e2d65857c8608cd75726e0ad).
+The independent review checked the D1 and Vectorize writer boundaries, CHS quota and chat evidence, and snapshot and restore operations.
+Legacy bootstrap checks now catch alternate spellings of the D1 guard and generated staging index names.
+Claim reviews bind to the provider's effective supported model and the exact candidate and corpus revision.
+The ordinary pipeline can finish an already indexed publication during a GitHub outage. A later cycle checks upstream freshness.
+Fresh isolated restores create their guard during initialization. Existing stores use the reviewed additive migration.
+
+The complete local gate passed on macOS with Node 24.22.3 and Bun 1.3.5.
+The frozen-lockfile check reused the previously installed dependency graph. All 117 vendor files matched.
+Four compiler projects, 2,261 Vitest cases in 106 files, 31 Python cases, native Durable Object and R2 probes, both invariant commands, and five Worker dry-run builds passed.
+The corpus invariant check skipped the three absent generated ingest artifacts.
+An earlier run exposed a multi-line SQL setup error in the native fixture. The fixed fixture passed the complete rerun.
+Local native checks used disposable localhost bindings.
+
+[Linux CI run 45090204686](https://github.com/chester-hill-solutions/civicsignal/actions/runs/45090204686) uses PR merge commit `8f0df91a0806af1e8abd62db92ef50f95134bea8`.
+Its Git tree `91d8f2988d8879e835def7c461f5652b87bb97c7` matches all 697 tracked files in the candidate.
+The job log confirms checkout of that merge commit. Clean frozen install, the full validation command, the 31 Python checks, and all five Worker dry-run builds passed.
+
+## November 22 live source freshness audit
+
+Cloudflare management reads on November 23 UTC confirm the production pipeline calendar `23 11 * * *` and an empty staging snapshot Worker calendar. The configured production snapshot Worker and Workflow both return 404. The account inventory shows only the October staging snapshot Workflow, whose native schedule field is absent.
+
+Production D1 records 277,857 federal provisions at `0507465`, dated October 15, with its last completed cycle on October 22. The live schema has no parser version, vector mutation journal, immutable text-reference table, or publication guard. The audit used read-only D1 queries.
+
+Justice Canada published `855cdfc` on November 16. A read of the seven-day pipeline invocation metrics found one success before that revision appeared and one `exceededMemory` outcome at the daily run time on each of November 17–22. Detailed Workers Logs access returned 403. The observed memory failures establish why those runs stopped. Their internal allocation site remains unverified.
+
+The exact public Git comparison has one commit and 274 changed files. An offline replay with the candidate parser, a counting store, and a stub encoder projects 1,027 added, 471 changed, and 1,218 removed provisions. That replay requested 1,450 document embeddings across 46 batches. These counts describe the source delta. A production allowance needs the actual target fingerprint and parser state.
+
+The complete November 16 `statutes-v2` reference was built locally from the pinned Justice Canada Git tree using the candidate's snapshot builder. A separate source pass checked all 277,666 serialized rows and UTF-8 index offsets and lengths. The offline verifier also checked all 238 published-format artifacts totaling 389,760,843 bytes and pinned the manifest at SHA-256 `43fdb9961b0980769552df1993e106beba8f3a354ecf9bd3fbd11091ea25ba34`. The independently hashed local staging inventory contains 243 logical objects totaling 760,573,309 bytes. These artifacts remain local.
+
+The stage qualification entry was rebuilt from `711b4f8`. Its 260,281-byte bundle hashes to `1a6e7a090cda96876f91bebb9eab6b3aa57926bf8db6ae7c940e3c2f9ac49f20` across 29 build inputs. That bundle embeds the retained October reference. The next stage packet needs a rebuilt runtime policy pinned to the new inventory, fresh resource evidence, and a bounded execution window. Production recovery also needs the guarded reader and writer rollout.
+
+## November 22 incremental ingestion memory fix
+
+[Draft candidate `3f16f93`](https://github.com/chester-hill-solutions/civicsignal/commit/3f16f933e1806d0a9327db00c36ff31e13b9c6a5) reads and parses one changed XML file at a time. The comparison retains prior fingerprints, unchanged IDs, and changed rows. Cross-file moves and duplicate precedence retain their existing behavior. The cycle finishes reading the source before it requests embeddings or writes row changes.
+
+The local workerd replay used the same 274 changed files and 520 file responses from the two exact Git trees. With a 113 MiB V8 old-space limit and 2 MiB semispaces, the preceding candidate exhausted the heap and the fix completed. The fixed run's 1,257 DevTools samples measured a maximum combined heap and backing storage of 114,797,988 bytes. It produced the same provision changes and sent 1,450 documents to a local stub encoder. Earlier four-file and two-file trials failed under more tightly constrained heaps. The local sample supports the memory repair. Hosted execution and latency still need their own evidence.
+
+All 46 affected regression tests, all four TypeScript checks, and the pipeline dry-run bundle passed locally. [Linux CI run 45093819484](https://github.com/chester-hill-solutions/civicsignal/actions/runs/45093819484) passed 2,261 tests, 31 Python checks, native runtime probes, and five Worker dry runs. The CI checkout `64f2eb49fb8f6a9b7eea9388c4f2310bd99d9fb1` has the exact candidate source tree.
+
+The snapshot-backed recovery rehearsal derived all 277,857 predecessor fingerprints from the pinned October source. It applied the verified November snapshot across two bounded cycles, with 2,000 then 716 provision writes and 1,450 synthetic embeddings. The first cycle left publication open. The second published once, and all 277,666 resulting fingerprints matched the November index. This evidence uses local counting storage and synthetic vectors. Hosted staging and the coordinated production rollout remain open.
+
+## November 22 scheduled-publication preparation
+
+An isolated staging source commit `07689eb09e2593c27dc0d1566a2509d0873c0054` builds on qualified candidate `3f16f93`. It binds the stage-only qualifier and proposal checker to the November 16 reference. The October source and receipts remain available for historical verification.
+
+An independent whole-archive local replay reproduced all 481 staged and final payload hashes from the pinned Git tree. The final 238 artifacts cover 277,666 provisions. The resulting successful-pass estimate is 982 logical R2 operations. The callback policy permits at most 1,937 R2 operations per Workflow traversal and 16 per scheduled callback. These numerators describe different execution scopes. Delivery, reconstruction, and in-flight operations still need reviewed handling.
+
+The offline proposal passed, including refusal of the October source under the November pin. All 105 proposal and runtime tests and all four compiler checks passed. The stage-only dry build preserved the exact bundle SHA-256 `79fffe09dad44a47dc78568f52af9fc7ec83ffc889d40ebef8d8218fb3aa38c8`. Its configuration has an empty Worker cron list and only the isolated Workflow and R2 bindings. The proposal file marks the illustrative event and budget as prepared and unapproved.
+
+November 23 UTC read-only Cloudflare observations confirmed the staging deployment and bindings, an empty Worker cron list, an unused proposal namespace, and a 404 for the proposed Workflow instance. The retained October staging manifest's size and SHA-256 metadata matched the existing reference. The API omitted the native Workflow schedule field, so its calendar remains unknown. The observed credential expires before the illustrative event and cleanup. The earlier hosted operator and guards must be rebound to an approved live window and credential before deployment or arming.
+
+Wrangler subsequently refreshed the existing OAuth login through 02:59:31 UTC. The illustrative event is later, so reissue the packet for the actual window with a credential valid through cleanup. The local Chester Hill Solutions checkout, available Git history, and organization code searches returned no matching operator or cleanup-guard source. The dashboard was at sign-in and did not resolve the native calendar. The disk had less free space than a duplicate artifact download. A streaming checker verified all 238 retained artifacts in place and rejected substituted, truncated, and oversized bodies in local tests. Hosted publication remains open.
+
+The `cf` CLI authenticated using its own profile. The `cf workflows get` read reached the intended staging Workflow and again found the native schedule field absent.
+
+The tracked calendar runner now owns singleton arming, two detached cleanup guards, and independent final readback. Its local tests include both guard entry points in separate Bun processes and a lost arming response that still leads to cleanup. The latest `cf` read again omitted the native schedule field. Hosted admission and publication remain open. [Calendar runner and guard evidence](V1-SCHEDULED-PUBLICATION-REVIEW.md#before-a-hosted-proposal-is-executable)
+
+## November 22 isolated Cloudflare staging bootstrap
+
+At 02:29 UTC on November 23, `cf` deployed `civicsignal-v1-stage-nov16-snapshot` as a new Worker and Workflow after confirming both names returned 404. The [preparation command](../scripts/prepare-snapshot-cf-stage.ts) uses the exact 259,948-byte November bundle with SHA-256 `79fffe09dad44a47dc78568f52af9fc7ec83ffc889d40ebef8d8218fb3aa38c8`. The prepared Worker config hashes to `900d2be16bb66ab8c03f700efbcf12cbeabfb8debf2ff0635cde6ca5f79b9908`. It binds only its own Workflow and configures zero Worker crons, native schedules, public routes, and R2 bindings. Preview and `workers.dev` URLs are disabled in that configuration.
+
+`cf` confirmed deployment `f538622c-74d8-4d50-93c6-7e27b9481b0a` serves version `4f24cb2f-cbf9-46d0-85ee-7749282ebd84` at 100%. The new Workflow is `c8ba63d3-a002-4c62-8669-45c7c4c2bf40`. Its creation and modification timestamps match, and its instance list returned zero entries. The 02:30:42 UTC read still omitted `schedules`. The creation configuration proves zero schedules were configured by this deployment. Direct provider confirmation of an empty native calendar remains open. The publication runner still needs to bind to the new identities and a reviewed staging event. [Hosted preflight](../scripts/check-snapshot-hosted.ts)
+
+At 02:36:07 UTC, the strict read-only `cf` check passed for the pinned deployment and version. Both Workflow timestamps and its ID matched the [creation record](evidence/2026-11-22/november-workflow-creation.json), yielding `unscheduled-creation` evidence. The API still omitted the schedule field. The calendar runner and both guards now accept the exact fresh Worker target. The publication runtime configuration and concrete event remain pending.
+
+## November 22 staging publication version
+
+`cf workers versions create` uploaded the publication configuration, and `cf workers deployments create` activated it at 100% without applying triggers. Deployment `4cbfc139-4d85-416d-967c-f90ea4e9b343` serves version `ce6deccb-c345-43ca-9fe5-b6c7d0b04836`. A `cf` version read independently hashed the 259,948-byte module and matched `79fffe09dad44a47dc78568f52af9fc7ec83ffc889d40ebef8d8218fb3aa38c8`. The nine bindings include `CORPUS` on `civicsignal-v1-stage-corpus-20261022`, the isolated November Workflow, and seven pinned qualification controls. The version reports zero public URLs. The strict `cf` admission check still matched the Workflow's unscheduled creation record after activation.
+
+The [publication preparation command](../scripts/prepare-snapshot-cf-stage.ts) pinned November 23 at **03:47 UTC** (`47 3 23 11 *`), calendar cleanup at **04:07 UTC** with a **04:10 UTC** deadline, and the Workflow runtime deadline at **05:47 UTC**. Its prebuilt configuration hashes to `0f2f1287701e64a5b7bb8829267f241f9eb616af005f55787ac9422b8335a5a5`. The qualification digest `b2b763a9599803fe0ed7aa1c8dd2575cbf78590ed666f755a48f2308e6a55b54` links the distinct Workflow instance and R2 namespace. `cf` observed zero namespace objects and a 404 for that instance. The canonical October manifest size, ETag, and SHA-256 metadata matched before and after deployment.
+
+The Worker is unarmed. The observed `cf` credential expires at 03:16:39 UTC, and the schedules API guards have no supplied `CLOUDFLARE_API_TOKEN` valid through cleanup and final readback. If the propagation cutoff passes, prepare a new event and version. No snapshot publication ran in this window as part of deployment verification.
+
+Cloudflare rejected a single-Worker user token with `1001` because granular roles require an account-owned token. The account-owned attempt with the default identity returned `9109`. The existing provisioning profile also returned `9109`, and its permission listing marked `Individual Workers Editor` as unavailable. Automatic approval review refused a new OAuth profile with broader write access. No credential was issued. Each November guard now verifies token expiry with Cloudflare and requires an acknowledged empty calendar write before it reports readiness.
+
+## November 22 streaming snapshot verification
+
+The [tracked streaming command](../scripts/verify-staged-snapshot.ts) verified the full retained November reference locally. All 238 artifacts totaled 389,760,843 bytes, and the row parts and checked index agreed on 277,666 rows. Both canonical reads matched the 44,627-byte October manifest pinned at `78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e`. The staging request path also passed an offline replay using the actual prepared packet and reference bytes, with exactly 240 logical GETs. All 198 affected tests and four TypeScript checks passed. Hosted artifact verification remains open until the qualified November instance publishes its output. [Verification procedure](V1-SCHEDULED-PUBLICATION-REVIEW.md#before-a-hosted-proposal-is-executable)
+
+## November 22 serving and acquisition preparation
+
+The November serving dataset combines 20 original calibration cases and 64 independent holdout cases. The existing label verifier checked 30 immutable November XML blobs and all 60 positive labels. Four blobs changed. The questions, gold identifiers, row text digests, source excerpts, and 24 scope exclusions were preserved. A separate local check matched all 60 positive rows in the retained November snapshot. [November label proof](evidence/2026-11-22/november-serving-label-verification.json)
+
+The D-02 suite contains eight English and French answer and refusal cases. The offline preparation command pins the target and named reviewer and hashes each serialized request body. The checker refuses reviewer substitution and requires the reviewer to record the answer language and account for the entire answer. The shared chat route localizes empty-material refusals with no generation call. The cases need a hosted target, named independent reviewer, and reviewed request budget before capture. [Chat acceptance procedure](V1-EVALUATION.md#d-02-bilingual-chat-claim-review)
+
+The MP-04 fixture session checks the capture producer's sizes and digests, then reopens the sealed source facts, raw capture, normalized auth, and downloaded SQL before issuing its receipt. Nine fault cases cover same-size edits during and after capture phases, including a changed export descriptor during the second KV view and SQL changed just after download acknowledgement. The tests preserve failure evidence and the existing request budget. Production ownership, maintenance controls, and authenticated acquisition remain open. [Acquisition seal checks](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md#offline-session-seal-checks--2026-11-22)
+
+The 466 serving and chat tests, 193 acquisition tests, all four TypeScript checks, and both local workerd probes passed. Local disk exhaustion interrupted the full suite and subsequent combined reruns. The protected-copy case that failed during the serial run passed in isolation. The corpus invariant check skipped three absent generated artifacts.
+
+After disk cleanup, the full local suite passed **2,342 tests in 111 files** with workerd enabled and the repository-pinned Bun 1.3.5. All four TypeScript checks passed on the same runtime. The first post-cleanup run used the machine's default Bun 1.4.4 and failed the exact runtime check in five protected-copy cases. The pinned rerun passed those cases. This evidence covers the local working tree. The release still requires clean-source qualification and hosted acceptance.
+
+The product owner approved D-01 with accuracy first, speed second, and freshness third. The approved limits cover both official languages and distinguish the currently observed head from a separately approved recent ancestor. The offline acceptance checker now recomputes quality, latency, and freshness from the reviewed inputs and report observations. All 74 focused tests and four TypeScript checks passed. The hosted serving packet still needs exact candidate binding, integration with the approved freshness check, and its reviewed request budget. [Approved serving bar and checker](V1-EVALUATION.md#d-01-serving-decision)
+
+## November 22 MP-03 staging packet preparation
+
+The [request packet](STAGING-REQUEST-BUDGET.md#november-d-01-run-packet) accounts for 131 relay attempts across calibration, holdout, and benchmark, including three discovery requests. The commands select the verified November dataset explicitly. Its offline source check again matched all 60 positive labels and retained all 24 scope controls. The D-01 checker now requires the reviewed encoder model and dimensions in all three discovery responses. All 124 focused tests and four TypeScript checks passed.
+
+The retained November Git source makes the Linux-qualified `3f16f93` commit available for comparison. Its fixed empty chat reply predates the French response in the current worktree. The previously reviewed API and serving operator source was absent from the checked local and Chester Hill Solutions packet locations. MP-03 still needs a clean exact candidate, a reviewed successor operator, current API and corpus provenance, and finite approved request windows. The role-separated D-02 capture and one-request Zen diagnosis have their own scope.
 
 ## Remaining release gates
 
 All four gates remain open: scheduled first publication, serving acceptance, production migration, and the final release audit.
-Use the [MP-01 candidate checks](PLAN.md#mp-01-reconcile-the-exact-candidate) to establish matching local and clean Linux receipts for the exact Cloudflare source. The November 22 receipts cover different worktree snapshots.
+The matching MP-01 local and Linux receipts qualify the current draft source. Bind each hosted operation to its reviewed source and actual target according to the [MP-01 checklist](PLAN.md#mp-01-reconcile-the-exact-candidate).
 The [master gate table](PLAN.md#release-gates-at-a-glance) defines completion evidence.
 The [master package checklist](PLAN.md#phase-1-close-the-v1-release) defines remaining work, dependencies, and responsible roles.
 The [decision register](PLAN.md#decisions-still-required) records the required dispositions before execution.

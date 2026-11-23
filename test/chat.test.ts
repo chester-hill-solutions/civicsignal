@@ -387,6 +387,25 @@ describe('exact citation destination binding', () => {
       expect(result.model).toBe('selected-but-not-used'); expect(result.generation?.status).toBe('skipped'); expect(send).not.toHaveBeenCalled();
     } finally { vi.unstubAllGlobals(); }
   });
+  it.each([
+    ['Que prévoit le règlement municipal sur les enseignes?', 'Les sources consultées ne contiennent pas de réponse à cette question.'],
+    ['What time does the Montréal ferry leave today?', 'The retrieved material does not contain an answer to this question.'],
+  ])('localizes the no-material answer to %s without reserving or calling the provider', async (content, answer) => {
+    const empty = { ...brief(), legislation: [], debate: [], news: [] };
+    const reserveGeneration = vi.fn();
+    const send = vi.fn();
+    vi.stubGlobal('fetch', send);
+    try {
+      const result = await runChat({
+        env: {} as Env, retrieve: async () => empty, byokKey: 'fixture-only-key', byokProvider: 'opencode-zen',
+        reserveGeneration,
+      }, { messages: [{ role: 'user', content }] });
+      expect(result.answer).toBe(answer);
+      expect(result.generation?.status).toBe('skipped');
+      expect(reserveGeneration).not.toHaveBeenCalled();
+      expect(send).not.toHaveBeenCalled();
+    } finally { vi.unstubAllGlobals(); }
+  });
   it.each(['anthropic', 'openai', 'google', 'opencode-zen'] as const)('still checks the %s key before empty-material retrieval', async (provider) => {
     const retrieve = vi.fn(async () => brief()), send = vi.fn(); vi.stubGlobal('fetch', send);
     try {

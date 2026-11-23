@@ -110,12 +110,14 @@ Use exact schedules PUT/GET for temporary calendar changes: the locked Wrangler
 ## Read-only production preflight
 
 Check the selected account before any remote command.
-Keep credentials in Wrangler or the process environment. Do not copy them into this repository.
+Use the Cloudflare `cf` CLI for remote checks. Keep credentials in the `cf` profile or process environment.
 
 ```sh
-bun x --no-install wrangler whoami --json
-bun x --no-install wrangler d1 list --json
-bun x --no-install wrangler d1 execute civicsignal --remote --json --command "SELECT corpus_id,commit_sha,as_of,row_count,last_run_at FROM corpus_state"
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+cf auth whoami | jq '{authenticated, tokenValid}'
+cf d1 list
+cf d1 query 8056b1a0-f858-4f89-a332-91f7f350eb7b \
+  --sql 'SELECT corpus_id,commit_sha,as_of,row_count,last_run_at FROM corpus_state'
 ```
 
 Check the live capabilities document.

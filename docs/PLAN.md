@@ -13,14 +13,17 @@ They do not create another work order.
 
 ## Immediate work order
 
-1. **Qualify one exact Cloudflare candidate under MP-01.** Review the worktree diff and include the new migration, vendored billing patch, and fixture inputs in the candidate. Run the full local gate and the existing Linux CI gate against the same source. Record the exact commit and receipts.
-2. **Prepare MP-02 and MP-04 in parallel.** Draft the scheduled-publication packet and confirm its reference artifact storage budget. Prepare the production capture owner and writer maintenance packet. Bind each packet to its reviewed source and current target facts before requesting execution approval.
-3. **Prepare MP-03 in parallel.** Record the replacement D-01 acceptance criteria. Preregister bilingual D-02 chat cases, including exact request hashes, and name an independent reviewer. Rebind the staging API, serving, and Zen packets to the qualified candidate. Confirm their separate request budgets.
+Cloudflare candidate `3f16f93` includes the incremental ingestion memory fix. The affected local checks and complete clean Linux CI pass. [Candidate evidence](V1-RELEASE.md#november-22-incremental-ingestion-memory-fix)
+
+Production is still on the October 15 corpus. Cloudflare recorded six consecutive memory failures after the November 16 upstream update. Prepare a snapshot-backed recovery through isolated staging and the guarded production rollout. [Live freshness observation](V1-RELEASE.md#november-22-live-source-freshness-audit)
+
+1. **Finish MP-02 staging admission.** The November publication version was last observed active and unarmed with the staging R2 binding. The recorded setup cutoff for its `2026-11-23T03:47:00Z` event has passed. A new reviewed event and version need a schedules API credential valid through both guards' cleanup. [November staging publication version](V1-RELEASE.md#november-22-staging-publication-version)
+2. **Prepare MP-04 in parallel.** Establish the production capture owner and writer authority, define the maintenance window, and complete sealed-input checks at handoff.
+3. **Prepare MP-03 in parallel.** Use the verified November labels for the November corpus and bind the approved D-01 criteria to the serving packet. Seal the D-02 suite with the exact candidate, revision, provider, model, and the product owner as independent reviewer. Rebind the staging API, serving, and Zen packets to the qualified candidate. Confirm their separate request budgets. [Serving and chat procedure](V1-EVALUATION.md#d-01-serving-decision)
 4. **Collect hosted evidence.** Qualify scheduled first publication under MP-02. Run serving and chat acceptance under MP-03. Complete the approved MP-04 capture before the MP-05 protected-copy, switch, and rollback checks.
 5. **Complete MP-06.** Audit all ten requirements. Review the production switch and rollback packet. Record the approved operation's actual result.
 
-MP-01 supplies the exact candidate for each operation.
-Local packet preparation can proceed while MP-01 qualification runs. Freeze and execute each hosted packet only after its source and dependencies qualify.
+Bind each hosted packet to the exact reviewed source it uses and close its dependencies before execution.
 MP-04 capture must pass before MP-05's production-derived proof.
 The final production decision waits for MP-02, MP-03, and MP-05 acceptance.
 Named operators and approvers remain execution prerequisites; role assignments below do not select them.
@@ -53,9 +56,7 @@ The following dispositions resolve conflicts among the planning documents.
 The [reference map](#reference-map) identifies each document's role.
 Existing execution constraints still apply; a newer priority does not renew an expired approval or consumed marker.
 
-The latest corpus and serving observations date from October 24.
-This document does not establish fresh remote state, credential validity, or a new request allowance.
-Engineering must reconcile actual state before any separately authorized hosted work.
+The latest hosted serving measurements date from October 24. The release ledger records later corpus and staging observations. Recheck the exact target, credential validity, and request allowance before each reviewed hosted operation.
 
 ## Product direction
 
@@ -63,13 +64,17 @@ The product's value is a maintained, cited corpus with usable search, exact prov
 Customers can use their existing applications and agent tools through HTTP and the Model Context Protocol, or MCP.
 Bring your own key, or BYOK, chat uses the customer's generation provider.
 
-The longer-term direction joins legislation, bills, debates, news, and geography into a cited brief.
-Candidate users include developers, government-affairs teams, researchers, campaigns, and newsrooms.
-Demand must determine the first customer group and the next paid surface.
+The long-term product is a policy research and monitoring platform for policy analysts, political staffers, and government relations teams.
+Users can follow bills and regulatory developments, review what members said and how they voted, and trace the related law and news.
+They can keep their own notes and assemble briefs that cite the source records.
+Each record type has its own table and remains available on its own. A brief brings the records together.
+The API is the product. AI agents are its primary clients. They use it to do research for staffers and policy teams.
+Customer applications and the CivicSignal front end use the same API.
+The pilot will test whether agents can complete useful work for those teams.
 The Policorner wire keeps its own brand, accounts, and reader-facing product.
 
-The sequence is: release the federal foundation, test external demand, select a paid use, then expand supported sources and surfaces.
-A portal or hosted agent is a later product decision.
+Release the federal foundation first. Test the staffer workflow with real files.
+Build parliamentary search and Canada Gazette monitoring on that foundation. Develop the staffer front end once the API supports the core workflow.
 Phase 1 is the active implementation scope. Phases 2–5 require their stated entry evidence and decisions.
 
 ## Current release scope
@@ -137,18 +142,17 @@ Unspent slots do not authorize another operation, reset, retry, or replacement l
 
 ## Implementation progress
 
-The latest runtime source with matching local and clean Linux qualification is **`9771a8b`**.
-Its [local gate](evidence/2026-10-31/integrated-candidate-local-validation-v11.json) and [clean Linux gate](evidence/2026-10-31/candidate-9771a8b-linux-ci-validation.json) cover 2,192 tests and 477 source and fixture inputs.
+The current draft source is **`3f16f93`**. The [memory fix evidence](V1-RELEASE.md#november-22-incremental-ingestion-memory-fix) records the affected local checks and matching clean Linux gate. The preceding [`711b4f8` candidate](V1-RELEASE.md#november-22-draft-candidate-qualification) has both complete local and Linux receipts.
+The earlier **`9771a8b`** [local gate](evidence/2026-10-31/integrated-candidate-local-validation-v11.json) and [clean Linux gate](evidence/2026-10-31/candidate-9771a8b-linux-ci-validation.json) cover 2,192 tests and 477 source and fixture inputs.
 The assessment at **`518aab0`** used the same runtime and test inputs. Its local probes added five findings to [the release ledger](V1-RELEASE.md#november-22-local-code-assessment).
 The local publication, search, cache, and quota regressions pass. The [integrated run](V1-RELEASE.md#november-22-integrated-v1-local-work) and the [later focused run](V1-RELEASE.md#november-22-cloudflare-release-preparation) checked different worktree snapshots.
-Run one complete gate on the final source before it qualifies.
 The qualified [source-loader repair closes issue 14](https://github.com/chester-hill-solutions/civicsignal/issues/14).
 It compiles the exact checked source bytes; Python cache flags alone do not establish that identity.
 The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves earlier candidates, repairs, failed checks, and exact receipts.
 
 | Package | Responsible role | Dependency | Current position and next deliverable |
 | --- | --- | --- | --- |
-| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Exact source for each operation | Review and freeze the current worktree. Obtain a complete local gate and its matching Linux CI receipt. |
+| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Exact source for each operation | Affected local and clean Linux checks pass at `3f16f93`. Bind each operator and its deployment identities to the reviewed source. |
 | [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | The offline verifier checks the pinned reference. Rebind the operator and confirm current calendars, resource identities, artifact storage, and the event budget. |
 | [MP-03](#mp-03-close-serving-acceptance) | API, pipeline, billing, and evaluation owners | MP-01 candidate, D-01 policy, and approved hosted scope | Local corpus and chat quota regressions pass. Finish serving and Zen preparation. Collect independent claim evidence under D-02. |
 | [MP-04](#mp-04-qualify-consistent-production-acquisition) | Release engineer and writer owners | Actual authority and common maintenance | The composed offline capture passes. Prepare the hosted owner, establish writer control, and acquire consistent production inputs. |
@@ -166,12 +170,12 @@ All 477 inputs match the committed source and CI's actual merge checkout.
 The earlier publication and API reviews qualify their recorded inputs. Recheck the parts that change for this candidate.
 
 Serving preparation passes source binding for the earlier qualified runtime. Bind the new search policy and its producer under MP-01.
-The serving freeze awaits the final candidate and the replacement D-01 criteria.
+The serving freeze awaits the final candidate and validation against the approved D-01 criteria.
 The Zen preparation retains the earlier source wrapper and skipped-generation regression. Its final bundle and review await the qualified serving producer.
 Earlier fixture passes do not qualify later draft edits.
 Scheduled-publication acceptance must inspect all nine settled owner chains and both completed cleanup guards.
 Canonical artifact proof alone is insufficient.
-The retained native Workflow calendar remains unknown; current admission refuses before deployment until an actual empty observation exists.
+The retained October Workflow calendar remains unknown. The November Workflow qualifies through its recorded creation without schedules and a fresh match to the Workflow ID and timestamps.
 
 The [earlier local EPIPE failure](evidence/2026-10-31/integrated-candidate-local-observation-v7.json) and [inconclusive diagnostic](evidence/2026-10-31/restore-frame-diagnostic-observation.json) remain intact.
 Later full passes do not explain that failure. [Issue 12](https://github.com/chester-hill-solutions/civicsignal/issues/12) remains open.
@@ -202,8 +206,10 @@ The October 31 chat candidate retains its local and clean Linux receipts. The No
 - [x] Retain matching clean Linux evidence for the successor's exact source and fixture inputs.
 - [x] Pass the complete local gate and independent review for the changed chat candidate.
 - [x] Retain matching clean Linux checks for the changed chat candidate.
-- [ ] Review the worktree diff and freeze the exact source, including new migration, vendor patch, and fixture files.
-- [ ] Run the complete local gate and matching Linux CI. Record the commit and any distinct CI merge checkout identity.
+- [x] Review the worktree diff and freeze `711b4f8`, including the new migration, vendor patch, and fixture files.
+- [x] Pass the complete local gate on the exact source.
+- [x] Record the successful Linux CI run and match its exact merge tree to the candidate.
+- [x] Qualify the memory fix with local targeted checks, the pinned November replay, and matching complete Linux CI on `3f16f93`.
 - [ ] Bind each operator, bundle, dependency, and source receipt to the qualified source it uses.
 - [ ] Connect actual deployed identities and current requirement dispositions to the operation packet.
 
@@ -216,7 +222,8 @@ Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPER
 
 ### MP-02 Qualify scheduled first publication
 
-The shared runtime controls and offline reference check pass locally. Source rebinding, current execution inputs, and hosted qualification remain open.
+The November runtime and offline proposal pass in an isolated checkout of `3f16f93` with the updated qualification reference. Hosted operator rebinding, execution admission, and hosted qualification remain open.
+The retained October reference is historical. The November 16 reference passed local byte and row checks. The qualification admits only the current upstream head at execution, so the next proposal must bind the verified reference and confirm that head again at admission.
 **Requirements:** V1-04, V1-05, V1-09.
 
 - [x] Reuse the Workflow, parser, builder, archive checks, and manifest-last publication path.
@@ -225,11 +232,20 @@ The shared runtime controls and offline reference check pass locally. Source reb
 - [x] Finish the operator successor's fixture repairs, complete checks, source linkage, and independent review.
 - [x] Retain the earlier chat candidate's publication-operator rebinding and independent preparation review.
 - [x] Check downloaded artifacts against the exact frozen reference manifest in the offline verifier.
-- [ ] Rebind the publication operator to the MP-01 candidate and review the changed inputs.
-- [ ] Freeze its bundle and configuration with a fresh namespace and distinct instance.
-- [ ] Resolve calendar facts and residual platform uncertainty before selecting the executable event and budgets.
+- [x] Track the streaming November verifier. Reproduce the pinned artifact bytes, physical row count, checked index, and canonical manifest against the retained local reference.
+- [x] Build and verify the November 16 reference from Justice Canada's pinned Git tree, including the staged object inventory. Rehearse two-cycle reconciliation locally against the complete October fingerprint set.
+- [x] Bind the qualification bundle and offline proposal to the November 16 inventory, with an isolated staging configuration and a distinct namespace and instance.
+- [x] Add the staging calendar cleanup and independent readback commands using Cloudflare's schedules API.
+- [x] Wire the staging calendar runner to two detached cleanup guards and exercise arming, ambiguous writes, and independent readback locally.
+- [x] Attach a read-only `cf` check to calendar admission for the reviewed deployment ID, its sole active version, Workflow identity, and explicit native calendar state.
+- [x] Create and independently read back the new isolated November staging Worker and Workflow. The bootstrap has zero Workflow instances and no configured schedules or R2 bindings.
+- [x] Verify the new native calendar from its creation record and live metadata. Bind Worker calendar arming, both guards, and final readback to the selected staging identity.
+- [x] Upload and activate the November publication Worker version with the staging R2 binding and concrete UTC controls. Verify the deployed bytes, exact bindings, empty qualification prefix, unused instance, and preserved Workflow definition.
+- [ ] Bind a schedules API credential valid through both guards and final observation. Confirm the event can still be armed within its propagation window or prepare a fresh version for a later event.
+- [ ] Bind the calendar runner to hosted publication admission and artifact verification. Recheck the bundle, namespace, instance, canonical backup, and native Workflow calendar before execution.
+- [ ] Qualify exact Worker calendar arming and cleanup, including an independent empty readback, before selecting the executable event and budgets. Keep the native Workflow calendar empty.
 - [ ] Prepare finite admission windows, credential checks, stop conditions, and independent cleanup guards.
-- [ ] Reserve enough scratch storage to download and check the complete reference artifact set.
+- [ ] Run the tracked read-only verifier against the admitted staging namespace and retain the artifact and canonical-manifest result.
 - [ ] Execute the separately reviewed event and complete all publication, artifact, canonical-state, and cleanup checks.
 
 Keep the genuine source and parser identity.
@@ -264,8 +280,14 @@ Local citation-link checks qualify. D-02 now requires independent claim-level re
 - [x] Return a fixed insufficient-evidence answer for empty retrieval, with zero generation calls and one successful retrieval unit.
 - [x] Pass local regressions for revision integrity, search eligibility, cache faults, and chat quota admission.
 - [x] Bind offline D-02 evidence to the exact preregistered request, captured answer, and retrieved text.
-- [ ] Record the replacement D-01 criteria before the serving acceptance run.
-- [ ] Preregister the hosted D-02 cases and name the independent reviewer.
+- [x] Reverify the calibration and independent holdout source labels for the November corpus.
+- [x] Author the eight bilingual D-02 cases, generate hashed request packets offline, and validate the registered reviewer.
+- [x] Record the approved replacement D-01 criteria.
+- [x] Verify the approved D-01 criteria offline against fixture reports, including the exact Git ancestry rule for an approved older revision.
+- [x] Prepare the November D-01 request schedule and verify that the checker requires the reviewed encoder in all three discovery responses.
+- [ ] Verify the serving operator applies the approved D-01 criteria to the exact candidate's reports.
+- [x] Confirm the product owner as the independent D-02 reviewer.
+- [ ] Seal the D-02 packet for the hosted target and designate a separate capture operator.
 - [ ] Finish and independently review the API deployment, serving, and Zen operators on the qualified source.
 - [ ] Prepare fresh target provenance, reviewed request scopes, and any required label checks for that revision.
 - [ ] Deploy and check the reviewed staging API; complete the independent bilingual holdout and bounded benchmark.
@@ -297,6 +319,16 @@ Keep HTTP and MCP response shapes and successful empty results compatible. Raw `
 Run hosted v1 acceptance only on Cloudflare. Bun/Postgres tests exercise the shared search adapter as local portability checks.
 Follow D-02 for any change to the public chat answer contract.
 
+#### Staging work order
+
+The retained November source contains the Linux-qualified `3f16f93` commit. Its empty chat reply is English only. The current worktree adds the French reply and the D-01 checker, so the combined candidate needs its own clean-source qualification. The previously reviewed API and serving operators were absent from the documented local packet locations and the checked Chester Hill Solutions archive paths. Assemble the successor from the tracked config, relay, and evaluation tools unless the reviewed originals become available. [Preparation evidence](V1-RELEASE.md#november-22-mp-03-staging-packet-preparation)
+
+| Work | Owner | Dependency and completion evidence |
+| --- | --- | --- |
+| MP-03.1 API candidate | Release and API engineers | Freeze and qualify the exact source under MP-01. Generate the stage-only config from the checked inventory. Review the exact bundle, active version, binding inventory, and coherent served revision before the request runs. |
+| MP-03.2 Serving run | Evaluation operator | After MP-03.1, bind the November labels, approved D-01 checker, provenance, and the reviewed 131-attempt ledger. Retain calibration, the independent bilingual holdout, and benchmark reports from the same policy and candidate. |
+| MP-03.3 Chat, Zen, and route checks | API operator and product owner | After MP-03.1, seal the eight-case D-02 plan for the selected provider/model with a separate capture operator and the product owner as reviewer. Bind the one-request Zen diagnostic and HTTP/MCP checks to their own reviewed scopes. |
+
 The sealed [one-request Zen proposal](V1-ZEN-RECHECK.md) remains a separate decision.
 Its previous generation approvals are spent; the final recorded serving slot does not grant a new approval.
 The relay repair changes a file pinned by the retained packet. Preserve it and qualify a fresh source-bound successor before execution.
@@ -314,11 +346,13 @@ Use the existing [evaluation procedure](V1-EVALUATION.md), [runner](../scripts/e
 
 - [x] Qualify the fixture capture core, transport, schema and sequence checks, and final file-integrity checks.
 - [x] Compose before and after source facts, both KV views, the continued export, and the signed SQL download under one offline fixture owner.
+- [x] Revalidate the sealed facts, raw capture, normalized auth, and SQL before the offline session receipt.
 - [x] Retain bounded inventory observations and private maintenance preparation without claiming a production freeze.
 - [ ] Identify actual versions, bindings, auth authority, source schema, writer owners, and active work.
 - [ ] Define common maintenance, drain evidence, stop conditions, and explicit reconciliation or resume authority.
 - [ ] Qualify authenticated transport and the production process owner for the fixture-proven read sequence.
 - [ ] Include source facts, signed download, private persistence, and complete request, storage, time, and cleanup budgets.
+- [ ] Revalidate every sealed input at the production-owner handoff before accepting the capture.
 - [ ] Acquire and check the consistent capture under the separately reviewed maintenance and execution packet.
 
 Do not substitute the staging coordinator for production writer control.
@@ -374,9 +408,9 @@ Use the [release evidence ledger](V1-RELEASE.md) and [operations procedure](V1-O
 
 - Choose one initial customer group and one repeatable task.
 - Confirm the public product name before distribution; the historical naming question remains open.
-- Give a small external cohort a working key, a copyable HTTP example, and an MCP configuration.
+- Give a small external cohort a workspace key, an MCP configuration, and a copyable HTTP example for their agents.
 - Keep the free allowance usage-limited rather than time-limited; manual pilot provisioning can remain sufficient.
-- Measure time to a useful result, failed requests, repeat workspace use, and willingness to pay.
+- Measure task success, citation accuracy, time to a useful result, and whether teams repeat the task.
 - Select relevant discovery channels; prepare directory or Apify work only after checking each channel's current requirements.
 - Set an experiment start, review date, and decision before launch.
 
@@ -390,56 +424,114 @@ Reconfirm that window and success criteria before launch; no experiment clock st
 **Exit decision:** continue a repeatable use, change the audience or task, or stop expansion.
 More infrastructure cannot substitute for this decision.
 
-## Phase 3 Select and qualify the paid use
+### Parliamentary monitoring pilot candidate
 
-**Entry:** external use identifies a repeatable job and a buyer.
+One political staffer built a monitor around their own keywords, committees, and people.
+They cited cost and inbox volume as barriers. They wanted detailed coverage of parliamentary procedure.
+They troubleshoot the monitor themselves.
 
-Measure actual encoder, rerank, storage, cache, and support costs before setting prices.
-The original direction favors metered use and prepaid credits; v1 does not configure checkout or a public unit price.
-Decide the paid model explicitly rather than assuming subscriptions or reusing historical margin estimates.
+Test one recurring task with staffers. Identify what changed on their files, why it matters, and what could happen next.
+Use the team's keywords, committees, bills, and people to prioritise a short list. Cite the event and the relevant Standing Order when procedure matters.
+State which events the source confirms. Explain any possible next step and the conditions it depends on.
+Show times where the source gives them. Test a ranked list or digest for routine updates and reserve alerts for changes the team marks urgent.
 
-Select one initial paid surface from the established candidates:
+- Replay one completed sitting week against a staffer's existing workflow.
+- Record which changes they acted on, which they missed, and which they would mute.
+- Measure time to find a useful change and effort to set up and maintain the monitor.
+- Check whether staffers want to repeat the workflow.
 
-| Candidate | Evidence needed before implementation |
-| --- | --- |
-| Paid API use | Integrators repeat a useful task and accept a measured price |
-| Policy briefing | A defined audience needs a recurring or on-demand cited brief |
-| Embeddable widget | Customers need a supported publishing surface with source and browser-key rules |
-| Commercial bulk snapshot | Buyers need a reproducible artifact and clear licence, update, and support terms |
+## Phase 3 Qualify the API for agents
 
-Extend shared billing and operation receipts for the selected model.
-Qualify payment, usage visibility, event delivery, and reconciliation before relying on paid automation.
-Stripe delivery is currently best effort; there is no durable Stripe outbox or product-result journal.
-Later delivery work must preserve the existing operation and month identities.
+**Entry:** the pilot identifies a repeatable job and the evidence needed to do it.
 
-**Exit evidence:** a buyer completes the selected paid workflow, and support can reconcile usage and payment failures.
+- Document the HTTP contract with an OpenAPI description. Give MCP tools typed inputs and structured results.
+- Publish tool descriptions and live capabilities that tell agents which operation to call and what that workspace can access.
+- Use the same search, coverage, and citation rules through HTTP and MCP.
+- Give each record type stable IDs, direct retrieval, citations, and revision information.
+- Return compact pages with a cursor, the matched passage or permitted excerpt, and source links. Let agents fetch full record detail by ID.
+- Return machine-readable states for empty results, unsupported coverage, stale sources, partial results, and retryable failures.
+- Keep ranking and match evidence in the API. Give agents the records they need to make a brief in the format their team uses.
+- Reuse workspace keys, usage limits, and operation receipts. Document the usage unit and how clients can reconcile a failed acknowledgement.
 
-## Phase 4 Expand the civic brief from demand
+**Exit evidence:** an agent in an external team's workspace discovers the right operation and returns a brief that cites the source records.
+Check the result against the task and test how the agent handles a coverage gap and a resumed search.
+Use the [daily cosmetics policy file](#daily-cosmetics-policy-file) to test current federal law lookup and the change feed before Parliament and Gazette coverage come online.
+
+## Phase 4 Build parliamentary and regulatory monitoring
 
 **Entry:** repeat use supports a specific source or workflow expansion.
 
-- Select the next corpus from news, debates, bills, or another licensed source.
-- Reuse existing source products and CHS corpus policies where appropriate.
-- Check source terms, attribution, permitted text, freshness, provenance, and failure behavior before ingestion.
-- Add source-specific tests and explicit coverage states before advertising support.
-- Add caller-selected geography only where source joins and permitted boundary data support it.
-- Measure the complete brief across supported sources and languages.
+Start with House of Commons debates (Hansard). The complete monitoring workflow requires the House floor, every House committee's public proceedings, and Canada Gazette Parts I and II.
+Use separate [source records](CORPUS.md#proposed-platform-corpus-model) for House speeches, committee interventions, members, bills, and meetings.
+Report coverage and freshness for each committee. Track the event time, when the source publishes it, and when CivicSignal first sees it as separate facts where available.
+Show gaps in language, transcripts, or media where they occur.
 
-The broader product joins cited sources into one useful answer.
-It must preserve source-specific limits and distinguish no results from unavailable coverage.
-Provincial expansion needs its own source and terms review.
+### First monitoring workflow
 
-## Phase 5 Add optional customer surfaces
+| Staffer task | API result |
+| --- | --- |
+| Check what changed on a file | Search using the file's terms and filters on each request. Filter by member, committee, bill, date, and language. Allow clients to fetch new and corrected results after a cursor. |
+| Track keywords and similar terms | Support exact phrases and optional related-term matching. Return the matching phrase or passage and how it matched. Apply explicit filters to every match. |
+| See who spoke and what they said | Return the speaker, topic, meeting or sitting, published time or sequence, linked bills, transcript citation, and permitted excerpt. Distinguish the bill under debate from bills that were mentioned. |
+| Watch the relevant moment | Return a verified link to the moment in the official player when the source supports one. Report whether a recording is audio only, available without a verified offset, or unavailable. |
+| Track regulatory proposals and instruments | Search and retrieve Gazette records by topic, part, and date. Return the source citation, publication date, and any consultation deadline or effective date the source states. |
+| Understand why it matters | Show which part of the file matched and cite the records that relate the event to the file. Cite the procedural rule when an interpretation depends on it. Label possible next steps and state their conditions. |
 
-**Entry:** a customer need justifies the surface and its ongoing cost.
+Use caller-supplied search criteria for the first release. Saved watches, scheduled checks, and delivery follow the search API.
+Give an agent a real policy file and a completed sitting week. Ask it to find relevant remarks and report any confirmed changes to the linked bills.
+Compare the underlying search results and the agent's brief against the staffer's review of that week.
+Check attribution, English and French search, related-term matches, official video links, source gaps, and missed events.
+Record whether each gap came from the source, the API, or the agent's use of the results.
+
+The [House publication viewer guide](https://www.ourcommons.ca/Content/Guides/DocumentViewer/hansardguide-E.pdf) describes playback links to individual interventions.
+Check actual link behavior and source coverage in both languages. Check media and excerpt use against the [House source terms](https://www.ourcommons.ca/en/important-notices).
+
+Use the monitoring pilot to identify which procedural records the workflow needs after Hansard.
+Candidate records include Standing Order provisions, Order Paper items, and committee notices and reports.
+Give each record type its own table and preserve the official citation for each record.
+Review the [Hansard adapter](../src/corpora/adapters.ts) and [source policy](LICENCE-REGISTER.md#debates--the-boundary-that-shapes-the-design) before implementation.
+
+### Canada Gazette
+
+Include Part I proposals and notices and Part II official regulations in regulatory monitoring. [Canada Gazette publications](https://gazette.gc.ca/rp-pr/publications-eng.html)
+Give Gazette records their own IDs, citations, and change feed. Report the feed's coverage and freshness separately from Parliament and the current-law corpus.
+Link a proposal to its final instrument and link an instrument to affected provisions where official sources establish those relationships.
+Return metadata and official links under the [Gazette publication policy](LICENCE-REGISTER.md#the-gazette). Keep the published instrument and any verified effective date available as separate facts.
+
+### Daily cosmetics policy file
+
+Use this scenario to qualify the agent workflow as each source becomes available.
+A government relations staffer follows animal testing and chemical rules that could affect a cosmetics client.
+The team gives its agent the file's terms in English and French, plus any ingredients, bills, committees, or members to follow.
+The team's agent runs the check each day and keeps a cursor for each supported change feed.
+
+| Task | Expected result |
+| --- | --- |
+| Pull the current law | Return the relevant federal provisions, their status, the corpus revision, and exact citations. |
+| Check what happened since the last run | Find relevant House and committee remarks, bill developments, and updates to the published law. Return each change or correction with a source link. |
+| Identify a regulatory development | Check Canada Gazette Parts I and II for proposals, consultation deadlines, and published regulations. Give each record its own citation. Report publication and effective dates as distinct facts where the source gives them. |
+| Give the staffer a daily brief | State what changed, why it relates to the file, and any deadline or next step the records support. When there are no relevant changes, name the sources checked and flag any coverage gaps. |
+
+The brief must distinguish parliamentary remarks, proposed changes, and changes to the law in force.
+The agent advances a source's cursor after it processes that source's results. It can retry a partial check from the last processed cursor.
+Test consecutive days with a relevant change, an unrelated result, a late correction, a source gap, and a day with no relevant changes.
+Include a Part I proposal and a Part II regulation with a later effective date. Check that the brief identifies the law in force during each run.
+Check each source's coverage and publication policy before the API advertises support.
+
+## Phase 5 Develop the staffer front end
+
+**Entry:** the public search API supports the core staffer workflow end to end.
+
+Start with a policy file view. Staffers can flag records, set terms and filters, and review what changed.
+Let them open the official transcript or video moment, add a note, and gather cited results for a brief.
+Use the same documented API for search, ranking, evidence, and source links. Add workspace APIs for flags and notes as the front end needs them.
+Extend the workspace API with saved watches and delivery once the team chooses when and how to receive updates.
 
 | Surface | Direction and condition |
 | --- | --- |
 | Developer console | Add workspace access, key lifecycle, usage, and payment controls when manual operation blocks demand |
 | Hosted OpenCode harness | Reuse OpenCode and the existing plugin; qualify customer isolation, credentials, process cost, and host choice |
 | External web answers | Keep search in the harness; fetch publisher passages with provenance and source policy checks |
-| Portal and research sessions | Use the existing design studies as references; define an approved product contract before implementation |
-| Watches and notifications | Build only for an observed recurring workflow, with delivery and subscription semantics |
 
 Customers can continue to use their own agent harness through MCP.
 A hosted harness needs a separate runtime and pricing decision.
@@ -447,28 +539,20 @@ It does not reopen the v1 platform choice automatically.
 
 ## Decisions still required
 
-No numerical serving policy, new generation allowance, or production maintenance authority follows from this consolidation.
-Record each decision and its supporting evidence before the dependent work.
+Record each open decision and its supporting evidence before the dependent work.
 
 Source commit age and last successful ingestion age do not measure the latest upstream check.
-Record whether acceptance requires the observed upstream head or a bounded historical snapshot before applying age limits.
-The current operator enforces three age caps; the upstream-head option requires an explicit policy-contract change.
-
-The product owner requested a different D-01 bar. The earlier draft proposed 21/24 top-five hits in each language and zero unsupported accepts across 16 negative cases.
-It also proposed complete requests and warm-ups, a completed-client p95 of at most five seconds, and a fresh match to the upstream head.
-Record the replacement criteria before the acceptance run. Report false refusals and provider fallbacks by language.
-The operator still needs a compatible freshness rule and a separate request budget.
+The approved D-01 policy allows the observed head or an explicitly approved, recent ancestor. The current operator's unconditional age caps need to support that rule before the new serving packet is frozen. [Approved serving bar](V1-EVALUATION.md#d-01-serving-decision)
 
 | ID | Decision and next action | Responsible role | Blocks |
 | --- | --- | --- | --- |
-| D-01 | Select numerical bilingual search, refusal, error, fallback, latency, and freshness criteria before the run | Product owner with evaluation owner | MP-03 execution |
-| D-02 | Verify every factual claim before chat release, as selected by the product owner. Define and collect the claim-level evidence. | API and evaluation owners | MP-03 chat acceptance |
+| D-02 | Collect the eight staging cases and have the product owner independently verify every factual claim before chat release. | API and evaluation owners for capture, product owner for review | MP-03 chat acceptance |
 | D-03 | Accept concrete budgets, finite windows, and residual provider uncertainty for each operation | Operator and approving user | The respective hosted execution |
 | D-04 | Identify writer authorities and approve actual maintenance, capture, reconciliation, and resume controls | Release engineer and writer owners | MP-04 acquisition and MP-05 migration |
 | D-05 | Review the complete release evidence and production switch/rollback candidate | Product owner and release engineer | MP-06 production release |
 | D-06 | Select audience, task, public name, experiment window, and stop criteria | Product owner | Phase 2 distribution |
-| D-07 | Select the paid surface, price, payment model, and reconciliation requirements | Product owner with cost evidence | Phase 3 paid automation |
-| D-08 | Select the next corpus, geography, harness, or portal from observed demand | Product owner | Phase 4 or 5 implementation |
+| D-07 | Confirm the API's usage unit, retry behavior, and reconciliation contract | API and billing owners | Phase 3 API qualification |
+| D-08 | Confirm history, freshness, and source use for the House floor, every House committee, and Canada Gazette Parts I and II | Product owner with API and source owners | Phase 4 monitoring release |
 
 The October 31 repair added a citation URL check. The November 22 probe returned an unsupported claim with a valid retrieved link.
 The current response exposes `answer: string` and a separate `cited` array.
@@ -498,6 +582,7 @@ Use each reference for its stated role; use this file for the next task.
 | Role | Documents |
 | --- | --- |
 | Entry point and history | [README](../README.md), [former product plan](PLAN-HISTORY.md) |
+| Domain terminology | [CivicSignal glossary](../CONTEXT.md) |
 | Requirement evidence and operations | [release ledger](V1-RELEASE.md), [v1 operations](V1-OPERATIONS.md), [evaluation](V1-EVALUATION.md) |
 | Scheduled publication | [qualification review](V1-SCHEDULED-PUBLICATION-REVIEW.md), [snapshot operations](../services/snapshot/OPERATIONS.md) |
 | Production acquisition and copy | [acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md), [offline copy](PROTECTED-STATE-COPY.md), [D1 binding](PROTECTED-D1-BINDING.md), [rollback](CORPUS-ROLLBACK.md) |

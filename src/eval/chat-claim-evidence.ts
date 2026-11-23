@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { isByokProvider, PROVIDERS, supportsByokModel, type ByokProvider } from '../byok';
-import { parseChatRequest } from '../routes/chat';
+import { detectLanguage } from '../language';
+import { CHAT_LIMITS, parseChatRequest } from '../routes/chat';
+import releaseCases from './data/v1-chat-claim-cases.json';
 
 const MAX_CASES = 200;
 const MAX_REQUEST_BYTES = 128 * 1024;
@@ -34,8 +36,17 @@ const segment = z.discriminatedUnion('kind', [
 
 const plan = z.object({
   target,
+  reviewerId: id,
   cases: z.array(z.object({ id, language, outcome, requestSha256: digest }).strict()).min(1).max(MAX_CASES),
 }).strict();
+const caseCatalog = z.array(z.object({
+  id,
+  language,
+  outcome,
+  prompt: z.string().trim().min(1).max(CHAT_LIMITS.topicChars),
+  reviewFocus: z.string().trim().min(1),
+  sources: z.array(sourceUrl).min(1).optional(),
+}).strict()).min(4).max(MAX_CASES);
 const capturedCase = z.object({
   id,
   language,
@@ -53,6 +64,7 @@ const review = z.object({
   reviewerId: id,
   cases: z.array(z.object({
     id,
+    language,
     outcome,
     answerSha256: digest,
     captureSha256: digest,
@@ -75,7 +87,7 @@ const chatBody = z.object({
 }).strict();
 
 type RecordKind = 'plan' | 'capture' | 'review';
-type IssueCode = 'invalid-input' | 'target-mismatch' | 'reviewer-not-independent' | 'missing-language-outcome'
+type IssueCode = 'invalid-input' | 'target-mismatch' | 'reviewer-not-independent' | 'reviewer-mismatch' | 'missing-language-outcome'
   | 'duplicate-case' | 'unexpected-case' | 'missing-case' | 'wrong-language' | 'wrong-outcome'
   | 'invalid-request-body' | 'request-hash-mismatch' | 'request-target-mismatch'
   | 'answer-hash-mismatch' | 'capture-hash-mismatch' | 'incomplete-answer-coverage' | 'missing-factual-claims' | 'refusal-contains-claims'
@@ -102,6 +114,46 @@ function indexCases<T extends { id: string }>(cases: T[], input: RecordKind, iss
 async function sha256(text: string): Promise<string> {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/** Prepare a fixed suite for one provider/model without making a serving request. */
+export async function prepareChatClaimPreregistration(identity: unknown, reviewer: unknown) {
+  const servingTarget = target.parse(identity);
+  const reviewerId = id.parse(reviewer);
+  const cases = caseCatalog.parse(releaseCases);
+  const issues: EvidenceIssue[] = [];
+  indexCases(cases, 'plan', issues);
+  checkCaseCoverage(cases, issues);
+  if (issues.length > 0 || cases.some((entry) => detectLanguage(entry.prompt) !== entry.language)) {
+    throw new Error('Invalid bilingual chat case catalog');
+  }
+  const requests = cases.map(({ prompt, ...entry }) => {
+    const body = parseChatRequest({
+      messages: [{ role: 'user', content: prompt }],
+      provider: servingTarget.provider,
+      model: servingTarget.model,
+      maxTokens: 256,
+    });
+    return { ...entry, requestBody: JSON.stringify(body) };
+  });
+  const planned = await Promise.all(requests.map(async ({ id, language, outcome, requestBody }) => ({
+    id, language, outcome, requestSha256: await sha256(requestBody),
+  })));
+  return {
+    plan: plan.parse({ target: servingTarget, reviewerId, cases: planned }),
+    requests,
+  };
+}
+
+function checkCaseCoverage(cases: readonly { language: z.infer<typeof language>; outcome: z.infer<typeof outcome> }[], issues: EvidenceIssue[]) {
+  const coverage = new Set(cases.map((entry) => `${entry.language}:${entry.outcome}`));
+  for (const locale of language.options) {
+    for (const expectedOutcome of outcome.options) {
+      if (!coverage.has(`${locale}:${expectedOutcome}`)) {
+        issues.push({ code: 'missing-language-outcome', input: 'plan', language: locale, outcome: expectedOutcome });
+      }
+    }
+  }
 }
 
 /** Bind the exact request, answer and retrieved text to the serving target. */
@@ -154,17 +206,11 @@ export async function verifyChatClaimEvidence(expected: unknown, captured: unkno
       source.provider !== compared.provider || source.model !== compared.model) issues.push({ code: 'target-mismatch', input });
   }
   if (observed.data.recorderId === attested.data.reviewerId) issues.push({ code: 'reviewer-not-independent', input: 'review' });
+  if (preregistered.data.reviewerId !== attested.data.reviewerId) issues.push({ code: 'reviewer-mismatch', input: 'review' });
   const expectedCases = indexCases(preregistered.data.cases, 'plan', issues);
   const capturedCases = indexCases(observed.data.cases, 'capture', issues);
   const reviewedById = indexCases(attested.data.cases, 'review', issues);
-  const coverage = new Set(preregistered.data.cases.map((entry) => `${entry.language}:${entry.outcome}`));
-  for (const locale of language.options) {
-    for (const expectedOutcome of outcome.options) {
-      if (!coverage.has(`${locale}:${expectedOutcome}`)) {
-        issues.push({ code: 'missing-language-outcome', input: 'plan', language: locale, outcome: expectedOutcome });
-      }
-    }
-  }
+  checkCaseCoverage(preregistered.data.cases, issues);
   for (const [input, actual] of [['capture', capturedCases], ['review', reviewedById]] as const) {
     for (const caseId of actual.keys()) if (!expectedCases.has(caseId)) issues.push({ code: 'unexpected-case', input, caseId });
     for (const caseId of expectedCases.keys()) if (!actual.has(caseId)) issues.push({ code: 'missing-case', input, caseId });
@@ -176,6 +222,7 @@ export async function verifyChatClaimEvidence(expected: unknown, captured: unkno
     const grading = reviewedById.get(caseId)!;
     const caseStart = issues.length;
     if (actual.language !== registered.language) issues.push({ code: 'wrong-language', input: 'capture', caseId });
+    if (grading.language !== registered.language) issues.push({ code: 'wrong-language', input: 'review', caseId });
     if (grading.outcome !== registered.outcome) issues.push({ code: 'wrong-outcome', input: 'review', caseId });
     const requestIssue = validateCapturedRequest(actual.requestBody, source);
     if (requestIssue) issues.push({ code: requestIssue, input: 'capture', caseId });

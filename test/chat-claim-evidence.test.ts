@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { PROVIDERS, type ByokProvider } from '../src/byok';
-import { verifyChatClaimEvidence } from '../src/eval/chat-claim-evidence';
+import { prepareChatClaimPreregistration, verifyChatClaimEvidence } from '../src/eval/chat-claim-evidence';
 
 const sourceUrl = 'https://example.invalid/test-act/1';
 const enExcerpt = 'The test provision states rule A.';
@@ -36,19 +36,49 @@ function fixture(provider: ByokProvider = 'opencode-zen') {
     id, language, answer, requestBody: JSON.stringify({ messages: [{ role: 'user', content: 'Case ' + id }] }),
     retrieved: excerpt ? [{ sourceUrl, text: excerpt }] : [],
   })) };
-  const plan = { target: { ...identity }, cases: cases.map(({ id, language, outcome }, index) => ({
+  const plan = { target: { ...identity }, reviewerId: 'reviewer', cases: cases.map(({ id, language, outcome }, index) => ({
     id, language, outcome, requestSha256: digest(capture.cases[index]!.requestBody),
   })) };
-  const review = { target: { ...identity }, reviewerId: 'reviewer', cases: cases.map(({ id, outcome, answer, excerpt, claim }, index) => {
+  const review = { target: { ...identity }, reviewerId: 'reviewer', cases: cases.map(({ id, language, outcome, answer, excerpt, claim }, index) => {
     const segments: Segment[] = claim && excerpt
       ? [{ kind: 'fact', text: claim, verdict: 'supported', evidence: [{ sourceUrl, excerpt }] },
         { kind: 'non-factual', text: answer.slice(claim.length) }]
       : [{ kind: 'non-factual', text: answer }];
-    return { id, outcome, answerSha256: digest(answer), captureSha256: captureDigest(capture.cases[index]!, capture.target),
+    return { id, language, outcome, answerSha256: digest(answer), captureSha256: captureDigest(capture.cases[index]!, capture.target),
       coverageAttested: true, segments };
   }) };
   return { plan, capture, review, check: () => verifyChatClaimEvidence(plan, capture, review) };
 }
+
+describe('chat claim preregistration', () => {
+  it('emits exact reproducible request bytes and binds them, the candidate and the reviewer', async () => {
+    const { target } = fixture().plan;
+    const packet = await prepareChatClaimPreregistration(target, 'independent-reviewer');
+    expect(packet).toEqual(await prepareChatClaimPreregistration(target, 'independent-reviewer'));
+    expect(packet.plan.target).toEqual(target);
+    expect(packet.plan.reviewerId).toBe('independent-reviewer');
+    expect(new Set(packet.requests.map(({ language, outcome }) => `${language}:${outcome}`))).toEqual(
+      new Set(['en:answer', 'fr:answer', 'en:refusal', 'fr:refusal']),
+    );
+    expect(packet.plan.cases).toEqual(packet.requests.map(({ id, language, outcome, requestBody }) => ({
+      id, language, outcome, requestSha256: digest(requestBody),
+    })));
+    for (const request of packet.requests) {
+      const body = JSON.parse(request.requestBody);
+      expect(Object.keys(body)).toEqual(['messages', 'provider', 'model', 'maxTokens']);
+      expect(body).toMatchObject({ messages: [{ role: 'user', content: expect.any(String) }],
+        provider: target.provider, model: target.model, maxTokens: 256 });
+      expect(body.messages).toHaveLength(1);
+    }
+  });
+
+  it('requires an exact target, allowed model and named reviewer', async () => {
+    const { target } = fixture().plan;
+    await expect(prepareChatClaimPreregistration({ ...target, revision: 'main' }, 'reviewer')).rejects.toThrow();
+    await expect(prepareChatClaimPreregistration({ ...target, model: 'different-model' }, 'reviewer')).rejects.toThrow();
+    await expect(prepareChatClaimPreregistration(target, undefined)).rejects.toThrow();
+  });
+});
 
 describe('chat claim release evidence', () => {
   it('binds separate English and French answer and refusal cases to the graded capture', async () => {
@@ -88,11 +118,18 @@ describe('chat claim release evidence', () => {
     f.capture.target.candidate = 'c'.repeat(40);
     f.review.target.revision = 'd'.repeat(40);
     f.review.reviewerId = f.capture.recorderId;
+    f.plan.reviewerId = f.capture.recorderId;
     expect((await f.check()).issues).toEqual([
       { code: 'target-mismatch', input: 'capture' },
       { code: 'target-mismatch', input: 'review' },
       { code: 'reviewer-not-independent', input: 'review' },
     ]);
+  });
+
+  it('rejects an independent reviewer substituted after preregistration', async () => {
+    const f = fixture();
+    f.review.reviewerId = 'different-reviewer';
+    expect((await f.check()).issues).toEqual([{ code: 'reviewer-mismatch', input: 'review' }]);
   });
 
   it('binds verdicts to the preregistered provider and model', async () => {
@@ -173,13 +210,15 @@ describe('chat claim release evidence', () => {
     expect((await f.check()).issues).toEqual([{ code: 'request-target-mismatch', input: 'capture', caseId: 'answer-en' }]);
   });
 
-  it('checks capture language and reviewed answer or refusal disposition', async () => {
+  it('checks capture language, reviewed language and reviewed disposition', async () => {
     const f = fixture();
     f.capture.cases[0]!.language = 'fr';
     f.review.cases[0]!.captureSha256 = captureDigest(f.capture.cases[0]!, f.capture.target);
+    f.review.cases[1]!.language = 'en';
     f.review.cases[3]!.outcome = 'answer';
     expect((await f.check()).issues).toEqual([
       { code: 'wrong-language', input: 'capture', caseId: 'answer-en' },
+      { code: 'wrong-language', input: 'review', caseId: 'answer-fr' },
       { code: 'wrong-outcome', input: 'review', caseId: 'refusal-fr' },
     ]);
   });

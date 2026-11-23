@@ -291,9 +291,9 @@ export class SnapshotReader implements SnapshotSource {
     if (manifest.index.sha256 && sha.digest('hex') !== manifest.index.sha256) throw new Error('snapshot index SHA-256 mismatch');
   }
 
-  /** Verify the entire sorted index before any diff can delete or replace rows.
-   * The second pass streams the same immutable revision, never a held map. */
-  private verifyIndex(): Promise<void> {
+  /** Verify the entire sorted index from one stream. Iteration reuses this
+   * validation before opening its separate pass to yield entries. */
+  verifyIndex(): Promise<void> {
     this.verified ??= (async () => {
       const manifest = await this.manifest();
       const digest = new IndexDigester();

@@ -234,6 +234,20 @@ The Canada Health Act source produced a preamble row with section label `8` as w
 
 ## Reproduce label verification
 
+### November revision
+
+The [November dataset](../src/eval/data/v1-november-questions.json) combines the original calibration split of 20 cases and the independent successor holdout of 64 cases. The November source check verified all 60 positive labels across 30 immutable XML blobs. Four blobs changed since October, and all labelled provision digests, prompt text, gold rows, and scope labels were preserved. [Verification receipt](evidence/2026-11-22/november-serving-label-verification.json)
+
+```sh
+bun scripts/eval-v1.ts \
+  --dataset src/eval/data/v1-november-questions.json \
+  --verify-only true \
+  --verify-sources /path/to/laws-lois-xml \
+  --output dist/evaluation/v1-november-labels.json
+```
+
+Select this dataset explicitly for any serving measurement that uses the verified November corpus revision. Select the declared split separately for each measurement.
+
 ### Successor labels — 2026-10-31
 
 The separate [successor dataset](../src/eval/data/v1-successor-questions.json) contains 64 holdout questions.
@@ -370,12 +384,67 @@ Exact query text is preserved. Repeated questions can hit the deployment cache. 
 
 Freshness reports distinguish corpus timestamp age, last successful run age, upstream observation age, and whether the observed upstream revision is served. If a newer upstream revision is pending, its age is a lower bound on unresolved lag. Historical metadata cannot establish current freshness.
 
+## D-01 serving decision
+
+The product owner approved the limits below with accuracy first, speed second, and freshness third. Pin the Worker version, route, corpus revision, parser, model, retrieval policy, and dataset hashes before the run.
+
+| Measure | Required passing bar | Evidence to use |
+| --- | --- | --- |
+| Accuracy in each language | At least **22 of 24** answerable cases return the correct provision in the top five. Allow at most one false refusal and one nonempty response without the gold provision per language. | Use the holdout's `metrics.byLanguage`. Hit@5 includes every planned answerable case in its denominator. Read `falseRejection` and `acceptedWithoutGold` separately. Report top-one hits and paired bilingual results. |
+| Unsupported queries and complete evidence | **Zero of eight** unsupported cases accepted in each language. All calibration, holdout, measured benchmark, and warm-up requests complete with valid evidence. | Read missing requests and HTTP, transport, and invalid-response errors separately. Report fresh Jev fallback rates by language over fresh Jev attempts, alongside cache hits and any missing telemetry. Successful fallback counts toward quality and latency under the same criteria. |
+| Speed | Completed-client p95 at or below **8 seconds at each** benchmark concurrency level, 1 and 4. | Use the bounded benchmark with two warm-ups and 20 mixed measured requests per level. Include relay overhead and report observed cache usage, all-attempt latency, and completed throughput at each level. |
+| Freshness | Observe the upstream head within **24 hours** of the end of measurement. The served revision may match that head or be an explicitly approved ancestor with a source commit timestamp within the preceding **seven days**. | Verify the served revision and ancestry against the upstream observation. Record the source commit time and last successful ingestion time separately. A quiet upstream can still match the served revision. |
+
+The [offline acceptance checker](../scripts/check-serving-acceptance.ts) binds the calibration, holdout, and benchmark reports to the reviewed staging provenance, relay origin, result limit, and dataset. It requires a successful discovery response with the reviewed encoder model and dimensions in all three phases, checks the expected cases and warm-ups, and recomputes the pass criteria from the recorded observations. Use the benchmark split from the [reviewed request packet](STAGING-REQUEST-BUDGET.md#november-d-01-run-packet).
+
+```sh
+bun --no-env-file scripts/check-serving-acceptance.ts \
+  --dataset src/eval/data/v1-november-questions.json \
+  --provenance stage-provenance.json --origin "$SERVING_RELAY_ORIGIN" \
+  --benchmark-split "$BENCHMARK_SPLIT" --limit 10 \
+  --calibration eval-calibration.json --holdout eval-holdout.json \
+  --benchmark benchmark.json
+```
+
+When the run serves an approved earlier revision, add `--approved-ancestor "$APPROVED_CORPUS_REVISION" --source-repo /path/to/laws-lois-xml`. Both commits and their connecting history must be present locally. The checker verifies ancestry and the actual Git commit timestamp. It emits a JSON result and exits unsuccessfully if a requirement fails.
+
+Keep the checker result with the reviewed provenance, report files, and relay ledger. The operator still verifies the staging deployment and upstream observation and reviews the request budget. Replace the retained operator's unconditional age caps with the approved policy before freezing its executable packet. Scheduled publication retains its own gate.
+
+Select the matching source labels before opening a serving budget. The November rebind qualifies labels for the exact corpus revision in its receipt. A different target revision needs its own source check. Keep calibration, the independent holdout, and the budgeted benchmark schedules explicit in their packets. [November revision proof](#november-revision)
+
+## D-02 bilingual chat claim review
+
+The [eight chat cases](../src/eval/data/v1-chat-claim-cases.json) exercise answerable and out-of-coverage questions in both languages. Keep them separate from retrieval acceptance and the single-request Zen smoke. The positive prompts reuse provisions from the original retrieval calibration, with no overlap with either holdout. Reference sources in the catalog guide the reviewer. Use the material returned by the same chat request to verify the captured answer.
+
+The product owner will independently review the eight cases using reviewer ID `product-owner`. A separate operator captures the responses and provides the exact answer and its retrieved provisions for review. After selecting the hosted candidate, served corpus revision, provider, and model, prepare and retain a packet before collecting evidence. This command runs offline.
+
+```sh
+bun scripts/prepare-chat-claim-preregistration.ts \
+  --candidate "$CANDIDATE_SHA" --revision "$CORPUS_REVISION" \
+  --provider "$CHAT_PROVIDER" --model "$CHAT_MODEL" \
+  --reviewer product-owner > chat-preregistration.json
+jq '.plan' chat-preregistration.json > chat-plan.json
+```
+
+Retain the packet and plan digest in the reviewed execution record before any request. Send each `requests[].requestBody` verbatim as UTF-8. The per-case hash covers the string bytes, without a trailing newline. Supply authorization separately in headers. Each case sets a 256-output-token cap. Budget one staging attempt and up to one BYOK generation call per case, including refusal cases, with no automatic retries. Account for retrieval providers separately. The packet supplies case inputs for a separately reviewed budget.
+
+Record each successful response privately with the corresponding request body and the retrieved `cited` entries' `citationUrl` and `text`, represented as `sourceUrl` and `text` in the capture. Confirm the response provider, model, and serving revision against the registered target and retain the correlated staging receipt. Record failures in the attempt ledger. A failed request leaves the required case incomplete.
+
+The registered reviewer records the answer language, answer or refusal outcome, and a contiguous segmentation covering the exact answer. Each factual segment needs a supported verdict and an exact excerpt from the retrieved material. Refusals need to decline the question without factual assertions. Use `hashChatClaimCapture` to bind the captured request, answer, retrieved text, and target for review. Keep credentials out of the capture and review.
+
+```sh
+bun scripts/check-chat-claim-evidence.ts \
+  --plan chat-plan.json --capture chat-capture.json --review chat-review.json
+```
+
+The checker verifies the evidence bindings, coverage and excerpts. Claim identification and factual support depend on the independent review. This is a release check on the preregistered cases.
+
 ## Verification status and remaining prerequisites
 
 The v1 release checks run against the Cloudflare Worker and Vectorize. Postgres measurements apply to the alternative deployment.
 
 Local regression checks pass for the [serving prerequisites](PLAN.md#local-serving-prerequisites) identified by the [November 22 probes](V1-RELEASE.md#november-22-local-code-assessment).
-Before the next hosted acceptance run, qualify the exact Cloudflare candidate and record the replacement D-01 criteria. Preregister the bilingual chat cases and name an independent reviewer for D-02. See the [master decision register](PLAN.md#decisions-still-required).
+Before the next hosted acceptance run, bind staging to the [qualified Cloudflare candidate](V1-RELEASE.md#november-22-draft-candidate-qualification) and apply the approved D-01 criteria to its serving packet. Seal the bilingual D-02 chat packet with the exact target and named reviewer. See the [master decision register](PLAN.md#decisions-still-required).
 
 - Check that the served revision matches the corpus data during update and recovery. Qualify the exact source, parser, and policy before the run.
 - Keep `preRefusalTopScore` as the raw language-filtered top score. If calibration uses the best eligible score, give it distinct telemetry and version its provenance.
