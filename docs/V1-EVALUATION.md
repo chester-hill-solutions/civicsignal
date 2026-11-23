@@ -329,6 +329,8 @@ An empty denominator is `null`, not a zero-error rate. A zero false-accept count
 
 Serving observations identify encoder, vector, row hydration, and reranker outcomes. A failed reranker that produces a successful vector fallback is counted as a provider failure and a fallback execution, independently of HTTP success. HTTP 502/503/504 remain a separate upstream-response count. A failed request with no serving observation has unknown provider attribution. The report does not infer provider identity from status alone or expose raw error text. Total client/retrieval latency is measured; per-provider latency is not yet instrumented.
 
+The `federal-authority-v4-eligible-floor` policy admits a vector fallback only when at least one returned provision meets the backend floor. The raw `preRefusalTopScore` can describe a candidate outside the result. The optional `cacheFailure` field records a read or write fault for the current request. Evaluation and benchmark summaries count those faults separately.
+
 ## Calibrate each backend separately
 
 Never translate a cosine threshold into a Vectorize score by a fixed factor. Preserve the existing index. Acquire **raw pre-refusal**, language-filtered best scores for every calibration question using the deployed encoder and exact target backend/revision. Do not derive raw scores from responses that have already passed an acceptance floor.
@@ -370,7 +372,17 @@ Freshness reports distinguish corpus timestamp age, last successful run age, ups
 
 ## Verification status and remaining prerequisites
 
-This section retains the initial local qualification and its original prerequisites.
+The v1 release checks run against the Cloudflare Worker and Vectorize. Postgres measurements apply to the alternative deployment.
+
+Local regression checks pass for the [serving prerequisites](PLAN.md#local-serving-prerequisites) identified by the [November 22 probes](V1-RELEASE.md#november-22-local-code-assessment).
+Before the next hosted acceptance run, qualify the exact Cloudflare candidate and record the replacement D-01 criteria. Preregister the bilingual chat cases and name an independent reviewer for D-02. See the [master decision register](PLAN.md#decisions-still-required).
+
+- Check that the served revision matches the corpus data during update and recovery. Qualify the exact source, parser, and policy before the run.
+- Keep `preRefusalTopScore` as the raw language-filtered top score. If calibration uses the best eligible score, give it distinct telemetry and version its provenance.
+- Run fresh Cloudflare calibration before the independent holdout. Report the eligibility rule and keep past hosted results with their original policy.
+- Record cache failures separately from provider and text hydration failures. Compare cold and warm paths under a declared cache policy.
+
+The checks below record the initial local qualification and its original prerequisites.
 Use the dated hosted observations above and the [master plan](PLAN.md#mp-03-close-serving-acceptance) for current acceptance work.
 
 The focused suite has **47 passing tests** for partitioning/provenance exclusions, denominator math, language pairing, threshold separation, percentile math, actual loopback HTTP requests, bounded concurrency, malformed/error responses, credential-safe redirects, freshness calculations, adapter observations, cache provenance/bypass, successful provider fallbacks, source/parser separation, and strict collection of all 20 calibration cases. Source verification passed as recorded above. An additional 20-request loopback integration passes through the actual portability HTTP handler, shared Postgres retrieval adapter, language filter, observation collector, and CHS in-memory usage ledger: all 20 calibration observations qualify, eight refused scores remain visible, and usage is exactly 20. Its embeddings and scores are deterministic fixtures. These tests establish the measurement contract only; their scores and timing are not CivicSignal retrieval-quality or production-performance results. They require local socket permission in restricted environments.
@@ -379,8 +391,8 @@ Before release, retain the following evidence:
 
 1. An authoritative served corpus/index revision and encoder/reranker/deployment snapshot for Cloudflare. Record a fresh upstream head at measurement time.
 2. A budgeted credentialed serving-path run on the 64 held-out cases, with failures investigated and bilingual results reviewed. No such new live run has been performed here.
-3. Execute and retain the 20-case fresh serving calibration per backend and language. The collection path is implemented and tested; no new calibrated threshold is established without a real run.
+3. Execute and retain the 20-case fresh Cloudflare serving calibration with results split by language. The collection path is implemented and tested; no new calibrated threshold is established without a real run.
 4. A bounded live HTTP benchmark with its request budget and cache state stated. No production latency or throughput number is established by the tests.
 5. Verify the new provider/fallback observations on the deployed candidate with correlated request evidence. Local instrumentation tests do not prove a live gateway failure or deployed configuration. Per-provider latency remains outside the current observation.
-6. Postgres held-out/performance evidence if Postgres is advertised as a production-equivalent backend. Its portability implementation must not inherit a Vectorize threshold without measurement.
+6. If a future release selects the Postgres stack, qualify its held-out quality, performance, and threshold independently.
 7. A new non-empty revision published by the automated pipeline, with observed ingestion/freshness lag. A metadata timestamp alone does not prove this end-to-end update path.

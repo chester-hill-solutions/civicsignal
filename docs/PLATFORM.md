@@ -2,7 +2,7 @@
 
 ## Current v1 authority
 
-Historical Railway migration proposal. Cloudflare remains the production target; Railway remains in place.
+Historical Railway migration proposal. The [master plan](PLAN.md) selects Cloudflare alone for v1.
 [The master plan](PLAN.md) defines current scope and work order.
 [The release evidence ledger](V1-RELEASE.md) retains dated outcomes.
 The master plan controls scope; the ledger records evidence. The historical claims below do not create current work.

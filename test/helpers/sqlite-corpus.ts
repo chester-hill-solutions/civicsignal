@@ -12,7 +12,9 @@ export function sqliteCorpus() {
   sqlite.exec(readFileSync(new URL('../../migrations/0002_statute_citation_columns.sql', import.meta.url), 'utf8'));
   const migration = readFileSync(new URL('../../migrations/0003_pipeline.sql', import.meta.url), 'utf8');
   sqlite.exec(migration);
+  sqlite.exec(readFileSync(new URL('../../migrations/0006_corpus_mutations.sql', import.meta.url), 'utf8'));
   sqlite.exec(readFileSync(new URL('../../migrations/0008_corpus_parser.sql', import.meta.url), 'utf8'));
+  sqlite.exec(readFileSync(new URL('../../migrations/0009_corpus_publication_guard.sql', import.meta.url), 'utf8'));
   const statements: string[] = [];
   const db: CorpusContext['db'] = {
     prepare(sql: string) {

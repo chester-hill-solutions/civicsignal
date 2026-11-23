@@ -20,6 +20,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fetchWithAuth } from './lib/cloudflare-auth';
+import { readWorkerConfig, stagingNames } from './lib/staging-config';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
@@ -291,6 +292,22 @@ async function listIndexIds(): Promise<{ ids: Set<string>; total: number }> {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(INDEX_NAME)) {
+    throw new Error('VECTORIZE_INDEX must be an index name.');
+  }
+  if (!args.dryRun) {
+    const name = INDEX_NAME.toLowerCase();
+    const stageSuffix = /\d{8}$/.exec(name)?.[0];
+    if (stageSuffix && name === stagingNames(stageSuffix).vectorize) {
+      throw new Error('Use the corpus pipeline to change the configured corpus index.');
+    }
+    for (const path of ['wrangler.jsonc', 'services/pipeline/wrangler.jsonc']) {
+      const bindings = readWorkerConfig(ROOT, path)['vectorize'];
+      const index = Array.isArray(bindings) ? bindings.find((binding) => binding?.binding === 'VECTORIZE')?.index_name : undefined;
+      if (typeof index !== 'string' || !index) throw new Error('Could not identify the configured corpus index.');
+      if (name === index.toLowerCase()) throw new Error('Use the corpus pipeline to change the configured corpus index.');
+    }
+  }
   const langs = args.lang === 'both' ? (['en', 'fr'] as const) : ([args.lang] as const);
 
   for (const lang of langs) {

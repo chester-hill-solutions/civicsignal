@@ -22,14 +22,14 @@ export const retrievalObservationSchema = z.object({
   languageFilter: z.string().max(16).nullable(), preRefusalTopScore: z.number().finite().nullable(),
   scoreSource: z.enum(['computed', 'cached', 'none']), scoredAt: z.string().datetime().nullable(),
   vectorFloor: z.number().finite().nullable(), candidateCount: z.number().int().nonnegative(), resultCount: z.number().int().nonnegative(),
-  cache: z.enum(['disabled', 'miss', 'hit', 'stale', 'bypass']), fallback: z.boolean(),
+  cache: z.enum(['disabled', 'miss', 'hit', 'stale', 'bypass']), cacheFailure: z.enum(['read', 'write']).optional(), fallback: z.boolean(),
   providers: z.object({ encoder: providerStatus, vector: providerStatus, reranker: providerStatus, rows: providerStatus }),
   rerankerFailure: rerankerFailureSchema.optional(),
   elapsedMs: z.number().finite().nonnegative(),
 });
 export type RetrievalObservation = z.infer<typeof retrievalObservationSchema>;
 export type RetrievalBackend = RetrievalObservation['backend'];
-export const RETRIEVAL_POLICY_VERSION = 'federal-authority-v3-observed';
+export const RETRIEVAL_POLICY_VERSION = 'federal-authority-v4-eligible-floor';
 
 export async function retrievalTrace(ctx: CorpusContext, query: CorpusQuery, backend: RetrievalBackend,
   mode: RetrievalObservation['mode'], floor: number | null) {

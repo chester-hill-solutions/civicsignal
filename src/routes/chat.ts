@@ -268,6 +268,8 @@ export interface ChatDeps {
   env: Env;
   /** Retrieves the material supplied to generation. */
   retrieve: (request: BriefRequest) => Promise<BriefResponse>;
+  /** Confirms quota immediately before the caller-paid provider request. */
+  reserveGeneration?: () => Promise<void>;
   /** The caller's provider key. Never stored, never logged. */
   byokKey: string;
   byokProvider: string;
@@ -315,11 +317,13 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
       generation: { status: 'skipped', reason: 'no-retrieved-material' },
     };
   }
+  const system = buildSystemPrompt(cited);
+  await deps.reserveGeneration?.();
   const result = await chatByok({
     provider: deps.byokProvider,
     apiKey: deps.byokKey,
     model: request.model,
-    system: buildSystemPrompt(cited),
+    system,
     messages: request.messages,
     maxTokens: request.maxTokens,
     validateAnswer: (answer) => validateAnswerCitationLinks(answer, cited.map((item) => item.citationUrl)),

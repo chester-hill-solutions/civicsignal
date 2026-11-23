@@ -2,7 +2,7 @@
 
 CivicSignal retrieves cited Canadian federal statutes and regulations in English and French.
 The production API uses Cloudflare Workers, D1, Vectorize, and an encoder container.
-The Bun/Postgres code remains an undeployed portability implementation. Railway services remain in place.
+Cloudflare is the sole v1 deployment target. The Bun/Postgres code and Railway configuration describe an alternative deployment.
 
 The v1 candidate adds workspace keys, shared usage limits, exact citations, semantic search, BYOK chat, and an observed change feed.
 News, debates, bills, provincial law, tone, geographic filters, OAuth, and a portal are outside v1.

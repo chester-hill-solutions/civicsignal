@@ -75,17 +75,25 @@ describe('calibration from actual serving observation contract', () => {
     expect(() => observedCalibration(dataset.questions, [response(dataset.questions[0]!)], expected)).toThrow('Holdout');
     expect(() => observedCalibration(dataset.questions, [response(questions[0]!), response(questions[0]!)], expected)).toThrow('Duplicate');
   });
-  it('reports provider fallbacks separately from HTTP success', () => {
+  it('reports provider fallbacks and cache failures separately from HTTP success', () => {
     const successfulFallback = response(questions[0]!);
     successfulFallback.retrieval![0]!.providers.reranker = 'error';
     successfulFallback.retrieval![0]!.fallback = true;
+    successfulFallback.retrieval![0]!.cache = 'miss';
+    successfulFallback.retrieval![0]!.cacheFailure = 'read';
     const cached = response(questions[1]!);
     cached.retrieval![0]!.cache = 'hit';
     cached.retrieval![0]!.scoreSource = 'cached';
-    const summary = servingObservationSummary([successfulFallback, cached, { id: 'failed', outcome: 'http-error', elapsedMs: 1, items: [] }]);
+    const writeFailure = response(questions[2]!);
+    writeFailure.retrieval![0]!.cache = 'miss';
+    writeFailure.retrieval![0]!.cacheFailure = 'write';
+    const summary = servingObservationSummary([successfulFallback, cached, writeFailure, { id: 'failed', outcome: 'http-error', elapsedMs: 1, items: [] }]);
     expect(summary.providerFailures.reranker).toBe(1);
+    expect(summary.providerFailures.rows).toBe(0);
     expect(summary.fallbackExecutions).toBe(1);
     expect(summary.cacheHits).toBe(1);
+    expect(summary.cacheReadFailures).toBe(1);
+    expect(summary.cacheWriteFailures).toBe(1);
     expect(summary.requestsWithoutTelemetry).toBe(1);
   });
 });

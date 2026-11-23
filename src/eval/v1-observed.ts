@@ -57,6 +57,8 @@ export function servingObservationSummary(observations: V1Observation[]) {
     cachedScores: traces.filter((trace) => trace.scoreSource === 'cached').length,
     fallbackExecutions: traces.filter((trace) => trace.fallback && trace.cache !== 'hit').length,
     cacheHits: traces.filter((trace) => trace.cache === 'hit').length,
+    cacheReadFailures: traces.filter((trace) => trace.cacheFailure === 'read').length,
+    cacheWriteFailures: traces.filter((trace) => trace.cacheFailure === 'write').length,
     modes: Object.fromEntries(['exact', 'rerank', 'vector-floor', 'unavailable'].map((mode) => [mode, traces.filter((trace) => trace.mode === mode).length])),
     providerFailures: Object.fromEntries(['encoder', 'vector', 'reranker', 'rows'].map((provider) => [provider,
       traces.filter((trace) => trace.providers[provider as keyof typeof trace.providers] === 'error').length])),

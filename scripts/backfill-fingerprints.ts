@@ -31,7 +31,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fetchWithAuth } from './lib/cloudflare-auth';
-import { query } from './lib/d1-load';
+import { assertLegacyD1CorpusWritable, query } from './lib/d1-load';
 import { fingerprint } from '../src/ingest/reconcile';
 import { buildRows, parseStatuteXml, statusOf } from '../src/ingest/statutes';
 
@@ -225,6 +225,7 @@ async function recordRevision(rowCount: number): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  if (!dryRun) await assertLegacyD1CorpusWritable();
   console.log(`backfilling the fingerprints of ${CORPUS_ID}`);
 
   const hashes = new Map<string, string>();

@@ -1,5 +1,5 @@
 import { CORPUS_POLICIES } from '../corpora/policies';
-import { loadCorpusAvailability } from '../corpora/registry';
+import { loadD1CorpusPublication } from '../corpora/registry';
 import type { CorpusAvailabilityMap } from '../corpora/types';
 import { ENCODER_CONTRACT, type EncoderContract } from '../encoder';
 import { corsHeaders } from '../http';
@@ -94,7 +94,7 @@ export function buildCapabilities(env: Env, origin: string, availability: Corpus
 }
 
 export async function capabilitiesResponse(env: Env, origin: string, correlationId: string): Promise<Response> {
-  const availability = await loadCorpusAvailability({ db: env.CIVIC_DB, fetch, now: () => new Date() });
+  const { availability } = await loadD1CorpusPublication(env.CIVIC_DB);
   return new Response(JSON.stringify(buildCapabilities(env, origin, availability), null, 2), {
     headers: { 'content-type': 'application/json; charset=UTF-8', ...corsHeaders(env, null, correlationId) },
   });

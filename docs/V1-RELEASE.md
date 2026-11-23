@@ -167,15 +167,15 @@ Use the dated entries below for source-specific outcomes.
 
 | ID | Outcome | Acceptance evidence | Status |
 | --- | --- | --- | --- |
-| V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
-| V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
-| V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
-| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Full hosted metadata, composite changed-text proof and complete vector backup pass |
-| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Manual hosted parity and new native qualification pass; hosted scheduled discovery/first publication remain unverified |
+| V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local counter, receipt, and pre-generation admission checks pass. Hosted migration remains open. |
+| V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Worktree package and build checks pass. Exact candidate qualification is open under MP-01. |
+| V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries. Warm hits avoid reranking. Search survives a cache fault. Chat checks input and citation links and admits provider work within the hard limit. Check input bounds, Google credentials, and browser CORS. | Search, cache, and concurrent BYOK admission regressions pass locally. Hosted acceptance remains open. |
+| V1-04 | Recoverable ingestion | Injected faults between row, vector, feed, and state writes recover with complete change history and unique events. Serving reads a coherent revision or reports unavailability during the transition. | Local publication, interrupted serving, and watermark retry checks pass. Hosted vector visibility and coherent serving remain open for this candidate. |
+| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Earlier manual hosted parity and local native qualification pass. The exact-reference verifier passes locally. Hosted scheduled discovery and first publication remain open. |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
-| V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
-| V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local and exact-source clean Linux gates pass at `9771a8b`; independent review accepts the scoped chat changes |
+| V1-07 | Broad, measured retrieval quality | Test held-out English and French answerable and unsupported cases. Calibrate the Cloudflare serving backend and report false accepts, false refusals, latency, throughput, and freshness. | The November 22 floor repair passes local regressions. The earlier calibration and failed holdout retain their original policy. D-01 and hosted acceptance remain open. |
+| V1-08 | Honest, complete v1 surfaces | Every advertised route and tool works and states coverage limits. Check change-feed and exact citation flows. Verify every factual claim in the predeclared chat cases under D-02. | The offline claim evidence checker passes. Both earlier hosted Zen attempts failed acceptance. Positive hosted chat and independent claim reviews remain open. |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | The latest matching full local and clean Linux receipts are for `9771a8b`. The November 22 work has separate local receipts. Exact candidate qualification is open under MP-01. |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Original work order — 2026-10-22
@@ -1057,9 +1057,96 @@ Serving source binding, types, and unchanged evaluation/benchmark graph checks p
 Zen contains the current source wrapper and a skipped-generation regression; its final integration remains pending.
 No execution approval or current hosted target proof follows. All four release gates remain open.
 
+## November 22 local code assessment
+
+The audit used a tracked copy of `518aab0912858d48a405c7060ae91951ec908894` on macOS arm64 with Node 24.22.3, Bun 1.3.5, and Python 3.14.3.
+The runtime and test inputs match the earlier qualified `9771a8b` source.
+The commands below ran against local fixtures and disposable resources.
+
+| Command | Observed result |
+| --- | --- |
+| `bun install --frozen-lockfile --ignore-scripts` | Bun 1.4.4 installed the locked dependencies in the temporary copy. The suite and builds used Bun 1.3.5. |
+| `CIVICSIGNAL_WORKERD_TESTS=1 bun run test --maxWorkers=4 --minWorkers=1` | 2,192 tests passed in 102 files in 106.72 seconds. |
+| `python3 -I -B test/protected-state-d1-owned.test.py` | 31 tests passed. |
+| `bun run typecheck` and `bun run build` | Four compiler projects and five Worker dry-run builds passed. |
+| `bun run check:vendor`, `bun run check:billing-invariants`, `bun run check:corpus-invariants` | 117 vendored files matched. Both invariant checks passed. The corpus check skipped absent SQL and both language JSONL artifacts. |
+| `bun run check:runtime` | In local workerd, 12 calls with one operation ID consumed one unit. Three of 20 competing operations consumed the remaining three units. R2 duplicate writes preserved the original bytes. |
+
+Five separate probes exercised the real HTTP handler against fixture state. The generation, encoder, and index responses used test doubles.
+
+| Requirement | Trigger and observation | Source |
+| --- | --- | --- |
+| V1-04 | Seed a published revision. Update a provision and fail the vector write after the row commit. Exact HTTP lookup returned `200` with the changed text and the previous revision. | [D1 write order](../src/corpora/d1-store.ts#L94), [API revision read](../src/index.ts#L138) |
+| V1-03, V1-07 | Disable Jev. For a topic plus keyword, return scores `0.90` and `0.10`. Only the lower match contains the keyword. The API returned that match with `decision: answer` and a floor of `0.62`. | [Vector floor](../src/corpora/adapters.ts#L259), [keyword filter](../src/corpora/adapters.ts#L309) |
+| V1-01, V1-03 | Start two chats with one workspace unit left. Hold both provider replies until both calls start. Complete one request first. HTTP results were `200` and `429`. The provider stub received two calls and the ledger recorded one unit. | [Chat handler](../src/index.ts#L71), [usage order](../src/metering.ts#L61) |
+| V1-08 | Return an invented entitlement with a valid retrieved link from the generation stub. Chat accepted the unsupported claim with HTTP `200`. | [Citation URL check](../src/routes/chat.ts#L168) |
+| V1-03 | Fail a KV read and keep the encoder and index healthy. Normal search returned `502`. A repeat with cache bypass returned `200` and used the index once. | [Cache read path](../src/corpora/adapters.ts#L233) |
+
+These checks add local evidence for the [serving prerequisites](PLAN.md#local-serving-prerequisites). Hosted quality, charges, freshness, and performance remain open.
+The existing hosted results, failures, and request ledger retain their scope. Hosted execution still requires its own approval.
+
+## November 22 search eligibility and cache repair
+
+The local patch on `518aab0` introduces `federal-authority-v4-eligible-floor` for the shared search adapter.
+With Jev off or failed, at least one returned provision must meet the backend floor.
+A valid Jev authority decision still uses the existing rerank path.
+The new policy changes the cache key. A cache read fault triggers fresh search. A write fault preserves the result.
+Evaluation reports count both faults separately. The raw pre-refusal score retains its definition.
+
+The Worker cache-fault regression returns HTTP `200` with the provision and consumes one workspace unit.
+The Bun/Postgres brief rejects a weak provision if its stronger candidate fails the keyword filter.
+Both tests reproduced the defect before the repair. Further fixtures cover the Jev fallback, missing rows, cache write faults, and retained text hydration errors.
+
+The first full run found two failures in a benchmark fixture that expected the old policy. The fixture now uses the serving policy constant.
+The full rerun passed 2,203 tests in 102 files with local workerd enabled.
+The same runtime patch passed 31 Python tests, four compiler projects, both native runtime probes, and five Worker dry-run builds.
+Vendor and invariant checks passed. The corpus check skipped the three absent generated artifacts.
+The local checks used Node 24.22.3 and Bun 1.3.5.
+The SHA-256 of `git diff --binary HEAD -- src test` at verification was `5b3d5204605826565aef2a473052d1109c3ba643adfd74d183e90e08abd7b2c9`.
+
+The patch changes the retrieval policy and adds optional cache diagnostics. It uses the existing store schema and cache expiry.
+The earlier build retains its original policy when selected for rollback.
+Coherent revision, BYOK hard-limit admission, hosted calibration, and independent holdout remain open.
+
+## November 22 integrated v1 local work
+
+The local worktree on `518aab0` adds publication and quota guards. It also composes the offline production capture and checks claim-review evidence.
+The [rollout procedure](V1-OPERATIONS.md#authorization-migration) requires a drained writer and coherent corpus and index before it applies migration 0009.
+
+| Package | Verified increment | Evidence still required |
+| --- | --- | --- |
+| MP-01 and MP-06 | Frozen install, all four compilers, five dry-run bundles, and local tests passed. | Exact final source, clean Linux CI, operation binding, and the final release decision. |
+| MP-02 | The local workerd scheduled-publication tests passed in the integrated suite. | Fresh namespace, distinct instance, both calendar checks, bounded event, and hosted artifacts and cleanup. |
+| MP-03 | A request crossing a publication returns unavailable without a usage charge. The writer waits for its vector mutation and resumes finalization without encoding the same rows again. | Hosted visibility, decision D-01, fresh bilingual holdout, benchmark, and positive Zen. |
+| MP-03 | The existing usage object admits one generation hold for one remaining unit. Mixed requests share that limit. Failed work releases capacity and repeated settlement charges one unit. | Qualify this version in hosted staging with the same usage identities. |
+| MP-03 and D-02 | The offline checker binds a complete independent review to each captured answer, retrieved text, candidate, revision, provider, and model. | Preregister real bilingual answer and refusal cases. Capture them on the candidate and independently verify every factual claim. |
+| MP-04 | The offline owner checks D1 facts before and after both KV views and export. It downloads the exact signed SQL under the same budget. | Live owner, actual writer controls and freeze, credential lifetime, and approved capture budget. |
+| MP-05 | Local text audits, vector export, and protected restore refuse conflicting publication state. | Authentic capture and isolated hosted copy. Qualify the production adapter and both switch targets. |
+
+The integrated run passed 2,219 tests in 103 files, 31 Python tests, and both native runtime probes.
+The independent claim checker passed 17 fixture tests. The command-line check accepted a complete synthetic review and refused a review with one unsupported claim.
+The vendor and invariant checks passed. The corpus check skipped three absent generated artifacts.
+The local runtime used Node 24.22.3 and Bun 1.3.5.
+No hosted operation ran. Existing hosted measurements and consumed budgets retain their scope.
+
+## November 22 Cloudflare release preparation
+
+| Package | Local evidence |
+| --- | --- |
+| MP-02 | The offline snapshot check pins the exact reference manifest before it reads the artifact set. The CLI fixture refuses a different, internally valid snapshot with the same source revision. |
+| MP-03 and D-02 | The case plan pins the hash of the exact chat request body. The review also pins the captured request, answer, and retrieved text. The CLI accepts the complete synthetic review and refuses a substituted request under the same case ID. |
+| MP-04 and MP-05 | Repair dry runs issue read-only D1 statements even with `--prune`. The old D1 load, repair, and fingerprint backfill paths refuse writes after migration 0009. The old index loader refuses the configured API and pipeline indexes. |
+
+The affected suites passed 213 tests in 11 files, with local workerd enabled.
+Four TypeScript projects, five Worker dry-run builds, vendor checks, and both invariant commands passed.
+The corpus invariant check skipped the three absent local ingest artifacts.
+The exact candidate still needs a clean Linux CI receipt.
+Hosted publication and serving acceptance still need their own execution evidence.
+
 ## Remaining release gates
 
 All four gates remain open: scheduled first publication, serving acceptance, production migration, and the final release audit.
+Use the [MP-01 candidate checks](PLAN.md#mp-01-reconcile-the-exact-candidate) to establish matching local and clean Linux receipts for the exact Cloudflare source. The November 22 receipts cover different worktree snapshots.
 The [master gate table](PLAN.md#release-gates-at-a-glance) defines completion evidence.
 The [master package checklist](PLAN.md#phase-1-close-the-v1-release) defines remaining work, dependencies, and responsible roles.
 The [decision register](PLAN.md#decisions-still-required) records the required dispositions before execution.

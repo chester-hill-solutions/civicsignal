@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { build } from 'esbuild';
 import { Miniflare, Response as LocalResponse } from 'miniflare';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -139,7 +139,7 @@ async function probeFixture(blocked = false, failure = false) {
   return { mf, call, entered: entered.promise, release: () => release.resolve(), encoderCalls: () => encoderCalls };
 }
 
-async function httpFixture(holdSource = false) {
+async function httpFixture(holdSource = false, controlled = true) {
   const path = await directory(), worker = 'pipeline-http-local', secret = 'local-fixture-secret';
   const sourceEntered = deferred<void>(), sourceRelease = deferred<void>();
   const outbound: string[] = [];
@@ -151,8 +151,8 @@ async function httpFixture(holdSource = false) {
         CIVIC_DB: { type: 'd1', id: 'fixture-only-d1', dev: { remote: false } },
         CORPUS: { type: 'r2', name: 'fixture-only-r2', dev: { remote: false } },
         VECTORIZE: { type: 'worker', worker: 'fixture-vectors' },
-        ...Object.fromEntries(Object.entries({ PIPELINE_SECRET: secret, PIPELINE_PINNED_COMMIT: commit,
-          PIPELINE_PINNED_DATE: date, PIPELINE_EMBEDDING_ATTEMPT_CAP: '3' }).map(([key, value]) => [key, { type: 'text' as const, value }])),
+        ...Object.fromEntries(Object.entries({ PIPELINE_SECRET: secret, ...(controlled ? { PIPELINE_PINNED_COMMIT: commit,
+          PIPELINE_PINNED_DATE: date, PIPELINE_EMBEDDING_ATTEMPT_CAP: '3' } : {}) }).map(([key, value]) => [key, { type: 'text' as const, value }])),
       },
       exports: { PipelineCoordinator: { type: 'durable-object', storage: 'sqlite' } },
       manifest: { mainModule: 'worker.js', modules: { 'worker.js': { type: 'esm', contents: pipelineScript } } },
@@ -166,16 +166,26 @@ async function httpFixture(holdSource = false) {
     } } } }, { config: {
       name: 'fixture-vectors', compatibilityDate: '2026-10-22',
       manifest: { mainModule: 'worker.js', modules: { 'worker.js': { type: 'esm', contents:
-        `import { WorkerEntrypoint } from 'cloudflare:workers'; export default class extends WorkerEntrypoint { async getByIds() { return []; } }` } } },
+        `import { WorkerEntrypoint } from 'cloudflare:workers'; export default class extends WorkerEntrypoint {
+          async getByIds() { return []; }
+          async describe() { return { processedUpToMutation: 'indexed-fixture-mutation' }; }
+        }` } } },
     } }] });
   close.push(async () => { sourceRelease.resolve(); await mf.dispose(); });
   const call = (route: string, body?: unknown, headers: Record<string, string> = {}, method = body === undefined ? 'GET' : 'POST') =>
     mf.dispatchFetch(`https://pipeline.invalid${route}`, { method, headers: { 'x-pipeline-secret': secret, ...headers },
       ...(body === undefined ? {} : { body: typeof body === 'string' ? body : JSON.stringify(body) }) });
   const db = await mf.getD1Database('CIVIC_DB', worker), bucket = await mf.getR2Bucket('CORPUS', worker);
-  await db.exec(`CREATE TABLE corpus_state(corpus_id TEXT,commit_sha TEXT,parser_version TEXT,row_count INTEGER);
-    CREATE TABLE statute_sections(id TEXT,corpus_id TEXT,text_hash TEXT);
-    CREATE TABLE corpus_mutations(id TEXT,corpus_id TEXT,payload TEXT);`);
+  const guardSql = await readFile('migrations/0009_corpus_publication_guard.sql', 'utf8');
+  await db.batch([
+    db.prepare(`CREATE TABLE corpus_state(corpus_id TEXT PRIMARY KEY,commit_sha TEXT,commit_date TEXT,as_of TEXT,
+      parser_version TEXT,row_count INTEGER,last_run_at TEXT)`),
+    db.prepare(`CREATE TABLE corpus_runs(corpus_id TEXT,commit_sha TEXT,commit_date TEXT,ran_at TEXT,added INTEGER,
+      changed INTEGER,removed INTEGER,unchanged INTEGER,embedded INTEGER,duration_ms INTEGER,ok INTEGER,error TEXT,parser_version TEXT)`),
+    db.prepare('CREATE TABLE statute_sections(id TEXT,corpus_id TEXT,text_hash TEXT)'),
+    db.prepare('CREATE TABLE corpus_mutations(id TEXT,corpus_id TEXT,payload TEXT)'),
+    db.prepare(guardSql),
+  ]);
   const row = { id: 'acts-en-1', corpusId: 'statutes-canada', instrument: 'Test Act', citation: 'T-1', section: '1',
     schedule: null, part: null, status: 'placeholder' as const, heading: null, text: '[Reserved]',
     source_url: 'https://example.invalid/1', in_force: 1 as const, language: 'en' as const, embedText: '', lastChanged: date };
@@ -186,7 +196,8 @@ async function httpFixture(holdSource = false) {
   const manifest = { format: 1, commit, parser, date, rows: { count: 1, bytes: rowBytes.length, partBytes: rowBytes.length,
     parts: [{ key: rowKey, bytes: rowBytes.length, sha256: sha(rowBytes) }] }, index: { key: indexKey(commit, parser), bytes: indexBytes.length, entries: 1, digest, sha256: sha(indexBytes) } };
   for (const [key, value] of [[rowKey, rowBytes], [indexKey(commit, parser), indexBytes], [manifestKey(commit, parser), bytes(JSON.stringify(manifest))]] as const) await bucket.put(key, value);
-  await db.prepare('INSERT INTO corpus_state VALUES(?,?,?,1)').bind('statutes-canada', commit, parser).run();
+  await db.prepare('INSERT INTO corpus_state(corpus_id,commit_sha,parser_version,row_count) VALUES(?,?,?,1)')
+    .bind('statutes-canada', commit, parser).run();
   await db.prepare('INSERT INTO statute_sections VALUES(?,?,?)').bind(row.id, 'statutes-canada', entries[0]!.fp).run();
   return { mf, call, db, bucket, outbound, worker, sourceEntered: sourceEntered.promise, releaseSource: () => sourceRelease.resolve(),
     request: { commit, parser, indexDigest: digest, part: 0 } };
@@ -390,5 +401,23 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS'] !== '1')('pipeline admi
     expect(state).toMatchObject({ submitted: 0, remaining: 3,
       coordinator: { revision: 1, suspended: true, pending: true, failures: 1, alarmAt: null, active: null, quiescent: true } });
     expect(f.outbound).toHaveLength(1);
+  }, 15_000);
+
+  it('publishes an already indexed ordinary revision without contacting GitHub', async () => {
+    const f = await httpFixture(false, false);
+    const next = 'b'.repeat(40), corpusId = 'statutes-canada', timestamp = date + 'T00:00:00.000Z';
+    const state = { corpusId, commit: next, commitDate: date, asOf: date, rowCount: 1, lastRunAt: timestamp, parserVersion: parser };
+    const counts = { added: 0, changed: 1, removed: 0, unchanged: 0 };
+    const run = { corpusId, commit: next, commitDate: date, ranAt: timestamp, counts, embedded: 1, durationMs: 20, ok: true };
+    await f.db.prepare(`INSERT INTO corpus_publication_guard
+      (corpus_id,generation,target_commit,target_date,vector_mutation,completion_json)
+      VALUES(?,1,?,?,'indexed-fixture-mutation',?)`).bind(corpusId, next, date, JSON.stringify({ run, state })).run();
+
+    const response = await f.call('/run', {});
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, at: next, cycle: 'publish', counts, remaining: true });
+    expect(f.outbound).toEqual([]);
+    expect(await f.db.prepare('SELECT commit_sha FROM corpus_state').first()).toEqual({ commit_sha: next });
+    expect(await f.db.prepare('SELECT target_commit FROM corpus_publication_guard').first()).toEqual({ target_commit: null });
   }, 15_000);
 });

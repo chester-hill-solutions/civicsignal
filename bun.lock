@@ -37,7 +37,7 @@
     },
     "vendor/@chester-hill-solutions/api-billing": {
       "name": "@chester-hill-solutions/api-billing",
-      "version": "0.1.1",
+      "version": "0.1.2",
     },
     "vendor/@chester-hill-solutions/app-origin": {
       "name": "@chester-hill-solutions/app-origin",

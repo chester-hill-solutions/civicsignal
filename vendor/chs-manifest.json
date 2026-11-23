@@ -1,6 +1,6 @@
 {
   "source": "chester-hill-solutions/chester-hill-solutions",
-  "revision": "9abf87ed3f47c83d1ddf9547d28bac979cd0c478",
+  "revision": "592aa6cbe4d1f84d6fa57db14e022d1c9681a1f4",
   "packages": {
     "app-origin": {
       "version": "0.1.0",
@@ -107,10 +107,10 @@
       }
     },
     "api-billing": {
-      "version": "0.1.1",
+      "version": "0.1.2",
       "files": {
-        "dist/durable-object.d.ts": "710a53776b1c9709559422c84a4e518b2a09f7b4205e111b16c7fe67b8fafc61",
-        "dist/durable-object.js": "35e139e85d8f7eba5b8cd04f766309a18e5de479321a9d8b05df92760cc8200c",
+        "dist/durable-object.d.ts": "3435cc5afd4a0a9c267c58a3921d02b26226ec9beff4bc145a7422e5fef48a1d",
+        "dist/durable-object.js": "8d5e9bab2b6a32347177309fd5100ddc2f2094081d190bfc1e3a99e0ba792f37",
         "dist/fuse.d.ts": "b2198101d2e1bf9452974110ebf314f14ac42c2d4e242fba5e7f8007b76f7dac",
         "dist/fuse.js": "bd0d0dfe09f3bcf0592ddc08188185423b6f8e9d33b4f84425dba861de35017b",
         "dist/index.d.ts": "af7423a9c49735927f014854cf17eac520384a4fbdf370e3f0ce56aa79937833",
@@ -127,7 +127,7 @@
         "dist/types.js": "e99711ee2112dd6a1bb6e77c91b4414fc930bd6ba08c57a798db8fe5122959f8",
         "dist/usage-ledger.d.ts": "a2558f3524b62bcd5502f2a79608df42560f746000271d9142e1bd1296202ec3",
         "dist/usage-ledger.js": "97e7f332549204862ada5cd2d34c49163f7b0d48e47aab629987357b7b268c56",
-        "package.json": "38de9f2bddad82d142e0f66a9915223d606bef2a844d98abf08e50d2ca13effd"
+        "package.json": "9c74478353863403cb474725c5dc40b456b7864f97dab02d6e92dda8b7730e1d"
       }
     },
     "corpus": {
@@ -147,8 +147,8 @@
   },
   "baseRevision": "853ffc5a606e5526cb64cf453238180223a39d12",
   "sourcePatch": {
-    "path": "vendor/patches/api-billing-0.1.1.patch",
-    "sha256": "833e7503f0a94f23329c4f208cc89440dcd2b77a515a309f64e03a27d2a439dd"
+    "path": "vendor/patches/api-billing-0.1.2.patch",
+    "sha256": "b76e15b2b3872902e700c797c653f086f5145b3332e165e3f0e854e67e99a16f"
   },
-  "sourceTree": "772354c9f4c3c519e84bfd46e94183a0eea84f1d"
+  "sourceTree": "5e8a9e878d08f35a7f67e3c309a68ac7cfeb1057"
 }

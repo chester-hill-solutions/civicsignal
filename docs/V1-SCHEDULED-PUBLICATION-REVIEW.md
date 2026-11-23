@@ -141,6 +141,11 @@ rows. Count additional qualification diagnostics separately. A health fetch,
 manual API creation, an existing-publication no-op or absent metrics cannot close
 this gate. Reconcile the canonical backup unchanged and the calendar empty.
 
+Run the [offline snapshot verifier](../scripts/publish-snapshot.ts) on the downloaded artifacts.
+Pass the frozen proposal's `referenceManifest.sha256` in `--reference-manifest-sha256`.
+The verifier checks the exact manifest bytes before it checks the row parts and index.
+This step checks artifact correspondence. The event, canonical backup, and cleanup still need independent receipts.
+
 The local implementation does not close this hosted gate or establish a new
 full-corpus 128-MiB measurement. Another hosted event requires its own concrete
 approval; the original serving ledger and embedding coordinator must not be reset

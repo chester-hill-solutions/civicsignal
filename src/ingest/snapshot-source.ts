@@ -234,7 +234,7 @@ export class SnapshotReader implements SnapshotSource {
   constructor(
     private readonly bucket: SnapshotBucket,
     readonly revision: string,
-    private readonly options: { parser?: string } = {},
+    private readonly options: { parser?: string; expectedManifestSha256?: string } = {},
   ) {}
 
   /** What the snapshot is, and where all of it is. */
@@ -242,7 +242,12 @@ export class SnapshotReader implements SnapshotSource {
     this.cached ??= (async () => {
       const object = await this.bucket.get(manifestKey(this.revision, this.options.parser));
       if (!object) throw new Error(`the snapshot at ${this.revision} has no manifest`);
-      const text = new TextDecoder().decode(await object.arrayBuffer());
+      const bytes = new Uint8Array(await object.arrayBuffer());
+      const expected = this.options.expectedManifestSha256;
+      if (expected !== undefined && createHash('sha256').update(bytes).digest('hex') !== expected) {
+        throw new Error('snapshot manifest differs from the pinned reference SHA-256');
+      }
+      const text = new TextDecoder().decode(bytes);
       const manifest = parseManifest(text, `the manifest of ${this.revision}`);
       if (manifest.commit !== this.revision || manifest.parser !== this.options.parser) throw new Error('snapshot manifest revision or parser mismatch');
       return manifest;

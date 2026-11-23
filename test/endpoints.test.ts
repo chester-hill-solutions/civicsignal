@@ -13,6 +13,8 @@ type RequestOptions = { method?: string; body?: string; headers?: Record<string,
 interface UsageStorage {
   get(name: string): Promise<unknown>;
   put(name: string | Record<string, unknown>, value?: unknown): Promise<void>;
+  list(options: { start?: string; end?: string; prefix?: string; limit?: number }): Promise<Map<string, unknown>>;
+  delete(names: string | string[]): Promise<void>;
   transaction<T>(work: (transaction: UsageStorage) => Promise<T>): Promise<T>;
 }
 const generationProviders=['anthropic','openai','google','opencode-zen'] as const;
@@ -32,15 +34,28 @@ async function setup(limit = 5) {
   const key = prepareWorkspaceKey('customer_kept', 'Endpoint test');
   fixture.sqlite.exec(key.sql);
   const counts = new Map<string, unknown>();
+  let currentTransaction = Promise.resolve();
   const storage: UsageStorage = { async get(name: string) { return counts.get(name); },
     async put(name: string | Record<string, unknown>, value?: unknown) {
       if (typeof name === 'string') counts.set(name, value);
       else for (const [key, item] of Object.entries(name)) counts.set(key, item);
     },
+    async list({ start, end, prefix, limit }) {
+      const keys = [...counts.keys()].sort().filter((key) =>
+        (start === undefined || key >= start) && (end === undefined || key < end) &&
+        (prefix === undefined || key.startsWith(prefix)));
+      return new Map(keys.slice(0, limit ?? keys.length).map((key) => [key, counts.get(key)]));
+    },
+    async delete(names) { for (const name of Array.isArray(names) ? names : [names]) counts.delete(name); },
     async transaction<T>(work: (transaction: UsageStorage) => Promise<T>): Promise<T> {
+      const current = currentTransaction;
+      let release!: () => void;
+      currentTransaction = new Promise<void>((resolve) => { release = resolve; });
+      await current;
       const previous = new Map(counts);
       try { return await work(storage); }
       catch (error) { counts.clear(); for (const entry of previous) counts.set(...entry); throw error; }
+      finally { release(); }
     } };
   // Exercise the actual shared Durable Object and its HTTP client. Cloudflare
   // supplies lifecycle and input gates; the fixture supplies persistent storage.
@@ -83,6 +98,111 @@ async function setup(limit = 5) {
 }
 
 describe('HTTP and MCP access and metering', () => {
+  it('holds the last workspace unit before the caller-paid provider starts', async () => {
+    const fixture = await setup(1);
+    let providerStarted!: () => void;
+    const started = new Promise<void>((resolve) => { providerStarted = resolve; });
+    let finishProvider!: () => void;
+    const finish = new Promise<void>((resolve) => { finishProvider = resolve; });
+    const provider = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      providerStarted();
+      await finish;
+      return Response.json(providerText('openai', '[Test Act](https://example.test/act/1)'));
+    });
+    const chat = () => fixture.send('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CivicSignal-BYOK-Provider': 'openai', 'X-CivicSignal-BYOK-Key': 'fixture-only' },
+      body: JSON.stringify({ topic: 'Test Act section 1', messages: [{ role: 'user', content: 'Give the citation.' }] }),
+    });
+
+    const first = chat();
+    try {
+      await started;
+      const second = await chat();
+      expect(second.status).toBe(429);
+      const lookup = await fixture.send('/api/statutes?act=Test+Act&section=1');
+      expect(lookup.status).toBe(429);
+      expect(await fixture.count()).toBe(0);
+      expect(provider).toHaveBeenCalledTimes(1);
+    } finally {
+      finishProvider();
+    }
+    expect((await first).status).toBe(200);
+    expect(await fixture.count()).toBe(1);
+  });
+
+  it('hides discovery and refuses corpus reads during an open publication', async () => {
+    const fixture = await setup();
+    fixture.sqlite.exec(`INSERT INTO corpus_publication_guard(corpus_id,generation,target_commit,target_date)
+      VALUES('statutes-canada',1,'next-revision','2026-10-23')`);
+    const vector = vi.fn(async () => ({ matches: [] }));
+    fixture.env.VECTORIZE = { query: vector };
+
+    for (const path of ['/api/statutes?act=Test+Act&section=1', '/api/brief?topic=leave', '/api/changes?after=7']) {
+      const response = await fixture.send(path);
+      expect(response.status).toBe(503);
+      expect(await response.json()).toMatchObject({ code: 'RETRIEVAL_UNAVAILABLE' });
+    }
+    const match = await fixture.send('/api/match', {
+      method: 'POST', body: JSON.stringify({ vector: Array(768).fill(0.1) }),
+    });
+    expect(match.status).toBe(503);
+    const capabilities = await fixture.send('/.well-known/civicsignal.json', {}, false);
+    expect(await capabilities.json()).toMatchObject({ endpoints: [], mcp: { tools: [] } });
+    expect(await (await fixture.rpc('tools/list')).text()).not.toContain('cite_provision');
+    expect(vector).not.toHaveBeenCalled();
+    expect(await fixture.count()).toBe(0);
+  });
+
+  it('discards a semantic result when the generation changes during the request', async () => {
+    const fixture = await setup();
+    const vector = vi.fn(async () => {
+      fixture.sqlite.exec(`INSERT INTO corpus_publication_guard(corpus_id,generation)
+        VALUES('statutes-canada',1)`);
+      fixture.sqlite.exec("UPDATE statute_sections SET text='New generation text' WHERE id='acts-en-one'");
+      return { matches: [{ id: 'acts-en-one', score: 0.9 }] };
+    });
+    fixture.env.VECTORIZE = { query: vector };
+    fixture.env.ENCODER_TOKEN = 'synthetic-local-only';
+    fixture.env.ENCODER_SERVICE = { async fetch() { return Response.json({ vectors: [Array(768).fill(0.1)] }); } };
+    const crossed = await fixture.send('/api/statutes?topic=leave');
+    expect(crossed.status).toBe(503);
+    const body = await crossed.json();
+    expect(body).toMatchObject({ code: 'RETRIEVAL_UNAVAILABLE' });
+    expect(body).not.toHaveProperty('items');
+    expect(await fixture.count()).toBe(0);
+    expect(vector).toHaveBeenCalledTimes(1);
+
+    const settled = await fixture.send('/api/statutes?act=Test+Act&section=1');
+    expect(settled.status).toBe(200);
+    expect(await settled.text()).toContain('New generation text');
+    expect(await fixture.count()).toBe(1);
+  });
+
+  it('serves and meters a semantic answer when the cache read fails', async () => {
+    const fixture = await setup();
+    const get = vi.fn(async () => { throw new Error('private-cache-error'); });
+    const put = vi.fn(async () => {});
+    const vector = vi.fn(async () => ({ matches: [{ id: 'acts-en-one', score: 0.9 }] }));
+    fixture.env.CIVIC_CACHE = { get, put } as unknown as KVNamespace;
+    fixture.env.VECTORIZE = { query: vector };
+    fixture.env.ENCODER_TOKEN = 'synthetic-local-only';
+    fixture.env.ENCODER_SERVICE = { async fetch() { return Response.json({ vectors: [Array(768).fill(0.1)] }); } };
+
+    const response = await fixture.send('/api/statutes?topic=test+rule&language=en');
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({
+      items: [{ id: 'acts-en-one', citationUrl: 'https://example.test/act/1' }],
+      retrieval: [{ decision: 'answer', cache: 'miss', cacheFailure: 'read' }],
+    });
+    expect(JSON.stringify(body)).not.toContain('private-cache-error');
+    expect(await fixture.count()).toBe(1);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(vector).toHaveBeenCalledTimes(1);
+    expect(put).not.toHaveBeenCalled();
+  });
+
   it('refuses a cached answer with conflicting shared-text byte contracts before billing', async () => {
     const fixture = await setup(), storage = memoryTextBucket();
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -455,7 +575,7 @@ describe('HTTP and MCP access and metering', () => {
     closed.push(fresh.close);
     // Copy protected identity and publication rows. The corpus restore cannot
     // reset a workspace or the existing external usage namespace.
-    for (const table of ['workspace', 'civic_workspace_billing', 'workspace_api_key', 'corpus_state']) {
+    for (const table of ['workspace', 'civic_workspace_billing', 'workspace_api_key', 'corpus_state', 'corpus_mutations', 'corpus_publication_guard']) {
       const ddl = fixture.sqlite.prepare('SELECT sql FROM sqlite_master WHERE type=\'table\' AND name=?').get(table)?.sql;
       fresh.sqlite.exec(String(ddl));
       for (const row of fixture.sqlite.prepare(`SELECT * FROM ${table}`).all()) {

@@ -1,4 +1,4 @@
-/** Undeployed Bun/Postgres portability entry point. Keep Railway services running. */
+/** Bun/Postgres entry point for the alternative deployment outside v1. */
 import postgres from 'postgres';
 import { PostgresUsageLedger } from '@chester-hill-solutions/api-billing/postgres';
 import type { CustomerPlan } from '@chester-hill-solutions/api-billing';

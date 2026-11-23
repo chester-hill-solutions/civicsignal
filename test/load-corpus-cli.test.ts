@@ -47,4 +47,32 @@ describe('corpus loader CLI', () => {
     expect(result.stderr).toContain(`${args[0]} must be`);
     expect(result.stdout).not.toContain('load-corpus:');
   });
+
+  it.each([
+    ['corpus_publication_guard', 'publication guard is installed'],
+    ['CORPUS_PUBLICATION_GUARD', 'publication guard is installed'],
+    [null, 'Could not verify the D1 publication schema'],
+  ])('refuses legacy writes with schema %s', (guardName, message) => {
+    const path = fixture();
+    writeFileSync(join(path, 'scripts/lib/cloudflare-auth.ts'), `
+      import { appendFileSync } from 'node:fs';
+      import { Database } from 'bun:sqlite';
+      const db = new Database(':memory:');
+      ${guardName ? `db.exec('CREATE TABLE ${guardName}(id TEXT)');` : ''}
+      export async function fetchWithAuth(_url: string, init: RequestInit) {
+        const { sql } = JSON.parse(String(init.body));
+        appendFileSync('queries.log', sql.replace(/\\s+/g, ' ').trim() + '\\n');
+        const results = ${guardName ? 'db.query(sql).all()' : '[{ guard_installed: null }]'};
+        return Response.json({ success: true, result: [{ results }] });
+      }
+    `);
+    const result = spawnSync('bun', ['scripts/load-corpus.ts', '--lang', 'en'], {
+      cwd: path, encoding: 'utf8', timeout: 5000,
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(message);
+    expect(readFileSync(join(path, 'queries.log'), 'utf8').trim().split('\n')).toEqual([
+      "SELECT EXISTS ( SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'corpus_publication_guard' COLLATE NOCASE ) AS guard_installed",
+    ]);
+  });
 });

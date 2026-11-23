@@ -14,12 +14,15 @@ const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite');
 /** Execute the actual production statements and D1 batch transaction semantics. */
 function harness(dropSearchText = false, textOptions: { textBucket?: TextObjectBucket; retainD1Text?: boolean } = {}) {
   const sqlite = new DatabaseSync(':memory:');
-  for (const name of ['0001_init.sql', '0002_statute_citation_columns.sql', '0003_pipeline.sql', '0006_corpus_mutations.sql', '0007_provision_text_refs.sql', '0008_corpus_parser.sql']) {
+  for (const name of ['0001_init.sql', '0002_statute_citation_columns.sql', '0003_pipeline.sql', '0006_corpus_mutations.sql', '0007_provision_text_refs.sql', '0008_corpus_parser.sql', '0009_corpus_publication_guard.sql']) {
     sqlite.exec(readFileSync(new URL(`../migrations/${name}`, import.meta.url), 'utf8'));
   }
   if (dropSearchText) sqlite.exec(readFileSync(new URL('../migrations/0004_drop_search_text.sql', import.meta.url), 'utf8'));
   let failSql: RegExp | null = null;
   let failVector = false;
+  let holdVisibility = false;
+  let mutations = 0;
+  let visibleMutation = '';
   let embedCalls = 0;
   const values = new Map<string, number[]>();
   const prepare = (sql: string) => {
@@ -44,21 +47,32 @@ function harness(dropSearchText = false, textOptions: { textBucket?: TextObjectB
       } catch (error) { sqlite.exec('ROLLBACK'); throw error; }
     },
   } as unknown as D1Database;
+  const submit = () => {
+    const mutationId = `mutation-${++mutations}`;
+    if (!holdVisibility) visibleMutation = mutationId;
+    return { mutationId };
+  };
   const vector = {
     async upsert(vectors: { id: string; values: number[] }[]) {
       if (failVector) throw new Error('injected vector failure');
       for (const vector of vectors) values.set(vector.id, vector.values);
+      return submit();
     },
     async deleteByIds(ids: string[]) {
       if (failVector) throw new Error('injected vector failure');
       for (const id of ids) values.delete(id);
+      return submit();
     },
+    async describe() { return { processedUpToMutation: visibleMutation }; },
   } as unknown as Vectorize;
   const store = new D1CorpusStore(db, vector, 'statutes-canada', textOptions);
   const encoder = { async embed(documents: unknown[]) { embedCalls++; return documents.map(() => [0.1, 0.2]); } };
   return { store, sqlite, values, encoder,
     sqlFailure: (pattern: RegExp | null) => { failSql = pattern; },
     vectorFailure: (value: boolean) => { failVector = value; },
+    holdVisibility: () => { holdVisibility = true; },
+    markVisible: () => { visibleMutation = `mutation-${mutations}`; },
+    mutationCount: () => mutations,
     embedCalls: () => embedCalls,
   };
 }
@@ -154,13 +168,40 @@ describe('corpus transaction and outbox recovery', () => {
     expect(count(h, 'corpus_changes')).toBe(1);
     expect(h.values.size).toBe(0);
     expect(await h.store.currentCommit()).toBeNull();
+    expect(await h.store.activePublication()).toEqual({ ...next, vectorMutation: null, completionJson: null });
     h.vectorFailure(false);
     await run();
     expect(h.embedCalls()).toBe(1);
     expect(h.values.get('a-1')).toEqual([0.1, 0.2]);
     expect(count(h, 'corpus_changes')).toBe(1);
     expect((await h.store.currentCommit())?.commit).toBe(next.commit);
+    expect(await h.store.activePublication()).toBeNull();
     expect(h.sqlite.prepare('SELECT payload FROM corpus_mutations').get().payload).toBeNull();
+  });
+
+  it('keeps an acknowledged mutation fenced until Vectorize reports that exact checkpoint', async () => {
+    const h = harness();
+    h.holdVisibility();
+    const reconcile = () => runPipeline({ corpusId: 'statutes-canada', previous: { commit: 'old', date: '2026-10-01' },
+      next, rows: [row('a-1')], store: h.store, encoder: h.encoder, now: new Date('2026-10-22T00:00:00Z') });
+    await expect(reconcile()).rejects.toThrow('Waiting for Vectorize');
+    expect(h.sqlite.prepare('SELECT payload FROM corpus_mutations').get().payload).toBeNull();
+    expect(await h.store.currentCommit()).toBeNull();
+    expect(await h.store.activePublication()).toMatchObject({ ...next, vectorMutation: 'mutation-1', completionJson: expect.any(String) });
+    await expect(h.store.applyBatch({ ...batch([upsert('a-2')]), revision: 'newer' })).rejects.toThrow('Finish the active corpus revision');
+    await expect(h.store.completeStagedPublication()).rejects.toThrow('Waiting for Vectorize');
+    expect(h.mutationCount()).toBe(1);
+    h.markVisible();
+    expect(await h.store.completeStagedPublication()).toMatchObject({ commit: next.commit, embedded: 1 });
+    expect(await h.store.completeStagedPublication()).toBeNull();
+    expect(h.mutationCount()).toBe(1);
+    expect(h.embedCalls()).toBe(1);
+    expect(count(h, 'corpus_runs')).toBe(1);
+    expect(await h.store.activePublication()).toBeNull();
+    expect((await h.store.currentCommit())?.commit).toBe(next.commit);
+    expect(h.sqlite.prepare('SELECT generation FROM corpus_publication_guard').get().generation).toBe(1);
+    await h.store.applyBatch({ ...batch([upsert('a-2')]), revision: 'newer' });
+    expect(h.sqlite.prepare('SELECT generation FROM corpus_publication_guard').get().generation).toBe(2);
   });
 
   it('commits each successful snapshot provider batch before the next call, then re-diffs after a later call fails', async () => {
@@ -168,11 +209,9 @@ describe('corpus transaction and outbox recovery', () => {
     const rows = Array.from({ length: EMBED_BATCH * 2 + 1 }, (_, i) =>
       row(`a-${String(i).padStart(3, '0')}`, { text: `Provision ${i}.` }));
     const same = row('s-same'), gone = row('z-gone');
-    await h.store.applyBatch({ ...batch([rows[0]!, same, gone].map(value => ({
-      row: value.id === rows[0]!.id ? { ...value, text: 'The earlier text.' } : value,
-      hash: fingerprint(value.id === rows[0]!.id ? { ...value, text: 'The earlier text.' } : value),
-      embedding: [0.1, 0.2],
-    }))), revision: 'baseline' });
+    await runPipeline({ corpusId: 'statutes-canada', previous: { commit: 'old', date: '2026-10-01' },
+      next: { ...next, commit: 'baseline' }, rows: [{ ...rows[0]!, text: 'The earlier text.' }, same, gone],
+      store: h.store, encoder: h.encoder, now: new Date('2026-10-22T00:00:00Z') });
     const baselineChanges = count(h, 'corpus_changes');
     const placeholder = row('p-placeholder', { status: 'placeholder', text: '[Reserved]' });
     const snapshotRows = [...rows, placeholder, same];
@@ -203,12 +242,13 @@ describe('corpus transaction and outbox recovery', () => {
     // still blocked, before allowing it to fail.
     const during = { fingerprints: await h.store.fingerprints(), events: count(h, 'corpus_changes'),
       pending: h.sqlite.prepare('SELECT count(*) AS n FROM corpus_mutations WHERE payload IS NOT NULL').get().n,
-      state: await h.store.currentCommit(), runs: count(h, 'corpus_runs') };
+      state: await h.store.currentCommit(), active: await h.store.activePublication(), runs: count(h, 'corpus_runs') };
     failSecond(new Error('later provider call interrupted')); await failed;
     expect(firstCalls.map(call => call.length)).toEqual([EMBED_BATCH, EMBED_BATCH]);
     for (const value of rows.slice(0, EMBED_BATCH)) expect(during.fingerprints.get(value.id)).toBe(fingerprint(value));
     expect(during.events).toBe(baselineChanges + EMBED_BATCH);
-    expect(during.pending).toBe(0); expect(during.state).toBeNull(); expect(during.runs).toBe(0);
+    expect(during.pending).toBe(0); expect(during.state?.commit).toBe('baseline'); expect(during.runs).toBe(1);
+    expect(during.active?.commit).toBe(next.commit);
 
     const resumedTexts: string[] = [];
     const resumed: Encoder = { async embed(documents) {
@@ -220,6 +260,7 @@ describe('corpus transaction and outbox recovery', () => {
     expect(completed).toMatchObject({ remaining: false, embedded: EMBED_BATCH + 1,
       counts: { added: EMBED_BATCH + 2, changed: 0, removed: 1, unchanged: EMBED_BATCH + 1 } });
     expect((await h.store.currentCommit())?.rowCount).toBe(snapshotRows.length);
+    expect(await h.store.activePublication()).toBeNull();
     expect(count(h, 'corpus_changes')).toBe(baselineChanges + rows.length + 2);
     expect(h.values.has(placeholder.id)).toBe(false); expect(h.values.has(gone.id)).toBe(false);
     const events = count(h, 'corpus_changes');

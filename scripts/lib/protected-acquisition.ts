@@ -101,7 +101,8 @@ type View={names:string[];entries:Map<string,string>;values:Map<string,{sha256:s
 
 /** A successful fixture capture stops BEFORE downloading SQL or qualifying a
  * production source. Any failed/uncertain/persisted attempt is non-resumable. */
-export async function captureProtectedAcquisitionFixture(options:ProtectedAcquisitionFixtureOptions){
+export async function captureProtectedAcquisitionFixture(options:ProtectedAcquisitionFixtureOptions,
+ onPrivateSignedUrl?:(url:string)=>void){
  let directory:string|undefined,attempts=0,sent=0,ioSettled=true,exportPolls=0;
  try{
   requireFact(options.mode==='fixture-only'&&options.io.fixtureOnly===true,'ACQUISITION_FIXTURE_ONLY');
@@ -214,7 +215,8 @@ export async function captureProtectedAcquisitionFixture(options:ProtectedAcquis
   }catch{return fail('ACQUISITION_AUTH_CONTRACT');}})();
   check();save('legacy-auth.private.json',normalized);check();
   const summary={format:1,fixtureOnly:true,fixtureCaptureComplete:true,standaloneAcceptance:false,acceptanceRequiresSuccessfulSettledOwner:true,requests:sent,kvNames:first.names.length,kvPages:[first.pages,second.pages],exportPolls,downloadPending:true,downloadRequests:0,sqlFactsCaptured:false,providerAuthenticated:false,globalQuiescenceEstablished:false,productionAcquisitionQualified:false,automaticRetry:false,automaticResume:false} as const;
-  save('capture.result.json',{...summary,receipts});check();return summary;
+  save('capture.result.json',{...summary,receipts});check();
+  onPrivateSignedUrl?.(signed);check();return summary;
  }catch(error){
   const code=error instanceof ProtectedAcquisitionError?error.code:'ACQUISITION_LOCAL';
   if(directory){try{exclusive(directory,'capture.failure.json',bytes({format:1,code,attempts,sent,exportPolls,ioSettled,automaticRetry:false,automaticResume:false,preserved:true,productionAcquisitionQualified:false}));}catch{/* Retain the exclusive claim and every partial; never restart. */}}

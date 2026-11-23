@@ -186,6 +186,24 @@ describe('immutable provision text', () => {
 });
 
 describe('D1 to R2 read cutover', () => {
+  it('refuses a text audit that crosses a publication generation with the same revision and row count', async () => {
+    const fixture = createTextFixture();
+    await fixture.stage();
+    fixture.sqlite.exec(`INSERT INTO corpus_state(corpus_id,commit_sha,commit_date,as_of,row_count,last_run_at)
+      VALUES ('statutes-canada','revision','2026-10-22','2026-10-22',1,'2026-10-22')`);
+    const bucket = {
+      async get(key: string) {
+        fixture.sqlite.exec("INSERT INTO corpus_publication_guard(corpus_id,generation) VALUES('statutes-canada',1)");
+        return fixture.bucket.get(key);
+      },
+    };
+    await expect(auditProvisionTextPage(fixture.db, bucket, { expectedRevision: 'revision:legacy', mode: 'verify' }))
+      .rejects.toThrow('corpus changed');
+    fixture.sqlite.exec(`UPDATE corpus_publication_guard SET target_commit='next', target_date='2026-10-23'`);
+    await expect(auditProvisionTextPage(fixture.db, fixture.bucket, { expectedRevision: 'revision:legacy', mode: 'verify' }))
+      .rejects.toThrow('settled corpus publication');
+  });
+
   it('audits every published row in resumable bounded pages and rejects a changed publication', async () => {
     const fixture = createTextFixture();
     await fixture.stage();

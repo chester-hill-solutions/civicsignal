@@ -232,11 +232,19 @@ export async function retrieveStatutesByVector(
 
     // Cache reuse happens before embedding. Store the original safe observation
     // so a warm response never pretends that its raw score was computed now.
-    let cacheKey = '';
+    let cacheKey: string | undefined;
     if (ctx.cache && ctx.retrievalCacheMode !== 'bypass') {
       if (trace.revisionKey) cacheKey = retrievalCacheKey(query, trace.revisionKey, Boolean(ctx.jev?.key), backend);
       else observation.cache = 'bypass';
-      const cached = cacheKey ? cachedRetrieval(await ctx.cache.get(cacheKey)) : undefined;
+      let cached: CachedRetrieval | undefined;
+      if (cacheKey) {
+        try {
+          cached = cachedRetrieval(await ctx.cache.get(cacheKey));
+        } catch {
+          observation.cacheFailure = 'read';
+          cacheKey = undefined;
+        }
+      }
       if (cached && cached.decision !== 'answer') {
         trace.cached(cached.observation);
         return trace.result([], cached.decision);
@@ -272,7 +280,7 @@ export async function retrieveStatutesByVector(
     if (!ctx.jev?.key && matches[0]!.score < backend.floor) return trace.result([]);
     const rows = await trace.provider('rows', () => backend.loadRows(ctx, matches.map((m) => m.id)));
     const byId = new Map(rows.map((row) => [String(row['id']), row]));
-    let ordered = matches.map((match) => byId.get(match.id)).filter((row): row is Record<string, unknown> => row !== undefined);
+    const ordered = matches.map((match) => byId.get(match.id)).filter((row): row is Record<string, unknown> => row !== undefined);
     if (!ordered.length) return trace.result([]);
 
     if (ctx.jev?.key) {
@@ -283,23 +291,31 @@ export async function retrieveStatutesByVector(
       if (ranked) {
         observation.mode = 'rerank';
         const decision = decide(ranked.flags, ranked.anyRelevant);
-        if (decision !== 'answer') {
-          trace.result([], decision);
-          if (ctx.cache && cacheKey) await ctx.cache.put(cacheKey, { decision, anyRelevant: ranked.anyRelevant, order: [], observation: { ...observation } } satisfies CachedRetrieval, CACHE_SECONDS);
-          return [];
+        const rankedRows = decision === 'answer' ? reorder(ordered, ranked.relevance) : [];
+        const items = decision === 'answer' ? trace.result(statuteItems(rankedRows, query)) : trace.result([], decision);
+        if (ctx.cache && cacheKey) {
+          const entry: CachedRetrieval = {
+            decision,
+            anyRelevant: ranked.anyRelevant,
+            order: rankedRows.map((row) => String(row['id'])).slice(0, CANDIDATE_COUNT),
+            observation: { ...observation },
+          };
+          try {
+            await ctx.cache.put(cacheKey, entry, CACHE_SECONDS);
+          } catch {
+            observation.cacheFailure = 'write';
+          }
         }
-        ordered = reorder(ordered, ranked.relevance);
-        const items = trace.result(statuteItems(ordered, query));
-        if (ctx.cache && cacheKey) await ctx.cache.put(cacheKey, {
-          decision, anyRelevant: ranked.anyRelevant, order: ordered.map((row) => String(row['id'])).slice(0, CANDIDATE_COUNT), observation: { ...observation },
-        } satisfies CachedRetrieval, CACHE_SECONDS);
         return items;
       }
       observation.providers.reranker = 'error';
       observation.fallback = true;
-      if (matches[0]!.score < backend.floor) return trace.result([]);
     }
-    return trace.result(statuteItems(ordered, query));
+    // The floor applies to the response as a whole, after filtering and limiting.
+    const items = statuteItems(ordered, query);
+    const returnedIds = new Set(items.map((item) => item.id));
+    const qualifies = matches.some(({ id, score }) => returnedIds.has(id) && Number.isFinite(score) && score >= backend.floor);
+    return trace.result(qualifies ? items : []);
   } catch (error) {
     observation.decision = 'error';
     throw error;

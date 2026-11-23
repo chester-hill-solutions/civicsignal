@@ -93,6 +93,8 @@ function ctx(
 }
 
 describe('the vector arm', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it('is used when the deployment has an index and an embedder', async () => {
     const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
     const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
@@ -341,15 +343,52 @@ describe('the vector arm', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('answers when the best match is at the floor', async () => {
-    const { db } = fakeDb([row('acts-en-c-34-36')]);
-    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: VECTOR_FLOOR, metadata: {} }]);
+  it('keeps weaker companions when a returned match is at the floor', async () => {
+    const { db } = fakeDb([row('at-floor'), row('companion')]);
+    const index = fakeIndex([
+      { id: 'at-floor', score: VECTOR_FLOOR, metadata: {} },
+      { id: 'companion', score: VECTOR_FLOOR - 0.01, metadata: {} },
+    ]);
     const items = await statutesCorpus.retrieve(
       { topic: 'recovery of damages' },
       ctx(db, { vector: index.index, embedQuery: async () => [0.1] }),
     );
 
-    expect(items).toHaveLength(1);
+    expect(items.map((item) => item.id)).toEqual(['at-floor', 'companion']);
+  });
+
+  it.each([false, true])('refuses when the keyword filter leaves only a weak match (Jev configured: %s)', async useJev => {
+    const { db, calls } = fakeDb([row('leader'), row('weak', { text: 'Compensation applies.' })]);
+    const index = fakeIndex([
+      { id: 'leader', score: 0.91, metadata: {} },
+      { id: 'weak', score: VECTOR_FLOOR - 0.01, metadata: {} },
+    ]);
+    const send = vi.fn(async () => new Response(null, { status: 503 }));
+    vi.stubGlobal('fetch', send);
+    const onRetrieval = vi.fn();
+    const items = await statutesCorpus.retrieve({ topic: 'recovery of damages', keywords: ['compensation'] },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1], onRetrieval, jev: useJev ? { key: 'test-key' } : undefined }));
+
+    expect(items).toEqual([]);
+    expect(calls).toHaveLength(1);
+    expect(send).toHaveBeenCalledTimes(useJev ? 1 : 0);
+    expect(onRetrieval).toHaveBeenCalledWith(expect.objectContaining({
+      decision: 'refuse', mode: 'vector-floor', preRefusalTopScore: 0.91, fallback: useJev,
+      candidateCount: 2, resultCount: 0,
+    }));
+  });
+
+  it('refuses when the highest-scoring match has no row and the returned row is below the floor', async () => {
+    const { db } = fakeDb([row('weak')]);
+    const index = fakeIndex([
+      { id: 'missing', score: 0.9, metadata: {} },
+      { id: 'weak', score: VECTOR_FLOOR - 0.01, metadata: {} },
+    ]);
+
+    const items = await statutesCorpus.retrieve({ topic: 'recovery of damages' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1] }));
+
+    expect(items).toEqual([]);
   });
 
   /**

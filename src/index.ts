@@ -1,9 +1,8 @@
 import { authenticateRequest, AccessError } from './access';
-import { runBillableRetrieval, BillableDenied } from './metering';
+import { runBillableChat, runBillableRetrieval, BillableDenied } from './metering';
 import { billableDenialResponse } from '@chester-hill-solutions/api-billing';
 import { buildBrief, type BriefRequest } from './routes/brief';
-import { CORPUS_ID } from './ingest/corpus-rows';
-import { CORPUSES_BY_ID, assertV1StatuteQuery, loadCorpusAvailability, UnsupportedCoverageError } from './corpora/registry';
+import { CORPUSES_BY_ID, assertV1StatuteQuery, loadD1CorpusPublication, UnsupportedCoverageError, type D1CorpusPublication } from './corpora/registry';
 import { emitCorpusItem, parseCitation } from '@chester-hill-solutions/corpus';
 import { policyFor } from './corpora/policies';
 import { capabilitiesResponse, llmsTxt } from './routes/capabilities';
@@ -52,9 +51,10 @@ export default {
       }
       if (url.pathname === '/mcp') {
         const identity = await authenticateRequest(env, request);
+        const publication = await loadD1CorpusPublication(env.CIVIC_DB);
         const handler = createCivicSignalMcpHandler({
-          request, env, ctx: corpusContext(env, observe, fresh),
-          runRetrieval: (work) => runBillableRetrieval(env, identity, work, {
+          request, env, ctx: corpusContext(env, publication, observe, fresh),
+          runRetrieval: (work) => runBillableRetrieval(env, identity, () => readPublishedStatutes(env, publication, work), {
             waitUntil: (task) => ctx.waitUntil(task),
           }),
         });
@@ -72,23 +72,24 @@ export default {
         const parsed = parseChatRequest(await readJsonBody(request));
         const byokKey = request.headers.get(BYOK_KEY_HEADER) ?? '';
         const byokProvider = request.headers.get(BYOK_PROVIDER_HEADER) ?? parsed.provider ?? 'anthropic';
-        body = await runBillableRetrieval(env, identity, () => runChat({
-          env, byokKey, byokProvider,
+        body = await runBillableChat(env, identity, (reserveGeneration) => runChat({
+          env, byokKey, byokProvider, reserveGeneration,
           retrieve: (briefRequest) => briefFor(briefRequest, env, observe, fresh),
         }, parsed), { waitUntil });
       } else if (url.pathname === '/api/match') {
         const parsed = parseMatchRequest(await readJsonBody(request));
         if (!env.VECTORIZE) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Vector retrieval is unavailable.', 503);
-        await requirePublishedStatutes(corpusContext(env));
         const index = new VectorizeIndex(env.VECTORIZE);
         const matches = await runBillableRetrieval(env, identity,
-          () => index.query(parsed.vector, parsed.topK ?? 10), { waitUntil });
+          async () => readPublishedStatutes(env, await loadD1CorpusPublication(env.CIVIC_DB),
+            () => index.query(parsed.vector, parsed.topK ?? 10)), { waitUntil });
         body = { matches, count: matches.length, corpus: parsed.corpus ?? 'statutes-canada' };
       } else if (url.pathname === '/api/changes') {
         const query = parseChangesQuery(url);
-        const context = corpusContext(env);
-        await requirePublishedStatutes(context);
-        body = await runBillableRetrieval(env, identity, () => readStatuteChanges(query, context), { waitUntil });
+        body = await runBillableRetrieval(env, identity, async () => {
+          const publication = await loadD1CorpusPublication(env.CIVIC_DB);
+          return readPublishedStatutes(env, publication, () => readStatuteChanges(query, corpusContext(env, publication)));
+        }, { waitUntil });
       } else {
         const query = parseQuery(url);
         body = await runBillableRetrieval(env, identity, () => runQuery(url.pathname, query, env, observe, fresh), { waitUntil });
@@ -119,12 +120,14 @@ function requireMethod(request: Request, expected: string): void {
   if (request.method !== expected) throw new AccessError('METHOD_NOT_ALLOWED', `Use ${expected} for this route.`, 405);
 }
 
-function corpusContext(env: Env, onRetrieval?: (observation: RetrievalObservation) => void, fresh = false): CorpusContext {
+function corpusContext(env: Env, publication: D1CorpusPublication, onRetrieval?: (observation: RetrievalObservation) => void, fresh = false): CorpusContext {
   const embedQuery = queryEmbedderFor(env);
   const textMode = parseCorpusTextMode(env.CORPUS_TEXT_MODE);
   if (textMode !== 'd1' && (!env.CIVIC_DB || !env.CORPORA)) {
     throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Verified provision text storage is unavailable.', 503);
   }
+  const statutes = publication.availability['statutes-canada'];
+  const cacheKey = (key: string) => `${key}:generation:${publication.generation}`;
   return {
     db: env.CIVIC_DB,
     fetch,
@@ -135,16 +138,14 @@ function corpusContext(env: Env, onRetrieval?: (observation: RetrievalObservatio
     ...(env.VECTORIZE ? { vector: new VectorizeIndex(env.VECTORIZE) } : {}),
     ...(embedQuery ? { embedQuery } : {}),
     ...(env.JEV_KEY ? { jev: { key: env.JEV_KEY } } : {}),
-    // Read the revision within this request. A global promise can belong to a
-    // different binding or request, and can preserve an obsolete revision.
-    corpusRevision: env.CIVIC_DB
-      ? env.CIVIC_DB.prepare('SELECT commit_sha, parser_version FROM corpus_state WHERE corpus_id = ?').bind(CORPUS_ID)
-          .first<{ commit_sha: string; parser_version: string | null }>()
-          .then((row) => row ? `${row.commit_sha}:${row.parser_version ?? 'legacy'}` : 'unknown').catch(() => 'unknown')
-      : Promise.resolve('unknown'),
+    corpusAvailability: publication.availability,
+    corpusRevision: statutes?.available ? `${statutes.revision}:${statutes.parserVersion}` : 'unknown',
     ...(env.CIVIC_CACHE ? { cache: {
-      get: (key: string) => env.CIVIC_CACHE!.get(key, 'json'),
-      put: (key: string, value: unknown, ttlSeconds: number) => env.CIVIC_CACHE!.put(key, JSON.stringify(value), { expirationTtl: ttlSeconds }),
+      get: (key: string) => env.CIVIC_CACHE!.get(cacheKey(key), 'json'),
+      put: async (key: string, value: unknown, ttlSeconds: number) => {
+        await checkPublication(env, publication);
+        await env.CIVIC_CACHE!.put(cacheKey(key), JSON.stringify(value), { expirationTtl: ttlSeconds });
+      },
     } } : {}),
   };
 }
@@ -174,18 +175,22 @@ function queryEmbedderFor(env: Env): ((text: string) => Promise<number[]>) | und
 
 async function briefFor(query: BriefRequest, env: Env, onRetrieval?: (observation: RetrievalObservation) => void, fresh = false) {
   assertV1StatuteQuery(query);
-  const context = corpusContext(env, onRetrieval, fresh);
-  await requirePublishedStatutes(context);
   if (!query.topic && !query.keywords?.length && !query.citation && !(query.act && query.section)) {
     throw new RequestInputError('Supply a topic, keywords or an exact act and section.');
   }
-  const titles = await loadActTitles(env);
-  const citation = query.citation ?? (query.act && query.section ? { act: query.act, section: query.section } : undefined)
-    ?? (query.topic && titles.length ? parseCitation(query.topic, titles)?.citation : undefined);
-  if (!citation && (query.topic || query.keywords?.length) && (!context.vector || !context.embedQuery)) {
-    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Semantic retrieval is unavailable.', 503);
-  }
-  return buildBrief({ ...query, citation }, context);
+  const publication = await loadD1CorpusPublication(env.CIVIC_DB);
+  return readPublishedStatutes(env, publication, async () => {
+    const context = corpusContext(env, publication, onRetrieval, fresh);
+    let citation = query.citation ?? (query.act && query.section ? { act: query.act, section: query.section } : undefined);
+    if (!citation && query.topic) {
+      const titles = await loadActTitles(env, `${context.corpusRevision}:${publication.generation}`);
+      if (titles.length) citation = parseCitation(query.topic, titles)?.citation;
+    }
+    if (!citation && (query.topic || query.keywords?.length) && (!context.vector || !context.embedQuery)) {
+      throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Semantic retrieval is unavailable.', 503);
+    }
+    return buildBrief({ ...query, citation }, context);
+  });
 }
 
 async function runQuery(pathname: string, query: CorpusQuery, env: Env, onRetrieval?: (observation: RetrievalObservation) => void, fresh = false): Promise<unknown> {
@@ -195,21 +200,36 @@ async function runQuery(pathname: string, query: CorpusQuery, env: Env, onRetrie
   }
   const corpus = CORPUSES_BY_ID.get(CORPUS_ROUTES[pathname]!);
   if (!corpus) throw new AccessError('UNSUPPORTED_COVERAGE', 'The requested corpus is unavailable.', 501);
-  const context = corpusContext(env, onRetrieval, fresh);
   assertV1StatuteQuery(query);
-  await requirePublishedStatutes(context);
   if (!corpus.supports(query)) throw new RequestInputError('Supply a topic, keywords or an exact act and section.');
-  if (corpus.id === 'statutes-canada' && !query.act && (!context.vector || !context.embedQuery)) {
-    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Semantic retrieval is unavailable.', 503);
-  }
-  const raw = await corpus.retrieve(query, context);
-  const policy = policyFor(corpus.id);
-  return { items: policy ? raw.map((item) => emitCorpusItem(policy, item)) : [], attribution: policy?.attribution ?? '' };
+  const publication = await loadD1CorpusPublication(env.CIVIC_DB);
+  return readPublishedStatutes(env, publication, async () => {
+    const context = corpusContext(env, publication, onRetrieval, fresh);
+    if (!query.act && (!context.vector || !context.embedQuery)) {
+      throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Semantic retrieval is unavailable.', 503);
+    }
+    const raw = await corpus.retrieve(query, context);
+    const policy = policyFor(corpus.id);
+    return { items: policy ? raw.map((item) => emitCorpusItem(policy, item)) : [], attribution: policy?.attribution ?? '' };
+  });
 }
 
-async function requirePublishedStatutes(context: CorpusContext): Promise<void> {
-  const availability = await loadCorpusAvailability(context);
-  if (!availability['statutes-canada']?.available) {
-    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'No non-empty statute revision is available.', 503);
+async function readPublishedStatutes<T>(env: Env, publication: D1CorpusPublication, read: () => Promise<T>): Promise<T> {
+  const pinned = publication.availability['statutes-canada'];
+  if (!pinned?.available) {
+    throw new AccessError('RETRIEVAL_UNAVAILABLE', pinned?.reason ?? 'The published statute corpus is unavailable.', 503);
+  }
+  const result = await read();
+  await checkPublication(env, publication);
+  return result;
+}
+
+async function checkPublication(env: Env, publication: D1CorpusPublication): Promise<void> {
+  const pinned = publication.availability['statutes-canada'];
+  const checked = await loadD1CorpusPublication(env.CIVIC_DB);
+  const current = checked.availability['statutes-canada'];
+  if (!pinned?.available || !current?.available || checked.generation !== publication.generation ||
+    current.revision !== pinned.revision || current.parserVersion !== pinned.parserVersion) {
+    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'The corpus changed during this request. Retry later.', 503);
   }
 }

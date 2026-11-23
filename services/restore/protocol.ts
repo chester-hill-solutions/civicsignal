@@ -66,6 +66,17 @@ CREATE INDEX idx_corpus_changes_corpus ON corpus_changes(corpus_id);
 CREATE INDEX idx_corpus_changes_row ON corpus_changes(row_id);
 CREATE TABLE corpus_mutations(id TEXT PRIMARY KEY,corpus_id TEXT NOT NULL,payload TEXT,completed_at TEXT);
 CREATE INDEX idx_corpus_mutations_pending ON corpus_mutations(corpus_id,id) WHERE payload IS NOT NULL;
+CREATE TABLE corpus_publication_guard(
+ corpus_id TEXT PRIMARY KEY NOT NULL,
+ generation INTEGER NOT NULL CHECK(generation > 0),
+ target_commit TEXT,
+ target_date TEXT,
+ vector_mutation TEXT,
+ completion_json TEXT,
+ CHECK((target_commit IS NULL) = (target_date IS NULL)),
+ CHECK(target_commit IS NOT NULL OR vector_mutation IS NULL),
+ CHECK(vector_mutation IS NOT NULL OR completion_json IS NULL)
+);
 CREATE TABLE stage_restore_session(id INTEGER PRIMARY KEY CHECK(id=1),plan_sha256 TEXT NOT NULL,plan_json TEXT NOT NULL,stage_id TEXT NOT NULL,account_id TEXT NOT NULL,d1_id TEXT NOT NULL,r2_name TEXT NOT NULL,phase TEXT NOT NULL,page_check_after INTEGER NOT NULL DEFAULT 0,page_check_chain TEXT NOT NULL,audit_checkpoint TEXT);
 CREATE TABLE stage_restore_objects(ordinal INTEGER PRIMARY KEY,object_key TEXT NOT NULL UNIQUE,sha256 TEXT NOT NULL,bytes INTEGER NOT NULL CHECK(bytes>0),cumulative_bytes INTEGER NOT NULL);
 `;

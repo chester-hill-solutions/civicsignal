@@ -203,7 +203,10 @@ export async function assertCorpusVectorExportCurrent(db: D1Database, corpusId: 
     `SELECT commit_sha, parser_version, row_count,
       (SELECT COUNT(*) FROM corpus_mutations WHERE corpus_id = ? AND payload IS NOT NULL) AS pending,
       (SELECT COUNT(*) FROM statute_sections WHERE corpus_id = ?) AS actual
-     FROM corpus_state WHERE corpus_id = ?`,
+     FROM corpus_state AS s WHERE s.corpus_id = ?
+       AND NOT EXISTS (
+         SELECT 1 FROM corpus_publication_guard g WHERE g.corpus_id = s.corpus_id AND g.target_commit IS NOT NULL
+       )`,
   ).bind(corpusId, corpusId, corpusId).first<{
     commit_sha: string; parser_version: string; row_count: number; pending: number; actual: number;
   }>();

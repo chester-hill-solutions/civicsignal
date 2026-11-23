@@ -9,7 +9,7 @@ import {ProtectedStateError} from '../../src/corpora/protected-state-format';
 import migrationAssets from './protected-state-schema-assets.json';
 
 export const PROTECTED_SOURCE_SCHEMA_CONTRACT='protected-source-schema-v1';
-const profiles=['migrations-through-0003','migrations-through-0004','migrations-through-0005','migrations-through-0006','migrations-through-0007','migrations-through-0008'] as const;
+const profiles=['migrations-through-0003','migrations-through-0004','migrations-through-0005','migrations-through-0006','migrations-through-0007','migrations-through-0008','migrations-through-0009'] as const;
 // Reference DDL stays in its authoritative files. The fixed pins also protect
 // bundled local clients, whose executable lives outside the source directory.
 const migrations=Object.entries(migrationAssets);
