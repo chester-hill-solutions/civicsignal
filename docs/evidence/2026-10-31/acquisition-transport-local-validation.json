@@ -1,0 +1,107 @@
+{
+  "format": 1,
+  "kind": "fixture-acquisition-transport-local-validation",
+  "recordedAt": "2026-10-31T20:35:10.916418+00:00",
+  "requirementIds": [
+    "V1-01",
+    "V1-04",
+    "V1-06"
+  ],
+  "planWorkPackage": "MP-04",
+  "findings": [
+    "https://github.com/chester-hill-solutions/civicsignal/issues/7",
+    "https://github.com/chester-hill-solutions/civicsignal/issues/8"
+  ],
+  "sourcePins": [
+    {
+      "path": "scripts/lib/protected-acquisition-transport.ts",
+      "bytes": 24489,
+      "sha256": "e35833e45be1efbda94b57ab10b145e952301ecb6f9a3b42d9d5224fbbc9ec60"
+    },
+    {
+      "path": "test/protected-acquisition-transport.test.ts",
+      "bytes": 32613,
+      "sha256": "5ac8978152c012218cd9a9fae810d62aef6fec1e075a03249240577522a10f08"
+    },
+    {
+      "path": "scripts/lib/protected-acquisition.ts",
+      "bytes": 17525,
+      "sha256": "8cb8b8a043b02d5b4f9c25d7741171ccc4c44b3df5043baa3e555704a6ac9b52"
+    },
+    {
+      "path": "test/protected-acquisition.test.ts",
+      "bytes": 22409,
+      "sha256": "c389cd3e34411e8f089806479bda6fc00052fe647bafa65261fd76b7b256827e"
+    }
+  ],
+  "focusedTests": {
+    "files": 2,
+    "transportTests": 75,
+    "captureCoreTests": 49,
+    "passed": 124,
+    "failed": 0
+  },
+  "compilerChecks": [
+    "typecheck:bun",
+    "typecheck:tooling"
+  ],
+  "independentReview": {
+    "exactSourcePinsChecked": true,
+    "verdict": "approved for local fixture repairs",
+    "highConfidenceResidualDefects": 0
+  },
+  "settlementRegression": {
+    "abortAwareCasesFailedBeforeFinalRepair": 2,
+    "finalCasesPass": true,
+    "checks": [
+      "active error",
+      "owner fence",
+      "snapshot",
+      "later refusal",
+      "single wire send"
+    ]
+  },
+  "downloadIntegrityChecks": [
+    "exclusive private output",
+    "same descriptor bounded readback",
+    "before/after bigint filesystem identity and timestamps",
+    "streamed and saved digest agreement",
+    "same-size mutation regression",
+    "mid-read mutation regression"
+  ],
+  "rawLocalLogs": [
+    {
+      "path": "/tmp/civicsignal-acquisition-abort-aware-before.log",
+      "bytes": 2188,
+      "sha256": "b860ae1bcaf4516ac27b756d6f87bed3aa1cf755b77111b4b01db9196fb48e20"
+    },
+    {
+      "path": "/tmp/civicsignal-acquisition-transport-v2-tests.log",
+      "bytes": 2603,
+      "sha256": "e5afd1b034a559d2790f91f728f17d88789a79057846db98a81ab0812ee0bf24"
+    },
+    {
+      "path": "/tmp/civicsignal-acquisition-transport-v2-typecheck.log",
+      "bytes": 278,
+      "sha256": "2a55fc09916407c3cf05e71e0f0731621ee4c1bf8fe78e17485f75ac106658b5"
+    }
+  ],
+  "boundary": {
+    "fixtureOnly": true,
+    "syntheticCredentialsOnly": true,
+    "defaultNetworkSender": false,
+    "liveCli": false,
+    "httpMcpContractsChanged": false
+  },
+  "providerAuthenticated": false,
+  "globalQuiescenceEstablished": false,
+  "productionAcquisitionQualified": false,
+  "cloudOperations": 0,
+  "realProviderCalls": 0,
+  "limitations": [
+    "Full integrated qualification and exact-source clean Linux CI remain pending.",
+    "No actual source facts, credential owner, common maintenance controls, or production acquisition qualify.",
+    "Complete acquisition request, storage, time, and cleanup budgets remain open.",
+    "The original capture core remains a partial protocol; these fixtures do not qualify its earlier proposed total ceiling."
+  ]
+}

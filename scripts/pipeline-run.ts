@@ -29,6 +29,7 @@ import { httpEncoder } from '../src/ingest/encoder-client';
 import { GitHubCorpusSource, type CorpusSource } from '../src/ingest/source';
 import { PostgresCorpusStore } from '../services/corpus-db/store';
 import { ensureCorpusSchema } from '../services/corpus-db/schema';
+import { pipelineIntervalMilliseconds } from './lib/pipeline-interval';
 
 const ENCODER_DOMAIN = process.env.ENCODER_DOMAIN ?? '127.0.0.1';
 const ENCODER_PORT = process.env.ENCODER_PORT ?? '8080';
@@ -37,7 +38,7 @@ const ENCODER_URL = ENCODER_DOMAIN.includes('://')
   : `http://${ENCODER_DOMAIN}:${ENCODER_PORT}`;
 const ENCODER_TOKEN = process.env.ENCODER_TOKEN ?? '';
 const DATABASE_URL = process.env.CORPUS_DATABASE_URL ?? process.env.DATABASE_URL ?? '';
-const WATCH_SECONDS = Number(process.env.PIPELINE_INTERVAL_SECONDS ?? 21_600);
+const WATCH_INTERVAL_MS = pipelineIntervalMilliseconds(process.env.PIPELINE_INTERVAL_SECONDS);
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? '';
 
 const args = process.argv.slice(2);
@@ -133,6 +134,6 @@ if (once) {
     } catch (error) {
       log(`the cycle failed: ${(error as Error).message}`);
     }
-    await new Promise((resolve) => setTimeout(resolve, WATCH_SECONDS));
+    await new Promise((resolve) => setTimeout(resolve, WATCH_INTERVAL_MS));
   }
 }

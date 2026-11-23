@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T01:17:06.394Z",
+  "source": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "legacy",
+    "indexDigest": "1d24eb747cf7dd9db4a35580f0cafe73",
+    "rows": 277857,
+    "embedded": 254671,
+    "placeholders": 23186,
+    "dimensions": 768
+  },
+  "files": {
+    "0507465393c224c0491fc8c17c88340217acc656.manifest.json": {
+      "bytes": 1039,
+      "sha256": "0599e8e56270457f653a8bc9a3bbeb75e47e178d2c1e7a56340de2ad087cd8e6"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.vectors.manifest.json": {
+      "bytes": 4580,
+      "sha256": "7c5cc3520bb22b1b1f0fc3826a16abe4464e312991658347571a0016be4be461"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.index.jsonl": {
+      "bytes": 26147135,
+      "sha256": "70c4744a00c15ac352fa833e0841cee733da973a2483a76d618190407ef618aa"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.000.jsonl": {
+      "bytes": 67108058,
+      "sha256": "7989b140b3101e5f333cb5a405f3c716d65ba8de8bb13031362956927f411aa1"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.001.jsonl": {
+      "bytes": 67108504,
+      "sha256": "f46ac1f8bff236a9ed3b05a68258c713e05e0597070c46392a5fa18e1d6b8c0c"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.002.jsonl": {
+      "bytes": 67094506,
+      "sha256": "3ad9ac0993c666e4446c75e09bbb764f162075658d58fdd5275681a49294f1fe"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.003.jsonl": {
+      "bytes": 67108502,
+      "sha256": "158bc2580a9d2e008a3373be49849ceb3c8b25204922aa6e0c5c5832f8f8564d"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.004.jsonl": {
+      "bytes": 67108721,
+      "sha256": "3cb9c011f2239c42551d687d62ff178ea4e57a27d10a800359eb0afbc0dbe5d7"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.rows.005.jsonl": {
+      "bytes": 28685748,
+      "sha256": "c2ba628fb2bbe51fa277154f7cdbe05340fe0b271c6f28628527e07f00430fa5"
+    },
+    "0507465393c224c0491fc8c17c88340217acc656.store.emb": {
+      "bytes": 853576720,
+      "sha256": "f3bd33d13f662ed01eb219e579d8b3d8daf9ad189bbf5705c78e7ef386a29611"
+    }
+  },
+  "verification": {
+    "allRows": true,
+    "rows": 277857,
+    "allVectorPositions": true,
+    "finite": true,
+    "placeholderZeros": true
+  },
+  "limitation": "Local downloaded bytes and positional identity. Live stored-vector equality requires a separate sampled readback."
+}

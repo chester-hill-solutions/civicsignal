@@ -1,0 +1,105 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T14:08:12.091076+00:00",
+  "scope": "Local authorization rollback isolation and paused vector-backup client",
+  "checks": {
+    "tests": 1018,
+    "testFiles": 82,
+    "compilerProjects": 4,
+    "vendorFiles": 117,
+    "runtimeProbes": true,
+    "billingAndCorpusInvariants": true,
+    "dryRunWorkerBuilds": 5
+  },
+  "commands": [
+    {
+      "name": "validate",
+      "command": [
+        "bun",
+        "run",
+        "validate"
+      ],
+      "exitCode": 0,
+      "seconds": 49.196,
+      "log": "dist/release/local-rollout-validation-final/validate.log"
+    },
+    {
+      "name": "build",
+      "command": [
+        "bun",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "seconds": 3.266,
+      "log": "dist/release/local-rollout-validation-final/build.log"
+    }
+  ],
+  "sourceFiles": {
+    "src/access.ts": {
+      "bytes": 3091,
+      "sha256": "ed09d0ca81da7cfe4bb42d901cd774a6738b96457b9dd0dce72bc4e364bbaa09"
+    },
+    "src/types.ts": {
+      "bytes": 3092,
+      "sha256": "4b7e61fab020bca375567f2c4252cbbfcce797baa89d3e3b54a3cff7ceffeda2"
+    },
+    "test/corpus-rollback.test.ts": {
+      "bytes": 9629,
+      "sha256": "2dfc752ca7a56675f7d03b2ca7dfe0bf39fd7108d250843037983fcc6edbae11"
+    },
+    "docs/CORPUS-ROLLBACK.md": {
+      "bytes": 7268,
+      "sha256": "d59fb1375a69a2931f7dd45335bdaaa410aa5ed078b83a778af44812848f3793"
+    },
+    "scripts/export-vectors.ts": {
+      "bytes": 7296,
+      "sha256": "c1ab66de7fa99576d5ed2053da326d060522856d779888a7780344adcacaf6e4"
+    },
+    "scripts/lib/vector-export-client.ts": {
+      "bytes": 14170,
+      "sha256": "47a99eb4ef6780132d1deb4adea067c335c32c25abe3e6c53430f8fd8bf0e06d"
+    },
+    "test/vector-export-client.test.ts": {
+      "bytes": 9702,
+      "sha256": "a2659fbd6d5178648a41ae733fec8538a7e28a4247176990195b5e83987577fb"
+    },
+    "test/vector-export-cli.test.ts": {
+      "bytes": 9698,
+      "sha256": "1e056ad8260050d026dc85931d671b5129e7332601ea9512db9b8f01f79dbcb6"
+    },
+    "test/helpers/vector-backup.ts": {
+      "bytes": 3321,
+      "sha256": "6eef70b3d2444d09c6e1159683ef7d2a25e38a4ee4e365669e3cdb473cb1fb8a"
+    },
+    "services/snapshot/OPERATIONS.md": {
+      "bytes": 29240,
+      "sha256": "6d5b57a2322667f088ed2c93d131f1b2b04d044e7412adea5ea97b7caa05a0f0"
+    }
+  },
+  "logs": {
+    "dist/release/local-rollout-validation-final/validate.log": {
+      "bytes": 21011,
+      "sha256": "cb90cc36a635e5c4cacc7b481df2a00d38bd994a815b4153ec71b0c47363ebf9"
+    },
+    "dist/release/local-rollout-validation-final/build.log": {
+      "bytes": 5302,
+      "sha256": "960759059473386af63ef48258844393bddd6ab7d34de2749d45fbd2bd3caecf"
+    },
+    "dist/release/local-rollout-validation-final/result.json": {
+      "bytes": 643,
+      "sha256": "f3fd3a95293336f53fa4db0d12f442a2bbed651d1dd43b85bc85cb85133b8781"
+    }
+  },
+  "independentReview": {
+    "rollback": "No actionable findings;13 auth/rollback checks pass",
+    "vectorClient": "Conditional journal-parent durability finding fixed;75 focused checks and all4 compilers pass"
+  },
+  "limits": [
+    "Synthetic endpoint fixtures prove local binding selection and shared usage protocol, not hosted authorization migration.",
+    "Vector client proof does not independently acquire vector bytes or attest a model.",
+    "D1 protected-state tracer is separate local-only evidence, not a full remote protected restore.",
+    "No production/Railway deployment or binding change."
+  ],
+  "frozenRecoveryInputsVerified": 67
+}

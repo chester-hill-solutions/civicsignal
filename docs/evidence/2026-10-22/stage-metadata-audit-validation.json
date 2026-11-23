@@ -1,0 +1,231 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T04:32:38.834174+00:00",
+  "status": "Local protocol validation complete; hosted handoff and full audit remain incomplete",
+  "sourceSha256": {
+    "scripts/restore-text-staging.ts": "10a6141d55ba5303c53d75168d476b85ef1fdcc523cb9df6dd1601bde8091a73",
+    "services/restore/worker.ts": "847cc35f2625f69c44a4c91e2841f60f844ca0efa849f7d77ed5614b74a0ac15",
+    "services/restore/metadata-batch.ts": "216b6437d7a817eda65e959ccf7421e9b3d7f930cef316436222b6ab15a7a05f",
+    "src/corpora/text-store.ts": "f613a767d7c04a8e6d8c96b948787c9fbc072d928361ea752a7dc5111ec035df",
+    "test/staging-text-restore.test.ts": "e406a4d6d2b13cf69a071100328888a6b6c4d623ed802450403383be95f3d72e",
+    "test/restore-metadata-batch.test.ts": "ff4d8bb6082bc7a9e85026871d1de57b1c18e8c3b3653122bd0278ed386b7c62",
+    "test/text-store.test.ts": "bfd7857c2d2946166f72e34270b6747d2188a84953352081c20b6a93540dce21"
+  },
+  "candidate": {
+    "path": "dist/release/staging/page-batch-candidate/restore-text-staging.mjs",
+    "sha256": "4f18bb392932dd3a7188d64a9482c2b2bbbcd97896b554d652f5b13c9e276d61",
+    "build": "bun build scripts/restore-text-staging.ts --target=node --packages=external --outfile=dist/release/staging/page-batch-candidate/restore-text-staging.mjs",
+    "offlineCommand": "node dist/release/staging/page-batch-candidate/restore-text-staging.mjs --bundle dist/text-cutover-legacy-20261022 --target dist/release/staging/restore-target.json",
+    "offlinePlan": "dist/release/staging/page-batch-candidate/offline-plan.json",
+    "offlineLog": "dist/release/staging/page-batch-candidate/offline-plan.log",
+    "offlineExitCode": 0,
+    "planHash": "8d08799fecc213232cd1db816d7da871ebe38116fce2cbe33ed5827e720480f6"
+  },
+  "activeRunnerUnchanged": {
+    "path": "dist/release/staging/restore-text-staging.mjs",
+    "sha256": "077a9cea76480cbd20d96533d2292bd0bce9c3a2c2e21c015d2b8eaad6aecf13",
+    "session": 80359,
+    "pid": 14686,
+    "guardBytes": 1073741824,
+    "checkpoint": "dist/release/staging/legacy-text-restore.json",
+    "receipts": "dist/release/staging/legacy-text-restore-evidence/attempt-4-stable-disk"
+  },
+  "fullValidation": {
+    "exitCode": 0,
+    "tests": 766,
+    "files": 73,
+    "compilerProjects": 4,
+    "vendorFiles": 117,
+    "runtimeProbes": 2,
+    "billingInvariants": true,
+    "corpusInvariants": true,
+    "log": "/private/tmp/civicsignal-stage-page-batch-validate.log",
+    "logSha256": "a2a7d48d279c96999b9aff7b082507a1468dbaa8ca1bdb1d49ddf99adfda8a5b"
+  },
+  "workerBuilds": {
+    "exitCode": 0,
+    "dryRunBuilds": 5,
+    "log": "/private/tmp/civicsignal-stage-page-batch-build.log",
+    "logSha256": "355e41ec7c1cf85248dee66a38913ac1a5403539cf1071ff905a54b49e5bd759"
+  },
+  "focusedValidation": {
+    "command": "CIVICSIGNAL_WORKERD_TESTS=1 bun run test test/staging-text-restore.test.ts test/restore-metadata-batch.test.ts test/restore-upload-batch.test.ts test/restore-fresh-schema.test.ts test/legacy-text-input.test.ts test/text-cutover.test.ts test/text-store.test.ts",
+    "files": 7,
+    "tests": 69,
+    "realWorkerdTests": 18,
+    "exitCode": 0,
+    "durationSeconds": 39.74,
+    "unifiedExecSession": 90453,
+    "rawOutput": "Returned in tool transcript; this JSON records the observed result, not an additional test run."
+  },
+  "sourceSizing": {
+    "localOnly": true,
+    "source": "Pinned legacy bundle fresh-pages.jsonl, streamed in source order; UTF8 JSON sizing and per-eight-row object dedup measured; no hosted calls.",
+    "pageFileSha256": "1f5e07779a6eaf29ca9cce3665e3e466254de52e48d2d5fd57eed72bce152aae",
+    "pages": 17367,
+    "rows": 277857,
+    "textBytes": 250978206,
+    "metadata": {
+      "oldHttp": 17367,
+      "newHttp": 4342,
+      "maxSingleJson": 25661,
+      "maxSingleReferences": 644283,
+      "maxBatchJson": 98797,
+      "maxBatchReferences": 782950,
+      "oldR2Gets": 277857,
+      "newR2Gets": 277857,
+      "oldD1BindingCalls": 104203,
+      "newD1BindingCalls": 82495,
+      "oldSqlStatements": 659918,
+      "newSqlStatements": 638210,
+      "maxD1CallsPerRequest": 20,
+      "maxSqlStatementsPerRequest": 149,
+      "maxR2GetsPerRequest": 64,
+      "parallelR2Reads": 4,
+      "maxFrameBytes": 131072,
+      "maxReferenceBytes": 16777216,
+      "sqlCounting": "Individual D1 SQL statements, including bound batch statements, empty-store count and first marker; no retries or duplicate replay."
+    },
+    "audit": {
+      "checkpoints": 34733,
+      "oldHttp": 8684,
+      "newHttp": 2171,
+      "oldD1BindingCalls": 217085,
+      "newD1BindingCalls": 184520,
+      "r2Gets": 235678,
+      "maxReferencesPerCheckpoint": 635919,
+      "maxD1CallsPerRequest": 85,
+      "maxR2GetsPerRequest": 128,
+      "maxSequentialCheckpoints": 16,
+      "rowsPerCheckpoint": 8
+    },
+    "publication": {
+      "unchangedHttp": 272
+    },
+    "http": {
+      "old": 26051,
+      "new": 6513,
+      "saved": 19538
+    }
+  },
+  "localMemory": {
+    "localOnly": true,
+    "provenHostedMemoryLimit": false,
+    "methodology": "Actual restore Worker in local workerd with real D1/R2. Two sequential four-page requests, each64rows and exactly16MiB referenced text. One16-checkpoint strict audit over128rows/32MiB. Runtime.getHeapUsage sampled every5ms; samples may miss instantaneous peaks.",
+    "sourceDigests": {
+      "services/restore/worker.ts": "847cc35f2625f69c44a4c91e2841f60f844ca0efa849f7d77ed5614b74a0ac15",
+      "services/restore/metadata-batch.ts": "216b6437d7a817eda65e959ccf7421e9b3d7f930cef316436222b6ab15a7a05f",
+      "src/corpora/text-store.ts": "f613a767d7c04a8e6d8c96b948787c9fbc072d928361ea752a7dc5111ec035df"
+    },
+    "ranges": [
+      {
+        "pages": 4,
+        "bytes": 70225,
+        "referenceBytes": 16777216
+      },
+      {
+        "pages": 4,
+        "bytes": 70238,
+        "referenceBytes": 16777216
+      }
+    ],
+    "audit": {
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:memory",
+      "rowCount": 128,
+      "mutationCount": 0,
+      "after": "acts-fr-127",
+      "rowsVerified": 128,
+      "bytesVerified": 33554432,
+      "complete": true
+    },
+    "summary": {
+      "metadata": {
+        "samples": 3,
+        "maxUsed": 31831048,
+        "maxBacking": 11495047,
+        "maxCombined": 54545911
+      },
+      "publication": {
+        "samples": 1,
+        "maxUsed": 31948428,
+        "maxBacking": 11505737,
+        "maxCombined": 54802949
+      },
+      "audit": {
+        "samples": 2,
+        "maxUsed": 28896480,
+        "maxBacking": 9302313,
+        "maxCombined": 39005889
+      }
+    },
+    "samples": [
+      {
+        "phase": "metadata",
+        "heap": {
+          "usedSize": 21640688,
+          "totalSize": 25231360,
+          "embedderHeapUsedSize": 9543296,
+          "backingStorageSize": 1459245
+        }
+      },
+      {
+        "phase": "metadata",
+        "heap": {
+          "usedSize": 31831048,
+          "totalSize": 35291136,
+          "embedderHeapUsedSize": 11219816,
+          "backingStorageSize": 11495047
+        }
+      },
+      {
+        "phase": "metadata",
+        "heap": {
+          "usedSize": 31831048,
+          "totalSize": 35291136,
+          "embedderHeapUsedSize": 11219816,
+          "backingStorageSize": 11495047
+        }
+      },
+      {
+        "phase": "publication",
+        "heap": {
+          "usedSize": 31948428,
+          "totalSize": 35291136,
+          "embedderHeapUsedSize": 11348784,
+          "backingStorageSize": 11505737
+        }
+      },
+      {
+        "phase": "audit",
+        "heap": {
+          "usedSize": 28896480,
+          "totalSize": 89653248,
+          "embedderHeapUsedSize": 807096,
+          "backingStorageSize": 9302313
+        }
+      },
+      {
+        "phase": "audit",
+        "heap": {
+          "usedSize": 28896480,
+          "totalSize": 89653248,
+          "embedderHeapUsedSize": 807096,
+          "backingStorageSize": 9302313
+        }
+      }
+    ]
+  },
+  "compatibility": {
+    "defaultMetadataPages": 1,
+    "defaultAuditCheckpoints": 4,
+    "objectUploadProtocolUnchanged": true,
+    "atomicPageApplyUnchanged": true,
+    "publicationChainUnchanged": true,
+    "everyAuditCheckpointRetainsCas": true,
+    "strictSiblingReadsSettleBeforeFailure": true
+  },
+  "servingRequests": 0,
+  "documentEmbeddingSubmissions": 0,
+  "productionChanges": false,
+  "railwayServiceChanges": false
+}

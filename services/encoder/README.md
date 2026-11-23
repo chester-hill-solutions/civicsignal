@@ -1,126 +1,53 @@
 # The encoder
 
-EmbeddingGemma 2, text 270M, served from the artefact itself.
+The service runs EmbeddingGemma 2 through the LiteRT-LM embedding engine.
+The API and pipeline use this service for one shared vector space.
+Cloudflare calls it through a service binding and a container Durable Object.
+Railway retains its existing service; this release does not change its deployment.
 
-## What it is
+## Pinned artifact
 
-| | |
-|---|---|
+| Field | Value |
+| --- | --- |
 | Model | `embeddinggemma-2-270m` |
-| Artefact | `litert-community/embeddinggemma-2-text-270m-litert-lm` → `embeddinggemma-2-text-270m.litertlm` |
-| Size | 157.0 MB |
-| Licence | Apache 2.0, ungated |
-| Dimensions | 768 — and 128, 256, 512 by Matryoshka truncation |
-| Normalised | yes, L2 |
-| Runtime | `litert-lm serve`, an OpenAI-compatible API |
-| Quantisation | int4 per-channel QAT for both the transformer and the embeddings |
+| Source | `litert-community/embeddinggemma-2-text-270m-litert-lm` |
+| Source revision | `9be6e8b90982095dc05c2bd162e4b954ee4dbac7` |
+| File | `embeddinggemma-2-text-270m.litertlm` |
+| Bytes | 164,626,432 |
+| SHA-256 | `2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb` |
+| Runtime | `litert-lm==0.18.1` |
+| Dimensions | 768, L2 normalized |
 
-## Why it is hosted rather than called
+The build checks the artifact SHA-256. It uses the pinned Python base image and `requirements.lock`.
+The publisher metadata, previous local registry image, and cached local artifact agree on the model fingerprint.
+This check does not replace the stored-vector parity check.
 
-The reason is narrow and it is the whole reason.
+`src/encoder.ts` publishes the contract through API discovery.
+A query uses `task: search result | query: {query}`.
+A document uses `title: {title} | text: {content}`.
+The server applies these templates. Clients send plain texts and separate document titles.
 
-**The client and the server must be in the same vector space.** A browser that
-embeds with the LiteRT bundle and a server that embeds with fp32 PyTorch weights
-produce vectors that differ by quantisation drift, and drift flips near-ties —
-which is exactly the case where a citation either resolves or does not.
+Long documents use `CHUNK_AND_AVERAGE` against the compiled token limit.
+The server serializes engine access because the engine is not thread safe.
+The API's outer Worker checks its encoder token before it calls the container.
+The container also checks its configured token when present.
 
-The bundle is one portable file. It runs in a browser today, through the LiteRT-LM
-WASM build, and it runs here. So the corpus is embedded with the same file a
-client embeds with, and the two are identical by construction rather than by
-approximation.
+## Build and smoke check
 
-There is a second reason, and it is the one that rules out the hosted option
-entirely: **EmbeddingGemma was trained with `SearchQuery` and `Document` task
-prefixes**, and Workers AI's `embeddinggemma-300m` accepts no parameter for them.
-The hosted model cannot be prompted the way it was trained. This one can, because
-the bundle carries its own preprocessor.
+Run these commands from the repository root:
 
-Measured on this corpus:
-
-```
-cosine(query, document)                  = 0.7346   (no prefixes)
-cosine(SearchQuery:, SearchDocument:)    = 0.7545   (prefixed)
-cosine(plain, prefixed)                  = 0.9700   (the prefix changes the vector)
+```sh
+docker build --platform linux/amd64 -t civicsignal-encoder:v1-candidate -f services/encoder/Dockerfile .
+docker run --rm --network none -i -e ENCODER_TOKEN=candidate-local-fixture --entrypoint python civicsignal-encoder:v1-candidate - < services/encoder/smoke.py
 ```
 
-## The contract
+The smoke check uses an internal loopback server. It exposes no host port.
+It checks the artifact, health response, authorization, invalid JSON, and an empty batch.
+An empty batch does not warm the engine or prove inference performance.
+Use `python - --embed` instead of `python -` to check one real embedding on a compatible CPU.
+The x86 runtime requires CPU instructions that an emulator may lack.
+A production-shaped staging check must exercise the actual hosted CPU.
 
-A client that embeds locally must match this exactly.
-
-```json
-{
-  "model": "embeddinggemma-2-270m",
-  "artefact": "litert-community/embeddinggemma-2-text-270m-litert-lm",
-  "file": "embeddinggemma-2-text-270m.litertlm",
-  "dimensions": 768,
-  "queryPrefix": "SearchQuery: ",
-  "documentPrefix": "SearchDocument: ",
-  "matryoshkaDimensions": [128, 256, 512, 768],
-  "normalised": true
-}
-```
-
-It is published at `/.well-known/civicsignal.json` from the product API, so a
-client can read it rather than be told it. `src/encoder.ts` is the single
-definition; the serving path and the pipeline both read it, so the model, the
-dimension and the prefixes cannot drift apart.
-
-**The prefixes are not decoration.** A query is embedded with `SearchQuery: ` and
-a document with `SearchDocument: `. Embedding a query with the document prefix
-degrades the ranking measurably, and it is the kind of mistake that looks like
-"the search is just not very good".
-
-## Measured
-
-On an Apple M1 Pro, CPU backend, single process:
-
-| Batch | Total | Each |
-|---|---|---|
-| 1 | 274 ms | 274 ms |
-| 8 | 1,167 ms | 146 ms |
-| 32 | 4,138 ms | 129 ms |
-| 64 | 6,971 ms | 109 ms |
-
-The corpus is 127,092 indexable provisions, so a full embed is roughly four hours
-on one core — a one-off. The pipeline re-embeds only what changed: a typical
-corpus commit changes **56 provisions**, which is six seconds.
-
-## The endpoint
-
-The service is **the LiteRT-LM runtime driven directly**, not `litert-lm serve`,
-for one reason: the runtime can **chunk an over-long input and average the
-embeddings**, and the OpenAI-compatible server does not expose that option.
-
-That matters because the runtime's compiled signature is **1,024 tokens**, not the
-8,192 the bundle's metadata advertises, and it refuses an input that is longer
-rather than truncating it. Measured on the corpus: the densest provision needs
-1,183 tokens for 5,680 characters.
-
-With `CHUNK_AND_AVERAGE`, a provision of any length is chunked to the signature
-and the chunk embeddings averaged into one vector. **No provision loses its tail**,
-and the corpus stays one row per provision — one vector per provision — rather
-than growing a row per chunk. `TRUNCATE` would be simpler and would throw away
-most of a long provision.
-
-The service keeps the OpenAI-shaped call so the client is ordinary HTTP:
-
-```bash
-curl -X POST https://<service>/embed \
-  -H 'Authorization: Bearer $ENCODER_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{"texts":["what does s. 210 say?"]}'
-```
-
-`GET /health` is the health check, and it is unauthenticated — it says nothing
-about the model.
-
-## Running it
-
-```bash
-docker build -t civicsignal-encoder services/encoder
-docker run -p 8080:8080 civicsignal-encoder
-```
-
-The model is fetched at build time, so the image is the contract: a client that
-pins the encoder can pin the image digest and know exactly which file produced
-the vectors. The index can be rebuilt from the same artefact years later.
+`/health` reports process health. It does not assert a warm model or corpus readiness.
+Do not replace the model, task templates, dimension, or index without a measured compatibility check.
+Keep the existing Vectorize index throughout v1 rollout.

@@ -1,0 +1,128 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T14:58:09.158Z",
+  "scope": "local source-head request reliability and privacy fix",
+  "hostedDeployment": false,
+  "hosted403ReasonEstablished": false,
+  "changedFiles": [
+    "src/ingest/source-head.ts",
+    "src/ingest/source.ts",
+    "test/source-head.test.ts",
+    "test/pipeline-coordinator-workerd.test.ts",
+    "test/snapshot-staging-probe-workerd.test.ts"
+  ],
+  "sourceHashes": {
+    "src/ingest/source-head.ts": "ee238c1211f116e58382f67e179d117b3592b3ffbd886b748eefcab5ac7b673a",
+    "src/ingest/source.ts": "31fade2af03b4bfa002ab76465d0ae9b8896359dbd56dc967feeea13ea0d4ae7",
+    "test/source-head.test.ts": "13c6aab422bb09ca8a77af6ab67718e135b5c1e1a564624ad8eb8c4fb419aaf8",
+    "test/pipeline-coordinator-workerd.test.ts": "2c30679e6d923ac4fe4fd0f269ea12b4fb50238e700df62520a50ec915c73927",
+    "test/snapshot-staging-probe-workerd.test.ts": "63089d14d6e9ff3460d4e4e8466e316421ea6c990310c8a0403dae527a725f3d"
+  },
+  "contract": {
+    "endpoint": "GET /repos/justicecanada/laws-lois-xml/commits?sha=<encoded-ref>&per_page=1",
+    "attempts": 1,
+    "timeoutMs": 15000,
+    "maxResponseBytes": 1048576,
+    "redirectsFollowed": 0,
+    "rateFields": [
+      "limit",
+      "remaining",
+      "used",
+      "reset",
+      "retryAfterSeconds"
+    ],
+    "rateFieldGrammar": "unsigned canonical decimal safe integers; retryAfterSeconds<=86400",
+    "primaryExhaustion": "HTTP403or429 plus valid numeric remaining0 only",
+    "persistedDiagnostic": "SourceHeadError code/status/allowlisted numeric quota JSON in String(error)",
+    "maxPersistedProjectionCharacters": 230,
+    "coordinatorPersistenceBound": 500,
+    "auth": "existing caller-supplied token, accept and user-agent behavior preserved; no personal credential reads",
+    "pinChecks": "existing head and immutable snapshot checks remain before each encoder reservation"
+  },
+  "focused": {
+    "sourceHead": {
+      "passed": 52,
+      "files": 1,
+      "log": "/private/tmp/civicsignal-source-head-final-focused.log"
+    },
+    "workerd": {
+      "passed": 16,
+      "files": 2,
+      "log": "/private/tmp/civicsignal-source-head-workerd.log"
+    },
+    "initialSandboxLimitation": "First workerd attempt could not listen on127.0.0.1; authorized loopback rerun passed."
+  },
+  "fullGate": {
+    "receipt": "dist/release/source-head-release-gate/20261023T145456Z/receipt.json",
+    "receiptSha256": "166814f8d440e84487b912dcd5ad907996f6c976bcc2314ab07de5af57eb6edd",
+    "passed": true,
+    "tests": 1070,
+    "testFiles": 83,
+    "compilers": [
+      "worker",
+      "bun",
+      "tooling",
+      "snapshot"
+    ],
+    "vendor": "117files verified",
+    "runtimeProbes": [
+      "usage-ledger workerd",
+      "R2 immutable conditional-create workerd"
+    ],
+    "invariants": [
+      "billing",
+      "corpus"
+    ],
+    "artifactInvariantSkips": [
+      "dist/statutes.sql absent",
+      "dist/statutes.jsonl absent",
+      "dist/statutes-fr.jsonl absent"
+    ],
+    "dryRunBuilds": [
+      {
+        "name": "build-api",
+        "exitCode": 0,
+        "log": "dist/release/source-head-release-gate/20261023T145456Z/build-api.log",
+        "logSha256": "29edd126d28f586d012d10fcc4170e09903cc14dbffeb38b4c32549b9499eabd"
+      },
+      {
+        "name": "build-pipeline",
+        "exitCode": 0,
+        "log": "dist/release/source-head-release-gate/20261023T145456Z/build-pipeline.log",
+        "logSha256": "54d626138950b166d06bc399ceef913125a1786bdbd1b41f7fad3e05d35a5372"
+      },
+      {
+        "name": "build-encoder",
+        "exitCode": 0,
+        "log": "dist/release/source-head-release-gate/20261023T145456Z/build-encoder.log",
+        "logSha256": "86f49704fb885970e0adbed1cf1dab7893d5486ecb9dfc0f3129d302cda8fa63"
+      },
+      {
+        "name": "build-snapshot",
+        "exitCode": 0,
+        "log": "dist/release/source-head-release-gate/20261023T145456Z/build-snapshot.log",
+        "logSha256": "0125bd694afe3d7af0ff7dd0693e42087f6e91b3747425e9aa02a5345096d823"
+      },
+      {
+        "name": "build-restore",
+        "exitCode": 0,
+        "log": "dist/release/source-head-release-gate/20261023T145456Z/build-restore.log",
+        "logSha256": "2bbf0022c16a7966e0b0c0614498f1458082242d5c4558e931839e95269f286f"
+      }
+    ],
+    "sourceHashesStable": true,
+    "tools": {
+      "node": "v25.9.0",
+      "bun": "1.3.5",
+      "wrangler": "4.151.3"
+    },
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "metrics": false
+  },
+  "limits": [
+    "Provider was not contacted to test the new endpoint; local fixtures verify the documented list-response contract.",
+    "This change preserves a refused request and improves its safe diagnosis; it does not establish or bypass the reason for the historical403.",
+    "Earlier frozen deployment bundles and operator manifests were not regenerated.",
+    "Full source tree was uncommitted while checked; hashes identify the validated code rather than a clean commit."
+  ]
+}

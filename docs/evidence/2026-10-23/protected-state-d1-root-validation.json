@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "scope": "synthetic-local-protected-state-d1-binding-only",
+  "reviewedAt": "2026-10-23T20:02:55.559172+00:00",
+  "candidate": {
+    "path": "dist/release/protected-d1-plan/local-binding-v1/candidate.json",
+    "sha256": "6ee0bb85256df0c02bd4a8c208203d9ba8933304bb5f8c36c93b746dfc25bc79",
+    "verifiedReferences": 27
+  },
+  "rootValidation": {
+    "command": "CIVICSIGNAL_WORKERD_TESTS=1 node node_modules/vitest/vitest.mjs run test/protected-state.test.ts test/protected-state-format.test.ts test/protected-state-d1.test.ts",
+    "result": "pass",
+    "files": 3,
+    "tests": 81,
+    "copierTests": 35,
+    "sharedFormatTests": 17,
+    "localD1R2Tests": 29
+  },
+  "cloudOrSecretAccess": false,
+  "hostedTransportImplemented": false,
+  "productionAcquisitionVerified": false,
+  "details": "docs/evidence/2026-10-23/protected-state-d1-local-validation.json",
+  "rootTypechecks": [
+    {
+      "project": "tsconfig.worker.json",
+      "result": "pass"
+    },
+    {
+      "project": "tsconfig.bun.json",
+      "result": "pass"
+    },
+    {
+      "project": "tsconfig.tooling.json",
+      "result": "pass"
+    }
+  ]
+}

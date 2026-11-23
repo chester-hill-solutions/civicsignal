@@ -1,0 +1,31 @@
+{
+  "format": 1,
+  "at": "2026-10-24T00:55:08.994059+00:00",
+  "preparedOnly": true,
+  "eventSelected": false,
+  "deployed": false,
+  "candidateSha256": "fcaf6d4b97b21389e5905407369934de6a4053a9c9d18e01ce3fafc36999c6e2",
+  "bundleSha256": "051b75c0109fd8fd0ca4401cec0568a194a33ee6c24437d573256923d8fed405",
+  "inputManifestSha256": "ea74e7c100a05c575d2691de6d3af7d6b2ec729b904caa794ab3c22480e85d29",
+  "filePins": 48,
+  "compiledInputs": 25,
+  "focusedTests": 50,
+  "actualWorkerdTests": 6,
+  "compilers": 4,
+  "rootVerified": [
+    "Read source diff and bounded source adapter",
+    "Exact candidate pins inspection exit0",
+    "In-memory write:false compiled correspondence exit0",
+    "Independent read-only peer review clear",
+    "Full local1276/88 gate covers public source"
+  ],
+  "sourceArchiveManifestSha256": "a8d058f123c5ca65de6e239159d25f97e8dde632e48dde6f3d098a8763a71a87",
+  "validationSha256": "e4a94771e456c6427e64ee5efb75c65804bc3dbb39a52f1df9818110e485ae86",
+  "limits": [
+    "No hosted Cron proof or deployment/arming approval.",
+    "One claimed delegate for one exact event; no global upstream cap across other workers/callers.",
+    "15s source acceptance bound is not CPU preemption or an R2/whole-handler wall deadline.",
+    "Completed receipt means an existing publication was discovered; it proves no Cron-created Workflow/publication.",
+    "Lost acknowledgement or failure leaves claim consumed; no retry or completion healing."
+  ]
+}

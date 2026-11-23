@@ -1,0 +1,169 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-24T01:28:16.265823+00:00",
+  "kind": "separately-user-approved-staging-zen-diagnostic-v2",
+  "acceptancePassed": false,
+  "releaseAcceptancePassed": false,
+  "additionalUserApprovedRequests": 1,
+  "originalAttemptPreserved": {
+    "ledgerSequence": 153,
+    "receipt": {
+      "path": "docs/evidence/2026-10-23/staging-retrieval-generation-root-validation.json",
+      "bytes": 26464,
+      "sha256": "6fae6d8feae0de0ad482fb00d5a876b5ea42736ee7672d1ca9ccc184f84e7a05"
+    },
+    "meaning": "Original attempt 153 retained only a generic terminal failure. Its earlier clean relay shutdown and 153-count checkpoint remain history."
+  },
+  "attempt": {
+    "ledgerSequence": 154,
+    "provider": "opencode-zen",
+    "model": "claude-haiku-4-5",
+    "maximumOutputTokens": 128,
+    "stagingApiVersionId": "02dd9821-6bac-481d-89a4-5dfdf977bc6e",
+    "startedAt": "2026-10-24T01:18:50.560921+00:00",
+    "finishedAt": "2026-10-24T01:18:55.306872+00:00",
+    "requestAttempted": true,
+    "httpStatus": 502,
+    "stageHeaderMatched": true,
+    "correlationId": "req_mvlpnc3f3csiit1oeq",
+    "apiCode": "UPSTREAM_UNAVAILABLE",
+    "failureCode": "http-stage",
+    "phase": "http-status-validation",
+    "automaticRetry": false,
+    "providerAttemptIndependentlyAttested": false,
+    "providerSuccessAttested": false,
+    "positiveAnswerAndCitationsVerified": false
+  },
+  "requestProcess": {
+    "exitCode": 1,
+    "ownedProcessSettled": true,
+    "timedOut": false,
+    "logBoundExceeded": false,
+    "localFailure": false,
+    "accepted": false
+  },
+  "serving": {
+    "sameOriginalLedger": true,
+    "limit": 160,
+    "reserved": 154,
+    "remaining": 6,
+    "reset": false,
+    "original14PrefixSha256": "4e5404b5a2806b4f8059690b9d035d2435896fc8f9eb89f2739d8aebeec8bceb",
+    "currentLedgerSha256": "b4056b7f7a683d603e915395a84affa632236c7db952f1d6ac22b6030144006f",
+    "prior153LedgerSha256": "06a4ef3a0df3339af62fa62adf47cdca8ff0bca947bc7e0574689e90326ba87c"
+  },
+  "relayOwner": {
+    "passed": false,
+    "exitCode": null,
+    "timedOut": true,
+    "ownedProcessSettled": false,
+    "localFailure": true,
+    "localFailureCode": "owned-process-cleanup-uncertain",
+    "outcome": "timeout-cleanup-uncertain-preserved",
+    "receipt": {
+      "path": "dist/release/staging/zen-diagnostic-relay-owned-v1/result.json",
+      "bytes": 333,
+      "sha256": "a65148ea82039a7699f855cfda60a0b3e0dedc0ec1ccde1c8c2ac6d0a80a236a"
+    }
+  },
+  "independentLaterStopObservation": {
+    "observedAt": "2026-10-24T01:24:41.693074+00:00",
+    "taskOwnedPid": 5807,
+    "listenerPort": 8788,
+    "ownedPidObservedAbsent": true,
+    "listenerObservedAbsent": true,
+    "relayLockAbsent": true,
+    "originalOwnerQualified": false,
+    "receipt": {
+      "path": "dist/release/staging/zen-diagnostic-relay-owned-v1/independent-stop-observation.json",
+      "bytes": 952,
+      "sha256": "1b1f91b1273c88eee2956266164a90f8bc31cae321902a519e8627f37ec42fda"
+    },
+    "meaning": "Later point-in-time PID/listener absence does not rewrite the original uncertain timeout or establish successful owned shutdown."
+  },
+  "privacy": {
+    "rawResponsePersisted": false,
+    "answerPersisted": false,
+    "credentialValuesPersisted": false,
+    "keyHashesIncluded": false,
+    "responseContentHashesIncluded": false,
+    "receiptSourceAndLedgerFileDigestsOnly": true
+  },
+  "evidence": [
+    {
+      "path": "dist/release/staging/opencode-zen-hosted-diagnostic-v2/execution/owned-result.json",
+      "bytes": 284,
+      "sha256": "3d4333e458dad984f6b74ac40a10a4729d9267c2047a2cadf9bc5f67c1696800"
+    },
+    {
+      "path": "dist/release/staging/opencode-zen-hosted-diagnostic-v2/execution/owned-process.json",
+      "bytes": 167,
+      "sha256": "1068589c5642426cb38dc3941652bf16c61296d7c1df03491d112ef6a9123fc5"
+    },
+    {
+      "path": "dist/release/staging/opencode-zen-hosted-diagnostic-v2/execution/http-metadata.json",
+      "bytes": 163,
+      "sha256": "fec5879ccff8355ff1b0474502dd33bd9338aa12a05e0fb9ef54e6c0a2d9ea43"
+    },
+    {
+      "path": "dist/release/staging/opencode-zen-hosted-diagnostic-v2/execution/acceptance-failure.json",
+      "bytes": 412,
+      "sha256": "e52b2eae2fcd4bba2626df21f56b5764a57490f9f6f77ae480f8c6f155e880f8"
+    },
+    {
+      "path": "dist/release/staging/opencode-zen-hosted-diagnostic-v2/execution/failure.json",
+      "bytes": 403,
+      "sha256": "17512312c5bc39312f2f1ad8f69052fe55094a777f89821e7b6848fb93e5f174"
+    }
+  ],
+  "sourceInspected": [
+    {
+      "path": "dist/release/staging/opencode-zen-hosted-diagnostic-v2/core.ts",
+      "bytes": 6785,
+      "sha256": "ab4ebf592ed8dc87840d4f96109bb3f1d4fecc6371a59d80b3855687e5cc7da8"
+    },
+    {
+      "path": "dist/release/staging/opencode-zen-hosted-diagnostic-v2/run.ts",
+      "bytes": 6759,
+      "sha256": "0764a55985116ecfe02a6b8f4e3aa66fe3e94595af490e4cb3a7a865a5a90aa9"
+    },
+    {
+      "path": "dist/release/staging/opencode-zen-hosted-diagnostic-v2/operate.py",
+      "bytes": 6787,
+      "sha256": "3220570d37e110f2ad509134b199ec32ba3e74c3387a1161f30a0f4c117e3633"
+    },
+    {
+      "path": "dist/release/staging/zen-diagnostic-relay-owned-v1/operate.py",
+      "bytes": 2619,
+      "sha256": "3ed48519d970377add0e47d30f2221cd6d710f992a03fecba90a8cf59b6cf79f"
+    },
+    {
+      "path": "src/index.ts",
+      "bytes": 12435,
+      "sha256": "0c23434e159e22ba861362b1214cfe0bbdcb555d7ec5bca91cca3b756d8bc03b"
+    },
+    {
+      "path": "src/routes/chat.ts",
+      "bytes": 10503,
+      "sha256": "1c964ed0d08c764923d34ca5e432b3125be0e8b94f7bcdee51759a33d42639cd"
+    },
+    {
+      "path": "src/byok.ts",
+      "bytes": 13015,
+      "sha256": "b93b1f48515e5bf55fde5ad7aacb1f54fafa57031d6e7d2880844919409d6926"
+    }
+  ],
+  "newerDiagnosticsHeadCommit": "520c102da791795de7b03577f46c42dfb65cb886",
+  "newerDiagnosticsDeployed": false,
+  "productionChanged": false,
+  "railwayChanged": false,
+  "reconciliationNetworkRequests": 0,
+  "reconciliationCredentialReads": 0,
+  "limitations": [
+    "HTTP502 UPSTREAM_UNAVAILABLE is a generic staging API failure. It does not establish that Zen was called, that the supplied generation key was valid, or which retrieval/provider stage failed.",
+    "The new API diagnostics source at 520c102 passed Linux PR merge-candidate CI but was not deployed; it cannot retroactively explain this response.",
+    "The original 153 failed attempt, its earlier clean relay shutdown, both failed hosted outcomes and the additional relay owner uncertainty are preserved.",
+    "This evidence does not authorize another request, automatic retry, ledger reset or allowance extension. No raw body, answer, message/error text, key value or key-derived hash is included."
+  ],
+  "outcome": "failed-staging-http-502"
+}

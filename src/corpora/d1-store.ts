@@ -1,44 +1,24 @@
-/**
- * The corpus store, on D1 and Vectorize.
- *
- * The pipeline writes through the `CorpusStore` interface, and there are now
- * two implementations of it: this one, and the Postgres one the Railway plane
- * runs. The pipeline's cycle does not know which it is talking to — that is the
- * whole point of the seam — so the same reconciliation, the same fingerprint
- * and the same change feed work on either.
- *
- * ## The one thing this plane cannot do
- *
- * **A row and its vector are written in two calls, and there is no
- * transaction across them.** On the Postgres plane they are one statement in
- * one transaction, so a vector cannot point at a provision the store does not
- * have. Here they can: the D1 write lands and the Vectorize write fails, and
- * the index names a provision the corpus does not hold.
- *
- * That is not a new risk — it is the risk the product ran on for a month, and
- * it cost a morning to find, because the index was recreated once and took
- * 62,245 rows with it and **nothing said so**. The mitigation is the repair
- * script, which asks the index what it holds rather than trusting a
- * checkpoint, and it is run after every ingest.
- *
- * So the order matters here: **the row is written first, then the vector.** A
- * row without a vector is invisible to the index and harmless; a vector
- * without a row is a broken answer the product will happily give.
- */
-/**
- * `search_text` is **gone from this table**, and its absence is deliberate.
- *
- * It was 250.9 MB of folded text on a 232.5 MB corpus — a second copy of
- * everything the product serves — plus an index on it, and it existed for one
- * query: the lexical `LIKE ?` path. That path ran only when the vector arm
- * returned nothing, which a vector search cannot do, and measured it rescued
- * one of the fourteen questions the vector arm misses at rank 5 — on the
- * concept half of the eval set, where the vector arm is the only arm that
- * works, it rescued none. The refusal it was standing in for is a floor on the
- * score now (`VECTOR_FLOOR`), which is a thing the product can actually say.
- */
-import type { ChangeFeedEntry, CorpusStore, PipelineRow, RemovedRow, UpsertRow } from '../ingest/pipeline';
+/** D1 atomically stores each row, its change event and a Vectorize outbox.
+ * Vectorize has no shared transaction with D1. Pending vector operations are
+ * replayed before reconciliation reads fingerprints; upsert/delete replay is
+ * idempotent. Completed mutation identities prevent duplicate change events
+ * when the same revision is retried with different batch boundaries. */
+import type { ChangeFeedEntry, CorpusBatch, CorpusStore, PipelineRow, RemovedRow, UpsertRow } from '../ingest/pipeline';
+import { prepareProvisionText, writeImmutableProvisionText, UPSERT_TEXT_REFERENCE_SQL, textReferenceBindings, type TextObjectBucket } from './text-store';
+import { SNAPSHOT_PARSER_VERSION } from '../ingest/snapshot-format';
+import { mutationId, removalFeedEntry } from '../ingest/mutations';
 import type { PipelineRun, PipelineState, FingerprintEntry } from '../ingest/reconcile';
+
+export class CorpusPublicationPending extends Error {
+  constructor(readonly commit: string) { super('Waiting for Vectorize to process the corpus publication mutation.'); }
+}
+
+interface ActivePublication {
+  commit: string;
+  date: string;
+  vectorMutation: string | null;
+  completionJson: string | null;
+}
 
 /**
  * The store.
@@ -53,7 +33,126 @@ export class D1CorpusStore implements CorpusStore {
     private readonly vector: Vectorize,
     /** The corpus this store holds. */
     private readonly corpusId = 'statutes-canada',
-  ) {}
+    private readonly options: { textBucket?: TextObjectBucket; retainD1Text?: boolean } = {},
+  ) {
+    if (options.retainD1Text === false && !options.textBucket) throw new Error('external corpus text requires a verified text bucket');
+  }
+
+  /** Read the revision that an interrupted writer must finish first. */
+  async activePublication(): Promise<ActivePublication | null> {
+    return this.db.prepare(
+      `SELECT target_commit AS "commit", target_date AS date, vector_mutation AS vectorMutation, completion_json AS completionJson
+       FROM corpus_publication_guard WHERE corpus_id = ? AND target_commit IS NOT NULL`,
+    ).bind(this.corpusId).first<ActivePublication>();
+  }
+
+  /** Replay bounded pages without holding a corpus of embedding payloads. */
+  async recoverPendingWrites(): Promise<void> {
+    for (;;) {
+      const pending = await this.db.prepare(
+        'SELECT id, payload FROM corpus_mutations WHERE corpus_id = ? AND payload IS NOT NULL ORDER BY id LIMIT 16',
+      ).bind(this.corpusId).all<{ id: string; payload: string }>();
+      if (!pending.results.length) return;
+      const active = await this.activePublication();
+      if (!active || pending.results.some(({ id }) => {
+        const identity: unknown = JSON.parse(id);
+        return !Array.isArray(identity) || identity[0] !== this.corpusId || identity[1] !== active.commit;
+      })) throw new Error('The vector outbox must belong to one active corpus publication.');
+      await this.completeVectorWrites(active.commit, pending.results);
+    }
+  }
+
+  private async completeVectorWrites(revision: string, entries: { id: string; payload: string }[]): Promise<void> {
+    if (!entries.length) return;
+    const operations = entries.map((entry) => JSON.parse(entry.payload) as {
+      upsert?: VectorizeVector; remove?: string;
+    });
+    const vectors = operations.flatMap((operation) => operation.upsert ? [operation.upsert] : []);
+    const removals = operations.flatMap((operation) => operation.remove ? [operation.remove] : []);
+    let lastMutation: string | undefined;
+    if (vectors.length) lastMutation = (await this.vector.upsert(vectors)).mutationId;
+    if (removals.length) lastMutation = (await this.vector.deleteByIds(removals)).mutationId;
+    if (!lastMutation) throw new Error('Vectorize did not return its last mutation ID.');
+    // The outbox records enqueue success. The publication guard retains the
+    // latest mutation so a later cycle can check visibility without another write.
+    const at = new Date().toISOString();
+    await this.db.batch([
+      this.db.prepare('UPDATE corpus_publication_guard SET vector_mutation = ? WHERE corpus_id = ? AND target_commit = ?')
+        .bind(lastMutation, this.corpusId, revision),
+      ...entries.map((entry) => this.db.prepare(
+        'UPDATE corpus_mutations SET payload = NULL, completed_at = ? WHERE id = ?',
+      ).bind(at, entry.id)),
+    ]);
+  }
+
+  async applyBatch(batch: CorpusBatch): Promise<void> {
+    if (batch.corpusId !== this.corpusId) throw new Error('corpus store identity mismatch');
+    await this.recoverPendingWrites();
+    let active = await this.activePublication();
+    if (active && (active.commit !== batch.revision || active.date !== batch.occurredAt || active.completionJson !== null)) {
+      throw new Error('Finish the active corpus revision before starting another one.');
+    }
+    const feed = new Map(batch.changes.map((entry) => [entry.rowId, entry]));
+    const units = [
+      ...batch.upserts.map((row) => ({ id: mutationId(batch, row.row.id, row.hash), row, rowId: row.row.id })),
+      ...batch.removedIds.map((rowId) => ({ id: mutationId(batch, rowId, 'removed'), row: null, rowId })),
+    ];
+    // At most 16 rows (64 statements with text references) in one D1 transaction. Every statement
+    // has <=18 bindings, and each journal payload holds only one vector. A
+    // 2,000-row catch-up fits the configured 10,000-subrequest budget, including text readback.
+    for (let start = 0; start < units.length; start += 16) {
+      const chunk = units.slice(start, start + 16);
+      const placeholders = chunk.map(() => '?').join(',');
+      const existing = await this.db.prepare(`SELECT id FROM corpus_mutations WHERE id IN (${placeholders})`)
+        .bind(...chunk.map((unit) => unit.id)).all<{ id: string }>();
+      const done = new Set(existing.results.map((unit) => unit.id));
+      const fresh = chunk.filter((unit) => !done.has(unit.id));
+      const removedIds = fresh.filter((unit) => !unit.row).map((unit) => unit.rowId);
+      const old = new Map<string, RemovedRow>();
+      if (removedIds.length) {
+        const result = await this.db.prepare(
+          `SELECT id, act AS instrument, citation, section, heading, status, source_url AS sourceUrl
+           FROM statute_sections WHERE corpus_id = ? AND id IN (${removedIds.map(() => '?').join(',')})`,
+        ).bind(batch.corpusId, ...removedIds).all<RemovedRow>();
+        for (const row of result.results) old.set(row.id, row);
+      }
+      const statements: D1PreparedStatement[] = [];
+      const pending: { id: string; payload: string }[] = [];
+      for (const unit of fresh) {
+        const { row, rowId, id } = unit;
+        const change = row ? feed.get(rowId) : old.has(rowId) ? removalFeedEntry(batch, old.get(rowId)!) : null;
+        if (!change) throw new Error(`missing row or change event for ${rowId}`);
+        const payload = JSON.stringify(row?.embedding ? { upsert: {
+          id: rowId, values: row.embedding, namespace: 'statutes',
+          metadata: { language: row.row.language, jurisdiction: 'CA', fingerprint: row.hash },
+        } } : { remove: rowId });
+        statements.push(this.db.prepare(
+          'INSERT INTO corpus_mutations (id, corpus_id, payload) VALUES (?, ?, ?)',
+        ).bind(id, batch.corpusId, payload));
+        if (row) statements.push(...await this.upsertStatements([row]));
+        else {
+          statements.push(this.db.prepare('DELETE FROM statute_sections WHERE id = ? AND corpus_id = ?').bind(rowId, batch.corpusId));
+          if (this.options.textBucket) statements.push(this.db.prepare('DELETE FROM statute_text_refs WHERE row_id = ? AND corpus_id = ?').bind(rowId, batch.corpusId));
+        }
+        statements.push(this.changeStatement(change));
+        pending.push({ id, payload });
+      }
+      if (!statements.length) continue;
+      if (!active) {
+        // The coordinator admits one writer. Open the fence in the same
+        // transaction as the first visible row, event and outbox entry.
+        statements.unshift(this.db.prepare(
+          `INSERT INTO corpus_publication_guard (corpus_id, generation, target_commit, target_date)
+           VALUES (?, 1, ?, ?)
+           ON CONFLICT(corpus_id) DO UPDATE SET generation = generation + 1,
+             target_commit = excluded.target_commit, target_date = excluded.target_date`,
+        ).bind(this.corpusId, batch.revision, batch.occurredAt));
+      }
+      await this.db.batch(statements);
+      active ??= { commit: batch.revision, date: batch.occurredAt, vectorMutation: null, completionJson: null };
+      await this.completeVectorWrites(batch.revision, pending);
+    }
+  }
 
   /**
    * The fingerprints currently held, keyed by row id.
@@ -101,14 +200,44 @@ export class D1CorpusStore implements CorpusStore {
   async upsert(rows: UpsertRow[]): Promise<void> {
     if (rows.length === 0) return;
 
-    const statements = rows.map((row) =>
-      this.db
+    const statements = await this.upsertStatements(rows);
+    await this.db.batch(statements);
+
+    const vectors = rows
+      .filter((row) => row.embedding !== null)
+      .map((row) => ({
+        id: row.row.id,
+        values: row.embedding as number[],
+        namespace: 'statutes',
+        metadata: { language: row.row.language, jurisdiction: 'CA', fingerprint: row.hash },
+      }));
+    if (vectors.length > 0) {
+      await this.vector.upsert(vectors);
+    }
+  }
+
+  private searchTextColumn: Promise<boolean> | undefined;
+
+  private async upsertStatements(rows: UpsertRow[]): Promise<D1PreparedStatement[]> {
+    this.searchTextColumn ??= this.db.prepare('PRAGMA table_info(statute_sections)')
+      .all<{ name: string }>().then((result) => result.results.length === 0 ||
+        result.results.some((column) => column.name === 'search_text'));
+    const hasSearchText = await this.searchTextColumn;
+    const statements: D1PreparedStatement[] = [];
+    for (const row of rows) {
+      let reference;
+      if (this.options.textBucket) {
+        reference = await writeImmutableProvisionText(this.options.textBucket, await prepareProvisionText({
+          rowId: row.row.id, corpusId: row.row.corpusId, rowFingerprint: row.hash, text: row.row.text,
+        }));
+      }
+      statements.push(this.db
         .prepare(
           `INSERT INTO statute_sections (
              id, corpus_id, act, citation, section, schedule, part, status, heading,
-             text, source_url, jurisdiction, in_force, language, topics, search_text,
+             text, source_url, jurisdiction, in_force, language, topics${hasSearchText ? ", search_text" : ""},
              text_hash, last_changed
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ) VALUES (${Array.from({ length: hasSearchText ? 18 : 17 }, () => "?").join(", ")})
            ON CONFLICT (id) DO UPDATE SET
              act = excluded.act,
              citation = excluded.citation,
@@ -135,7 +264,7 @@ export class D1CorpusStore implements CorpusStore {
           row.row.part,
           row.row.status,
           row.row.heading,
-          row.row.text,
+          this.options.retainD1Text === false ? '' : row.row.text,
           row.row.source_url,
           'CA',
           row.row.in_force,
@@ -155,24 +284,13 @@ export class D1CorpusStore implements CorpusStore {
           // copy of everything the product serves. It is deliberately **not**
           // in the `ON CONFLICT` clause, so an update leaves whatever is there
           // alone rather than rewriting a value nobody reads.
-          '',
+          ...(hasSearchText ? [''] : []),
           row.hash,
           row.row.lastChanged,
-        ),
-    );
-    await this.db.batch(statements);
-
-    const vectors = rows
-      .filter((row) => row.embedding !== null)
-      .map((row) => ({
-        id: row.row.id,
-        values: row.embedding as number[],
-        namespace: 'statutes',
-        metadata: { language: row.row.language, jurisdiction: 'CA' },
-      }));
-    if (vectors.length > 0) {
-      await this.vector.upsert(vectors);
+        ));
+      if (reference) statements.push(this.db.prepare(UPSERT_TEXT_REFERENCE_SQL).bind(...textReferenceBindings(reference)));
     }
+    return statements;
   }
 
   /** Remove rows that are no longer in the corpus, and return what they were. */
@@ -217,13 +335,64 @@ export class D1CorpusStore implements CorpusStore {
   }
 
   /** Record the run in the run log. */
+  async finishRun(run: PipelineRun, state?: PipelineState): Promise<void> {
+    await this.recoverPendingWrites();
+    if (!state) {
+      await this.runStatement(run).run();
+      return;
+    }
+    if (state.corpusId !== this.corpusId || run.corpusId !== this.corpusId || state.commit !== run.commit ||
+        state.commitDate !== run.commitDate) throw new Error('The finished run and publication target must match.');
+    const active = await this.activePublication();
+    if (!active) {
+      await this.db.batch([this.runStatement(run), this.stateStatement(state)]);
+      return;
+    }
+    if (active.commit !== state.commit || active.date !== state.commitDate || !active.vectorMutation || active.completionJson) {
+      throw new Error('The active corpus publication has no matching completion checkpoint.');
+    }
+    await this.db.prepare(
+      'UPDATE corpus_publication_guard SET completion_json = ? WHERE corpus_id = ? AND target_commit = ?',
+    ).bind(JSON.stringify({run,state}), this.corpusId, state.commit).run();
+    await this.completeStagedPublication();
+  }
+
+  /** Resume after asynchronous vector indexing without re-reading or re-embedding rows. */
+  async completeStagedPublication(): Promise<PipelineRun | null> {
+    const active = await this.activePublication();
+    if (!active?.completionJson) return null;
+    const {run,state} = JSON.parse(active.completionJson) as {run:PipelineRun;state:PipelineState};
+    if (!active.vectorMutation || run.corpusId !== this.corpusId || state.corpusId !== this.corpusId ||
+        run.commit !== active.commit || state.commit !== active.commit ||
+        run.commitDate !== active.date || state.commitDate !== active.date) {
+      throw new Error('Invalid corpus publication checkpoint.');
+    }
+    const index = await this.vector.describe();
+    // Mutation IDs are opaque. This index has one writer, and only exact
+    // equality proves that its latest acknowledged mutation is processed.
+    if (String(index.processedUpToMutation) !== active.vectorMutation) throw new CorpusPublicationPending(active.commit);
+    await this.db.batch([
+      this.runStatement(run), this.stateStatement(state),
+      this.db.prepare(
+        `UPDATE corpus_publication_guard
+         SET target_commit = NULL, target_date = NULL, vector_mutation = NULL, completion_json = NULL
+         WHERE corpus_id = ? AND target_commit = ?`,
+      ).bind(this.corpusId, active.commit),
+    ]);
+    return run;
+  }
+
   async recordRun(run: PipelineRun): Promise<void> {
-    await this.db
+    await this.runStatement(run).run();
+  }
+
+  private runStatement(run: PipelineRun): D1PreparedStatement {
+    return this.db
       .prepare(
         `INSERT INTO corpus_runs (
            corpus_id, commit_sha, commit_date, ran_at, added, changed, removed,
-           unchanged, embedded, duration_ms, ok, error
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           unchanged, embedded, duration_ms, ok, error, parser_version
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         run.corpusId,
@@ -238,37 +407,23 @@ export class D1CorpusStore implements CorpusStore {
         run.durationMs,
         run.ok ? 1 : 0,
         run.error ?? null,
-      )
-      .run();
+        run.parserVersion ?? SNAPSHOT_PARSER_VERSION,
+      );
   }
 
   /** Record the changes in the change feed. */
   async recordChanges(changes: ChangeFeedEntry[]): Promise<void> {
-    if (changes.length === 0) return;
-    for (const change of changes) {
-      await this.db
-        .prepare(
-          `INSERT INTO corpus_changes (
-             corpus_id, change, row_id, instrument, citation, section, heading,
-             status, summary, source_url, occurred_at, recorded_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        )
-        .bind(
-          change.corpusId,
-          change.change,
-          change.rowId,
-          change.instrument,
-          change.citation,
-          change.section,
-          change.heading,
-          change.status,
-          change.summary,
-          change.sourceUrl,
-          change.occurredAt,
-          new Date().toISOString(),
-        )
-        .run();
-    }
+    if (changes.length) await this.db.batch(changes.map((change) => this.changeStatement(change)));
+  }
+
+  private changeStatement(change: ChangeFeedEntry): D1PreparedStatement {
+    return this.db.prepare(`INSERT INTO corpus_changes (
+      corpus_id, change, row_id, instrument, citation, section, heading,
+      status, summary, source_url, occurred_at, recorded_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(change.corpusId, change.change, change.rowId, change.instrument,
+        change.citation, change.section, change.heading, change.status,
+        change.summary, change.sourceUrl, change.occurredAt, new Date().toISOString());
   }
 
   /**
@@ -305,16 +460,21 @@ export class D1CorpusStore implements CorpusStore {
 
   /** Record the corpus revision the store is now at. */
   async setState(state: PipelineState): Promise<void> {
-    await this.db
+    await this.stateStatement(state).run();
+  }
+
+  private stateStatement(state: PipelineState): D1PreparedStatement {
+    return this.db
       .prepare(
-        `INSERT INTO corpus_state (corpus_id, commit_sha, commit_date, as_of, row_count, last_run_at)
-         VALUES (?, ?, ?, ?, ?, ?)
+        `INSERT INTO corpus_state (corpus_id, commit_sha, commit_date, as_of, row_count, last_run_at, parser_version)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (corpus_id) DO UPDATE SET
            commit_sha = excluded.commit_sha,
            commit_date = excluded.commit_date,
            as_of = excluded.as_of,
            row_count = excluded.row_count,
-           last_run_at = excluded.last_run_at`,
+           last_run_at = excluded.last_run_at,
+           parser_version = excluded.parser_version`,
       )
       .bind(
         state.corpusId,
@@ -323,15 +483,15 @@ export class D1CorpusStore implements CorpusStore {
         state.asOf,
         state.rowCount,
         state.lastRunAt,
-      )
-      .run();
+        state.parserVersion ?? SNAPSHOT_PARSER_VERSION,
+      );
   }
 
   /** The revision the store is at, if it is at one. */
   async currentCommit(corpusId = this.corpusId): Promise<PipelineState | null> {
     const result = await this.db
       .prepare(
-        'SELECT corpus_id, commit_sha, commit_date, as_of, row_count, last_run_at FROM corpus_state WHERE corpus_id = ?',
+        'SELECT corpus_id, commit_sha, commit_date, as_of, row_count, last_run_at, parser_version FROM corpus_state WHERE corpus_id = ?',
       )
       .bind(corpusId)
       .first<{
@@ -341,9 +501,11 @@ export class D1CorpusStore implements CorpusStore {
         as_of: string;
         row_count: number;
         last_run_at: string;
+        parser_version: string | null;
       }>();
     if (!result) return null;
     return {
+      parserVersion: result.parser_version ?? undefined,
       corpusId: result.corpus_id,
       commit: result.commit_sha,
       commitDate: result.commit_date,

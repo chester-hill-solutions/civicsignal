@@ -1,0 +1,8 @@
+{
+  "recordedAt": "2026-10-23T01:34:05.358531+00:00",
+  "path": "dist/text-cutover-full-20261022-v2.tar.gz",
+  "bytes": 274733659,
+  "sha256": "260f06adff3f03a563a503c8e3644bde088473c9836d86d260f45f12d163715a",
+  "contents": "Previously verified full v2 cutover bundle, with original manifest and files. All 11 archive members streamed successfully before removal of the uncompressed task-generated copy.",
+  "extract": "tar -xzf dist/text-cutover-full-20261022-v2.tar.gz -C dist"
+}

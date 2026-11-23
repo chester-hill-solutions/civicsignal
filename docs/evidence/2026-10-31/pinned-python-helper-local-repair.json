@@ -1,0 +1,73 @@
+{
+  "format": 1,
+  "kind": "pinned-python-helper-local-repair",
+  "recordedAt": "2026-11-01T00:52:10.326068+00:00",
+  "planWorkPackages": [
+    "MP-04",
+    "MP-06"
+  ],
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/14",
+  "sourcePins": [
+    {
+      "path": "scripts/protected-state-d1-owned.py",
+      "bytes": 21037,
+      "sha256": "ffd6d56fbc73c3f1fe04dc59d4fae6483385d0686ee015d0cb7081ee6a21e5d8"
+    },
+    {
+      "path": "test/protected-state-d1-owned.test.py",
+      "bytes": 22500,
+      "sha256": "99fc1d7ab2d17fd0385a3efb8339f891960536e49876bf2101a6e2fd64603cde"
+    },
+    {
+      "path": "scripts/lib/capture_owned.py",
+      "bytes": 6738,
+      "sha256": "222640626fa99e8e413d5282c439d11f0c3770c06653e61bce6801a8a79b084a"
+    }
+  ],
+  "cause": "SourceFileLoader reads a timestamp-valid cached code object under -B and reopens source after an independent source hash. The source pin alone does not identify executed bytes.",
+  "repair": "bounded O_NOFOLLOW regular-fd read, hash exact buffer, compile/execute same buffer with dont_inherit and optimize0; default operator calls it; test bootstrap directly compiles source too",
+  "regressions": {
+    "red": "two genuine failures: stale-cache value and file replacement after hash; one hash-mismatch control passes",
+    "finalSharpPassed": 3,
+    "defaultOperatorLoaderIntegrationAdded": true,
+    "existingSuitePassedBeforeFinalBootstrapDelta": 31,
+    "completeFinalSourceGate": "docs/evidence/2026-10-31/integrated-candidate-local-validation-v9.json",
+    "completeFinalPythonTestsPassed": 31
+  },
+  "independentReview": {
+    "reviewer": "planning_api_product",
+    "verdict": "approve scoped source/read-race fix",
+    "exactFinalPinsMatched": true,
+    "remainingHighConfidenceFindings": 0,
+    "limit": "final bootstrap delta independently reviewed; complete v9 now passes all31 cases on final bytes; exact successor Linux remains open"
+  },
+  "originalCaptureHelperChanged": false,
+  "newSourceCacheLookup": false,
+  "workspaceCacheExecutedByReview": false,
+  "logs": [
+    {
+      "path": "/private/tmp/civicsignal-pinned-helper-red-v2.log",
+      "bytes": 1350,
+      "sha256": "f35243cde6a1e7f948fa35057028683e536d800612e0eaaa0e407311cf7a801c"
+    },
+    {
+      "path": "/private/tmp/civicsignal-pinned-helper-final-bootstrap.log",
+      "bytes": 101,
+      "sha256": "edb4e2159c923ea45a32656078835cdf531c3d7b414c670dd786978875cb0678"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-python-helper-source-validation-v1/tests.log",
+      "bytes": 130,
+      "sha256": "a9347f0267a5257ab258eaf676b4ebf6176de2f3e486cf925d8a0557f662c734"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-python-helper-cache-repro-v1/result.json",
+      "bytes": 875,
+      "sha256": "b2defef5f3c042949407539d3d4a016c8a9f49dfa2e66cadfbc11c0f480548ff"
+    }
+  ],
+  "credentialReads": 0,
+  "providerRequests": 0,
+  "hostedQualified": false,
+  "limits": "All stale-code/drift execution is confined to newly authored synthetic fixtures. The generated workspace cache is retained privately and structurally matches current helper source; no historical stale/malicious helper execution is established. Earlier eee source receipts remain historical qualification and do not qualify this new tracked increment."
+}

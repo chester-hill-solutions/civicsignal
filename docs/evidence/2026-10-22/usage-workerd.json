@@ -1,0 +1,12 @@
+{
+  "runtime": "local workerd SQLite Durable Object",
+  "packageVersion": "0.1.1",
+  "legacyCounterPreserved": true,
+  "concurrentSameOperationRequests": 12,
+  "sameOperationUnits": 1,
+  "distinctCompetingRequests": 20,
+  "acceptedWithinRemainingAllowance": 3,
+  "finalCount": 5,
+  "acceptedAndRefusedReceiptsReplayWithoutIncrement": true,
+  "remoteMutations": 0
+}

@@ -1,6 +1,9 @@
-import type { Env as SpineEnv } from './spine/env';
-
-export interface Env extends SpineEnv {
+export interface Env {
+  /** Legacy KV binding retained only for export and rollback. */
+  API_KEYS?: KVNamespace;
+  /** Preserve this namespace and customer:<workspace id> counter identity. */
+  API_KEY_USAGE?: DurableObjectNamespace;
+  FREE_MONTHLY_ALLOWANCE?: string;
   /** Public origin used in discovery documents and MCP instructions. */
   PUBLIC_API_BASE_URL?: string;
   /** Comma-separated public hostnames allowed to serve discovery routes. */
@@ -15,8 +18,12 @@ export interface Env extends SpineEnv {
   DEMO_BROWSER_API_KEY?: string;
   /** Corpus store. */
   CIVIC_DB?: D1Database;
+  /** CHS keys and workspace billing; defaults to CIVIC_DB. Keep fixed during corpus rollback. */
+  AUTH_DB?: D1Database;
   /** Static corpus snapshots and rendered briefs. */
   CORPORA?: R2Bucket;
+  /** d1(default), verify, prefer-r2 or r2. Enable only after parity checks. */
+  CORPUS_TEXT_MODE?: string;
   /** Response cache for corpus queries. */
   CIVIC_CACHE?: KVNamespace;
   /**

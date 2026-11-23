@@ -1,5 +1,12 @@
 # The web fallback
 
+## Current v1 authority
+
+Future external-source design. v1 reports a refusal or route decision; it does not fetch web answers.
+[The master plan](PLAN.md) defines current scope and work order.
+[The release evidence ledger](V1-RELEASE.md) retains dated outcomes.
+The master plan controls scope; the ledger records evidence. The historical claims below do not create current work.
+
 When the corpus has nothing, the product looks further afield, and when that
 comes up empty it says so.
 

@@ -1,0 +1,191 @@
+{
+  "format": 1,
+  "kind": "staging-api-v5-retrieval-root-observation",
+  "observedAt": "2026-10-24T03:48:55.105385+00:00",
+  "apiVersionId": "f512cf84-fbcc-4990-bad0-13cdc0678c71",
+  "probeCandidateSha256": "62aa5966b34d371cdffa03abf1a4941eaa78ee1b50cf620b1a1adb12d9904da1",
+  "freshIdentityCandidateSha256": "ef64195f5d704d26f424c71ca9756c1046e4a7adab14adee348bd01186458786",
+  "freshIdentityObservationSha256": "4ce4d5555469d09e180fbc4b1c5562e3d5dcd7c3fa56d595aeffabecb05a3d72",
+  "freshIdentityObservedAt": "2026-10-24T03:44:01.669Z",
+  "freshIdentityManagementGETs": 4,
+  "freshIdentitySameVersionBindingsRuntimeUsageAndEmptyCalendar": true,
+  "deploymentPlusFreshIdentityExplicitProofGETs": 12,
+  "servingRequests": 2,
+  "maximumServingRequests": 3,
+  "generationRequests": 0,
+  "thirdRequestSent": false,
+  "warmCharacterizationAttempted": false,
+  "kvSettleWaitAttempted": false,
+  "qualified": false,
+  "terminalReason": "cold-trace: calibration reranker reported error and used existing vector-floor fallback",
+  "ledgerReservedBefore": 154,
+  "ledgerReservedAfter": 156,
+  "ledgerLimit": 160,
+  "ledgerRemaining": 4,
+  "ledgerBeforeSha256": "b4056b7f7a683d603e915395a84affa632236c7db952f1d6ac22b6030144006f",
+  "ledgerAfterSha256": "38257c2183c8c0bb4b47e953f3ca57420b46b2cdeb1339860bc4799a9c2ce5f5",
+  "historical14PrefixSha256": "4e5404b5a2806b4f8059690b9d035d2435896fc8f9eb89f2739d8aebeec8bceb",
+  "original154PrefixUnchanged": true,
+  "ledgerLockAbsent": true,
+  "childAndOwner": {
+    "childExitCode": 1,
+    "ownedProcessSettled": true,
+    "timedOut": false,
+    "logBoundExceeded": false,
+    "parentAccepted": false,
+    "parentLocalFailure": true,
+    "parentFailureCode": "owned-window-or-acceptance-refused",
+    "childFailureCode": "cold-trace",
+    "ledgerClosed": true,
+    "failureFencePreserved": true,
+    "automaticRetry": false
+  },
+  "checks": [
+    {
+      "format": 1,
+      "job": "original-zen-topic-retrieval-only",
+      "httpStatus": 200,
+      "stageHeaderMatched": true,
+      "correlationId": "req_mvluuxucjg5ap3njss",
+      "apiCode": null,
+      "retrieval": [
+        {
+          "version": 1,
+          "corpusId": "statutes-canada",
+          "backend": "vectorize",
+          "revision": "0507465393c224c0491fc8c17c88340217acc656",
+          "parserVersion": "statutes-v2",
+          "policy": "vectorize:federal-authority-v3-observed",
+          "encoderModel": "embeddinggemma-2-270m",
+          "languageFilter": "en",
+          "provenanceMatched": true,
+          "mode": "exact",
+          "decision": "answer",
+          "cache": "bypass",
+          "fallback": false,
+          "providers": {
+            "encoder": "not-called",
+            "vector": "not-called",
+            "reranker": "not-called",
+            "rows": "ok"
+          },
+          "candidateCount": 0,
+          "resultCount": 1,
+          "preRefusalTopScore": null,
+          "vectorFloor": null,
+          "scoreSource": "none",
+          "scoredAt": null,
+          "elapsedMs": 93
+        }
+      ],
+      "rows": [
+        {
+          "id": "acts-en-151510",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/C-6/section-8.html"
+        }
+      ],
+      "briefResolved": true,
+      "ledgerReservedBefore": 154,
+      "ledgerReservedAfter": 155
+    },
+    {
+      "format": 1,
+      "job": "P-21-4-en-cold",
+      "httpStatus": 200,
+      "stageHeaderMatched": true,
+      "correlationId": "req_mvluv1n27oq7j764nk",
+      "apiCode": null,
+      "retrieval": [
+        {
+          "version": 1,
+          "corpusId": "statutes-canada",
+          "backend": "vectorize",
+          "revision": "0507465393c224c0491fc8c17c88340217acc656",
+          "parserVersion": "statutes-v2",
+          "policy": "vectorize:federal-authority-v3-observed",
+          "encoderModel": "embeddinggemma-2-270m",
+          "languageFilter": "en",
+          "provenanceMatched": true,
+          "mode": "vector-floor",
+          "decision": "answer",
+          "cache": "miss",
+          "fallback": true,
+          "providers": {
+            "encoder": "ok",
+            "vector": "ok",
+            "reranker": "error",
+            "rows": "ok"
+          },
+          "candidateCount": 100,
+          "resultCount": 10,
+          "preRefusalTopScore": 0.6629009,
+          "vectorFloor": 0.62,
+          "scoreSource": "computed",
+          "scoredAt": "2026-10-24T03:44:50.341Z",
+          "elapsedMs": 2138
+        }
+      ],
+      "rows": [
+        {
+          "id": "acts-en-397240",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-5.html"
+        },
+        {
+          "id": "acts-en-397504",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-22.4.html"
+        },
+        {
+          "id": "acts-en-397500",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-22.3.html"
+        },
+        {
+          "id": "acts-en-417086",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-7.3.html"
+        },
+        {
+          "id": "acts-en-397545",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-29.html"
+        },
+        {
+          "id": "acts-en-397236",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-4.html"
+        },
+        {
+          "id": "acts-en-397332",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-10.html"
+        },
+        {
+          "id": "acts-en-416970",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-5.html"
+        },
+        {
+          "id": "acts-en-416935",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-4.html"
+        },
+        {
+          "id": "acts-en-416983",
+          "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-7.html"
+        }
+      ],
+      "briefResolved": false,
+      "ledgerReservedBefore": 155,
+      "ledgerReservedAfter": 156
+    }
+  ],
+  "calibrationGoldRank": 6,
+  "exactOriginalZenTopicRetrievalPassed": true,
+  "zenKeyValidityEstablished": false,
+  "generationProviderAttemptEstablished": false,
+  "rerankerFailurePhaseOrUpstreamStatusKnown": false,
+  "qualityAcceptanceClaim": false,
+  "heldoutUse": "First request only diagnoses the fixed topic already used by the historical Zen requests; it is not new quality validation or tuning.",
+  "rawResponseTextQueryVectorsAuthorityFlagsAndKeysPersisted": false,
+  "productionChanged": false,
+  "railwayChanged": false,
+  "limitations": [
+    "Both API responses were HTTP200; the calibration acceptance check failed on fallback behavior.",
+    "The exact-topic result is current retrieval evidence, not the cause of either historical Zen502.",
+    "The reranker error does not identify transport, HTTP, JSON or domain-schema failure.",
+    "No warm result or general retrieval-quality/performance claim is established."
+  ]
+}

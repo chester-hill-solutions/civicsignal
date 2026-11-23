@@ -29,8 +29,8 @@ import {
   locate,
   parseManifest,
   partStarts,
-  type SnapshotIndexEntry,
 } from '../src/ingest/snapshot-format';
+import type { SnapshotIndexEntry } from '../src/ingest/snapshot-diff';
 
 const args = process.argv.slice(2);
 function arg(flag: string, fallback: string): string {

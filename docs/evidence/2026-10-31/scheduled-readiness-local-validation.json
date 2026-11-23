@@ -1,0 +1,52 @@
+{
+  "format": 1,
+  "kind": "scheduled-publication-readiness-local-validation",
+  "recordedAt": "2026-10-31T21:51:12Z",
+  "planWorkPackage": "MP-02",
+  "preparedOnly": true,
+  "executionApproved": false,
+  "packet": {
+    "directory": "dist/release/staging/first-publication-preflight-20261031-v1",
+    "candidateSha256": "522b608d6fcf69cba062083a56db48e6f78e1983d2e1fc6e121fdfd0a9ad86aa",
+    "runSha256": "74d463bba0ba2e833d511d24bc2543f8822823b6cf08ec329ed8f2a5a151c68f",
+    "ownerSha256": "749390b2aa6e95a75481aabef203dc49dfcabec71577797e7bd71d7cf1d37a47",
+    "manifestInputs": 34,
+    "maxGetRequests": 6,
+    "mutations": 0,
+    "automaticRetry": false,
+    "automaticRefresh": false
+  },
+  "localChecks": {
+    "entryCasesPassed": 15,
+    "ownerCasesPassed": 12,
+    "totalCasesPassed": 27,
+    "packetTypecheckPassed": true,
+    "rootOwnedInspectionPassed": true,
+    "rootFrozenFileHashesMatched": 17,
+    "rootCommandLogHashesMatched": 4,
+    "independentExactPinReview": "approved for local preparation only",
+    "independentJournalCloseFault": {
+      "syntheticRequests": 6,
+      "responseBytesRead": 4047,
+      "observedHttpStatus": 200,
+      "outcome": "permanent refusal with known accounting retained"
+    },
+    "actualReviewAndOperationalMarkersAbsent": true
+  },
+  "realCredentialReads": 0,
+  "accountRequests": 0,
+  "sourceRequests": 0,
+  "servingRequests": 0,
+  "generationRequests": 0,
+  "freshAccountStateEstablished": false,
+  "credentialValidityEstablished": false,
+  "firstPublicationQualified": false,
+  "qualifiedImplementation": "08cf10c6b96eaa94a9c4660f32e2941b95184962",
+  "qualifiedSourceFixtureInputsUnchanged": 470,
+  "limitations": [
+    "Synthetic fault tests and local inspection do not establish hosted readiness.",
+    "No top-level execution review exists and no operational intent was created.",
+    "This management packet cannot establish source freshness, namespace or instance absence, artifact parity, or scheduled first publication.",
+    "The original approvals, markers, serving ledger, and paused coordinator remain unchanged."
+  ]
+}

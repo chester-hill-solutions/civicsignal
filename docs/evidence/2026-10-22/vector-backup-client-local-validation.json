@@ -1,0 +1,185 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T13:54:36.807Z",
+  "scope": "Local generic suspended vector export client, CLI and synthetic fixtures",
+  "frozen": true,
+  "sourceFiles": {
+    "scripts/export-vectors.ts": {
+      "bytes": 7296,
+      "sha256": "c1ab66de7fa99576d5ed2053da326d060522856d779888a7780344adcacaf6e4"
+    },
+    "scripts/lib/vector-export-client.ts": {
+      "bytes": 14170,
+      "sha256": "47a99eb4ef6780132d1deb4adea067c335c32c25abe3e6c53430f8fd8bf0e06d"
+    },
+    "test/helpers/vector-backup.ts": {
+      "bytes": 3321,
+      "sha256": "6eef70b3d2444d09c6e1159683ef7d2a25e38a4ee4e365669e3cdb473cb1fb8a"
+    },
+    "test/vector-export-client.test.ts": {
+      "bytes": 9702,
+      "sha256": "a2659fbd6d5178648a41ae733fec8538a7e28a4247176990195b5e83987577fb"
+    },
+    "test/vector-export-cli.test.ts": {
+      "bytes": 9698,
+      "sha256": "1e056ad8260050d026dc85931d671b5129e7332601ea9512db9b8f01f79dbcb6"
+    },
+    "services/snapshot/OPERATIONS.md": {
+      "bytes": 29240,
+      "sha256": "6d5b57a2322667f088ed2c93d131f1b2b04d044e7412adea5ea97b7caa05a0f0"
+    }
+  },
+  "checks": [
+    {
+      "command": "bun run test -- test/vector-export-client.test.ts test/vector-export-cli.test.ts test/vector-export.test.ts test/vector-export-state.test.ts",
+      "exitCode": 0,
+      "tests": 69,
+      "files": 4,
+      "newClientTests": 45,
+      "newCliTests": 13,
+      "log": "/private/tmp/civicsignal-vector-backup-focused-tests.log"
+    },
+    {
+      "command": "bun run typecheck:bun",
+      "exitCode": 0,
+      "log": "/private/tmp/civicsignal-vector-backup-bun-types.log"
+    },
+    {
+      "command": "bun run typecheck:tooling",
+      "exitCode": 0,
+      "log": "/private/tmp/civicsignal-vector-backup-tooling-types.log"
+    },
+    {
+      "command": "bun run check:corpus-invariants",
+      "exitCode": 0,
+      "artifactChecksSkipped": [
+        "dist/statutes.sql",
+        "dist/statutes.jsonl",
+        "dist/statutes-fr.jsonl"
+      ]
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "node node_modules/vitest/vitest.mjs run test/vector-export-client.test.ts test/vector-export-cli.test.ts test/vector-export.test.ts test/vector-export-state.test.ts",
+      "exitCode": 0,
+      "tests": 75,
+      "files": 4,
+      "clientTests": 45,
+      "cliTests": 19,
+      "log": "dist/release/vector-journal-parent-proof/final-vector-results.log"
+    },
+    {
+      "command": "bun run typecheck",
+      "exitCode": 0,
+      "projects": [
+        "worker",
+        "bun",
+        "tooling",
+        "snapshot"
+      ],
+      "log": "dist/release/vector-journal-parent-proof/final-typecheck-results.log"
+    },
+    {
+      "command": "git diff --check -- scripts/export-vectors.ts test/vector-export-cli.test.ts services/snapshot/OPERATIONS.md",
+      "exitCode": 0
+    }
+  ],
+  "verified": [
+    "Local SnapshotReader index SHA/order/global digest and fixed-part digests checked before live execution.",
+    "Explicit original object ID and current revision required; initial/final control both require the same completed, suspended, quiescent state with pending=false/failures0 and no work or alarms.",
+    "Every vectors POST includes the suspension header and requires an exact echo; receipt hashes/counts/part digests agree with the normalized final manifest.",
+    "No automatic retry, redirect, credential refresh, run, resume or suspend call. URL userinfo/path/query/hash rejected, including empty userinfo.",
+    "Whole-request deadline covers fetch and body consumption, including a hanging injected transport/stream. Oversized/malformed/private responses do not propagate raw content.",
+    "Intent records are fsynced before requests; lost acknowledgement retains the exclusive failed journal and sends no later request. A new journal is required after separate review.",
+    "Existing or concurrently created local manifests are never overwritten; final control must pass before exclusive local manifest creation.",
+    "Actual Bun dry-run and injected credential getter prove no credential/transport path; privacy-safe outputs normalize unknown response fields.",
+    "Live export refuses missing/symlink/file/unowned/non-0700 journal parents before any credential getter or transport, leaving no journal ancestors. Existing private-parent success and all prior exclusive journal/manifest cases still pass."
+  ],
+  "bounds": {
+    "fixedPositionsPerPart": 10000,
+    "maxParts": 1000,
+    "maxRequests": "parts + 3 (at most 1003)",
+    "networkConcurrency": 1,
+    "controlMs": 15000,
+    "defaultExportMs": 120000,
+    "helperMaxExportMs": 300000,
+    "controlBytes": 16384,
+    "partResponseBytes": 8192,
+    "manifestResponseBytes": 262144,
+    "retries": 0,
+    "redirects": 0,
+    "credentialRefreshes": 0
+  },
+  "boundaries": {
+    "cloudRequests": 0,
+    "secretReads": 0,
+    "actualVectorBackupRuns": 0,
+    "deployments": 0,
+    "frozenRecoveryRuntimeOrOperatorEdits": 0,
+    "originalIgnoredStagePacketEdits": 0
+  },
+  "limits": [
+    "This is protocol/receipt validation and server-reported R2 readback, not independent download/hash verification of local vector bytes.",
+    "Vector positions, fingerprints, 768-dimensional shape and receipts do not attest the model that generated existing vectors.",
+    "No completed production or staging backup acquisition, publication, resource state or hosted quota/cost claim is established.",
+    "Full repository and fresh Linux CI gates remain parent-owned; corpus invariant artifact checks were skipped because those optional dist artifacts were absent."
+  ],
+  "amendedAt": "2026-10-23T14:03:32.090013+00:00",
+  "amendments": [
+    {
+      "observedAt": "2026-10-23T14:03:32.090013+00:00",
+      "scope": "Reviewed P2 journal-parent durability prerequisite only",
+      "previousSourceFiles": {
+        "scripts/export-vectors.ts": {
+          "bytes": 6767,
+          "sha256": "550a93a65f5288db0f50213c366a2389d94c19fe456b24f8c9f458ee22c9fea6"
+        },
+        "test/vector-export-cli.test.ts": {
+          "bytes": 7859,
+          "sha256": "8409563ae8d7be85b96889775dc38c4b6367bdb30de51234a4d9dca17fbf076c"
+        },
+        "services/snapshot/OPERATIONS.md": {
+          "bytes": 28940,
+          "sha256": "ef0134058ae1f35f3ec6924ccdab5656cedf78ef5ae85601ad04abba50ff0ef5"
+        }
+      },
+      "updatedSourceFiles": {
+        "scripts/export-vectors.ts": {
+          "bytes": 7296,
+          "sha256": "c1ab66de7fa99576d5ed2053da326d060522856d779888a7780344adcacaf6e4"
+        },
+        "test/vector-export-cli.test.ts": {
+          "bytes": 9698,
+          "sha256": "1e056ad8260050d026dc85931d671b5129e7332601ea9512db9b8f01f79dbcb6"
+        },
+        "services/snapshot/OPERATIONS.md": {
+          "bytes": 29240,
+          "sha256": "6d5b57a2322667f088ed2c93d131f1b2b04d044e7412adea5ea97b7caa05a0f0"
+        }
+      },
+      "redProof": {
+        "command": "node node_modules/vitest/vitest.mjs run test/vector-export-cli.test.ts --testNamePattern 'missing journal parent'",
+        "exitCode": 1,
+        "failed": 1,
+        "skipped": 13,
+        "log": "dist/release/vector-journal-parent-proof/red.log"
+      },
+      "newPrerequisite": "Journal parent must already exist, be a non-symlink directory owned by process.getuid(), with mode0700. CLI creates no parent/ancestor. Operator must supply a durable existing private path.",
+      "newTests": 6,
+      "newCases": [
+        "missing nested parent",
+        "symlink parent",
+        "file parent",
+        "group-accessible parent",
+        "world-accessible parent",
+        "different operator UID"
+      ],
+      "beforeCredentialOrTransport": true,
+      "noCloudCalls": true,
+      "noFrozenRecoveryInputEdits": true
+    }
+  ]
+}

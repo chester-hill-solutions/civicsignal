@@ -1,0 +1,15 @@
+{
+  "observedAt": "2026-10-23T00:52:52.966Z",
+  "sourceRepository": "justicecanada/laws-lois-xml",
+  "sourceCommit": "0507465393c224c0491fc8c17c88340217acc656",
+  "sourceDate": "2026-10-15T18:08:27Z",
+  "observedProduction": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "asOf": "2026-10-15",
+    "rowCount": 277857,
+    "lastCycleAt": "2026-10-22T16:37:09.355Z",
+    "databaseBytes": 1165287424,
+    "latestApiVersion": "4c06fcd8-db2e-47b9-92ad-fc214522e73e"
+  },
+  "limitation": "Read-only point-in-time observations. These do not prove v1 deployment or end-to-end automated freshness."
+}

@@ -1,0 +1,55 @@
+{
+  "format": 1,
+  "kind": "native-restore-EPIPE-diagnostic-observation",
+  "recordedAt": "2026-10-31T23:50:10.101898+00:00",
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/12",
+  "sourceHead": "dba19d3679727863f2fb1fc0fe6b38a53d2a9eff",
+  "originalFailedAggregate": "docs/evidence/2026-10-31/integrated-candidate-local-observation-v7.json",
+  "linuxComparison": "docs/evidence/2026-10-31/candidate-dba19d3-linux-ci-observation.json",
+  "causeEstablished": false,
+  "EPIPEReproduced": false,
+  "EPIPEFixApplied": false,
+  "trackedSourceEdits": 0,
+  "fullRestoreFileTestsPassed": 18,
+  "originalBufferedTriggerPasses": 61,
+  "controlledStreamCadenceVariantsPassed": 10,
+  "originalConcurrency": 4,
+  "objectsPerFrame": 16,
+  "validFrameBytes": 2097152,
+  "oversizeBytes": 2097153,
+  "originalPayloadConcurrencyTimeoutAssertionsUnchanged": true,
+  "runtime": "Node25.9.0; no local Node24 differential",
+  "expectedSourceFenceRefusal": "next probe stops before launch after separately authorized relay regression changes an old477-source input",
+  "sourceFenceWeakened": false,
+  "originalFailurePreserved": true,
+  "validatedDiagnosticArtifactPins": 59,
+  "artifacts": [
+    {
+      "path": "dist/evaluation/2026-10-31-restore-frame-diagnosis-v2/diagnosis-summary.json",
+      "bytes": 22777,
+      "sha256": "5dcfa2474d753133cede283518979564206d9ec6d13359524719adace649c1aa"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-restore-frame-diagnosis-v2/freeze.json",
+      "bytes": 15231,
+      "sha256": "f9a64ac12e984eebc7085ae877282fb5b9a4f152ca8eee3ab6e232619558820c"
+    },
+    {
+      "path": "dist/evaluation/2026-10-31-restore-frame-diagnosis-v2/HANDOVER.md",
+      "bytes": 5366,
+      "sha256": "ec57ce8910f4e5fc661675649db8ca8802a9b37aa2964026ce0b8a6025368721"
+    }
+  ],
+  "limits": [
+    "The retained fullgate failure lacks its operation stage; a later pass does not identify the historical cause.",
+    "All61 buffered triggers had client-stage instrumentation; Worker instrumentation/logging may affect timing.",
+    "A proposed100-case client-only/unchanged-Worker probe did not launch due to valid source-pin drift refusal.",
+    "Two additional native suites do not reproduce the full102-file load/interference profile.",
+    "Controlled slow-stream transfer tests a cadence variation and is not the original buffered request.",
+    "No Node/OS dependency blame or production defect is established.",
+    "No test retry, timeout increase, payload/concurrency reduction, accepted EPIPE or weakened assertion was used."
+  ],
+  "sourceGateQualified": false,
+  "realCredentialReads": 0,
+  "hostedRequests": 0
+}

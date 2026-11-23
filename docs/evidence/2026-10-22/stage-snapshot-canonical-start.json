@@ -1,0 +1,287 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T06:41:53.283718+00:00",
+  "status": "canonical_api_instance_complete_artifact_parity_pending_automated_cron_gate_unmet",
+  "scope": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-snapshot-20261022",
+    "workflowId": "f69bdbef-2554-44e1-b683-52eed805acc6",
+    "bucket": "civicsignal-v1-stage-corpus-20261022",
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2",
+    "version": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+    "etag": "af019cdc08abf1cc03d9931829f23b59fed4c38e2792ba25d712f76b7db99a1d"
+  },
+  "previousCalendarOutcome": "stage-snapshot-0600-outcome.json",
+  "diagnosis": {
+    "startedAt": "2026-10-23T06:31:00.027Z",
+    "completedAt": "2026-10-23T06:31:01.906Z",
+    "requestCount": 4,
+    "requests": [
+      {
+        "label": "deployments",
+        "httpStatus": 200,
+        "beganAt": "2026-10-23T06:31:00.027Z",
+        "observedAt": "2026-10-23T06:31:00.506Z",
+        "bytes": 1223,
+        "cfRay": "a4eeb242bdf1ac24-YYZ",
+        "errors": []
+      },
+      {
+        "label": "version",
+        "httpStatus": 200,
+        "beganAt": "2026-10-23T06:31:00.508Z",
+        "observedAt": "2026-10-23T06:31:00.707Z",
+        "bytes": 1971,
+        "cfRay": "a4eeb2447ec7ac24-YYZ",
+        "errors": []
+      },
+      {
+        "label": "settings",
+        "httpStatus": 200,
+        "beganAt": "2026-10-23T06:31:00.709Z",
+        "observedAt": "2026-10-23T06:31:01.075Z",
+        "bytes": 1549,
+        "cfRay": "a4eeb245bf5dac24-YYZ",
+        "errors": []
+      },
+      {
+        "label": "analytics",
+        "httpStatus": 200,
+        "beganAt": "2026-10-23T06:31:01.082Z",
+        "observedAt": "2026-10-23T06:31:01.904Z",
+        "bytes": 247,
+        "cfRay": "a4eeb248086dac24-YYZ",
+        "errors": null
+      }
+    ],
+    "resultSha256": "fd3908be1bc7817a5c810dd6919782266ced33be3290ad292ed3e8510a9dee2b",
+    "descriptorsMatched": true,
+    "serverDefaultHandlers": [
+      "fetch",
+      "scheduled"
+    ],
+    "scheduledDatasetRows": 0,
+    "existingHealthControl": [
+      {
+        "dimensions": {
+          "datetime": "2026-10-23T04:12:21Z",
+          "scriptName": "civicsignal-v1-stage-snapshot-20261022",
+          "status": "success"
+        },
+        "sum": {
+          "errors": 0,
+          "requests": 1
+        }
+      }
+    ],
+    "scopeProof": {
+      "exactAccountFilterInPinnedBody": true,
+      "accountsArrayLength": 1,
+      "accountIdReturned": false
+    },
+    "querySha256": "3c22f6dae46da24ccfac1ea448ba215001c60208001a17d7a924933fee83455e",
+    "noProviderRootCauseClaim": true
+  },
+  "canonicalApiStart": {
+    "postIntent": {
+      "observedAt": "2026-10-23T06:31:56.344Z",
+      "pin": {
+        "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-snapshot-20261022",
+        "workflowId": "f69bdbef-2554-44e1-b683-52eed805acc6",
+        "bucket": "civicsignal-v1-stage-corpus-20261022",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2",
+        "version": "759ba875-3f6f-4cea-859f-14d5c798d4c2",
+        "etag": "af019cdc08abf1cc03d9931829f23b59fed4c38e2792ba25d712f76b7db99a1d"
+      },
+      "body": {
+        "instance_id": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+        "params": {
+          "revision": {
+            "commit": "0507465393c224c0491fc8c17c88340217acc656",
+            "date": "2026-10-15"
+          }
+        }
+      },
+      "bodySha256": "d228c76eecaf32fa32be31c7266a30168468f5b05e6c41f6fd8abb976ef267ac",
+      "outcome": "uncertain-until-same-id-observation",
+      "maxPosts": 1,
+      "automatedCronGate": false
+    },
+    "postOutcome": {
+      "observedAt": "2026-10-23T06:31:56.777Z",
+      "httpStatus": 200,
+      "bytes": 236,
+      "bodySha256": "a77591bd8ec49c5289f83caefd506ebb99e7cb8c57332e2698ea8882b946e328",
+      "response": {
+        "success": true,
+        "codes": [],
+        "result": {
+          "id": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+          "status": "queued",
+          "version_id": "69a34c03-cc72-4692-9663-ccd9da23ac2b"
+        }
+      },
+      "outcome": "requires-same-id-observation"
+    },
+    "sameIdObservation": {
+      "observedAt": "2026-10-23T06:31:57.031Z",
+      "httpStatus": 200,
+      "bytes": 389,
+      "bodySha256": "f4dab224d8028196a543e7ec87b4d69ad0ce87fad7560e301a5a495e1b35df03",
+      "observation": {
+        "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+        "status": "queued",
+        "workflowVersionId": "69a34c03-cc72-4692-9663-ccd9da23ac2b",
+        "paramsMatch": true,
+        "triggerSource": "api",
+        "automatedCronGate": false
+      },
+      "outcome": "canonical-instance-observed",
+      "automatedCronGate": false
+    },
+    "parentReportedPostCount": 1,
+    "automatedCronGate": false
+  },
+  "observation": {
+    "pid": 14797,
+    "session": 66162,
+    "startedAt": "2026-10-23T06:36:17.767Z",
+    "maxAttempts": 120,
+    "minimumStartIntervalMs": 60000,
+    "maxResponseBytes": 524288,
+    "timeoutMs": 15000,
+    "first": {
+      "attempt": 1,
+      "beganAt": "2026-10-23T06:36:17.770Z",
+      "observedAt": "2026-10-23T06:36:18.225Z",
+      "httpStatus": 200,
+      "bytes": 61689,
+      "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+      "status": "running",
+      "workflowVersionId": "69a34c03-cc72-4692-9663-ccd9da23ac2b",
+      "paramsMatch": true,
+      "triggerSource": "api",
+      "stepCount": 58,
+      "errorCount": 0
+    },
+    "firstLastSteps": [
+      {
+        "name": "parse file group 52-1",
+        "type": "step",
+        "success": true,
+        "attempts": 1,
+        "lastAttemptSuccess": true
+      },
+      {
+        "name": "parse file group 53-1",
+        "type": "step",
+        "success": true,
+        "attempts": 1,
+        "lastAttemptSuccess": true
+      },
+      {
+        "name": "parse file group 54-1",
+        "type": "step",
+        "success": null,
+        "attempts": 1,
+        "lastAttemptSuccess": null
+      }
+    ],
+    "evidenceRoot": "dist/release/staging/snapshot-canonical-api-create-20261023",
+    "result": {
+      "format": 1,
+      "pid": 14797,
+      "startedAt": "2026-10-23T06:36:17.767Z",
+      "url": "https://api.cloudflare.com/client/v4/accounts/ad5ec479b9a421faa2ed06c3d1c2b23a/workflows/civicsignal-v1-stage-snapshot-20261022/instances/statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+      "instanceId": "statutes-v2-0507465393c224c0491fc8c17c88340217acc656",
+      "workflowVersionId": "69a34c03-cc72-4692-9663-ccd9da23ac2b",
+      "maxAttempts": 120,
+      "intervalMs": 60000,
+      "timeoutMs": 15000,
+      "maxResponseBytes": 524288,
+      "automatedCronGate": false,
+      "retries": 0,
+      "authRefreshes": 0,
+      "mutations": 0,
+      "completedAt": "2026-10-23T06:41:18.032Z",
+      "attemptedGets": 6,
+      "stopReason": "terminal-complete-artifact-parity-unverified",
+      "finalObservationPath": "dist/release/staging/snapshot-canonical-api-create-20261023/observation-latest.json",
+      "terminalComplete": true,
+      "artifactParityVerified": false
+    },
+    "returnedStart": "2026-10-23T06:31:58.499Z",
+    "returnedEnd": "2026-10-23T06:40:42.294Z",
+    "terminalObservation": {
+      "attempt": 6,
+      "beganAt": "2026-10-23T06:41:17.781Z",
+      "observedAt": "2026-10-23T06:41:18.031Z",
+      "httpStatus": 200,
+      "bytes": 134226,
+      "status": "complete",
+      "workflowVersionId": "69a34c03-cc72-4692-9663-ccd9da23ac2b",
+      "paramsMatch": true,
+      "triggerSource": "api",
+      "stepCount": 127,
+      "errorCount": 0,
+      "output": {
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "count": 277857,
+        "bytes": 364231731,
+        "digest": "b9b9ad97092ae2c5b4a35580f0cafe73"
+      },
+      "bodySha256": "1fff62d4a0cb292e1c58efceb84683ac632979474ad7ad56059f3db202b2d754"
+    },
+    "terminalEvidenceSha256": "806bf0fbf4bc1717d7e5654c3704fae343dc612bdb8f73386fca9f6703e934e2",
+    "terminalLastSteps": [
+      {
+        "name": "sort regulations-fr- index-1",
+        "type": "step",
+        "success": true,
+        "attempts": 1,
+        "lastAttemptSuccess": true
+      },
+      {
+        "name": "publish immutable snapshot manifest last-1",
+        "type": "step",
+        "success": true,
+        "attempts": 1,
+        "lastAttemptSuccess": true
+      },
+      {
+        "name": "remove this revision staging objects-1",
+        "type": "step",
+        "success": true,
+        "attempts": 1,
+        "lastAttemptSuccess": true
+      }
+    ],
+    "observedGetStarts": [
+      "2026-10-23T06:36:17.770Z",
+      "2026-10-23T06:37:17.774Z",
+      "2026-10-23T06:38:17.776Z",
+      "2026-10-23T06:39:17.777Z",
+      "2026-10-23T06:40:17.780Z",
+      "2026-10-23T06:41:17.781Z"
+    ],
+    "workflowReportedTotalsMatchLocalReference": true,
+    "reportedTotalsAreNotArtifactParity": true
+  },
+  "automatedCronGate": false,
+  "artifactParityVerified": false,
+  "documentEmbeddingSubmissions": 0,
+  "servingRequests": 0,
+  "productionChanges": false,
+  "sourceImplementationChanged": false,
+  "statusHistory": [
+    {
+      "recordedAt": "2026-10-23T06:36:56.067837+00:00",
+      "status": "canonical_api_instance_running_automated_cron_gate_unmet"
+    }
+  ]
+}

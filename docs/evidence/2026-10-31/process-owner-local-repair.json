@@ -1,0 +1,109 @@
+{
+  "format": 1,
+  "kind": "owned-process-cleanup-local-repair",
+  "recordedAt": "2026-10-31T20:49:45.045969+00:00",
+  "planWorkPackage": "MP-06",
+  "requirementIds": [
+    "V1-09",
+    "V1-10"
+  ],
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/5",
+  "sourcePins": [
+    {
+      "path": "scripts/lib/capture_owned.py",
+      "bytes": 6738,
+      "sha256": "222640626fa99e8e413d5282c439d11f0c3770c06653e61bce6801a8a79b084a"
+    },
+    {
+      "path": "scripts/protected-state-d1-owned.py",
+      "bytes": 20552,
+      "sha256": "6a8e29fc2365bbd35b1cba2209581e380cbd07a668ca26f9a9f76be5aca6e52d"
+    },
+    {
+      "path": "test/protected-state-d1-owned.test.py",
+      "bytes": 20005,
+      "sha256": "a9b49788d742a991dcbfc41b7b73d2fc593c1f468b7e6fd3110910daeebc5e12"
+    },
+    {
+      "path": "scripts/lib/capture_owned.provenance.json",
+      "bytes": 1128,
+      "sha256": "a0fe9d119a3a4594a17c29da63943c03436458e5cccd5f51fa9328fe5cc32707"
+    }
+  ],
+  "newReproduction": {
+    "attempted": 13,
+    "firstFailedOrdinal": 13,
+    "observation": {
+      "stage": "group-probe",
+      "errorClass": "PermissionError",
+      "errno": 1
+    },
+    "consequence": "The broad cleanup handler skipped remaining direct-child completion and stdout closure after a group-probe exception."
+  },
+  "repair": [
+    "Probe/signal errors remain uncertainty; EPERM never means group absence.",
+    "Bounded re-polling stays within the original five-second TERM and five-second KILL windows.",
+    "Settlement requires later affirmative group absence and direct-child reap.",
+    "Direct-child reap and stdout closure run independently of group-probe or signal failures.",
+    "Persistent failure remains unsettled; bounded safe stage/class/allowlisted-errno observations survive even after recovery."
+  ],
+  "deterministicRegression": {
+    "before": {
+      "cases": 3,
+      "failed": 2
+    },
+    "afterFocusedCaptureCases": 9,
+    "afterFocusedPassed": 9,
+    "persistentPermissionErrorStillUnsettled": true,
+    "stdoutClosedOnPersistentError": true,
+    "remainingGroupGetsSigkillAfterChildReap": true
+  },
+  "finiteExactSeamAfterLoop": {
+    "attempted": 20,
+    "settled": 20,
+    "allLogBytes": 128,
+    "naturallyRecoveredProbeErrors": 1,
+    "sourceContext": "Cleanup repair before final errno allowlist tightening; this loop is not exact-final-source qualification."
+  },
+  "exactFinalPythonFile": {
+    "tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "seconds": 10.697,
+    "resourceWarnings": 0,
+    "retainedOriginalCases": 23,
+    "addedCases": 4
+  },
+  "historicalLimit": "The earlier integrated failures lack group-probe stage metadata; their exact causes remain unknown. These new results do not rewrite those failed receipts.",
+  "rawLocalArtifacts": [
+    {
+      "path": "/tmp/civicsignal-capture-owned-probe-red.log",
+      "bytes": 1573,
+      "sha256": "214672a5cb6efe94993cde9875579b219b392540b98fe1193cb5bd5ce10863ef"
+    },
+    {
+      "path": "/tmp/civicsignal-capture-owned-focused-green.log",
+      "bytes": 107,
+      "sha256": "b17f622f2d3d85614ba9ed8ccc0f3def053a72fabaf3e4a89e7caddcb5546b75"
+    },
+    {
+      "path": "/tmp/civicsignal-capture-owned-full-final.log",
+      "bytes": 127,
+      "sha256": "07c26a5688f8e37e5ca65e5d2d9f09923d40bb91588be99bde47744c97a0f996"
+    },
+    {
+      "path": "probe-before.jsonl",
+      "bytes": 3133,
+      "sha256": "2bdcc48eed32c2d772356b759b380c9bab0a9a3727cdad9d4ddb984d436880fe"
+    },
+    {
+      "path": "probe-after.jsonl",
+      "bytes": 4795,
+      "sha256": "27dcd67be70cbee82f68f805697edc1c553e7ea8bf29d3bbfb5f3277166967a4"
+    }
+  ],
+  "cloudOperations": 0,
+  "realProviderCalls": 0,
+  "fullIntegratedQualification": "pending",
+  "exactSourceCleanLinuxCi": "pending"
+}

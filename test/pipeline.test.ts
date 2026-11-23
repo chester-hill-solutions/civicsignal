@@ -4,6 +4,7 @@ import {
   runPipeline,
   type ChangeFeedEntry,
   type CorpusStore,
+  type CorpusBatch,
   type PipelineRow,
   type RemovedRow,
 } from '../src/ingest/pipeline';
@@ -51,6 +52,30 @@ class FakeStore implements CorpusStore {
     for (const r of seed) this.rows.set(r.id, { row: r, hash: fingerprint(r) });
   }
 
+  private mutations = new Set<string>();
+  async recoverPendingWrites(): Promise<void> {}
+  async applyBatch(batch: CorpusBatch): Promise<void> {
+    const key = JSON.stringify([batch.revision, batch.upserts.map((r) => [r.row.id, r.hash]), batch.removedIds]);
+    if (this.mutations.has(key)) return;
+    // A test store models a transaction, including injected feed failures.
+    const previousRows = new Map(this.rows);
+    const previousChanges = [...this.changes];
+    try {
+      if (batch.upserts.length) await this.upsert(batch.upserts);
+      const gone = await this.remove(batch.removedIds);
+      await this.recordChanges([...batch.changes, ...gone.map((row): ChangeFeedEntry => ({
+        corpusId: batch.corpusId, change: 'removed', rowId: row.id,
+        instrument: row.instrument, citation: row.citation, section: row.section,
+        heading: row.heading, status: row.status, summary: row.heading,
+        sourceUrl: row.sourceUrl, occurredAt: batch.occurredAt,
+      }))]);
+      this.mutations.add(key);
+    } catch (error) {
+      this.rows = previousRows;
+      this.changes = previousChanges;
+      throw error;
+    }
+  }
   async fingerprints(): Promise<Map<string, string>> {
     return new Map([...this.rows].map(([id, v]) => [id, v.hash]));
   }
@@ -79,6 +104,18 @@ class FakeStore implements CorpusStore {
     }
     this.removed = out;
     return out;
+  }
+  async finishRun(run: unknown, state?: unknown): Promise<void> {
+    const runs = [...this.runs];
+    const states = [...this.states];
+    try {
+      await this.recordRun(run);
+      if (state) await this.setState(state);
+    } catch (error) {
+      this.runs = runs;
+      this.states = states;
+      throw error;
+    }
   }
   async recordRun(run: unknown): Promise<void> {
     this.runs.push(run);
@@ -205,6 +242,7 @@ describe('the pipeline', () => {
     // The removed entry says which provision it was, not just that something went.
     expect(byChange['removed']?.instrument).toBe('Access to Information Act');
     expect(store.changes.every((c) => c.occurredAt === '2026-10-15')).toBe(true);
+    expect(store.changes.every((c) => c.sourceUrl?.startsWith('https://laws-lois.justice.gc.ca/'))).toBe(true);
   });
 
   it('records the revision the store is now at', async () => {

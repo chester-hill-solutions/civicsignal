@@ -1,0 +1,193 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T11:36:25.202735+00:00",
+  "status": "one_controlled_pipeline_calendar_armed_waiting_for_due_event",
+  "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "worker": "civicsignal-v1-stage-pipeline-20261022",
+  "workerVersionId": "c891a4aa-0ad1-4b76-9045-d2527815a047",
+  "source": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2"
+  },
+  "documentAttemptCap": 1112,
+  "initialSubmitted": 0,
+  "initialRemaining": 1112,
+  "packetSha256": "9365b12df246db1f9c41f0b3900f2392039a496abc398487d08f918149323961",
+  "armedConfigSha256": "803d451904837c736fa987a7135d426447dd4c0b53cb0fb29593d0b78bab2be7",
+  "deploymentReadiness": {
+    "format": 1,
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "origin": "https://civicsignal-v1-stage-pipeline-20261022.chester-hill-solutions.workers.dev",
+    "observedAt": "2026-10-23T11:30:51.000Z",
+    "workerVersionId": "c891a4aa-0ad1-4b76-9045-d2527815a047",
+    "settingsVerified": true,
+    "control": {
+      "httpStatus": 200,
+      "observedAt": "2026-10-23T11:29:15.183Z",
+      "value": {
+        "controlled": true,
+        "format": 1,
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2",
+        "cap": 1112,
+        "submitted": 0,
+        "remaining": 1112
+      }
+    },
+    "encoder": {
+      "ok": true,
+      "observedAt": "2026-10-23T11:27:21.950Z",
+      "evidencePath": "dist/release/staging/manual-smoke-observations/10-encoder-semantic.result.json"
+    },
+    "evidencePath": "dist/release/staging/finite-pipeline-deployment-ready-proof.json",
+    "parentReviewedAt": "2026-10-23T11:31:40.222040+00:00"
+  },
+  "arming": {
+    "armedAt": "2026-10-23T11:33:06.793Z",
+    "confirmedAt": "2026-10-23T11:33:09.414Z",
+    "configSha": "803d451904837c736fa987a7135d426447dd4c0b53cb0fb29593d0b78bab2be7",
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "commandExitCode": 0,
+    "schedules": [
+      {
+        "cron": "0 12 * * *",
+        "created_on": "2026-10-23T11:33:09.137896Z",
+        "modified_on": "2026-10-23T11:33:09.137896Z"
+      }
+    ],
+    "due": "2026-10-23T12:00:00.000Z",
+    "afterStates": [
+      {
+        "guard": "primary",
+        "pid": 29529,
+        "phase": "ready",
+        "ready": true,
+        "removed": false,
+        "observedAt": "2026-10-23T11:33:09.420Z",
+        "lastObservationAt": "2026-10-23T11:33:02.187Z",
+        "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-pipeline-20261022",
+        "cron": "0 12 * * *",
+        "scheduledAt": "2026-10-23T12:00:00.000Z",
+        "tokenExpiresAt": "2026-10-23T12:09:25.319Z",
+        "workerVersionId": "c891a4aa-0ad1-4b76-9045-d2527815a047",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2",
+        "cap": 1112,
+        "submitted": 0,
+        "remaining": 1112
+      },
+      {
+        "guard": "backup",
+        "pid": 29534,
+        "phase": "ready",
+        "ready": true,
+        "removed": false,
+        "observedAt": "2026-10-23T11:33:09.420Z",
+        "lastObservationAt": "2026-10-23T11:32:52.732Z",
+        "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+        "worker": "civicsignal-v1-stage-pipeline-20261022",
+        "cron": "0 12 * * *",
+        "scheduledAt": "2026-10-23T12:00:00.000Z",
+        "tokenExpiresAt": "2026-10-23T12:09:25.319Z",
+        "workerVersionId": "c891a4aa-0ad1-4b76-9045-d2527815a047",
+        "commit": "0507465393c224c0491fc8c17c88340217acc656",
+        "date": "2026-10-15",
+        "parser": "statutes-v2",
+        "cap": 1112,
+        "submitted": 0,
+        "remaining": 1112
+      }
+    ]
+  },
+  "armingCompletedWithoutUncertaintyPath": true,
+  "ownedGuards": [
+    {
+      "role": "primary",
+      "pid": 29529,
+      "session": 37875,
+      "statePort": 51971
+    },
+    {
+      "role": "backup",
+      "pid": 29534,
+      "session": 89861,
+      "statePort": 51972
+    }
+  ],
+  "foregroundObserver": {
+    "pid": 39492,
+    "session": 95204,
+    "localOnly": true,
+    "startedAt": "2026-10-23T11:35:31.106Z",
+    "latestCheckpoint": {
+      "observedAt": "2026-10-23T11:36:16.153Z",
+      "observerPid": 39492,
+      "poll": 4,
+      "states": [
+        {
+          "guard": "primary",
+          "pid": 29529,
+          "phase": "ready",
+          "ready": true,
+          "removed": false,
+          "observedAt": "2026-10-23T11:36:16.153Z",
+          "lastObservationAt": "2026-10-23T11:36:02.738Z",
+          "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+          "worker": "civicsignal-v1-stage-pipeline-20261022",
+          "cron": "0 12 * * *",
+          "scheduledAt": "2026-10-23T12:00:00.000Z",
+          "tokenExpiresAt": "2026-10-23T12:09:25.319Z",
+          "workerVersionId": "c891a4aa-0ad1-4b76-9045-d2527815a047",
+          "commit": "0507465393c224c0491fc8c17c88340217acc656",
+          "date": "2026-10-15",
+          "parser": "statutes-v2",
+          "cap": 1112,
+          "submitted": 0,
+          "remaining": 1112
+        },
+        {
+          "guard": "backup",
+          "pid": 29534,
+          "phase": "ready",
+          "ready": true,
+          "removed": false,
+          "observedAt": "2026-10-23T11:36:16.153Z",
+          "lastObservationAt": "2026-10-23T11:35:53.374Z",
+          "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+          "worker": "civicsignal-v1-stage-pipeline-20261022",
+          "cron": "0 12 * * *",
+          "scheduledAt": "2026-10-23T12:00:00.000Z",
+          "tokenExpiresAt": "2026-10-23T12:09:25.319Z",
+          "workerVersionId": "c891a4aa-0ad1-4b76-9045-d2527815a047",
+          "commit": "0507465393c224c0491fc8c17c88340217acc656",
+          "date": "2026-10-15",
+          "parser": "statutes-v2",
+          "cap": 1112,
+          "submitted": 0,
+          "remaining": 1112
+        }
+      ],
+      "sourceChecks": [
+        null,
+        null
+      ]
+    }
+  },
+  "sourceChecksDueAt": "2026-10-23T11:58:30.000Z",
+  "scheduledAt": "2026-10-23T12:00:00.000Z",
+  "watchdogAt": "2026-10-23T12:05:00.000Z",
+  "pipelineCalendarExecutionObserved": false,
+  "pipelineReconciliationVerified": false,
+  "priorSnapshotCalendarGateMet": false,
+  "snapshotArtifactParityProof": "stage-snapshot-artifact-parity.json",
+  "privateSecretReadByForegroundObserver": false,
+  "cloudRequestsByForegroundObserver": 0,
+  "servingCallsByForegroundObserver": 0,
+  "productionChanges": false
+}

@@ -1,0 +1,92 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T12:07:46.352797+00:00",
+  "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "worker": "civicsignal-v1-stage-pipeline-20261022",
+  "guards": [
+    {
+      "pid": 29529,
+      "session": 37875,
+      "stillAlive": false,
+      "exitCode": 0,
+      "exitCodeConfirmedBy": "parent reaped original exec session"
+    },
+    {
+      "pid": 29534,
+      "session": 89861,
+      "stillAlive": false,
+      "exitCode": 0,
+      "exitCodeConfirmedBy": "parent reaped original exec session"
+    }
+  ],
+  "observer": {
+    "pid": 39492,
+    "session": 95204,
+    "exitCode": 0,
+    "completedAt": "2026-10-23T12:07:00.003Z",
+    "stillAlive": false
+  },
+  "ports": [
+    {
+      "port": 51971,
+      "closed": true
+    },
+    {
+      "port": 51972,
+      "closed": true
+    }
+  ],
+  "guardSignal": "SIGINT",
+  "priorConfirmedRemovals": {
+    "primary": {
+      "reason": "controlled-submission-observed",
+      "observedAt": "2026-10-23T12:01:09.176Z",
+      "commandExitCode": 0,
+      "getStatus": 200,
+      "schedules": []
+    },
+    "backup": {
+      "reason": "controlled-submission-observed",
+      "observedAt": "2026-10-23T12:01:02.202Z",
+      "putStatus": 200,
+      "getStatus": 200,
+      "schedules": []
+    }
+  },
+  "builtInCleanupReusedResolvedPromises": true,
+  "newProviderRequestRequired": false,
+  "pipelineOrAlarmTerminated": false,
+  "productionChanges": false,
+  "parentReapedExitConfirmationRecordedAt": "2026-10-23T12:09:18.941041+00:00",
+  "independentPostWindowCleanup": {
+    "observedAt": "2026-10-23T12:05:51.551Z",
+    "httpStatus": 200,
+    "schedules": [],
+    "source": "parent-approved finite post-window reader",
+    "evidencePath": "dist/release/staging/pipeline-calendar-1200/post-window-observation.json",
+    "evidenceSha256": "e8325c8ce8e4158ba013c9ad40d8f21167f45d84045836891a51a10aaf141a5c"
+  },
+  "pipelineActivityObserved": {
+    "firstSubmitted": 32,
+    "firstObservationAt": "2026-10-23T12:00:57.295Z",
+    "postWindowSubmitted": 528,
+    "postWindowObservedAt": "2026-10-23T12:05:51.796Z",
+    "meaning": "Durable document-attempt reservations; these counters do not prove embedding success or vector index visibility."
+  },
+  "scheduledOriginTraceObserved": false,
+  "reconciliationCompletedAtPostWindowObservation": false,
+  "sourceChecks": [
+    {
+      "guard": "primary",
+      "commit": "0507465393c224c0491fc8c17c88340217acc656",
+      "date": "2026-10-15",
+      "observedAt": "2026-10-23T11:58:30.467Z"
+    },
+    {
+      "guard": "backup",
+      "commit": "0507465393c224c0491fc8c17c88340217acc656",
+      "date": "2026-10-15",
+      "observedAt": "2026-10-23T11:58:30.466Z"
+    }
+  ]
+}

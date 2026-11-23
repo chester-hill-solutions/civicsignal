@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "bun-types",
+      "@cloudflare/workers-types"
+    ]
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "services/**/*.ts"
+  ],
+  "exclude": [
+    "services/**/worker.ts",
+    "services/snapshot/**"
+  ]
+}

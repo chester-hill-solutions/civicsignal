@@ -1,0 +1,81 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T23:34:26.878934+00:00",
+  "scope": "isolated-staging-completed-metadata-and-composite-text",
+  "metadata": {
+    "candidateSha256": "07a520abddfffeb7ff01efd108e88930128c2ec52ee81922f28c3633fd80d2cd",
+    "receiptSha256": "d86a1ce695277840ca68dafff542e5986661ca99842f783ad7134beb516096a1",
+    "ownedProcessReceiptSha256": "f7cb912793e180384974d5b8da56e7849fbdd704bd1054ef7f9acf0f917f202f",
+    "startedAt": "2026-10-23T23:14:07.254Z",
+    "finishedAt": "2026-10-23T23:27:06.129Z",
+    "expectedRevision": 5,
+    "summary": {
+      "expectedDelta": 1112,
+      "matchingTargetFingerprints": 1112,
+      "remainingTargetFingerprints": 0,
+      "matchingTargetIdsSha256": "a00bb5c8296ead3ccea4bc2c77e8acbc35097b9dffd797ec90ace32f180aa09d",
+      "remainingIdsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "fullMetadataRowsVerified": 277857,
+      "preservedUnchangedBaselineRowsVerified": 276745,
+      "feedIdentities": 1112,
+      "completedMutationIdentities": 1112,
+      "pendingOutbox": 0,
+      "requestCount": 2237,
+      "d1Queries": 2231,
+      "controlCount": 2,
+      "managementGets": 4,
+      "allQueryRowsWritten": 0
+    },
+    "requestsAttempted": 2237,
+    "queryWrites": 0,
+    "currentLiveAdmission": {
+      "startedAt": "2026-10-23T23:14:07.262Z",
+      "finishedAt": "2026-10-23T23:14:09.240Z",
+      "maxAgeBeforeFirstD1Ms": 300000,
+      "managementGets": 4,
+      "controlGets": 1
+    },
+    "historicalMonitorTimestampsPreserved": true
+  },
+  "text": {
+    "candidateSha256": "0b7a914893b5f9ffd393117a3502bd5f4d01594ca47560774b09d8819702cfb2",
+    "receiptSha256": "ca0328bffab92fec11923452e49fad0a6fc5536e51e37c578278f0a17e71ee3e",
+    "ownedProcessReceiptSha256": "e30f8107e7844cbfaf884bca566816c0e3d6df3489ea38c41c3e39bcd8379e6a",
+    "finishedAt": "2026-10-23T23:27:48.448Z",
+    "freshUniqueObjects": 74,
+    "freshUniqueBytes": 24836,
+    "targetReferences": 1112,
+    "targetReferenceBytes": 143020,
+    "unchangedMetadataReferences": 276745,
+    "requests": 84,
+    "proofLimits": [
+      "Fresh byte/hash equality covers 74 unique objects referenced by the 1112 changed target rows.",
+      "Remaining 276745 references use successful full current metadata parity plus the historical full legacy byte-audit receipt.",
+      "The composite requires immutable content objects and stopped independent writers throughout; bracketing is not a transactional snapshot.",
+      "This is not a fresh whole-store byte audit, source backup authenticity proof, Vectorize/model proof or serving check."
+    ]
+  },
+  "freshCompletion": {
+    "candidateSha256": "5adf130900757527b637b05c9d1a95f53581fe8e96b5fe723cc9a418e7c2d2ee",
+    "publicationReceiptSha256": "325f1c2fe00d0c0a27483a6d5fd046a5dc4269838cd9970822690aff586ec908",
+    "proofSha256": "551adbf325b0bc6ebea08f202a9635638ba4e6952dcdee5088cef2662f4d7815",
+    "matchingIndependentPrivateFiles": 2,
+    "managementRequests": 4,
+    "controlRequests": 1,
+    "observedAt": "2026-10-23T23:28:15.178Z"
+  },
+  "vectorBackupCompleted": false,
+  "servingRequestsUsed": 14,
+  "servingCap": 160,
+  "submittedDocuments": 1624,
+  "extensionCalls": 16,
+  "documentCap": 1752,
+  "extensionCallCap": 20,
+  "productionOrRailwayChanges": false,
+  "goalComplete": false,
+  "limits": [
+    "The text proof combines fresh changed-object equality with the prior full baseline byte proof and current all-row metadata/reference parity. It is not a fresh whole-store text-byte audit.",
+    "Independent writers must remain stopped; bracketing deployment/control/count/publication checks are not a transactional snapshot.",
+    "Vector backup, vector/model provenance and serving quality/performance remain separate acceptance gates."
+  ]
+}

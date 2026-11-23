@@ -1,0 +1,82 @@
+{
+  "format": 1,
+  "kind": "snapshot-qualification-proposal-local-validation",
+  "recordedAt": "2026-10-31T20:51:46.180039+00:00",
+  "planWorkPackage": "MP-02",
+  "requirementIds": [
+    "V1-05",
+    "V1-09",
+    "V1-10"
+  ],
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/6",
+  "sourceAndEvidencePins": [
+    {
+      "path": "scripts/lib/snapshot-qualification-proposal.ts",
+      "bytes": 23366,
+      "sha256": "1f4d23c1992842812b3e3cf854467a6ea152ffc633913e0bb38f3fd3579cd3a2"
+    },
+    {
+      "path": "scripts/prepare-snapshot-qualification.ts",
+      "bytes": 1166,
+      "sha256": "320df1ff57bf37325ea36b968927165130f636d296e7d4d6149d56665f2ef739"
+    },
+    {
+      "path": "test/snapshot-qualification-proposal.test.ts",
+      "bytes": 16526,
+      "sha256": "c7a42c76620d320ba35e7ced6f9cf5071043b6a666c76f62573dcd102b704e30"
+    },
+    {
+      "path": "docs/evidence/2026-10-31/snapshot-reference-accounting.json",
+      "bytes": 5006,
+      "sha256": "af9017c33e3f6c29eb71304b69cef617cc4aa6b1b20cfde0fa05d457274c9186"
+    },
+    {
+      "path": "docs/evidence/2026-10-31/reference-staging-archive-receipt.json",
+      "bytes": 107498,
+      "sha256": "149aeb8f303c3e7b07d8ad088974460b8f9c72ec57a20921ab2e83f254157e29"
+    },
+    {
+      "path": "docs/evidence/2026-10-31/reference-snapshot-manifest.json",
+      "bytes": 44627,
+      "sha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e"
+    }
+  ],
+  "focusedTests": {
+    "passed": 45,
+    "failed": 0
+  },
+  "compilerChecks": [
+    "typecheck:bun",
+    "typecheck:tooling"
+  ],
+  "checks": [
+    "existing qualification identity and source/parser admission",
+    "complete actual bundle input manifest and reproducible bundle bytes",
+    "empty schedule and exact staging-only config",
+    "resource/reference byte lineage",
+    "all named budget classes and reference-derived lower bounds",
+    "aggregate-byte and combined-storage consistency",
+    "exclusive private output and failed-persistence refusal",
+    "no ignored local dist reference dependency"
+  ],
+  "preparedOnly": true,
+  "executionApproved": false,
+  "executionReady": false,
+  "declaredBudgetsRuntimeEnforced": false,
+  "freshRemoteStateVerified": false,
+  "namespaceAbsenceVerified": false,
+  "instanceAbsenceVerified": false,
+  "networkRequests": 0,
+  "credentialBytesRead": 0,
+  "runtimeChanged": false,
+  "remainingDependencies": [
+    "owned execution operator",
+    "enforced aggregate accounting including runtime retries, duplicates, and reconstruction",
+    "fresh scoped provider and absence evidence",
+    "credential lifetime and independent cleanup guards",
+    "complete qualified artifact verification and canonical preservation",
+    "separate concrete execution decision"
+  ],
+  "fullIntegratedQualification": "pending",
+  "exactSourceCleanLinuxCi": "pending"
+}

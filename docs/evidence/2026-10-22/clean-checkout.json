@@ -1,0 +1,92 @@
+{
+  "recordedAt": "2026-10-23T01:46:39.646805+00:00",
+  "candidateCommit": "b3adaab08a2563cfd41c9ca6b94a02f14a96eb81",
+  "candidateTree": "2abacad6a2466e53fe5c0191881faa588a757863",
+  "method": "Fresh local Git clone with no prior node_modules or ignored corpus artifacts",
+  "checkout": "/private/tmp/civicsignal-v1-clean-b3adaab",
+  "platform": {
+    "system": "macOS arm64",
+    "node": "v25.9.0",
+    "bun": "1.3.5"
+  },
+  "lockfileSha256": "95111e6882410c2e40ddd9669401727d5ff3547a5d8d0480218d0425381fdb80",
+  "commands": [
+    {
+      "command": "bun install --frozen-lockfile",
+      "exitCode": 0,
+      "packagesInstalled": 744
+    },
+    {
+      "command": "bun run validate",
+      "exitCode": 0,
+      "compilerProjects": 4,
+      "testsPassed": 693,
+      "testFilesPassed": 68,
+      "localWorkerdTestsEnabled": true,
+      "vendorFilesChecked": 117,
+      "runtimeProbes": [
+        "SQLite Durable Object concurrency and operation receipts",
+        "R2 immutable conditional creates"
+      ],
+      "invariants": [
+        "billing",
+        "corpus source/schema checks",
+        "Railway IaC static checks"
+      ]
+    },
+    {
+      "command": "bun run build",
+      "exitCode": 0,
+      "workerDryRuns": [
+        "api",
+        "pipeline",
+        "encoder",
+        "snapshot",
+        "restore"
+      ]
+    }
+  ],
+  "builds": [
+    {
+      "uploadKiB": 1745.53,
+      "gzipKiB": 307.18
+    },
+    {
+      "uploadKiB": 188.36,
+      "gzipKiB": 43.52
+    },
+    {
+      "uploadKiB": 55.97,
+      "gzipKiB": 13.97
+    },
+    {
+      "uploadKiB": 129.34,
+      "gzipKiB": 28.5
+    },
+    {
+      "uploadKiB": 39.71,
+      "gzipKiB": 10.14
+    }
+  ],
+  "logs": {
+    "install": {
+      "path": "/private/tmp/civicsignal-v1-clean-install.log",
+      "sha256": "62422a5d2cb80aa57aae6037714b8687cc2d7190e493c3c7d50e74ed0e3c208d"
+    },
+    "validate": {
+      "path": "/private/tmp/civicsignal-v1-clean-validate.log",
+      "sha256": "90150b310de05c90607dd6399800a40d771b7ae5495b22c2e00eb772f536a35e"
+    },
+    "build": {
+      "path": "/private/tmp/civicsignal-v1-clean-build.log",
+      "sha256": "233e6d2c1b4848e7b47ceea07faad236c877dc032bf831f08d82022fe63d0d5a"
+    }
+  },
+  "limitations": [
+    "macOS local evidence; Linux Node 24 CI remains separate",
+    "Corpus invariant skips absent dist/statutes.sql and language JSONL artifacts; full corpus proof is recorded separately",
+    "No hosted inference, quality, performance or freshness acceptance",
+    "No cloud writes, deployment, production migration or image publication"
+  ],
+  "resolvedEarlierFailure": "An initial parallel suite exposed a real-10ms timeout assumption in a relay test. Deterministic checks now separately cover expiry before forwarding and in-flight abort; production behavior was unchanged."
+}

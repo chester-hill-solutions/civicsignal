@@ -1,0 +1,69 @@
+{
+  "format": 1,
+  "kind": "owned-python-qualification-observation",
+  "recordedAt": "2026-10-31T20:22:31.456194+00:00",
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/5",
+  "firstAggregate": {
+    "cases": 23,
+    "failed": 1,
+    "case": "CaptureTests.test_actual_deadline_cancels_owned_process",
+    "outerMonitor": {
+      "exitCode": 1,
+      "timedOut": false,
+      "logBoundExceeded": false,
+      "localFailure": false,
+      "localFailureCode": null,
+      "maxLogBytes": 2097152,
+      "childPid": 85280,
+      "ownedProcessSettled": true,
+      "recordedAt": "2026-10-31T20:15:23.576199+00:00"
+    },
+    "innerCaptureResultRetained": false,
+    "cause": "unknown"
+  },
+  "separateSyntheticProbe": {
+    "kind": "synthetic-owned-process-sandbox-diagnosis",
+    "capture": {
+      "exitCode": -15,
+      "timedOut": true,
+      "logBoundExceeded": false,
+      "localFailure": false,
+      "localFailureCode": null,
+      "maxLogBytes": 2097152,
+      "childPid": 85648,
+      "ownedProcessSettled": true
+    },
+    "signalErrors": [
+      {
+        "signal": 0,
+        "errorType": "ProcessLookupError",
+        "errno": 3
+      }
+    ],
+    "realProviderCalls": 0
+  },
+  "laterAggregate": {
+    "cases": 23,
+    "failed": 0,
+    "outerMonitor": {
+      "exitCode": 0,
+      "timedOut": false,
+      "logBoundExceeded": false,
+      "localFailure": false,
+      "localFailureCode": null,
+      "maxLogBytes": 2097152,
+      "childPid": 86546,
+      "ownedProcessSettled": true,
+      "recordedAt": "2026-10-31T20:17:50.695930+00:00"
+    },
+    "change": "Assertion failures now include safe per-case capture metadata; runtime capture helper unchanged."
+  },
+  "captureSourceSha256": "e262416e5ca9d25b37f869f238b5cbffe3d71c9ac178eb1bc4191b45fd367455",
+  "ownershipObservation": {
+    "method": "exact read-only ps query for three previously owned synthetic PIDs",
+    "result": "all absent",
+    "scope": "later point-in-time absence; does not repair or qualify the earlier failed inner result"
+  },
+  "runtimeRepairClaimed": false,
+  "hostedOperations": 0
+}

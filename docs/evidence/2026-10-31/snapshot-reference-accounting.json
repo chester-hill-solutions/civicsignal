@@ -1,0 +1,171 @@
+{
+  "format": 1,
+  "kind": "snapshot-reference-single-pass-accounting",
+  "recordedAt": "2026-10-31T20:36:07.640345+00:00",
+  "planWorkPackage": "MP-02",
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/6",
+  "evidencePins": [
+    {
+      "path": "docs/evidence/2026-10-31/reference-staging-archive-receipt.json",
+      "bytes": 107498,
+      "sha256": "149aeb8f303c3e7b07d8ad088974460b8f9c72ec57a20921ab2e83f254157e29"
+    },
+    {
+      "path": "docs/evidence/2026-10-31/reference-snapshot-manifest.json",
+      "bytes": 44627,
+      "sha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e"
+    },
+    {
+      "path": "scripts/validate-snapshot-workflow.ts",
+      "bytes": 7771,
+      "sha256": "89c7bca4328ebcb844b8f78c5b972836d360d04403073e71990e6f58c8408d0c"
+    },
+    {
+      "path": "services/snapshot/builder.ts",
+      "bytes": 12024,
+      "sha256": "10076afd5d15ef0a92ba021f684faacfb06deea2ad2ff139889e7300adfa5cb7"
+    },
+    {
+      "path": "services/snapshot/qualification.ts",
+      "bytes": 9236,
+      "sha256": "8f125ce1cb822495f946aababf1e15a214e64876dbdc2540a42472723f55e5bb"
+    },
+    {
+      "path": "services/snapshot/qualification-worker.ts",
+      "bytes": 2710,
+      "sha256": "157e4e2fedf611efcfd17f88fb68bf7c862e5b1e42b01129c523bfcfb6f84147"
+    },
+    {
+      "path": "services/snapshot/snapshot-workflow.ts",
+      "bytes": 3160,
+      "sha256": "097c1595afc2568e49886c6bbc8627971891caf57224aac0804fce30959de8a6"
+    }
+  ],
+  "localArchiveInventory": {
+    "files": 486,
+    "bytes": 762314144,
+    "classes": {
+      "groupJsonlPayloads": {
+        "files": 116,
+        "bytes": 681040471
+      },
+      "groupJsonlMetadataSidecars": {
+        "files": 116,
+        "bytes": 8932
+      },
+      "groupXmlPayloads": {
+        "files": 2,
+        "bytes": 28960660
+      },
+      "groupXmlMetadataSidecars": {
+        "files": 2,
+        "bytes": 154
+      },
+      "indexFragmentsPayloads": {
+        "files": 121,
+        "bytes": 26147151
+      },
+      "indexFragmentsMetadataSidecars": {
+        "files": 121,
+        "bytes": 9317
+      },
+      "sortedIndexesPayloads": {
+        "files": 4,
+        "bytes": 26147151
+      },
+      "sortedIndexesMetadataSidecars": {
+        "files": 4,
+        "bytes": 308
+      }
+    }
+  },
+  "localMetadataSidecars": {
+    "files": 243,
+    "bytes": 18711,
+    "separateR2Objects": false,
+    "meaning": "Local representations of R2 custom metadata, excluded from logical bucket listings."
+  },
+  "logicalPayloads": {
+    "intermediate": {
+      "objects": 243,
+      "bytes": 762295433
+    },
+    "final": {
+      "objects": 240,
+      "bytes": 390423509,
+      "rowParts": 238
+    },
+    "combinedBeforeCleanup": {
+      "objects": 483,
+      "bytes": 1152718942
+    }
+  },
+  "singleSuccessfulPassLogicalR2Operations": {
+    "builderThroughPublication": {
+      "put": 483,
+      "get": 243,
+      "head": 238,
+      "list": 0,
+      "batchDelete": 0,
+      "total": 964
+    },
+    "qualificationAdmissionClaimsSuccess": {
+      "put": 7,
+      "get": 11,
+      "head": 1,
+      "list": 0,
+      "batchDelete": 0,
+      "total": 19
+    },
+    "oneCleanupPass": {
+      "put": 0,
+      "get": 0,
+      "head": 0,
+      "list": 2,
+      "batchDelete": 1,
+      "total": 3
+    },
+    "combined": {
+      "put": 490,
+      "get": 254,
+      "head": 239,
+      "list": 2,
+      "batchDelete": 1,
+      "total": 986
+    }
+  },
+  "separateCalls": {
+    "sourcePhases": 3,
+    "workflowBindingCreate": 1
+  },
+  "excludedClasses": [
+    "immutable-write collision HEADs",
+    "Workflow retries and reconstruction",
+    "duplicate scheduled invocations",
+    "failure/rejection/existing-publication receipts",
+    "uncertain create reconciliation",
+    "extra cleanup attempts and retained failures",
+    "management deployment arming and calendar guards",
+    "Workflow status polling",
+    "canonical preservation checks",
+    "complete artifact download/readback and local verification",
+    "metadata and provider accounting overhead"
+  ],
+  "approvedExecutionCeiling": false,
+  "capacityQualified": false,
+  "executionPerformed": false,
+  "limitation": "Reference-derived payload and successful single-pass logical-call baseline only. Complete enforceable operation, verification, storage, time and cleanup budgets remain required.",
+  "retainedLocalOriginals": [
+    {
+      "path": "dist/workflow-validation-v2-bounded/snapshot-staging-archive-receipt.json",
+      "bytes": 107498,
+      "sha256": "149aeb8f303c3e7b07d8ad088974460b8f9c72ec57a20921ab2e83f254157e29"
+    },
+    {
+      "path": "dist/workflow-validation-v2-bounded/snapshots/statutes-v2/0507465393c224c0491fc8c17c88340217acc656.manifest.json",
+      "bytes": 44627,
+      "sha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e"
+    }
+  ],
+  "referenceCopies": "Exact bytes copied into tracked evidence paths for clean-checkout proposal validation; original local paths and hashes remain above."
+}

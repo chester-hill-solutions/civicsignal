@@ -1,0 +1,105 @@
+{
+  "format": 1,
+  "scope": "synthetic-local-staging-protected-copy-http-only",
+  "reviewedAt": "2026-10-23T21:10:02.505184+00:00",
+  "rootValidation": {
+    "command": "CIVICSIGNAL_WORKERD_TESTS=1 node node_modules/vitest/vitest.mjs run test/protected-state-d1.test.ts test/protected-state-format.test.ts test/protected-state.test.ts test/staging-text-restore.test.ts",
+    "result": "pass",
+    "files": 4,
+    "tests": 119,
+    "protectedD1Tests": 49,
+    "originalCopierTests": 35,
+    "sharedFormatTests": 17,
+    "originalStagingRestoreTests": 18,
+    "logSha256": "901197f73941263f0c481d7798907d76ba135697929dd5792ec0cd1ee8e4f8d8"
+  },
+  "typechecks": [
+    {
+      "project": "tsconfig.worker.json",
+      "result": "pass"
+    },
+    {
+      "project": "tsconfig.bun.json",
+      "result": "pass"
+    },
+    {
+      "project": "tsconfig.tooling.json",
+      "result": "pass"
+    }
+  ],
+  "independentReview": {
+    "actionableFindings": 3,
+    "fixed": 3,
+    "regressionCasesAdded": 7,
+    "findingReproducedBeforeEachFix": true,
+    "confirmedFixes": [
+      "monotonic body deadline including immediately fulfilled reads and EOF",
+      "canonical target before identity hash",
+      "SQL token boundaries preserve exact type affinity"
+    ]
+  },
+  "transport": {
+    "enabledByDefault": false,
+    "stageOnly": true,
+    "fixedTargetAndCompactPlan": true,
+    "completeCompactSessionRequired": true,
+    "serverManifestAndAdmissionPins": true,
+    "safeStatusOmitsProtectedValuesAndCursorKeys": true,
+    "textExpectedVersionBeforeR2": true,
+    "lateTextVersionFaultRollsBack": true,
+    "bodyDeadlineMs": 5000,
+    "bodyLimits": {
+      "begin": 16384,
+      "pageEnvelope": 66560,
+      "textAndFinish": 1024
+    }
+  },
+  "cloudRequests": 0,
+  "productionAcquisitionVerified": false,
+  "hostedCopyVerified": false,
+  "durableClientImplemented": false,
+  "productionAdapterEnabled": false,
+  "limitations": [
+    "independent D1/R2 writers must remain stopped",
+    "no multi-step transactional snapshot",
+    "body deadline is not an end-to-end D1/R2 deadline",
+    "consistent production acquisition, durable staging client and hosted proof remain pending"
+  ],
+  "sourceFiles": [
+    {
+      "path": "services/restore/protected.ts",
+      "bytes": 6744,
+      "sha256": "b284e1bb45f3620b223c9aa621e1bda27148233ef915a3e660887caf2f6068bd"
+    },
+    {
+      "path": "services/restore/worker.ts",
+      "bytes": 19080,
+      "sha256": "97c66cf3af986a36ba57b478ee65a188d7cf9ae0facf795da0f60899dea2df65"
+    },
+    {
+      "path": "src/corpora/protected-state-d1.ts",
+      "bytes": 22239,
+      "sha256": "1bab8e77558d339d53fbcbac5bcc3ba2f53cd6c4bc1641d934d83eb874bfe72c"
+    },
+    {
+      "path": "src/corpora/protected-state-d1-schema.ts",
+      "bytes": 5868,
+      "sha256": "87ee8bd4a86621539a43ad7f13c4b683021b3f486c8d10378ba81de281d1f179"
+    },
+    {
+      "path": "test/protected-state-d1.test.ts",
+      "bytes": 43794,
+      "sha256": "0893762e32d0dedd9b01b4a321677825e03a14e794a3451a6c811590609ad525"
+    },
+    {
+      "path": "docs/PROTECTED-D1-BINDING.md",
+      "bytes": 10374,
+      "sha256": "340c22a76462d1c758697e2d134ee098f6dd67614d92871f88ed8ddb6869892e"
+    },
+    {
+      "path": "docs/PROTECTED-STATE-COPY.md",
+      "bytes": 7120,
+      "sha256": "37e8bbedfdb08959c175ff138a115eb6ce3fcb4d3b5c55d6b7b6aeb83fff3b34"
+    }
+  ]
+}

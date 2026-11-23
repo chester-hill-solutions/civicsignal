@@ -1,0 +1,30 @@
+{
+  "revision": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15"
+  },
+  "parser": "statutes-v2",
+  "parserSourceDigest": "89408196d74cf05331562ed80676adf84675e153dec98cb9f8065c9e3fb24cb8",
+  "parserSources": {
+    "statutes.ts": "3fa48710fca608f6f09489f7dce474029cd3f88f15f47c36599228214127f043",
+    "corpus-rows.ts": "f30f9bef944daa1aed1e4806f8f8a33b5229d5093ec4638f77eb163efee53dd7",
+    "reconcile.ts": "6c4e581fa32aab7a6574e4757542c8cb59605ca3b8181bf11e7fa79e116cac8b"
+  },
+  "files": 11736,
+  "groups": 118,
+  "checked": 277857,
+  "exactRowJSON": true,
+  "allOffsets": true,
+  "allUTF8Lengths": true,
+  "rowBytes": 364231731,
+  "index": {
+    "key": "snapshots/statutes-v2/0507465393c224c0491fc8c17c88340217acc656.index.jsonl",
+    "bytes": 26147151,
+    "sha256": "24fc30cfc427d5231c24fce911de198e92b7ada8b429aa4c6341ccb4f0159feb",
+    "entries": 277857,
+    "digest": "b9b9ad97092ae2c5b4a35580f0cafe73"
+  },
+  "buildMs": 173373.77975000002,
+  "totalMs": 277983.41629200004,
+  "limitation": "Local parity and timing; does not establish hosted Workers CPU or memory limits."
+}

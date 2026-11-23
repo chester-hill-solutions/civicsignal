@@ -1,0 +1,168 @@
+{
+  "kind": "mp02-local-safe-source-diagnostics",
+  "generatedAt": "2026-10-31T20:11:11.219Z",
+  "sourceFiles": [
+    "services/snapshot/qualification.ts",
+    "services/snapshot/qualification-source.ts",
+    "services/snapshot/archive-source.ts"
+  ],
+  "testFiles": [
+    "test/snapshot-qualification.test.ts",
+    "test/snapshot-qualification-workerd.test.ts"
+  ],
+  "unchangedOwnedFiles": [
+    "services/snapshot/qualification-worker.ts",
+    "test/snapshot-archive-source.test.ts"
+  ],
+  "reproductions": [
+    [
+      {
+        "report": "discovery-red.json",
+        "success": false,
+        "total": 47,
+        "passed": 0,
+        "failed": 1,
+        "pending": 46
+      },
+      {
+        "report": "discovery-green.json",
+        "success": true,
+        "total": 47,
+        "passed": 1,
+        "failed": 0,
+        "pending": 46
+      }
+    ],
+    [
+      {
+        "report": "head-status-red.json",
+        "success": false,
+        "total": 48,
+        "passed": 0,
+        "failed": 1,
+        "pending": 47
+      },
+      {
+        "report": "head-status-green.json",
+        "success": true,
+        "total": 48,
+        "passed": 1,
+        "failed": 0,
+        "pending": 47
+      }
+    ],
+    [
+      {
+        "report": "archive-red.json",
+        "success": false,
+        "total": 49,
+        "passed": 0,
+        "failed": 1,
+        "pending": 48
+      },
+      {
+        "report": "archive-green.json",
+        "success": true,
+        "total": 49,
+        "passed": 1,
+        "failed": 0,
+        "pending": 48
+      }
+    ]
+  ],
+  "final": [
+    {
+      "report": "pure-final.json",
+      "success": true,
+      "total": 119,
+      "passed": 119,
+      "failed": 0,
+      "pending": 0
+    },
+    {
+      "report": "native-final.json",
+      "success": true,
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "pending": 0
+    }
+  ],
+  "typechecks": {
+    "tooling": "passed",
+    "snapshot": "passed"
+  },
+  "safeFields": {
+    "discovery": [
+      "code",
+      "status when observed",
+      "existing allowlisted numeric quota metadata"
+    ],
+    "archive": [
+      "code",
+      "status when observed"
+    ],
+    "excluded": [
+      "raw exception/cause",
+      "URL",
+      "headers",
+      "provider body",
+      "credentials"
+    ]
+  },
+  "limits": {
+    "hostedCalls": 0,
+    "newSourceClaims": 0,
+    "newRetries": 0,
+    "newBudgets": 0,
+    "changesToQualificationIdentity": false,
+    "changesToCanonicalRetryPolicy": false,
+    "qualificationReceiptBytes": 2048
+  },
+  "priorFailures": [
+    "Initial native suite blocked by local 127.0.0.1 socket permissions (11 EPERM failures).",
+    "First admitted native suite: 9 passed, two newly added assertions failed by reading an R2 body twice. Fixed assertions to read the body once; final native suite passes all 11."
+  ],
+  "primaryReferences": [
+    "https://developers.cloudflare.com/workers/best-practices/workers-best-practices/",
+    "https://developers.cloudflare.com/workflows/build/rules-of-workflows/",
+    "https://developers.cloudflare.com/workflows/build/sleeping-and-retrying/"
+  ],
+  "typesRead": "node_modules/@cloudflare/workers-types/index.d.ts WorkflowStepConfig, WorkflowEntrypoint, WorkflowEvent, InstanceStatus",
+  "format": 1,
+  "recordedAt": "2026-10-31T20:13:22.127273+00:00",
+  "requirementIds": [
+    "V1-05",
+    "V1-09"
+  ],
+  "planWorkPackage": "MP-02",
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/3",
+  "sourcePins": [
+    {
+      "path": "services/snapshot/qualification.ts",
+      "bytes": 9236,
+      "sha256": "8f125ce1cb822495f946aababf1e15a214e64876dbdc2540a42472723f55e5bb"
+    },
+    {
+      "path": "services/snapshot/qualification-source.ts",
+      "bytes": 3512,
+      "sha256": "792918507074578960eb916021585798c256dd0ce64481cebab672ec52a2f905"
+    },
+    {
+      "path": "services/snapshot/archive-source.ts",
+      "bytes": 10194,
+      "sha256": "e2c6e624a5198b3375d602fe8b4cb29b785a4001a9a55140c8d19bdf7c66d6da"
+    },
+    {
+      "path": "test/snapshot-qualification.test.ts",
+      "bytes": 26363,
+      "sha256": "9703a1efc6a2ae1669f33a4ca69051e546497f30e3da3448dc8893fb7b3848a5"
+    },
+    {
+      "path": "test/snapshot-qualification-workerd.test.ts",
+      "bytes": 15308,
+      "sha256": "32cb3d841f87e729ffd52955fcf5ade610ef73d7c69f834da7d57dc24e530025"
+    }
+  ],
+  "integrationStatus": "focused local qualification only; final integrated gate pending"
+}

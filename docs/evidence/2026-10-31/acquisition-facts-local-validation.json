@@ -1,0 +1,139 @@
+{
+  "format": 1,
+  "kind": "mp04-fixed-source-facts-retained-revalidation-local-validation",
+  "recordedAt": "2026-10-31T22:15:02.928226+00:00",
+  "passed": true,
+  "predecessor": {
+    "path": "/tmp/civicsignal-mp04-source-facts-local-validation-20261031.json",
+    "bytes": 5084,
+    "sha256": "d7729d423fc833f19afd3d4cb63dd02fec69be481e19f243cc6ac3feead31790"
+  },
+  "scope": "Repair stale retained-artifact references at completion of one fixed source-facts observation; no live operator or production qualification.",
+  "sourcePins": [
+    {
+      "path": "scripts/lib/protected-acquisition.ts",
+      "bytes": 17659,
+      "sha256": "e23ec00a8790d759dc0b4e482f96e05f5ff692bde4e6715284a5eb652538632e"
+    },
+    {
+      "path": "scripts/lib/protected-acquisition-transport.ts",
+      "bytes": 25503,
+      "sha256": "73242d38d2ed51d2a315d4ccf5d3c027ac0d84f68341c74e46832e35f524fe57"
+    },
+    {
+      "path": "scripts/lib/protected-acquisition-facts.ts",
+      "bytes": 14664,
+      "sha256": "7ac186501bc70a93b90e93673de9dff56f05d5e0819bda3b1f6f40432a3b06f6"
+    },
+    {
+      "path": "test/protected-acquisition-facts.test.ts",
+      "bytes": 21752,
+      "sha256": "cb7440e5225267966a3d3d43f14ed4cd09d826a58907e97ad5039f1ae8ee324a"
+    }
+  ],
+  "changedInRepair": [
+    "scripts/lib/protected-acquisition-facts.ts",
+    "test/protected-acquisition-facts.test.ts"
+  ],
+  "checks": [
+    {
+      "name": "narrow-revalidation-red",
+      "exitCode": 1,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-revalidation-red.log",
+        "bytes": 9107,
+        "sha256": "c0dfbe49950f47b455413a7741d86f0072118f2ad773a119466485b55549f954"
+      }
+    },
+    {
+      "name": "narrow-revalidation-green",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-revalidation-green.log",
+        "bytes": 564,
+        "sha256": "ed9cbf75fbcd80730763f295902312ccfd8ee6c2f8a4dd0985e46cd065223af5"
+      }
+    },
+    {
+      "name": "focused-acquisition-core-transport-facts",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-revalidation-final-focused.log",
+        "bytes": 4970,
+        "sha256": "39f98e74277316ac94a623708117c7e52a39147e2b2f7b5326edeaa6b05656f8"
+      }
+    },
+    {
+      "name": "typecheck:bun",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-revalidation-bun-types.log",
+        "bytes": 137,
+        "sha256": "137233cf0d3c1cacc81f5c561ccd8067935e982264c8a32314186e660a3584c1"
+      }
+    },
+    {
+      "name": "typecheck:tooling",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-revalidation-tooling-types.log",
+        "bytes": 141,
+        "sha256": "46b33dc115594175bb52d74c8ff90deddf998a4699a4db244a75917cfbe8b69d"
+      }
+    },
+    {
+      "name": "scoped-diff-check",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/civicsignal-acquisition-facts-revalidation-diff-check.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "focusedBreakdown": {
+    "facts": 55,
+    "captureCore": 49,
+    "transport": 75,
+    "total": 179
+  },
+  "redCases": 10,
+  "additionalRegressionCases": 13,
+  "repair": [
+    "Preserve original dev/ino/size/mode/uid/nlink/mtime/ctime and bytes/hash for every retained artifact",
+    "Reject a replacement pathname before opening; check opened descriptor against original identity before reading",
+    "Keep at most5 original descriptors, fsync all files/directories before final reads",
+    "Read/hash each file through the same bounded descriptor, then recheck every descriptor/name before and after independent closure",
+    "Use the same cumulative owner checkpoint/clock; any drift or persistence/deadline failure remains terminal, preserving refusal/artifacts"
+  ],
+  "bounds": {
+    "maxRetainedArtifacts": 5,
+    "maxArtifactBytes": 524288,
+    "readChunkBytes": 65536,
+    "newRequestBudgetCreated": false
+  },
+  "regressions": [
+    "Same-size schema rewrite during later sequence exchange",
+    "Same-byte inode replacement, hardlink and private-permission drift during later exchange",
+    "Intent, both raw responses, observation and result drift at final persistence boundary",
+    "In-place and inode replacement after descriptors open but before final readback",
+    "Earlier-artifact mutation during final result readback",
+    "Same-owner deadline expiry during final readback"
+  ],
+  "realCredentialReads": 0,
+  "networkRequests": 0,
+  "productionWriterChanges": 0,
+  "broadSuiteRun": false,
+  "fixtureOnly": true,
+  "providerAuthenticated": false,
+  "globalQuiescenceEstablished": false,
+  "productionAcquisitionQualified": false,
+  "sourceSchemaClassified": false,
+  "standaloneAcceptance": false,
+  "remaining": [
+    "Complete source publication/count/outbox/schema-profile facts",
+    "Real credential/process owner and complete acquisition budget",
+    "Independently established common writer freeze and authentic acquisition",
+    "Complete later operator acceptance must revalidate all consumed inputs; this result is a point-in-time local observation"
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "recordedAt": "2026-10-23T05:16:07.225Z",
+  "localOnly": true,
+  "scope": "Retrieval-only preference for actual numbered sections when legacy ordinal provisions share the same exact label.",
+  "sourceSha256": {
+    "src/corpora/adapters.ts": "17b1e724ea601f23e97c32e3aec27395c6dc48433a3d57bc987447efc2dcd4ed",
+    "src/corpora/postgres-adapters.ts": "8e45e11d609680b03a53e73b11d6e345ee64126da99336120de8d4ea542b269e",
+    "src/corpora/provision-lookup.ts": "90d3127df96ca951d04328d8ebd5645ea123e57a2ec33a4437f157d736b4e5d5",
+    "test/exact-provision-selection.test.ts": "2d8638500db2f57342faa06dbe8efcf235d44c659f26d7db49d38321a710a4ab",
+    "test/fixtures/c6-exact-citation-legacy.json": "d350bb5da27a939761775f4810261e4d5101809f40659d50d2e07fc002e5807d"
+  },
+  "sourceContract": "buildRows emits canonical numbered-section URLs only for numeric/decimal Section units; other provision kinds use FullText URLs. Shared SQLite/PostgreSQL SQL requires the exact Laws host/path, row citation and section, including French comma encoding.",
+  "verification": {
+    "newBehaviorTests": 21,
+    "engines": [
+      "SQLite through D1 adapter",
+      "PGlite PostgreSQL through Postgres adapter"
+    ],
+    "focused": {
+      "command": "bun run test test/exact-provision-selection.test.ts test/cite.test.ts test/postgres-adapters.test.ts test/vector-arm.test.ts",
+      "passed": 58,
+      "files": 4,
+      "exitCode": 0,
+      "log": "dist/release/staging/manual-smoke/exact-selection-tests.log"
+    },
+    "typechecks": {
+      "worker": {
+        "passed": true,
+        "command": "bun run typecheck:worker"
+      },
+      "bun": {
+        "passed": true,
+        "command": "bun run typecheck:bun"
+      },
+      "tooling": {
+        "passed": true,
+        "command": "bun run typecheck:tooling",
+        "log": "dist/release/staging/manual-smoke/exact-selection-typecheck-tooling.log"
+      }
+    },
+    "fixture": {
+      "sourceCommit": "0507465393c224c0491fc8c17c88340217acc656",
+      "sourceReceiptSha256": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc",
+      "allFourTextsMatchIndependentSourceProof": true,
+      "proof": "dist/release/staging/manual-smoke/exact-selection-fixture-parity.json"
+    },
+    "fullGate": {
+      "observedAt": "2026-10-23T05:18:49.680592+00:00",
+      "exitCode": 0,
+      "tests": 787,
+      "testFiles": 74,
+      "compilerProjects": 4,
+      "vendorFiles": 117,
+      "runtimeProbes": 2,
+      "billingInvariants": true,
+      "corpusInvariants": true,
+      "historicalCorpusInvariantSqlJsonlInputsAbsent": true,
+      "separateFullCorpusProofRetained": true,
+      "log": "/private/tmp/civicsignal-exact-provision-validate.log",
+      "logSha256": "102fd9dce233b66b6c1c818fbbb43c997e53f43a90b551461aecc385e9709957",
+      "workerDryRunBuilds": 5,
+      "buildExitCode": 0,
+      "buildLog": "/private/tmp/civicsignal-exact-provision-build.log",
+      "buildLogSha256": "d39c28493dc85842d929901dd61f5eb5c5eebdf3cf842c51f4862ccafc0139ba"
+    }
+  },
+  "behavior": [
+    "Prefer canonical numeric/decimal section rows before LIMIT and before D1 text hydration.",
+    "Retain language filtering, repealed sections and multiple canonical versions.",
+    "Preserve all original noncanonical, amending, lettered and schedule fallback matches when no canonical section exists."
+  ],
+  "tradeoff": "A numeric/decimal citation without a recognized canonical section performs one additional bounded exact query before the unchanged fallback. Unknown URL formats retain fallback ambiguity; no heading or text heuristic substitutes for source type evidence.",
+  "parserArtifactsSchemaVectorsAndSemanticCachePolicyChanged": false,
+  "activeTextRunnerChanged": false,
+  "liveDeploymentsPerformed": false
+}

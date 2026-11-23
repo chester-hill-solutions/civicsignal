@@ -1,0 +1,210 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T12:54:35.530180+00:00",
+  "outcome": "Stopped incomplete isolated reconciliation after original embedding allowance was exhausted",
+  "target": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "origin": "https://civicsignal-v1-stage-pipeline-20261022.chester-hill-solutions.workers.dev",
+    "namespace": "751026e8a12f46dc87f829d44cef4221"
+  },
+  "deployment": {
+    "format": 1,
+    "startedAt": "2026-10-23T12:51:20.434740+00:00",
+    "stageOnly": true,
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "configSha256": "689359af21968bfb59ad21d1fdb02a6754483e2cf342acddf152fa6217cfeb88",
+    "intent": "stop-only constructor pause; no reset or increased allowance",
+    "timedOut": false,
+    "exitCode": 0,
+    "reportedVersionId": "e2fba179-fb89-4d48-b0e5-2dc85545e0db",
+    "finishedAt": "2026-10-23T12:51:25.572284+00:00",
+    "logSha256": "9942f0b2270fb720f3672ace9f094962f23c20b98fe13147ab98ef9a26c7be54"
+  },
+  "before": {
+    "version": [
+      {
+        "version_id": "c891a4aa-0ad1-4b76-9045-d2527815a047",
+        "percentage": 100
+      }
+    ],
+    "control": {
+      "controlled": true,
+      "format": 1,
+      "commit": "0507465393c224c0491fc8c17c88340217acc656",
+      "date": "2026-10-15",
+      "parser": "statutes-v2",
+      "cap": 1112,
+      "submitted": 1112,
+      "remaining": 0,
+      "httpStatus": 200,
+      "observedAt": "2026-10-23T12:49:26.109Z"
+    },
+    "d1": {
+      "rows": 277857,
+      "refs": 277857,
+      "retained_text_rows": 0,
+      "invalid_or_missing_refs": 0,
+      "changes": 600,
+      "mutations": 600,
+      "pending_mutations": 0,
+      "runs": 0,
+      "parser_version": null,
+      "commit_sha": "0507465393c224c0491fc8c17c88340217acc656"
+    }
+  },
+  "after": {
+    "deployment": {
+      "id": "4fa89c9e-2087-4fbf-bd67-1c52d5f6000e",
+      "createdOn": "2026-10-23T12:51:23.554791Z",
+      "versions": [
+        {
+          "version_id": "e2fba179-fb89-4d48-b0e5-2dc85545e0db",
+          "percentage": 100
+        }
+      ]
+    },
+    "control": {
+      "controlled": true,
+      "format": 1,
+      "commit": "0507465393c224c0491fc8c17c88340217acc656",
+      "date": "2026-10-15",
+      "parser": "statutes-v2",
+      "cap": 1112,
+      "submitted": 1112,
+      "remaining": 0,
+      "httpStatus": 200,
+      "observedAt": "2026-10-23T12:52:20.414Z",
+      "corpusId": "statutes-canada",
+      "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+      "coordinator": {
+        "format": 1,
+        "revision": 1,
+        "suspended": true,
+        "active": null,
+        "queued": 0,
+        "alarmHandlersActive": 0,
+        "alarmAt": null,
+        "pending": true,
+        "failures": 7,
+        "lastFailure": {
+          "classification": "attempt-budget-exhausted"
+        },
+        "quiescent": true
+      }
+    },
+    "d1": {
+      "rows": 277857,
+      "refs": 277857,
+      "retained_text_rows": 0,
+      "invalid_or_missing_refs": 0,
+      "changes": 600,
+      "mutations": 600,
+      "pending_mutations": 0,
+      "runs": 0,
+      "parser_version": null,
+      "commit_sha": "0507465393c224c0491fc8c17c88340217acc656"
+    }
+  },
+  "remaining": {
+    "expectedChanges": 1112,
+    "matchingTargetFingerprints": 600,
+    "remainingTargetFingerprints": 512,
+    "rowsWritten": 0,
+    "referenceFingerprintMismatches": 0,
+    "remainingIdsSha256": "a7fd7991e5cbdbfe40ecec3ca0c0391d0a294060218788d80cc0a42f1589a5fa"
+  },
+  "localValidation": {
+    "tests": 118,
+    "files": 6,
+    "actualWorkerdCases": 14,
+    "workerTypecheck": 0,
+    "bunTypecheck": 0,
+    "toolingTypecheck": 0,
+    "sourceFiles": {
+      "services/pipeline/single-flight.ts": {
+        "sha256": "efc49fbecd3f96189a8035f75245a83db8c0ab5bc666a752df151711c3d054c2"
+      },
+      "services/pipeline/worker.ts": {
+        "sha256": "b71c37e3e0efe1ecbdf46994cca4f7c6b7c93ed06b9b49863cf1eee0579e91e3"
+      },
+      "services/pipeline/staging-maintenance.ts": {
+        "sha256": "daa2bd1e106d7180d39416dca8d0b5282a27ee8d4f2b92ea6ac3d817631b4752"
+      },
+      "services/snapshot/OPERATIONS.md": {
+        "sha256": "800e22826606df2430ac90c38d688050e8c7a9ac463d0df5ea725efdfd56a670"
+      },
+      "test/pipeline-coordinator.test.ts": {
+        "sha256": "f58c233814a802950f9992af8259f0d0e61a712539d832ace4ffa3b53694a74f"
+      },
+      "test/pipeline-attempt-budget.test.ts": {
+        "sha256": "114e5161cbdccc66a2b1261910be35c5c0f6e533afbbe036cc83de6d88f0184b"
+      },
+      "test/pipeline-coordinator-workerd.test.ts": {
+        "sha256": "8e28b7e998f1ca7736dc05ac2e84c891056d2f068b78a8424ce1e3cac4c5d7aa"
+      },
+      "test/pipeline-maintenance-workerd.test.ts": {
+        "sha256": "93917629640fb44ce2388af06b9214f9f2fedc9f9dc24cf8b4a5c5074f023912"
+      }
+    }
+  },
+  "evidence": {
+    "before.json": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/before.json",
+      "sha256": "02d25678224bcfcc652f72d829b94e04b2e4e5d3f49bf1fb8d433ba6f4ce50f8"
+    },
+    "after.json": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/after.json",
+      "sha256": "9af12cdaedbea35842bd3f2ed993ed43db7ba96aae28420fb0fda89ba302a5b4"
+    },
+    "remaining.json": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/remaining.json",
+      "sha256": "b94a7328883253f11e46b3897a6c0f4204722cc00925c273ced1d76793dfaf95"
+    },
+    "deploy.json": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/deploy.json",
+      "sha256": "f0ea8ce287a2f3f7b0a22c781aa80806f39303f687d159784df714a63dacc5af"
+    },
+    "local-proof-corrected.json": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/local-proof-corrected.json",
+      "sha256": "85eb30b6597c922b21f02c809adbdc5e455890dac398fe663a9205fc08ef282e"
+    },
+    "observe.ts": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/observe.ts",
+      "sha256": "4562e4eee1b2119f9d561bd8c5e56b37c640cd659060dd57675713149b21d897"
+    },
+    "check-remaining.ts": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/check-remaining.ts",
+      "sha256": "3893f824eb8fc0de315fa3daf716174c72f4a061e38a18cb7679dc5533d634cc"
+    },
+    "deploy.py": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/deploy.py",
+      "sha256": "c94806243164904e33b70991a1471c5bfeb2ddf937998c04c01fee2fd30f196b"
+    },
+    "pipeline-maintenance.json": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/pipeline-maintenance.json",
+      "sha256": "689359af21968bfb59ad21d1fdb02a6754483e2cf342acddf152fa6217cfeb88"
+    },
+    "worker.mjs": {
+      "path": "dist/release/staging/pipeline-maintenance-stop/worker.mjs",
+      "sha256": "b02d3bc6fe45b8aaf91ca2e56ea1cc49dca8e99e8edf1e27bdd70239d1057a21"
+    }
+  },
+  "claims": {
+    "originalAllowanceSatisfied": false,
+    "completedReconciliation": false,
+    "originalNamespacePreserved": true,
+    "capResetOrIncreased": false,
+    "retryAlarmRemoved": true,
+    "maintenanceResumeDisabled": true,
+    "productionOrRailwayChanged": false
+  },
+  "limits": [
+    "The first 600 target fingerprints are durable; 512 expected target fingerprints remain. The legacy publication is retained with parser NULL and no completed new run.",
+    "An earlier dashboard exception proves a code-update reset, but the specific control-plane cause and subsequent non-budget failures are not established.",
+    "The current persisted last failure reports budget exhaustion and does not reconstruct overwritten earlier failures.",
+    "The provider-sized write fix limits repeated returned work; an accepted uncertain request may still incur spend without a durable row.",
+    "No additional embedding allowance is approved. Any recovery beyond 1112 requires an explicit cumulative approval and tested preservation of the existing spent count.",
+    "This is a safe stop, not completed ingestion, vector visibility, retrieval evaluation, or production migration evidence."
+  ]
+}

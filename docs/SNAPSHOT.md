@@ -1,5 +1,12 @@
 # The corpus snapshot
 
+## Current v1 authority
+
+Format history and original design. Current Workflow uses parser-versioned keys and bounded index partitions; see V1-OPERATIONS.md.
+[The master plan](PLAN.md) defines current scope and work order.
+[The release evidence ledger](V1-RELEASE.md) retains dated outcomes.
+The master plan controls scope; the ledger records evidence. The historical claims below do not create current work.
+
 The corpus is XML in a git repository, and that is the reason three separate
 things are awkward.
 

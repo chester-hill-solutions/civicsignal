@@ -1,4 +1,10 @@
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { fingerprint } from '../src/ingest/reconcile';
 import {
   SnapshotReader,
   linesOf,
@@ -8,10 +14,12 @@ import {
 import {
   cutRows,
   DEFAULT_PART_BYTES,
+  IndexDigester,
   indexKey,
   manifestKey,
   partKey,
   SNAPSHOT_FORMAT,
+  SNAPSHOT_PARSER_VERSION,
 } from '../src/ingest/snapshot-format';
 import type { PipelineRow } from '../src/ingest/pipeline';
 
@@ -105,7 +113,7 @@ function snapshotOf(rows: PipelineRow[], partBytes?: number) {
   lines.forEach((line, position) => {
     const len = new TextEncoder().encode(line).length;
     index.push(
-      `{"id":${JSON.stringify(rows[position]!.id)},"fp":"hash-${position}","off":${offset},"len":${len}}`,
+      `{"id":${JSON.stringify(rows[position]!.id)},"fp":${JSON.stringify(fingerprint(rows[position]!))},"off":${offset},"len":${len}}`,
     );
     offset += len;
   });
@@ -136,6 +144,51 @@ function snapshotOf(rows: PipelineRow[], partBytes?: number) {
   return files;
 }
 
+it('verifies a downloaded snapshot CLI against exact independently pinned manifest bytes', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'snapshot-manifest-pin-'));
+  const commit = 'a'.repeat(40);
+  const parser = SNAPSHOT_PARSER_VERSION;
+  const manifestPath = join(directory, manifestKey(commit, parser));
+  const rowsPath = `snapshots/${parser}/${partKey(commit, 0)}`;
+  const indexPath = indexKey(commit, parser);
+  const hash = (value: string) => createHash('sha256').update(value).digest('hex');
+  const writeCandidate = async (text: string) => {
+    const provision = row('a-1', text);
+    const rowBytes = JSON.stringify(provision) + '\n';
+    const entry = { id: provision.id, fp: fingerprint(provision), off: 0, len: Buffer.byteLength(rowBytes) };
+    const indexBytes = JSON.stringify(entry) + '\n';
+    const digester = new IndexDigester();
+    digester.add(entry);
+    const manifest = JSON.stringify({
+      format: SNAPSHOT_FORMAT, commit, parser, date: '2026-10-15',
+      rows: { count: 1, bytes: entry.len, partBytes: DEFAULT_PART_BYTES,
+        parts: [{ key: rowsPath, bytes: entry.len, sha256: hash(rowBytes) }] },
+      index: { key: indexPath, bytes: Buffer.byteLength(indexBytes), entries: 1,
+        digest: digester.digest(), sha256: hash(indexBytes) },
+    });
+    await writeFile(manifestPath, manifest);
+    await writeFile(join(directory, rowsPath), rowBytes);
+    await writeFile(join(directory, indexPath), indexBytes);
+    return hash(manifest);
+  };
+  const check = (...options: string[]) => spawnSync('bun', ['scripts/publish-snapshot.ts', '--commit', commit, '--dir', directory, ...options],
+    { encoding: 'utf8', timeout: 10_000 });
+  try {
+    await mkdir(dirname(manifestPath), { recursive: true });
+    const reference = await writeCandidate('Independently checked provision');
+    const flag = '--reference-manifest-sha256';
+    expect(check(flag, reference)).toMatchObject({ status: 0, stdout: expect.stringContaining(reference) });
+    expect(check(flag)).toMatchObject({ status: 1, stderr: expect.stringContaining('usage:') });
+    expect(check(flag, reference, flag, reference)).toMatchObject({ status: 1, stderr: expect.stringContaining('usage:') });
+    const changed = await writeCandidate('Different provision with a new index and matching manifest');
+    expect(changed).not.toBe(reference);
+    expect(check()).toMatchObject({ status: 0 });
+    expect(check(flag, reference)).toMatchObject({
+      status: 1, stdout: '', stderr: expect.stringContaining('snapshot manifest differs from the pinned reference SHA-256'),
+    });
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 describe('the snapshot in a bucket', () => {
   const rows = [row('a-1', 'one'), row('a-2', 'two')];
   const files = snapshotOf(rows);
@@ -147,11 +200,12 @@ describe('the snapshot in a bucket', () => {
     const index = await source.index();
 
     expect(index.size).toBe(2);
-    expect(index.get('a-1')?.fp).toBe('hash-0');
+    expect(index.get('a-1')?.fp).toBe(fingerprint(rows[0]!));
     // The manifest first — it is what says where the rest is — and then the
     // index, whole. The manifest is read once and remembered.
     expect(reads.map((read) => read.key)).toEqual([
       'abc123.manifest.json',
+      'abc123.index.jsonl',
       'abc123.index.jsonl',
     ]);
   });
@@ -221,28 +275,16 @@ describe('the snapshot in a bucket', () => {
     expect(found.map((r) => r.id)).toEqual(['a-2', 'a-1']);
   });
 
-  /**
-   * The rows come back in the order their entries were given, and an entry
-   * that points at nothing is skipped rather than throwing.
-   *
-   * The caller is the diff, and a diff that hands over an entry has read it
-   * out of the index — so an entry with no bytes behind it means the rows
-   * file and the index disagree, and the row that is missing is one the
-   * caller asked for. The cycle counts what came back against what it asked
-   * for and stops loudly, which is why this must not silently return a
-   * half-filled list.
-   */
-  it('skips an entry whose bytes are not there', async () => {
+  /** A truncated range must stop the cycle before a partial write can land. */
+  it('refuses an entry whose bytes are not there', async () => {
     const { bucket } = fakeBucket(files);
     const source = new SnapshotReader(bucket, 'abc123');
     const index = await source.index();
 
-    const found = await source.rows([
+    await expect(source.rows([
       index.get('a-1')!,
       { id: 'gone', fp: '', off: 10_000, len: 100 },
-    ]);
-
-    expect(found.map((r) => r.id)).toEqual(['a-1']);
+    ])).rejects.toThrow(/truncated snapshot row/);
   });
 
   it('reads adjacent rows in one request', async () => {

@@ -1,0 +1,82 @@
+{
+  "name": "@chester-hill-solutions/auth-d1",
+  "version": "0.9.0",
+  "description": "Cloudflare D1 (SQLite) auth provider — auth() factory, session reader, workspace invitations, feature permissions (Better Auth)",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chester-hill-solutions/chester-hill-solutions.git",
+    "directory": "packages/auth-d1"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js",
+      "default": "./dist/schema.js"
+    },
+    "./plugins": {
+      "types": "./dist/plugins/index.d.ts",
+      "import": "./dist/plugins/index.js",
+      "default": "./dist/plugins/index.js"
+    },
+    "./plugins/mcp": {
+      "types": "./dist/plugins/mcp.d.ts",
+      "import": "./dist/plugins/mcp.js",
+      "default": "./dist/plugins/mcp.js"
+    },
+    "./plugins/oauth-provider": {
+      "types": "./dist/plugins/oauth-provider.d.ts",
+      "import": "./dist/plugins/oauth-provider.js",
+      "default": "./dist/plugins/oauth-provider.js"
+    },
+    "./plugins/cimd": {
+      "types": "./dist/plugins/cimd.d.ts",
+      "import": "./dist/plugins/cimd.js",
+      "default": "./dist/plugins/cimd.js"
+    },
+    "./drizzle-adapter": {
+      "types": "./dist/drizzle-adapter.d.ts",
+      "import": "./dist/drizzle-adapter.js",
+      "default": "./dist/drizzle-adapter.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js",
+      "default": "./dist/testing/index.js"
+    }
+  },
+  "dependencies": {
+    "@chester-hill-solutions/auth": "workspace:*"
+  },
+  "peerDependencies": {
+    "@better-auth/drizzle-adapter": "^1.7.10",
+    "better-auth": "^1.7.10",
+    "drizzle-orm": "^0.45.0",
+    "@better-auth/oauth-provider": "^1.7.10",
+    "@better-auth/mcp": "^1.7.10",
+    "@better-auth/cimd": "^1.7.10"
+  },
+  "peerDependenciesMeta": {
+    "@better-auth/oauth-provider": {
+      "optional": true
+    },
+    "@better-auth/mcp": {
+      "optional": true
+    },
+    "@better-auth/cimd": {
+      "optional": true
+    }
+  }
+}

@@ -1,5 +1,12 @@
 # The harness
 
+## Current v1 authority
+
+Future harness design. v1 exposes authenticated HTTP and MCP retrieval with BYOK chat; it does not ship this harness.
+[The master plan](PLAN.md) defines current scope and work order.
+[The release evidence ledger](V1-RELEASE.md) retains dated outcomes.
+The master plan controls scope; the ledger records evidence. The historical claims below do not create current work.
+
 Why the product embeds OpenCode rather than building a chat interface.
 
 ## The short version

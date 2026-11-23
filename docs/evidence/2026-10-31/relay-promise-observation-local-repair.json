@@ -1,0 +1,81 @@
+{
+  "format": 1,
+  "kind": "relay-promise-observation-local-repair",
+  "recordedAt": "2026-10-31T23:54:43.891305+00:00",
+  "planWorkPackages": [
+    "MP-03",
+    "MP-06"
+  ],
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/13",
+  "sourcePins": [
+    {
+      "path": "scripts/lib/staging-request-relay.ts",
+      "bytes": 15668,
+      "sha256": "1e6228e975ed937250f3a4c882805846c333b4817d765d73c29d4f772bd48c12"
+    },
+    {
+      "path": "test/staging-request-proxy.test.ts",
+      "bytes": 18497,
+      "sha256": "36818d52ecf0992bf41a04fcc20445147b37cc3c8483ecc921aa87581b22fbae"
+    }
+  ],
+  "predecessor": {
+    "commit": "dba19d3679727863f2fb1fc0fe6b38a53d2a9eff",
+    "relayBytes": 15471,
+    "relaySha256": "60c29a1b1f99c83f64076846347fdab2f3a9ef096cbf113e837e7e995c33f0c5"
+  },
+  "cause": "abortable returns an abort rejection after send/read has created a rejected promise, without observing that original promise",
+  "repair": "attach a nonthrowing rejection observer before returning the immediate abort outcome",
+  "regression": {
+    "red": {
+      "failed": 1,
+      "controlsPassed": 2,
+      "predecessorTestSha256": "9e2cfc5b01fecc9ce5329eec1a5e88500441c8fed76e24e12a09a8208ada2470"
+    },
+    "final": {
+      "passed": 3,
+      "failed": 0,
+      "cases": [
+        "synchronous-abort-and-reject",
+        "reject-without-abort",
+        "synchronous-abort-and-fulfill"
+      ],
+      "realCompiledRelaySubprocess": true,
+      "expectedStatuses": [
+        499,
+        502,
+        499
+      ],
+      "reservationPerCase": 1,
+      "sendPerCase": 1,
+      "unhandledRejections": 0,
+      "retry": false,
+      "ledgerLockClosed": true,
+      "HOMEOverrideRemoved": true
+    }
+  },
+  "independentReview": {
+    "reviewer": "planning_operations",
+    "verdict": "approve scoped fix",
+    "finalSourcePinsVerified": true,
+    "normalAbortOutcomeAndCleanupPreserved": true
+  },
+  "completeLocalGate": "docs/evidence/2026-10-31/integrated-candidate-local-validation-v8.json",
+  "logs": [
+    {
+      "path": "/tmp/civicsignal-relay-promise-observation-red.log",
+      "bytes": 2082,
+      "sha256": "5e3f5e3f14d92acd4e20652cbff9af8a046342c67cdf3f6d6a17863e22ddb85d"
+    },
+    {
+      "path": "/tmp/civicsignal-relay-promise-observation-final-regression.log",
+      "bytes": 318,
+      "sha256": "ee3cbff516559b80ac2e72027111f834fb2f14b4a9575fd85d504a3691a11445"
+    }
+  ],
+  "cleanLinuxQualified": false,
+  "originalLedgerChanged": false,
+  "realCredentialReads": 0,
+  "hostedRequests": 0,
+  "limits": "Local source repair only. It does not establish a historical hosted-failure cause or cancellation/settlement of remote work. Final exact-source Linux qualification remains open. Sealed Zen predecessor packet remains unchanged but its old relay source pin is stale; it needs a separately qualified successor and separate execution decision."
+}

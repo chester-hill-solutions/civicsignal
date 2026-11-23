@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "kind": "brief-shared-policy-local-validation",
+  "recordedAt": "2026-10-31T20:13:22.127273+00:00",
+  "requirementIds": [
+    "V1-03",
+    "V1-08"
+  ],
+  "planWorkPackage": "MP-03",
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/2",
+  "change": "Both brief emission paths reuse shared emitCorpusItem; the copied sanitizer is removed.",
+  "sourcePins": [
+    {
+      "path": "src/routes/brief.ts",
+      "bytes": 14844,
+      "sha256": "6c8ff869674c8975aa3622241ffdf9cef50bdf02794ef0a5e1bd6b9e1899b923"
+    },
+    {
+      "path": "test/brief.test.ts",
+      "bytes": 11467,
+      "sha256": "f742734b3490f96ec486b0c2184374351919fd777c37b1f3cc2d669ced79a2d7"
+    },
+    {
+      "path": "test/endpoints.test.ts",
+      "bytes": 30046,
+      "sha256": "f0d84d4d1a3b926d9a96bc9822354ac1574d1b820895c65121d735480d7e8eab"
+    }
+  ],
+  "reproduction": {
+    "tests": 110,
+    "passed": 99,
+    "failed": 11,
+    "success": false
+  },
+  "focusedAfter": {
+    "tests": 190,
+    "passed": 190,
+    "failed": 0,
+    "success": true
+  },
+  "servingBoundary": {
+    "cases": 4,
+    "transports": [
+      "HTTP brief",
+      "MCP brief_topic"
+    ],
+    "faults": [
+      "missing required citation",
+      "wrong corpus identity"
+    ],
+    "before": "successful malformed response; one unit each",
+    "after": "safe existing error response; zero units each"
+  },
+  "contract": {
+    "responseShape": "unchanged",
+    "perItemAttribution": "shared licence and conditions now apply",
+    "aggregateAttribution": "unchanged source-level strings",
+    "permittedBodyAndExcerptRules": "shared policy contract"
+  },
+  "typecheck": "Worker, Bun and snapshot passed in focused validation; tooling initially failed in concurrent snapshot fixture, then that owned fixture was repaired and tooling passed separately. Integrated final gate remains pending.",
+  "limitations": [
+    "Local deterministic fixtures do not establish production data quality or hosted availability.",
+    "Changes remain uncommitted; no final clean Linux qualification yet."
+  ],
+  "cloudOperations": 0,
+  "realProviderCalls": 0
+}

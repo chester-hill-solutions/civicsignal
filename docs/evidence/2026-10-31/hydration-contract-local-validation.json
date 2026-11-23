@@ -1,0 +1,218 @@
+{
+  "kind": "offline-hydration-contract-diagnosis-and-repair",
+  "sourceBaseCommit": "2616a35cc7a4b29300f1260f39b3a54cfbaf4ff2",
+  "historicalFailureCauseEstablished": false,
+  "retainedFailures": {
+    "holdout": [
+      {
+        "id": "unsupported-quebec-civil-code-en",
+        "items": [],
+        "elapsedMs": 10259.82362499999,
+        "correlationId": "req_mvlob3yop7pyixg8cj",
+        "retrieval": [
+          {
+            "version": 1,
+            "corpusId": "statutes-canada",
+            "backend": "vectorize",
+            "revision": "0507465393c224c0491fc8c17c88340217acc656",
+            "parserVersion": "statutes-v2",
+            "policy": "vectorize:federal-authority-v3-observed",
+            "encoderModel": "embeddinggemma-2-270m",
+            "mode": "vector-floor",
+            "decision": "error",
+            "languageFilter": "en",
+            "preRefusalTopScore": null,
+            "scoreSource": "none",
+            "scoredAt": null,
+            "vectorFloor": 0.62,
+            "candidateCount": 0,
+            "resultCount": 0,
+            "cache": "miss",
+            "fallback": false,
+            "providers": {
+              "encoder": "error",
+              "vector": "not-called",
+              "reranker": "not-called",
+              "rows": "not-called"
+            },
+            "elapsedMs": 10107
+          }
+        ],
+        "status": 502,
+        "outcome": "http-error",
+        "errorCode": "UPSTREAM_UNAVAILABLE"
+      }
+    ],
+    "benchmark": [
+      {
+        "id": "A-1-6-en#4",
+        "items": [],
+        "elapsedMs": 1435.7109170000003,
+        "correlationId": "req_mvloddrh6082ng38pr",
+        "retrieval": [
+          {
+            "version": 1,
+            "corpusId": "statutes-canada",
+            "backend": "vectorize",
+            "revision": "0507465393c224c0491fc8c17c88340217acc656",
+            "parserVersion": "statutes-v2",
+            "policy": "vectorize:federal-authority-v3-observed",
+            "encoderModel": "embeddinggemma-2-270m",
+            "mode": "vector-floor",
+            "decision": "error",
+            "languageFilter": "en",
+            "preRefusalTopScore": null,
+            "scoreSource": "none",
+            "scoredAt": null,
+            "vectorFloor": 0.62,
+            "candidateCount": 0,
+            "resultCount": 0,
+            "cache": "miss",
+            "fallback": false,
+            "providers": {
+              "encoder": "not-called",
+              "vector": "not-called",
+              "reranker": "not-called",
+              "rows": "error"
+            },
+            "elapsedMs": 1142
+          }
+        ],
+        "status": 502,
+        "outcome": "http-error",
+        "errorCode": "UPSTREAM_UNAVAILABLE"
+      }
+    ]
+  },
+  "historicalEvidenceLimits": [
+    "Holdout failure is encoder:error with rows:not-called.",
+    "Benchmark rows:error covers both D1 loading and strict R2 hydration; no substage or reason code survived.",
+    "Selected cached order, row-reference byte facts and the specific failure were not retained.",
+    "Warmups identify A-1-4-en/fr as the two planned questions, but individual failed warmup observations were discarded.",
+    "Later successful calibration is not historical-cause evidence."
+  ],
+  "confirmedLocalDefect": "An object-key-only hydration cache reused valid body text for a second reference whose bytes disagreed; last-reference overwrite also undercounted aggregate byte admission.",
+  "fix": "Retain maximum declared bytes per object for admission and require matching bytes before sharing an in-flight verified text promise.",
+  "beforeReproduction": {
+    "claimedBytes": [
+      50,
+      51
+    ],
+    "actualBytes": 50,
+    "rowsIncorrectlyServed": 2,
+    "objectReads": 1
+  },
+  "afterReproduction": {
+    "errorType": "ProvisionTextError",
+    "objectReads": 1
+  },
+  "red": {
+    "command": "bun run test -- test/text-store.test.ts test/endpoints.test.ts",
+    "tests": 108,
+    "failed": 5,
+    "passed": 103,
+    "log": "/tmp/civicsignal-hydration-red.log"
+  },
+  "final": {
+    "command": "bun run test -- test/text-store.test.ts test/endpoints.test.ts test/retrieval-observation.test.ts test/benchmark-observations.test.ts",
+    "passed": 138,
+    "files": 4,
+    "log": "/tmp/civicsignal-hydration-final-v3-tests.log",
+    "compilerProjects": [
+      "tsconfig.worker.json",
+      "tsconfig.bun.json",
+      "tsconfig.tooling.json"
+    ],
+    "compilerLog": "/tmp/civicsignal-hydration-final-v3-types.log"
+  },
+  "newTests": 9,
+  "newTestCoverage": [
+    "strict r2/verify both reference orders and +/- byte disagreement",
+    "concurrent valid sharing stays one read",
+    "mismatched shared read fully settles before failure",
+    "verified prefer-r2 fallback preserved; corrupt fallback refused",
+    "largest reference wins aggregate admission in both orders before any object read",
+    "duplicate aliases at exact aggregate boundary are not double charged",
+    "actual HTTP cached hydration refusal with usage unchanged after failure"
+  ],
+  "minimalMissingHistoricalObservation": "The original request correlation req_mvloddrh6082ng38pr with a bounded D1/reference/R2/aggregate substage and failure reason (plus aggregate planned bytes if the bound failed). Exact replay would additionally need the then-selected order and reference metadata, which are absent.",
+  "pins": {
+    "src/corpora/text-store.ts": {
+      "bytes": 14848,
+      "sha256": "c640adecd22d3fa303106b80c61cbe0d599e403e7e7f52426f390d689bc1418f"
+    },
+    "test/text-store.test.ts": {
+      "bytes": 20291,
+      "sha256": "7618e526ad196e9c3035c2a34cd063556ef0cb2fe534f14a445ff76241451022"
+    },
+    "test/endpoints.test.ts": {
+      "bytes": 32901,
+      "sha256": "865b03eb9766eac556e9531604b8fbef183c1e871809e7cb7c3fd04d1fe88e25"
+    },
+    "dist/evaluation/v1-stage-20261022-network-recovery-holdout.json": {
+      "bytes": 121595,
+      "sha256": "c19f82bb51f17c678ad8f704d6d3924ee5b766060d20274108241dd6df39aadc"
+    },
+    "dist/evaluation/v1-stage-20261022-network-recovery-benchmark.json": {
+      "bytes": 75344,
+      "sha256": "cf6135078a7c6e5dbcb6ebe3503c9ca000e907f4a7cb5c11b5ab20d3c71ebd70"
+    },
+    "dist/release/staging/serving-v3-owned/holdout.started.json": {
+      "bytes": 714,
+      "sha256": "dd96aadde73bd00961022c27ea5d3cbfad865887eb8d95f6c1d533b14fc90629"
+    },
+    "dist/release/staging/serving-v3-owned/holdout.result.json": {
+      "bytes": 376,
+      "sha256": "093275ded96bd0f7bc534374f346477ad219f876f5f2254ad90357eddad61376"
+    },
+    "dist/release/staging/serving-v3-owned/holdout.log": {
+      "bytes": 7305,
+      "sha256": "530793e178b90e1d9732de8b9ec6e601578013a2185099f195317d989a86f164"
+    },
+    "dist/release/staging/serving-v3-owned/benchmark.started.json": {
+      "bytes": 735,
+      "sha256": "1bac820bd449e038a914d7813e55d03aaf0cd59c1fa2e5334b0d6906d859519b"
+    },
+    "dist/release/staging/serving-v3-owned/benchmark.result.json": {
+      "bytes": 378,
+      "sha256": "f4d943094002c4c9f8252550494611d0686b82b6bde81587e8c5263d6b904f2c"
+    },
+    "dist/release/staging/serving-v3-owned/benchmark.log": {
+      "bytes": 2839,
+      "sha256": "cac805ed10b3bcc40069507bc5e9ba6979d341ef432199c5eed69682112f4d1b"
+    },
+    "dist/evaluation/offline-diagnosis-20261024/diagnosis-before.json": {
+      "bytes": 13890,
+      "sha256": "e4739a9cd85a5327204685c0f89672a0a98e8c42bbc7021c1e2bb99ef683c595"
+    },
+    "dist/evaluation/offline-diagnosis-20261024/observability-validation.json": {
+      "bytes": 3349,
+      "sha256": "a0442bf9c836cfcc4c2c9b44fdb49cd96ae937ef5d2b444446347ea975deb464"
+    },
+    "dist/evaluation/offline-diagnosis-20261024/warmup-identity-correction.json": {
+      "bytes": 901,
+      "sha256": "798fbb637b957309b6d418416d1726ed71cd71dd2fa36a997ae611c736618aab"
+    }
+  },
+  "networkRequests": 0,
+  "servingRequests": 0,
+  "modelRequests": 0,
+  "credentialReads": 0,
+  "historicalReportsEdited": false,
+  "thresholdOrPromptOrDefaultChanges": false,
+  "hostedValidation": false,
+  "logPins": {
+    "/tmp/civicsignal-hydration-red.log": {
+      "bytes": 7556,
+      "sha256": "aa2a88eb1e69f6dd20fe4d3a8ce1cdc69343fb6e6789e120f470b20954078840"
+    },
+    "/tmp/civicsignal-hydration-final-v3-tests.log": {
+      "bytes": 1231,
+      "sha256": "03ffe702b5286cc180bf091214a2cd4b490c0010d7f7c2ab6c4be5243576d265"
+    },
+    "/tmp/civicsignal-hydration-final-v3-types.log": {
+      "bytes": 418,
+      "sha256": "422a93344e09cd7a95e4436e48beca9668cc230c00d32ec0c8c56136cef334c4"
+    }
+  }
+}

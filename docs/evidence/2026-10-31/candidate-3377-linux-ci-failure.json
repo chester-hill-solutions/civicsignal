@@ -1,0 +1,44 @@
+{
+  "format": 1,
+  "kind": "v1-clean-linux-ci-failure",
+  "recordedAt": "2026-10-31T21:09:14.157979+00:00",
+  "sourceHead": "3377cb8689c16d9626ee0f65479a019931515877",
+  "baseHead": "717bf3299701d06ec6d85add276e1ed546c69387",
+  "checkedOutMerge": "1e969d2634b507d4c70438dde5bd8ae283d49e65",
+  "runId": 41241701998,
+  "jobId": 124656748459,
+  "url": "https://github.com/chester-hill-solutions/civicsignal/actions/runs/41241701998",
+  "state": "completed",
+  "conclusion": "failure",
+  "install": "passed frozen dependency installation",
+  "compilers": "all four passed before test phase",
+  "tests": {
+    "filesPassed": 99,
+    "filesFailed": 1,
+    "passed": 1826,
+    "failed": 23,
+    "total": 1849
+  },
+  "failure": {
+    "file": "test/snapshot-qualification-proposal.test.ts",
+    "code": "SNAPSHOT_PROPOSAL_INPUT_METADATA",
+    "readerLocation": "scripts/lib/snapshot-qualification-proposal.ts:79",
+    "sourceGraphAdmissionLocation": "scripts/lib/snapshot-qualification-proposal.ts:188"
+  },
+  "python": "skipped after failed validate step",
+  "dryBuilds": "skipped after failed validate step",
+  "localQualifiedReceipt": "docs/evidence/2026-10-31/integrated-candidate-local-validation-v3.json",
+  "hypothesis": {
+    "explanation": "Public source reader also requires single-link metadata; normal Linux Bun dependency installs use hardlinks. Actual CI inode facts were not retained, so reproduce at the same file-reader seam before attributing the exact failure.",
+    "primaryDocumentation": "https://bun.com/docs/pm/global-cache"
+  },
+  "finding": "https://github.com/chester-hill-solutions/civicsignal/issues/9",
+  "retainedDecodedJobLog": {
+    "path": "/tmp/civicsignal-linux-3377-job.log",
+    "bytes": 152245,
+    "sha256": "399243f6efc3b025dca2254248d51840a6d2f01d2c97f9832ec6cc44d69d246f"
+  },
+  "rerunPerformed": false,
+  "deploymentPerformed": false,
+  "productionQualified": false
+}

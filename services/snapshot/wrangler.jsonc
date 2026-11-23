@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-snapshot",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "limits": { "cpu_ms": 300000, "subrequests": 100000 },
+  "workflows": [{ "binding": "SNAPSHOT", "name": "civicsignal-snapshot", "class_name": "CorpusSnapshot" }],
+  "r2_buckets": [{ "binding": "CORPUS", "bucket_name": "civicsignal-corpus" }],
+  "triggers": { "crons": ["13 10 * * *"] },
+  "workers_dev": false
+}

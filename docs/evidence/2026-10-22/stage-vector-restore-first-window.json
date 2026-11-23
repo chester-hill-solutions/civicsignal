@@ -1,0 +1,68 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T02:31:38.057Z",
+  "completedAt": "2026-10-23T02:30:25.860Z",
+  "scope": "first reviewed pending-window invocation; full baseline incomplete",
+  "target": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "createdOn": "2026-10-23T02:06:42.218162Z",
+    "metric": "cosine",
+    "dimensions": 768
+  },
+  "source": {
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "parser": "legacy",
+    "date": "2026-10-15",
+    "receiptSha256": "600dd529e48cf8209a444455cfe5e5e2a36d9cc530273176d18782d6954d70fc"
+  },
+  "priorCheckpoint": {
+    "format": 1,
+    "nextPosition": 100,
+    "verifiedVectors": 100,
+    "pendingPositions": [
+      100,
+      200
+    ],
+    "mutationId": "af76a98e-5c17-4026-b533-b0b46f26f06e"
+  },
+  "result": {
+    "identity": "265590b800471325614871da6ac4f813fb4b4ab0a1ebfa40077a3530efe20fda",
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "createdOn": "2026-10-23T02:06:42.218162Z",
+    "nextPosition": 10200,
+    "verifiedVectors": 8508,
+    "complete": false,
+    "format": 2,
+    "pending": [],
+    "newLogicalSubmissions": 100,
+    "verifiedBatches": 101,
+    "documentEmbeddings": 0,
+    "servingCalls": 0,
+    "remoteTotalCountChecked": false
+  },
+  "bounds": {
+    "sourcePositionsPerWrite": 100,
+    "pendingWindow": 100,
+    "maxNewLogicalSubmissions": 100,
+    "transportAttemptsPerRequest": 3,
+    "readbackPollsPerGroup": 12,
+    "readbackPauseMs": 5000
+  },
+  "pacing": {
+    "firstNewAcknowledgementAt": "2026-10-23T02:26:34.104Z",
+    "lastNewAcknowledgementAt": "2026-10-23T02:28:09.162Z",
+    "queueFillMs": 95058
+  },
+  "journalSha256": "ed7ef69deae17b1d50fb16f13f066d6e26e6e9f7793b9a7d5bc23a7778378534",
+  "scriptSha256": "24c22d38caf4e20265f34c4491bb9ba7461cd80e4f14f63f6fd8f85fd4e16a5c",
+  "helperSha256": "727db8ac5f77876e0c2d6028417461bb3417fa7ff53316fa90924854d375000f",
+  "notes": [
+    "The prior acknowledged batch was drained by exact value/metadata readback without an upsert replay.",
+    "The same target/artifact journal identity was preserved during format1-to-format2 migration.",
+    "New logical submissions exclude bounded identical REST transport retries.",
+    "All new and prior pending batches passed exact value/metadata readback before the verified cursor advanced.",
+    "Initial sandbox transport refusal and the earlier visibility timeout remain in the raw safe log and diagnostic receipt."
+  ]
+}

@@ -19,8 +19,12 @@
  *     bun scripts/check-stored-vectors.ts [--sample 200]
  */
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { join } from 'node:path';
+import { SnapshotReader } from '../src/ingest/snapshot-source';
+import { FileSnapshotBucket } from './lib/file-snapshot';
 import { token } from './lib/cloudflare-auth';
-import { parseVectorsManifest, vectorsManifestKey } from '../src/ingest/snapshot-format';
+import { IndexDigester, parseVectorsManifest, SNAPSHOT_PARSER_VERSION, snapshotNamespace, vectorsManifestKey } from '../src/ingest/snapshot-format';
 import { loadVectorStore } from '../src/eval/retrieval';
 
 const args = process.argv.slice(2);
@@ -33,19 +37,29 @@ const ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID ?? 'ad5ec479b9a421faa2ed06c3d1
 const INDEX = arg('--index', 'civicsignal-statutes-gemma');
 const REVISION = arg('--revision', '0507465393c224c0491fc8c17c88340217acc656');
 const sample = Number(arg('--sample', '200'));
+if (!Number.isSafeInteger(sample) || sample < 1) throw new Error('--sample must be a positive integer');
 const dir = arg('--dir', 'dist/snapshot');
 
-const indexIds: string[] = [];
-for (const line of readFileSync(`${dir}/${REVISION}.index.jsonl`, 'utf8').split('\n')) {
-  if (line.trim()) indexIds.push((JSON.parse(line) as { id: string }).id);
-}
-console.log('loading the exported store…');
-const exported = loadVectorStore(`${dir}/${REVISION}.store.emb`);
-
+const selectedParser = arg('--parser', SNAPSHOT_PARSER_VERSION);
+if (selectedParser !== 'legacy' && selectedParser !== SNAPSHOT_PARSER_VERSION) throw new Error('unsupported parser; select current parser or explicit legacy');
+const parser = selectedParser === 'legacy' ? undefined : selectedParser;
+const snapshot = new SnapshotReader(new FileSnapshotBucket(dir), REVISION, { parser });
+const entries = await snapshot.index();
+const indexIds = [...entries.keys()];
+const identity = new IndexDigester();
+for (const entry of entries.values()) identity.add(entry);
 const manifest = parseVectorsManifest(
-  readFileSync(`${dir}/${vectorsManifestKey(REVISION)}`, 'utf8'),
-  vectorsManifestKey(REVISION),
+  readFileSync(join(dir, vectorsManifestKey(REVISION, parser)), 'utf8'),
+  vectorsManifestKey(REVISION, parser),
 );
+if (manifest.commit !== REVISION || manifest.parser !== parser || manifest.index.digest !== identity.digest()) throw new Error('vectors do not match this exact snapshot index/fingerprints');
+console.log('loading the exported store…');
+const exported = loadVectorStore(join(dir, snapshotNamespace(parser), `${REVISION}.store.emb`));
+if (exported.count !== manifest.count || exported.dims !== manifest.dims) throw new Error('assembled vector store shape differs from the manifest');
+for (const part of manifest.parts) {
+  const bytes = new Uint8Array(exported.vectors.buffer, exported.vectors.byteOffset + part.from * manifest.dims * 4, part.bytes);
+  if (part.sha256 && createHash('sha256').update(bytes).digest('hex') !== part.sha256) throw new Error(`assembled vector part SHA-256 mismatch: ${part.key}`);
+}
 if (manifest.count !== indexIds.length) {
   throw new Error(
     `the vectors manifest holds ${manifest.count} vector(s) and the index names ` +
@@ -106,6 +120,8 @@ for (let at = 0; at < chosen.length; at += 20) {
     const id = indexIds[position]!;
     const values = stored.get(id);
     if (!values || values.length !== exported.dims) {
+      const row = await snapshot.row(id, entries.get(id)!);
+      if (row?.status === 'placeholder' && !values && exported.vectors.subarray(position * exported.dims, (position + 1) * exported.dims).every((value) => value === 0)) { notEmbedded++; continue; }
       missing.push(id);
       continue;
     }
@@ -158,7 +174,9 @@ if (exact !== compared) {
   console.log(`  the first that differs:       ${worstAt}, cosine ${worst.toFixed(6)}`);
 }
 console.log(
-  exact === compared && compared > 0
+  exact === compared && compared > 0 && missing.length === 0
     ? '\nthe export is a faithful copy of the index at every sampled position, boundaries included'
     : '\nthe export is NOT a faithful copy — do not use it as a positional reference',
 );
+
+if (exact !== compared || compared === 0 || missing.length > 0) process.exitCode = 1;

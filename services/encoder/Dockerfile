@@ -16,7 +16,7 @@
 # `embeddinggemma-300m` accepts no parameter for. This can, because the bundle
 # carries its own preprocessor.
 
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl \
@@ -24,7 +24,8 @@ RUN apt-get update \
 
 # litert-lm is the LiteRT-LM runtime: Apache 2.0, and it runs a `.litertlm` bundle
 # on CPU or GPU.
-RUN pip install --no-cache-dir litert-lm==0.18.1
+COPY services/encoder/requirements.lock /app/requirements.lock
+RUN pip install --no-cache-dir -r /app/requirements.lock
 
 # The model is fetched at build time with curl, not with `litert-lm import`.
 #
@@ -40,12 +41,14 @@ RUN pip install --no-cache-dir litert-lm==0.18.1
 ARG MODEL_REPO=litert-community/embeddinggemma-2-text-270m-litert-lm
 ARG MODEL_FILE=embeddinggemma-2-text-270m.litertlm
 ARG MODEL_ID=embeddinggemma-2-270m
+ARG MODEL_REVISION=9be6e8b90982095dc05c2bd162e4b954ee4dbac7
+ARG MODEL_SHA256=2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb
 ENV LITERT_MODEL_PATH=/models/${MODEL_ID}/model.litertlm
 RUN mkdir -p "/models/${MODEL_ID}" \
  && curl -fsSL --retry 3 \
-      "https://huggingface.co/${MODEL_REPO}/resolve/main/${MODEL_FILE}?download=true" \
+      "https://huggingface.co/${MODEL_REPO}/resolve/${MODEL_REVISION}/${MODEL_FILE}?download=true" \
       -o "${LITERT_MODEL_PATH}" \
- && test -s "${LITERT_MODEL_PATH}" \
+ && echo "${MODEL_SHA256}  ${LITERT_MODEL_PATH}" | sha256sum -c - \
  && echo "the model is ${MODEL_FILE} in ${MODEL_ID}"
 
 # The service checks a token that arrives in a header of its own, because the

@@ -27,6 +27,8 @@
  * cron job, a GitHub Action. It has no disk and no image to keep warm.
  */
 
+import { requestSourceHead } from './source-head';
+
 export const CORPUS_REPO = 'justicecanada/laws-lois-xml';
 const API = `https://api.github.com/repos/${CORPUS_REPO}`;
 const TARBALL = `https://codeload.github.com/${CORPUS_REPO}/tar.gz`;
@@ -124,19 +126,7 @@ export class GitHubCorpusSource implements CorpusSource {
   }
 
   async head(): Promise<CorpusRevision> {
-    const branch = this.options.branch ?? 'main';
-    const response = await fetch(`${this.api}/commits/${branch}`, {
-      headers: this.headers('application/vnd.github+json'),
-    });
-    if (!response.ok) {
-      throw new Error(`the corpus repository returned ${response.status}`);
-    }
-    const body = (await response.json()) as {
-      sha?: string;
-      commit?: { committer?: { date?: string } };
-    };
-    if (!body.sha) throw new Error('the corpus repository did not name a revision');
-    return { commit: body.sha, date: body.commit?.committer?.date?.slice(0, 10) ?? '' };
+    return requestSourceHead(this.api, this.options.branch ?? 'main', this.headers('application/vnd.github+json'));
   }
 
   /**

@@ -1,0 +1,124 @@
+{
+  "format": 1,
+  "startedAt": "2026-10-23T13:19:28.180623+00:00",
+  "checks": [
+    {
+      "label": "validate",
+      "exitCode": 0,
+      "log": "/private/tmp/civicsignal-v1-recovery-extension-validate-20261023.log",
+      "sha256": "58850acbc9374ecf173d4b48238b9d0158ccef4dae1fb2bf66951140cd31a298",
+      "summary": [
+        "chs-vendor: 117 files verified at 9abf87ed3f47c83d1ddf9547d28bac979cd0c478",
+        "   \u2713 stage-only vector restore > does not advance the verified cursor while a full pending window is invisible 613ms",
+        "   \u2713 isolated staging restore using real local workerd D1 and R2 bindings > processes four concurrent full 2 MiB frames with sixteen individually verified objects each 1274ms",
+        " Test Files  79 passed (79)",
+        "      Tests  944 passed (944)"
+      ]
+    },
+    {
+      "label": "build",
+      "exitCode": 0,
+      "log": "/private/tmp/civicsignal-v1-recovery-extension-build-20261023.log",
+      "sha256": "f837352f5226b2e94b79aa38d2d3715146f2f2f598b885be3a0a1b41d769890c"
+    }
+  ],
+  "productionRequests": 0,
+  "finishedAt": "2026-10-23T13:20:29.482077+00:00",
+  "passed": true,
+  "scope": "Complete local v1 gate including corrected protected schema admission and offline bounded recovery candidate",
+  "tests": 944,
+  "testFiles": 79,
+  "compilerProjects": 4,
+  "workerBuilds": 5,
+  "vendoredFiles": 117,
+  "hostedClaims": false,
+  "previousCompletedGate": {
+    "tests": 899,
+    "testFiles": 77,
+    "startedAt": "2026-10-23T12:52:03.282242+00:00",
+    "checks": [
+      {
+        "label": "validate",
+        "exitCode": 0,
+        "log": "/private/tmp/civicsignal-v1-recovery-validate-20261023.log",
+        "sha256": "572f9de52588532ada33bbb0683c8635cb5d033d278c3bce99eeacf9b4edc6bc",
+        "summary": [
+          "chs-vendor: 117 files verified at 9abf87ed3f47c83d1ddf9547d28bac979cd0c478",
+          "   \u2713 stage-only vector restore > validates values/IDs/metadata, skips only verified placeholders and restores all substantive vectors 345ms",
+          "   \u2713 stage-only vector restore > does not advance the verified cursor while a full pending window is invisible 571ms",
+          "   \u2713 isolated staging restore using real local workerd D1 and R2 bindings > processes four concurrent full 2 MiB frames with sixteen individually verified objects each 2134ms",
+          " Test Files  77 passed (77)",
+          "      Tests  899 passed (899)"
+        ]
+      },
+      {
+        "label": "build",
+        "exitCode": 0,
+        "log": "/private/tmp/civicsignal-v1-recovery-build-20261023.log",
+        "sha256": "a0dc1562507aa75736e206ed360829db9ac2bd43587b7de80fe74cf8ca39751e"
+      }
+    ]
+  },
+  "sourceFiles": {
+    "services/pipeline/single-flight.ts": {
+      "sha256": "8c5261ed4d78eca2e90452f68fc5f6b9cfc05e97a7823b05cae74b2dde3501f1"
+    },
+    "services/pipeline/worker.ts": {
+      "sha256": "0df83d7d9f42daa1996a16a16ac90595ea3bf5226abed3080f08a04cd353c62f"
+    },
+    "services/pipeline/staging-maintenance.ts": {
+      "sha256": "daa2bd1e106d7180d39416dca8d0b5282a27ee8d4f2b92ea6ac3d817631b4752"
+    },
+    "src/ingest/snapshot-pipeline.ts": {
+      "sha256": "c24fa865e6c448c4cdb2ca4bfeceb7dff38067e4293c5c98e100f0fb8da48ffb"
+    },
+    "scripts/protected-state.ts": {
+      "sha256": "12e4d6d3138c9fdc3b8fd6319b3ffe1bcf1edea84da7ca6a08b85eea8f1128d5"
+    },
+    "scripts/lib/protected-state.ts": {
+      "sha256": "7782a7acd33249aecae6bd48693c17802c84feba8f8470ad003b5fcbcfde5321"
+    },
+    "scripts/lib/protected-sql-import.mjs": {
+      "sha256": "b5e7c669a6ef2087cb4a23ffc18b15505578092a65a799c7f544ff98cdaebfc2"
+    },
+    "test/protected-state.test.ts": {
+      "sha256": "1a0b8277c40242c95a64c32fc4cc10259ead9a2eef53aca09086848cda636163"
+    },
+    "test/pipeline-coordinator-workerd.test.ts": {
+      "sha256": "8e28b7e998f1ca7736dc05ac2e84c891056d2f068b78a8424ce1e3cac4c5d7aa"
+    },
+    "test/pipeline-maintenance-workerd.test.ts": {
+      "sha256": "93917629640fb44ce2388af06b9214f9f2fedc9f9dc24cf8b4a5c5074f023912"
+    },
+    "test/pipeline-coordinator.test.ts": {
+      "sha256": "f58c233814a802950f9992af8259f0d0e61a712539d832ace4ffa3b53694a74f"
+    },
+    "test/pipeline-attempt-budget.test.ts": {
+      "sha256": "114e5161cbdccc66a2b1261910be35c5c0f6e533afbbe036cc83de6d88f0184b"
+    },
+    "test/corpus-recovery.test.ts": {
+      "sha256": "032f3516ec65c9cdf551c7361494146e7f9b6e1afe148796cd85796158d42414"
+    },
+    "test/snapshot-pipeline.test.ts": {
+      "sha256": "685ebd3f17d23b9951ddf610edd273c2b0f80ec26798cc75d7f36ce5dac5f5df"
+    },
+    "services/pipeline/staging-recovery-plan.ts": {
+      "sha256": "cc9485b1dbcd35f5d99fcd3e3fb837c5f6062b7cad75700d646c7c28a46ef8b9"
+    },
+    "services/pipeline/staging-recovery.ts": {
+      "sha256": "026a2e183d58d70067b95d75d580d9b6368b61b29df9ef870a1f53f98573972a"
+    },
+    "test/pipeline-recovery-extension.test.ts": {
+      "sha256": "cca18e312ebca3e7d507b3052d09876fd5642e79dce03992b5dcef6dbfa48682"
+    },
+    "test/pipeline-recovery-workerd.test.ts": {
+      "sha256": "1cc9eaa8adf59020fff220dcbef20a5c621f3b317a8866d7c7a7be59062cb412"
+    }
+  },
+  "limitations": [
+    "Local and dry-run validation does not prove completed hosted ingestion, calibrated quality, throughput, scheduled Snapshot discovery or production cutover.",
+    "Protected-state copy proof is local-only and excludes target text references, compact markers and text objects.",
+    "Hosted ingestion is suspended at the original exhausted 1112-document allowance; no additional allowance is approved.",
+    "The approved original allowance remains unchanged on the hosted coordinator. The local extension path requires explicit additional usage approval before deployment/initialization."
+  ]
+}

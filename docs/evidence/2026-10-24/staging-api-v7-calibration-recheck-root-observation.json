@@ -1,0 +1,233 @@
+{
+  "format": 1,
+  "kind": "staging-api-v7-calibration-recheck-root-observation",
+  "observedAt": "2026-10-24T04:24:15.116392+00:00",
+  "apiVersionId": "3efd1935-39ea-41da-b19c-e8bbf495b50d",
+  "sourceCommit": "78e0c2faaeb6103c22de911a165cd6a08b043f7a",
+  "candidateSha256": "e8144d5b5ebcbf65293556324ef8bbbd6d1d7121d7db58f7a0b8dba2d3a8ddbd",
+  "pins": 142,
+  "apiPostverifySha256": "145617d350dcd59d4afe232e637f4341747d5198b6afdc0bf66c587b533841f3",
+  "immediateAcceptedPostverifyUsed": true,
+  "additionalManagementGETs": 0,
+  "servingRequests": 2,
+  "generationRequests": 0,
+  "coldAndWarmPassed": true,
+  "kvWaitMilliseconds": 65000,
+  "sameOrderedRowsCitationsScoresScoredAtAndCandidateCount": true,
+  "calibrationGoldRankBeforeRepair": 6,
+  "calibrationGoldRankAfterRepair": 1,
+  "coldRetrievalElapsedMs": 2301,
+  "warmRetrievalElapsedMs": 1450,
+  "elapsedTimeScope": "Worker retrieval observation; not a client latency/capacity benchmark.",
+  "cold": {
+    "format": 1,
+    "job": "P-21-4-en-cold",
+    "httpStatus": 200,
+    "stageHeaderMatched": true,
+    "correlationId": "req_mvlw6hyc9s52s7uf05",
+    "apiCode": null,
+    "retrieval": [
+      {
+        "version": 1,
+        "corpusId": "statutes-canada",
+        "backend": "vectorize",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "parserVersion": "statutes-v2",
+        "policy": "vectorize:federal-authority-v3-observed",
+        "encoderModel": "embeddinggemma-2-270m",
+        "languageFilter": "en",
+        "provenanceMatched": true,
+        "mode": "rerank",
+        "decision": "answer",
+        "cache": "miss",
+        "fallback": false,
+        "providers": {
+          "encoder": "ok",
+          "vector": "ok",
+          "reranker": "ok",
+          "rows": "ok"
+        },
+        "candidateCount": 100,
+        "resultCount": 10,
+        "preRefusalTopScore": 0.6629009,
+        "vectorFloor": 0.62,
+        "scoreSource": "computed",
+        "scoredAt": "2026-10-24T04:21:44.187Z",
+        "elapsedMs": 2301
+      }
+    ],
+    "rows": [
+      {
+        "id": "acts-en-397236",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-4.html"
+      },
+      {
+        "id": "acts-en-397240",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-5.html"
+      },
+      {
+        "id": "acts-en-416983",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-7.html"
+      },
+      {
+        "id": "acts-en-417086",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-7.3.html"
+      },
+      {
+        "id": "acts-en-1169302",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/I-7.88/section-12.html"
+      },
+      {
+        "id": "acts-en-416970",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-5.html"
+      },
+      {
+        "id": "acts-en-397261",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-7.html"
+      },
+      {
+        "id": "acts-en-397267",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-8.html"
+      },
+      {
+        "id": "acts-en-1169435",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/C-49.8/section-20.html"
+      },
+      {
+        "id": "acts-en-397332",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-10.html"
+      }
+    ],
+    "briefResolved": false,
+    "goldRank": 1,
+    "ledgerReservedBefore": 157,
+    "ledgerReservedAfter": 158,
+    "evaluation": "normal",
+    "calibrationOnly": true,
+    "qualityAcceptanceClaim": false,
+    "holdoutAcceptanceClaim": false,
+    "generationRequests": 0,
+    "rawResponsePersisted": false,
+    "queryTextPersisted": false,
+    "credentialValuesPersisted": false,
+    "automaticRetry": false
+  },
+  "warm": {
+    "format": 1,
+    "job": "P-21-4-en-warm",
+    "httpStatus": 200,
+    "stageHeaderMatched": true,
+    "correlationId": "req_mvlw7yztp97yn6fuqp",
+    "apiCode": null,
+    "retrieval": [
+      {
+        "version": 1,
+        "corpusId": "statutes-canada",
+        "backend": "vectorize",
+        "revision": "0507465393c224c0491fc8c17c88340217acc656",
+        "parserVersion": "statutes-v2",
+        "policy": "vectorize:federal-authority-v3-observed",
+        "encoderModel": "embeddinggemma-2-270m",
+        "languageFilter": "en",
+        "provenanceMatched": true,
+        "mode": "rerank",
+        "decision": "answer",
+        "cache": "hit",
+        "fallback": false,
+        "providers": {
+          "encoder": "not-called",
+          "vector": "not-called",
+          "reranker": "not-called",
+          "rows": "ok"
+        },
+        "candidateCount": 100,
+        "resultCount": 10,
+        "preRefusalTopScore": 0.6629009,
+        "vectorFloor": 0.62,
+        "scoreSource": "cached",
+        "scoredAt": "2026-10-24T04:21:44.187Z",
+        "elapsedMs": 1450
+      }
+    ],
+    "rows": [
+      {
+        "id": "acts-en-397236",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-4.html"
+      },
+      {
+        "id": "acts-en-397240",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-5.html"
+      },
+      {
+        "id": "acts-en-416983",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-7.html"
+      },
+      {
+        "id": "acts-en-417086",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-7.3.html"
+      },
+      {
+        "id": "acts-en-1169302",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/I-7.88/section-12.html"
+      },
+      {
+        "id": "acts-en-416970",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-8.6/section-5.html"
+      },
+      {
+        "id": "acts-en-397261",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-7.html"
+      },
+      {
+        "id": "acts-en-397267",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-8.html"
+      },
+      {
+        "id": "acts-en-1169435",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/C-49.8/section-20.html"
+      },
+      {
+        "id": "acts-en-397332",
+        "citationUrl": "https://laws-lois.justice.gc.ca/en/acts/P-21/section-10.html"
+      }
+    ],
+    "briefResolved": false,
+    "goldRank": 1,
+    "ledgerReservedBefore": 158,
+    "ledgerReservedAfter": 159,
+    "evaluation": "normal",
+    "calibrationOnly": true,
+    "qualityAcceptanceClaim": false,
+    "holdoutAcceptanceClaim": false,
+    "generationRequests": 0,
+    "rawResponsePersisted": false,
+    "queryTextPersisted": false,
+    "credentialValuesPersisted": false,
+    "automaticRetry": false
+  },
+  "ledgerReservedBefore": 157,
+  "ledgerReservedAfter": 159,
+  "ledgerLimit": 160,
+  "ledgerRemaining": 1,
+  "ledgerAfterSha256": "f84e9ac62d73ff3e5944101e7efd79542eb2d229bde4779b0f47d621b4799e17",
+  "prefix15715615414Unchanged": true,
+  "ledgerLockAbsent": true,
+  "ownedProcessSettled": true,
+  "operationAccepted": true,
+  "operationResultSha256": "2065b1a65186539b9f1e4e289292a4858ccd5b1c2726a658336dc847dee308cc",
+  "completedSha256": "ca2ff1d9dc061b530e0831799a2f1fd3596715aa2be5c9df8910099576cb8579",
+  "automaticRetry": false,
+  "rawProviderTextQueryVectorsAuthorityFlagsOrKeysPersisted": false,
+  "qualityAcceptanceClaim": false,
+  "holdoutAcceptanceClaim": false,
+  "zenKeyValidityEstablished": false,
+  "positiveGenerationAccepted": false,
+  "historicalZenFailureCauseEstablished": false,
+  "productionChanged": false,
+  "railwayChanged": false,
+  "limitations": [
+    "One repeated calibration question establishes cold/warm repair behavior only; no new held-out quality or general performance claim.",
+    "Prior holdout, benchmark, Cron and production acquisition gates remain open.",
+    "No additional generation request is authorized by remaining serving allowance."
+  ]
+}

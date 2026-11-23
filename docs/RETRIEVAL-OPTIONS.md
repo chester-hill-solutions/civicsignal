@@ -1,5 +1,12 @@
 # Retrieval: the vector arm, and where the pieces actually run
 
+## Current v1 authority
+
+Historical comparisons. Current acceptance evidence appears in V1-EVALUATION.md and V1-RELEASE.md.
+[The master plan](PLAN.md) defines current scope and work order.
+[The release evidence ledger](V1-RELEASE.md) retains dated outcomes.
+The master plan controls scope; the ledger records evidence. The historical claims below do not create current work.
+
 This is the investigation behind one decision: **does a semantic retrieval arm earn
 its running cost on top of the keyword search the product already has?**
 

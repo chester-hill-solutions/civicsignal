@@ -1,0 +1,226 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-24T00:38:57.421001+00:00",
+  "kind": "root-reviewed-vector-backup-api-smokes",
+  "passed": true,
+  "productionChanged": false,
+  "railwayChanged": false,
+  "vectorBackup": {
+    "outcome": "downloaded-existing-immutable-vector-backup",
+    "finishedAt": "2026-10-24T00:25:45.106Z",
+    "newObjectGets": 28,
+    "originalExportRequests": 31,
+    "originalManifestGets": 1,
+    "cumulativeRequests": 60,
+    "normalizedManifestSha256": "85d87dd3b00b1701389c443436b9ca7d220ac349a3199085b40842085bfae885",
+    "remoteManifestSha256": "2f45e9b224010cfdd2cae5352bf5156437a62861ec14a067827c4207ff88497e",
+    "semanticManifestEquality": true,
+    "sourceArtifactsRehashedBefore": 240,
+    "sourceArtifactsRehashedAfter": 240,
+    "historicalExportCheckpoint": "2026-10-24T00:11:52.069Z",
+    "currentCoordinatorStateObserved": false,
+    "embedded": 254671,
+    "notEmbedded": 23186,
+    "modelProvenance": "not-attested"
+  },
+  "vectorStore": {
+    "bytes": 853576720,
+    "sha256": "21dcdd09cdac16cde05a69ee7bf09b0d1abdff5db37636e3438b6e45c4c41666"
+  },
+  "vectorHeader": {
+    "magic": 1129534294,
+    "rows": 277857,
+    "dimensions": 768,
+    "reserved": 0
+  },
+  "vectorRootValidation": {
+    "path": "dist/release/staging/stage-vector-download-only-v1/root-validation.json",
+    "sha256": "29f2ee4e5c47a6aa7188a2a977491737c93faee0cf40cd728de584d8dc7cfe77"
+  },
+  "vectorResult": {
+    "path": "dist/release/staging/stage-vector-download-only-v1/execution/result.json",
+    "sha256": "d1bd037017a2bf1ca9b831ce79bea4938672880345815d75b4cd6fb7f36e8925"
+  },
+  "api": {
+    "versionId": "02dd9821-6bac-481d-89a4-5dfdf977bc6e",
+    "candidateSha256": "36cbd09cc926b9a68a79cd8b35a5a9228b2c03b53130eac64bca92d83123f7e8",
+    "finishedAt": "2026-10-24T00:27:57.813Z",
+    "namespaceId": "64e06ff739514962a8038d4875bc090c",
+    "runtime": {
+      "compatibility_date": "2026-10-22",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "limits": {}
+    },
+    "onlyBindingAddition": "AUTH_DB",
+    "schedules": []
+  },
+  "apiPostverify": {
+    "path": "dist/release/staging/stage-api-candidate-v4/operations-v4/postverify.result.json",
+    "sha256": "1d1a0acfcbf32fc018c0640213e7892f97a3c5eef17119772de5699a252c651b"
+  },
+  "servingSmokes": {
+    "passed": 21,
+    "originalBaseline": 14,
+    "postReconciliation": 7,
+    "postFinishedAt": "2026-10-24T00:32:49.694288+00:00",
+    "cases": [
+      {
+        "ordinal": 1,
+        "id": "health",
+        "status": 200,
+        "recordedAt": "2026-10-23T11:27:13.989Z",
+        "sha256": "90075424323150394d258aca16c7ec380e5bd63ae1ed82f7ce222f8853193654"
+      },
+      {
+        "ordinal": 2,
+        "id": "discovery",
+        "status": 200,
+        "recordedAt": "2026-10-23T11:27:14.107Z",
+        "sha256": "341a135a36fa6b3ae311cda1b3bc57133a7d90958c0cd81306811c104177bd1a"
+      },
+      {
+        "ordinal": 3,
+        "id": "byok-cors",
+        "status": 204,
+        "recordedAt": "2026-10-23T11:27:14.187Z",
+        "sha256": "7bf3c83ecdc4ad9e0b725c9433a01a9ec7ed6ffcd3571bf7d4838d1736d1f471"
+      },
+      {
+        "ordinal": 4,
+        "id": "missing-key",
+        "status": 401,
+        "recordedAt": "2026-10-23T11:27:14.245Z",
+        "sha256": "8a3e8da2f497e0bc2bb354c47bad8d33878b8be0fdda978093a704f27fbf8e3d"
+      },
+      {
+        "ordinal": 5,
+        "id": "unknown-key",
+        "status": 401,
+        "recordedAt": "2026-10-23T11:27:14.350Z",
+        "sha256": "6f2b38df2d58a7487af0af6e461d8336ef52fe1f991eb628aadd127de6ac5735"
+      },
+      {
+        "ordinal": 6,
+        "id": "revoked-key",
+        "status": 401,
+        "recordedAt": "2026-10-23T11:27:14.429Z",
+        "sha256": "b02712aa21c4911b03aa934980ca97215ced4df26084f2c3153ea5a58a8c33de"
+      },
+      {
+        "ordinal": 7,
+        "id": "capability-key",
+        "status": 403,
+        "recordedAt": "2026-10-23T11:27:14.516Z",
+        "sha256": "b55922fd199e213693ee732a650c2ecea74099a8a371bdeafd43aa36116f9d1d"
+      },
+      {
+        "ordinal": 8,
+        "id": "exact-en",
+        "status": 200,
+        "recordedAt": "2026-10-23T11:27:15.138Z",
+        "sha256": "19774f21897ba6450285caaf88b451dbf45b1e11cdc4667c4a71b92d12fda9a2"
+      },
+      {
+        "ordinal": 9,
+        "id": "exact-fr",
+        "status": 200,
+        "recordedAt": "2026-10-23T11:27:15.488Z",
+        "sha256": "2b0b4b20a11ccdae3b96127dddf6bb2fd4159130232b93647ae7cab8d54d5235"
+      },
+      {
+        "ordinal": 10,
+        "id": "encoder-semantic",
+        "status": 200,
+        "recordedAt": "2026-10-23T11:27:21.950Z",
+        "sha256": "3263bbb184abf9a508d10b64ec6cad4da092c028d203130095d46a22db6f5039"
+      },
+      {
+        "ordinal": 11,
+        "id": "mcp-initialize",
+        "status": 200,
+        "recordedAt": "2026-10-23T11:27:22.077Z",
+        "sha256": "16613ba44eebd10c8e259e6fd89660bb53f7b08949b0d9082d1b5536f87ddee7"
+      },
+      {
+        "ordinal": 12,
+        "id": "mcp-notify",
+        "status": 202,
+        "recordedAt": "2026-10-23T11:27:22.253Z",
+        "sha256": "14b803e86d27d23a8e9bdd44b18c41ed95c59e8c9014d2f1e9e31afc9f556353"
+      },
+      {
+        "ordinal": 13,
+        "id": "mcp-tools",
+        "status": 200,
+        "recordedAt": "2026-10-23T11:27:22.377Z",
+        "sha256": "2ce9c3796f6cc521042a1df8c09d82f046904ff34bdff7e9dce63f0446a6428b"
+      },
+      {
+        "ordinal": 14,
+        "id": "mcp-citation",
+        "status": 200,
+        "recordedAt": "2026-10-23T11:27:23.065Z",
+        "sha256": "e13bc85b428dd452a2dc99039f35e1d07e011f2ff965d72c4699a47c7e5ae1fd"
+      },
+      {
+        "ordinal": 15,
+        "id": "changes-first",
+        "status": 200,
+        "recordedAt": "2026-10-24T00:31:34.774Z",
+        "sha256": "a57eb2972e7a2864989c42fba405c8e03eb41cea91b466bb9cb80c4b1482bfa3"
+      },
+      {
+        "ordinal": 16,
+        "id": "changes-next",
+        "status": 200,
+        "recordedAt": "2026-10-24T00:31:35.116Z",
+        "sha256": "da14642fab12f9daa57945d312893d86214da05042f70bcee57d4c43f5b00bdf"
+      },
+      {
+        "ordinal": 17,
+        "id": "cache-cold-en",
+        "status": 200,
+        "recordedAt": "2026-10-24T00:31:39.346Z",
+        "sha256": "6266311dce5f41e2819bca146ebc6a38459bb069d342797252fc66e1be79d2d7"
+      },
+      {
+        "ordinal": 18,
+        "id": "cache-warm-en",
+        "status": 200,
+        "recordedAt": "2026-10-24T00:32:46.195Z",
+        "sha256": "5ff935d40efbaf4437e97403ccb3e03518d089a9f16f26c9e3a106de74700fe4"
+      },
+      {
+        "ordinal": 19,
+        "id": "cache-language-fr",
+        "status": 200,
+        "recordedAt": "2026-10-24T00:32:48.686Z",
+        "sha256": "e60e9dfded1bb80e32381a7055d53a936d08895d8c53453d37ecc3d81cbb5181"
+      },
+      {
+        "ordinal": 20,
+        "id": "quota-http-denied",
+        "status": 429,
+        "recordedAt": "2026-10-24T00:32:49.410Z",
+        "sha256": "16759bc09e62d679951159e533d7ef250dc659fe37a7a18efb7292021a75d93f"
+      },
+      {
+        "ordinal": 21,
+        "id": "quota-mcp-denied",
+        "status": 200,
+        "recordedAt": "2026-10-24T00:32:49.687Z",
+        "sha256": "30aab5cff600f673fc0fa95b8b2268af513326c21683b8447f9219a8339586bb"
+      }
+    ]
+  },
+  "limits": [
+    "The initial export succeeded, then download acceptance failed on JSON property ordering. The failed intent/result remain preserved. A reviewed download-only continuation used the same original budget; no export or model call repeated.",
+    "Remote and normalized manifests are semantically equal but have different exact bytes. The remote manifest was durably copied before the28 part downloads.",
+    "The backup verifies byte integrity and complete row positions; legacy embedding model provenance remains not-attested.",
+    "The coordinator observation is historical at the export checkpoint; downloading did not refresh its state.",
+    "The API identity proof establishes deployed bindings/runtime, including strict R2 and same usage namespace. The serving smokes separately establish tested endpoint behavior; no production identity migration is claimed.",
+    "Baseline smokes precede reconciliation; seven post-reconciliation cases establish increasing feed, cold and warm retrieval, French isolation and preserved HTTP/MCP quota refusal."
+  ]
+}

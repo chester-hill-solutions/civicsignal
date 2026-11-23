@@ -1,0 +1,118 @@
+{
+  "format": 1,
+  "kind": "protected-source-schema-root-validation",
+  "observedAt": "2026-10-24T03:13:39.063823+00:00",
+  "baseCommit": "f4960c373efd54423000ceb743071a935f679782",
+  "schemaContract": "protected-source-schema-v1",
+  "supportedMigrationPrefixes": [
+    "0003",
+    "0004",
+    "0005",
+    "0006",
+    "0007",
+    "0008"
+  ],
+  "sourcePins": {
+    "scripts/lib/protected-state.ts": "1e3b71510e9341fd4b8e1ad9d37d742b29138f5449d992cf98ca591ecafac1b0",
+    "src/corpora/protected-state-d1-schema.ts": "fbef5646c992ff67cb7506f17889ad58b094f56f45d171500975b8ddea5cdfea",
+    "scripts/lib/protected-state-schema.ts": "78e17cc37f6f33260a210cc6172ab1c95b85ef55bee67f00ac0f152678709648",
+    "scripts/lib/protected-state-schema-assets.json": "0c75ce933ffa09329dad31c7ad47872df31fcc006c63888ee2b72746aa1fe9eb",
+    "scripts/lib/protected-sql-import.mjs": "e2d58a31f36a64da2315a15352f94c5940b386aa74dd76707c78013a2cf6cda5",
+    "scripts/lib/protected-state-d1.ts": "25c953e0e03b0b27bed06c2a4dc5df6c9b163c854e1d498ccd4023dace6a3fbc",
+    "scripts/build-protected-state-d1-owned.mjs": "2844d56c02ccc3737967444861068116341eb4f9f52b5ce6b8d99283a760965b",
+    "scripts/protected-state-d1-owned.py": "11958453a97461a6d7a7d9678d62a2a935b8431f0c7b5c8ad2670ce1f618d739",
+    "test/protected-state.test.ts": "14f93bd44765d20e11bfe27a93949e42200a504afd93c93bb44a5c30cc57861c",
+    "test/protected-state-d1.test.ts": "2e672a26ef5518a3a2179918fbd00970908745a4dfb2f0aea2c1d0ad0d68a08d",
+    "test/protected-state-d1-fixture.test.ts": "554f910f694fdbf0c899f0c31adfea0640e0b82b7f351c5fe838580f72a93eff",
+    "test/protected-state-d1-owned.test.py": "30dd07b63d39cf39fcad924c2ffc03a6ea149823f5a406cd73cc3a4f36dcf5e8"
+  },
+  "fullGate": {
+    "tests": 1537,
+    "testFiles": 92,
+    "pythonCases": 23,
+    "compilerProjects": 4,
+    "vendorFiles": 117,
+    "actualLocalWorkerdProbes": 2,
+    "workerDryBuilds": 5,
+    "all435SourcePinsUnchanged": true,
+    "invariantsPassed": true,
+    "phases": [
+      {
+        "name": "validate",
+        "exitCode": 0,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "ownedProcessSettled": true,
+        "logSha256": "71ca9ba2df02b43079acb661302569ab78a0cf04620208191212b0cc09a90652",
+        "logBytes": 40513,
+        "startedAt": "2026-10-24T03:09:29.179923+00:00",
+        "finishedAt": "2026-10-24T03:11:34.149479+00:00"
+      },
+      {
+        "name": "python",
+        "exitCode": 0,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "ownedProcessSettled": true,
+        "logSha256": "c85553498e04d8aa186f3d9e958cba9fcd05bccbbf88cfc12cb7c20dfe75f6c1",
+        "logBytes": 122,
+        "startedAt": "2026-10-24T03:11:34.151988+00:00",
+        "finishedAt": "2026-10-24T03:11:40.472185+00:00"
+      },
+      {
+        "name": "build",
+        "exitCode": 0,
+        "timedOut": false,
+        "logBoundExceeded": false,
+        "localFailure": false,
+        "ownedProcessSettled": true,
+        "logSha256": "b2ab15e9b0409fb9e773ac062615c444bf842a9c6bd1721730ef083f7536e5b7",
+        "logBytes": 4642,
+        "startedAt": "2026-10-24T03:11:40.474777+00:00",
+        "finishedAt": "2026-10-24T03:11:43.607392+00:00"
+      }
+    ],
+    "privateRootResultSha256": "32770576ca4e10f6977254910d45c0abf03c9a49387769ffa2ba9c611d9dd2f8"
+  },
+  "independentReview": {
+    "result": "no-actionable-finding",
+    "schemaProfileSidecarCases": 31,
+    "importerAndBunCliCases": 15,
+    "pythonPreCredentialCases": 2,
+    "all8MigrationPinsMatched": true,
+    "ownedBundleFromDifferentCwdPassed": true
+  },
+  "preservedHistory": {
+    "authorEvidenceSha256": "364b9cc7ccc4eb89ace0e21d68dcfe8b0d22dff09f751ce74ec0b355e02d0323",
+    "firstExpandedRun": {
+      "tests": 254,
+      "passed": 250,
+      "assertionOnlyFailures": 4
+    },
+    "correctedFourThenPassed": true,
+    "threeAdditionalCasesThenPassed": true,
+    "rootFinalFullRunPassed": true
+  },
+  "behavior": {
+    "unknownOrMixedSourceSchemaRefusedBeforePlanOutput": true,
+    "sourceSchemaSidecarRequiredBeforePlanExecution": true,
+    "sidecarShaBoundToOwnedPlanAndRecheckedBeforeCredentials": true,
+    "onlyExactSameStatementMainIndexReindexCallbackAllowed": true,
+    "format1ManifestAndHostedWireChanged": false,
+    "historicalReceiptlessPlansExecutable": false
+  },
+  "providerAuthenticated": false,
+  "globalQuiescenceEstablished": false,
+  "productionAcquisitionQualified": false,
+  "hostedProtectedCopyQualified": false,
+  "cloudOperations": 0,
+  "stagingServingRequests": 0,
+  "realProviderRequests": 0,
+  "limitations": [
+    "Exact public migration profiles are conservative; actual production schema has not been acquired or classified.",
+    "The hosted row protocol does not prove the original source schema; it relies on the reviewed local client evidence.",
+    "Existing plans lacking source-schema.json must be prepared again from sealed source inputs before execution."
+  ]
+}

@@ -1,0 +1,70 @@
+[
+  {
+    "id": "chat-evidence-federal-collection-en",
+    "language": "en",
+    "outcome": "answer",
+    "prompt": "Before a federal institution collects personal information, what link must the information have to the institution’s work under the Privacy Act? Give a short answer and cite the provision.",
+    "reviewFocus": "Check the direct link to a program or activity. Flag any extra condition.",
+    "sources": [
+      "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/P-21.xml"
+    ]
+  },
+  {
+    "id": "chat-evidence-federal-collection-fr",
+    "language": "fr",
+    "outcome": "answer",
+    "prompt": "Selon la Loi sur la protection des renseignements personnels, quel lien doit exister entre les renseignements personnels et le travail d’une institution fédérale avant leur collecte? Répondez brièvement et citez la disposition.",
+    "reviewFocus": "Vérifier le lien direct avec un programme ou une activité. Signaler toute condition ajoutée.",
+    "sources": [
+      "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/P-21.xml"
+    ]
+  },
+  {
+    "id": "chat-evidence-election-appointment-en",
+    "language": "en",
+    "outcome": "answer",
+    "prompt": "At a federal election, who appoints the person who runs the vote in each electoral district? Give the title named in the Canada Elections Act and cite the provision.",
+    "reviewFocus": "Check the appointing official’s title. Flag any unsupported appointment or removal claim.",
+    "sources": [
+      "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/eng/acts/E-2.01.xml"
+    ]
+  },
+  {
+    "id": "chat-evidence-election-appointment-fr",
+    "language": "fr",
+    "outcome": "answer",
+    "prompt": "Lors d’une élection fédérale, qui nomme la personne chargée de diriger le scrutin dans chaque circonscription? Donnez le titre prévu dans la Loi électorale du Canada et citez la disposition.",
+    "reviewFocus": "Vérifier le titre de la personne qui fait la nomination. Signaler toute affirmation sans appui sur la nomination ou la révocation.",
+    "sources": [
+      "https://github.com/justicecanada/laws-lois-xml/blob/0507465393c224c0491fc8c17c88340217acc656/fra/lois/E-2.01.xml"
+    ]
+  },
+  {
+    "id": "chat-evidence-territorial-school-councils-en",
+    "language": "en",
+    "outcome": "refusal",
+    "prompt": "Quote the provision in Yukon’s territorial Education Act that describes what school councils do. I need the wording of the territorial Act itself.",
+    "reviewFocus": "Check that the response declines to supply territorial text and makes no claim about its contents."
+  },
+  {
+    "id": "chat-evidence-territorial-school-councils-fr",
+    "language": "fr",
+    "outcome": "refusal",
+    "prompt": "Citez le passage de la loi territoriale du Yukon sur l’éducation qui décrit le rôle des conseils scolaires. Je cherche le texte de cette loi territoriale.",
+    "reviewFocus": "Vérifier que le refus est en français et qu’il ne contient aucune affirmation sur le contenu de la loi territoriale."
+  },
+  {
+    "id": "chat-evidence-ferry-timetable-en",
+    "language": "en",
+    "outcome": "refusal",
+    "prompt": "What time does the last Alderney ferry leave tonight according to the timetable published by Halifax Transit? I need the service timetable.",
+    "reviewFocus": "Check that the response declines to give an unsourced time and makes no claim about the service."
+  },
+  {
+    "id": "chat-evidence-ferry-timetable-fr",
+    "language": "fr",
+    "outcome": "refusal",
+    "prompt": "À quelle heure part le dernier traversier de la ligne Alderney ce soir selon l’horaire publié par Halifax Transit? Je cherche l’horaire du service.",
+    "reviewFocus": "Vérifier que le refus est en français et qu’il ne donne aucune heure ou affirmation sur le service."
+  }
+]

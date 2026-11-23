@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-23T23:30:30.080457+00:00",
+  "scope": "full-staging-protected-copy-client",
+  "files": [
+    {
+      "path": "scripts/lib/protected-state-d1-client.ts",
+      "bytes": 24741,
+      "sha256": "632faca801ac8946c28a680cb193c29ec6c804e9c54cd7e29bf49c289afdc6db"
+    },
+    {
+      "path": "scripts/lib/protected-state-d1.ts",
+      "bytes": 8376,
+      "sha256": "d6400eb163544e15c01e5ab477434747fa8fd2abed37c537b176b76c4f107dee"
+    },
+    {
+      "path": "scripts/protected-state-d1.ts",
+      "bytes": 3058,
+      "sha256": "0b998cc57640d1b2336ccbeeebd76cf26f4188e63cb70e5296684090ba1535ef"
+    },
+    {
+      "path": "test/protected-state-d1.test.ts",
+      "bytes": 77930,
+      "sha256": "a4a63b7b3075b2589b1e69cd6fdffb632b08f9c8b8c5c7b32379cb71d08d88ab"
+    }
+  ],
+  "authorCodeSetSha256": "58a655d8f227d904d69dd81b9cf2e1419092728b19ed9f9150010e9147326cd5",
+  "checks": {
+    "focusedTests": 171,
+    "testFiles": 3,
+    "d1ClientTests": 119,
+    "copierTests": 35,
+    "formatTests": 17,
+    "compilerProjects": [
+      "worker",
+      "bun",
+      "tooling"
+    ],
+    "independentFullFlowTests": 39,
+    "independentReview": "clear",
+    "realLocalWorkerdD1R2": true,
+    "outboundForbidden": true,
+    "independentFirstRunBlockedBySandboxLoopback": true,
+    "localLoopbackRerunPassed": true
+  },
+  "behavior": {
+    "initialModePreserved": true,
+    "fullModeFlag": "--full-phases",
+    "distinctPlanSlice": "full-copy-v1",
+    "phases": [
+      "checking-corpus",
+      "checking-text",
+      "loading",
+      "checking-protected",
+      "checking-corpus-final",
+      "complete"
+    ],
+    "exactEightRowTextBytePrefixes": true,
+    "exactVersionAndPageChains": true,
+    "finalCompactCursorReset": true,
+    "sameTransportAndJournalEngine": true,
+    "lostReplyExactCommittedStatusOnly": true,
+    "pendingCleanupBlocksAutomaticWrite": true
+  },
+  "limits": {
+    "maxRequestsPerWindow": 64,
+    "wallMs": 300000,
+    "requestMs": 15000,
+    "responseBytes": 16384,
+    "concurrency": 1,
+    "automaticRetries": 0,
+    "automaticWindowContinuation": false
+  },
+  "remoteRequests": 0,
+  "realCredentialsRead": false,
+  "hostedCopyVerified": false,
+  "consistentProductionAcquisitionVerified": false,
+  "productionAuthorized": false,
+  "ownedOperatorStillPending": true,
+  "limitations": [
+    "Local filesystem operations are not preemptible; a separate owned operator remains required.",
+    "Status and bracketing checks do not establish a transactional production backup cohort."
+  ]
+}

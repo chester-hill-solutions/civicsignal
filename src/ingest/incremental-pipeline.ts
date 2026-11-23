@@ -1,3 +1,4 @@
+import { SNAPSHOT_PARSER_VERSION } from './snapshot-format';
 /**
  * The cycle, incrementally.
  *
@@ -43,36 +44,22 @@ import {
   type UpsertRow,
 } from './pipeline';
 import { fingerprint, type PipelineRun } from './reconcile';
-import type { CorpusSource } from './source';
+import type { ChangedFile, CorpusRevision, CorpusSource } from './source';
 
 /** How many rows are embedded at a time. */
 const EMBED_BATCH = 32;
 
-/**
- * Run `work` over `items`, a few at a time.
- *
- * The changed files come from GitHub, and one at a time is two round trips per
- * file — ninety-six for a commit that moved forty-eight files, which is three
- * and a half minutes of waiting for something that takes half a minute when
- * eight are in flight at once. The limit is what keeps the cycle from opening
- * six hundred connections at once and being refused by the other end.
- */
-async function mapWithLimit<T, R>(
-  items: readonly T[],
-  limit: number,
-  work: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    for (;;) {
-      const index = next++;
-      if (index >= items.length) return;
-      results[index] = await work(items[index]!);
-    }
-  });
-  await Promise.all(workers);
-  return results;
+/** Release each file's XML before fetching the next. Yield in source order so
+ * repeated provision IDs follow the same precedence as the file comparison. */
+async function* changedRows(
+  source: CorpusSource, files: ChangedFile[], revision: CorpusRevision, corpusId: string, previous: boolean,
+): AsyncGenerator<PipelineRow> {
+  for (const file of files) {
+    if (file.status === (previous ? 'added' : 'removed')) continue;
+    const path = previous ? file.previousPath ?? file.path : file.path;
+    const content = await source.fileAt(path, revision.commit);
+    if (content !== null) yield* rowsForFile({ path, content, date: revision.date, corpusId });
+  }
 }
 
 /** The change feed's entry, built from a row. */
@@ -125,6 +112,7 @@ export async function runIncrementalPipeline(options: {
   const log = options.logger ?? (() => {});
   const { corpusId, previous, next, source, store, encoder } = options;
 
+  await store.recoverPendingWrites();
   const change = await source.changedFiles(previous.commit, next.commit);
   if (change.truncated) {
     throw new Error(
@@ -135,134 +123,70 @@ export async function runIncrementalPipeline(options: {
   }
   log(`${corpusId}: ${change.files.length} file(s) changed between ${previous.commit.slice(0, 9)} and ${next.commit.slice(0, 9)}`);
 
-  // What the changed files held before, and what they hold now.
-  //
-  // The files are fetched **concurrently**. One at a time is two round trips
-  // per file — ninety-six of them for a commit that moved forty-eight files,
-  // which is three and a half minutes of waiting for something that takes
-  // half a minute when eight are in flight at once.
-  const before = new Map<string, PipelineRow>();
-  const after = new Map<string, PipelineRow>();
-  const oldContents = await mapWithLimit(change.files, 8, (file) =>
-    file.status === 'added'
-      ? Promise.resolve(null)
-      : source.fileAt(file.previousPath ?? file.path, previous.commit),
-  );
-  const newContents = await mapWithLimit(change.files, 8, (file) =>
-    file.status === 'removed'
-      ? Promise.resolve(null)
-      : source.fileAt(file.path, next.commit),
-  );
-  for (const [index, file] of change.files.entries()) {
-    const oldPath = file.previousPath ?? file.path;
-    for (const row of oldContents[index] === null
-      ? []
-      : rowsForFile({
-          path: oldPath,
-          content: oldContents[index]!,
-          date: previous.date,
-          corpusId,
-        })) {
-      before.set(row.id, row);
-    }
-    for (const row of newContents[index] === null
-      ? []
-      : rowsForFile({
-          path: file.path,
-          content: newContents[index]!,
-          date: next.date,
-          corpusId,
-        })) {
-      after.set(row.id, row);
-    }
+  const before = new Map<string, string>();
+  for await (const row of changedRows(source, change.files, previous, corpusId, true)) {
+    before.set(row.id, fingerprint(row));
+  }
+  // Keep unchanged IDs so a provision that moved between files remains visible
+  // to the removal check. Only added or changed rows retain their text.
+  const after = new Map<string, UpsertRow | null>();
+  for await (const row of changedRows(source, change.files, next, corpusId, false)) {
+    const hash = fingerprint(row);
+    after.set(row.id, before.get(row.id) === hash ? null : { row, hash, embedding: null });
   }
 
   let added = 0;
   let changed = 0;
   let unchanged = 0;
-  let embedded = 0;
   const feed: ChangeFeedEntry[] = [];
   const toWrite: UpsertRow[] = [];
-  const removedIds: string[] = [];
-
-  // The removals: a provision the old copy had and the new copy does not.
-  //
-  // The check is against **every** new row, not just this file's — a
-  // provision that moved from one file to another is not a removal.
-  for (const [id, row] of before) {
-    if (after.has(id)) continue;
-    removedIds.push(id);
-    feed.push({
-      corpusId,
-      change: 'removed',
-      rowId: row.id,
-      instrument: row.instrument,
-      citation: row.citation,
-      section: row.section,
-      heading: row.heading,
-      status: row.status,
-      summary: null,
-      sourceUrl: row.source_url,
-      occurredAt: next.date,
-    });
-  }
-
-  for (const [id, row] of after) {
-    const old = before.get(id);
-    if (old && fingerprint(old) === fingerprint(row)) {
+  const removedIds = [...before.keys()].filter(id => !after.has(id));
+  for (const [id, entry] of after) {
+    if (!entry) {
       unchanged++;
       continue;
     }
-    if (old) {
-      changed++;
-      feed.push(feedEntry(corpusId, 'changed', row, next.date));
-    } else {
-      added++;
-      feed.push(feedEntry(corpusId, 'added', row, next.date));
-    }
-    toWrite.push({ row, hash: fingerprint(row), embedding: null });
+    const exists = before.has(id);
+    if (exists) changed++;
+    else added++;
+    feed.push(feedEntry(corpusId, exists ? 'changed' : 'added', entry.row, next.date));
+    toWrite.push(entry);
   }
 
-  // The embeddings, for the rows that changed and are worth embedding.
-  const indexable = toWrite.filter((entry) => entry.row.status !== 'placeholder');
-  const embeddings = new Map<string, number[]>();
+  const indexable = toWrite.filter(entry => entry.row.status !== 'placeholder');
   for (let i = 0; i < indexable.length; i += EMBED_BATCH) {
     const chunk = indexable.slice(i, i + EMBED_BATCH);
-    const vectors = await encoder.embed(chunk.map((entry) => embeddableText(entry.row)));
+    const vectors = await encoder.embed(chunk.map(entry => embeddableText(entry.row)));
     if (vectors.length !== chunk.length) {
       throw new Error(
         `the encoder returned ${vectors.length} vectors for ${chunk.length} documents`,
       );
     }
-    chunk.forEach((entry, index) => embeddings.set(entry.row.id, vectors[index]!));
-  }
-  embedded = indexable.length;
-  for (const entry of toWrite) {
-    entry.embedding = embeddings.get(entry.row.id) ?? null;
+    chunk.forEach((entry, index) => { entry.embedding = vectors[index]!; });
   }
 
-  // The rows first, then the removals: a row that is written and then
-  // removed would be a provision the corpus holds and the store does not.
-  if (toWrite.length > 0) await store.upsert(toWrite);
-  if (removedIds.length > 0) await store.remove(removedIds);
-
-  await store.recordChanges(feed);
+  await store.applyBatch({
+    corpusId, revision: next.commit, occurredAt: next.date,
+    upserts: toWrite, removedIds,
+    changes: feed,
+  });
   log(
     `${corpusId}: ${added} added, ${changed} changed, ${removedIds.length} removed, ${unchanged} unchanged`,
   );
 
   const run: PipelineRun = {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: next.commit,
     commitDate: next.date,
     ranAt: options.now.toISOString(),
     counts: { added, changed, removed: removedIds.length, unchanged },
-    embedded,
+    embedded: indexable.length,
     durationMs: Date.now() - started,
     ok: true,
   };
-  await store.recordRun(run);
-  await store.setState({
+  await store.finishRun(run, {
+    parserVersion: SNAPSHOT_PARSER_VERSION,
     corpusId,
     commit: next.commit,
     commitDate: next.date,

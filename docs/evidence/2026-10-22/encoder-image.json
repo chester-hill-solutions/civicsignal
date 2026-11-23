@@ -1,0 +1,22 @@
+{
+  "modelRevision": "9be6e8b90982095dc05c2bd162e4b954ee4dbac7",
+  "artifactSha256": "2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb",
+  "artifactBytes": 164626432,
+  "image": "civicsignal-encoder:v1-candidate",
+  "localImageId": "sha256:c8b7bbb3f91f5b36bd3edd38ce0711ca90220b9b5b156457a8c60e865116952c",
+  "platform": "linux/amd64",
+  "networkDisabledSmoke": [
+    "artifact digest",
+    "health 200",
+    "missing authentication 401",
+    "invalid JSON 400",
+    "empty batch 200"
+  ],
+  "actualInferenceMeasured": false,
+  "remotePublication": false,
+  "inferenceAttempt": {
+    "outcome": "Host capability blocked",
+    "message": "Native runtime requires AVX; amd64 emulation on this ARM host reported SIGILL.",
+    "liveCompatibleHostInferenceRequired": true
+  }
+}

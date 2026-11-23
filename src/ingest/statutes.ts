@@ -133,9 +133,21 @@ export interface ParseOptions {
  * `citation` is the last path segment of the citation URL.
  */
 export function parseStatuteXml(xml: string, options: ParseOptions = {}): ParsedStatute | null {
+  // The span scan already supplies every provision. Building a second DOM for
+  // the entire instrument consumed >200 MB for the largest source file, though
+  // only root attributes and Identification were ever read from that DOM.
+  const spans = scanElements(xml);
+  const rootSpan = spans.find((span) => span.path.length === 0 && (span.tag === 'Statute' || span.tag === 'Regulation'));
+  if (!rootSpan) return null;
+  const identificationSpan = childrenOf(spans, rootSpan).find((span) => span.tag === 'Identification');
+  if (!identificationSpan) return null;
+  const opening = xml.slice(rootSpan.openStart, rootSpan.openEnd);
+  const rootTag = /^<([\w:.-]+)/.exec(opening)?.[1];
+  if (!rootTag) return null;
+  const header = opening + xml.slice(identificationSpan.openStart, identificationSpan.end) + `</${rootTag}>`;
   let doc: unknown;
   try {
-    doc = parser.parse(xml);
+    doc = parser.parse(header);
   } catch {
     return null;
   }
@@ -153,7 +165,6 @@ export function parseStatuteXml(xml: string, options: ParseOptions = {}): Parsed
 
   const inForce = statute['@in-force'] !== 'no';
 
-  const spans = scanElements(xml);
   const units: ParsedUnit[] = [];
 
   // Schedules first, so a provision inside one is claimed by the schedule.
@@ -169,6 +180,7 @@ export function parseStatuteXml(xml: string, options: ParseOptions = {}): Parsed
   }
 
   let provisionOrdinal = 0;
+  let enactingOrdinal = 0;
   for (const span of spans) {
     if (span.tag === 'Section') {
       if (!isLawSection(span)) continue;
@@ -194,10 +206,14 @@ export function parseStatuteXml(xml: string, options: ParseOptions = {}): Parsed
     // A preamble's clauses are numbered "1", "2", "3" — the same labels the body
     // sections use. Prefixed, they cannot be confused with a section.
     const inPreamble = span.path[span.path.length - 1] === 'Preamble';
+    const inEnacts = span.path[span.path.length - 1] === 'Enacts';
+    if (inEnacts) enactingOrdinal++;
     units.push({
       label: inPreamble
         ? `Preamble ${label?.text ?? provisionOrdinal}`
-        : (label?.text ?? String(provisionOrdinal)),
+        : inEnacts
+          ? `Enacting clause ${label?.text ?? enactingOrdinal}`
+          : (label?.text ?? String(provisionOrdinal)),
       marginalNote: marginalNoteOf(xml, span, spans),
       text,
       kind: 'provision',
@@ -235,7 +251,12 @@ interface Span {
  */
 function scanElements(xml: string): Span[] {
   const spans: Span[] = [];
-  const stack: { tag: string; path: string[]; openStart: number; openEnd: number }[] = [];
+  // Mixed-content text is sliced from the source; only structural/citation and
+  // editorial-removal spans are needed. Keeping every Text/Paragraph/XRef span
+  // and a full ancestry array for each exceeded the Worker's memory budget.
+  const retained = new Set(['Statute', 'Regulation', 'Identification', 'Section', 'Provision', 'Schedule',
+    'Label', 'MarginalNote', 'HistoricalNote', 'Footnote', 'FootnoteRef', 'ScheduleFormHeading', 'TitleText']);
+  const stack: { tag: string; path?: string[]; openStart: number; openEnd: number }[] = [];
   const tagRe = /<(\/?)([A-Za-z_][\w:.-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?)(\/?)>/g;
   let match: RegExpExecArray | null;
   while ((match = tagRe.exec(xml)) !== null) {
@@ -249,21 +270,20 @@ function scanElements(xml: string): Span[] {
         if (stack[i]!.tag !== tag) continue;
         const open = stack[i]!;
         stack.length = i;
-        spans.push({
-          tag: open.tag,
-          path: open.path,
-          contentStart: open.openEnd,
-          end: offset + full.length,
-          openStart: open.openStart,
-          openEnd: open.openEnd,
-        });
+        if (open.path) {
+          spans.push({ tag: open.tag, path: open.path, contentStart: open.openEnd,
+            end: offset + full.length, openStart: open.openStart, openEnd: open.openEnd });
+        }
         break;
       }
       continue;
     }
     if (selfClosing === '/') continue;
 
-    const path = stack.map((frame) => frame.tag);
+    // Every direct child is a schedule item, including shapes unknown to this
+    // parser. Retain it so schedule text/chunk boundaries remain unchanged.
+    const path = retained.has(tag) || stack.at(-1)?.tag === 'Schedule'
+      ? stack.map((frame) => frame.tag) : undefined;
     stack.push({ tag, path, openStart: offset, openEnd: offset + full.length });
   }
   return spans;

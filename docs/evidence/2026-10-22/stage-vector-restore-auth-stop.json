@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "observedAt": "2026-10-23T03:10:06.172Z",
+  "stoppedAt": "2026-10-23T03:08:26.525Z",
+  "reason": "HTTP401during readback after existing bounded retries; no next invocation started",
+  "target": {
+    "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "index": "civicsignal-v1-stage-statutes-20261022",
+    "createdOn": "2026-10-23T02:06:42.218162Z"
+  },
+  "checkpoint": {
+    "path": "dist/release/staging/legacy-vector-restore-checkpoint-auth-20261023.json",
+    "sha256": "3483489b1f7b32051270ad90d67d4081f41b8e8907d3a0b1c074688e780c882c",
+    "bytes": 25641,
+    "identity": "265590b800471325614871da6ac4f813fb4b4ab0a1ebfa40077a3530efe20fda",
+    "nextPosition": 69200,
+    "verifiedVectors": 57718,
+    "pendingBatches": 100,
+    "pendingFrom": 69200,
+    "pendingThrough": 79200,
+    "acknowledgedPendingBatches": 100
+  },
+  "helperSha256": "228007585f4d8a6ef3987a174b2e49c2eec2c99aa21695f136420c2e850f01a9",
+  "minimumAvailableBytes": 2638884864,
+  "resets": 0,
+  "deletes": 0,
+  "documentEmbeddings": 0,
+  "servingCalls": 0
+}

@@ -1,0 +1,51 @@
+{
+  "format": 1,
+  "scope": "One explicitly authorized finite read-only stage-account whoami; no recurring loop",
+  "timerPid": 14479,
+  "execSession": 43671,
+  "wranglerChildPid": 30768,
+  "account": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "config": "dist/release/staging/resources.json",
+  "configSha256": "6e2348162be51a0eec810b54948fdf37dcd5beaee8301b861b27bdc94231a62f",
+  "command": "CI=true WRANGLER_SEND_METRICS=false CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a node node_modules/wrangler/bin/wrangler.js whoami --account ad5ec479b9a421faa2ed06c3d1c2b23a --config dist/release/staging/resources.json",
+  "wranglerVersion": "4.151.3",
+  "wranglerBinSha256": "780661a508810f3b65786895b1ca9aacbc4f55d329ae6b8c1e49ec8433569f77",
+  "wranglerImplementationSha256": "85a0fd68160392c7b9233a2a3406a94d61ab2a84d6dc192ebcb758774a76ee61",
+  "privateLogDirectory": "/private/tmp/civicsignal-stage-oauth-070844-20261023",
+  "processTimeoutMs": 30000,
+  "maximumWhoamiProcesses": 1,
+  "check": {
+    "phase": "checked",
+    "scheduledAt": "2026-10-23T07:08:44Z",
+    "observedAt": "2026-10-23T07:08:46.447328Z",
+    "exitCode": 0,
+    "timedOut": false,
+    "approvedAccountListed": true,
+    "oauthReported": true,
+    "unknownArgument": false,
+    "beforeExpiry": "2026-10-23T07:08:43.062Z",
+    "afterExpiry": "2026-10-23T08:08:44.233Z",
+    "expiryAdvanced": true,
+    "forcedLogin": false,
+    "manualExpiryEdit": false,
+    "productionProbe": false,
+    "credentialValuesPrinted": false,
+    "furtherSidecarsArmed": 0
+  },
+  "rawProof": {
+    "path": "dist/release/staging/vector-oauth-check-070844-20261023.jsonl",
+    "sha256": "1bda1fa77225671e1d57a55154e255852ca9a5e3e24a519c81637dee6a6c860d"
+  },
+  "runner": {
+    "path": "/private/tmp/civicsignal-stage-oauth-070844-20261023.py",
+    "sha256": "161ca11fb674cb38380d3101472b925dac3cac13281fdab3b7f95cfbb668f60c"
+  },
+  "networkBeforeScheduledTime": false,
+  "furtherSidecarsArmed": 0,
+  "privatePipelineSecretRead": false,
+  "encoderSecretRead": false,
+  "servingCalls": 0,
+  "documentEmbeddings": 0,
+  "indexWrites": 0,
+  "cloudResourceWrites": 0
+}

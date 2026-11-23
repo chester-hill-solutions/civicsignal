@@ -1,0 +1,48 @@
+{
+  "format": 1,
+  "at": "2026-10-24T00:57:12.901759+00:00",
+  "preparedOnly": true,
+  "sourcePins": {
+    "scripts/prepare-protected-state-d1-fixture.ts": {
+      "bytes": 12194,
+      "sha256": "30b378467c7f7175fe7667c6ac0393bac113187afb50a3007061a0381751f0bb"
+    },
+    "test/protected-state-d1-fixture.test.ts": {
+      "bytes": 13177,
+      "sha256": "27f516592f652b3384df416ffac57c06088e1a88695f4f23a1d8d8a30be6c01c"
+    }
+  },
+  "focusedTests": 12,
+  "includedInFullGate": {
+    "tests": 1276,
+    "files": 88,
+    "receipt": "release-local-gates-20261024.json"
+  },
+  "independentReviewClear": true,
+  "actualLocalWorkerd": true,
+  "syntheticCorpusRows": 18,
+  "protectedTables": 8,
+  "actualFullWindowRequests": 26,
+  "postRequests": 25,
+  "statusRequests": 1,
+  "activeKeys": 1,
+  "revokedKeys": 1,
+  "unicodePreserved": true,
+  "originalSequenceHighwaters": {
+    "corpus_runs": 120,
+    "corpus_changes": 1000
+  },
+  "survivingMaximumIds": {
+    "corpus_runs": 2,
+    "corpus_changes": 10
+  },
+  "credentialBytesReadByPreparer": 0,
+  "targetCredentialAliasZeroReadRegressions": 2,
+  "hostedResourcesCreated": false,
+  "hostedCopyExecuted": false,
+  "productionIdentityMigrationProved": false,
+  "limits": [
+    "The small fixture exercises transport and preservation in actual local workerd. It is not an authentic production backup or a full hosted corpus/protected copy.",
+    "Actual returned new isolated resource IDs, independently verified emptiness, separate deployment/window reviews and consistent production acquisition remain required."
+  ]
+}

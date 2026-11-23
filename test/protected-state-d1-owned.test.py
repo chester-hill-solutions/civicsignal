@@ -1,0 +1,271 @@
+"""Local-only operator/capture tests. All credentials and source files are synthetic."""
+from pathlib import Path
+import datetime,errno,hashlib,json,os,py_compile,shutil,signal,subprocess,sys,tempfile,time,types,unittest
+from unittest.mock import patch
+ROOT=Path(__file__).resolve().parent.parent
+def source_module(name,path):
+ module=types.ModuleType(name);module.__file__=str(path)
+ exec(compile(path.read_bytes(),str(path),'exec',dont_inherit=True,optimize=0),module.__dict__)
+ return module
+op=source_module('owned_under_test',ROOT/'scripts/protected-state-d1-owned.py')
+cap=source_module('capture_under_test',ROOT/'scripts/lib/capture_owned.py')
+NODE=shutil.which('node')
+TEMP_ROOT=str(Path(tempfile.gettempdir()).resolve())
+TOKEN='SYNTHETIC-RESTORE-TOKEN-'*3
+
+def write(path,value):
+ with path.open('x') as f:f.write(json.dumps(value)+'\n')
+ os.chmod(path,0o600)
+def expiry():return (datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(hours=1)).isoformat()
+def prepared(root):
+ root.chmod(0o700)
+ for name in ['protected','cutover']: (root/name).mkdir(mode=0o700)
+ target={'format':1,'stageOnly':True,'stageId':'stage-owned-fixture','accountId':'a'*32,'d1Id':'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','r2Bucket':'owned-stage-fixture','adminUrl':'http://127.0.0.1:1'}
+ write(root/'target.json',target);write(root/'token.json',{'RESTORE_TOKEN':TOKEN});write(root/'protected/manifest.json',{'pagesSha256':'a'*64});write(root/'protected/source-schema.json',{'syntheticOwnerHashFixture':True})
+ admission={'targetSha256':op.digest(json.dumps(target,separators=(',',':')).encode()),'compactPlanSha256':'b'*64,'compactPlan':{'pagesSha256':'c'*64}};write(root/'admission.json',admission)
+ c={'format':1,'mode':'full','window':1,'directory':str(root/'protected'),'manifestSha256':op.sha_file(root/'protected/manifest.json'),'admissionPath':str(root/'admission.json'),'admissionSha256':'e'*64,'admissionFileSha256':op.sha_file(root/'admission.json'),'cutoverBundle':str(root/'cutover'),'targetFile':str(root/'target.json'),'journalDirectory':str(root/'journal'),'credentialFile':str(root/'token.json')}
+ c['sourceSchemaSha256']=op.sha_file(root/'protected/source-schema.json');write(root/'inputs.json',c);return c
+
+class OperatorTests(unittest.TestCase):
+ @classmethod
+ def setUpClass(cls):
+  cls.cache=Path(tempfile.mkdtemp(prefix='protected-owned-prepared-',dir=TEMP_ROOT));prepared(cls.cache)
+  r=cap.capture_owned([NODE,str(ROOT/'scripts/build-protected-state-d1-owned.mjs'),'--inputs',str(cls.cache/'inputs.json'),'--bun',str(Path(shutil.which('bun')).resolve())],ROOT,{'PATH':'/usr/bin:/bin','HOME':str(cls.cache)},cls.cache/'build.log',timeout=30,max_bytes=2097152)
+  if not op.successful(r):raise AssertionError('Actual fixed builder failed: '+(cls.cache/'build.log').read_text())
+  cls.base=op.private_json(cls.cache/'journal.owned/window-000001.review-template.json');cls.bundle=(cls.cache/'journal.owned/protected-state-d1.mjs').read_bytes();cls.manifest=(cls.cache/'journal.owned/bundle-manifest.json').read_bytes()
+ @classmethod
+ def tearDownClass(cls):shutil.rmtree(cls.cache)
+ def setUp(self):
+  self.root=Path(tempfile.mkdtemp(prefix='protected-owned-unit-',dir=TEMP_ROOT));self.c=prepared(self.root);self.registry=self.root/'journal.owned';self.registry.mkdir(mode=0o700);(self.registry/'home').mkdir(mode=0o700)
+  for name,b in [('protected-state-d1.mjs',self.bundle),('bundle-manifest.json',self.manifest)]: (self.registry/name).write_bytes(b);(self.registry/name).chmod(0o600)
+  self.r=json.loads(json.dumps(self.base));self.r.update(authority='trusted-parent-review',executeOneWindow=True,validUntil=expiry());self.r['inputs']={k:self.c[k] for k in ['directory','manifestSha256','sourceSchemaSha256','admissionPath','admissionSha256','admissionFileSha256','cutoverBundle','targetFile','journalDirectory']};self.r['inputs']['targetFileSha256']=op.sha_file(self.root/'target.json');self.r['credential']=op.credential_metadata(self.root/'token.json');self.review=self.registry/'window-000001.reviewed.json';write(self.review,self.r)
+  self.calls=[];self.selected=0
+ def tearDown(self):shutil.rmtree(self.root)
+ def select(self,r):
+  self.selected+=1;self.assertTrue((self.registry/'window-000001/execution.intent.json').exists());return op.credential(r)
+ def capture(self,argv,cwd,env,log,timeout,max_bytes):
+  execution='--execute-window' in argv;version='--version' in argv;self.calls.append('runtime' if version else 'execution' if execution else 'inspection');self.assertEqual(argv if version else argv[:3],[self.r['runtime']['path'],'--no-env-file','--version'] if version else [self.r['runtime']['path'],'--no-env-file',str(self.registry/'protected-state-d1.mjs')]);self.assertEqual(cwd,ROOT);self.assertEqual(timeout,5 if version else 330 if execution else 300);self.assertEqual(max_bytes,4096 if version else 65536 if not execution else 2097152-(self.registry/'window-000001/runtime.log').stat().st_size-(self.registry/'window-000001/inspection.log').stat().st_size);self.assertEqual(set(env),{'HOME','PATH','LANG','TZ'}|({'RESTORE_TOKEN'} if execution else set()))
+  if version:
+   with log.open('x') as stream:stream.write('1.3.5\n')
+   log.chmod(0o600);return {'exitCode':0,'timedOut':False,'logBoundExceeded':False,'localFailure':False,'ownedProcessSettled':True,'childPid':123}
+  if execution:
+   self.assertEqual(env['RESTORE_TOKEN'],TOKEN);j=self.root/'journal';j.mkdir(mode=0o700);write(j/'plan.json',{'format':1,'planSha256':self.r['planSha256']});w=j/'window-000001';w.mkdir(mode=0o700)
+   value={'format':1,'planSha256':self.r['planSha256'],'window':1,'outcome':'bounded','attempts':1,'limits':self.r['limits']};write(w/'result.json',value);write(w/'accepted.json',{'format':1,'resultSha256':op.sha_file(w/'result.json')})
+  else:value={'format':1,'execute':False,'planSha256':self.r['planSha256'],'pins':{'targetSha256':self.r['target'] and op.digest(json.dumps(self.r['target'],separators=(',',':')).encode()),'slice':'full-copy-v1'}}
+  write(log,value);return {'exitCode':0,'timedOut':False,'logBoundExceeded':False,'localFailure':False,'ownedProcessSettled':True,'childPid':123}
+ def test_real_builder_pins_physical_graph_and_preserves_private_root(self):
+  m=json.loads(self.manifest);self.assertEqual(m['entry'],'scripts/protected-state-d1.ts');self.assertEqual(m['dirnameOverride']['uses'],[{'path':'scripts/lib/protected-state.ts','count':1}]);self.assertIn('node_modules/esbuild/package.json',m['aliases']);self.assertEqual(op.digest(self.bundle),m['bundlePin']['sha256']);self.assertIn(str(ROOT/'scripts/lib').encode(),self.bundle)
+ def test_only_one_explicit_window_seals_then_reads_key(self):
+  with patch.dict(os.environ,{'PATH':'/hostile/no-bun','BUN_OPTIONS':'--preload /never-run'}):result=op.execute(self.review,self.capture,self.select)
+  self.assertTrue(result['passed']);self.assertEqual(self.calls,['runtime','inspection','execution']);self.assertEqual(self.selected,1)
+  raw=''.join(p.read_text() for p in (self.registry/'window-000001').iterdir() if p.is_file());self.assertNotIn(TOKEN,raw);self.assertTrue((self.registry/'window-000001/accepted.json').exists())
+  with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+  self.assertEqual(self.selected,1)
+ def test_default_capture_uses_checked_source_loader(self):
+  with patch.object(op,'load_capture',return_value=self.capture) as loader:
+   result=op.execute(self.review,select_credential=self.select)
+  self.assertTrue(result['passed']);loader.assert_called_once_with();self.assertEqual(self.calls,['runtime','inspection','execution']);self.assertEqual(self.selected,1)
+ def test_inspection_failure_never_selects_key_or_creates_execution_intent(self):
+  def capture(*args,**kwargs):r=self.capture(*args,**kwargs);r['exitCode']=1 if self.calls[-1]=='inspection' else 0;return r
+  self.assertFalse(op.execute(self.review,capture,self.select)['passed']);self.assertEqual(self.selected,0);self.assertEqual(self.calls,['runtime','inspection']);self.assertFalse((self.registry/'window-000001/execution.intent.json').exists())
+ def test_review_drift_after_inspection_preserves_lock_before_key(self):
+  def capture(*args,**kwargs):
+   r=self.capture(*args,**kwargs)
+   if self.calls[-1]=='inspection':self.review.write_text(json.dumps({**self.r,'validUntil':expiry()+'x'}))
+   return r
+  self.assertFalse(op.execute(self.review,capture,self.select)['passed']);self.assertEqual(self.selected,0);self.assertTrue((self.registry/'window-000001/started.json').exists())
+ def test_source_manifest_drift_after_inspection_precedes_key(self):
+  def capture(*args,**kwargs):
+   r=self.capture(*args,**kwargs)
+   if self.calls[-1]=='inspection':(self.root/'protected/manifest.json').write_text('PRIVATE changed source')
+   return r
+  self.assertFalse(op.execute(self.review,capture,self.select)['passed']);self.assertEqual(self.selected,0);self.assertEqual(self.calls,['runtime','inspection'])
+ def test_source_schema_drift_after_inspection_precedes_key(self):
+  def capture(*args,**kwargs):
+   r=self.capture(*args,**kwargs)
+   if self.calls[-1]=='inspection':(self.root/'protected/source-schema.json').write_text('changed schema evidence')
+   return r
+  self.assertFalse(op.execute(self.review,capture,self.select)['passed']);self.assertEqual(self.selected,0);self.assertEqual(self.calls,['runtime','inspection'])
+ def test_missing_source_schema_is_refused_before_attempt_or_key(self):
+  (self.root/'protected/source-schema.json').unlink()
+  with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+  self.assertEqual(self.selected,0);self.assertEqual(self.calls,[]);self.assertFalse((self.registry/'window-000001').exists())
+ def test_other_runtime_or_excess_limits_never_spawn(self):
+  self.r['runtime']['path']='/bin/sh';self.review.write_text(json.dumps(self.r))
+  with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+  self.assertEqual(self.calls,[]);self.assertEqual(self.selected,0)
+ def test_complete_prior_owned_receipts_are_required_even_with_new_review(self):
+  self.assertTrue(op.execute(self.review,self.capture,self.select)['passed']);r={**self.r,'window':2};op.prior_windows(r,self.registry)
+  (self.root/'journal/window-000001/result.json').write_text('{}')
+  with self.assertRaises(ValueError):op.prior_windows(r,self.registry)
+ def test_bundle_drift_is_refused_before_inspection_or_key(self):
+  (self.registry/'protected-state-d1.mjs').write_text('PRIVATE changed')
+  with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+  self.assertEqual(self.selected,0);self.assertEqual(self.calls,[])
+ def test_pending_owned_group_has_no_accepted_marker_or_future_window(self):
+  def capture(*args,**kwargs):r=self.capture(*args,**kwargs);r.update(exitCode=1,ownedProcessSettled=False);return r
+  self.assertFalse(op.execute(self.review,capture,self.select)['passed']);self.assertFalse((self.registry/'window-000001/accepted.json').exists());self.assertEqual(self.selected,0)
+  r={**self.r,'window':2};review=self.registry/'window-000002.reviewed.json';write(review,r)
+  with self.assertRaises(ValueError):op.execute(review,self.capture,self.select)
+  self.assertEqual(self.selected,0)
+ def test_invalid_stage_target_is_refused_before_inspection(self):
+  self.r['target']['d1Id']='8056b1a0-f858-4f89-a332-91f7f350eb7b';self.review.write_text(json.dumps(self.r))
+  with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+  self.assertEqual(self.selected,0);self.assertEqual(self.calls,[])
+ def test_global_config_checks_are_metadata_only(self):
+  with patch.object(op.Path,'glob',return_value=[ROOT/'.env.fake']):
+   with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+  self.assertEqual(self.selected,0)
+ def test_private_key_metadata_and_payload_are_exact(self):
+  self.assertEqual(op.credential(self.r),TOKEN);(self.root/'token.json').chmod(0o644)
+  with self.assertRaises(ValueError):op.credential(self.r)
+ def test_partial_result_persistence_failure_blocks_reentry(self):
+  original=op.exclusive
+  def fail(path,value):
+   if path.name=='result.json':
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    try:os.write(fd,b'{"partial":')
+    finally:os.close(fd)
+    raise OSError('PRIVATE persistence failure')
+   return original(path,value)
+  with patch.object(op,'exclusive',side_effect=fail):result=op.execute(self.review,self.capture,self.select)
+  self.assertFalse(result['passed']);self.assertTrue(result['receiptPersistenceUncertain']);self.assertFalse((self.registry/'window-000001/accepted.json').exists());self.assertEqual((self.registry/'window-000001/result.json').read_bytes(),b'{"partial":')
+  with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+ def test_expired_review_does_not_create_attempt(self):
+  self.r['validUntil']=datetime.datetime.now(datetime.timezone.utc).isoformat();self.review.write_text(json.dumps(self.r))
+  with self.assertRaises(ValueError):op.execute(self.review,self.capture,self.select)
+  self.assertFalse((self.registry/'window-000001').exists());self.assertEqual(self.selected,0)
+ def test_acceptance_write_then_failure_permanently_fences_next_window(self):
+  original=op.exclusive
+  def fail(path,value):
+   result=original(path,value)
+   if path.name=='accepted.json' and path.parent.parent==self.registry:raise OSError('PRIVATE after marker write')
+   return result
+  with patch.object(op,'exclusive',side_effect=fail):result=op.execute(self.review,self.capture,self.select)
+  own=self.registry/'window-000001';self.assertFalse(result['passed']);self.assertTrue(result['receiptPersistenceUncertain']);self.assertTrue((own/'accepted.json').exists());self.assertTrue((own/'receipt-uncertain.json').exists())
+  self.assertTrue(op.private_json(own/'result.json')['passed'])
+  with self.assertRaisesRegex(ValueError,'PROTECTED_OWNED_PRIOR_UNCERTAINTY'):op.prior_windows({**self.r,'window':2},self.registry)
+  # Admission depends on fence presence, including an incomplete local write.
+  (own/'receipt-uncertain.json').write_bytes(b'')
+  with self.assertRaisesRegex(ValueError,'PROTECTED_OWNED_PRIOR_UNCERTAINTY'):op.prior_windows({**self.r,'window':2},self.registry)
+ def test_acceptance_parent_fsync_failure_leaves_failclosed_fence(self):
+  original=op.sync_dir;own=self.registry/'window-000001'
+  def fail(path):
+   if path==own and (own/'accepted.json').exists():raise OSError('PRIVATE parent fsync failure')
+   return original(path)
+  with patch.object(op,'sync_dir',side_effect=fail):result=op.execute(self.review,self.capture,self.select)
+  self.assertFalse(result['passed']);self.assertTrue(result['receiptPersistenceUncertain']);self.assertTrue((own/'accepted.json').exists());self.assertTrue((own/'receipt-uncertain.json').exists())
+  with self.assertRaisesRegex(ValueError,'PROTECTED_OWNED_PRIOR_UNCERTAINTY'):op.prior_windows({**self.r,'window':2},self.registry)
+
+class PinnedCaptureLoaderTests(unittest.TestCase):
+ def setUp(self):
+  self.root=Path(tempfile.mkdtemp(prefix='protected-helper-source-',dir=TEMP_ROOT));self.helper=self.root/'scripts/lib/capture_owned.py';self.helper.parent.mkdir(mode=0o700,parents=True)
+  self.pinned=b"def capture_owned():\n return 'pinned'\n";self.cached=b"def capture_owned():\n return 'cached'\n";self.expected=op.digest(self.pinned);self.helper.write_bytes(self.pinned);self.helper.chmod(0o600)
+ def tearDown(self):shutil.rmtree(self.root)
+ def load(self):
+  with patch.object(op,'ROOT',self.root),patch.object(op,'CAPTURE_SHA',self.expected):return op.load_capture()
+ def test_executes_pinned_bytes_even_with_timestamp_valid_stale_cache(self):
+  self.assertEqual(len(self.pinned),len(self.cached));self.helper.write_bytes(self.cached);before=self.helper.stat();cache=Path(py_compile.compile(str(self.helper),doraise=True));cache_before=cache.read_bytes()
+  self.helper.write_bytes(self.pinned);os.utime(self.helper,ns=(before.st_atime_ns,before.st_mtime_ns));self.assertEqual(op.sha_file(self.helper),op.digest(self.pinned))
+  self.assertEqual(self.load()(),'pinned');self.assertEqual(cache.read_bytes(),cache_before)
+ def test_compiles_same_checked_buffer_when_file_changes_after_read(self):
+  original=hashlib.sha256;mutations=[];helper=self.helper;cached=self.cached;expected=self.expected
+  class HashThenChangeFile:
+   def __init__(self,*args,**kwargs):self.inner=original(*args,**kwargs)
+   def update(self,value):return self.inner.update(value)
+   def hexdigest(self):
+    value=self.inner.hexdigest()
+    if value==expected and not mutations:helper.write_bytes(cached);mutations.append(True)
+    return value
+  with patch.object(hashlib,'sha256',HashThenChangeFile):capture=self.load()
+  self.assertEqual(capture(),'pinned');self.assertEqual(mutations,[True]);self.assertEqual(self.helper.read_bytes(),self.cached)
+ def test_refuses_unpinned_source_before_execution(self):
+  self.helper.write_text("raise AssertionError('UNPINNED_HELPER_EXECUTED')\n")
+  with self.assertRaisesRegex(ValueError,'PROTECTED_OWNED_CODE_DRIFT'):self.load()
+
+class CaptureTests(unittest.TestCase):
+ def setUp(self):self.root=Path(tempfile.mkdtemp(prefix='protected-capture-',dir=TEMP_ROOT));self.root.chmod(0o700)
+ def tearDown(self):shutil.rmtree(self.root)
+ def capture(self,program,**kw):return cap.capture_owned([sys.executable,'-I','-c',program],self.root,{'PATH':'/usr/bin:/bin'},self.root/'process.log',**kw)
+ def test_actual_short_process_and_minimal_environment(self):
+  r=self.capture('import os;print(sorted(os.environ))');self.assertTrue(op.successful(r));self.assertNotIn('RESTORE_TOKEN',(self.root/'process.log').read_text());self.assertEqual((self.root/'process.log').stat().st_mode&0o777,0o600)
+ def test_actual_deadline_cancels_owned_process(self):
+  r=self.capture('import time;time.sleep(60)',timeout=.1);self.assertTrue(r['timedOut'],r);self.assertTrue(r['ownedProcessSettled'],r)
+ def test_actual_log_cap(self):
+  r=self.capture('print("x"*100000)',timeout=2,max_bytes=128);self.assertTrue(r['logBoundExceeded'],r);self.assertTrue(r['ownedProcessSettled'],r);self.assertEqual((self.root/'process.log').stat().st_size,128)
+ def test_actual_log_io_failure_settles_group(self):
+  def fail(stream,block):raise OSError('PRIVATE')
+  r=self.capture('import time;print("ready",flush=True);time.sleep(60)',timeout=2,write_chunk=fail);self.assertTrue(r['localFailure'],r);self.assertTrue(r['ownedProcessSettled'],r)
+ def test_exclusive_log_is_not_overwritten(self):
+  (self.root/'process.log').write_bytes(b'preserved');r=self.capture('print("never")',timeout=2);self.assertTrue(r['localFailure']);self.assertIsNone(r['childPid']);self.assertEqual((self.root/'process.log').read_bytes(),b'preserved')
+ def cleanup_probe_fixture(self,mode):
+  # Real bounded pipe capture with a deterministic process-group syscall seam.
+  # No fake PID ever reaches the operating system's signal implementation.
+  read_fd,write_fd=os.pipe();os.write(write_fd,b'x'*256);os.close(write_fd)
+  stdout=os.fdopen(read_fd,'rb');state={'clock':0.0,'probes':0,'signals':[],'killed':False,'polls':0}
+  class Child:
+   pid=2147483647;args=['synthetic-owned-child'];returncode=None
+   def __init__(self):self.stdout=stdout
+   def poll(self):
+    state['polls']+=1
+    if state['signals']:self.returncode=-signal.SIGTERM
+    return self.returncode
+  child=Child()
+  def killpg(pid,signum):
+   self.assertEqual(pid,child.pid)
+   if signum:
+    state['signals'].append(signum)
+    if signum==signal.SIGKILL:state['killed']=True
+    return
+   state['probes']+=1
+   if mode=='persistent' or mode=='transient' and state['probes']==1:
+    raise PermissionError(errno.EPERM,'PRIVATE synthetic probe details')
+   if mode=='descendant' and not state['killed']:return
+   raise ProcessLookupError(errno.ESRCH,'PRIVATE synthetic absent group')
+  def sleep(seconds):state['clock']+=seconds
+  try:
+   with patch.object(cap.subprocess,'Popen',return_value=child),patch.object(cap.os,'killpg',side_effect=killpg),patch.object(cap.time,'monotonic',side_effect=lambda:state['clock']),patch.object(cap.time,'sleep',side_effect=sleep):
+    result=self.capture('synthetic',timeout=2,max_bytes=128)
+   return result,state,stdout.closed
+  finally:stdout.close()
+ def test_transient_group_probe_permission_error_requires_later_absence(self):
+  r,state,closed=self.cleanup_probe_fixture('transient')
+  self.assertTrue(r['logBoundExceeded'],r);self.assertTrue(r['ownedProcessSettled'],r)
+  self.assertTrue(closed);self.assertGreaterEqual(state['probes'],2)
+  self.assertEqual(r['cleanupFailure'],{'stage':'group-probe','errorClass':'PermissionError','errno':errno.EPERM})
+  self.assertTrue(r['cleanupRecovered']);self.assertNotIn('PRIVATE',json.dumps(r))
+ def test_persistent_group_probe_permission_error_never_means_absence(self):
+  r,state,closed=self.cleanup_probe_fixture('persistent')
+  self.assertTrue(r['logBoundExceeded'],r);self.assertFalse(r['ownedProcessSettled'],r)
+  self.assertTrue(r['localFailure'],r);self.assertEqual(r['localFailureCode'],'owned-process-cleanup-uncertain')
+  self.assertTrue(closed);self.assertIn(signal.SIGKILL,state['signals']);self.assertLessEqual(state['clock'],10)
+  self.assertEqual(r['cleanupFailure']['errno'],errno.EPERM);self.assertNotIn('PRIVATE',json.dumps(r))
+ def test_remaining_descendant_group_is_killed_after_direct_child_reap(self):
+  r,state,closed=self.cleanup_probe_fixture('descendant')
+  self.assertTrue(r['logBoundExceeded'],r);self.assertTrue(r['ownedProcessSettled'],r)
+  self.assertEqual(r['exitCode'],-signal.SIGTERM);self.assertTrue(closed)
+  self.assertEqual(state['signals'],[signal.SIGTERM,signal.SIGKILL]);self.assertGreaterEqual(state['clock'],5)
+  self.assertLessEqual(state['clock'],10)
+ @unittest.skipUnless(hasattr(os,'fork'),'requires POSIX process groups')
+ def test_actual_log_cap_waits_for_term_resistant_descendant(self):
+  program='''import os,signal,time
+read_fd,write_fd=os.pipe()
+pid=os.fork()
+if pid==0:
+ signal.signal(signal.SIGTERM,signal.SIG_IGN)
+ os.close(read_fd)
+ os.write(write_fd,b"ready")
+ os.close(write_fd)
+ time.sleep(.3)
+ os._exit(0)
+os.close(write_fd)
+os.read(read_fd,5)
+os.close(read_fd)
+print("x"*100000,flush=True)
+time.sleep(60)
+'''
+  r=self.capture(program,timeout=2,max_bytes=128)
+  self.assertTrue(r['logBoundExceeded'],r);self.assertTrue(r['ownedProcessSettled'],r)
+  self.assertEqual(r['exitCode'],-signal.SIGTERM);self.assertEqual((self.root/'process.log').stat().st_size,128)
+
+if __name__=='__main__':unittest.main()

@@ -1,10 +1,14 @@
 /**
- * The retrieval evaluation set.
+ * The legacy retrieval development set.
  *
- * Every question has one gold answer: an Act and a section, both of which are
- * verifiable against the ingested corpus. The runner checks each label resolves to
- * exactly one row before scoring anything, so a mis-specified question is reported
- * rather than quietly counted as a miss.
+ * These questions were used repeatedly to choose models, prompts and floors.
+ * They are calibration evidence, not an untouched release holdout. The v1 set
+ * in `data/v1-questions.json` adds bilingual source provenance, disjoint Act
+ * groups and explicit unverified exclusions; use `scripts/eval-v1.ts` for a
+ * serving-path release evaluation.
+ *
+ * Legacy gold labels identify an Act and a section and can match multiple parsed
+ * rows. Existence alone does not prove that every matched row states the answer.
  *
  * The set is deliberately split in two:
  *
@@ -327,7 +331,9 @@ export const QUESTIONS: EvalQuestion[] = [
 ];
 
 /**
- * Questions the corpus **cannot** answer.
+ * Legacy negative probes, with historical answerability assumptions.
+ * These are retained to reproduce old runs. Their labels have not received the
+ * v1 source/scope review: a current rate is not automatically absent from law.
  *
  * Every question in `QUESTIONS` has a gold answer, so measuring a threshold
  * against that set prices only its cost: the questions it refuses that the

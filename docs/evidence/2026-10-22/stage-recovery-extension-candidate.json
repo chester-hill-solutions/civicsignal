@@ -1,0 +1,142 @@
+{
+  "format": 1,
+  "preparedAt": "2026-10-23T13:27:41.298162+00:00",
+  "status": "Locally validated and independently reviewed; awaiting explicit additional-usage approval and hosted execution",
+  "executionApproved": false,
+  "allowanceTransitionExecuted": false,
+  "additionalHostedSubmissions": 0,
+  "planSha256": "26b6b13a511ac3f55e07bffc08686f8997addc88425838564bbf789d256e5b13",
+  "sourceFiles": {
+    "services/pipeline/attempt-budget.ts": {
+      "bytes": 10025,
+      "sha256": "8349802530c782f4c66748da48c9aa9068e581755330ab34a85d62039d199f48"
+    },
+    "services/pipeline/single-flight.ts": {
+      "bytes": 17123,
+      "sha256": "8c5261ed4d78eca2e90452f68fc5f6b9cfc05e97a7823b05cae74b2dde3501f1"
+    },
+    "services/pipeline/worker.ts": {
+      "bytes": 20093,
+      "sha256": "0df83d7d9f42daa1996a16a16ac90595ea3bf5226abed3080f08a04cd353c62f"
+    },
+    "services/pipeline/staging-recovery-plan.ts": {
+      "bytes": 2479,
+      "sha256": "cc9485b1dbcd35f5d99fcd3e3fb837c5f6062b7cad75700d646c7c28a46ef8b9"
+    },
+    "services/pipeline/staging-recovery.ts": {
+      "bytes": 2541,
+      "sha256": "026a2e183d58d70067b95d75d580d9b6368b61b29df9ef870a1f53f98573972a"
+    },
+    "test/pipeline-recovery-extension.test.ts": {
+      "bytes": 12190,
+      "sha256": "cca18e312ebca3e7d507b3052d09876fd5642e79dce03992b5dcef6dbfa48682"
+    },
+    "test/pipeline-recovery-workerd.test.ts": {
+      "bytes": 15127,
+      "sha256": "1cc9eaa8adf59020fff220dcbef20a5c621f3b317a8866d7c7a7be59062cb412"
+    }
+  },
+  "limits": {
+    "originalCap": 1112,
+    "originalSpent": 1112,
+    "newCumulativeCap": 1752,
+    "additionalDocuments": 640,
+    "additionalReservedCalls": 20,
+    "maxDocumentsPerCall": 32,
+    "encoderInstancesMaximum": 1,
+    "servingRequestsCapUnchanged": 160,
+    "servingRequestsReserved": 14,
+    "automaticContingencyResumes": 0
+  },
+  "target": {
+    "format": 1,
+    "id": "v1-stage-recovery-20261023-1112-to-1752",
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "worker": "civicsignal-v1-stage-pipeline-20261022",
+    "namespaceId": "751026e8a12f46dc87f829d44cef4221",
+    "coordinatorId": "5f57efc844823b53825d844574680ed1be6d0c372a32db23482639a321ca9504",
+    "corpusId": "statutes-canada",
+    "commit": "0507465393c224c0491fc8c17c88340217acc656",
+    "date": "2026-10-15",
+    "parser": "statutes-v2",
+    "initialAdmissionRevision": 1,
+    "originalCap": 1112,
+    "originalSubmitted": 1112,
+    "totalCap": 1752,
+    "maxCalls": 20,
+    "maxDocumentsPerCall": 32,
+    "indexDigest": "b9b9ad97092ae2c5b4a35580f0cafe73"
+  },
+  "remaining": {
+    "matchingTargetFingerprints": 600,
+    "remainingTargetFingerprints": 512,
+    "remainingIdsSha256": "a7fd7991e5cbdbfe40ecec3ca0c0391d0a294060218788d80cc0a42f1589a5fa"
+  },
+  "localProof": {
+    "completeGateTests": 944,
+    "completeGateFiles": 79,
+    "compilerProjects": 4,
+    "workerBuilds": 5,
+    "focusedTests": 181,
+    "focusedFiles": 10,
+    "newUnitCases": 33,
+    "newWorkerdCases": 8,
+    "operatorPureScenarios": 26,
+    "optimizedPythonRefusals": 4,
+    "missingApprovalRefusals": 3
+  },
+  "artifacts": {
+    "dist/release/staging/recovery-extension-proposal/candidate.json": {
+      "bytes": 3899,
+      "sha256": "7c97a18b2f1f60e247821ae5daf6840211f9a80bd4e679e44f01f2ec292ed269"
+    },
+    "dist/release/staging/recovery-extension-proposal/candidate-validation.json": {
+      "bytes": 4876,
+      "sha256": "139cda7ec073164766f4637b1f95a1b8944821f4f92536294c5cdc25bc5ee89d"
+    },
+    "dist/release/staging/recovery-extension-proposal/recovery-config.json": {
+      "bytes": 1714,
+      "sha256": "0735def2e9bd825abc9bb3af52e1c95eba696541d1d53eba7856208b7574fbfc"
+    },
+    "dist/release/staging/recovery-extension-proposal/recovery-worker.mjs": {
+      "bytes": 207920,
+      "sha256": "a923399adc57859dada30c976df2fb766e0597007b47bf6f928cf9fdd50ca708"
+    },
+    "dist/release/staging/recovery-extension-proposal/stop-config.json": {
+      "bytes": 1739,
+      "sha256": "c2b46d82f61749e2ecff3c55547ce2a3905c3ef99b41e918ffbce1f15c54eafd"
+    },
+    "dist/release/staging/recovery-extension-proposal/stop-worker.mjs": {
+      "bytes": 207193,
+      "sha256": "08819019f175be4d186869a0514b1ae334cf1b9ac14ba6f2af8d8de3846e864e"
+    },
+    "dist/release/staging/recovery-extension-operations/candidate-manifest.json": {
+      "bytes": 12194,
+      "sha256": "9d3d0fab4b685587ed0f9dbc0108794e54e1bd86c2aa6f27e6c2c768d1234367"
+    },
+    "dist/release/staging/recovery-extension-operations/missing-approval-check.json": {
+      "bytes": 318,
+      "sha256": "0e892eb2073d221f097e72390c9d7f5da8507d230033d85df169fe14d19899fa"
+    },
+    "dist/release/staging/recovery-extension-operations/missing-deploy-approval-check.json": {
+      "bytes": 304,
+      "sha256": "c6ae7593f70e11e0d7cbbcf2194f742df652a55ba5d989e62beea25a07926fd8"
+    },
+    "dist/release/staging/recovery-extension-operations/optimized-deployment-guard-check.json": {
+      "bytes": 700,
+      "sha256": "9d103f15ee7d2d294ce9975361a47d89ee5c10e17967fadc40f925c4e7736ab5"
+    }
+  },
+  "limitations": [
+    "The positive persisted workerd fixture injects the fixed policy identity; the actual entry proves wrong-object refusal. Hosted namespace/resources require fresh independent readback.",
+    "The original 1112-bound run failed. Recovered completion does not replace that result or establish scheduled Snapshot publication.",
+    "Failure pauses and reconstruction require explicit operator review before contingency resume. Repeated storage failures can make a stop uncertain; both durable usage ceilings still apply.",
+    "Final run counters cover its own successful slice; full delta acceptance uses all1112 feed and completed mutation identities.",
+    "No guaranteed encoder completion, model quality, latency, throughput, production migration or Railway change is claimed."
+  ],
+  "independentReview": {
+    "path": "docs/evidence/2026-10-22/stage-recovery-extension-independent-review.json",
+    "sha256": "59d7a27cf03683f821126a0bca581caefe4ec6d8d6d5a67bfeb684106800c72a",
+    "remainingActionableFindings": 0
+  }
+}
