@@ -10,12 +10,23 @@ import {
   CommitteeDetailResponseSchema,
   CommitteePassagesResponseSchema,
   CommitteePassageSchema,
+  CommitteeCallSchema,
+  CommitteeCallsResponseSchema,
+  CommitteeCallDetailResponseSchema,
+  type CommitteeCall,
   type CommitteeLanguage,
 } from '../corpora/committee-corpus';
+import {
+  OpportunityDeadlineSchema,
+  OpportunityOpenState,
+  openStateAsOf,
+  type OpportunityDeadline,
+} from '../corpora/opportunity';
 
 export const COMMITTEE_CORPUS_PATH = '/api/committees';
 
-type Op = 'session' | 'committee' | 'studies' | 'meetings' | 'study' | 'meeting' | 'document' | 'passages' | 'search' | 'coverage';
+type Op = 'session' | 'committee' | 'studies' | 'meetings' | 'study' | 'meeting' | 'document' | 'passages'
+  | 'search' | 'coverage' | 'calls' | 'call';
 type Route = { op: Op; session?: string; id?: string; parentId?: string };
 type Paging = { offset: number; limit: number };
 type OperationContext = {
@@ -43,6 +54,11 @@ export function matchCommitteeCorpusRoute(path: string): Route | undefined {
 
 function matchSessionResource(session: string, parts: string[]): Route | undefined {
   if (parts[0] === 'documents') return matchDocumentResource(session, parts.slice(1));
+  if (parts[0] === 'calls') {
+    if (parts.length === 1) return { op: 'calls', session };
+    const callId = parts[1] ?? '';
+    return ID.test(callId) && parts.length === 2 ? { op: 'call', session, id: callId } : undefined;
+  }
   const id = parts[0] ?? '';
   if (!ID.test(id)) return undefined;
   if (parts.length === 1) return { op: 'committee', session, id };
@@ -102,37 +118,67 @@ function database(env: Env): D1Database {
   return env.COMMITTEE_DB;
 }
 
+const ALLOWED_PARAMETERS: Record<Op, readonly string[]> = {
+  coverage: ['session', 'chamber', 'committeeId', 'language', 'kind', 'offset', 'limit'],
+  search: ['language', 'query', 'session', 'chamber', 'committeeId', 'studyId', 'kind', 'offset', 'limit'],
+  calls: ['language', 'query', 'committeeId', 'status', 'asOf', 'offset', 'limit'],
+  call: ['language', 'asOf'],
+  passages: ['language', 'offset', 'limit'],
+  session: ['language', 'offset', 'limit'],
+  committee: ['language', 'offset', 'limit'],
+  studies: ['language', 'offset', 'limit'],
+  meetings: ['language', 'offset', 'limit'],
+  study: ['language', 'offset', 'limit'],
+  meeting: ['language', 'offset', 'limit'],
+  document: ['language', 'offset', 'limit'],
+};
+
+function prepareParameters(route: Route, url: URL) {
+  const p = params(url, ALLOWED_PARAMETERS[route.op]);
+  let language: CommitteeLanguage | undefined;
+  if (['search', 'passages'].includes(route.op) || p.language !== undefined) {
+    const parsed = CommitteeLanguageSchema.safeParse(p.language);
+    if (!parsed.success) throw new RequestInputError('Supply language=en or fr.');
+    language = parsed.data;
+  }
+  validateParameters(route, p);
+  return { parameters: p, language, ...paging(p) };
+}
+
+function validateParameters(route: Route, p: Record<string, string>) {
+  if (route.op === 'search' && (!p.query?.trim() || p.query.length > 256)) {
+    throw new RequestInputError('query must contain 1 to 256 characters.');
+  }
+  if (route.op === 'calls') validateCallParameters(p);
+}
+
+function validateCallParameters(p: Record<string, string>) {
+  if (p.query !== undefined && (!p.query.trim() || p.query.length > 256)) {
+    throw new RequestInputError('query must contain 1 to 256 characters.');
+  }
+  if (p.status !== undefined && !OpportunityOpenState.safeParse(p.status).success) {
+    throw new RequestInputError('status must be open, closed or unknown.');
+  }
+  if (p.asOf !== undefined && Number.isNaN(Date.parse(p.asOf))) {
+    throw new RequestInputError('asOf must be an ISO date or instant.');
+  }
+}
+
 export function prepareCommitteeCorpus(url: URL): ((env: Env) => () => Promise<unknown>) | undefined {
   const route = matchCommitteeCorpusRoute(url.pathname);
   if (!route) return undefined;
-
   return (env) => {
     const db = database(env);
-    const allowed = route.op === 'coverage'
-      ? ['session', 'chamber', 'committeeId', 'language', 'kind', 'offset', 'limit']
-      : route.op === 'search'
-        ? ['language', 'query', 'session', 'chamber', 'committeeId', 'studyId', 'kind', 'offset', 'limit']
-        : route.op === 'passages'
-          ? ['language', 'offset', 'limit']
-          : ['language', 'offset', 'limit'];
-    const p = params(url, allowed);
-    let language: CommitteeLanguage | undefined;
-    if (['search', 'passages'].includes(route.op) || p.language !== undefined) {
-      const parsed = CommitteeLanguageSchema.safeParse(p.language);
-      if (!parsed.success) throw new RequestInputError('Supply language=en or fr.');
-      language = parsed.data;
-    }
-    const { offset, limit } = paging(p);
-    if (route.op === 'search' && (!p.query?.trim() || p.query.length > 256)) {
-      throw new RequestInputError('query must contain 1 to 256 characters.');
-    }
-    return () => runCommitteeCorpusOperation({ db, route, parameters: p, language, offset, limit });
+    const { parameters, language, offset, limit } = prepareParameters(route, url);
+    return () => runCommitteeCorpusOperation({ db, route, parameters, language, offset, limit });
   };
 }
 
 function runCommitteeCorpusOperation(context: OperationContext): Promise<unknown> {
   const { route } = context;
   if (route.op === 'coverage') return readCommitteeCoverage(context);
+  if (route.op === 'calls') return listCommitteeCalls(context);
+  if (route.op === 'call') return readCommitteeCall(context);
   if (route.op === 'search') return searchCommitteeRecords(context);
   if (route.op === 'committee') return readCommitteeRecord(context);
   if (route.op === 'session' || route.op === 'studies' || route.op === 'meetings') {
@@ -336,6 +382,137 @@ function publishedCredits(metadata: Record<string, unknown>) {
     if (!organization && !submitter) return [];
     return [{ ...(organization ? { organization } : {}), ...(submitter ? { submitter } : {}) }];
   });
+}
+
+
+const CALL_SELECT = `SELECT r.session,r.id,r.language,r.title,r.url,r.metadata_json,r.committee_id,
+    c.title AS committee_title,s.id AS study_id,s.title AS study_title,s.url AS study_url
+  FROM cc_records r
+  LEFT JOIN cc_records c ON c.session=r.session AND c.language=r.language
+    AND c.id=r.committee_id AND c.kind='committee'
+  LEFT JOIN cc_records s ON s.session=r.session AND s.language=r.language AND s.kind='study'
+    AND s.id = r.committee_id || '-study-' || json_extract(r.metadata_json,'$.studyId')
+  WHERE r.kind = 'call'`;
+
+function asOfInstant(value: string | undefined): string {
+  return (value ? new Date(value) : new Date()).toISOString();
+}
+
+async function listCommitteeCalls(context: OperationContext) {
+  const { db, route, parameters, language, offset, limit } = context;
+  const session = route.session ?? '45-1';
+  const asOf = asOfInstant(parameters.asOf);
+  const filters = ['r.session = ?'];
+  const values: unknown[] = [session];
+  if (language) { filters.push('r.language = ?'); values.push(language); }
+  if (parameters.committeeId) { filters.push('r.committee_id = ?'); values.push(parameters.committeeId); }
+  if (parameters.query) {
+    const like = `%${parameters.query}%`;
+    filters.push("(r.title LIKE ? OR json_extract(r.metadata_json,'$.instructions') LIKE ?)");
+    values.push(like, like);
+  }
+  const rows = await db.prepare(`${CALL_SELECT} AND ${filters.join(' AND ')} ORDER BY r.id,r.language`)
+    .bind(...values).all<Record<string, unknown>>();
+  const items = rows.results.map(row => callFromRow(row, asOf));
+  // The open state is computed for a date, so it cannot be filtered in SQL.
+  const matched = parameters.status ? items.filter(item => item.status === parameters.status) : items;
+  return CommitteeCallsResponseSchema.parse({
+    session,
+    asOf,
+    items: matched.slice(offset, offset + limit),
+    offset,
+    limit,
+    hasMore: matched.length > offset + limit,
+    coverageBasis: 'materialized-records',
+  });
+}
+
+async function readCommitteeCall(context: OperationContext) {
+  const { db, route, parameters, language } = context;
+  const session = route.session;
+  const id = route.id;
+  if (!session || !id) throw new RequestInputError('A session and call ID are required.');
+  const asOf = asOfInstant(parameters.asOf);
+  const row = await db.prepare(`${CALL_SELECT} AND r.session = ? AND r.id = ? AND r.language = ? LIMIT 1`)
+    .bind(session, id, language ?? 'en').first<Record<string, unknown>>();
+  if (!row) {
+    return CommitteeCallDetailResponseSchema.parse({ state: 'not-found', session, id, language: language ?? 'en' });
+  }
+  const item = callFromRow(row, asOf);
+  return CommitteeCallDetailResponseSchema.parse({
+    state: 'found',
+    asOf,
+    item,
+    related: await callRelatedCounts(db, session, language ?? 'en', item.study?.id ?? null),
+  });
+}
+
+async function callRelatedCounts(
+  db: D1Database,
+  session: string,
+  language: CommitteeLanguage,
+  studyId: string | null,
+) {
+  if (!studyId) return { submissions: 0, evidence: 0, meetings: 0 };
+  const rows = await db.prepare(`SELECT r.kind AS kind,COUNT(*) AS count FROM cc_links l
+      JOIN cc_records r ON r.session=l.session AND r.language=l.language AND r.id=l.child_id
+      WHERE l.session = ? AND l.language = ? AND l.parent_id = ? GROUP BY r.kind`)
+    .bind(session, language, studyId).all<{ kind: string; count: number }>();
+  const counts = new Map(rows.results.map(row => [String(row.kind), Number(row.count)]));
+  return {
+    submissions: (counts.get('submission') ?? 0) + (counts.get('brief') ?? 0),
+    evidence: counts.get('evidence') ?? 0,
+    meetings: counts.get('meeting') ?? 0,
+  };
+}
+
+function callFromRow(row: Record<string, unknown>, asOf: string): CommitteeCall {
+  const metadata = parseJson(row.metadata_json);
+  const deadline = readDeadline(metadata.deadline);
+  const observedAt = instantString(metadata.observedAt);
+  const firstObservedAt = instantString(metadata.firstObservedAt ?? metadata.observedAt);
+  const { state, basis } = openStateAsOf(deadline, { firstObservedAt, observedAt }, asOf);
+  const instructions = metadata.delivery === 'excerpt' && typeof metadata.instructions === 'string'
+    ? metadata.instructions
+    : null;
+  return CommitteeCallSchema.parse({
+    id: String(row.id),
+    language: row.language,
+    title: String(row.title),
+    url: String(row.url),
+    status: state,
+    statusBasis: basis,
+    deadline,
+    instructions: instructions?.slice(0, 400) ?? null,
+    instructionsTruncated: instructions !== null && instructions.length > 400,
+    instructionUrl: nullableString(metadata.instructionUrl),
+    committee: { id: String(row.committee_id), name: nullableString(row.committee_title) },
+    study: row.study_id
+      ? { id: String(row.study_id), title: String(row.study_title), url: String(row.study_url) }
+      : null,
+    listingUrl: String(metadata.listingUrl ?? row.url),
+    contentWarning: metadata.contentWarning === true,
+    contentWarningText: nullableString(metadata.contentWarningText),
+    observedAt,
+    firstObservedAt,
+  });
+}
+
+function readDeadline(value: unknown): OpportunityDeadline | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Record<string, unknown>;
+  const parsed = OpportunityDeadlineSchema.safeParse({
+    text: candidate.text,
+    instant: candidate.instant ?? null,
+    timeZone: candidate.timeZone ?? null,
+  });
+  return parsed.success ? parsed.data : null;
+}
+
+function instantString(value: unknown): string {
+  const parsed = Date.parse(String(value ?? ''));
+  if (Number.isNaN(parsed)) throw new Error('A call record has no usable observation stamp.');
+  return new Date(parsed).toISOString();
 }
 
 async function readCommitteeRecord(context: OperationContext) {

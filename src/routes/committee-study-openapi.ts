@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { CommitteeStudyBriefSchema, CommitteeStudyLanguageSchema } from '../corpora/committee-study';
 import {
+  CommitteeCallDetailResponseSchema,
+  CommitteeCallsResponseSchema,
   CommitteeCorpusCoverageSchema,
   CommitteeCorpusPageSchema,
   CommitteeCorpusSearchResponseSchema,
@@ -92,6 +94,42 @@ export function committeeStudyOpenApi() {
             ...paginationParameters,
           ],
           responses: { 200: response('Counts, cutoff and paginated outstanding record identifiers.', CommitteeCorpusCoverageSchema), ...corpusErrors },
+        },
+      },
+      [`${COMMITTEE_CORPUS_PATH}/{session}/calls`]: {
+        get: {
+          operationId: 'listCommitteeCalls',
+          summary: 'List the published calls for briefs',
+          description: 'Returns the studies the publisher currently lists as seeking input, in either or both language editions. status is computed for asOf: a published deadline settles it, and without one the call is open only while an observation still lists it. The Senate publishes no equivalent listing; the coverage receipt records that gap.',
+          parameters: [
+            sessionParameter,
+            { ...languageParameter, required: false },
+            { in: 'query', name: 'query', required: false, schema: { type: 'string', minLength: 1, maxLength: 256 } },
+            { in: 'query', name: 'committeeId', required: false, schema: { type: 'string' } },
+            { in: 'query', name: 'status', required: false, schema: { type: 'string', enum: ['open', 'closed', 'unknown'] } },
+            { in: 'query', name: 'asOf', required: false, schema: { type: 'string', format: 'date-time' } },
+            ...paginationParameters,
+          ],
+          responses: {
+            200: response('The calls that match, with the open state computed for the queried instant.', CommitteeCallsResponseSchema),
+            ...corpusErrors,
+          },
+        },
+      },
+      [`${COMMITTEE_CORPUS_PATH}/{session}/calls/{callId}`]: {
+        get: {
+          operationId: 'getCommitteeCall',
+          summary: 'Inspect one call, its instructions and linked study',
+          parameters: [
+            sessionParameter,
+            { in: 'path', name: 'callId', required: true, schema: { type: 'string', pattern: '^[a-z0-9][a-z0-9._-]{0,99}$' } },
+            languageParameter,
+            { in: 'query', name: 'asOf', required: false, schema: { type: 'string', format: 'date-time' } },
+          ],
+          responses: {
+            200: response('The call, its published deadline and instruction excerpt, and counts of the linked study records.', CommitteeCallDetailResponseSchema),
+            ...corpusErrors,
+          },
         },
       },
       [`${COMMITTEE_CORPUS_PATH}/{session}`]: {

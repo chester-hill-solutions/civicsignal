@@ -16,6 +16,8 @@ Every operation is GET and returns JSON. Search and list operations use stable I
 | `/api/committees/{session}/{committeeId}/meetings/{meetingId}` | Inspect a meeting under its committee |
 | `/api/committees/{session}/documents/{documentId}` | Inspect publication metadata and links |
 | `/api/committees/{session}/documents/{documentId}/passages?language=en` | Read ordered cited passages |
+| `/api/committees/{session}/calls` | List the studies currently seeking briefs, with a state for the queried date |
+| `/api/committees/{session}/calls/{callId}` | Inspect one call, its deadline and submission instructions |
 | `/api/committees/search?query=water&language=en` | Search indexed passages |
 | `/api/committees/coverage` | Inspect cutoff, counts and paged outstanding IDs |
 | `/api/committees/openapi.json` | Discover the OpenAPI contract |
@@ -23,6 +25,107 @@ Every operation is GET and returns JSON. Search and list operations use stable I
 Search accepts optional `session`, `chamber`, `committeeId`, `studyId`, `kind`, `offset`, and `limit`. It returns citations, source locations, published speaker, affiliation, authors and credits, parent references, and `hasMore`. Search response `coverageBasis` is `materialized-records`. `language` is mandatory on search, detail, document and passage routes; list routes can filter by language. Each detail relationship includes the related record's `kind`, the source relation label, and `direction` (`parent` or `child`) so clients can move in either direction.
 
 Coverage accepts optional `session` (default `45-1`), `chamber`, `committeeId`, `language`, `kind`, `offset`, and `limit`. The `counts` array groups materialized records by committee, chamber, language, kind and acquisition status. `outstanding` enumerates IDs with `stored`, `pending`, `unavailable` or `removed` status in deterministic pages and reports its total; `stored` records have an original but may still lack searchable text. Counts and outstanding rows include the committee's published `metadata.directoryCutoffs` when recorded. The top-level cutoff is the recorded snapshot cutoff for the selected session.
+
+## Calls for briefs
+
+A call is a committee study that the publisher lists as currently seeking input.
+One record exists per language edition. The House publishes the current list at
+`/Committees/{en|fr}/Participate`; each listed study page carries a participation
+button, an optional deadline and the published submission instructions.
+
+The Senate publishes briefs and other documents, but the committee index, a
+committee page and its briefs and studies pages returned no listing of studies
+currently inviting briefs. The intake archives each page it checked and records
+that gap. It does not infer Senate calls from the existence of briefs.
+
+| Route | Returns |
+| --- | --- |
+| `/api/committees/{session}/calls` | Calls that match, each with its state for `asOf`, the deadline, and a short instructions excerpt |
+| `/api/committees/{session}/calls/{callId}` | The same call plus counts of the linked study's published submissions, evidence and meetings |
+
+`calls` accepts `language` (optional; without it both editions are returned),
+`query` (title and published instructions), `committeeId`, `status`
+(`open`, `closed`, `unknown`), `asOf` and the usual `offset`/`limit`. `language`
+is required on the exact route.
+
+### State on a date
+
+`status` is computed for `asOf`, which defaults to the request time, and
+`statusBasis` says which fact decided it.
+
+| Basis | Meaning |
+| --- | --- |
+| `deadline` | The publisher published a deadline that names a zone, a date and a weekday. The call is open through that instant. |
+| `listing-observation` | No deadline was published. An observation vouches for the call on the day it was made; before the first observation the state is `unknown`, and without a refresh the next day it returns to `unknown`. |
+| `unobserved` | The query date precedes every observation. The answer is unknown, not closed. |
+
+`deadline.text` is the publisher's phrase verbatim, for example
+`before 11:59 p.m. (EST) on Monday, November 30, 2026`. `deadline.instant` is
+present only when the phrase, its date and its weekday agree; `timeZone` keeps
+the published label. A phrase the intake cannot place stays text-only and the
+state falls back to the observation.
+
+Instructions are published text under the same delivery rule as every other
+committee excerpt: at most 400 characters with `instructionsTruncated` telling
+the client to open `instructionUrl` for the rest. A publisher content warning is
+kept separate in `contentWarningText` rather than merged into the instructions.
+
+### Example
+
+```http
+GET /api/committees/45-1/calls?language=en&status=open&asOf=2026-11-24T18:00:00Z HTTP/1.1
+Authorization: Bearer <workspace-key>
+```
+
+```json
+{
+  "session": "45-1",
+  "asOf": "2026-11-24T18:00:00.000Z",
+  "items": [{
+    "id": "house-hesa-call-13632808",
+    "language": "en",
+    "title": "Diagnostic Imaging Capacity",
+    "url": "https://www.ourcommons.ca/committees/en/HESA/StudyActivity?studyActivityId=13632808",
+    "status": "open",
+    "statusBasis": "listing-observation",
+    "deadline": null,
+    "instructions": "Written submissions of no more than 2,000 words can be submitted to the committee.",
+    "instructionsTruncated": true,
+    "instructionUrl": "https://www.ourcommons.ca/committee-participation/en/submit-brief/hesa/13632808",
+    "committee": { "id": "house-hesa", "name": "Health" },
+    "study": { "id": "house-hesa-study-13632808", "title": "Diagnostic Imaging Capacity",
+      "url": "https://www.ourcommons.ca/committees/en/HESA/StudyActivity?studyActivityId=13632808" },
+    "listingUrl": "https://www.ourcommons.ca/Committees/en/Participate",
+    "contentWarning": false,
+    "contentWarningText": null,
+    "observedAt": "2026-11-24T16:17:46.000Z",
+    "firstObservedAt": "2026-11-24T16:17:46.000Z"
+  }],
+  "offset": 0,
+  "limit": 20,
+  "hasMore": false,
+  "coverageBasis": "materialized-records"
+}
+```
+
+Follow `url` or `study` to the study page for its order of reference and its
+published briefs, or use the committee routes to list that study's meetings and
+evidence. A position belongs to the submitter or speaker the committee published;
+the call itself has no author.
+
+### Refresh the calls
+
+```sh
+python3 -B scripts/committee-calls.py   --receipt docs/evidence/2026-11-24/committee-calls.json
+```
+
+The intake fetches both editions with the shared committee download cache and
+archives each original by SHA-256. `--from-cache` re-parses archived pages for an
+offline rerun; it is off by default because an earlier corpus copy is not the
+current call. A re-run with unchanged publisher pages adds no revision and no
+change event. The receipt records the two House lists, the checked Senate pages,
+the counts, and any study title repaired in the store.
+
 
 ## Rights and disclosure
 

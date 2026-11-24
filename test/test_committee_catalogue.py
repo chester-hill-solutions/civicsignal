@@ -137,6 +137,18 @@ class Committees(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'No interrupted partial'):
                 catalogue.load_resume_checkpoint(absent)
 
+    def test_house_work_index_keeps_the_study_title_not_the_participation_action(self):
+        page='''<html><body><div>45th Parliament, 1st Session</div>
+          <a href="/committees/en/TEST/StudyActivity?studyActivityId=123">Diagnostic Imaging Capacity</a>
+          <a href="/committees/en/TEST/StudyActivity?studyActivityId=123">Participate</a>
+        </body></html>'''
+        with patch.object(catalogue, 'get', return_value=page):
+            result = catalogue.house_index(
+                {'code': 'TEST', 'url': 'https://www.ourcommons.ca/committees/en/TEST'}, 'en', 'Work')
+        studies = [item for item in result['links'] if item['kind'] == 'study']
+        self.assertTrue(studies)
+        self.assertEqual({item['title'] for item in studies}, {'Diagnostic Imaging Capacity'})
+
     def test_senate_brief_table_follows_publisher_page_links(self):
         shell='''<html><div data-ajaxpartial-action="GetTablePartialView" data-ajaxpartial-data='{"tableName":"Briefs","committeeId":1,"selectedSession":"45-1"}'></div></html>'''
         page1='''<div id="table-print"><table><tr><td>Org</td><td>First</td><td>x</td><td>date</td><td><a href="/Content/Sen/Committee/451/TEST/briefs/first.pdf">PDF</a></td></tr></table></div><nav class="sen-pagination"><a href="#?session=45-1&amp;CommitteeID=1&amp;PageSize=10&amp;p=2">2</a></nav>'''

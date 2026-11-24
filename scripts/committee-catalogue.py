@@ -71,6 +71,9 @@ def entries(url, records):
             'terminalPage':{'kind':'rendered-index','exhausted':True,'rows':len(records)}}
 
 
+PARTICIPATION_LABELS = {'participate', 'participez'}
+
+
 def house_study_title(page):
     title=page.find(lambda n:n.tag=='h1' and cls(n,'study-title-label'))
     if title: return title.text()
@@ -176,12 +179,19 @@ def house_index(c, lang, section):
             seen.add(signature)
             pages.append((page_url,page_html))
     records = []
+    study_titles = {}
     for page_url,page_html in pages:
       page = tree(page_html)
       for a in anchors(page):
         path = a.attrs['href']
         if re.search(rf'/committees/{lang}/{c["code"]}/StudyActivity\?studyActivityId=\d+$', path, re.I):
-            item=pub(a,page_url,'study'); item['studyUrl']=item['url']; records.append(item)
+            item=pub(a,page_url,'study'); item['studyUrl']=item['url']
+            label = ' '.join((a.text() or '').split())
+            # A Work page repeats each study's URL on a "Participate" button. That
+            # label is an action, not the published study title.
+            if label.casefold() not in PARTICIPATION_LABELS:
+                study_titles.setdefault(item['url'], label)
+            records.append(item)
         elif re.search(rf'/DocumentViewer/{lang}/45-1/{c["code"]}/',path,re.I):
             item = pub(a,page_url,'publication')
             item.update({'committeeCode':c['code'],'language':lang,'section':section,
@@ -205,6 +215,11 @@ def house_index(c, lang, section):
                     if notice: item['meetingUrl'] = urljoin(page_url,notice.attrs['href'])
             records.append(item)
     for item in records:
+        if item.get('kind') == 'study':
+            better = study_titles.get(item['url'])
+            if better and (item.get('title') or '').casefold() in PARTICIPATION_LABELS | {''}:
+                item['title'] = better
+                item['sourceContext'] = better
         item.setdefault('committeeCode',c['code']); item.setdefault('language',lang)
         item.setdefault('section',section); item.setdefault('sourceIndexUrl',url)
         item.setdefault('studyUrl',None)

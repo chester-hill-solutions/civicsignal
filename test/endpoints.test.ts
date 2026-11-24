@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { DatabaseSync as SqliteDatabase } from 'node:sqlite';
-import { CommitteeCorpusPageSchema, CommitteeCorpusSearchResponseSchema, CommitteeCorpusCoverageSchema } from '../src/corpora/committee-corpus';
+import { CommitteeCallDetailResponseSchema, CommitteeCallsResponseSchema, CommitteeCorpusPageSchema, CommitteeCorpusSearchResponseSchema, CommitteeCorpusCoverageSchema } from '../src/corpora/committee-corpus';
 import { FundingSearchResponse, FundingLookupResponse } from '../src/corpora/funding';
 import { localD1 } from '../scripts/lib/local-d1';
 import { ApiKeyUsageDO, DurableObjectUsageLedger } from '@chester-hill-solutions/api-billing/durable-object';
@@ -1534,6 +1534,49 @@ describe('GEDS directory through the Worker', () => {
     expect(found.status).toBe(200);
     expect(await found.json()).toMatchObject({ language: 'fr', items: expect.arrayContaining([expect.objectContaining({ id: expect.any(String) })]) });
     expect(await fixture.count()).toBe(1);
+  });
+});
+
+describe('committee calls through the Worker against the acquired corpus', () => {
+  const committeePath = process.env.CIVICSIGNAL_COMMITTEES_D1;
+  it.skipIf(!committeePath)('computes the open state, answers a dated zero, and follows a real call to its study', async () => {
+    if (!committeePath) throw new Error('The committee corpus is required.');
+    const fixture = await setup(6);
+    const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
+    fixture.env.AUTH_DB = fixture.db;
+    const db = new DatabaseSync(committeePath, { readOnly: true });
+    closed.push(() => db.close());
+    fixture.env.COMMITTEE_DB = localD1(db);
+    fixture.env.COMMITTEE_CORPUS_PREVIEW = 'on';
+
+    const list = await fixture.send('/api/committees/45-1/calls?language=en');
+    expect(list.status).toBe(200);
+    const english = CommitteeCallsResponseSchema.parse(await list.json());
+    expect(english.items.length).toBeGreaterThanOrEqual(15);
+    expect(english.items.every(item => item.committee.id.startsWith('house-'))).toBe(true);
+    expect(english.items.some(item => item.status === 'open' && item.statusBasis === 'deadline')).toBe(true);
+    const health = english.items.find(item => item.id === 'house-hesa-call-13632808');
+    if (!health) throw new Error('The Health committee call is missing.');
+    expect(health.study?.title).toBe('Diagnostic Imaging Capacity');
+    expect(health.instructionUrl).toMatch(/^https:\/\/www\.ourcommons\.ca\/committee-participation\//u);
+
+    const zero = CommitteeCallsResponseSchema.parse(await (await fixture.send(
+      '/api/committees/45-1/calls?language=en&query=apprenticeship')).json());
+    expect(zero.items).toEqual([]);
+    expect(zero.asOf).toMatch(/^\d{4}-\d{2}-\d{2}T/u);
+    expect(zero.hasMore).toBe(false);
+
+    const detail = CommitteeCallDetailResponseSchema.parse(await (await fixture.send(
+      `/api/committees/45-1/calls/${health.id}?language=en`)).json());
+    expect(detail.state).toBe('found');
+    if (detail.state === 'found') {
+      expect(detail.item.instructions).not.toBeNull();
+      expect(detail.related.submissions).toBeGreaterThan(0);
+    }
+    const french = CommitteeCallDetailResponseSchema.parse(await (await fixture.send(
+      `/api/committees/45-1/calls/${health.id}?language=fr`)).json());
+    expect(french.state).toBe('found');
+    expect(await fixture.count()).toBe(4);
   });
 });
 

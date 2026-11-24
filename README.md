@@ -61,7 +61,7 @@ The [funding programs API](docs/FUNDING-PROGRAMS-API.md) serves bilingual NSERC 
 The [federal directory](docs/GEDS-API.md) provides dated people, contact, organization and hierarchy lookups from GEDS snapshots.
 The [bilingual bill and committee brief](docs/BILL-TRACE-API.md) follows S-5 through both chambers, committee amendments, a recorded division and Royal Assent.
 The [committee study brief](docs/BILL-TRACE-API.md#committee-study-action) follows ENVI's freshwater report and government response as of a selected date.
-The [committee corpus API](docs/COMMITTEES-API.md) searches 45-1 House, Senate and joint proceedings and submissions in English and French. It links each result to its official source and exposes coverage by committee and edition.
+The [committee corpus API](docs/COMMITTEES-API.md) searches 45-1 House, Senate and joint proceedings and submissions in English and French. It links each result to its official source, exposes coverage by committee and edition, and lists the House studies currently seeking briefs with the published deadline, instructions and open state for a queried date.
 Use the [source change feeds](docs/SOURCE-CHANGE-FEEDS.md) to follow a topic through additions, corrections and removals in the Gazette or either chamber.
 
 Every search route requires `Authorization: Bearer <workspace API key>` with capability `civicsignal.retrieve`.

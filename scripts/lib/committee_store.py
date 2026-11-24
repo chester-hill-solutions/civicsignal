@@ -1,6 +1,7 @@
 """Edition-scoped local store for the session 45-1 committee preview."""
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from pathlib import Path
@@ -95,3 +96,40 @@ def mark_snapshot(db: sqlite3.Connection, session: str, cutoff: str) -> None:
     """Record the cutoff only after the caller's staged batch is complete."""
     db.execute("INSERT INTO cc_snapshot VALUES (?,?) ON CONFLICT(session) DO UPDATE SET cutoff=excluded.cutoff",
                (session, cutoff))
+
+# Fields the publisher refreshes on every visit. They never make a new revision.
+VOLATILE_METADATA = {"lastChecked", "directoryCutoffs", "submissionIndex", "observedAt", "firstObservedAt"}
+
+
+def signature(record: Mapping[str, Any]) -> str:
+    """Hash the facts that would matter to a reader, ignoring re-observation stamps."""
+    metadata = {
+        key: value
+        for key, value in (record.get("metadata") or {}).items()
+        if key not in VOLATILE_METADATA
+    }
+    return hashlib.sha256(
+        json.dumps(dict(record, metadata=metadata), sort_keys=True, ensure_ascii=False).encode()
+    ).hexdigest()
+
+
+def update(db: sqlite3.Connection, record: Mapping[str, Any]) -> None:
+    """Write a record and record a change event only when its published facts differ."""
+    key = record["session"], record["id"], record["language"]
+    sig = signature(record)
+    existing = db.execute(
+        "SELECT signature FROM cc_revision WHERE session=? AND id=? AND language=?", key
+    ).fetchone()
+    if existing and existing[0] == sig:
+        if {"lastChecked", "directoryCutoffs", "submissionIndex", "observedAt"} & (
+            record.get("metadata") or {}
+        ).keys():
+            write_record(db, record)
+        return
+    write_record(db, record)
+    db.execute("INSERT OR REPLACE INTO cc_revision VALUES(?,?,?,?)", (*key, sig))
+    db.execute(
+        "INSERT INTO cc_changes(session,id,language,signature) VALUES(?,?,?,?)",
+        (*key, sig),
+    )
+

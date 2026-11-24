@@ -12,7 +12,7 @@ from lib.committee_files import cache_db, fetch_url, read_object
 from lib.committee_inventory import Inventory, SUBMISSIONS
 from lib.committee_proceedings import extract_proceedings
 from lib.committee_publications import extract_publication
-from lib.committee_store import initialize, replace_passages, write_record
+from lib.committee_store import initialize, replace_passages, signature, update, write_record
 from lib.committee_submissions import extract_submission, classify_extraction
 from lib.wq_catalog import save_atomic
 
@@ -56,43 +56,6 @@ def extract(task):
     except (ValueError, RuntimeError) as error:
         return [], str(error)
     return passages, None if passages else outcome
-
-
-def signature(row):
-    metadata = {
-        k: v
-        for k, v in row["metadata"].items()
-        if k not in {"lastChecked", "directoryCutoffs"}
-    }
-    if index := metadata.get("submissionIndex"):
-        metadata["submissionIndex"] = {
-            k: v for k, v in index.items() if k != "sourceFetchedAt"
-        }
-    return hashlib.sha256(
-        json.dumps(
-            dict(row, metadata=metadata), sort_keys=True, ensure_ascii=False
-        ).encode()
-    ).hexdigest()
-
-
-def update(db, row):
-    key = row["session"], row["id"], row["language"]
-    sig = signature(row)
-    existing = db.execute(
-        "SELECT signature FROM cc_revision WHERE session=? AND id=? AND language=?", key
-    ).fetchone()
-    if existing and existing[0] == sig:
-        if {"lastChecked", "directoryCutoffs", "submissionIndex"} & row[
-            "metadata"
-        ].keys():
-            write_record(db, row)
-        return
-    write_record(db, row)
-    db.execute("INSERT OR REPLACE INTO cc_revision VALUES(?,?,?,?)", (*key, sig))
-    db.execute(
-        "INSERT INTO cc_changes(session,id,language,signature) VALUES(?,?,?,?)",
-        (*key, sig),
-    )
 
 
 def write_graph(db, inventory):

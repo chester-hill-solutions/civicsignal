@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { OpportunityBasis, OpportunityDeadlineSchema, OpportunityOpenState } from './opportunity';
 
 export const CommitteeLanguageSchema = z.enum(['en', 'fr']);
 
@@ -141,5 +142,59 @@ export const CommitteeCorpusCoverageSchema = z.strictObject({
   }),
   basis: z.literal('materialized-records'),
 });
+
+const httpsUrl = z.url({ protocol: /^https$/ });
+
+/** One committee study that the publisher currently lists as seeking briefs. */
+export const CommitteeCallSchema = z.strictObject({
+  id: z.string().min(1),
+  language: CommitteeLanguageSchema,
+  title: z.string().min(1).describe("The publisher's study title in this edition."),
+  url: httpsUrl.describe('The study page. Follow it for the order of reference and published briefs.'),
+  status: OpportunityOpenState,
+  statusBasis: OpportunityBasis,
+  deadline: OpportunityDeadlineSchema.nullable(),
+  instructions: z.string().max(400).nullable().describe('A short excerpt of the published submission instructions.'),
+  instructionsTruncated: z.boolean(),
+  instructionUrl: httpsUrl.nullable().describe('The publisher page that accepts a brief.'),
+  committee: z.strictObject({ id: z.string(), name: z.string().nullable() }),
+  study: z.strictObject({ id: z.string(), title: z.string(), url: httpsUrl }).nullable(),
+  listingUrl: httpsUrl.describe('The publisher page that lists this call as current.'),
+  contentWarning: z.boolean(),
+  contentWarningText: z.string().nullable().describe("The publisher's warning text, when it publishes one."),
+  observedAt: z.iso.datetime({ offset: true }),
+  firstObservedAt: z.iso.datetime({ offset: true }),
+});
+
+export const CommitteeCallsResponseSchema = z.strictObject({
+  session: z.string(),
+  asOf: z.iso.datetime({ offset: true }).describe('The instant the open state was computed for.'),
+  items: z.array(CommitteeCallSchema),
+  offset: z.number().int().nonnegative(),
+  limit: z.number().int().min(1).max(100),
+  hasMore: z.boolean(),
+  coverageBasis: z.literal('materialized-records'),
+});
+
+export const CommitteeCallDetailResponseSchema = z.discriminatedUnion('state', [
+  z.strictObject({
+    state: z.literal('found'),
+    asOf: z.iso.datetime({ offset: true }),
+    item: CommitteeCallSchema,
+    related: z.strictObject({
+      submissions: z.number().int().nonnegative().describe('Published briefs attached to the linked study.'),
+      evidence: z.number().int().nonnegative(),
+      meetings: z.number().int().nonnegative(),
+    }),
+  }),
+  z.strictObject({
+    state: z.literal('not-found'),
+    session: z.string(),
+    id: z.string(),
+    language: CommitteeLanguageSchema,
+  }),
+]);
+
+export type CommitteeCall = z.infer<typeof CommitteeCallSchema>;
 
 export type CommitteeLanguage = z.infer<typeof CommitteeLanguageSchema>;

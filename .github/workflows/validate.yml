@@ -51,5 +51,7 @@ jobs:
           python3 -B test/test_parliament_journal_roll_calls.py
       - name: Check funding catalogue intakes
         run: python3 -B -m unittest discover -s test -p 'test_funding_*.py'
+      - name: Check committee intakes
+        run: python3 -B -m unittest discover -s test -p 'test_committee_*.py'
       - name: Bundle every Cloudflare Worker without deployment
         run: bun run build

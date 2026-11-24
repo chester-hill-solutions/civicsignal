@@ -1,0 +1,196 @@
+{
+  "generatedAt": "2026-11-24T16:20:02.793Z",
+  "environment": {
+    "bun": "1.4.4",
+    "node": "v26.3.1",
+    "platform": "darwin arm64"
+  },
+  "commands": [
+    "python3 -B scripts/committee-calls.py --receipt docs/evidence/2026-11-24/committee-calls.json",
+    "CIVICSIGNAL_COMMITTEES_D1=data/corpus/committees/committee.sqlite bun run test test/endpoints.test.ts -t \"committee calls through the Worker\"",
+    "bun run validate",
+    "python3 -B -m unittest discover -s test -p 'test_committee_*.py'"
+  ],
+  "acquisition": {
+    "session": "45-1",
+    "observedAt": "2026-11-24T16:17:46Z",
+    "houseSources": [
+      {
+        "chamber": "house",
+        "language": "en",
+        "url": "https://www.ourcommons.ca/Committees/en/Participate",
+        "sha256": "3e05a52129ba8bdec045b534e19eccb0fd4a5fa7e6a9ad55cb25fbfbc7c51323",
+        "studies": 15
+      },
+      {
+        "chamber": "house",
+        "language": "fr",
+        "url": "https://www.ourcommons.ca/Committees/fr/Participate",
+        "sha256": "aa1c6e65c40acdf2cd976d9ed7107691630ec7d04f4513c139351e9fe81afff7",
+        "studies": 15
+      }
+    ],
+    "counts": {
+      "calls": 30,
+      "committees": 6,
+      "deadlines": 14,
+      "deadlineInstants": 14,
+      "instructionBlocks": 18,
+      "contentWarnings": 4
+    },
+    "callsPerEdition": {
+      "en": 15,
+      "fr": 15
+    },
+    "senatePagesChecked": [
+      {
+        "url": "https://sencanada.ca/en/committees/",
+        "media": "text/html",
+        "bytes": 81386,
+        "error": null,
+        "sha256": "d0920d4665890bd01444f45594b480b36e7151e907b09550697b749c82b8739a",
+        "state": "archived",
+        "chamber": "senate",
+        "language": "en",
+        "listing": "no-call-listing-in-archived-html"
+      },
+      {
+        "url": "https://sencanada.ca/en/committees/aefa/",
+        "media": "text/html",
+        "bytes": 76865,
+        "error": null,
+        "sha256": "b2087a44205586183d230c80a7b81314032c93f9392e39f85e95099a991680ca",
+        "state": "archived",
+        "chamber": "senate",
+        "language": "en",
+        "listing": "no-call-listing-in-archived-html"
+      },
+      {
+        "url": "https://sencanada.ca/en/committees/aefa/briefs/45-1",
+        "media": "text/html",
+        "bytes": 64265,
+        "error": null,
+        "sha256": "25dab206c53046e98b1c3c2f5111679d58ed1f30be85b2268221c8fc659baec0",
+        "state": "archived",
+        "chamber": "senate",
+        "language": "en",
+        "listing": "no-call-listing-in-archived-html"
+      },
+      {
+        "url": "https://sencanada.ca/en/committees/aefa/studiesandbills/45-1",
+        "media": "text/html",
+        "bytes": 63517,
+        "error": null,
+        "sha256": "9e4499b2d882529076cf6785ab56fdf66612e78efb6e4691b7e8d0e7146a01fe",
+        "state": "archived",
+        "chamber": "senate",
+        "language": "en",
+        "listing": "no-call-listing-in-archived-html"
+      },
+      {
+        "url": "https://sencanada.ca/fr/comites/",
+        "media": "text/html",
+        "bytes": 83540,
+        "error": null,
+        "sha256": "189e5500fcec22212cc64f33282213d125363d9a9f5e7b37d8c1bc69747cac37",
+        "state": "archived",
+        "chamber": "senate",
+        "language": "fr",
+        "listing": "no-call-listing-in-archived-html"
+      },
+      {
+        "url": "https://sencanada.ca/fr/comites/aefa/",
+        "media": "text/html",
+        "bytes": 78540,
+        "error": null,
+        "sha256": "a6d0f63add3bcefaf46853bba7c83cbee4ae308aaec85ab6d5388cd4306d57a6",
+        "state": "archived",
+        "chamber": "senate",
+        "language": "fr",
+        "listing": "no-call-listing-in-archived-html"
+      },
+      {
+        "url": "https://sencanada.ca/fr/comites/aefa/memoires/45-1",
+        "media": "text/html",
+        "bytes": 65775,
+        "error": null,
+        "sha256": "97e548f27425da1f8af14cf6c2d08611e60ed1294be2dd2ccc2161229440eb77",
+        "state": "archived",
+        "chamber": "senate",
+        "language": "fr",
+        "listing": "no-call-listing-in-archived-html"
+      },
+      {
+        "url": "https://sencanada.ca/fr/comites/aefa/etudesetprojetsdeloi/45-1",
+        "media": "text/html",
+        "bytes": 64903,
+        "error": null,
+        "sha256": "d17488237da80938384bbc77d75772f7e66d7527bffc051c96f0227c3adb46bd",
+        "state": "archived",
+        "chamber": "senate",
+        "language": "fr",
+        "listing": "no-call-listing-in-archived-html"
+      }
+    ],
+    "studiesNotYetInCorpus": []
+  },
+  "studyTitleRepair": {
+    "studies": 13,
+    "editionRows": 26,
+    "remainingActionTitles": 0,
+    "cause": "The House Work index repeats each study URL on a \"Participate\" button; an earlier catalogue build stored that label as the study title.",
+    "fix": "scripts/committee-catalogue.py house_index keeps the study title link; test/test_committee_catalogue.py covers it. This intake repaired the linked study rows from the publisher listing label."
+  },
+  "queries": {
+    "englishOpenNow": 15,
+    "englishWithDeadline": 7,
+    "englishWithoutDeadline": 8,
+    "apprenticeship": {
+      "items": 0,
+      "asOf": "2026-11-24T16:20:02.771Z",
+      "hasMore": false
+    },
+    "sample": [
+      {
+        "id": "house-chpc-call-13668976",
+        "status": "open",
+        "statusBasis": "deadline",
+        "deadline": "2026-12-09T04:59:00Z",
+        "study": "Bill C-34, An Act to enact the Digital Safety Act and the Digital Safety Commission of Canada Act and to make consequential amendments to other Acts"
+      },
+      {
+        "id": "house-fewo-call-13612330",
+        "status": "open",
+        "statusBasis": "deadline",
+        "deadline": "2026-11-28T04:59:00Z",
+        "study": "Impact of Artificial Intelligence on Women, Girls and 2SLGBTQIA+ Individuals"
+      },
+      {
+        "id": "house-fewo-call-13634118",
+        "status": "open",
+        "statusBasis": "deadline",
+        "deadline": "2026-12-12T04:59:00Z",
+        "study": "State of Fertility in Canada"
+      }
+    ]
+  },
+  "detail": {
+    "id": "house-hesa-call-13632808",
+    "status": "open",
+    "statusBasis": "listing-observation",
+    "study": {
+      "id": "house-hesa-study-13632808",
+      "title": "Diagnostic Imaging Capacity",
+      "url": "https://www.ourcommons.ca/committees/en/HESA/StudyActivity?studyActivityId=13632808"
+    },
+    "related": {
+      "submissions": 5,
+      "evidence": 1,
+      "meetings": 4
+    },
+    "instructionUrl": "https://www.ourcommons.ca/committee-participation/en/submit-brief/hesa/13632808",
+    "instructionsCharacters": 400,
+    "instructionsTruncated": true,
+    "frenchStatus": "open"
+  }
+}

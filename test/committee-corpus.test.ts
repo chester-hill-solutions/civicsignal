@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import type { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import {
+  CommitteeCallDetailResponseSchema,
+  CommitteeCallsResponseSchema,
   CommitteeCorpusCoverageSchema,
   CommitteeCorpusPageSchema,
   CommitteeCorpusSearchResponseSchema,
@@ -20,6 +22,10 @@ describe('committee corpus HTTP contract', () => {
       .toEqual({ op: 'studies', session: '45-1', id: 'house-envi' });
     expect(matchCommitteeCorpusRoute('/api/committees/45-1/documents/shared-file/passages'))
       .toEqual({ op: 'passages', session: '45-1', id: 'shared-file' });
+    expect(matchCommitteeCorpusRoute('/api/committees/45-1/calls')).toEqual({ op: 'calls', session: '45-1' });
+    expect(matchCommitteeCorpusRoute('/api/committees/45-1/calls/house-hesa-call-13632808'))
+      .toEqual({ op: 'call', session: '45-1', id: 'house-hesa-call-13632808' });
+    expect(matchCommitteeCorpusRoute('/api/committees/45-1/calls/a/b')).toBeUndefined();
     expect(matchCommitteeCorpusRoute('/api/committees/search')).toEqual({ op: 'search' });
     expect(matchCommitteeCorpusRoute('/unrelated/45-1')).toBeUndefined();
     expect(matchCommitteeCorpusRoute('/api/committees/45-1/not%20an%20id')).toBeUndefined();
@@ -37,12 +43,18 @@ describe('committee corpus HTTP contract', () => {
     expect(() => prepare(`${COMMITTEE_CORPUS_PATH}/search?query=x&language=en&limit=101`)?.(env)).toThrow(/limit/);
     expect(() => prepare(`${COMMITTEE_CORPUS_PATH}/search?query=x&language=de`)?.(env)).toThrow(/language/);
     expect(prepare(`${COMMITTEE_CORPUS_PATH}/search?query=water&language=fr&limit=10`)?.(env)).toBeTypeOf('function');
+    expect(() => prepare(`${COMMITTEE_CORPUS_PATH}/45-1/calls?status=maybe`)?.(env)).toThrow(/open, closed or unknown/);
+    expect(() => prepare(`${COMMITTEE_CORPUS_PATH}/45-1/calls?asOf=not-a-date`)?.(env)).toThrow(/ISO date/);
+    expect(() => prepare(`${COMMITTEE_CORPUS_PATH}/45-1/calls?query=`)?.(env)).toThrow(/256/);
+    expect(prepare(`${COMMITTEE_CORPUS_PATH}/45-1/calls?status=open&asOf=2026-11-24`)?.(env)).toBeTypeOf('function');
   });
 
   it('advertises the committee routes and keeps the freshwater brief contract', () => {
     const api = committeeStudyOpenApi();
     expect(api.paths[`${COMMITTEE_CORPUS_PATH}/search`]?.get.operationId).toBe('searchCommitteeCorpus');
     expect(api.paths[`${COMMITTEE_CORPUS_PATH}/coverage`]?.get.operationId).toBe('getCommitteeCorpusCoverage');
+    expect(api.paths[`${COMMITTEE_CORPUS_PATH}/{session}/calls`]?.get.operationId).toBe('listCommitteeCalls');
+    expect(api.paths[`${COMMITTEE_CORPUS_PATH}/{session}/calls/{callId}`]?.get.operationId).toBe('getCommitteeCall');
     expect(api.paths[`${COMMITTEE_CORPUS_PATH}/{session}/documents/{documentId}/passages`]?.get.description)
       .toContain('400 characters');
     expect(api.paths['/api/committees/house/ENVI/studies/freshwater/brief']?.get.operationId)
@@ -182,6 +194,82 @@ describe('committee corpus HTTP contract', () => {
     });
     const laterGaps = CommitteeCorpusCoverageSchema.parse(await read('/api/committees/coverage?session=45-1&limit=1&offset=1'));
     expect(laterGaps.outstanding.ids).toHaveLength(1);
+    fixture.close();
+  });
+
+  it('serves a published call for the queried date and links it to its study', async () => {
+    const schema = readFileSync('preview/committees/migrations/0001_committee_preview.sql', 'utf8');
+    const fixture = testD1({ schema });
+    const { db } = fixture;
+    const put = (record: { id: string; language?: 'en' | 'fr'; kind: string; chamber?: string | null;
+      committee: string | null; title?: string; status?: string; metadata?: object }) =>
+      db.prepare('INSERT INTO cc_records VALUES(?,?,?,?,?,?,?,?,?,?,?)')
+        .bind('45-1', record.id, record.language ?? 'en', record.kind, record.chamber ?? 'house', record.committee,
+          record.title ?? `Title ${record.id}`, `https://example.org/${record.id}`, record.status ?? 'indexed',
+          JSON.stringify(record.metadata ?? {}), null).run();
+    const deadline = { text: 'before 11:59 p.m. (EST) on Monday, November 30, 2026',
+      instant: '2026-12-01T04:59:00Z', timeZone: 'EST' };
+    const call = (id: string, extra: object) => ({
+      delivery: 'excerpt', studyId: id.replace(/^.*-study-/, ''), listingUrl: 'https://example.org/participate',
+      instructionUrl: 'https://example.org/submit-brief/hesa/1', instructions: 'x'.repeat(600),
+      contentWarning: false, observedAt: '2026-11-24T12:00:00Z', firstObservedAt: '2026-11-24T12:00:00Z', ...extra,
+    });
+    await put({ id: 'house-hesa', kind: 'committee', committee: 'house-hesa', title: 'Standing Committee on Health' });
+    await put({ id: 'house-hesa-study-13632808', kind: 'study', committee: 'house-hesa', title: 'Diagnostic Imaging Capacity' });
+    await put({ id: 'house-hesa-call-13632808', kind: 'call', committee: 'house-hesa',
+      title: 'Diagnostic Imaging Capacity', metadata: call('house-hesa-study-13632808', { deadline }) });
+    await put({ id: 'house-hesa-call-13145156', kind: 'call', committee: 'house-hesa',
+      title: 'Opioid Epidemic', metadata: call('house-hesa-study-13145156', {
+        deadline: { text: 'before ...', instant: '2026-11-01T04:59:00Z', timeZone: 'EST' } }) });
+    await put({ id: 'house-hesa-call-13604489', kind: 'call', committee: 'house-hesa',
+      title: 'Food Price Inflation', metadata: call('house-hesa-study-13604489', { deadline: null }) });
+    await put({ id: 'house-hesa-call-13631120', language: 'fr', kind: 'call', committee: 'house-hesa',
+      title: 'Risques pour la science', metadata: call('house-hesa-study-13631120', { delivery: 'metadata-only' }) });
+    await put({ id: 'house-hesa-submission-1', kind: 'submission', committee: 'house-hesa', status: 'searchable',
+      metadata: { delivery: 'metadata-only' } });
+    await put({ id: 'house-hesa-notice-1', kind: 'notice', committee: 'house-hesa', status: 'searchable' });
+    await db.prepare('INSERT INTO cc_links VALUES(?,?,?,?,?)').bind('45-1', 'en', 'house-hesa-study-13632808', 'house-hesa-submission-1', 'study-publication').run();
+    await db.prepare('INSERT INTO cc_links VALUES(?,?,?,?,?)').bind('45-1', 'en', 'house-hesa-study-13632808', 'house-hesa-notice-1', 'study-publication').run();
+
+    const env = { COMMITTEE_CORPUS_PREVIEW: 'on', COMMITTEE_DB: db } as Env;
+    const read = async (path: string): Promise<unknown> => {
+      const handler = prepareCommitteeCorpus(new URL(`https://example.test${path}`))?.(env);
+      if (!handler) throw new Error(`No committee handler matched ${path}.`);
+      return handler();
+    };
+
+    const open = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=en&asOf=2026-11-24T18:00:00Z'));
+    expect(open.items.map(item => [item.id, item.status, item.statusBasis])).toEqual([
+      ['house-hesa-call-13145156', 'closed', 'deadline'],
+      ['house-hesa-call-13604489', 'open', 'listing-observation'],
+      ['house-hesa-call-13632808', 'open', 'deadline'],
+    ]);
+    expect(open.items[2]).toMatchObject({
+      title: 'Diagnostic Imaging Capacity', contentWarning: false,
+      committee: { id: 'house-hesa', name: 'Standing Committee on Health' },
+      study: { id: 'house-hesa-study-13632808', title: 'Diagnostic Imaging Capacity' },
+      deadline: { instant: '2026-12-01T04:59:00Z', timeZone: 'EST' },
+      instructionsTruncated: true,
+    });
+    expect(open.items[2]?.instructions).toHaveLength(400);
+
+    const filtered = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=en&status=open&asOf=2026-11-24T18:00:00Z'));
+    expect(filtered.items.map(item => item.id)).toEqual(['house-hesa-call-13604489', 'house-hesa-call-13632808']);
+    const beforeObservation = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=en&asOf=2026-11-01T00:00:00Z'));
+    expect(beforeObservation.items.every(item => item.status === 'unknown' && item.statusBasis === 'unobserved')).toBe(true);
+    const afterObservation = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=en&asOf=2026-11-30T18:00:00Z'));
+    expect(afterObservation.items.find(item => item.id === 'house-hesa-call-13604489')?.status).toBe('unknown');
+    const french = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=fr&asOf=2026-11-24T18:00:00Z'));
+    expect(french.items[0]).toMatchObject({ instructions: null, instructionsTruncated: false });
+
+    const detail = CommitteeCallDetailResponseSchema.parse(await read('/api/committees/45-1/calls/house-hesa-call-13632808?language=en&asOf=2026-11-24T18:00:00Z'));
+    expect(detail.state).toBe('found');
+    if (detail.state === 'found') {
+      expect(detail.related).toEqual({ submissions: 1, evidence: 0, meetings: 0 });
+      expect(detail.item.study?.id).toBe('house-hesa-study-13632808');
+    }
+    expect(await read('/api/committees/45-1/calls/house-hesa-call-13632808?language=fr&asOf=2026-11-24T18:00:00Z'))
+      .toMatchObject({ state: 'not-found', id: 'house-hesa-call-13632808' });
     fixture.close();
   });
 });
