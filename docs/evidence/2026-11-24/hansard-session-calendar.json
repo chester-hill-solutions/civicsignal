@@ -1,0 +1,167 @@
+{
+  "session": "45-1",
+  "from": "2025-05-26",
+  "through": "2026-11-22",
+  "importedWeekOf": "2026-11-16",
+  "weeksTested": 78,
+  "baseCommit": "181596646406244a4f5b5f903c1e4533f622c23f",
+  "runtime": "Bun 1.4.4 on macOS arm64",
+  "publisherRequests": {
+    "calendars": 2,
+    "transcripts": 0,
+    "recheckUsedCapturedCalendarBytes": true
+  },
+  "chambers": {
+    "house": {
+      "source": {
+        "url": "https://www.ourcommons.ca/documentviewer/en/SessionPublicationCalendarsWidget?organization=HOC&publicationTypeId=37&parliament=45&session=1",
+        "bytes": 381753,
+        "sha256": "b2400989379ddb9475639dbabde0eacf7def432e5ffa5f752f7800f9ed5e71a4",
+        "observedAt": "2026-11-24T20:49:42.871Z"
+      },
+      "parserPath": "scripts/lib/hansard-house-source.ts",
+      "parserSha256": "349f9d9751edbed7990af122ba17517e19f26336e855b9f76f55e11e63842785",
+      "weeksWithListedSittingsOrIssues": 35,
+      "weeksWithCompleteDatesAndNoSittings": 43,
+      "parserCoverageFailures": [],
+      "consecutiveSittingOrIssueCount": 169,
+      "first": {
+        "sittingDate": "2025-05-26",
+        "sittingId": "45-1-1"
+      },
+      "last": {
+        "sittingDate": "2026-11-20",
+        "sittingId": "45-1-169"
+      },
+      "expectedBilingualEditionSlots": 338,
+      "expectedEarlierEditionSlots": 328,
+      "importedWeek": {
+        "weekOf": "2026-11-16",
+        "sittingIds": [
+          "45-1-165",
+          "45-1-166",
+          "45-1-167",
+          "45-1-168",
+          "45-1-169"
+        ],
+        "expectedBilingualEditionSlots": 10
+      },
+      "latestEarlierSittingWeek": {
+        "weekOf": "2026-11-02",
+        "sittingIds": [
+          "45-1-160",
+          "45-1-161",
+          "45-1-162",
+          "45-1-163",
+          "45-1-164"
+        ],
+        "expectedBilingualEditionSlots": 10
+      }
+    },
+    "senate": {
+      "source": {
+        "url": "https://sencanada.ca/en/in-the-chamber/debates/45-1",
+        "bytes": 93041,
+        "sha256": "49e2b78c4d0cdeec3351e413215304f20ab88b4b4b172e0ccebe8ec6be8dc7dc",
+        "observedAt": "2026-11-24T20:49:42.219Z"
+      },
+      "parserPath": "scripts/lib/hansard-senate-source.ts",
+      "parserSha256": "7e8d229809381878da00b667cd639aae9af2ed6155d1dba2eaa1cad9ede0c8ec",
+      "weeksWithListedSittingsOrIssues": 34,
+      "weeksWithNoLinkedDebateIssue": 44,
+      "confirmedNoSittingWeeks": null,
+      "parserCoverageFailures": [],
+      "consecutiveSittingOrIssueCount": 104,
+      "first": {
+        "sittingId": "45-1-1",
+        "sittingDate": "2025-05-26"
+      },
+      "last": {
+        "sittingId": "45-1-104",
+        "sittingDate": "2026-11-19"
+      },
+      "expectedBilingualEditionSlots": 208,
+      "expectedEarlierEditionSlots": 202,
+      "importedWeek": {
+        "weekOf": "2026-11-16",
+        "sittingIds": [
+          "45-1-102",
+          "45-1-103",
+          "45-1-104"
+        ],
+        "expectedBilingualEditionSlots": 6
+      },
+      "latestEarlierSittingWeek": {
+        "weekOf": "2026-11-02",
+        "sittingIds": [
+          "45-1-99",
+          "45-1-100",
+          "45-1-101"
+        ],
+        "expectedBilingualEditionSlots": 6
+      }
+    }
+  },
+  "houseCalendarRepair": {
+    "priorCoverageFailures": 10,
+    "cause": "Some adjournment tabling cells use the adjournment-tabling class in place of the full-date class.",
+    "recoveredDays": [
+      {
+        "date": "2025-07-16",
+        "journal": "20B",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      },
+      {
+        "date": "2025-08-20",
+        "journal": "20C",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      },
+      {
+        "date": "2025-12-17",
+        "journal": "72A",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      },
+      {
+        "date": "2026-01-21",
+        "journal": "72B",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      },
+      {
+        "date": "2026-02-18",
+        "journal": "86A",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      },
+      {
+        "date": "2026-03-18",
+        "journal": null,
+        "dateEvidence": "Unlinked March cell between explicitly dated March 17 and 19 cells in the same row, with displayed day 18"
+      },
+      {
+        "date": "2026-05-20",
+        "journal": "120A",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      },
+      {
+        "date": "2026-07-22",
+        "journal": "139B",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      },
+      {
+        "date": "2026-08-19",
+        "journal": "139C",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      },
+      {
+        "date": "2026-09-16",
+        "journal": "139D",
+        "dateEvidence": "Same-session lettered Journals link, full aria-label date, and matching displayed day"
+      }
+    ]
+  },
+  "earlierCandidateEditionSlots": 530,
+  "limits": [
+    "House coverage requires all seven dates for each week and excludes adjournment tablings from the sitting count.",
+    "An empty Senate week has no debate issue link. The Senate calendar does not establish that no sitting occurred.",
+    "Candidate edition slots come from listed sitting or issue IDs. This run did not check historic transcript availability or language coverage."
+  ]
+}

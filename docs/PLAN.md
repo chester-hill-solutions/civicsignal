@@ -148,7 +148,7 @@ Unspent slots do not authorize another operation, reset, retry, or replacement l
 
 | Evidence scope | Source and recorded position |
 | --- | --- |
-| Local execution | The uncommitted successor to `8302892` includes exact citation parity, bounded chat follow-ups, and two intake repairs. [Changes and local evidence](V1-RELEASE.md#november-24-local-serving-and-intake-repairs) |
+| Local execution | Commit `1815966` includes exact citation parity, bounded chat follow-ups, and two intake repairs. [Changes and local evidence](V1-RELEASE.md#november-24-local-serving-and-intake-repairs) |
 | Local assessment | `8302892` contains the current source previews and the citation boundary repair. The audit used local fixtures and saved staging observations. [Local assessment](V1-RELEASE.md#november-24-code-assessment-reconciliation) |
 | Qualified base | `44ce56f` includes the memory fix and serving guards. Clean local checks and Linux CI passed for that source. [Base candidate](V1-RELEASE.md#november-23-clean-mp-03-candidate) |
 | Last recorded hybrid staging target | `65bd7ff` on Worker version `17dcf4a5` used corpus `855cdfc` and a matching R2 lexical index. D-01 remains open. [Hybrid receipt](V1-RELEASE.md#november-23-repaired-hybrid-d-01) |
@@ -919,6 +919,10 @@ bun scripts/hansard-local.ts show "$hansard_db" senate-hansard:fr:45-1-67:8-1
 ### Hansard HTTP preview
 
 The Worker exposes chamber-specific search and exact speech lookup with typed request, response, and error schemas, workspace authorization and usage, and a generated OpenAPI description. Both chambers use the same search and lookup logic. The data routes are disabled by default. Local tests proved the contract with fixture rows, and Workerd served OpenAPI and enforced workspace authentication. Each chamber now also has a typed change feed. MCP operations and scheduled publication remain open. Hosted source use remains part of D-08. [Hansard API contract](HANSARD-API.md) · [Contract tests](../test/endpoints.test.ts)
+
+**November 24 local intake.** The November 16–22 week covered House sittings 165–169 and Senate sittings 102–104. The combined session store served both languages through authenticated search, exact lookup, and change cursors. Repeat source checks added zero change events. Check older and newly published editions against their official sources before expanding the coverage claim. [Rebuild and acceptance](HANSARD-API.md#current-session-local-intake)
+
+The 78 completed weeks through November 22 list 169 House sittings and 104 Senate debate issues. The House calendar confirms 43 weeks without a sitting. The Senate index lists no issue in 44 weeks. A week without a Senate debate link does not establish whether the chamber sat. The earlier weeks account for 530 possible language editions. Continue with November 2–8, House sittings 160–164 and Senate issues 99–101. Check each listed edition against the publisher. [Session calendar receipt](evidence/2026-11-24/hansard-session-calendar.json)
 
 Ratchet Strap enforces the 13 rules in Callcaster's lint ratchet against CivicSignal's baseline. The CI workflow supplies the prior revision for baseline comparison. Local `bun run validate` passed all 2,403 tests, with Workerd checks enabled. [Rule profile](../house-rules/index.mjs) · [Validation workflow](../.github/workflows/validate.yml)
 

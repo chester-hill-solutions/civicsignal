@@ -1,0 +1,184 @@
+{
+  "generatedAt": "2026-11-24T20:48:10Z",
+  "environment": {
+    "platform": "darwin arm64",
+    "acquisitionBun": "1.4.4"
+  },
+  "scope": {
+    "source": "Senate of Canada",
+    "session": "45-1",
+    "weekOf": "2026-11-16",
+    "weekThrough": "2026-11-22",
+    "languageEditions": [
+      "en",
+      "fr"
+    ],
+    "calendarUrl": "https://sencanada.ca/en/in-the-chamber/debates/45-1",
+    "parser": "senate-hansard-html-v1",
+    "firstIndexedAt": "2026-11-24T20:44:23.993Z",
+    "lastIndexedAt": "2026-11-24T20:44:24.916Z"
+  },
+  "sittings": [
+    {
+      "sittingId": "45-1-102",
+      "sittingDate": "2026-11-17",
+      "editions": {
+        "en": {
+          "url": "https://sencanada.ca/en/content/sen/chamber/451/debates/102db_2026-11-17-e",
+          "bytes": 418371,
+          "sha256": "ce6999b9218016011d64c978bdf818b07ee25f10bbeabb2d096126c99b537598",
+          "indexedOpeningTurns": 156
+        },
+        "fr": {
+          "url": "https://sencanada.ca/fr/content/sen/chamber/451/debates/102db_2026-11-17-f",
+          "bytes": 490768,
+          "sha256": "46e9c32ab49f6ef806d74d997222bdfb0d6987df0a38d48ca3aa6a4089a9915e",
+          "indexedOpeningTurns": 156
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-103",
+      "sittingDate": "2026-11-18",
+      "editions": {
+        "en": {
+          "url": "https://sencanada.ca/en/content/sen/chamber/451/debates/103db_2026-11-18-e",
+          "bytes": 163043,
+          "sha256": "e93e4e9be025faf8ea9603eb66318d70e163a112b2e6bd71f08a063cab991bb0",
+          "indexedOpeningTurns": 75
+        },
+        "fr": {
+          "url": "https://sencanada.ca/fr/content/sen/chamber/451/debates/103db_2026-11-18-f",
+          "bytes": 184642,
+          "sha256": "6184fda55777bd9429ee34d0f1876722a1d88db9ccb6338fb27feafa9396d98c",
+          "indexedOpeningTurns": 75
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-104",
+      "sittingDate": "2026-11-19",
+      "editions": {
+        "en": {
+          "url": "https://sencanada.ca/en/content/sen/chamber/451/debates/104db_2026-11-19-e",
+          "bytes": 270122,
+          "sha256": "43a472ed6d47199005139ab161f37df8ff4c1e5370168c8dd68e867d2bebda63",
+          "indexedOpeningTurns": 112
+        },
+        "fr": {
+          "url": "https://sencanada.ca/fr/content/sen/chamber/451/debates/104db_2026-11-19-f",
+          "bytes": 309202,
+          "sha256": "eb4ba8ec918c7c25ec43f02e3beaa03b8c218f98f7803843210e699d423b24f4",
+          "indexedOpeningTurns": 112
+        }
+      }
+    }
+  ],
+  "firstLiveImport": {
+    "complete": true,
+    "imported": 6,
+    "missing": 0,
+    "failed": 0,
+    "indexedOpeningTurns": {
+      "en": 343,
+      "fr": 343
+    },
+    "changeFeedBaseline": {
+      "en": {
+        "added": 343,
+        "lastSequence": 574
+      },
+      "fr": {
+        "added": 343,
+        "lastSequence": 686
+      }
+    }
+  },
+  "liveRepeat": {
+    "complete": true,
+    "reprocessedEditions": 6,
+    "missing": 0,
+    "failed": 0,
+    "newChangeEvents": 0,
+    "example": {
+      "sittingId": "45-1-104",
+      "language": "en",
+      "sameLengthBytes": 270122,
+      "varyingFields": [
+        "stylesheet version query",
+        "body data-lb metadata"
+      ],
+      "responseSha256": [
+        "f3a9a6011a3da7236f281c8b3c6455959da157e27b3726edd4707f3e30702b13",
+        "17db524310a099070b560e01ab7aa69c5d371437d9d90353e6f013ee1adb25cf"
+      ],
+      "sameParsedEditionSha256": "903696eec07424d9b97ad3fb69e1672f05b0de4b4567c6f046f4ee14748bb160"
+    }
+  },
+  "offlineReplay": {
+    "manifest": "dist/hansard/senate-2026-11-16-week/week.json",
+    "database": "dist/hansard/senate-2026-11-16.sqlite",
+    "capturedEditions": 6,
+    "firstReplayReprocessedEditions": 6,
+    "identicalReplayUnchangedEditions": 6,
+    "identicalReplaySpeechWrites": 0,
+    "newChangeEvents": 0,
+    "databaseSha256AfterBothReplays": "b293fb84be13d40f324dc4949678e69730839d44a586431500a486f0ba5a54b2",
+    "orderedRowDigestsUnchangedAcrossBothReplays": {
+      "hansard_speeches": {
+        "rows": 686,
+        "sha256": "52db438f831db44a474b01222877835c065b1e23232728dfbc301eb1efa81f0e"
+      },
+      "source_feed_events": {
+        "rows": 686,
+        "sha256": "2caebd7666817fc1635bf35d415e836b7fbef34cfac3c0df6d1c54ba85ee1bee"
+      },
+      "source_feed_editions": {
+        "rows": 6,
+        "sha256": "2e0f81533607a4e8266a71afbac1a832c48cd64b952dd5801420ba9a5995c296"
+      }
+    }
+  },
+  "searchAndExactLookup": [
+    {
+      "language": "en",
+      "query": "budget",
+      "returned": 12,
+      "checkedId": "senate-hansard:en:45-1-104:26-4",
+      "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/104db_2026-11-19-e#26",
+      "exactLookupExcerptCharacters": 243,
+      "redistribution": "cite-only",
+      "hasBody": false
+    },
+    {
+      "language": "fr",
+      "query": "budget",
+      "returned": 11,
+      "checkedId": "senate-hansard:fr:45-1-104:26-4",
+      "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/104db_2026-11-19-f#26",
+      "exactLookupExcerptCharacters": 298,
+      "redistribution": "cite-only",
+      "hasBody": false
+    }
+  ],
+  "commands": [
+    "bun --no-env-file scripts/hansard-local.ts sync-senate-week dist/hansard/senate-2026-11-16.sqlite 45-1 2026-11-16",
+    "bun --no-env-file scripts/hansard-local.ts replay-senate-week dist/hansard/senate-2026-11-16.sqlite dist/hansard/senate-2026-11-16-week/week.json",
+    "bun --no-env-file scripts/hansard-local.ts search-senate dist/hansard/senate-2026-11-16.sqlite <en|fr> budget",
+    "bun --no-env-file scripts/hansard-local.ts show dist/hansard/senate-2026-11-16.sqlite senate-hansard:<en|fr>:45-1-104:26-4"
+  ],
+  "localChecks": {
+    "bun": "1.3.5",
+    "node": "24.22.3",
+    "testFiles": 4,
+    "passed": 256,
+    "skipped": 12,
+    "command": "bun --no-env-file run test test/senate-hansard.test.ts test/hansard-store.test.ts test/hansard-week.test.ts test/endpoints.test.ts --maxWorkers=3 --minWorkers=1"
+  },
+  "limits": [
+    "Local non-commercial preview of speaker-labelled opening paragraphs, bounded to 400 characters per turn.",
+    "Raw editions are retained only in the private, Git-ignored local replay packet.",
+    "The change feed starts at this local baseline and does not measure publisher corrections before acquisition.",
+    "Section anchors identify the official transcript section. Hosted delivery was outside this check."
+  ]
+}

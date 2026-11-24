@@ -30,3 +30,18 @@ To export the OpenAPI document directly from a checkout, run the following comma
 ```sh
 bun --no-env-file -e 'import { hansardOpenApi } from "./src/routes/hansard-openapi"; console.log(JSON.stringify(hansardOpenApi(), null, 2))' > hansard.openapi.json
 ```
+
+## Current-session local intake
+
+For November 16–22, 2026, the local store contains all ten House editions and six Senate editions listed for that week. Each language has 1,409 House interventions and 343 Senate speaker turns. House results cite the intervention. Senate results cite the transcript section and expose an excerpt from the opening paragraph.
+
+Use the same SQLite path for both chambers. Each command checks the official calendar for a completed Monday–Sunday week and imports the available editions.
+
+```sh
+mkdir -p dist/hansard
+bun --no-env-file scripts/hansard-local.ts sync-week dist/hansard/session-45-1.sqlite 45-1 2026-11-16
+bun --no-env-file scripts/hansard-local.ts sync-senate-week dist/hansard/session-45-1.sqlite 45-1 2026-11-16
+CIVICSIGNAL_HANSARD_SQLITE=dist/hansard/session-45-1.sqlite bun run test test/endpoints.test.ts -t 'November 16 week'
+```
+
+The authenticated checks cover search, exact lookup, and two cursor pages per language and chamber. On a second live check, all ten House XML files matched their previous hashes. The Senate pages changed bytes and produced the same indexed turns. Neither chamber produced a new change event. Compare the source hashes and change feed when checking later weeks. [House receipt](evidence/2026-11-24/hansard-house.json) · [Senate receipt](evidence/2026-11-24/hansard-senate.json)

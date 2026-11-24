@@ -294,6 +294,48 @@ describe('deployment discovery', () => {
 });
 
 describe('Hansard preview HTTP contract', () => {
+  const databasePath = process.env.CIVICSIGNAL_HANSARD_SQLITE;
+  it.skipIf(!databasePath).each(['house', 'senate'] as const)(
+    'reads the November 16 week from the acquired %s Hansard', async (chamber) => {
+      if (!databasePath) throw new Error('Supply the combined local Hansard store.');
+      const fixture = await setup(8);
+      const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
+      const db = new DatabaseSync(databasePath, { readOnly: true });
+      closed.push(() => db.close());
+      fixture.env.AUTH_DB = fixture.db;
+      fixture.env.CIVIC_DB = localD1(db);
+      fixture.env.HANSARD_PREVIEW = 'on';
+      const path = HANSARD_PATHS[chamber];
+      for (const language of ['en', 'fr'] as const) {
+        const topic = chamber === 'senate' ? 'budget' : language === 'en' ? 'housing' : 'logement';
+        const search = await fixture.send(path + '?' + new URLSearchParams({
+          language, topic, since: '2026-11-16', until: '2026-11-22', limit: '1',
+        }));
+        expect(search.status).toBe(200);
+        const { items } = HansardSearchResponseSchema.parse(await search.json());
+        expect(items).toHaveLength(1);
+        const [item] = items;
+        if (!item) throw new Error(`Missing ${chamber} Hansard result for ${language}.`);
+        expect(item).toMatchObject({ language, chamber, redistribution: 'cite-only' });
+        expect(item.sittingDate >= '2026-11-16' && item.sittingDate <= '2026-11-22').toBe(true);
+        const exact = await fixture.send(path + '/' + encodeURIComponent(item.id));
+        expect(exact.status).toBe(200);
+        expect(HansardLookupResponseSchema.parse(await exact.json()).item).toEqual(item);
+
+        const changes = path + '/changes?' + new URLSearchParams({ language, topic, limit: '1' });
+        const first = SourceFeedResponseSchema.parse(await (await fixture.send(changes)).json());
+        const next = SourceFeedResponseSchema.parse(await (await fixture.send(
+          changes + '&cursor=' + encodeURIComponent(first.nextCursor))).json());
+        expect(first.scope).toMatchObject({ source: chamber, language, redistribution: 'cite-only' });
+        expect(first.events).toHaveLength(1);
+        expect(next.events).toHaveLength(1);
+        const [previousEvent] = first.events;
+        if (!previousEvent) throw new Error(`Missing ${chamber} Hansard change for ${language}.`);
+        expect(next.events[0]?.id).toBeGreaterThan(previousEvent.id);
+      }
+      expect(await fixture.count()).toBe(8);
+    });
+
   it.each(['house', 'senate'] as const)('searches and resolves a cited %s speech by ID', async (chamber) => {
     const fixture = await setup();
     fixture.env.HANSARD_PREVIEW = 'on';
