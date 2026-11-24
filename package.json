@@ -16,6 +16,7 @@
     "check:billing-invariants": "node scripts/check-billing-invariants.mjs",
     "check:corpus-invariants": "node scripts/check-corpus-invariants.mjs",
     "refresh:committee-calls": "python3 -B scripts/committee-calls.py",
+    "refresh:daily": "bun scripts/refresh-daily.ts",
     "check:railway-iac": "bun scripts/check-railway-iac.ts",
     "ingest:statutes": "bun scripts/ingest-statutes.ts",
     "embed:statutes": "bun scripts/embed-corpus.ts",

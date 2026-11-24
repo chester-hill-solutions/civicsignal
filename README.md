@@ -27,7 +27,7 @@ python3 -I -B test/protected-state-d1-owned.test.py
 bun run build
 ```
 
-Refresh the local source previews with `bun run refresh:consultations` and `bun run refresh:committee-calls`; each writes a receipt with additions, removals and field-level changes.
+Refresh the local source previews with `bun run refresh:consultations`, `bun run refresh:committee-calls` or `bun run refresh:daily`; each writes a receipt with additions, removals and field-level changes. [Refresh runbook](docs/REFRESH.md)
 
 CI runs these commands without production credentials.
 Vendored CHS packages include their runtime files and a pinned [file manifest](vendor/chs-manifest.json).
