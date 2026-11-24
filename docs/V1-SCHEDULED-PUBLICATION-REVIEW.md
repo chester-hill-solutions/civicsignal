@@ -105,7 +105,7 @@ It selects no credentials and makes no network request.
 Declared allowances remain distinct from runtime enforcement; `executionReady` stays false.
 The checker requires at least 33,810 known custom-metadata key/value bytes for the 483 payload objects.
 This floor differs from the 18,711 local sidecar bytes and does not measure provider overhead.
-The owned execution operator and the dependencies below remain open. The [November staging composition](../scripts/lib/snapshot-publication-window.ts) connects live admission, the guarded calendar, and pinned artifact verification through explicit provider adapters.
+The [November staging runner](#running-the-reviewed-staging-event) connects live admission, the guarded calendar and pinned artifact verification. Hosted execution still needs the schedule credential, a fresh deployed packet and event-specific evidence.
 
 Safe source diagnostics now pass 119 pure checks and 11 native checks on October 31.
 Discovery receipts and archive Workflow errors retain typed codes, actual observed HTTP status, and safe quota facts.
@@ -169,7 +169,7 @@ bun --no-env-file scripts/verify-staged-snapshot.ts --staging-admission --packet
 
 The guarded runner can use `createSnapshotCfAdmissionReader` with the reviewed packet path, review ID and staging R2 read token. It checks the public Justice head, the exact Workflow instance, an empty untruncated R2 prefix, a missing qualified manifest, and the canonical manifest hash. Budget five reads for this adapter in addition to deployment, schedule, outcome and artifact operations. A check on an expired packet is a rehearsal. Repeat admission inside the fresh approved calendar window. [Instance readback](evidence/2026-11-24/staging-workflow-instance-absence.json) · [Admission reader](../scripts/lib/snapshot-publication-cf.ts) · [R2 list response](https://developers.cloudflare.com/api/resources/r2/subresources/buckets/subresources/objects/methods/list/)
 
-Upload and activate the publication Worker version without applying Workflow triggers, then repeat the calendar check. An adjusted Workflow definition requires fresh calendar evidence. The programmatic composition takes the reviewed upload pins, including the staged Workflow ID, and the same prepared packet as the verifier. It requires fresh source, exact namespace and instance absence, and a canonical backup match before arming. Its completion check requires the matching first-publishing Workflow and scheduled diagnostics, then runs the pinned artifact verifier. The process owner still supplies the approved scope and bounded provider adapters. [Local composition and hosted handoff](evidence/2026-11-24/snapshot-publication-composition.md) · [Cloudflare version and trigger commands](https://developers.cloudflare.com/cf/projects/#upload-a-version)
+Upload and activate the publication Worker version without applying Workflow triggers, then repeat the calendar check. An adjusted Workflow definition requires fresh calendar evidence. The programmatic composition takes the reviewed upload pins, including the staged Workflow ID, and the same prepared packet as the verifier. It requires fresh source, exact namespace and instance absence, and a canonical backup match before arming. Its completion check requires the matching first-publishing Workflow and scheduled diagnostics, then runs the pinned artifact verifier. The [staging runner](../scripts/run-staged-snapshot-publication.ts) supplies the bounded provider readers from a reviewed run specification. [Local composition and hosted handoff](evidence/2026-11-24/snapshot-publication-composition.md) · [Cloudflare version and trigger commands](https://developers.cloudflare.com/cf/projects/#upload-a-version)
 
 The [first publication version](V1-RELEASE.md#november-22-staging-publication-version) pinned 03:47 UTC and passed the deployed bundle, R2 binding, namespace, instance, and native calendar checks. Guard startup must begin before 03:30:45 UTC to allow for readiness checks and Cloudflare propagation. Each credential must expire after 04:10:10 UTC. An account administrator can issue a short-lived account-owned token with `Individual Workers Editor` limited to `civicsignal-v1-stage-nov16-snapshot`. Regenerate the prebuilt configuration and recheck its exact deployment for any later event. [Cloudflare Workers roles](https://developers.cloudflare.com/workers/authorization/workers/)
 
@@ -195,3 +195,47 @@ The local implementation does not close this hosted gate or establish a new
 full-corpus 128-MiB measurement. Another hosted event requires its own concrete
 approval; the original serving ledger and embedding coordinator must not be reset
 or spent for this qualification.
+
+## Staging schedule access
+
+Use a host whose operator can reserve the calendar on `civicsignal-v1-stage-nov16-snapshot` through cleanup. An existing staging operator can run the qualification in place. To issue a credential, a member with account API Token Provisioning and Editor access to this Worker, or a Super Administrator, can create an expiring account-owned token with **Individual Workers Editor** scoped to this Worker. The provisioner can use `cf accounts tokens create` from their authorized profile. Supply the resulting token through the host's secret configuration as `CLOUDFLARE_API_TOKEN`. The operator and both guards may use that same token. To use different guard credentials, set `CIVICSIGNAL_SNAPSHOT_PRIMARY_GUARD_TOKEN` and/or `CIVICSIGNAL_SNAPSHOT_BACKUP_GUARD_TOKEN`. Separately provide list and object-read access to `civicsignal-v1-stage-corpus-20261022`. [Account API tokens](https://developers.cloudflare.com/fundamentals/api/get-started/account-owned-tokens/) · [Workers roles](https://developers.cloudflare.com/workers/authorization/workers/)
+
+Reserve the calendar before starting the checks. Coordinate Worker and Workflow deployments with the staging owner so the reviewed version stays active through the event and cleanup. Set `CLEANUP_DEADLINE` to the prepared window's UTC timestamp including milliseconds. Each account token must remain valid more than ten seconds past that deadline.
+
+```sh
+bun --no-env-file scripts/snapshot-calendar.ts --fresh preflight-credentials --cleanup-deadline "$CLEANUP_DEADLINE"
+```
+
+Save the JSON receipt with the run. For each of the operator, primary guard and backup guard, the command verifies the account token and expiry, requires an empty calendar, writes an empty list, and independently reads it back. A successful preflight uses 12 requests including three empty schedule writes. It stops on the first refusal. The event run must still start both detached guards, arm the fresh event and collect both cleanup receipts and its own final empty readback.
+
+## Running the reviewed staging event
+
+On the operator host, use the pinned private bundle and a new private output directory to prepare the event. Select a UTC minute with enough time for upload, deployment readback, credential preflight and guard startup before the propagation cutoff.
+
+```sh
+bun --no-env-file scripts/prepare-snapshot-cf-stage.ts "$BUNDLE_PATH" "$NEW_STAGE_DIR" --scheduled-at "$SCHEDULED_AT"
+```
+
+Activate the prepared staging version using the version-only procedure above and retain the upload and deployment IDs. Use the fresh packet and the activated version’s receipt for this event. The command below is the live execution entry point. It can arm the staging calendar. The credential preflight above can be run independently.
+
+```sh
+bun --no-env-file scripts/run-staged-snapshot-publication.ts --reviewed-spec "$REVIEWED_SPEC"
+```
+
+Allow for the before-arm version read, including its module bytes, and the operator token verification in the admission budget. The active November version returned 349,894 bytes with the installed `cf`. The review expiry must cover cleanup, the final calendar read, the full Workflow observation allowance and the two-hour artifact scan.
+
+Supply the operator and optional guard credentials as above. Set `CIVICSIGNAL_SNAPSHOT_R2_READ_TOKEN` to the staging R2 credential for namespace admission, diagnostic reads and full artifact reads. The named `cf` profile must be able to read the staging Worker version and module, deployment, Workflow and instance.
+
+Keep the reviewed JSON specification in an owner-only file at an absolute canonical path. The runner reads these fields.
+
+| Field | Value to bind |
+| --- | --- |
+| `format`, `worker` | `1` and `civicsignal-v1-stage-nov16-snapshot` |
+| `review` | The review’s `id`, `execute: true` and UTC `validUntil` |
+| `packet` | Absolute `path`, exact file `bytes` and `sha256` of the fresh private `prepared-stage.json`. Keep the generated configuration tree beside it. |
+| `deployment` | The new `deploymentId`, `versionId`, `workflowId` and `configSha256` |
+| `cfMetadataProfile`, `journal` | Named read profile and an unused absolute journal path under a private directory |
+| `credentialExpiries` | UTC `operator`, `primary` and `backup` expiry instants. Use milliseconds and a trailing `Z` for timestamps. |
+| `evidence` | Reviewed positive integers for `admissionMs`, `observationMs`, `maxInstanceReads` and `pollIntervalMs` |
+
+Keep the terminal `publication-result.json` with the two guard receipts and `calendar-result.json` in the private journal. A calendar success alone leaves publication unverified.

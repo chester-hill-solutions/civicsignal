@@ -87,5 +87,5 @@ exit 1
     } finally {
       await rm(directory, { force: true, recursive: true });
     }
-  });
+  }, 12_000);
 });

@@ -52,7 +52,8 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-export function snapshotCalendar(token: string, send: typeof fetch = fetch, target: SnapshotStageTarget = QUALIFICATION_STAGE_ID) {
+export function snapshotCalendar(token: string, send: (url: string, init: RequestInit) => Promise<Response> = fetch,
+  target: SnapshotStageTarget = QUALIFICATION_STAGE_ID) {
   if (!/^[!-~]+$/.test(token)) throw new SnapshotCalendarError('CREDENTIAL');
   const worker = snapshotStageTarget.parse(target);
   const account = `https://api.cloudflare.com/client/v4/accounts/${STAGING_ACCOUNT}`;
@@ -91,18 +92,24 @@ export function snapshotCalendar(token: string, send: typeof fetch = fetch, targ
     return { worker, empty: true as const, observedAt: new Date().toISOString() };
   }
 
+  async function verifyAccountToken(cleanupDeadline: string) {
+    const deadline = Date.parse(cleanupDeadline);
+    if (worker !== FRESH_SNAPSHOT_STAGE_ID || !Number.isFinite(deadline) || deadline <= Date.now() ||
+      new Date(deadline).toISOString() !== cleanupDeadline) throw new SnapshotCalendarError('CREDENTIAL_EXPIRY');
+    const tokenStatus = accountTokenResult.safeParse(await requestJson(`${account}/tokens/verify`));
+    if (!tokenStatus.success) throw new SnapshotCalendarError('CREDENTIAL');
+    const { expires_on: expiresAt, not_before: notBefore } = tokenStatus.data.result;
+    if (Date.parse(expiresAt) <= deadline + SNAPSHOT_CALENDAR_REQUEST_MS || (notBefore && Date.parse(notBefore) > Date.now())) {
+      throw new SnapshotCalendarError('CREDENTIAL_EXPIRY');
+    }
+    return { expiresAt };
+  }
+
   return {
     verifyEmpty,
+    verifyAccountToken,
     async verifyCleanupAccess(cleanupDeadline: string) {
-      const deadline = Date.parse(cleanupDeadline);
-      if (worker !== FRESH_SNAPSHOT_STAGE_ID || !Number.isFinite(deadline) || deadline <= Date.now() ||
-        new Date(deadline).toISOString() !== cleanupDeadline) throw new SnapshotCalendarError('CREDENTIAL_EXPIRY');
-      const tokenStatus = accountTokenResult.safeParse(await requestJson(`${account}/tokens/verify`));
-      if (!tokenStatus.success) throw new SnapshotCalendarError('CREDENTIAL');
-      const { expires_on: expiresAt, not_before: notBefore } = tokenStatus.data.result;
-      if (Date.parse(expiresAt) <= deadline + SNAPSHOT_CALENDAR_REQUEST_MS || (notBefore && Date.parse(notBefore) > Date.now())) {
-        throw new SnapshotCalendarError('CREDENTIAL_EXPIRY');
-      }
+      const { expiresAt } = await verifyAccountToken(cleanupDeadline);
       await verifyEmpty();
       const acknowledged = await request([]);
       const readback = await verifyEmpty();

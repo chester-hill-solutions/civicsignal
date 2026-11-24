@@ -1,4 +1,5 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -108,7 +109,9 @@ it('binds anonymous Justice head, exact instance and R2 admission reads to the r
   const f = await fixture();
   const { preparedTarget: target, instanceArgv } = cfFixture(f);
   const signal = new AbortController().signal;
-  const options = { packetPath: f.options.packetPath, reviewId: 'review', r2ReadToken: 'fixture-token' };
+  const packetBytes = await readFile(f.options.packetPath);
+  const packetPin = { bytes: packetBytes.length, sha256: createHash('sha256').update(packetBytes).digest('hex') };
+  const options = { packetPath: f.options.packetPath, packetPin, reviewId: 'review', r2ReadToken: 'fixture-token' };
   const github = (sha: string) => Response.json([{ sha, commit: { committer: { date: reference.date + 'T12:00:00Z' } } }]);
   const send = vi.fn<typeof fetch>().mockResolvedValueOnce(github(reference.commit));
   const cf = vi.fn().mockRejectedValue(new MissingSnapshotWorkflowInstance(f.qualification.instanceId));
@@ -123,7 +126,7 @@ it('binds anonymous Justice head, exact instance and R2 admission reads to the r
   expect(url).toBe('https://api.github.com/repos/justicecanada/laws-lois-xml/commits?sha=main&per_page=1');
   expect(new Headers(init?.headers).has('authorization')).toBe(false);
   expect(cf).toHaveBeenCalledWith(instanceArgv, signal);
-  expect(storage).toHaveBeenCalledWith(options.packetPath, options.r2ReadToken, send, signal);
+  expect(storage).toHaveBeenCalledWith(options.packetPath, options.r2ReadToken, send, signal, packetPin);
 
   send.mockResolvedValueOnce(github('a'.repeat(40)));
   await expect(admit(target, signal)).rejects.toThrow('SNAPSHOT_CF_PUBLICATION_SOURCE');

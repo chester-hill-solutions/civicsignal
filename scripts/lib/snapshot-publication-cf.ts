@@ -3,8 +3,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import { QUALIFICATION_RECEIPT_BYTES } from '../../services/snapshot/qualification-store';
 import { CORPUS_REPO } from '../../src/ingest/source';
-import { requestSourceHead } from '../../src/ingest/source-head';
-import { verifyStagedR2Admission } from '../verify-staged-snapshot';
+import { requestSourceHead, type SourceHeadSend } from '../../src/ingest/source-head';
+import { verifyStagedR2Admission, type StagedPublicationPacketPin } from '../verify-staged-snapshot';
 import { FRESH_SNAPSHOT_STAGE_ID } from './snapshot-calendar';
 import { MissingSnapshotDiagnostic, readSnapshotCfBytes, requireSnapshotWorkflowInstanceAbsent, snapshotWorkflowInstanceArgs } from './snapshot-hosted-admission';
 import type { runStagedSnapshotPublication } from './snapshot-publication-window';
@@ -53,8 +53,8 @@ export function requireSnapshotCfUnusedInstance(target: Target, signal: AbortSig
 }
 
 /** Called inside the guarded publication window after the owner approves the packet and its read budget. */
-export function createSnapshotCfAdmissionReader(options: { packetPath: string; reviewId: string; r2ReadToken: string },
-  send = fetch, read = readSnapshotCfBytes): AdmitPublication {
+export function createSnapshotCfAdmissionReader(options: { packetPath: string; packetPin?: StagedPublicationPacketPin; reviewId: string; r2ReadToken: string },
+  send: SourceHeadSend = fetch, read = readSnapshotCfBytes): AdmitPublication {
   if (!options.reviewId.trim() || options.reviewId.length > 128) throw new Error('SNAPSHOT_CF_PUBLICATION_REVIEW');
   return async (target, signal) => {
     boundTarget(target);
@@ -66,7 +66,7 @@ export function createSnapshotCfAdmissionReader(options: { packetPath: string; r
     signal.throwIfAborted();
     const instance = await requireSnapshotCfUnusedInstance(target, signal, read);
     signal.throwIfAborted();
-    const r2 = await verifyStagedR2Admission(options.packetPath, options.r2ReadToken, send, signal);
+    const r2 = await verifyStagedR2Admission(options.packetPath, options.r2ReadToken, send, signal, options.packetPin);
     signal.throwIfAborted();
     if (r2.qualification !== target.qualification.digest || r2.namespace !== target.qualification.prefix || r2.bucket !== target.bucket) {
       throw new Error('SNAPSHOT_CF_PUBLICATION_PACKET');

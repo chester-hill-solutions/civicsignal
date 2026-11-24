@@ -93,5 +93,49 @@
     "backupGuardCleanupAccess": "unverified",
     "scheduleWrites": 0,
     "freshEventArmed": false
+  },
+  "readOnlyResumeCheck": {
+    "baselineFinishedAt": "2026-11-24T22:50:12.306Z",
+    "deploymentId": "4cbfc139-4d85-416d-967c-f90ea4e9b343",
+    "soleActiveVersionId": "ce6deccb-c345-43ca-9fe5-b6c7d0b04836",
+    "trafficPercentage": 100,
+    "workflowId": "c8ba63d3-a002-4c62-8669-45c7c4c2bf40",
+    "nativeCalendarEvidence": "unscheduled-creation",
+    "anyWorkflowInstances": false,
+    "canonical": {
+      "bucket": "civicsignal-v1-stage-corpus-20261022",
+      "key": "snapshots/statutes-v2/0507465393c224c0491fc8c17c88340217acc656.manifest.json",
+      "bytes": 44627,
+      "sha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e"
+    },
+    "upstreamHead": "855cdfc65207a6906c414e09a77d7f93267c5356",
+    "repositoryEnvironments": [
+      "civicsignal / production"
+    ],
+    "repositoryRegisteredRunnerCount": 0,
+    "workerScheduleWrites": 0,
+    "freshEventArmed": false,
+    "versionRead": {
+      "scope": "previously active staging version",
+      "provider": "cf workers versions get --include modules",
+      "responseBytes": 349894,
+      "moduleBytes": 259948,
+      "moduleSha256": "79fffe09dad44a47dc78568f52af9fc7ec83ffc889d40ebef8d8218fb3aa38c8",
+      "moduleCount": 1,
+      "bindingCount": 9,
+      "versionUrlCount": 0,
+      "cliVerifier": {
+        "observedAt": "2026-11-24T22:58:51.500Z",
+        "result": "verified",
+        "scope": "November 23 version, module, limits, compatibility and nine bindings",
+        "qualificationDigest": "b2b763a9599803fe0ed7aa1c8dd2575cbf78590ed666f755a48f2308e6a55b54"
+      }
+    },
+    "credentialPreflight": {
+      "error": "SNAPSHOT_CALENDAR_CREDENTIAL",
+      "operatorTokenConfigured": false,
+      "providerRequests": 0,
+      "rolesVerified": []
+    }
   }
 }

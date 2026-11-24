@@ -49,7 +49,7 @@ async function requirePrivateDirectory(path: string) {
   }
 }
 
-async function writeReceipt(directory: string, name: string, record: object) {
+export async function writeSnapshotWindowReceipt(directory: string, name: string, record: object) {
   const file = await open(join(directory, name), 'wx', 0o600);
   try {
     await file.writeFile(JSON.stringify(record) + '\n');
@@ -79,12 +79,12 @@ export async function runSnapshotCleanupGuard({ role, credential, window, journa
   else await calendar.verifyEmpty();
   if (Date.now() >= scheduled) throw new Error('SNAPSHOT_WINDOW_GUARD_LATE');
   const record = guardRecord(role, process.pid, window, target);
-  await writeReceipt(journal, `${role}-ready.json`, record);
+  await writeSnapshotWindowReceipt(journal, `${role}-ready.json`, record);
   // A wall clock adjustment must not start cleanup before the reviewed instant.
   while (Date.now() < clear) await sleep(clear - Date.now());
   if (Date.now() > deadline - clearMs) throw new Error('SNAPSHOT_WINDOW_GUARD_LATE');
   const receipt = await calendar.clear(window.scheduledAt);
-  await writeReceipt(journal, `${role}-cleared.json`, { ...record, receipt });
+  await writeSnapshotWindowReceipt(journal, `${role}-cleared.json`, { ...record, receipt });
 }
 
 interface GuardProcess {
@@ -186,7 +186,7 @@ export async function runSnapshotCalendarWindow(options: SnapshotCalendarRunOpti
       await dependencies.wait(100);
     }
 
-    await writeReceipt(journal, 'arm-intent.json', { worker: target, ...window });
+    await writeSnapshotWindowReceipt(journal, 'arm-intent.json', { worker: target, ...window });
     armReceipt = await calendar.arm(window.scheduledAt, () => {
       if (children.some(child => !child.running())) throw new Error('SNAPSHOT_WINDOW_GUARDS_NOT_READY');
       if (dependencies.now() + 2 * SNAPSHOT_CALENDAR_REQUEST_MS >= armBy) throw new Error('SNAPSHOT_WINDOW_ARM_LATE');
@@ -210,6 +210,6 @@ export async function runSnapshotCalendarWindow(options: SnapshotCalendarRunOpti
     backup: finished[1]?.receipt ?? null, final: calendarEmpty || null },
     passed: !!armReceipt && !armingFailure && finished.length === roles.length &&
       finished.every(guard => guard?.receipt?.putAcknowledged === true) && !!calendarEmpty };
-  await writeReceipt(journal, 'calendar-result.json', result);
+  await writeSnapshotWindowReceipt(journal, 'calendar-result.json', result);
   return result;
 }

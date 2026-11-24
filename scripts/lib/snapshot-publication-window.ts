@@ -2,7 +2,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { qualificationRecord, SOURCE_PHASES, type Qualification } from '../../services/snapshot/qualification';
 import type { CorpusRevision } from '../../src/ingest/source';
-import { loadStagedPublication, stagedPublicationPins, verifyStagedPublicationArtifacts } from '../verify-staged-snapshot';
+import { loadStagedPublication, stagedPublicationPins, verifyStagedPublicationArtifacts, type StagedPublicationPacketPin } from '../verify-staged-snapshot';
 import { FRESH_SNAPSHOT_STAGE_ID } from './snapshot-calendar';
 import type { SnapshotCalendarRunOptions, SnapshotCalendarWindow } from './snapshot-calendar-window';
 import { runHostedSnapshotCalendarWindow } from './snapshot-hosted-admission';
@@ -88,10 +88,11 @@ function checkOutcome(outcome: PublicationOutcome, q: Qualification) {
  * Evidence providers and approval remain explicit at this programmatic boundary. */
 export async function runStagedSnapshotPublication(options: Omit<SnapshotCalendarRunOptions, 'window' | 'target' | 'admit'> & {
   packetPath: string;
+  packetPin?: StagedPublicationPacketPin;
   deployment: HostedOptions['deployment'] & { configSha256: string; workflowId: string };
   evidenceTime: PublicationTarget['evidenceTime'];
 }, evidence: PublicationEvidence, runCalendar?: CalendarRunner) {
-  const packet = await loadStagedPublication(options.packetPath);
+  const packet = await loadStagedPublication(options.packetPath, options.packetPin);
   const { qualification, window: { scheduledAt, clearAt, cleanupDeadline }, bucket } = packet.publication;
   const { deploymentId, versionId, workflowId, configSha256 } = options.deployment;
   const { canonical } = stagedPublicationPins;

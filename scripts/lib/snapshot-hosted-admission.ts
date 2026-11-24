@@ -58,11 +58,30 @@ export function missingSnapshotWorkflowInstanceId(args: string[], error: unknown
   if (lines?.includes('│ [10400] workflows.api.error.instance.not_found') && lines.includes(`│ 404 Not Found · HTTP ${path}`)) return instance.data;
 }
 
-/** The staging metadata and canonical reference reads fit in 64 KiB. */
-export async function readSnapshotCfBytes(args: string[], signal?: AbortSignal): Promise<Buffer> {
+type SnapshotCfReadOptions = { profile?: string; versionModules?: true; r2ReadToken?: never } |
+  { r2ReadToken: string; profile?: never; versionModules?: never };
+
+function isStagedReceiptRead(args: string[]) {
+  return args.length === 6 && args.slice(0, 3).join(' ') === 'r2 objects get' &&
+    args[4] === '--bucket-name' && args[5] === stagingNames('20261022').corpus &&
+    /^qualifications\/[a-z][a-z0-9-]{0,39}\/[0-9a-f]{64}\/(?:diagnostics\/(?:admitted|discovered|delegated|published|failed|existing)|attempts\/(?:discovery|authoritative|archive))\.json$/.test(args[3] ?? '');
+}
+
+/** The staging metadata and canonical reference reads fit in 64 KiB. The
+ * reviewed version module needs a larger base64 response allowance. */
+export async function readSnapshotCfBytes(args: string[], signal?: AbortSignal, options: SnapshotCfReadOptions = {}): Promise<Buffer> {
+  const { profile, versionModules, r2ReadToken } = options;
+  if (r2ReadToken !== undefined && (profile !== undefined || versionModules || !/^[!-~]+$/.test(r2ReadToken) || !isStagedReceiptRead(args))) {
+    throw new Error('SNAPSHOT_HOSTED_CF_R2_SCOPE');
+  }
+  const { HOME, PATH, TMPDIR, XDG_CONFIG_HOME } = process.env;
+  const isolated = profile !== undefined || r2ReadToken !== undefined;
+  const env = isolated ? { HOME, PATH, TMPDIR, XDG_CONFIG_HOME, CLOUDFLARE_API_TOKEN: r2ReadToken } : process.env;
+  const command = profile ? [...args, '--profile', profile] : args;
   try {
-    const { stdout } = await exec('cf', args, { signal, timeout: 10_000, maxBuffer: 64 * 1024, encoding: 'buffer',
-      env: { ...process.env, CLOUDFLARE_ACCOUNT_ID: STAGING_ACCOUNT, CF_TELEMETRY_DISABLED: '1' } });
+    const { stdout } = await exec('cf', command, { signal, timeout: 10_000, maxBuffer: (versionModules ? 512 : 64) * 1024,
+      cwd: isolated ? '/' : undefined, encoding: 'buffer',
+      env: { ...env, CLOUDFLARE_ACCOUNT_ID: STAGING_ACCOUNT, CF_TELEMETRY_DISABLED: '1' } });
     return stdout;
   } catch (error) {
     if (!signal?.aborted) {

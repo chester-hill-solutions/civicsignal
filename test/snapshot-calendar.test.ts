@@ -2,14 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { snapshotCalendarMain } from '../scripts/snapshot-calendar';
 
 const worker = 'civicsignal-v1-stage-snapshot-20261022';
-const endpoint = `https://api.cloudflare.com/client/v4/accounts/ad5ec479b9a421faa2ed06c3d1c2b23a/workers/scripts/${worker}/schedules`;
+const freshWorker = 'civicsignal-v1-stage-nov16-snapshot';
+const account = 'https://api.cloudflare.com/client/v4/accounts/ad5ec479b9a421faa2ed06c3d1c2b23a';
+const endpoint = `${account}/workers/scripts/${worker}/schedules`;
+const freshEndpoint = `${account}/workers/scripts/${freshWorker}/schedules`;
 const scheduledAt = '2030-11-23T03:47:00.000Z';
 const cron = '47 3 23 11 *';
 const args = ['clear', '--scheduled-at', scheduledAt];
 const env = { CLOUDFLARE_API_TOKEN: 'fixture-token' };
 const schedules = (...crons: string[]) => Response.json({ success: true, result: { schedules: crons.map(cron => ({ cron })) } });
 const mockFetch = () => vi.fn<typeof fetch>();
-const verifyCleanup = ['--fresh', 'verify-cleanup', '--cleanup-deadline', '2030-11-23T04:10:00.000Z'];
+const cleanupDeadline = '2030-11-23T04:10:00.000Z';
+const verifyCleanup = ['--fresh', 'verify-cleanup', '--cleanup-deadline', cleanupDeadline];
+const preflight = ['--fresh', 'preflight-credentials', '--cleanup-deadline', cleanupDeadline];
 const accountToken = (expiresOn: string) => Response.json({ success: true, result: { status: 'active', expires_on: expiresOn } });
 
 describe('staging snapshot calendar', () => {
@@ -44,6 +49,61 @@ describe('staging snapshot calendar', () => {
       .mockResolvedValueOnce(new Response(null, { status: 403 }));
     await expect(snapshotCalendarMain(verifyCleanup, env, readOnly)).rejects.toMatchObject({ code: 'HTTP', status: 403 });
     expect(readOnly).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    { name: 'one shared token', overrides: {}, tokens: ['fixture-token', 'fixture-token', 'fixture-token'] },
+    { name: 'distinct guard tokens', overrides: { CIVICSIGNAL_SNAPSHOT_PRIMARY_GUARD_TOKEN: 'primary-fixture',
+      CIVICSIGNAL_SNAPSHOT_BACKUP_GUARD_TOKEN: 'backup-fixture' }, tokens: ['fixture-token', 'primary-fixture', 'backup-fixture'] },
+  ])('checks all three credential contexts with $name and returns safe receipts', async ({ overrides, tokens }) => {
+    const expiry = ['2030-11-23T04:15:00.000Z', '2030-11-23T04:16:00.000Z', '2030-11-23T04:17:00.000Z'];
+    const path = `${account}/tokens/verify`;
+    const send = mockFetch();
+    for (const expiresAt of expiry) send.mockResolvedValueOnce(accountToken(expiresAt)).mockResolvedValueOnce(schedules())
+      .mockResolvedValueOnce(schedules()).mockResolvedValueOnce(schedules());
+    const result = await snapshotCalendarMain(preflight, { ...env, ...overrides }, send);
+    const roles = ['operator', 'primary', 'backup'];
+    expect(result).toMatchObject({ worker: freshWorker, cleanupDeadline, credentialContexts: roles.map((role, index) => ({
+      role, worker: freshWorker, expiresAt: expiry[index], empty: true, putAcknowledged: true,
+    })) });
+    expect(send.mock.calls.map(([url, init]) => [url, init?.method, init?.body, new Headers(init?.headers).get('authorization')]))
+      .toEqual(tokens.flatMap(token => [[path, 'GET', undefined, `Bearer ${token}`], [freshEndpoint, 'GET', undefined, `Bearer ${token}`],
+        [freshEndpoint, 'PUT', '[]', `Bearer ${token}`], [freshEndpoint, 'GET', undefined, `Bearer ${token}`]]));
+    for (const token of tokens) expect(JSON.stringify(result)).not.toContain(token);
+  });
+
+  it('refuses explicitly empty or malformed credentials before any provider request', async () => {
+    const send = mockFetch();
+    await expect(snapshotCalendarMain(preflight, {}, send)).rejects.toMatchObject({ code: 'CREDENTIAL' });
+    await expect(snapshotCalendarMain(preflight, { ...env, CIVICSIGNAL_SNAPSHOT_BACKUP_GUARD_TOKEN: '' }, send))
+      .rejects.toMatchObject({ code: 'CREDENTIAL' });
+    await expect(snapshotCalendarMain(preflight, { ...env, CIVICSIGNAL_SNAPSHOT_PRIMARY_GUARD_TOKEN: 'bad token' }, send))
+      .rejects.toMatchObject({ code: 'CREDENTIAL' });
+    await expect(snapshotCalendarMain(preflight.slice(1), env, send)).rejects.toThrow('Usage');
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('reports the failing context and stops when its empty write is refused', async () => {
+    const expiresAt = '2030-11-23T04:15:00.000Z';
+    const send = mockFetch().mockResolvedValueOnce(accountToken(expiresAt)).mockResolvedValueOnce(schedules())
+      .mockResolvedValueOnce(schedules()).mockResolvedValueOnce(schedules())
+      .mockResolvedValueOnce(accountToken(expiresAt)).mockResolvedValueOnce(schedules())
+      .mockResolvedValueOnce(new Response('private provider message', { status: 403 }));
+    await expect(snapshotCalendarMain(preflight, env, send)).rejects.toMatchObject({
+      role: 'primary', code: 'HTTP', status: 403, message: 'SNAPSHOT_CALENDAR_HTTP',
+    });
+    expect(send).toHaveBeenCalledTimes(7);
+  });
+
+  it('does not write with the backup credential when its token expires before final observation', async () => {
+    const send = mockFetch();
+    for (const expiresAt of ['2030-11-23T04:15:00.000Z', '2030-11-23T04:16:00.000Z']) {
+      send.mockResolvedValueOnce(accountToken(expiresAt))
+        .mockResolvedValueOnce(schedules()).mockResolvedValueOnce(schedules()).mockResolvedValueOnce(schedules());
+    }
+    send.mockResolvedValueOnce(accountToken('2030-11-23T04:10:10.000Z'));
+    await expect(snapshotCalendarMain(preflight, env, send)).rejects.toMatchObject({ role: 'backup', code: 'CREDENTIAL_EXPIRY' });
+    expect(send).toHaveBeenCalledTimes(9);
   });
 
   it('uses a scoped PUT with an explicit empty list and confirms it with a separate GET', async () => {

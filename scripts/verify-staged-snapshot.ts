@@ -8,6 +8,7 @@ import { z } from 'zod';
 import creation from '../docs/evidence/2026-11-22/november-workflow-creation.json';
 import { QUALIFICATION_STAGE_ID, qualificationIdentity } from '../services/snapshot/qualification';
 import { manifestKey } from '../src/ingest/snapshot-format';
+import type { SourceHeadSend } from '../src/ingest/source-head';
 import { FileSnapshotBucket } from './lib/file-snapshot';
 import { FRESH_SNAPSHOT_STAGE_ID, snapshotEventCron } from './lib/snapshot-calendar';
 import { STAGING_ACCOUNT, stagingNames } from './lib/staging-config';
@@ -42,12 +43,24 @@ const packetSchema = z.object({ target: z.literal(FRESH_SNAPSHOT_STAGE_ID),
       cleanupDeadline: z.iso.datetime().optional() }), runtimeDeadline: z.iso.datetime(),
     qualification: z.object({ identity: z.object({ id: z.string() }).passthrough(), digest: z.string(), prefix: z.string(), instanceId: z.string() }) }) });
 
-export async function loadStagedPublication(path: string) {
+export type StagedPublicationPacketPin = { bytes: number; sha256: string };
+
+async function stagedPacketBytes(path: string, pin?: StagedPublicationPacketPin) {
   const maxBytes = 64 * 1024;
+  if (pin) {
+    if (!Number.isSafeInteger(pin.bytes) || pin.bytes < 1 || pin.bytes > maxBytes) throw new Error('SNAPSHOT_PUBLICATION_PACKET');
+    const { readSnapshotProposalPinnedFile } = await import('./lib/snapshot-qualification-proposal');
+    return readSnapshotProposalPinnedFile({ path, ...pin }, 'private');
+  }
   const chunks: Buffer[] = [];
   for await (const chunk of createReadStream(path, { end: maxBytes })) chunks.push(chunk);
   const bytes = Buffer.concat(chunks);
   if (bytes.length > maxBytes) throw new Error('snapshot publication packet exceeds its size limit');
+  return bytes;
+}
+
+export async function loadStagedPublication(path: string, pin?: StagedPublicationPacketPin) {
+  const bytes = await stagedPacketBytes(path, pin);
   const result = packetSchema.safeParse(JSON.parse(bytes.toString('utf8')));
   if (!result.success) throw new Error('snapshot publication packet does not match the November staging resources');
   const { window, runtimeDeadline, qualification } = result.data.publication;
@@ -72,7 +85,7 @@ function localSource(directory: string, canonicalRoot: string | undefined): Open
   };
 }
 
-function stagedR2Reader(token: string, send: typeof fetch) {
+function stagedR2Reader(token: string, send: SourceHeadSend) {
   if (!/^[!-~]+$/.test(token)) throw new Error('a staging R2 read token is required in CLOUDFLARE_API_TOKEN');
   return (suffix: string, signal: AbortSignal) => {
     const request: RequestInit & { credentials: 'omit' } = {
@@ -88,7 +101,7 @@ function objectSuffix(key: string) {
   return '/' + key.split('/').map(encodeURIComponent).join('/');
 }
 
-export function stagedSnapshotArtifactSource(prefix: string, token: string, send: typeof fetch): OpenSnapshotArtifact {
+export function stagedSnapshotArtifactSource(prefix: string, token: string, send: SourceHeadSend): OpenSnapshotArtifact {
   const read = stagedR2Reader(token, send);
   return async (key, signal) => {
     const physical = key === canonical.key ? key : prefix + key;
@@ -117,7 +130,8 @@ type AdmissionRequest = { step: 'LIST' | 'MANIFEST' | 'CANONICAL'; suffix: strin
 async function readAdmissionResponse(read: ReturnType<typeof stagedR2Reader>, wallDeadline: number, signal: AbortSignal | undefined,
   { step, suffix, status, limit }: AdmissionRequest) {
   const started = performance.now();
-  const deadline = Math.min(wallDeadline, started + admissionRequestMs);
+  const remainingMs = Math.min(admissionRequestMs, wallDeadline - started);
+  const deadline = started + remainingMs;
   const controller = new AbortController();
   const timeout = new StagedR2AdmissionError(step, 'DEADLINE');
   function checkDeadline() {
@@ -130,7 +144,7 @@ async function readAdmissionResponse(read: ReturnType<typeof stagedR2Reader>, wa
   const expired = new Promise<never>((_resolve, reject) => {
     abort = () => { reject(timeout); controller.abort(); };
   });
-  const timer = setTimeout(abort, Math.ceil(deadline - started));
+  const timer = setTimeout(abort, Math.ceil(remainingMs));
   signal?.addEventListener('abort', abort, { once: true });
   try {
     const pending = read(suffix, controller.signal);
@@ -168,8 +182,9 @@ async function readAdmissionResponse(read: ReturnType<typeof stagedR2Reader>, wa
   }
 }
 
-export async function verifyStagedR2Admission(packetPath: string, token: string, send: typeof fetch = fetch, signal?: AbortSignal) {
-  const { publication: { qualification, bucket } } = await loadStagedPublication(packetPath);
+export async function verifyStagedR2Admission(packetPath: string, token: string, send: SourceHeadSend = fetch,
+  signal?: AbortSignal, pin?: StagedPublicationPacketPin) {
+  const { publication: { qualification, bucket } } = await loadStagedPublication(packetPath, pin);
   const read = stagedR2Reader(token, send);
   const deadline = performance.now() + admissionWallMs;
   const get = (request: AdmissionRequest) => readAdmissionResponse(read, deadline, signal, request);
