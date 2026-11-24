@@ -1,6 +1,6 @@
 # Departmental publications — ECCC
 
-The first departmental increment inventories Environment and Climate Change Canada's two publication series and archives every listed component. Passage extraction and the HTTP API are the next slice; this page covers what exists today.
+The first departmental increment inventories Environment and Climate Change Canada's two publication series and archives the original files it can retrieve. Use the [master plan](PLAN.md#eccc-implementation-scope) for the extraction and API work order.
 
 ## Source
 
@@ -52,8 +52,4 @@ The November 23 research baseline counted 181 title paragraphs. Only 155 carry l
 - **29 works have one edition.** Audit PDFs and partner-department reports publish no explicit language alternate; they remain single-language works rather than being merged by translated title.
 - **18 duplicate appearances** repeat an entry for the same series and language; the edition is written once and the repetition is counted.
 
-## Next slice
-
-Passage and table extraction (`dp_passages`, `dp_fts`) and the `/api/departmental-publications` routes: search, exact edition, versions and coverage, with the Lake Winnipeg recommendation/response, the Appendix K two-assessment table row, and the French freshwater science edition through the publisher's language link as acceptance cases. The inventory already holds both editions of each target work.
-
-Evidence: [eccc-inventory.json](evidence/2026-11-24/eccc-inventory.json).
+The inventory holds both editions of the three works in the [master plan's acceptance cases](PLAN.md#eccc-implementation-scope). See the [inventory receipt](evidence/2026-11-24/eccc-inventory.json).

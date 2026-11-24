@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import closing
 import hashlib
 import ctypes
 import os
@@ -11,11 +12,16 @@ import json
 from pathlib import Path
 import re
 import sqlite3
+from stat import S_IMODE
 import sys
 from typing import Iterable
 
+from lib.committee_store import MIGRATION, initialize
+
 
 SESSION = "45-1"
+INTAKE_TABLES = ("cc_revision", "cc_changes", "cc_link_changes", "cc_extracted")
+D1_METADATA_TABLES = ("d1_migrations", "_cf_METADATA")
 TABLES = {
     "cc_records": (
         "session",
@@ -114,7 +120,7 @@ def _validate_schema(db: sqlite3.Connection, *, label: str) -> None:
         raise ValueError(f"{label} is missing the committee snapshot table")
 
 
-def _validate_local_migration(db: sqlite3.Connection) -> None:
+def _validate_local_migration(db: sqlite3.Connection, *, exact: bool = False) -> None:
     ledger = db.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='d1_migrations'"
     ).fetchone()
@@ -123,10 +129,45 @@ def _validate_local_migration(db: sqlite3.Connection) -> None:
             "local D1 migration ledger is missing; apply preview/committees/migrations first"
         )
     applied = db.execute(
-        "SELECT 1 FROM d1_migrations WHERE name='0001_committee_preview.sql'"
+        "SELECT 1 FROM d1_migrations WHERE name=?", (MIGRATION.name,)
     ).fetchone()
     if not applied:
         raise ValueError("local D1 committee preview migration has not been applied")
+    if exact and db.execute("SELECT count(*) FROM d1_migrations").fetchone()[0] != 1:
+        raise ValueError("APFS clone requires the known local D1 committee migration version")
+
+
+def _schema_sql(db: sqlite3.Connection) -> dict[tuple[str, str], str]:
+    return {
+        (row["type"], row["name"]): row["sql"]
+        for row in db.execute(
+            "SELECT type, name, sql FROM sqlite_schema WHERE sql IS NOT NULL"
+        )
+    }
+
+
+def _validate_clone_schema(
+    actual: dict[tuple[str, str], str], expected: dict[tuple[str, str], str], *, target: bool
+) -> None:
+    allowed = set(expected)
+    if target:
+        allowed.update(("table", name) for name in (*D1_METADATA_TABLES, "sqlite_sequence"))
+    unexpected = actual.keys() - allowed
+    tables = sorted(name for kind, name in unexpected if kind == "table")
+    if tables:
+        raise ValueError(f"Unexpected tables in dedicated local committee database: {tables}")
+    if unexpected:
+        raise ValueError(f"Unexpected schema objects in dedicated local committee database: {sorted(unexpected)}")
+
+    intake = {("table", name) for name in INTAKE_TABLES}
+    # Earlier clones removed the whole intake group. A partial target is unknown.
+    target_intake = intake & actual.keys() if target else set()
+    if target_intake and target_intake != intake:
+        raise ValueError("Incomplete intake schema in dedicated local committee database")
+    required = (expected.keys() - intake) | target_intake
+    for key in sorted(required):
+        if actual.get(key, "").split() != expected[key].split():
+            raise ValueError(f"Unexpected definition for {key[1]} in dedicated local committee database")
 
 
 def _rows(db: sqlite3.Connection, table: str, session: str) -> Iterable[tuple]:
@@ -305,8 +346,10 @@ def clone_local(
     with (
         (source_path.parent / "build.lock").open("a") as lock,
         tempfile.TemporaryDirectory(dir=target_path.parent) as directory,
+        closing(sqlite3.connect(":memory:")) as reference,
     ):
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        expected_schema = _schema_sql(initialize(reference))
         tmp = Path(directory) / "candidate"
         source = connect(source_path, timeout=timeout)
         prior = connect(target_path, timeout=timeout)
@@ -330,45 +373,16 @@ def clone_local(
             prior.execute("PRAGMA locking_mode=EXCLUSIVE")
             prior.execute("PRAGMA journal_mode=DELETE")
             prior.execute("BEGIN EXCLUSIVE")
+            target_mode = S_IMODE(target_path.stat().st_mode)
+            _validate_local_migration(prior, exact=True)
+            prior_schema = _schema_sql(prior)
+            _validate_clone_schema(prior_schema, expected_schema, target=True)
             candidate = connect(tmp, timeout=timeout)
             try:
                 candidate.execute("PRAGMA journal_mode=DELETE")
                 candidate.execute("PRAGMA secure_delete=OFF")
-                required = set(TABLES) | {
-                    "cc_snapshot",
-                    "cc_fts",
-                    "cc_fts_data",
-                    "cc_fts_idx",
-                    "cc_fts_docsize",
-                    "cc_fts_config",
-                }
-                for conn, allowed in [
-                    (
-                        candidate,
-                        required
-                        | {
-                            "cc_revision",
-                            "cc_changes",
-                            "cc_link_changes",
-                            "cc_extracted",
-                        },
-                    ),
-                    (
-                        prior,
-                        required | {"d1_migrations", "_cf_METADATA", "sqlite_sequence"},
-                    ),
-                ]:
-                    names = {
-                        r[0]
-                        for r in conn.execute(
-                            "SELECT name FROM sqlite_master WHERE type='table'"
-                        )
-                    }
-                    if names - allowed:
-                        raise ValueError(
-                            "Unexpected tables in dedicated local committee database: "
-                            + str(names - allowed)
-                        )
+                _validate_clone_schema(_schema_sql(candidate), expected_schema, target=False)
+                for conn in (candidate, prior):
                     if conn.execute(
                         "SELECT 1 FROM cc_records WHERE session<>? LIMIT 1", (session,)
                     ).fetchone():
@@ -376,26 +390,33 @@ def clone_local(
                             "Dedicated local candidate contains another session"
                         )
                 with candidate:
-                    for table in (
-                        "cc_revision",
-                        "cc_changes",
-                        "cc_link_changes",
-                        "cc_extracted",
-                    ):
-                        candidate.execute(f"DROP TABLE IF EXISTS {table}")
-                    for table in ("d1_migrations", "_cf_METADATA"):
-                        ddl = prior.execute(
-                            "SELECT sql FROM sqlite_master WHERE name=?", (table,)
-                        ).fetchone()
-                        if ddl:
-                            candidate.execute(ddl[0])
-                            for row in prior.execute(f'SELECT * FROM "{table}"'):
-                                candidate.execute(
-                                    f'INSERT INTO "{table}" VALUES('
-                                    + ",".join("?" for _ in row)
-                                    + ")",
-                                    tuple(row),
-                                )
+                    # Serve the source corpus in the migrated target schema. Leave
+                    # intake and D1 bookkeeping local to the target generation.
+                    for table in (*INTAKE_TABLES, *D1_METADATA_TABLES):
+                        key = ("table", table)
+                        if table in INTAKE_TABLES:
+                            candidate.execute(f"DROP TABLE IF EXISTS {table}")
+                        ddl = prior_schema.get(key, expected_schema.get(key))
+                        if ddl is None:
+                            continue
+                        candidate.execute(ddl)
+                        if key not in prior_schema:
+                            continue
+                        for row in prior.execute(f'SELECT * FROM "{table}"'):
+                            candidate.execute(
+                                f'INSERT INTO "{table}" VALUES('
+                                + ",".join("?" for _ in row)
+                                + ")",
+                                tuple(row),
+                            )
+                    if ("table", "sqlite_sequence") in prior_schema:
+                        sequences = prior.execute("SELECT name, seq FROM sqlite_sequence").fetchall()
+                        if any(row["name"] not in D1_METADATA_TABLES for row in sequences):
+                            raise ValueError("Unexpected sequence in dedicated local committee database")
+                        candidate.execute("DELETE FROM sqlite_sequence")
+                        candidate.executemany(
+                            "INSERT INTO sqlite_sequence(name, seq) VALUES(?, ?)", sequences
+                        )
                     actual = table_stats(candidate, session)
                     if actual != expected or _search_probe(candidate, session) != (
                         term,
@@ -409,6 +430,7 @@ def clone_local(
                     )
             finally:
                 candidate.close()
+            tmp.chmod(target_mode)
             os.replace(tmp, target_path)
             return dict(
                 materialized=True,

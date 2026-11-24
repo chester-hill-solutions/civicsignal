@@ -1,6 +1,6 @@
 # Federal public service corpus engineering handover
 
-**Start here.** Build a local, reproducible census of federal public service publishers and their series. In parallel, implement the first departmental reads against frozen evidence. The first integrated build should answer a bilingual research question against a reconciled collection and account for everything its publisher listed. Scale by publication system and format across the whole federal roster. The [master plan](PLAN.md#federal-public-service-corpus-scope) defines the eight record families and the federal completion criteria.
+Use the [master plan](PLAN.md#departmental-policy-and-program-delivery) for priorities, assignments, and acceptance. This handover describes census inputs, contract proposals, and reusable code. The [ECCC inventory](DEPARTMENTAL-PUBLICATIONS.md) records the first local archive.
 
 ## Inputs ready for engineering
 
@@ -15,7 +15,7 @@
 
 The Treasury Board comparison column contains 41 schedule entries whose English names matched a row in its 2015–2026 departmental population table after case and apostrophe normalization. Another 37 entries match through the Commission’s explicit legal-title mapping, for a total of 78. The other 32 require further reconciliation, including agencies for which the payroll table omits data. Use the Federal Identity Program’s legal and applied titles, dated departmental publications and organization history to resolve them. Preserve separate mappings for the Treasury Board and its Secretariat, and for a department, an agency, and a unit publishing on their behalf. [Population table and exclusions](https://www.canada.ca/en/treasury-board-secretariat/services/innovation/human-resources-statistics/population-federal-public-service-department.html) · [Commission reference list](https://www.canada.ca/en/public-service-commission/services/public-service-hiring-guides/information-staffing-obligations/reference-list-organizations.html) · [Official title register and dictionary](https://open.canada.ca/data/en/dataset/83320390-7715-43bc-a281-2049bf5d4232)
 
-## Work to assign
+## Implementation reference
 
 Run the [offline census preparation tool](evidence/2026-11-23/prepare-public-service-census.py) from the repository root. Its default mode checks the dated inputs, counts and references. With `--matrix` it writes a starter CSV to standard output, one row per provisional statutory name and family. Of 872 cells, seven have a dated record and publisher evidence from ECCC, IRCC or CFIA. The other 865 are unexamined. A located series starts discovery for its cell. A source owner must still enumerate the institution’s other series and record history and cutoff. Keep the dated inputs with the receipt when fresh schedules or agency indexes change.
 

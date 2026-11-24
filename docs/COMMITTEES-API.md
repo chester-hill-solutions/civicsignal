@@ -216,7 +216,7 @@ cf d1 migrations apply 2e6f6b5d-bddd-4ae9-b879-92114cc37799 --local --persist-to
 python3 -B scripts/materialize-committee-corpus.py
 ```
 
-On macOS with an offline APFS candidate, `python3 -B scripts/materialize-committee-corpus.py --clone-local` shares unchanged disk blocks with the acquired SQLite database. Both paths verify the serving rows, text lengths and search index before publishing the local candidate. The previous generation remains readable after a failed verification. Set `CIVICSIGNAL_COMMITTEES_D1` to the generated database file to run the authenticated integration test.
+For an offline, dedicated local D1 database on macOS APFS, add `--clone-local` to the materializer command. It accepts the current migration and upgrades a target from the older serving-only clone. It verifies the serving tables and full-text index before replacement. It retains the target's intake bookkeeping, D1 metadata, and file mode. Use the standard materializer on other filesystems. Set `CIVICSIGNAL_COMMITTEES_D1` to the generated database file to run the authenticated integration test.
 
 ```sh
 bun run test test/endpoints.test.ts -t 'session committee corpus through the Worker'

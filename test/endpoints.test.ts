@@ -944,6 +944,37 @@ describe('HTTP and MCP access and metering', () => {
     expect(send).toHaveBeenCalledTimes(1);expect(await fixture.count()).toBe(1);
     expect(new Set(fixture.names)).toEqual(new Set(['customer:customer_kept']));
   });
+  it('meters chat follow-ups once and honours an explicit change of topic', async () => {
+    const fixture = await setup();
+    const citationUrl = 'https://example.test/act/1';
+    const generate = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      expect(String(input)).toBe(generationEndpoints.openai);
+      return Response.json(providerText('openai', `See ${citationUrl}`));
+    });
+    const messages = [
+      { role: 'user', content: 'What does section 1 of the Test Act say?' },
+      { role: 'assistant', content: 'We were discussing section 12.' },
+      { role: 'user', content: 'And how long is it?' },
+    ];
+    const send = (topic?: string) => fixture.send('/api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-civicsignal-byok-provider': 'openai',
+        'x-civicsignal-byok-key': 'fixture-only' },
+      body: JSON.stringify({ messages, topic }),
+    });
+    const implicit = await send();
+    expect(implicit.status).toBe(200);
+    expect(await implicit.json()).toMatchObject({ cited: [expect.objectContaining({ citationUrl })],
+      retrieval: [expect.objectContaining({ mode: 'exact' })] });
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(await fixture.count()).toBe(1);
+
+    const explicit = await send('Test Act section 99');
+    expect(explicit.status).toBe(200);
+    expect(await explicit.json()).toMatchObject({ cited: [], generation: { status: 'skipped', reason: 'no-retrieved-material' } });
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(await fixture.count()).toBe(2);
+  });
   it.each([{ provider: 'google' }, { model: 'gpt-4.1-mini' }])('refuses unsupported Zen routing before generation or billing', async (change) => {
     const fixture = await setup(),send = vi.spyOn(globalThis, 'fetch');
     const response = await fixture.send('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json',
@@ -1203,6 +1234,47 @@ describe('HTTP and MCP access and metering', () => {
     }
     expect((await fixture.send('/api/statutes?topic=leave&limit=NaN')).status).toBe(400);
     expect(await fixture.count()).toBe(1);
+  });
+  it.each([
+    { language: 'en', act: 'Test Act', id: 'acts-en-one', topic: (section: string) => `What does section ${section} of the Test Act say?` },
+    { language: 'fr', act: "Loi d'essai", id: 'acts-fr-one', topic: (section: string) => `Que dit la section ${section} de la Loi d'essai?` },
+  ])('resolves the same $language citation through HTTP and MCP topic tools', async ({ language, act, id, topic }) => {
+    const fixture = await setup(10);
+    fixture.sqlite.prepare(`INSERT INTO statute_sections(id,corpus_id,act,citation,section,status,text,source_url,jurisdiction,in_force,language)
+      VALUES('acts-fr-one','statutes-canada',?,'T-1','1','in-force','Une disposition vérifiée.','https://example.test/fr/loi/1','CA',1,'fr')`)
+      .run("Loi d'essai");
+    const embed = vi.fn(async () => Response.json({ vectors: [Array(768).fill(0.1)] }));
+    const vectorQuery = vi.fn(async () => ({ matches: [{ id, score: 0.9 }] }));
+    fixture.env.ENCODER_TOKEN = 'fixture-only';
+    fixture.env.ENCODER_SERVICE = { fetch: embed };
+    fixture.env.VECTORIZE = { query: vectorQuery };
+
+    let units = 0;
+    for (const section of ['1', '99']) {
+      const question = topic(section);
+      const resolved = section === '1';
+      const items = resolved ? [expect.objectContaining({ id, language })] : [];
+      const citation = { act, section, resolved, item: items[0] ?? null };
+      const retrieval = [expect.objectContaining({ mode: 'exact' })];
+      const http = await fixture.send('/api/brief?' + new URLSearchParams({ topic: question, language }));
+      expect(http.status).toBe(200);
+      expect(await http.json()).toMatchObject({ legislation: items, citation, retrieval });
+      expect(await fixture.count()).toBe(++units);
+
+      for (const name of ['brief_topic', 'statute_lookup']) {
+        const mcp = await fixture.rpc('tools/call', { name, arguments: { topic: question, language } });
+        expect(mcp.status).toBe(200);
+        const body = await mcp.text();
+        const data = mcp.headers.get('content-type')?.includes('text/event-stream')
+          ? body.split('\n').find((line) => line.startsWith('data: '))?.slice(6)
+          : body;
+        const result = name === 'brief_topic' ? { legislation: items, citation, retrieval } : { items, retrieval };
+        expect(JSON.parse(data ?? '')).toMatchObject({ result: { structuredContent: { result } } });
+        expect(await fixture.count()).toBe(++units);
+      }
+    }
+    expect(embed).not.toHaveBeenCalled();
+    expect(vectorQuery).not.toHaveBeenCalled();
   });
   it.each((['http', 'mcp'] as const).flatMap(transport =>
     (['missing-source', 'corpus-mismatch'] as const).map(fault => ({ transport, fault }))))(

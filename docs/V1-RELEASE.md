@@ -173,8 +173,8 @@ Use the dated entries below for source-specific outcomes.
 | V1-04 | Recoverable ingestion | Injected faults between row, vector, feed, and state writes recover with complete change history and unique events. Serving reads a coherent revision or reports unavailability during the transition. | Local publication, interrupted serving, and watermark retry checks pass. Hosted vector visibility and coherent serving remain open for this candidate. |
 | V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Earlier manual hosted parity and local native qualification pass. The exact-reference verifier passes locally. Hosted scheduled discovery and first publication remain open. |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
-| V1-07 | Broad, measured retrieval quality | Test held-out English and French answerable and unsupported cases. Calibrate the Cloudflare serving backend and report false accepts, false refusals, latency, throughput, and freshness. | The November 22 floor repair passes local regressions. The earlier calibration and failed holdout retain their original policy. The product owner approved D-01. Hosted acceptance remains open. |
-| V1-08 | Honest, complete v1 surfaces | Every advertised route and tool works and states coverage limits. Check change-feed and exact citation flows. Verify every factual claim in the predeclared chat cases under D-02. | The offline claim evidence checker passes. Both earlier hosted Zen attempts failed acceptance. Positive hosted chat and independent claim reviews remain open. |
+| V1-07 | Broad, measured retrieval quality | Test held-out English and French answerable and unsupported cases. Calibrate the Cloudflare serving backend and report false accepts, false refusals, latency, throughput, and freshness. | Vector fallback and repaired hybrid failed D-01 on their recorded staging targets. The hybrid run stopped before the benchmark. [November comparison](#november-24-code-assessment-reconciliation) |
+| V1-08 | Honest, complete v1 surfaces | Every advertised route and tool works and states coverage limits. Check change-feed and exact citation flows. Verify every factual claim in the predeclared chat cases under D-02. | A positive DeepSeek Zen smoke passed on an earlier staging version. Candidate-specific route checks and the independent D-02 claim review remain open. [Zen receipt](#november-23-staging-deepseek-zen-recovery) · [D-02 packet](#november-23-d-02-offline-packet) |
 | V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | The complete clean Linux gate and affected local checks pass for `3f16f93`. |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
@@ -1367,10 +1367,109 @@ The MP-03 packet recorded two citation tests that failed only on Node 26. The de
 
 All 146 citation cases pass on Node 26.3.1, where they previously failed, and the complete `bun run validate` passes on the pinned Bun 1.3.5: 146 test files, 2,541 passed and 8 skipped, four TypeScript projects, both workerd probes, and the runtime, billing and corpus invariants. This source is not the reviewed MP-03 candidate; a hosted operation still needs its own refresh and approval.
 
+## November 24 code assessment reconciliation
+
+The audit checked local source `8302892` with disposable fixtures and read-only archives. It made no new hosted requests. The [master plan](PLAN.md#immediate-work-order) owns the resulting work order.
+
+| Local check | Observation |
+| --- | --- |
+| Vitest and runtime | On macOS arm64, Node 24.22.3 and Bun 1.4.4 with loopback access, 2,559 tests passed, five failed, and ten skipped across 149 files. All five failures passed in a 41-test rerun with the CI-pinned Bun 1.3.5. The Workerd usage and R2 checks passed. |
+| Type, bundle and static checks | Four typechecks, five Worker dry-run bundles, the lint ratchet, vendor integrity, and billing and corpus invariant scripts passed. The corpus script skipped three absent statute exports. |
+| Archive-backed HTTP | Seven checks passed using local archives. They cover bilingual committee and funding research, parliamentary catalogues, committee calls, consultations, and directory lookup. These checks corroborate local preview status. |
+| Python | On Python 3.14.3, the 159-case discovery suite recorded two errors. The separate parliamentary vote suite passed eight tests. The protected-copy Python suite passed 31 tests with Bun 1.3.5. |
+
+These runs do not form a single full pass on the pinned runtime. Matching clean Linux evidence is source-specific.
+
+| Finding | Trigger and observed result |
+| --- | --- |
+| Exact citation parity | A synthetic named provision returned through HTTP `/api/brief` and MCP `cite_provision`. MCP `brief_topic` sent the same question to an empty vector stub and returned zero provisions. [HTTP resolver](../src/index.ts#L259) · [MCP topic handler](../src/mcp/server.ts#L74) |
+| Chat follow-up | After a turn named the Act, chat sent only “And how long is it?” to the encoder. Empty results skipped generation. An explicit `topic` recovered the provision. [Chat query](../src/routes/chat.ts#L329) |
+| Chat claim support | A fake provider asserted an unsupported 99-day minimum with a valid retrieved link. Chat returned HTTP 200. This repeats the [November 22 finding](#november-22-local-code-assessment) on newer local source. [Citation check](../src/routes/chat.ts#L353) |
+| Committee clone | The clone refused four intake tables in the prior store. An empty target with the documented preview migration reproduced the refusal and retained zero served rows. Standard materialization and identical replay passed on a separate target with the same migration. [Migration](../preview/committees/migrations/0001_committee_preview.sql#L61) · [Clone guard](../scripts/materialize-committee-corpus.py#L337) |
+| House Journals replay | The fixture's live clock admitted sitting 171. Its fake fetch supplied sitting 122. The replay passed when `date.today()` returned November 23, 2026. [Replay test](../test/test_parliament_house_journals.py#L112) · [Collector](../scripts/parliament-house-journals.py#L349) |
+
+The audit reproduced the two November 23 holdout scores offline. Both ran 64 fresh `/api/statutes` requests at concurrency one. They used the same corpus revision and [labeled cases](../src/eval/data/v1-november-questions.json).
+
+| Staging policy | Rank 1 | Top five | HTTP 502 | Holdout p95 across all attempts |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached vector fallback | 23/48 | 32/48 | 0/64 | 5.11 s |
+| Repaired hybrid | 43/48 | 43/48 | 3/64 | 6.57 s |
+
+Jev returned HTTP 402 in the earlier run. The vector figures measure fallback. Both policies accepted zero of 16 unsupported questions. Hybrid reached 20/24 in English and 23/24 in French. Its 502s occurred in interpretation, evidence exchange, and evidence retry. Hybrid stopped before the D-01 benchmark. Its completed holdout p95 was 6.14 seconds. [Vector fallback run](#november-23-hosted-serving-and-chat-acceptance) · [Hybrid run](#november-23-repaired-hybrid-d-01)
+
+The prior positive Zen smoke covers one exact question on its recorded target. Live answer quality, current hosted availability, and production freshness remain open for the assessed source.
+
+## November 24 offline readiness for MP-02 and MP-04
+
+The focused check used tracked runtime source `8302892491f4dda2cf8871bd0b001805abbca3e4`.
+All 413 tests in 12 files passed on macOS arm64 with Node 24.22.3 and Bun 1.3.5.
+MP-02 accounted for 220 checks across proposal, calendar, admission, runtime, and artifact verification.
+MP-04 accounted for 193 checks across capture, source facts, transport, and session sealing.
+The tests used local fixtures and synthetic credentials. The two hosted gates remain open.
+
+### MP-02 scheduled first publication
+
+The last recorded staged deployment is `4cbfc139-4d85-416d-967c-f90ea4e9b343` with version `ce6deccb-c345-43ca-9fe5-b6c7d0b04836`.
+Its November 23 cutoff passed. The recorded account-token requests failed, and automatic approval review refused broader OAuth access.
+The next packet needs a new UTC event and a version that binds its exact tuple and runtime deadline.
+The account administrator must confirm authority for the isolated Worker Script Schedules API.
+Provide operator and cleanup guard credentials that remain valid beyond the cleanup deadline plus the final request bound.
+Budget the arming lead and both independent guard readiness checks before the propagation cutoff.
+[Prior publication version](#november-22-staging-publication-version) · [Calendar admission](../scripts/lib/snapshot-calendar-window.ts#L152)
+
+The retained packaging command and artifact verifier pin the November `855cdfc` reference and its exact stage bundle.
+Reuse those pins only if the reviewed source and the upstream head at admission still match. A new reference requires corresponding candidate and verifier pins.
+Complete the owned connection between the calendar runner, publication admission, and the artifact verifier.
+That owner needs current deployment and Workflow evidence, an unused instance and namespace, and the canonical backup observation.
+The November procedure counts 18 calendar requests and 240 artifact GETs separately from source, management, and other R2 operations.
+Acceptance needs the scheduled event, first complete snapshot, canonical preservation, and both guards' cleanup receipts.
+[Hosted calendar wrapper](../scripts/lib/snapshot-hosted-admission.ts#L69) · [Verifier](../scripts/verify-staged-snapshot.ts#L74) · [Qualification procedure](V1-SCHEDULED-PUBLICATION-REVIEW.md#before-a-hosted-proposal-is-executable)
+
+### MP-04 consistent production acquisition
+
+The offline fixture checked source facts before and after KV view A, one continued D1 export, and KV view B.
+It downloaded the signed SQL from the pinned origin and checked raw data and SQL seals before receipt.
+The current transport admits only injected fixture IO and synthetic credentials. A production process owner and authenticated transport remain open.
+[Session implementation](../scripts/lib/protected-acquisition-session.ts#L102) · [Transport admission](../scripts/lib/protected-acquisition-transport.ts#L144)
+
+The previous inventory is historical. The release engineer must privately confirm current versions, bindings, actual schema, and the authoritative stores for corpus, keys, and billing.
+The pipeline owner must account for scheduled, manual, and any alarm-driven writes and show that in-flight work drained.
+The identity and billing owners must identify request-driven and administrative writers. The candidate key verification writes both key timestamps.
+Include any operator scripts, migrations, and other jobs that write the captured stores.
+Named writer owners must agree on one interval and record drain evidence, abort conditions, and who can reconcile or resume writes.
+Keep the original usage namespace bound to its own identity and record the verified control for each writer.
+[Prior inventory scope](#october-31-implementation-progress) · [Candidate key writes](../vendor/@chester-hill-solutions/auth-d1/dist/api-key.js#L55) · [Production acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md#gaps-conflicts-or-redundancies-to-fix)
+
+The approved packet must bind the exact owner, resource identities, maintenance observation, and signed-download rules.
+Count preflight, writer control, both source-facts reads, export, KV, download, local seal checks, and cleanup in the complete budget.
+The earlier 2,080-exchange bound covers the partial collector. It does not qualify the older 2,200-call proposal.
+Confirm the sealed inputs at handoff before MP-05 uses the production capture.
+[Acquisition accounting and handoff](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md#gaps-conflicts-or-redundancies-to-fix)
+
+## November 24 local serving and intake repairs
+
+This local worktree starts at `8302892491f4dda2cf8871bd0b001805abbca3e4`. The code and test patch has SHA-256 `e3fc2c872896786b79e2a6eb01a0af97fb554069fac54f8592c102dd9bede655`. Reproduce it with `git diff --no-ext-diff --binary --full-index 8302892 -- scripts src test | shasum -a 256`. Final Linux and hosted qualification remain open.
+
+| Change | Local evidence |
+| --- | --- |
+| Exact citations | HTTP `/api/brief` and MCP `brief_topic` and `statute_lookup` used the same revision-bound resolver. Each successful request used one unit and made zero encoder or vector calls. The English and French tests used `section` for present and missing provisions. The shared parser still needs support for French `article` in free text. Structured exact lookup accepts an Act title and section number in either language. [Endpoint tests](../test/endpoints.test.ts) |
+| Chat follow-ups | The owner selected one previous user question as context for a short follow-up. The bounded query uses both questions. In the HTTP regression, the follow-up retrieved section 1 and called the fixture provider once. An explicit topic requested missing section 99 and skipped generation. Each request used one unit. [Chat tests](../test/chat.test.ts) · [HTTP tests](../test/endpoints.test.ts) |
+| Committee publication | A native APFS clone accepted a fresh migrated target and a legacy serving-only target. A second clone preserved target bookkeeping, migration sequence values and file permissions. An unknown schema or migration left the previous generation intact. The standard materializer passed its replay and rollback tests. [Native and standard tests](../test/test_materialize_committee_corpus.py) |
+| House Journals | The bilingual fixture used the November 23 cutoff and exact edition URLs. A failed edition fetch retained the complete prior inventory. The next successful replay returned the same records. [Journals tests](../test/test_parliament_house_journals.py) |
+| Freshwater staffer packet | The offline replay reproduced all five published briefs byte-for-byte. The staffer still needs to review the two deadlines, Q-1010, and the Charlo lead. [Review packet](../preview/policy-files/freshwater-2026-05-25/BRIEFS.md#staffer-review) |
+
+A separate APFS run used disposable copies of the acquired committee store and the existing local D1 target. For the November 24 00:07:12 UTC cutoff, the clone verified 33,894 records, 88,788 links, and 1,755,636 passages. The full-text probe matched 8,025 passages. Four authenticated Worker checks passed against the clone, including English and French funding research.
+
+Six additional local HTTP checks passed against the parliamentary catalogues, GEDS, consultations, and written questions, including the GEDS transfer fixture. These ten checks require database paths and skip in the default suite.
+
+On macOS arm64, Node 24.22.3 and Bun 1.3.5 passed 2,587 Vitest tests across 149 files with Workerd enabled. Ten database-dependent tests skipped in that run and passed separately. Python discovery passed 162 tests. The separate protected-copy and House vote suites passed 31 and eight tests, respectively.
+
+All four TypeScript projects, the lint ratchet, vendor verification, billing checks, and five Worker dry-run builds passed. The Workerd usage and R2 checks passed. The corpus invariant check skipped three absent generated statute exports.
+
 ## Remaining release gates
 
 All four gates remain open: scheduled first publication, serving acceptance, production migration, and the final release audit.
-The matching MP-01 local and Linux receipts qualify the current draft source. Bind each hosted operation to its reviewed source and actual target according to the [MP-01 checklist](PLAN.md#mp-01-reconcile-the-exact-candidate).
+MP-01 receipts qualify the sources they identify. Bind each hosted operation to its reviewed source and target under the [MP-01 checklist](PLAN.md#mp-01-reconcile-the-exact-candidate).
 The [master gate table](PLAN.md#release-gates-at-a-glance) defines completion evidence.
 The [master package checklist](PLAN.md#phase-1-close-the-v1-release) defines remaining work, dependencies, and responsible roles.
 The [decision register](PLAN.md#decisions-still-required) records the required dispositions before execution.

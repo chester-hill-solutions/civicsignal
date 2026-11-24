@@ -3,7 +3,9 @@ import sqlite3
 import sys
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
+from stat import S_IMODE
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -38,15 +40,16 @@ def seed_source(path):
     db.close()
 
 
-def seed_old_candidate(path):
-    db = initialize(sqlite3.connect(path))
-    db.execute("CREATE TABLE d1_migrations(id INTEGER PRIMARY KEY, name TEXT UNIQUE)")
-    db.execute("INSERT INTO d1_migrations(name) VALUES('0001_committee_preview.sql')")
-    write_record(db, {"session": "45-1", "id": "prior", "language": "en", "kind": "study"})
-    replace_passages(db, "45-1", "en", "prior", [{"text": "previous candidate stays on failure"}])
-    mark_snapshot(db, "45-1", "2026-11-22T00:00:00Z")
-    db.commit()
-    db.close()
+def seed_migrated_candidate(path, *, previous_generation=True):
+    with closing(initialize(sqlite3.connect(path))) as db, db:
+        db.execute("CREATE TABLE d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE)")
+        db.execute("INSERT INTO d1_migrations(name) VALUES('0001_committee_preview.sql')")
+        db.execute("CREATE TABLE _cf_METADATA(key INTEGER PRIMARY KEY, value BLOB)")
+        db.execute("INSERT INTO _cf_METADATA VALUES(1, X'0102')")
+        if previous_generation:
+            write_record(db, {"session": "45-1", "id": "prior", "language": "en", "kind": "study"})
+            replace_passages(db, "45-1", "en", "prior", [{"text": "previous candidate stays on failure"}])
+            mark_snapshot(db, "45-1", "2026-11-22T00:00:00Z")
 
 
 class CommitteeMaterializationTests(unittest.TestCase):
@@ -56,7 +59,7 @@ class CommitteeMaterializationTests(unittest.TestCase):
         self.source = root / "committee.sqlite"
         self.target = root / "target.sqlite"
         seed_source(self.source)
-        seed_old_candidate(self.target)
+        seed_migrated_candidate(self.target)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -97,16 +100,80 @@ class CommitteeMaterializationTests(unittest.TestCase):
         db.close()
 
     @unittest.skipUnless(sys.platform == "darwin", "APFS local publication")
-    def test_apfs_clone_verifies_and_preserves_prior_generation_on_failure(self):
+    def test_apfs_clone_materializes_a_fresh_migrated_target_and_repeats(self):
+        self.target = self.target.with_name("fresh.sqlite")
+        seed_migrated_candidate(self.target, previous_generation=False)
+        self.source.chmod(0o644)
+        self.target.chmod(0o600)
+        with closing(sqlite3.connect(self.source)) as source, source:
+            source.execute("INSERT INTO cc_revision VALUES('45-1','source','en','source-only')")
+        with closing(sqlite3.connect(self.target)) as target, target:
+            target.execute("INSERT INTO cc_revision VALUES('45-1','target','en','target-only')")
+            target.execute("INSERT INTO d1_migrations(id, name) VALUES(42, 'discarded')")
+            target.execute("DELETE FROM d1_migrations WHERE id=42")
+        with closing(sqlite3.connect(self.target)) as target:
+            expected_schema = target.execute(
+                "SELECT type, name, sql FROM sqlite_schema ORDER BY type, name"
+            ).fetchall()
+
         first = materializer.clone_local(self.source, self.target, "45-1", 5)
+        self.assertEqual(S_IMODE(self.target.stat().st_mode), 0o600)
+        second = materializer.clone_local(self.source, self.target, "45-1", 5)
+        self.assertEqual(S_IMODE(self.target.stat().st_mode), 0o600)
+        self.assertEqual(first, second)
+        self.assertEqual(first["method"], "verified-apfs-clone")
         self.assertEqual(first["ftsProbe"]["hits"], 1)
-        with sqlite3.connect(self.source) as db:
+        with closing(sqlite3.connect(self.target)) as target:
+            self.assertEqual(target.execute(
+                "SELECT type, name, sql FROM sqlite_schema ORDER BY type, name"
+            ).fetchall(), expected_schema)
+            self.assertEqual(target.execute("SELECT signature FROM cc_revision").fetchall(), [("target-only",)])
+            self.assertEqual(target.execute("SELECT name FROM d1_migrations").fetchall(), [("0001_committee_preview.sql",)])
+            self.assertEqual(target.execute("SELECT name, seq FROM sqlite_sequence").fetchall(), [("d1_migrations", 42)])
+            self.assertEqual(target.execute("SELECT value FROM _cf_METADATA").fetchall(), [(b"\x01\x02",)])
+            self.assertEqual(target.execute("SELECT cutoff FROM cc_snapshot").fetchone()[0], "2026-11-23T20:00:00Z")
+            self.assertEqual(target.execute("SELECT count(*) FROM cc_fts WHERE cc_fts MATCH 'Freshwater'").fetchone()[0], 1)
+
+    @unittest.skipUnless(sys.platform == "darwin", "APFS local publication")
+    def test_apfs_clone_restores_schema_on_legacy_clone_targets(self):
+        with closing(sqlite3.connect(self.target)) as db, db:
+            for table in ("cc_revision", "cc_changes", "cc_link_changes", "cc_extracted"):
+                db.execute(f"DROP TABLE {table}")
+        materializer.clone_local(self.source, self.target, "45-1", 5)
+        with closing(sqlite3.connect(self.target)) as db:
+            for table in ("cc_revision", "cc_changes", "cc_link_changes", "cc_extracted"):
+                self.assertEqual(db.execute(f"SELECT count(*) FROM {table}").fetchone()[0], 0)
+
+    @unittest.skipUnless(sys.platform == "darwin", "APFS local publication")
+    def test_apfs_clone_rejects_unknown_source_tables_and_preserves_previous_generation(self):
+        materializer.clone_local(self.source, self.target, "45-1", 5)
+        previous = self.target.read_bytes()
+        with closing(sqlite3.connect(self.source)) as db, db:
             db.execute("CREATE TABLE unrelated_source_data(id INTEGER)")
         with self.assertRaisesRegex(ValueError, "Unexpected tables"):
             materializer.clone_local(self.source, self.target, "45-1", 5)
-        with sqlite3.connect(self.target) as db:
+        self.assertEqual(self.target.read_bytes(), previous)
+        with closing(sqlite3.connect(self.target)) as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM cc_passages").fetchone()[0], 3)
-            self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='unrelated_source_data'").fetchone())
+            self.assertEqual(db.execute("SELECT count(*) FROM cc_fts WHERE cc_fts MATCH 'Freshwater'").fetchone()[0], 1)
+
+    @unittest.skipUnless(sys.platform == "darwin", "APFS local publication")
+    def test_apfs_clone_rejects_unknown_target_tables_and_versions(self):
+        cases = (
+            ("CREATE TABLE unrelated_target_data(id INTEGER)", "Unexpected tables"),
+            ("INSERT INTO d1_migrations(name) VALUES('0002_future.sql')", "migration version"),
+            ("ALTER TABLE cc_revision ADD COLUMN future TEXT", "Unexpected definition for cc_revision"),
+        )
+        for index, (alteration, reason) in enumerate(cases):
+            with self.subTest(reason=reason):
+                target = self.target.with_name(f"unknown-{index}.sqlite")
+                seed_migrated_candidate(target)
+                with closing(sqlite3.connect(target)) as db, db:
+                    db.execute(alteration)
+                previous = target.read_bytes()
+                with self.assertRaisesRegex(ValueError, reason):
+                    materializer.clone_local(self.source, target, "45-1", 5)
+                self.assertEqual(target.read_bytes(), previous)
 
     def test_default_d1_locator_requires_single_database(self):
         with tempfile.TemporaryDirectory() as temp:

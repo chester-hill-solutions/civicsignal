@@ -2,6 +2,7 @@
 import importlib.util
 import json
 from datetime import date
+from functools import partial
 from pathlib import Path
 import tempfile
 import unittest
@@ -40,6 +41,24 @@ def journal(language="en", sitting="121", title=None, content=None):
       </section></body></html>'''.encode()
 
 
+EN_JOURNALS = journals.BASE + "/DocumentViewer/en/45-1/house"
+FR_JOURNALS = journals.BASE + "/DocumentViewer/fr/45-1/chambre"
+COLLECT_REPLAY = partial(journals.collect, through=date(2026, 11, 23), workers=2)
+REPLAY_PAGES = {
+    journals.calendar_url("45-1"): calendar(),
+    f"{EN_JOURNALS}/sitting-121/journals": journal(),
+    f"{FR_JOURNALS}/seance-121/journaux": journal("fr"),
+    f"{EN_JOURNALS}/sitting-122/journals": journal(
+        sitting="122", title="Journals No. 122 - May 26, 2026 (45-1) - House of Commons of Canada"),
+}
+
+
+def replay_fetch(url):
+    if url == f"{FR_JOURNALS}/seance-122/journaux":
+        raise journals.PublisherGap("official edition returned HTTP 404")
+    return REPLAY_PAGES[url]
+
+
 class HouseJournalsTest(unittest.TestCase):
     def test_calendar_reconciles_sitting_ids_and_excludes_future_entries(self):
         rows = journals.parse_calendar(calendar(), "45-1", date(2026, 11, 23))
@@ -69,23 +88,7 @@ class HouseJournalsTest(unittest.TestCase):
         self.assertEqual(french["passages"][1]["links"][0]["url"], "https://www.ourcommons.ca/deputes/fr/votes/45/1/1")
 
     def test_collect_emits_both_languages_and_explicit_publisher_gap(self):
-        data = {
-            journals.calendar_url("45-1"): calendar(),
-            ("121", "en"): journal(), ("121", "fr"): journal("fr"),
-            ("122", "en"): journal(sitting="122", title="Journals No. 122 - May 26, 2026 (45-1) - House of Commons of Canada"),
-        }
-
-        def fetch(url):
-            if url == journals.calendar_url("45-1"):
-                return data[url]
-            sitting = "121" if "sitting-121" in url or "seance-121" in url else "122"
-            language = "fr" if "/fr/" in url else "en"
-            try:
-                return data[(sitting, language)]
-            except KeyError as exc:
-                raise journals.PublisherGap("official edition returned HTTP 404") from exc
-
-        packet = journals.collect("45-1", fetch, through=date(2026, 11, 23), workers=2)
+        packet = COLLECT_REPLAY("45-1", replay_fetch)
         self.assertEqual([(r["key"], r["language"]) for r in packet["records"]],
                          [("121", "en"), ("121", "fr"), ("122", "en"), ("122", "fr")])
         self.assertEqual([r["details"]["status"] for r in packet["records"]],
@@ -110,39 +113,20 @@ class HouseJournalsTest(unittest.TestCase):
             journals.parse_journal(journal(content="<p class=\"Para\"> </p>"), "en", "121", "45-1")
 
     def test_transient_failure_preserves_previous_packet_and_replay_is_stable(self):
-        previous = {"old": True}
-
-        def failing_fetch(_url):
-            raise RuntimeError("temporary network failure")
+        def failing_fetch(url):
+            if url == f"{EN_JOURNALS}/sitting-122/journals":
+                raise RuntimeError("temporary network failure")
+            return replay_fetch(url)
 
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "house-journals.json"
-            output.write_text(json.dumps(previous))
+            first = journals.archive_inventory(output, "45-1", COLLECT_REPLAY, replay_fetch)
+            previous = output.read_bytes()
             with self.assertRaisesRegex(RuntimeError, "temporary network failure"):
-                journals.archive_inventory(output, "45-1", journals.collect, failing_fetch)
-            self.assertEqual(json.loads(output.read_text()), previous)
+                journals.archive_inventory(output, "45-1", COLLECT_REPLAY, failing_fetch)
+            self.assertEqual(output.read_bytes(), previous)
             self.assertEqual(list(Path(directory).rglob("*.tmp")), [])
-
-        data = {journals.calendar_url("45-1"): calendar(),
-                "121-en": journal(), "121-fr": journal("fr"),
-                "122-en": journal(sitting="122", title="Journals No. 122 - May 26, 2026 (45-1) - House of Commons of Canada")}
-
-        def replay_fetch(url):
-            if url == journals.calendar_url("45-1"):
-                return data[url]
-            sitting = "121" if "121" in url else "122"
-            language = "fr" if "/fr/" in url else "en"
-            if f"{sitting}-{language}" not in data:
-                raise journals.PublisherGap("official edition returned HTTP 404")
-            return data[f"{sitting}-{language}"]
-
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "house-journals.json"
-            first = journals.archive_inventory(output, "45-1", journals.collect,
-                lambda url: replay_fetch(url))
-            # Refreshing inventories should retain the same reconciled record rows.
-            second = journals.archive_inventory(output, "45-1", journals.collect,
-                lambda url: replay_fetch(url))
+            second = journals.archive_inventory(output, "45-1", COLLECT_REPLAY, replay_fetch)
             self.assertEqual(first["records"], second["records"])
             self.assertEqual(json.loads(output.read_text())["records"], first["records"])
 

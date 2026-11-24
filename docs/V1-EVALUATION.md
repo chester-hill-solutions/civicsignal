@@ -593,9 +593,9 @@ The initial evidence review picked the wrong Part of the Canada Labour Code twic
 
 The 20 new prompts, staged vector capture, frozen candidate packets, both evidence runs, and raw results are in `dist/evaluation/2026-11-23-hybrid-scope/`. Fresh cases used scoped full-text on literal Act names plus vectors. The later upstream scope replay changed the admission decision using those same candidate lists. Recompute the final report with `python3 dist/evaluation/2026-11-23-hybrid-scope/score.py --with-scope-routing`. This experiment checked passages and candidate routing. Independent chat claim verification remains open.
 
-#### Next comparison
+#### Serving results and work order
 
-Use the combined prototype as the candidate for serving-path integration. Confirm the full retrieval and evidence path on a fresh named and unnamed calibration set before freezing the policy for D-01. D-02 requires independent review of every factual claim in the registered chat answers.
+The combined prototype advanced to isolated staging. The repaired run passed calibration and failed D-01 on the holdout. It stopped before the benchmark. See the [release ledger](V1-RELEASE.md#november-23-repaired-hybrid-d-01) for the receipt and the [master plan](PLAN.md#mp-03-close-serving-acceptance) for current work.
 
 ### Serving verification procedure
 
@@ -609,12 +609,12 @@ Use the dated hosted observations above and the [master plan](PLAN.md#mp-03-clos
 
 The focused suite has **47 passing tests** for partitioning/provenance exclusions, denominator math, language pairing, threshold separation, percentile math, actual loopback HTTP requests, bounded concurrency, malformed/error responses, credential-safe redirects, freshness calculations, adapter observations, cache provenance/bypass, successful provider fallbacks, source/parser separation, and strict collection of all 20 calibration cases. Source verification passed as recorded above. An additional 20-request loopback integration passes through the actual portability HTTP handler, shared Postgres retrieval adapter, language filter, observation collector, and CHS in-memory usage ledger: all 20 calibration observations qualify, eight refused scores remain visible, and usage is exactly 20. Its embeddings and scores are deterministic fixtures. These tests establish the measurement contract only; their scores and timing are not CivicSignal retrieval-quality or production-performance results. They require local socket permission in restricted environments.
 
-Before release, retain the following evidence:
+The original serving qualification required the following evidence. Use the [D-01 criteria](#d-01-serving-decision) for the current passing bar and the [master plan](PLAN.md#mp-03-close-serving-acceptance) for the queue.
 
 1. An authoritative served corpus/index revision and encoder/reranker/deployment snapshot for Cloudflare. Record a fresh upstream head at measurement time.
-2. A budgeted credentialed serving-path run on the 64 held-out cases, with failures investigated and bilingual results reviewed. No such new live run has been performed here.
-3. Execute and retain the 20-case fresh Cloudflare serving calibration with results split by language. The collection path is implemented and tested; no new calibrated threshold is established without a real run.
-4. A bounded live HTTP benchmark with its request budget and cache state stated. No production latency or throughput number is established by the tests.
+2. A budgeted serving-path run on the 64 held-out cases, with failures investigated and bilingual results reviewed.
+3. The 20-case fresh Cloudflare serving calibration with results split by language.
+4. A bounded live HTTP benchmark with its request budget and cache state stated.
 5. Verify the new provider/fallback observations on the deployed candidate with correlated request evidence. Local instrumentation tests do not prove a live gateway failure or deployed configuration. Per-provider latency remains outside the current observation.
 6. If a future release selects the Postgres stack, qualify its held-out quality, performance, and threshold independently.
 7. A new non-empty revision published by the automated pipeline, with observed ingestion/freshness lag. A metadata timestamp alone does not prove this end-to-end update path.

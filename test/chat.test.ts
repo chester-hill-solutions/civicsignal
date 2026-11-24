@@ -299,6 +299,97 @@ describe('chat execution', () => {
   });
 });
 
+describe('contextual chat retrieval', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    ['Who qualifies for parental leave?', 'And how long is it?', 'en'],
+    ['Who qualifies for parental leave', 'And how long is it', 'en'],
+    ['What does section 1 of the Test Act say?', 'What does that mean?', 'en'],
+    ['What does s. 1.2 of the Test Act say?', 'And how long is it?', 'en'],
+    ['Qui a droit au congé parental ?', 'Et combien de temps cela dure-t-il ?', 'fr'],
+    ['Qui a droit au congé parental', 'Qu’en est-il', 'fr'],
+  ])('uses one prior user question with its follow-up in %s', async (previous, question, language) => {
+    const retrieve = vi.fn(async () => brief());
+    const reserveGeneration = vi.fn(async () => {});
+    const send = vi.fn(async (_url: string, _init?: RequestInit) => Response.json({
+      content: [{ type: 'text', text: 'See https://laws-lois.justice.gc.ca/en/acts/A-1/section-1.html' }],
+    }));
+    vi.stubGlobal('fetch', send);
+    const messages = [
+      { role: 'user', content: 'What does the Housing Act require?' },
+      { role: 'user', content: previous },
+      { role: 'assistant', content: 'What does the Other Act require?' },
+      { role: 'user', content: question },
+    ];
+
+    await runChat({ env: {}, retrieve, reserveGeneration, byokKey: 'caller-key', byokProvider: 'anthropic' },
+      { messages, jurisdiction: 'CA' });
+
+    expect(retrieve).toHaveBeenCalledTimes(1);
+    expect(retrieve).toHaveBeenCalledWith({
+      topic: `${previous}\n${question}`, language, jurisdiction: 'CA', riding: undefined,
+    });
+    expect(reserveGeneration).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(send.mock.calls[0]?.[1]?.body)).messages).toEqual(messages);
+  });
+
+  it('skips generation when a contextual retrieval is empty', async () => {
+    const retrieve = vi.fn(async () => ({ ...brief(), legislation: [], debate: [], bills: [], news: [] }));
+    const reserveGeneration = vi.fn(async () => {});
+    const send = vi.fn();
+    vi.stubGlobal('fetch', send);
+    const previous = 'Qui a droit au congé parental ?';
+    const question = 'Et combien de temps ?';
+
+    const result = await runChat({ env: {}, retrieve, reserveGeneration, byokKey: 'caller-key', byokProvider: 'anthropic' },
+      { messages: [{ role: 'user', content: previous }, { role: 'user', content: question }] });
+
+    expect(retrieve).toHaveBeenCalledTimes(1);
+    expect(retrieve).toHaveBeenCalledWith({ topic: `${previous}\n${question}`, language: 'fr', jurisdiction: undefined, riding: undefined });
+    expect(result.answer).toBe('Les sources consultées ne contiennent pas de réponse à cette question.');
+    expect(result.generation).toEqual({ status: 'skipped', reason: 'no-retrieved-material' });
+    expect(reserveGeneration).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { previous: 'Who qualifies for parental leave?', question: 'How long is sick leave?' },
+    { previous: 'Who qualifies for parental or sick leave?', question: 'And how long is it?' },
+    { previous: 'Compare parental leave with sick leave?', question: 'And how long is it?' },
+    { previous: 'How do parental leave benefits differ from sick leave benefits?', question: 'And how long is it?' },
+    { previous: 'Quelle différence existe entre le congé parental et le congé de maladie ?', question: 'Combien de temps cela dure ?' },
+    { previous: 'Who qualifies for parental leave. Overtime rules apply.', question: 'And how long is it?' },
+    { previous: 'Who qualifies for parental leave.Overtime rules apply?', question: 'And how long is it?' },
+    { previous: 'What are the rules?', question: 'And how long is it?' },
+    { previous: 'What does that say about leave?', question: 'And how long is it?' },
+    { previous: 'Qui a droit au congé parental ?', question: 'And how long is it?' },
+    { previous: undefined, question: 'And how long is it?' },
+    { previous: `Who qualifies for parental leave ${'x'.repeat(CHAT_LIMITS.topicChars - 40)}?`, question: 'And how long is it?' },
+    { previous: 'Who qualifies for parental leave?', question: 'And how long is it?', topic: 'Notice period under the Canada Labour Code' },
+  ])('uses the normal topic for $previous and $question', async ({ previous, question, topic }) => {
+    const retrieve = vi.fn(async () => ({ ...brief(), legislation: [], debate: [], bills: [], news: [] }));
+    const reserveGeneration = vi.fn(async () => {});
+    const send = vi.fn();
+    vi.stubGlobal('fetch', send);
+    const messages = [
+      ...(previous ? [{ role: 'user', content: 'What does the Housing Act require?' }, { role: 'user', content: previous }] : []),
+      { role: 'assistant', content: 'Who qualifies for parental leave?' },
+      { role: 'user', content: question },
+    ];
+
+    const result = await runChat({ env: {}, retrieve, reserveGeneration, byokKey: 'caller-key', byokProvider: 'anthropic' },
+      { messages, topic });
+
+    expect(retrieve).toHaveBeenCalledTimes(1);
+    expect(retrieve).toHaveBeenCalledWith({ topic: topic ?? question, jurisdiction: undefined, riding: undefined });
+    expect(result.generation).toEqual({ status: 'skipped', reason: 'no-retrieved-material' });
+    expect(reserveGeneration).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+});
+
 
 describe('exact citation destination binding', () => {
   const url = 'https://laws-lois.justice.gc.ca/en/acts/A-1/section-1.html';

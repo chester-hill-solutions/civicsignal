@@ -6,35 +6,27 @@ CivicSignal will give applications and agents source-cited Canadian civic inform
 The first release serves Canadian federal statutes and regulations in English and French.
 The immediate objective is to close four release gates: scheduled first publication, serving acceptance, production migration, and the final release audit.
 
-This file owns scope, priorities, dependencies, decisions, and next actions.
-The [release evidence ledger](V1-RELEASE.md) owns detailed results and source-specific receipts.
-Supporting documents supply contracts, procedures, historical evidence, or future designs.
-They do not create another work order.
+This is the single work order for scope, priorities, dependencies, decisions, and next actions.
+Use the [release evidence ledger](V1-RELEASE.md) for dated results and source-specific receipts.
+Use the [reference map](#reference-map) for contracts, procedures, and historical plans.
 
 ## Immediate work order
 
-**Ready for staffer review.** Review the [five federal freshwater briefs for May 25–29, 2026](../preview/policy-files/freshwater-2026-05-25/BRIEFS.md). Check which events changed the file, whether the two deadlines reached the right owner, and whether the First Nations drinking-water funding and Charlo groundwater leads belong in the main brief. Use missed items and false positives to revise the watch terms, then replay the week. Phase 5 covers scheduling and shared delivery. [Pilot priorities](#parliament-monitor-workflow-benchmark)
+### Release work
 
-**Parliamentary backend.** The local committee API serves bilingual 45-1 studies, meetings, proceedings, written submissions and the House calls for briefs across House, Senate and joint committees. Coverage reports distinguish searchable passages, stored originals and publisher gaps. [Committee execution plan and acceptance checks](#session-45-1-committee-corpus-execution-plan)
+1. **Bind the candidate under MP-01.** Match each operation to its source, checks, and target identities. Use the [candidate inventory](#implementation-progress) to keep local, staging, and production evidence distinct.
+2. **Prepare MP-02 and MP-04 in parallel.** The offline checks passed. The account administrator must confirm schedule authority for a new event and both cleanup guards. The production writer owners must identify the active writers and agree on one maintenance interval. [November 24 operator handoff](V1-RELEASE.md#november-24-offline-readiness-for-mp-02-and-mp-04)
+3. **Qualify the MP-03 serving changes.** Bind the local exact-citation and chat follow-up changes to the next candidate. Hosted evaluation remains paused for Hansard work. When it resumes, follow D-01 and D-02 for that candidate. [Serving work](#mp-03-close-serving-acceptance)
+4. **Qualify migration under MP-05.** Use the approved MP-04 capture to prove the hosted copy, switch, and rollback. [Migration work](#mp-05-qualify-protected-copy-and-production-rollback)
+5. **Complete MP-06 after MP-02, MP-03, and MP-05 close.** Audit all ten requirements. Submit the exact production candidate and rollback procedure for the release decision. Record the approved operation's outcome. [Final release](#mp-06-qualify-the-final-source-and-release-packet)
 
-**Current corpus build.** Add source pipelines and the remaining backend APIs. The local parliamentary API covers session-wide bills, House and Senate Journals, recorded divisions and individual voting records. The local funding API now covers the current NSERC College and Community Innovation opportunities and ESDC’s jobs, skills and community funding catalogue in both languages. The House calls for briefs are indexed with their published deadlines and instructions; the Senate publishes no equivalent listing, which the intake records as a measured gap. The federal consultation catalogue is served with its published dates, status and department and report links, and a state computed for the queried date; 71 consultations are open and 111 rows carry a status that disagrees with their dates. Next, parse the linked department notices for who may participate and how to respond, then ECCC audit and evaluation publications. Connect each opening to its study or policy question and the evidence already published on that file. Retain official budget and spending-bill references when a source cites them. The GEDS directory serves the full October 25 export: 189,994 source rows, 21,874 organizations and 189,877 roles, and a replay adds no snapshot or change event. [Full import](evidence/2026-11-24/geds-full-import.json) Continue routine intake for collections already built. Historical session backfills are deferred. [Backend work order](#current-corpus-pipelines-and-apis)
+### Local source and staffer work
 
-**House written-questions baseline.** The local 45-1 inventory contains all 1,709 question numbers in English and French. Searchable government replies cover 1,518 of the 1,519 answered questions in each edition. The collection also retains 184 awaiting a response and six withdrawn questions. Follow the cited gaps for Q-105 and Q-338 on refresh. [Written-questions API](WRITTEN-QUESTIONS-PREVIEW.md) · [Collection reconciliation](evidence/2026-11-23/parliamentary-corpus.md)
+1. Review the [five freshwater briefs for May 25–29, 2026](../preview/policy-files/freshwater-2026-05-25/BRIEFS.md) with a staffer. Check who owns the two deadlines. Decide where to put Q-1010 and the Charlo groundwater lead. Revise the watch terms from misses and false positives. Replay the week. [Pilot checks](#parliament-monitor-workflow-benchmark)
+2. Continue current-session intake and Hansard work. Use the repaired committee clone and deterministic House Journals replay checks in the [refresh work](#routine-current-session-refresh).
+3. Extract participation instructions from linked consultation notices. Then extract ECCC audit and evaluation passages from the archived originals. Use the existing [source sequence](#current-corpus-pipelines-and-apis) and [ECCC acceptance cases](#eccc-implementation-scope).
 
-Cloudflare base candidate `44ce56f` includes the incremental ingestion memory fix and guarded serving changes. It passed clean local checks and Linux CI. The isolated staging API now serves repaired hybrid candidate `65bd7ff` on Worker version `17dcf4a5`. It uses the November 16 corpus at `855cdfc` and a matching lexical index in R2. [Base candidate evidence](V1-RELEASE.md#november-23-clean-mp-03-candidate) · [Staging refresh](V1-RELEASE.md#november-23-isolated-staging-refresh) · [Repaired candidate](V1-RELEASE.md#november-23-repaired-hybrid-d-01)
-
-Production is still on the October 15 corpus. Cloudflare recorded six consecutive memory failures after the November 16 upstream update. Prepare a snapshot-backed recovery through isolated staging and the guarded production rollout. [Live freshness observation](V1-RELEASE.md#november-22-live-source-freshness-audit)
-
-1. **Finish MP-02 staging admission.** The November publication version was last observed active and unarmed with the staging R2 binding. The recorded setup cutoff for its `2026-11-23T03:47:00Z` event has passed. A new reviewed event and version need a schedules API credential valid through both guards' cleanup. [November staging publication version](V1-RELEASE.md#november-22-staging-publication-version)
-2. **Prepare MP-04 in parallel.** Establish the production capture owner and writer authority, define the maintenance window, and complete sealed-input checks at handoff.
-3. **Retain the serving and chat evidence under MP-03.** The product owner paused evaluation to start Hansard. The repaired holdout found 20 of 24 English and 23 of 24 French provisions. Three HTTP 502 responses stopped the run before the benchmark. D-01 remains open. The eight-case D-02 packet is ready for when evaluation resumes. [D-01 result](V1-RELEASE.md#november-23-repaired-hybrid-d-01) · [D-02 packet](V1-RELEASE.md#november-23-d-02-offline-packet)
-4. **Collect hosted evidence.** Qualify scheduled first publication under MP-02. Run serving and chat acceptance under MP-03. Complete the approved MP-04 capture before the MP-05 protected-copy, switch, and rollback checks.
-5. **Complete MP-06.** Audit all ten requirements. Review the production switch and rollback packet. Record the approved operation's actual result.
-
-Bind each hosted packet to the exact reviewed source it uses and close its dependencies before execution.
-MP-04 capture must pass before MP-05's production-derived proof.
-The final production decision waits for MP-02, MP-03, and MP-05 acceptance.
-Named operators and approvers remain execution prerequisites; role assignments below do not select them.
+Local previews and staffer review can proceed alongside v1 preparation. D-06 governs external pilots. D-08 governs hosted source publication and cadence. Historical session backfills stay deferred.
 
 ## Release gates at a glance
 
@@ -55,7 +47,7 @@ The following dispositions resolve conflicts among the planning documents.
 | Earlier proposal | Current disposition |
 | --- | --- |
 | Move the API to Railway and remove Cloudflare services | Use Cloudflare as the sole v1 runtime. Railway is an alternative deployment choice. |
-| Drop reranking after the early retrieval experiment | Retain the current Jev authority policy and vector fallback; require new serving evidence for changes |
+| Drop reranking after the early retrieval experiment | Keep Jev and vector fallback as the baseline policy. Qualify a successor through D-01. |
 | Add news, debates, bills, tone, and geography in the first product wave | Build the pre-alpha parliamentary corpus and its documented HTTP APIs now. News, tone analysis and geographic reporting remain later product decisions. Hosted publication follows the source-specific release review. |
 | Ship a hosted OpenCode harness or portal | Defer both; v1 exposes HTTP, MCP, and BYOK chat |
 | Publish public snapshots, paid credits, or a fixed unit price immediately | Make separate distribution and commercial decisions after the release |
@@ -117,7 +109,7 @@ These exclusions do not remove snapshot, restore, migration, recovery, or servin
 3. **Preserve the encoder and index.** Keep the existing 768-dimension index and pinned encoder artifact, templates, and vector ordering.
 4. **Separate exact citations from search.** Resolve named provisions structurally; a nearby provision cannot replace a missing exact provision.
 5. **Keep language in identity and search.** English and French rows have distinct identifiers; apply the language filter before candidate selection.
-6. **Keep the current rerank policy.** Jev authority decisions and the observed vector-floor fallback supersede the historical no-reranker proposal.
+6. **Qualify search policy changes.** Jev and vector fallback remain the baseline policy. Hybrid has separate staging evidence and must pass D-01 before release.
 7. **Version semantic changes.** Bind cache entries and snapshots to source, parser, language, and decision contracts; retain immutable historical artifacts.
 8. **Reuse CHS packages.** Extend shared auth, auth-d1, api-billing, and corpus emission paths instead of creating parallel implementations.
 9. **Keep authorization independent of corpus rollback.** Retain the authoritative `AUTH_DB`, current keys and billing, and the original usage namespace.
@@ -154,7 +146,15 @@ Unspent slots do not authorize another operation, reset, retry, or replacement l
 
 ## Implementation progress
 
-The current draft source is **`3f16f93`**. The [memory fix evidence](V1-RELEASE.md#november-22-incremental-ingestion-memory-fix) records the affected local checks and matching clean Linux gate. The preceding [`711b4f8` candidate](V1-RELEASE.md#november-22-draft-candidate-qualification) has both complete local and Linux receipts.
+| Evidence scope | Source and recorded position |
+| --- | --- |
+| Local execution | The uncommitted successor to `8302892` includes exact citation parity, bounded chat follow-ups, and two intake repairs. [Changes and local evidence](V1-RELEASE.md#november-24-local-serving-and-intake-repairs) |
+| Local assessment | `8302892` contains the current source previews and the citation boundary repair. The audit used local fixtures and saved staging observations. [Local assessment](V1-RELEASE.md#november-24-code-assessment-reconciliation) |
+| Qualified base | `44ce56f` includes the memory fix and serving guards. Clean local checks and Linux CI passed for that source. [Base candidate](V1-RELEASE.md#november-23-clean-mp-03-candidate) |
+| Last recorded hybrid staging target | `65bd7ff` on Worker version `17dcf4a5` used corpus `855cdfc` and a matching R2 lexical index. D-01 remains open. [Hybrid receipt](V1-RELEASE.md#november-23-repaired-hybrid-d-01) |
+| Last recorded production corpus | The November 22 observation found the October 15 corpus and six ingestion memory failures. Plan a snapshot-backed recovery through staging and the guarded rollout. [Production observation](V1-RELEASE.md#november-22-live-source-freshness-audit) |
+
+The [memory fix receipt](V1-RELEASE.md#november-22-incremental-ingestion-memory-fix) covers `3f16f93`. The preceding [`711b4f8` candidate](V1-RELEASE.md#november-22-draft-candidate-qualification) retains complete local and Linux receipts.
 The earlier **`9771a8b`** [local gate](evidence/2026-10-31/integrated-candidate-local-validation-v11.json) and [clean Linux gate](evidence/2026-10-31/candidate-9771a8b-linux-ci-validation.json) cover 2,192 tests and 477 source and fixture inputs.
 The assessment at **`518aab0`** used the same runtime and test inputs. Its local probes added five findings to [the release ledger](V1-RELEASE.md#november-22-local-code-assessment).
 The local publication, search, cache, and quota regressions pass. The [integrated run](V1-RELEASE.md#november-22-integrated-v1-local-work) and the [later focused run](V1-RELEASE.md#november-22-cloudflare-release-preparation) checked different worktree snapshots.
@@ -164,9 +164,9 @@ The [release ledger](V1-RELEASE.md#october-31-implementation-progress) preserves
 
 | Package | Responsible role | Dependency | Current position and next deliverable |
 | --- | --- | --- | --- |
-| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Exact source for each operation | Affected local and clean Linux checks pass at `3f16f93`. Bind each operator and its deployment identities to the reviewed source. |
+| [MP-01](#mp-01-reconcile-the-exact-candidate) | Release engineer | Exact source for each operation | Use the candidate inventory above. Bind each operator and target to the receipts for its exact source. |
 | [MP-02](#mp-02-qualify-scheduled-first-publication) | Pipeline engineer and operator | MP-01 before execution | The offline verifier checks the pinned reference. Rebind the operator and confirm current calendars, resource identities, artifact storage, and the event budget. |
-| [MP-03](#mp-03-close-serving-acceptance) | API, pipeline, billing, and evaluation owners | MP-01 candidate, D-01 policy, and approved hosted scope | D-02 offline packet is ready. Approve the separate capture scope and have the product owner review the cases. D-01 remains an open release gate. |
+| [MP-03](#mp-03-close-serving-acceptance) | API, pipeline, billing, and evaluation owners | MP-01 candidate, D-01 policy, and approved hosted scope | Bind local citation parity and the approved chat behavior to the successor. D-01 remains open. The D-02 packet is ready offline for its recorded staging candidate. |
 | [MP-04](#mp-04-qualify-consistent-production-acquisition) | Release engineer and writer owners | Actual authority and common maintenance | The composed offline capture passes. Prepare the hosted owner, establish writer control, and acquire consistent production inputs. |
 | [MP-05](#mp-05-qualify-protected-copy-and-production-rollback) | Migration engineer | MP-04 capture for production-derived proof | Local mechanisms pass; qualify hosted copy, production target, and rollback |
 | [MP-06](#mp-06-qualify-the-final-source-and-release-packet) | Release engineer and product owner | MP-02, MP-03, and MP-05 acceptance | Draft candidate; complete final checks, requirement audit, and production decision |
@@ -253,7 +253,7 @@ The retained October reference is historical. The November 16 reference passed l
 - [x] Create and independently read back the new isolated November staging Worker and Workflow. The bootstrap has zero Workflow instances and no configured schedules or R2 bindings.
 - [x] Verify the new native calendar from its creation record and live metadata. Bind Worker calendar arming, both guards, and final readback to the selected staging identity.
 - [x] Upload and activate the November publication Worker version with the staging R2 binding and concrete UTC controls. Verify the deployed bytes, exact bindings, empty qualification prefix, unused instance, and preserved Workflow definition.
-- [ ] Bind a schedules API credential valid through both guards and final observation. Confirm the event can still be armed within its propagation window or prepare a fresh version for a later event.
+- [ ] Prepare a new version for a fresh UTC event. Bind schedule authority through both cleanup guards and final observation. Check the new arming window.
 - [ ] Bind the calendar runner to hosted publication admission and artifact verification. Recheck the bundle, namespace, instance, canonical backup, and native Workflow calendar before execution.
 - [ ] Qualify exact Worker calendar arming and cleanup, including an independent empty readback, before selecting the executable event and budgets. Keep the native Workflow calendar empty.
 - [ ] Prepare finite admission windows, credential checks, stop conditions, and independent cleanup guards.
@@ -283,7 +283,9 @@ Prepare a fresh successor from existing owned helpers; preserve every consumed m
 
 ### MP-03 Close serving acceptance
 
-The first hybrid candidate stopped at calibration. The repaired candidate completed calibration and stopped after the holdout with three HTTP 502 responses. D-02 requires independent claim-level review. The earlier positive Zen smoke qualifies its recorded version.
+The first hybrid candidate stopped at calibration. The repaired candidate passed calibration and found 20/24 English and 23/24 French provisions in the holdout. Three HTTP 502 responses stopped the run before the benchmark. D-01 still requires 22/24 in each language, complete responses, and passing benchmarks at both concurrency levels. [D-01 criteria](V1-EVALUATION.md#d-01-serving-decision)
+
+D-02 requires independent claim review. The earlier positive Zen smoke qualifies its recorded version. [Chat review](V1-EVALUATION.md#d-02-bilingual-chat-claim-review)
 **Requirements** V1-01, V1-03, V1-04, V1-07, V1-08.
 
 - [x] Qualify provider dispatch, brief policy, shared-object byte checks, allocation limits, and relay abort handling.
@@ -304,7 +306,7 @@ The first hybrid candidate stopped at calibration. The repaired candidate comple
 - [ ] Prepare fresh target provenance, reviewed request scopes, and any required label checks for that revision.
 - [x] Deploy the reviewed staging API and verify its bundle, bindings, and health.
 - [x] Reconcile the November staging corpus and verify the published row count and Vectorize watermark.
-- [x] Run the November bilingual holdout and bounded benchmark and record the D-01 result.
+- [x] Record the November vector fallback holdout and benchmark after Jev returned HTTP 402. Retain the D-01 failure for that candidate.
 - [x] Replay the staged raw candidates on the November calibration set and verify the named-statute fallback ranking change locally.
 - [x] Record the labour-board staging probe and identify Canada Labour Code section 16 as the target for the explicit federal powers question.
 - [x] Prototype a revision-bound lexical index over provision headings and opening text for explicitly named statutes. Measure top-five ranks, unresolved scope, and candidate returns for unsupported questions on the fresh bilingual development set.
@@ -320,7 +322,9 @@ The first hybrid candidate stopped at calibration. The repaired candidate comple
 - [x] Add one bounded retry for nonmatching evidence quotes. Reproduce the HTTP error locally and check recovery and repeat mismatch through the HTTP route.
 - [x] Deploy repaired hybrid source `65bd7ff` to isolated staging and bind Worker version `17dcf4a5` to the fresh D-01 request scope.
 - [x] Run formal calibration and holdout on the repaired version. Retain the 86-attempt ledger, results, and key revocation. [Repaired hybrid D-01 result](V1-RELEASE.md#november-23-repaired-hybrid-d-01)
-- [ ] Resolve the outstanding D-01 release checks on a reviewed candidate. Retain provider-stage failures for that work. Defer further recall tuning.
+- [ ] When hosted evaluation resumes, investigate the three provider-stage failures. Qualify the reviewed candidate under the existing D-01 bar, including both benchmark levels. Keep general recall tuning deferred.
+- [x] Resolve recognized citations through one path for HTTP `/api/brief` and both MCP topic tools. The bilingual local regressions cover present and missing provisions.
+- [x] Use the previous user question when it identifies one subject for a follow-up. An explicit `topic` takes precedence. Preserve empty-evidence and billing behavior.
 - [x] Verify the eight-case D-02 packet, request hashes, and separate recorder and reviewer templates for `65bd7ff` on `17dcf4a5`.
 - [ ] Approve a separate eight-attempt D-02 staging scope. To capture before D-01 closes, explicitly approve that sequence for staging evaluation.
 - [ ] If hybrid search qualifies, publish its lexical index for each corpus revision before serving that revision. Check the index and R2 catalog against the exact served corpus under MP-02 and MP-05.
@@ -342,6 +346,7 @@ Retain the [November 22 probes](V1-RELEASE.md#november-22-local-code-assessment)
 Search eligibility and cache failure handling pass the local regressions for the [new search policy](V1-RELEASE.md#november-22-search-eligibility-and-cache-repair).
 Coherent revision and chat quota admission pass [integrated local checks](V1-RELEASE.md#november-22-integrated-v1-local-work).
 Formal calibration passes for the repaired hybrid candidate. The holdout showed better recall in both languages and found failures in interpretation and evidence checking. English recall and response completeness still need qualification.
+The November 24 audit reproduced the existing claim-support gap and found two request-path gaps. Keep these local cases separate from the D-01 holdout and the D-02 review. [Reproduction and limits](V1-RELEASE.md#november-24-code-assessment-reconciliation)
 
 | Work | Owner | Implementation and acceptance |
 | --- | --- | --- |
@@ -349,14 +354,18 @@ Formal calibration passes for the repaired hybrid candidate. The holdout showed 
 | Search eligibility | API engineer and evaluation owner | Extend the [shared search adapter](../src/corpora/adapters.ts). Apply the fallback floor using eligible rows after keyword checks. Test a filtered-out leader and a below-floor survivor with Jev disabled and with a Jev failure. Preserve the Jev authority policy. Version the decision and cache contract. Calibrate the serving backend under D-01 before its independent holdout. |
 | Chat quota admission | Billing and API owners | Extend [shared CHS metering](../src/metering.ts) with atomic admission for provider work against the workspace hard limit. Preserve monthly counters and operation IDs. Test two chats and a competing retrieval at the last unit. A chat must hold a unit before it calls the provider. Charge one unit on success. Test release on failure, safe expiry, and lost acknowledgements. Hosted request budgets under D-03 are separate. |
 | Cache failure handling | API engineer | Extend the [search cache path](../src/corpora/adapters.ts). Continue fresh search after a cache read failure. Return a valid result after a cache write failure. Check read and write faults, bounded diagnostics, usage counts, and propagation of provider and text hydration failures. |
+| Exact citation parity | API engineer | HTTP and both MCP topic tools share the [serving brief resolver](../src/index.ts), the revision-bound [Act title cache](../src/corpora/act-titles.ts), and the CHS parser. Recognized citations use exact lookup. The explicit `cite_provision` tool remains available. |
+| Contextual chat follow-up | Product owner and API engineer | The owner selected the previous user question when it identifies one subject. For recognized follow-ups, [chat](../src/routes/chat.ts) combines both questions within the existing retrieval limit. An explicit topic wins. Ambiguous history falls back to the final question. [Chat tests](../test/chat.test.ts) |
+| Chat claim support | Product owner and evaluation owner | Use D-02 and the [existing offline evidence checker](../scripts/check-chat-claim-evidence.ts) for release review. Track any runtime claim control under [issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) and the [decision register](#decisions-still-required). |
 
-Keep HTTP and MCP response shapes and successful empty results compatible. Raw `/api/match` continues to return nearest vectors.
+Keep HTTP and MCP request and response shapes compatible for exact citation parity. Preserve successful empty results and typed failures. Raw `/api/match` continues to return nearest vectors.
+Keep chat `answer` and `cited` compatible. Review any additive clarification status or change to successful usage before implementation.
 Run hosted v1 acceptance only on Cloudflare. Bun/Postgres tests exercise the shared search adapter as local portability checks.
 Follow D-02 for any change to the public chat answer contract.
 
 #### Staging work order
 
-The earlier hosted run used base candidate `44ce56f` with the DeepSeek adapter patch and migration `0009`. The hybrid successor uses the same verified November D1 corpus and Vectorize index at `855cdfc`. The successor assigns scope and checks excerpts with DeepSeek V4.1 Flash. Its staged lexical index uses that corpus revision. [Earlier acceptance run](V1-RELEASE.md#november-23-hosted-serving-and-chat-acceptance) · [Hybrid candidate](V1-RELEASE.md#november-23-hybrid-serving-candidate)
+The earlier D-01 run used base candidate `44ce56f`. The positive DeepSeek Zen smoke used a later staging version. The repaired hybrid uses the same November corpus `855cdfc`, a matching lexical index, and DeepSeek V4.1 Flash for scope and excerpt checks. [Earlier run](V1-RELEASE.md#november-23-hosted-serving-and-chat-acceptance) · [Positive Zen smoke](V1-RELEASE.md#november-23-staging-deepseek-zen-recovery) · [Hybrid receipt](V1-RELEASE.md#november-23-repaired-hybrid-d-01)
 
 | Work | Owner | Dependency and completion evidence |
 | --- | --- | --- |
@@ -519,11 +528,11 @@ Use the session and official source identifiers for parliamentary acquisition. I
 | Build order | Source and client operation | Acceptance |
 | --- | --- | --- |
 | 1. Parliamentary catalogues | Ingest the official 45-1 LEGISinfo bill inventories, House recorded divisions and Senate standing-vote indexes in both languages. Browse, search, look up an official number, and inspect coverage for each collection. | Reconcile editions to the official inventories. Return bill status or a vote decision and numeric tallies with a citation. Exercise both languages through the authenticated Worker. [Parliamentary catalogue API](PARLIAMENT-CATALOGUE-API.md) |
-| 2. Federal directory, in parallel | Integrate the recovered GEDS intake and people, contact, organization, hierarchy and membership handlers with shared Worker authorization and metering. | Prove current and as-of lookup across a transfer and retain the full export import and replay receipt. [Directory work order](GEDS-WORK-ORDER.md) |
+| 2. Federal directory, local preview | Continue directory refresh. Reuse the current people, contact, organization, hierarchy and membership handlers when linking source records. | Full import, replay and bilingual exact lookup passed locally. Check each new link against its dated source. [Directory API](GEDS-API.md) · [Full import receipt](evidence/2026-11-24/geds-full-import.json) |
 | 3. Chamber decisions, local preview | Bilingual House and Senate Journals supply cited passages and dispositions. All 198 House divisions have links from the Journals. Both chambers’ roll-call APIs expose individual positions and retain the citation for each vote. | Authenticated passage search, voting history, exact lookup and coverage with OpenAPI and bilingual Worker tests. [Verification and examples](PARLIAMENT-CATALOGUE-API.md#chamber-reconciliation) |
 | 4. Funding programs and calls, local preview | Ingested all five current NSERC CCI calls and all 98 ESDC catalogue listings in each language, including closed and continuous intakes. | Typed, authenticated search, exact editions, observed versions and coverage. The English and French Worker checks trace both Polytechnics Canada recommendations from the finance committee brief to cited federal program terms. [Funding API](FUNDING-PROGRAMS-API.md) |
 | 5. Committee calls for briefs, local preview | Reconcile current House, Senate and joint committee study listings in both languages. Capture published calls, submission instructions, deadlines and revisions. Link to the study, briefs and witness evidence already held. | For apprenticeship, return matching calls open as of the query date, or a dated zero with coverage gaps. Follow one real call to its instructions and study. Cite the speaker or submitter for each related position. |
-| 6. Federal departmental consultations, local preview | Ingested both editions of the Open Dialogue catalogue (5,208 rows, 62 institutions) and serve the published policy question, dates, status, department and report links with a state computed for a queried date. The department notice is cited; its participation text is not parsed yet. | For applied AI, return matching opportunities and their status as of a specified date. Trace an extension or closure without losing the earlier notice. Expose missing dates, editions and outcomes. |
+| 6. Federal departmental consultations, local preview | Extend the [existing catalogue and API](CONSULTATIONS-API.md) with cited eligibility and response instructions from linked department notices. Preserve published status and the date-based state. | Use the applied-AI case to show dated status and cited participation instructions. Test a changed notice, a missing edition, and an unavailable source. Keep the existing response fields and add notice evidence through the typed contract. |
 | 7. Departmental publications | ECCC audit and evaluation inventory and originals are complete over both series; passage extraction and the shared departmental publication API are next. | Search passages, retrieve a cited edition, inspect versions and coverage in both languages. [Intake and inventory](DEPARTMENTAL-PUBLICATIONS.md) · [Full scope and acceptance](#eccc-implementation-scope) |
 
 The two participation intakes can be assigned separately. Use one typed opportunity contract for search, exact editions, status as of a date, revision history and deployment discovery. Each intake owns its publisher inventory and bilingual coverage receipt. An ongoing study alone does not establish that submissions are open. If the publisher omits a deadline, return it as unknown. Use apprenticeship and applied AI to test retrieval across the full collections.
@@ -557,6 +566,11 @@ Use these checks in the operation of the collections already built. Each collect
 7. **Verify each refresh.** Compare the two successful cutoffs by source and language. Record additions, revisions, confirmed removals and outstanding source IDs. Check a changed record through authenticated search or exact lookup in each available language. If the publisher has made no change, record that result and use fixtures to exercise a change. Interrupt and resume one run, replay identical inputs with zero new change events, and verify that a failed run leaves the previous serving data queryable. Publish the receipt with the repeatable commands and the last successful cutoff.
 
 Use the existing local operators and typed API contracts. The [refresh runbook](REFRESH.md) records the measured daily set (consultations, committee calls and funding, about three minutes in total), the weekly set, and the installed macOS agent. Once both collections pass, apply the same checks to current House and Senate Hansard and Canada Gazette intakes. Measure request volume, run duration and observed publication intervals before setting a hosted cadence under D-08.
+
+The local refresh regressions now cover both failures from the [November 24 assessment](V1-RELEASE.md#november-24-code-assessment-reconciliation).
+
+- **Committee clone.** The native APFS checks exercise the [preview migration](../preview/committees/migrations/0001_committee_preview.sql), repeated publication, legacy targets, and rejection of an unfamiliar schema. A rejected clone retains the preceding generation. [Materializer tests](../test/test_materialize_committee_corpus.py)
+- **House Journals replay.** The fixture requests the exact sitting and language through November 23. A later edition failure preserves the previous inventory byte-for-byte. Replaying the same inputs reproduces its records. The live collector still uses its normal clock. [Replay tests](../test/test_parliament_house_journals.py)
 
 ### Collection backfill and refresh
 
@@ -649,15 +663,15 @@ For later work, use the Gazette Part II URL ledger and House and Senate debate c
 
 ### GEDS people, organizations and contact discovery
 
-**Directory recovery baseline.** Local branch `aboiteau/geds` at `a5adddc` contains 23 files verified against the R2 checkpoint, including the importer, migration, typed routes, OpenAPI builder and fixtures. On that revision, 16 of 18 focused tests pass under Bun. Two API tests look for a transferred employee in their former unit. The hosted run later processed 189,994 source rows and passed 18 tests. Its later revision and full-import receipt still need to be reproduced. [Recovery evidence](https://github.com/chester-hill-solutions/cf-opencode/issues/141)
+**Directory recovery history.** The earlier recovery inspected `aboiteau/geds` at `a5adddc` and a separate hosted run. The November 24 receipt below qualifies the current local full import and replay. [Recovery evidence](https://github.com/chester-hill-solutions/cf-opencode/issues/141)
 
 **Current directory integration.** The working tree includes the importer and an isolated preview migration `preview/geds/migrations/0010_geds.sql`. Seven documented data routes use the current Worker’s workspace authorization and retrieval billing. Fixture tests cover a person moving between units and a query against the earlier snapshot. The full October 25 export is imported and replayed: 189,994 source rows, 21,874 organizations, 189,877 roles, no unresolved record, and an authenticated lookup that resolves one unit from both published names and cites its contact. The 15 malformed publisher rows and the reader rule that recovers them are recorded with the receipt. Then use the verified directory IDs for the parliamentary links below. [Directory API](GEDS-API.md) · [Full import](evidence/2026-11-24/geds-full-import.json) · [Standalone acceptance criteria](GEDS-WORK-ORDER.md)
 
 A staffer can start with a policy topic, a name, a title or an office and find whom to contact. Use the Government Electronic Directory Services (GEDS) bulk export for federal public servants and organizational units. Committee records also identify external witnesses and submitters. Keep those stakeholders discoverable through their published appearances and submissions.
 
-1. **Acquire dated directory snapshots.** Check the bilingual bulk export daily and retain each changed snapshot. Give people and organizational units stable CivicSignal IDs. Preserve published names, titles, department and unit names, parent units, professional contact details, source citation and observation date. Departments maintain their own entries and some list only managers or office numbers. Represent missing contact details and show when the listing was last observed. [Official bulk dataset](https://open.canada.ca/data/en/dataset/8ec4a9df-b76b-4a67-8f93-cdbc2e040098) · [GEDS coverage notes](https://geds-sage.gc.ca/en/GEDS/?pgid=005)
+1. **Keep dated directory snapshots.** Check the bilingual bulk export weekly or on a change signal. Retain each changed snapshot under stable people and organization IDs. Show the published fields, missing contacts, and observation date. [Refresh runbook](REFRESH.md#what-stays-off-the-daily-job) · [Official bulk dataset](https://open.canada.ca/data/en/dataset/8ec4a9df-b76b-4a67-8f93-cdbc2e040098) · [GEDS coverage notes](https://geds-sage.gc.ca/en/GEDS/?pgid=005)
 2. **Connect people and offices to parliamentary evidence.** Link a departmental reply to the organization that signed it. For a named witness or submission author, require corroborating evidence such as a matching published affiliation and title before linking a directory identity. Keep ambiguous candidates separate. Label why each topic search matched, cite the passage or directory entry, and preserve the role as published on the event date alongside the latest observed role.
-3. **Serve typed, documented Worker endpoints.** Provide people search and lookup at `GET /api/people` and `GET /api/people/{id}`. Support organization search, parent and child lookup by `asOf`, and traversal through `GET /api/organizations/{id}/people` and `GET /api/organizations/{id}/appearances`. Return a published work email or telephone where available, identifying whether it reaches the person or a general office. Include English and French OpenAPI examples and tests through the authenticated handlers.
+3. **Extend the existing directory endpoints.** Keep people, hierarchy, and membership lookups under the [current contract](GEDS-API.md). Add an appearances route after the links have cited evidence. Include bilingual OpenAPI examples and authenticated handler tests.
 
 **Acceptance.** Starting with drinking water and no known name, search in English and French, resolve the same federal unit, retrieve a cited appearance and a written reply linked to that unit, and follow a published contact route. Test a same-name ambiguity, a witness who later moved branches, and a unit with only a general office number. The result must show why the person or office is relevant and which source supports the contact details.
 
@@ -684,6 +698,8 @@ The [House publication viewer guide](https://www.ourcommons.ca/Content/Guides/Do
 Check actual link behavior and source coverage in both languages. Check media and excerpt use against the [House source terms](https://www.ourcommons.ca/en/important-notices).
 
 ### Competitor feature inventory
+
+The November 24 code assessment points to a pilot with teams that integrate exact federal provisions and structured policy evidence into their own tools. Test that task under D-06. Compare with CanLII for point-in-time law and with Canadian Political Data and Canada Parliament MCP for parliamentary integration. Compare with the monitoring tools below if teams need push alerts. Measure repeat use and willingness to pay in the pilot. [CanLII API](https://github.com/canlii/API_documentation/blob/master/EN.md) · [Canadian Political Data API](https://docs.canadianpoliticaldata.org/developers/) · [Canada Parliament MCP](https://github.com/cyanheads/canada-parliament-mcp-server) · [Pilot decision](#decisions-still-required)
 
 #### Parliament Monitor workflow benchmark
 
@@ -844,7 +860,7 @@ Use the existing [written-questions materializer](../scripts/materialize-written
 
 **Release evidence.** Exercise the real local HTTP handlers in English and French. The Lake Winnipeg query must return recommendation 1, its response, owner and target date. The Appendix K query must return both attributed assessments from the same table row. The freshwater quality science lookup must reach the French edition through the publisher’s language link. Include an unsupported edition, an unreadable file and stable cursor traversal in the contract tests. Every discovered item needs a recorded disposition. Report outstanding fetch or extraction failures separately from confirmed publisher gaps. A complete inventory can still have partial searchable coverage.
 
-**Effort and sequencing.** Allow roughly 1–2 engineering days for inventory and identity, 2–4 for archival and extraction, and 2–4 for API integration, reconciliation and documentation. This 5–10 day estimate assumes one engineer reusing the local preview tooling, with ordinary HTML and text-bearing PDFs, and excludes unattended download time. Re-estimate after the first inventory and representative extraction. OCR, production scheduling and hosted redistribution are separately sized increments. For the following collections, reuse the inventory, edition, passage and coverage contracts. IRCC adds receipt-date applicability and manual replacement, briefing disclosures add bulk metadata and nil reports, and Treasury Board adds current/inactive instrument reconciliation once traversal is verified.
+**Effort and sequencing.** The first inventory and archive receipt cover work packages 1 and 2 at their recorded cutoff. Start package 3 with representative HTML and text-bearing PDF originals from both series. Use that sample to size extraction and the remaining API work. Later collections reuse the inventory, edition, passage, and coverage contracts. Size OCR and any hosted operation separately. [Inventory receipt](evidence/2026-11-24/eccc-inventory.json)
 
 ### Local Hansard speech slice
 
@@ -1015,7 +1031,7 @@ The product owner chose claim-by-claim verification before release on November 2
 Bind the bilingual case list, generated answers, retrieved provisions, and independent review to the exact candidate.
 The reviewer must account for the full answer. Each factual claim needs evidence from the retrieved text.
 Any unsupported or unreviewed claim blocks chat acceptance.
-The finite release review measures the candidate on those cases. A runtime verification claim needs its own control and evidence.
+The finite release review measures the candidate on those cases. The November 24 reproduction confirms the runtime gap on local source `8302892`. The product owner must decide the runtime evidence contract under [issue 4](https://github.com/chester-hill-solutions/civicsignal/issues/4) before engineering commits to a control. D-02 retains its approved independent review requirement. [Local reproduction](V1-RELEASE.md#november-24-code-assessment-reconciliation)
 Use the [offline evidence checker](../scripts/check-chat-claim-evidence.ts) with the preregistered plan, private capture, and independent review.
 Put the SHA-256 of the exact serialized request body in each planned case. Keep the body with the private capture and keep authorization headers outside the evidence.
 Create a separate evidence set for each provider and model that the release qualifies.
@@ -1043,6 +1059,8 @@ Use each reference for its stated role; use this file for the next task.
 | Production acquisition and copy | [acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md), [offline copy](PROTECTED-STATE-COPY.md), [D1 binding](PROTECTED-D1-BINDING.md), [rollback](CORPUS-ROLLBACK.md) |
 | Staging procedures and chronology | [staging](V1-STAGING.md), [recovery](V1-STAGING-RECOVERY.md), [binding recovery](V1-STAGING-BINDING-RECOVERY.md), [source access](V1-STAGING-SOURCE-ACCESS.md) |
 | Bounded serving work | [request budget](STAGING-REQUEST-BUDGET.md), [sealed Zen proposal](V1-ZEN-RECHECK.md) |
+| Source contracts and discovery | [agent discovery](AGENT-DISCOVERY.md), [parliamentary catalogues](PARLIAMENT-CATALOGUE-API.md), [committees](COMMITTEES-API.md), [written questions](WRITTEN-QUESTIONS-PREVIEW.md), [Hansard](HANSARD-API.md), [Gazette](GAZETTE-API.md), [source change feeds](SOURCE-CHANGE-FEEDS.md), [consultations](CONSULTATIONS-API.md), [funding](FUNDING-PROGRAMS-API.md), [directory](GEDS-API.md) |
+| Local source procedures and engineering references | [refresh runbook](REFRESH.md), [GEDS acceptance history](GEDS-WORK-ORDER.md), [departmental handover](FEDERAL-PUBLIC-SERVICE-HANDOVER.md), [ECCC inventory and intake](DEPARTMENTAL-PUBLICATIONS.md) |
 | Data and prior checks | [corpus model](CORPUS.md), [snapshot format history](SNAPSHOT.md), [snapshot checks](SNAPSHOT-VALIDATION.md), [text-cutover checks](TEXT-CUTOVER-VALIDATION.md), [evidence index](evidence/2026-10-22/README.md) |
 | Shared policy and encoder | [licence register](LICENCE-REGISTER.md), [encoder contract](../services/encoder/README.md) |
 | Historical architecture and future designs | [retrieval studies](RETRIEVAL-OPTIONS.md), [platform history](PLATFORM.md), [harness](HARNESS.md), [web fallback](WEB-FALLBACK.md) |

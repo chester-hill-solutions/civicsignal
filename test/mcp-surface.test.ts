@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createCivicSignalMcpHandler } from '../src/mcp/server';
+import { buildBrief } from '../src/routes/brief';
 import { sqliteCorpus } from './helpers/sqlite-corpus';
 import type { CorpusContext } from '../src/corpora/types';
 import type { Env } from '../src/types';
@@ -33,7 +34,8 @@ function fixture(populated = true, semantic = false) {
     billed++;
     return value;
   }
-  const handler = createCivicSignalMcpHandler({ request: new Request('https://api.example/mcp'), env: {} as Env, ctx, runRetrieval: executeRetrieval });
+  const handler = createCivicSignalMcpHandler({ request: new Request('https://api.example/mcp'), env: {} as Env, ctx,
+    retrieveBrief: buildBrief, runRetrieval: executeRetrieval });
   async function rpc(method: string, params?: unknown, notification = false) {
     const response = await handler.fetch(new Request('https://api.example/mcp', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream', 'MCP-Protocol-Version': '2025-03-26' },

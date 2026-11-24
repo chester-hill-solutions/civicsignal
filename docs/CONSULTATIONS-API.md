@@ -144,7 +144,7 @@ The November 24 receipt and acceptance measurements are in
 
 ## Known limits
 
-- The intake reads the catalogue, not each department's notice. `who may participate` and `how to respond` remain on the linked page; only its URL is served. Parsing those notices is the next work item for this family.
+- The intake serves the catalogue and links to each department notice. The notice holds the participation instructions. The [master plan](PLAN.md#current-corpus-pipelines-and-apis) tracks extraction.
 - Profile cells published as prose are served as `unparsable` text rather than a guessed URL: 106 English and 124 French cells at this observation.
 - The label for `C` is inferred. The publisher's schema defines `O`, `P` and the longer closed variants (`CA`, `CN`, `CR`, `NF`), but not the `C` the CSV uses.
 - A row dropped from the catalogue is recorded as removed, but a formal withdrawal is not distinguished from a change in the catalogue's own scope.

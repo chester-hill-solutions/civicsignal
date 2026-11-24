@@ -76,6 +76,7 @@ export default {
         const publication = await loadD1CorpusPublication(env.CIVIC_DB);
         const handler = createCivicSignalMcpHandler({
           request, env, ctx: corpusContext(env, publication, observe, fresh),
+          retrieveBrief: (query, context) => buildServingBrief(query, context, env, publication),
           runRetrieval: (work) => runBillableRetrieval(env, identity, () => readPublishedStatutes(env, publication, work), {
             waitUntil: (task) => ctx.waitUntil(task),
           }),
@@ -262,18 +263,20 @@ async function briefFor(query: BriefRequest, env: Env, onRetrieval?: (observatio
     throw new RequestInputError('Supply a topic, keywords or an exact act and section.');
   }
   const publication = await loadD1CorpusPublication(env.CIVIC_DB);
-  return readPublishedStatutes(env, publication, async () => {
-    const context = corpusContext(env, publication, onRetrieval, fresh);
-    let citation = query.citation ?? (query.act && query.section ? { act: query.act, section: query.section } : undefined);
-    if (!citation && query.topic) {
-      const titles = await loadActTitles(env, `${context.corpusRevision}:${publication.generation}`);
-      if (titles.length) citation = parseCitation(query.topic, titles)?.citation;
-    }
-    if (!citation && (query.topic || query.keywords?.length) && (!context.vector || !context.embedQuery)) {
-      throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Semantic retrieval is unavailable.', 503);
-    }
-    return buildBrief({ ...query, citation }, context);
-  });
+  return readPublishedStatutes(env, publication,
+    () => buildServingBrief(query, corpusContext(env, publication, onRetrieval, fresh), env, publication));
+}
+
+async function buildServingBrief(query: BriefRequest, context: CorpusContext, env: Env, publication: D1CorpusPublication) {
+  let citation = query.citation ?? (query.act && query.section ? { act: query.act, section: query.section } : undefined);
+  if (!citation && query.topic) {
+    const titles = await loadActTitles(env, `${context.corpusRevision}:${publication.generation}`);
+    if (titles.length) citation = parseCitation(query.topic, titles)?.citation;
+  }
+  if (!citation && (query.topic || query.keywords?.length) && (!context.vector || !context.embedQuery)) {
+    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Semantic retrieval is unavailable.', 503);
+  }
+  return buildBrief({ ...query, citation }, context);
 }
 
 async function runQuery(pathname: string, query: CorpusQuery, env: Env, onRetrieval?: (observation: RetrievalObservation) => void, fresh = false): Promise<unknown> {

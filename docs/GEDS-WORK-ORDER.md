@@ -1,6 +1,8 @@
-# GEDS directory backend
+# GEDS original work order and acceptance
 
-Build a standalone, bilingual Government Electronic Directory Services directory for CivicSignal on the Cloudflare backend. A client should be able to find a federal unit in either language, look up its people and retrieve a cited professional contact as it appeared on a selected date.
+This records the original assignment. The [master plan](PLAN.md#geds-people-organizations-and-contact-discovery) owns current directory work. Use the [import receipt](evidence/2026-11-24/geds-full-import.json) for local acceptance and the [refresh runbook](REFRESH.md#what-stays-off-the-daily-job) for cadence.
+
+The assignment called for a bilingual Government Electronic Directory Services directory. A client could use either language to find a federal unit, look up its people, and get a cited contact for a selected date.
 
 ## Inputs and scope
 

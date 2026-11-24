@@ -103,6 +103,8 @@ The [paid model table](https://opencode.ai/v2/docs/console/models/) lists that m
 The generation key goes only to the selected provider.
 The CivicSignal key authorizes corpus access separately.
 
+For chat retrieval, an explicit `topic` takes precedence. For “And how long is it?”, chat can use the previous user question when it identifies one subject. Semantic search sends both questions to its search providers in one query. Supply a topic when the conversation compares subjects or changes language. Chat uses the final question alone when it cannot identify suitable context.
+
 The chat response keeps `answer` as text and lists retrieved material in `cited`.
 That list does not establish factual support for each generated statement.
 Independent answer-support acceptance remains open under [the chat evidence decision](docs/PLAN.md#decisions-still-required).

@@ -1,6 +1,6 @@
 import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { buildBrief, type BriefRequest, type BriefResponse } from '../routes/brief';
+import type { BriefRequest, BriefResponse } from '../routes/brief';
 import { readStatuteChanges } from '../routes/changes';
 import { loadCorpusAvailability, UnsupportedCoverageError } from '../corpora/registry';
 import { RequestInputError } from '../http';
@@ -15,6 +15,7 @@ export interface CivicSignalMcpOptions {
   request: Request;
   env: Env;
   ctx: CorpusContext;
+  retrieveBrief: (query: BriefRequest, context: CorpusContext) => Promise<BriefResponse>;
   /** Required: the authenticated entry point authorizes and meters successful work. */
   runRetrieval: <T>(work: () => Promise<T>) => Promise<T>;
 }
@@ -81,7 +82,7 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
         }).strict(),
         outputSchema, annotations,
       }, async (args) => runTool(options, async (context, retrieval) => {
-        const brief = await buildBrief(args as BriefRequest, context);
+        const brief = await options.retrieveBrief(args, context);
         return result({ ...brief, retrieval }, summarise(brief));
       }));
 
@@ -94,7 +95,7 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
         }).strict(),
         outputSchema, annotations,
       }, async (args) => runTool(options, async (context, retrieval) => {
-        const brief = await buildBrief({ ...args, include: ['statutes-canada'] }, context);
+        const brief = await options.retrieveBrief({ ...args, include: ['statutes-canada'] }, context);
         const data = { items: brief.legislation, coverage: brief.coverage.filter((entry) => entry.corpusId === 'statutes-canada'), attribution: brief.attribution, retrieval };
         return result(data, `${brief.legislation.length} accepted federal statute section(s).`);
       }));

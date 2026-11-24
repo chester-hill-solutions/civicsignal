@@ -15,7 +15,7 @@ import { parseCitation } from '@chester-hill-solutions/corpus';
 import { errorResponse, RequestInputError } from '../http';
 import type { CorpusItem } from '@chester-hill-solutions/corpus';
 import type { Env } from '../types';
-import { detectLanguage } from '../language';
+import { detectLanguage, languageFor } from '../language';
 
 /**
  * The chat and match surfaces.
@@ -305,6 +305,39 @@ export interface ChatDeps {
   byokProvider: string;
 }
 
+const FOLLOW_UP_QUESTIONS = [
+  ['en', /^(?:and )?how long(?: (?:is (?:it|that)|(?:does|will) (?:it|that) (?:last|take|apply)))?$/iu],
+  ['en', /^(?:and )?when (?:does|will) (?:it|that) (?:start|end|expire|take effect)$/iu],
+  ['en', /^(?:and )?what (?:about (?:it|that)|does (?:it|that) (?:say|mean))$/iu],
+  ['fr', /^(?:et )?combien de temps(?: (?:(?:ça|cela) dure(?:-t-il)?|dure-t-(?:il|elle)|est-ce que (?:ça|cela) dure))?$/iu],
+  ['fr', /^(?:et )?(?:que (?:dit|signifie) (?:ça|cela)|qu['’]en est-il)$/iu],
+] as const;
+const QUESTION_START = /^(?:who|what|when|where|why|how|which|do|does|did|is|are|can|could|will|would|qui|que|qu['’]est-ce|quand|où|pourquoi|comment|quel(?:le|les|s)?|combien|est-ce|peut-on)(?=\s)/iu;
+const SUBJECT_SEPARATORS = /[?!;,&/\r\n]|\b(?:and|or|both|either|versus|vs|compar(?:e[sd]?|ing|isons?)|differ(?:s|ent|ence)?|between|alongside|as well as|et|ou|soit|comparer|comparaison|diff[ée]r(?:ence|ents?|entes?|e)|entre|ainsi que|par rapport)\b/iu;
+const SUBJECT_REFERENCE = /(?:^|[^\p{L}\p{N}])(?:it|its|this|that|these|those|they|them|same|former|latter|ça|cela|ceci|cette|ces|celui|celle|ceux|celles|il|elle|ils|elles|leur|leurs)(?![\p{L}\p{N}])/iu;
+const UNSPECIFIED_SUBJECT = /^(?:what (?:is|are) the (?:rules?|laws?|requirements?|details?|policy)|quelles? (?:est|sont) (?:la|les) (?:règles?|lois?|exigences?|conditions?))$/iu;
+
+/** Use one standalone user question as context for a recognized short follow-up. */
+function contextualTopic(messages: ChatRequest['messages'], question: string) {
+  const focalQuestion = question.trim();
+  const normalized = focalQuestion.replace(/\?$/u, '').trimEnd().replace(/[ \t]+/gu, ' ');
+  const followUp = FOLLOW_UP_QUESTIONS.find(([, pattern]) => pattern.test(normalized));
+  if (!followUp) return undefined;
+
+  const previous = messages.slice(0, -1).reverse().find(({ role }) => role === 'user')?.content.trim();
+  if (!previous || previous.length + focalQuestion.length + 1 > CHAT_LIMITS.topicChars) return undefined;
+  const subject = previous.replace(/\?$/u, '').trimEnd();
+  // Set aside periods within numbered citations before checking sentence boundaries.
+  const sentenceText = subject.replace(/\b(?:s|ss|sec|art)\.(?=\s*\d)|\d\.(?=\d)/giu, '');
+  if (!QUESTION_START.test(subject) || subject.split(/\s+/u).length < 4 ||
+    sentenceText.includes('.') || SUBJECT_SEPARATORS.test(subject) ||
+    SUBJECT_REFERENCE.test(subject) || UNSPECIFIED_SUBJECT.test(subject)) return undefined;
+
+  const [language] = followUp;
+  if (languageFor(undefined, previous) !== language) return undefined;
+  return { topic: `${previous}\n${focalQuestion}`, language };
+}
+
 /**
  * Retrieve material, then use the caller's model when material exists.
  *
@@ -331,11 +364,13 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
   if (topic.length > CHAT_LIMITS.topicChars) {
     throw new ChatInputError(`The retrieval question must not exceed ${CHAT_LIMITS.topicChars} characters. Supply a shorter topic.`);
   }
+  const context = request.topic === undefined ? contextualTopic(request.messages, question) : undefined;
   const brief = await deps.retrieve({
     topic,
+    ...context,
     jurisdiction: request.jurisdiction,
     riding: request.riding,
-  } as BriefRequest);
+  });
 
   const cited = citedItemsFromBrief(brief);
   if (cited.length === 0) {
