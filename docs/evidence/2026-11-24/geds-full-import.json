@@ -1,0 +1,273 @@
+{
+  "generatedAt": "2026-11-24T15:27:22.561Z",
+  "environment": {
+    "bun": "1.4.4",
+    "node": "v26.3.1",
+    "platform": "darwin arm64"
+  },
+  "commands": [
+    "bun scripts/geds-import.ts --download --db dist/geds/geds.sqlite --archive dist/geds/archive --as-of <iso>",
+    "bun scripts/geds-import.ts --csv <extracted gedsOpenData.csv> --db dist/geds/geds.sqlite --archive dist/geds/archive --source-date 2026-10-25T14:55:39Z --as-of <iso> --report dist/geds/receipt-replay.json",
+    "bun scripts/geds-import.ts --download --db dist/geds/geds.sqlite --archive dist/geds/archive --as-of <iso> --report dist/geds/receipt-download-replay.json",
+    "python3 docs/evidence/2026-11-24/geds-published-digest.py dist/geds/geds.sqlite",
+    "CIVICSIGNAL_GEDS_SQLITE=dist/geds/geds.sqlite bun run test test/endpoints.test.ts -t \"real unit from both published names\""
+  ],
+  "dataset": {
+    "id": "8ec4a9df-b76b-4a67-8f93-cdbc2e040098",
+    "title": "Government of Canada Employee Contact Information",
+    "titleFr": "Information sur les coordonnées des fonctionnaires du gouvernement du Canada",
+    "publisher": "Shared Services Canada / Services partagés Canada",
+    "licence": "Open Government Licence - Canada",
+    "datasetUrl": "https://open.canada.ca/data/dataset/8ec4a9df-b76b-4a67-8f93-cdbc2e040098",
+    "resourceUrl": "https://api.geds-sage.gc.ca/GEDS20/dist/opendata/gedsOpenData.zip",
+    "encoding": "ISO-8859-1"
+  },
+  "source": {
+    "observationTime": "2026-11-24T14:48:53.000Z",
+    "observationTimeSource": "caller-supplied --as-of",
+    "sourceDate": "2026-10-25T14:55:39.000Z",
+    "sourceDateSource": "publisher Last-Modified header",
+    "originalHash": "8f6f075f63e1d40a51da444417c35ce5f2f2de86dafa44f0c998ab9463313751",
+    "csvHash": "5e8ae25d545d64c8e1839384dc3778d8d1d15120402d1359472a33abde66f1db",
+    "archiveKey": "geds/archive/8f6f075f63e1d40a51da444417c35ce5f2f2de86dafa44f0c998ab9463313751/gedsOpenData.zip",
+    "archived": true,
+    "snapshotId": "snap_5eb69f7b8a23b19c66f29b96cbc7a3cb",
+    "refreshDurationMs": 418391
+  },
+  "published": {
+    "counts": {
+      "sourceRows": 189994,
+      "storedRoles": 189877,
+      "people": 188816,
+      "officeListings": 110,
+      "organizations": 21874,
+      "databaseRows": {
+        "people": 188926,
+        "organizations": 21874,
+        "roles": 189877,
+        "changes": 211751,
+        "observations": 1,
+        "snapshots": 1
+      },
+      "publishedRows": {
+        "distinctRoleRows": 189877,
+        "personRows": 188926,
+        "organizationRows": 21874,
+        "changeEventRows": 211751,
+        "publishedSnapshots": 1,
+        "discardedSnapshots": 2,
+        "observationRows": 5
+      }
+    },
+    "languageCoverage": {
+      "en": {
+        "rows": 189994,
+        "title": 180460,
+        "department": 189994,
+        "organization": 189994
+      },
+      "fr": {
+        "rows": 189994,
+        "title": 180147,
+        "department": 189994,
+        "organization": 189994
+      }
+    },
+    "missing": {
+      "telephone": 62983,
+      "email": 76387,
+      "titleEn": 9534,
+      "titleFr": 9847,
+      "anyContact": 20183,
+      "surnameOrGivenName": 1,
+      "organizationStructure": 0,
+      "departmentAcronym": 0
+    },
+    "unresolved": {
+      "count": 0,
+      "sample": []
+    },
+    "duplicateRoleKeys": 117
+  },
+  "replay": {
+    "rescan": {
+      "inputMode": "caller-supplied-csv",
+      "outcome": "replay",
+      "counts": {
+        "sourceRows": 189994,
+        "storedRoles": 189877,
+        "people": 188816,
+        "officeListings": 110,
+        "organizations": 21874,
+        "added": 0,
+        "changed": 0,
+        "removed": 0,
+        "unchanged": 189994,
+        "changeEvents": 211751,
+        "database": {
+          "people": 188926,
+          "organizations": 21874,
+          "roles": 189877,
+          "changes": 211751,
+          "observations": 4,
+          "snapshots": 3
+        }
+      },
+      "snapshotDiscarded": true,
+      "refreshDurationMs": 188971
+    },
+    "archiveMatch": {
+      "inputMode": "publisher-zip-download",
+      "outcome": "replay",
+      "counts": {
+        "sourceRows": 189994,
+        "storedRoles": 189877,
+        "people": 188816,
+        "officeListings": 110,
+        "organizations": 21874,
+        "added": 0,
+        "changed": 0,
+        "removed": 0,
+        "unchanged": 189994,
+        "changeEvents": 211751,
+        "database": {
+          "people": 188926,
+          "organizations": 21874,
+          "roles": 189877,
+          "changes": 211751,
+          "observations": 5,
+          "snapshots": 3
+        }
+      },
+      "refreshDurationMs": 26
+    },
+    "publishedState": {
+      "before": {
+        "persons": {
+          "rows": 188926,
+          "sha256": "4042e48b6bd14434a4e7046e7fb6f1dcf61f27b53f4221218d30307455588d0c"
+        },
+        "roles": {
+          "rows": 189877,
+          "sha256": "0b769da06675db8e8a450ebc05105d04c3253758543457420066d7792de292d1"
+        },
+        "organizations": {
+          "rows": 21874,
+          "sha256": "6285b08af23db2501fee793faca4cb40588caf3b002a4ba3f5457026e9372766"
+        },
+        "changes": {
+          "rows": 211751,
+          "sha256": "8743c47928f523ccc1a43d08d876fbf5f24c4746bd9e5981cb2ada1b04e64922"
+        },
+        "snapshots": {
+          "rows": 1,
+          "sha256": "af27759a0538c31f79faad1f4f3eb94b105de3fa54ad1a159f2895c0c6549736"
+        },
+        "counts": {
+          "people": 188926,
+          "roles": 189877,
+          "organizations": 21874,
+          "changes": 211751,
+          "publishedSnapshots": 1,
+          "discardedSnapshots": 2
+        }
+      },
+      "after": {
+        "persons": {
+          "rows": 188926,
+          "sha256": "4042e48b6bd14434a4e7046e7fb6f1dcf61f27b53f4221218d30307455588d0c"
+        },
+        "roles": {
+          "rows": 189877,
+          "sha256": "0b769da06675db8e8a450ebc05105d04c3253758543457420066d7792de292d1"
+        },
+        "organizations": {
+          "rows": 21874,
+          "sha256": "6285b08af23db2501fee793faca4cb40588caf3b002a4ba3f5457026e9372766"
+        },
+        "changes": {
+          "rows": 211751,
+          "sha256": "8743c47928f523ccc1a43d08d876fbf5f24c4746bd9e5981cb2ada1b04e64922"
+        },
+        "snapshots": {
+          "rows": 1,
+          "sha256": "af27759a0538c31f79faad1f4f3eb94b105de3fa54ad1a159f2895c0c6549736"
+        },
+        "counts": {
+          "people": 188926,
+          "roles": 189877,
+          "organizations": 21874,
+          "changes": 211751,
+          "publishedSnapshots": 1,
+          "discardedSnapshots": 2
+        }
+      },
+      "identical": true
+    }
+  },
+  "acceptance": {
+    "unit": {
+      "id": "org_143c85c5cf216fbdc51c01a2d10fcc22",
+      "nameEn": "Privy Council Office",
+      "nameFr": "Bureau du Conseil Privé",
+      "acronym": "PCO-BCP",
+      "level": 1
+    },
+    "bilingualResolution": {
+      "enQuery": "Privy Council Office",
+      "frQuery": "Bureau du Conseil Privé",
+      "enFirst": "org_143c85c5cf216fbdc51c01a2d10fcc22",
+      "frMatchesIncludeEnFirst": true
+    },
+    "member": {
+      "id": "per_0e109140fc6f1dcdff311490396495da",
+      "name": "Abdoulkader Aboukader-Houmed",
+      "title": "Store Clerk",
+      "organization": "Accommodation and Inventory Management Services",
+      "unitTotal": 1277
+    },
+    "contact": {
+      "kind": "telephone",
+      "value": "613-957-5208",
+      "reachedVia": "direct",
+      "citation": {
+        "datasetId": "8ec4a9df-b76b-4a67-8f93-cdbc2e040098",
+        "datasetUrl": "https://open.canada.ca/data/dataset/8ec4a9df-b76b-4a67-8f93-cdbc2e040098",
+        "resourceUrl": "https://api.geds-sage.gc.ca/GEDS20/dist/opendata/gedsOpenData.zip",
+        "sourceDate": "2026-10-25T14:55:39.000Z",
+        "observedAt": "2026-11-24T14:48:53.000Z",
+        "snapshotId": "snap_5eb69f7b8a23b19c66f29b96cbc7a3cb",
+        "entity": {
+          "type": "role",
+          "id": "role_5384acad1198847088d7d3caebbec2f1"
+        },
+        "field": "Telephone Number",
+        "text": "GEDS — Privy Council Office — Accommodation and Inventory Management Services — Abdoulkader Aboukader-Houmed — Telephone Number: 613-957-5208 (observed 2026-11-24T14:48:53.000Z)",
+        "asOf": "2026-11-24T14:48:53.000Z",
+        "roleId": "role_5384acad1198847088d7d3caebbec2f1",
+        "personId": "per_0e109140fc6f1dcdff311490396495da"
+      }
+    },
+    "frenchLabels": {
+      "label": "Numéro de téléphone",
+      "citationField": "Telephone Number"
+    }
+  },
+  "publisherDefects": {
+    "rowsRepairedByTheCsvReader": 15,
+    "detail": "In the October 25, 2026 export, 15 of 189,994 records repeat an unescaped quote inside a quoted field, such as \"... SERVICES D\"IDENTITÉ NUMÉrique\". A strict reader ended the field early and split the record into up to 51 columns. src/geds/csv.ts now treats a quote that no delimiter follows as text."
+  },
+  "notes": [
+    "The export publishes 117 rows that repeat an identity already seen in the same file, so 189,994 source rows produce 189,877 distinct roles.",
+    "people excludes the 110 general-office listings, which the snapshot stores as person rows for contact fallback.",
+    "The rescan replay re-read every row and matched the published identities, so it adds no snapshot and no change event.",
+    "The archive-match replay compares the ZIP SHA-256 and keeps the published snapshot without re-reading the CSV."
+  ],
+  "validation": {
+    "command": "CIVICSIGNAL_WORKERD_TESTS=1 bun run validate",
+    "bun": "1.3.5",
+    "node": "v26.3.1",
+    "result": "146 test files, 2541 passed, 8 skipped; four TypeScript projects; runtime, billing and corpus invariants ok",
+    "note": "The accepted export test is skipped without CIVICSIGNAL_GEDS_SQLITE and passed separately with it (test/endpoints.test.ts, \"real unit from both published names\")."
+  }
+}

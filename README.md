@@ -2,7 +2,7 @@
 
 CivicSignal retrieves cited Canadian federal statutes and regulations in English and French.
 The production API uses Cloudflare Workers, D1, Vectorize, and an encoder container.
-The Bun/Postgres code remains an undeployed portability implementation. Railway services remain in place.
+Cloudflare is the sole v1 deployment target. The Bun/Postgres code and Railway configuration describe an alternative deployment.
 
 The v1 candidate adds workspace keys, shared usage limits, exact citations, semantic search, BYOK chat, and an observed change feed.
 News, debates, bills, provincial law, tone, geographic filters, OAuth, and a portal are outside v1.
@@ -31,8 +31,10 @@ CI runs these commands without production credentials.
 Vendored CHS packages include their runtime files and a pinned [file manifest](vendor/chs-manifest.json).
 Run `bun run check:vendor` to check their fingerprints.
 
+`bun run check:lint-ratchet` runs ESLint with the [Callcaster lint rules](house-rules/index.mjs) and compares findings against CivicSignal's [identity baseline](.ratchet-strap.json). Callcaster's console exemptions for tests, operational scripts, and services and its function-length exemption for tests apply here too. After removing violations, run `bun run tools:lint-ratchet:tighten` to remove their allowances. CI compares the baseline against the PR base or previous main revision to catch growth.
+
 The manifest pins the CHS revision and complete source tree. The billing fix is
-also retained as a hash-verified [source patch](vendor/patches/api-billing-0.1.1.patch)
+also retained as a hash-verified [source patch](vendor/patches/api-billing-0.1.2.patch)
 over its recorded base, so refresh works from the original CHS checkout before
 that isolated commit is available upstream:
 
@@ -49,6 +51,19 @@ The local source patch is not a published upstream release.
 
 ## HTTP and MCP
 
+Start with the deployment’s `/.well-known/civicsignal.json` or `/llms.txt`. The source inventory reports which editions you can query, their dates and the requests an agent can run for questions such as apprenticeship training capacity. [Agent discovery contract](docs/AGENT-DISCOVERY.md)
+
+The separate [Hansard HTTP preview](docs/HANSARD-API.md) documents House and Senate search and exact retrieval.
+The [Canada Gazette preview](docs/GAZETTE-API.md) covers local replay, bilingual metadata search and exact lookup for Parts I and II.
+The [parliamentary catalogues](docs/PARLIAMENT-CATALOGUE-API.md) cover current-session bills, House and Senate Journals, vote totals and member-by-member voting records. Staff can search a Journal passage or a voting history and open the cited parliamentary edition.
+
+The [funding programs API](docs/FUNDING-PROGRAMS-API.md) serves bilingual NSERC College and Community Innovation and ESDC funding catalogues, with cited program terms, edition history and coverage.
+The [federal directory](docs/GEDS-API.md) provides dated people, contact, organization and hierarchy lookups from GEDS snapshots.
+The [bilingual bill and committee brief](docs/BILL-TRACE-API.md) follows S-5 through both chambers, committee amendments, a recorded division and Royal Assent.
+The [committee study brief](docs/BILL-TRACE-API.md#committee-study-action) follows ENVI's freshwater report and government response as of a selected date.
+The [committee corpus API](docs/COMMITTEES-API.md) searches 45-1 House, Senate and joint proceedings and submissions in English and French. It links each result to its official source and exposes coverage by committee and edition.
+Use the [source change feeds](docs/SOURCE-CHANGE-FEEDS.md) to follow a topic through additions, corrections and removals in the Gazette or either chamber.
+
 Every search route requires `Authorization: Bearer <workspace API key>` with capability `civicsignal.retrieve`.
 A successful search consumes one workspace unit. Validation and retrieval failures, plus MCP protocol messages, consume none.
 A lost usage acknowledgement can return `503/USAGE_UNAVAILABLE` with `uncertain:true` after the usage ledger commits a unit.
@@ -58,7 +73,7 @@ Keep API keys in server code. Public `pk_` keys cannot authorize v1 calls.
 | Route | Behavior |
 | --- | --- |
 | `GET /health` | Process health; no corpus readiness claim |
-| `GET /.well-known/civicsignal.json` | Live population, revision, configured routes, tools and limits |
+| `GET /.well-known/civicsignal.json` | Queryable source editions, freshness, research questions, routes and tools |
 | `GET /llms.txt` | Agent instructions |
 | `GET /api/statutes?topic=...&language=fr` | Semantic search over the current federal corpus |
 | `GET /api/statutes?act=Canada%20Health%20Act&section=8&language=en` | Exact provision; no encoder required |
@@ -70,7 +85,7 @@ Keep API keys in server code. Public `pk_` keys cannot authorize v1 calls.
 
 Search parameters accept `topic`, repeated `keyword`, `language`, `limit`, `act`, and `section`.
 Supply `act` and `section` together. The HTTP limit is 1–50.
-The only supported jurisdiction is `CA`. Use `/api/changes` for dated source changes.
+The only supported jurisdiction is `CA`. Use `/api/changes` for dated changes to federal statutes and regulations.
 The change feed accepts `after`, `limit` (1–100), `since`, `until`, and `change`.
 Its dates describe source revisions, not legal commencement dates.
 

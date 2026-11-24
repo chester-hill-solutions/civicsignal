@@ -26,7 +26,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { query, writeRows, type Row } from './lib/d1-load';
+import { assertLegacyD1CorpusWritable, query, writeRows, type Row } from './lib/d1-load';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
@@ -48,6 +48,7 @@ function parseArgs(argv: string[]): Args {
       args.lang = value;
     } else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--prune') args.prune = true;
+    else throw new Error(`Unknown repair option: ${arg}`);
   }
   return args;
 }
@@ -65,8 +66,11 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const langs = args.lang === 'both' ? (['en', 'fr'] as const) : ([args.lang] as const);
 
-  let totalMissing = 0;
-  let totalStale = 0;
+  let plannedInserts = 0;
+  let plannedDeletes = 0;
+  let inserted = 0;
+  let deleted = 0;
+  let failed = 0;
 
   for (const lang of langs) {
     const rows = rowsFor(lang);
@@ -86,14 +90,12 @@ async function main(): Promise<void> {
         `${missing.length.toLocaleString()} missing, ${stale.length.toLocaleString()} stale`,
     );
 
-    totalMissing += missing.length;
-    totalStale += stale.length;
+    const toDelete = args.prune ? stale : [];
+    plannedInserts += missing.length;
+    plannedDeletes += toDelete.length;
+    if (args.dryRun || (missing.length === 0 && toDelete.length === 0)) continue;
 
-    if (args.dryRun || missing.length === 0) {
-      if (missing.length) {
-        console.log('  (dry run: nothing was written)');
-      }
-    } else {
+    if (missing.length) {
       const started = Date.now();
       const result = await writeRows(missing, {
         onProgress: (sent, total) => {
@@ -106,30 +108,20 @@ async function main(): Promise<void> {
           }
         },
       });
-      console.log(
-        `repair-corpus: ${lang} — wrote ${(result.sent - result.failed).toLocaleString()} row(s)` +
-          (result.failed ? `, ${result.failed} failed` : ''),
-      );
+      inserted += result.sent - result.failed;
+      failed += result.failed;
     }
 
-    if (stale.length && args.prune) {
-      console.log(`repair-corpus: ${lang} — deleting ${stale.length.toLocaleString()} stale row(s)`);
-      for (const id of stale) {
-        await query('DELETE FROM statute_sections WHERE id = ?', [id]);
-      }
-    } else if (stale.length) {
-      console.log(`  ${stale.length.toLocaleString()} stale row(s) (--prune to delete them)`);
+    if (toDelete.length) await assertLegacyD1CorpusWritable();
+    for (const id of toDelete) {
+      const removed = await query<{ id: string }>('DELETE FROM statute_sections WHERE id = ? RETURNING id', [id]);
+      deleted += removed.length;
     }
   }
 
-  if (totalMissing) {
-    console.log(`repair-corpus: ${totalMissing.toLocaleString()} row(s) were missing`);
-  } else {
-    console.log('repair-corpus: the store and the corpus agree');
-  }
-  if (totalStale) {
-    console.log(`repair-corpus: ${totalStale.toLocaleString()} stale row(s) — run with --prune`);
-  }
+  console.log(`repair-corpus: planned ${plannedInserts} insert(s), ${plannedDeletes} delete(s)`);
+  console.log(`repair-corpus: executed ${inserted} insert(s), ${deleted} delete(s), ${failed} failed insert(s)`);
+  if (failed) process.exitCode = 1;
 }
 
 await main();

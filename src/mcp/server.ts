@@ -5,6 +5,7 @@ import { readStatuteChanges } from '../routes/changes';
 import { loadCorpusAvailability, UnsupportedCoverageError } from '../corpora/registry';
 import { RequestInputError } from '../http';
 import { BillableDenied } from '../metering';
+import { AccessError } from '../access';
 import { citeProvision } from './cite';
 import type { CorpusContext } from '../corpora/types';
 import type { Env } from '../types';
@@ -39,11 +40,13 @@ async function runTool(options: CivicSignalMcpOptions, work: (context: CorpusCon
     // Provider and database exceptions may contain request details. The MCP SDK
     // receives only deliberate client messages and the bounded observations.
     const denied = error instanceof BillableDenied ? error.outcome : undefined;
-    const code = denied ? String(denied.body?.['code'] ?? 'USAGE_UNAVAILABLE') : error instanceof UnsupportedCoverageError
-      ? error.code : error instanceof RequestInputError ? 'INVALID_ARGUMENT' : 'UPSTREAM_UNAVAILABLE';
+    const unavailable = error instanceof AccessError && error.code === 'RETRIEVAL_UNAVAILABLE' ? error : undefined;
+    const code = unavailable?.code ?? (denied ? String(denied.body?.['code'] ?? 'USAGE_UNAVAILABLE') : error instanceof UnsupportedCoverageError
+      ? error.code : error instanceof RequestInputError ? 'INVALID_ARGUMENT' : 'UPSTREAM_UNAVAILABLE');
     const message = error instanceof RequestInputError || error instanceof UnsupportedCoverageError ? error.message
-      : error instanceof BillableDenied ? error.message : 'The retrieval could not complete. Retry later.';
-    return { ...result({ ...denied?.body, code, message, ...(denied ? { status: denied.status } : {}),
+      : error instanceof BillableDenied ? error.message : unavailable?.message ?? 'The retrieval could not complete. Retry later.';
+    const status = unavailable?.status ?? denied?.status;
+    return { ...result({ ...denied?.body, code, message, ...(status ? { status } : {}),
       retrieval: observed.retrieval }, message), isError: true };
   }
 }
@@ -58,7 +61,7 @@ export function createCivicSignalMcpHandler(options: CivicSignalMcpOptions) {
       capabilities: { tools: {} },
       maxToolInputElements: 128,
       instructions: 'Cited Canadian federal statute retrieval in English and French. ' +
-        'News, debate, bills, provincial law, tone and geographic distribution are unavailable in v1. ' +
+        'See /.well-known/civicsignal.json for additional HTTP sources, coverage dates and research questions. ' +
         'Riding, municipality, region, provincial and historical-version filtering are unsupported. ' +
         'Use cite_provision for exact citations, statute_lookup for topics and statute_changes for observed source updates. ' +
         'Tools are listed only when their published corpus and required backends are available. ' +

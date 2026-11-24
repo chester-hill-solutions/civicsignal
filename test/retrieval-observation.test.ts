@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { statutesCorpus } from '../src/corpora/adapters';
 import { postgresStatutesCorpus } from '../src/corpora/postgres-adapters';
-import { observeRetrievalContext, rerankerFailureSchema, type RetrievalObservation } from '../src/corpora/retrieval-observation';
+import { observeRetrievalContext, rerankerFailureSchema, retrievalObservationSchema, type RetrievalObservation } from '../src/corpora/retrieval-observation';
 import type { CorpusContext } from '../src/corpora/types';
 
 const row = { id: 'row-1', corpus_id: 'statutes-canada', act: 'Test Act', instrument: 'Test Act', section: '1', text: 'private-candidate-body', source_url: 'https://example.test/1', language: 'fr', in_force: 1 };
-function jevResponse() {
+function jevResponse(answersFromStatutes = true) {
   return Response.json({ answers: {
-    c0: { type: 'noul', noul: 0.9 }, needs_federal_statute: { type: 'noul', noul: 1 },
-    any_relevant: { type: 'noul', noul: 1 }, needs_provincial: { type: 'noul', noul: 0 },
+    c0: { type: 'noul', noul: 0.9 }, needs_federal_statute: { type: 'noul', noul: answersFromStatutes ? 1 : 0 },
+    any_relevant: { type: 'noul', noul: answersFromStatutes ? 1 : 0 }, needs_provincial: { type: 'noul', noul: 0 },
     needs_court_decision: { type: 'noul', noul: 0 }, needs_foreign_law: { type: 'noul', noul: 0 },
     is_not_law: { type: 'noul', noul: 0 }, asks_published_figure: { type: 'noul', noul: 0 },
   } });
@@ -69,7 +69,10 @@ describe('safe serving retrieval observations', () => {
     const f = fixture();
     const cache = new Map<string, unknown>();
     f.ctx.jev = { key: 'private-provider-key' };
-    f.ctx.cache = { get: async (key) => cache.get(key) ?? null, put: async (key, value) => { cache.set(key, value); } };
+    f.ctx.cache = { get: async (key) => cache.get(key) ?? null, put: async (key, value) => {
+      const entry = value as { observation: RetrievalObservation };
+      cache.set(key, { ...entry, observation: { ...entry.observation, cacheFailure: 'write' } });
+    } };
     await statutesCorpus.retrieve({ topic: 'private-question', language: 'fr' }, f.ctx);
     await statutesCorpus.retrieve({ topic: 'private-question', language: 'fr' }, f.ctx);
     expect(send).toHaveBeenCalledTimes(1);
@@ -78,6 +81,48 @@ describe('safe serving retrieval observations', () => {
     expect(f.retrieval[0]).toMatchObject({ cache: 'miss', mode: 'rerank', scoreSource: 'computed', preRefusalTopScore: 0.9 });
     expect(f.retrieval[1]).toMatchObject({ cache: 'hit', mode: 'rerank', scoreSource: 'cached', preRefusalTopScore: 0.9, providers: { encoder: 'not-called', vector: 'not-called', reranker: 'not-called', rows: 'ok' } });
     expect(f.retrieval[1]!.scoredAt).toBe(f.retrieval[0]!.scoredAt);
+    expect(f.retrieval[1]!.cacheFailure).toBeUndefined();
+  });
+  it('runs a fresh rerank after a cache read failure and skips writing', async () => {
+    const send = vi.fn(async () => jevResponse());
+    vi.stubGlobal('fetch', send);
+    const f = fixture();
+    const get = vi.fn(async () => { throw new Error('private-cache-read-error'); });
+    const put = vi.fn(async () => {});
+    f.ctx.jev = { key: 'private-provider-key' };
+    f.ctx.cache = { get, put };
+
+    const items = await statutesCorpus.retrieve({ topic: 'private-question', language: 'fr' }, f.ctx);
+
+    expect(items.map((item) => item.id)).toEqual(['row-1']);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(put).not.toHaveBeenCalled();
+    expect(f.embedQuery).toHaveBeenCalledTimes(1);
+    expect(f.vector).toHaveBeenCalledTimes(1);
+    expect(f.rows).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(f.retrieval).toHaveLength(1);
+    expect(f.retrieval[0]).toMatchObject({ cache: 'miss', cacheFailure: 'read', mode: 'rerank', decision: 'answer', scoreSource: 'computed' });
+    expect(retrievalObservationSchema.safeParse({ ...f.retrieval[0], cacheFailure: 'private-cache-read-error' }).success).toBe(false);
+    expect(JSON.stringify(f.retrieval)).not.toContain('private-cache-read-error');
+  });
+  it.each(['answer', 'refuse'])('preserves Jev’s %s decision when the cache write fails', async (decision) => {
+    const answersFromStatutes = decision === 'answer';
+    const send = vi.fn(async () => jevResponse(answersFromStatutes));
+    vi.stubGlobal('fetch', send);
+    const f = fixture(0.2);
+    const put = vi.fn(async () => { throw new Error('private-cache-write-error'); });
+    f.ctx.jev = { key: 'private-provider-key' };
+    f.ctx.cache = { get: async () => null, put };
+
+    const items = await statutesCorpus.retrieve({ topic: 'private-question', language: 'fr' }, f.ctx);
+
+    expect(items.map((item) => item.id)).toEqual(answersFromStatutes ? ['row-1'] : []);
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(f.retrieval).toHaveLength(1);
+    expect(f.retrieval[0]).toMatchObject({ cache: 'miss', cacheFailure: 'write', mode: 'rerank', decision, preRefusalTopScore: 0.2 });
+    expect(JSON.stringify(f.retrieval)).not.toContain('private-cache-write-error');
   });
   it.each(['d1', 'r2'])('records cached answer selection when %s hydration fails without inventing cached scores', async (stage) => {
     const send = vi.fn(async () => jevResponse());

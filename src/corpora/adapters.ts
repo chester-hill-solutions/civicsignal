@@ -1,8 +1,7 @@
-import type { RawCorpusItem } from "@chester-hill-solutions/corpus";
+import { truncate, type RawCorpusItem } from "@chester-hill-solutions/corpus";
 import {
   BILLS_CANADA,
   GDELT,
-  HANSARD_FEDERAL,
   NEWS_CANADA,
   STATUTES_CANADA,
   STATUTES_ONTARIO,
@@ -11,11 +10,14 @@ import { hash128 } from '../ingest/reconcile';
 import { ATOMIC_QUESTIONS, CANDIDATE_COUNT, decide, EXCERPT_CHARS, JEV_CONTRACT_VERSION, JEV_MODEL, rankWithJev, RELEVANCE_FLOOR, reorder } from '../jev';
 import { ENCODER_CONTRACT } from '../encoder';
 import { normalizeForSearch } from '../text';
-import { RETRIEVAL_POLICY_VERSION, retrievalTrace, type RetrievalBackend } from './retrieval-observation';
+import { retrievalPolicyVersion, retrievalTrace, type RetrievalBackend } from './retrieval-observation';
 import { loadExactProvisionRows } from './provision-lookup';
+import { retrieveHybrid } from './hybrid';
+import { hansardCitation, hansardLanguagePrefix, hansardPolicy, hansardSpeechIdentity, type HansardChamber } from './hansard';
 import {
   escapeLike,
   likePatterns,
+  normalizedSearchTerms,
   resolveLimit,
   MAX_LIMIT,
   type Corpus,
@@ -43,15 +45,15 @@ function tokenClause(patterns: string[]): { sql: string; binds: string[] } {
   };
 }
 
-function dateClause(query: CorpusQuery): { sql: string; binds: string[] } {
+function dateClause(query: CorpusQuery, column: 'published_at' | 'sitting_date' = 'published_at'): { sql: string; binds: string[] } {
   const binds: string[] = [];
   const parts: string[] = [];
   if (query.since) {
-    parts.push('published_at >= ?');
+    parts.push(`${column} >= ?`);
     binds.push(query.since);
   }
   if (query.until) {
-    parts.push('published_at <= ?');
+    parts.push(`${column} <= ?`);
     binds.push(query.until);
   }
   return { sql: parts.length ? ` AND ${parts.join(' AND ')}` : '', binds };
@@ -105,7 +107,7 @@ export function retrievalCacheKey(query: CorpusQuery, revision: string, useJev: 
     scope: query.scope ?? null,
     limit: resolveLimit(query.limit),
     encoder: ENCODER_CONTRACT,
-    policy: RETRIEVAL_POLICY_VERSION,
+    policy: retrievalPolicyVersion(backend.id),
     backend: backend.id,
     floor: backend.floor,
     reranker: useJev ? { contract: JEV_CONTRACT_VERSION, model: JEV_MODEL, questions: ATOMIC_QUESTIONS, excerptChars: EXCERPT_CHARS, candidates: CANDIDATE_COUNT, relevanceFloor: RELEVANCE_FLOOR } : null,
@@ -148,6 +150,12 @@ export const statutesCorpus: Corpus = {
       try { return trace.result(await trace.provider('rows', () => retrieveProvision(query, ctx))); }
       catch (error) { trace.observation.decision = 'error'; throw error; }
       finally { trace.emit(); }
+    }
+
+    if (ctx.hybrid) {
+      const rows = await retrieveHybrid(query, ctx, ctx.hybrid, VECTOR_FLOOR, rowsById,
+        (items) => new Set(statuteItems(items, { ...query, limit: MAX_LIMIT }).map((item) => item.id)));
+      return statuteItems(rows, query);
     }
 
     // **The vector arm, and nothing after it.**
@@ -232,11 +240,19 @@ export async function retrieveStatutesByVector(
 
     // Cache reuse happens before embedding. Store the original safe observation
     // so a warm response never pretends that its raw score was computed now.
-    let cacheKey = '';
+    let cacheKey: string | undefined;
     if (ctx.cache && ctx.retrievalCacheMode !== 'bypass') {
       if (trace.revisionKey) cacheKey = retrievalCacheKey(query, trace.revisionKey, Boolean(ctx.jev?.key), backend);
       else observation.cache = 'bypass';
-      const cached = cacheKey ? cachedRetrieval(await ctx.cache.get(cacheKey)) : undefined;
+      let cached: CachedRetrieval | undefined;
+      if (cacheKey) {
+        try {
+          cached = cachedRetrieval(await ctx.cache.get(cacheKey));
+        } catch {
+          observation.cacheFailure = 'read';
+          cacheKey = undefined;
+        }
+      }
       if (cached && cached.decision !== 'answer') {
         trace.cached(cached.observation);
         return trace.result([], cached.decision);
@@ -272,7 +288,7 @@ export async function retrieveStatutesByVector(
     if (!ctx.jev?.key && matches[0]!.score < backend.floor) return trace.result([]);
     const rows = await trace.provider('rows', () => backend.loadRows(ctx, matches.map((m) => m.id)));
     const byId = new Map(rows.map((row) => [String(row['id']), row]));
-    let ordered = matches.map((match) => byId.get(match.id)).filter((row): row is Record<string, unknown> => row !== undefined);
+    const ordered = matches.map((match) => byId.get(match.id)).filter((row): row is Record<string, unknown> => row !== undefined);
     if (!ordered.length) return trace.result([]);
 
     if (ctx.jev?.key) {
@@ -283,27 +299,66 @@ export async function retrieveStatutesByVector(
       if (ranked) {
         observation.mode = 'rerank';
         const decision = decide(ranked.flags, ranked.anyRelevant);
-        if (decision !== 'answer') {
-          trace.result([], decision);
-          if (ctx.cache && cacheKey) await ctx.cache.put(cacheKey, { decision, anyRelevant: ranked.anyRelevant, order: [], observation: { ...observation } } satisfies CachedRetrieval, CACHE_SECONDS);
-          return [];
+        const rankedRows = decision === 'answer' ? reorder(ordered, ranked.relevance) : [];
+        const items = decision === 'answer' ? trace.result(statuteItems(rankedRows, query)) : trace.result([], decision);
+        if (ctx.cache && cacheKey) {
+          const entry: CachedRetrieval = {
+            decision,
+            anyRelevant: ranked.anyRelevant,
+            order: rankedRows.map((row) => String(row['id'])).slice(0, CANDIDATE_COUNT),
+            observation: { ...observation },
+          };
+          try {
+            await ctx.cache.put(cacheKey, entry, CACHE_SECONDS);
+          } catch {
+            observation.cacheFailure = 'write';
+          }
         }
-        ordered = reorder(ordered, ranked.relevance);
-        const items = trace.result(statuteItems(ordered, query));
-        if (ctx.cache && cacheKey) await ctx.cache.put(cacheKey, {
-          decision, anyRelevant: ranked.anyRelevant, order: ordered.map((row) => String(row['id'])).slice(0, CANDIDATE_COUNT), observation: { ...observation },
-        } satisfies CachedRetrieval, CACHE_SECONDS);
         return items;
       }
       observation.providers.reranker = 'error';
       observation.fallback = true;
-      if (matches[0]!.score < backend.floor) return trace.result([]);
     }
-    return trace.result(statuteItems(ordered, query));
+    // The floor applies to the response as a whole, after filtering and limiting.
+    const items = statuteItems(ordered, query);
+    const qualifies = (results: RawCorpusItem[]) => {
+      const returnedIds = new Set(results.map((item) => item.id));
+      return matches.some(({ id, score }) => returnedIds.has(id) && Number.isFinite(score) && score >= backend.floor);
+    };
+    if (!qualifies(items)) return trace.result([]);
+    if (backend.id !== 'vectorize' || !topic) return trace.result(items);
+
+    const prioritized = prioritizeNamedInstrument(ordered, topic);
+    if (prioritized === ordered) return trace.result(items);
+    const namedItems = statuteItems(prioritized, query);
+    return trace.result(qualifies(namedItems) ? namedItems : items);
   } catch (error) {
     observation.decision = 'error';
     throw error;
   } finally { trace.emit(); }
+}
+
+function titleWords(text: string): string {
+  return normalizeForSearch(text).replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+
+/** Promote a uniquely named instrument among the existing vector candidates. */
+function prioritizeNamedInstrument(rows: Record<string, unknown>[], topic: string): Record<string, unknown>[] {
+  const question = ` ${titleWords(topic)} `;
+  let namedCitation: string | undefined;
+  for (const row of rows) {
+    const title = typeof row['act'] === 'string' ? titleWords(row['act']) : '';
+    const citation = row['citation'];
+    if (typeof citation !== 'string' || !citation || !title.includes(' ') || !question.includes(` ${title} `)) continue;
+    if (namedCitation && namedCitation !== citation) return rows;
+    namedCitation = citation;
+  }
+  if (!namedCitation) return rows;
+
+  const named: Record<string, unknown>[] = [];
+  const other: Record<string, unknown>[] = [];
+  for (const row of rows) (row['citation'] === namedCitation ? named : other).push(row);
+  return other.length ? [...named, ...other] : rows;
 }
 
 /** Apply the same constraints to both fresh candidates and cached order. */
@@ -429,44 +484,102 @@ async function retrieveProvision(
   }));
 }
 
-export const hansardCorpus: Corpus = {
-  id: HANSARD_FEDERAL.id,
-  policy: HANSARD_FEDERAL,
-  supports(query) {
-    return Boolean(query.topic || (query.keywords && query.keywords.length > 0));
-  },
-  async retrieve(query: CorpusQuery, ctx: CorpusContext): Promise<RawCorpusItem[]> {
-    const patterns = likePatterns(query);
-    if (patterns.length === 0) return [];
-    const { sql: tok, binds: tokBinds } = tokenClause(patterns);
-    const { sql: dates, binds: dateBinds } = dateClause(query);
+const HANSARD_COLUMNS = 'id, speaker, party, sitting_date, excerpt, source_url, topics';
 
-    const rows = await queryRows(
-      ctx,
-      `SELECT id, corpus_id, speaker, party, sitting_date, excerpt, source_url, topics
-         FROM hansard_speeches
-        WHERE 1 = 1${tok}${dates}
-        ORDER BY sitting_date DESC
-        LIMIT ?`,
-      [...tokBinds, ...dateBinds, String(resolveLimit(query.limit))],
-    );
+function speechFromRow(row: Record<string, unknown>, chamber: HansardChamber): (RawCorpusItem & { excerpt: string }) | undefined {
+  const policy = hansardPolicy(chamber);
+  const id = String(row['id']);
+  const speaker = String(row['speaker']);
+  const sittingDate = String(row['sitting_date']);
+  const citationUrl = String(row['source_url']);
+  const stored = String(row['excerpt']);
+  const citation = hansardCitation(citationUrl, chamber);
+  if (!id.trim() || !speaker.trim() || !sittingDate.trim() || !stored.trim() || !citation) return undefined;
+  const identity = hansardSpeechIdentity(id);
+  if (identity ? identity.chamber !== chamber || !citation.hash : chamber === 'senate') return undefined;
+  if (chamber === 'senate' && !/^#[0-9]+$/u.test(citation.hash)) return undefined;
+  const place = chamber === 'senate'
+    ? (identity?.language === 'fr' ? 'au Sénat' : 'in the Senate')
+    : (identity?.language === 'fr' ? 'à la Chambre des communes' : 'in the House of Commons');
+  return {
+    corpusId: policy.id,
+    kind: 'debate',
+    id,
+    title: `${speaker} ${place}`,
+    excerpt: truncate(stored, policy.excerptMaxChars),
+    citationUrl,
+    publishedAt: sittingDate,
+    source: policy.publisher,
+    language: identity?.language,
+    topics: splitTopics(row['topics']),
+    extra: {
+      speaker, sittingDate, party: row['party'] ? String(row['party']) : undefined,
+      ...(identity && { sittingId: identity.sittingId, interventionId: identity.interventionId }),
+      ...(chamber === 'senate' && { chamber, citationGranularity: 'section' }),
+    },
+  };
+}
 
-    return rows.map((row) => ({
-      corpusId: String(row['corpus_id'] ?? HANSARD_FEDERAL.id),
-      kind: 'debate' as const,
-      id: String(row['id']),
-      title: `${String(row['speaker'])} in the House of Commons`,
-      // The full speech never reaches this adapter; the ingest job stores only a
-      // short excerpt, and the policy caps what may be emitted.
-      excerpt: row['excerpt'] === null ? undefined : String(row['excerpt']),
-      citationUrl: String(row['source_url']),
-      publishedAt: row['sitting_date'] === null ? undefined : String(row['sitting_date']),
-      source: HANSARD_FEDERAL.publisher,
-      topics: splitTopics(row['topics']),
-      extra: { speaker: String(row['speaker']), party: row['party'] ? String(row['party']) : undefined },
-    }));
-  },
-};
+export async function getHansardSpeech(id: string, ctx: CorpusContext): Promise<RawCorpusItem | undefined> {
+  const chamber = hansardSpeechIdentity(id)?.chamber ?? 'house';
+  const [row] = await queryRows(ctx,
+    `SELECT ${HANSARD_COLUMNS} FROM hansard_speeches WHERE corpus_id = ? AND id = ?`,
+    [hansardPolicy(chamber).id, id]);
+  return row && speechFromRow(row, chamber);
+}
+
+function debateCorpus(chamber: HansardChamber): Corpus {
+  const policy = hansardPolicy(chamber);
+  return {
+    id: policy.id,
+    policy,
+    supports(query) {
+      return Boolean(query.topic || (query.keywords && query.keywords.length > 0));
+    },
+    async retrieve(query: CorpusQuery, ctx: CorpusContext): Promise<RawCorpusItem[]> {
+      const terms = normalizedSearchTerms(query).filter(Boolean);
+      if (terms.length === 0) return [];
+      const { sql: tok, binds: tokBinds } = tokenClause(terms.map((term) => `%${escapeLike(term)}%`));
+      const { sql: dates, binds: dateBinds } = dateClause(query, 'sitting_date');
+      const language = query.language?.trim().toLowerCase() || undefined;
+      if (language !== undefined && language !== 'en' && language !== 'fr') return [];
+      const languagePattern = language ? [`${hansardLanguagePrefix(language, chamber)}%`] : [];
+      const limit = resolveLimit(query.limit);
+      const results: RawCorpusItem[] = [];
+      let cursor: string[] = [];
+
+      // The index can match outside the permitted excerpt. Page through those
+      // candidates so unusable hits do not consume the caller's result limit.
+      while (results.length < limit) {
+        const rows = await queryRows(ctx,
+          `SELECT ${HANSARD_COLUMNS}
+             FROM hansard_speeches
+            WHERE corpus_id = ?${tok}${dates}${language ? ' AND id LIKE ?' : ''}${cursor.length ? ' AND (sitting_date, id) < (?, ?)' : ''}
+            ORDER BY sitting_date DESC, id DESC
+            LIMIT ?`,
+          [policy.id, ...tokBinds, ...dateBinds, ...languagePattern, ...cursor, String(limit)],
+        );
+        for (const row of rows) {
+          const speech = speechFromRow(row, chamber);
+          if (!speech || (language && speech.language !== language)) continue;
+          const stored = String(row['excerpt']);
+          const excerpt = speech.excerpt;
+          const quoted = normalizeForSearch(excerpt === stored ? excerpt : excerpt.slice(0, -1));
+          if (!terms.some((term) => quoted.includes(term))) continue;
+          results.push(speech);
+          if (results.length === limit) return results;
+        }
+        if (rows.length < limit) break;
+        const last = rows[rows.length - 1]!;
+        cursor = [String(last['sitting_date']), String(last['id'])];
+      }
+      return results;
+    },
+  };
+}
+
+export const hansardCorpus = debateCorpus('house');
+export const senateHansardCorpus = debateCorpus('senate');
 
 /* -------------------------------------------------------------------------- */
 /* News — per-publisher terms. Metadata only: headline, outlet, timestamp, link. */

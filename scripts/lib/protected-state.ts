@@ -83,7 +83,7 @@ function tableRows(db: DatabaseSync, table: Table, legacy = false): Iterable<Rec
   const projection = tables[table].map(name => actual.includes(name) ? name : `NULL AS ${name}`).join(',');
   return db.prepare(`SELECT ${projection} FROM ${table}${table === 'sqlite_sequence' ? " WHERE name IN ('corpus_runs','corpus_changes')" : ''} ORDER BY ${tables[table][0]} COLLATE BINARY`).iterate();
 }
-function count(db: DatabaseSync, table: Table | 'protected_state_pages') { return exists(db, table) ? Number(db.prepare(`SELECT count(*) AS n FROM ${table}`).get()?.['n']) : 0; }
+function count(db: DatabaseSync, table: Table | 'protected_state_pages' | 'corpus_publication_guard') { return exists(db, table) ? Number(db.prepare(`SELECT count(*) AS n FROM ${table}`).get()?.['n']) : 0; }
 function transaction<T>(db: DatabaseSync, action: () => T): T {
   db.exec('BEGIN IMMEDIATE'); try { const value = action(); db.exec('COMMIT'); return value; } catch (error) { db.exec('ROLLBACK'); throw error; }
 }
@@ -100,14 +100,18 @@ function healthy(db: DatabaseSync) {
   assert(db.prepare('PRAGMA foreign_key_check').all().length === 0, 'SQLITE_FOREIGN_KEYS');
 }
 function knownProtectedSchema(db:DatabaseSync){
-  const allowed=new Set<string>([...order,'corpus_compact_restore','corpus_compact_pages']);
+  const allowed=new Set<string>([...order,'corpus_compact_restore','corpus_compact_pages','corpus_publication_guard']);
   for(const row of db.prepare("SELECT name FROM sqlite_master WHERE type='table'").iterate()){
     const name=String(row['name']);
     if(/^(?:workspace|civic_workspace_|corpus_)/.test(name)||['user','session','account','verification','organization','member','invitation'].includes(name))assert(allowed.has(name),'UNSUPPORTED_PROTECTED_TABLE');
   }
 }
+function requireEmptyPublicationGuard(db: DatabaseSync) {
+  assert(count(db, 'corpus_publication_guard') === 0, 'TARGET_PROTECTED_DATA_PRESENT');
+}
 function emptyProtectedTarget(db: DatabaseSync) {
   assert(!exists(db, 'protected_state_restore') && !exists(db, 'protected_state_pages'), 'TARGET_ALREADY_PREPARED');
+  requireEmptyPublicationGuard(db);
   assert(authTables.filter(t => exists(db, t)).length % 3 === 0, 'PARTIAL_AUTH_SCHEMA');
   for(const table of authTables)if(exists(db,table))checkSchema(db,table);
   for (const table of order.filter(t => t !== 'corpus_state' && t !== 'sqlite_sequence')) assert(count(db, table) === 0, 'TARGET_PROTECTED_DATA_PRESENT');
@@ -175,6 +179,9 @@ export async function prepareProtectedState(options: {
     const reference=new Database(':memory:');
     let sourceSchema:ReturnType<typeof admitProtectedSourceSchema>;
     try{sourceSchema=admitProtectedSourceSchema(source,reference,resolve(repository,'migrations'));}finally{reference.close();}
+    if (exists(source, 'corpus_publication_guard')) {
+      assert(!source.prepare('SELECT 1 FROM corpus_publication_guard WHERE target_commit IS NOT NULL LIMIT 1').get(), 'CORPUS_PUBLICATION_ACTIVE');
+    }
     for (const table of order.filter(t => !authTables.includes(t))) checkSchema(target,table);
     const sourceState = [...tableRows(source,'corpus_state',true)].map(row => rowValues('corpus_state',row));
     const targetState = [...tableRows(target,'corpus_state',true)].map(row => rowValues('corpus_state',row));
@@ -296,8 +303,10 @@ function verifyFinal(db: DatabaseSync, m: ProtectedManifest) {
   const identity=corpusIdentity(db);assert(identity.rows===m.corpusRows&&identity.digest===m.corpusDigest&&identity.metadataSha256===m.corpusMetadataSha256,'CORPUS_FINGERPRINT_MISMATCH');
   for(const table of order)assert(equal(hashRows(db,table),m.tables[table]),'TARGET_TABLE_DIGEST');
   healthy(db);
+  requireEmptyPublicationGuard(db);
 }
 async function verifyCheckpoint(db:DatabaseSync,pagesPath:string,m:ProtectedManifest){
+  requireEmptyPublicationGuard(db);
   const counts=Object.fromEntries(order.map(t=>[t,0])) as Record<Table,number>;
   let gap=false,recorded=0,stateCopied=false,sequenceCopied=false;
   const sequences=new Map<string,number>();
@@ -331,6 +340,7 @@ export async function applyProtectedState(options:{directory:string;manifestSha2
       assert(initialSha===m.targetSha256,'TARGET_PREIMAGE_MISMATCH');emptyProtectedTarget(db);
       assert(equal([...tableRows(db,'corpus_state',true)].map(row=>rowValues('corpus_state',row)),m.initialPublication),'TARGET_PUBLICATION_CHANGED');
       transaction(db,()=>{
+        requireEmptyPublicationGuard(db!);
         if(!exists(db!,'workspace'))db!.exec(readFileSync(new URL('../../migrations/0005_workspace_auth.sql',import.meta.url),'utf8'));
         for(const table of order)checkSchema(db!,table);
         db!.exec(journalSchema);db!.prepare('INSERT INTO protected_state_restore VALUES(1,?,0)').run(options.manifestSha256);
@@ -343,6 +353,7 @@ export async function applyProtectedState(options:{directory:string;manifestSha2
     for await(const value of jsonLines(pagesPath)){
       const page=await checkedPage(value);
       transaction(db,()=>{
+        requireEmptyPublicationGuard(db!);
         const recorded=db!.prepare('SELECT sha256 FROM protected_state_pages WHERE page=?').get(page.page);
         if(recorded){assert(recorded['sha256']===page.sha256,'PAGE_RECEIPT_MISMATCH');verifyRows(db!,page);skipped++;return;}
         assert(Number(db!.prepare('SELECT coalesce(max(page),0) AS n FROM protected_state_pages').get()?.['n'])===page.page-1,'PAGE_ORDER');

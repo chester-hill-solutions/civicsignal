@@ -51,14 +51,31 @@ export const HANSARD_FEDERAL: CorpusPolicy = {
   id: 'hansard-federal',
   title: 'House of Commons debates (Hansard), 2006–present',
   publisher: 'House of Commons of Canada',
-  licence: 'Crown copyright (federal) — non-commercial reproduction with attribution',
-  licenceUrl: 'https://www.canada.ca/en/transparency/terms.html',
+  licence: 'Crown copyright (federal) — Speaker’s permission for non-commercial reproduction',
+  licenceUrl: 'https://www.ourcommons.ca/en/important-notices',
   redistribution: 'cite-only',
   attribution:
     'Source: Debates (Hansard), House of Commons of Canada. © His Majesty the King in Right of Canada. Crown copyright.',
   conditions: [
-    'Quoted as excerpts with a citation to the official text; the corpus is not republished.',
-    'Excerpts are short and attributed; each links to the official Hansard record.',
+    'The Speaker’s general permission covers accurate non-commercial reproduction presented as unofficial.',
+    'Excerpts are short, attributed, and linked to the official Hansard record.',
+  ],
+  excerptMaxChars: 400,
+  allowFullText: false,
+  requireSourceLink: true,
+};
+
+export const HANSARD_SENATE: CorpusPolicy = {
+  id: 'hansard-senate',
+  title: 'Debates of the Senate (Hansard)',
+  publisher: 'Senate of Canada',
+  licence: 'Senate of Canada — permission for non-commercial reproduction',
+  licenceUrl: 'https://sencanada.ca/en/intellectual-property/',
+  redistribution: 'cite-only',
+  attribution: 'Source: Debates of the Senate (Hansard), Senate of Canada.',
+  conditions: [
+    'The Senate’s general permission covers accurate, unofficial reproduction and excludes financial gain.',
+    'Excerpts are short, attributed, and linked to the official transcript section.',
   ],
   excerptMaxChars: 400,
   allowFullText: false,
@@ -79,6 +96,20 @@ export const HANSARD_PROVINCIAL: CorpusPolicy = {
     'Credit the originating legislative assembly.',
   ],
   excerptMaxChars: 400,
+  allowFullText: false,
+  requireSourceLink: true,
+};
+
+export const CANADA_GAZETTE: CorpusPolicy = {
+  id: 'canada-gazette',
+  title: 'Canada Gazette, Parts I and II',
+  publisher: 'Government of Canada',
+  licence: 'Crown copyright and third-party material',
+  licenceUrl: 'https://www.canada.ca/en/transparency/terms.html',
+  redistribution: 'metadata-only',
+  attribution: 'Source: Canada Gazette, Government of Canada.',
+  conditions: ['Return the issue metadata and a link to the official record.'],
+  excerptMaxChars: 0,
   allowFullText: false,
   requireSourceLink: true,
 };
@@ -152,7 +183,9 @@ export const CORPUS_POLICIES: CorpusPolicy[] = [
   STATUTES_CANADA,
   STATUTES_ONTARIO,
   HANSARD_FEDERAL,
+  HANSARD_SENATE,
   HANSARD_PROVINCIAL,
+  CANADA_GAZETTE,
   NEWS_CANADA,
   GDELT,
   BILLS_CANADA,

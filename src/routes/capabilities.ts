@@ -1,11 +1,15 @@
 import { CORPUS_POLICIES } from '../corpora/policies';
-import { loadCorpusAvailability } from '../corpora/registry';
+import { loadD1CorpusPublication } from '../corpora/registry';
 import type { CorpusAvailabilityMap } from '../corpora/types';
 import { ENCODER_CONTRACT, type EncoderContract } from '../encoder';
 import { corsHeaders } from '../http';
 import type { Env } from '../types';
+import { discoveryContext, discoverSources, statuteSource, type DiscoverySource } from './discovery-sources';
+import { apprenticeshipQuestions, type ResearchQuestion } from './discovery-questions';
 
 export interface Capabilities {
+  sources: DiscoverySource[];
+  researchQuestions: ResearchQuestion[];
   encoder: EncoderContract;
   product: string;
   description: string;
@@ -31,32 +35,48 @@ export interface Capabilities {
   errors: { code: string; meaning: string }[];
 }
 
+function policyAvailable(id: string, sources: DiscoverySource[]) {
+  return sources.some(source => source.status === 'available' && (source.id === id || (id === 'bills-canada' &&
+    (source.id === 'bill-trace' || (source.id === 'parliament' && source.editions.some(row => row.scope.startsWith('bills/')))))));
+}
+
 /** Only verified, populated v1 corpora appear as supported coverage. */
-export function buildCapabilities(env: Env, origin: string, availability: CorpusAvailabilityMap = {}): Capabilities {
-  const baseUrl = (env.PUBLIC_API_BASE_URL ?? origin).replace(/\/$/, '');
+function buildCapabilities(env: Env, origin: string, availability: CorpusAvailabilityMap, sources: DiscoverySource[]): Capabilities {
+  const baseUrl = origin.replace(/\/$/, '');
   const statutes = availability['statutes-canada'];
-  const populated = Boolean(env.CIVIC_DB && statutes?.available);
+  const populated = sources.some(source => source.id === 'statutes-canada' && source.status === 'available');
   const semantic = populated && Boolean(env.VECTORIZE && env.ENCODER_TOKEN && (env.ENCODER_SERVICE || env.ENCODER_URL));
   const endpoints: Capabilities['endpoints'] = [];
   const tools: Capabilities['mcp']['tools'] = [];
   if (populated) {
+    endpoints.push({ path: '/api/statutes', description: semantic ? 'Look up a federal provision or search by topic.' : 'Look up an exact federal act and section.' });
     endpoints.push({ path: '/api/brief', description: 'Federal statute brief with explicit unavailable and excluded coverage. Exact citations are resolved structurally.' });
     endpoints.push({ path: '/api/changes', description: 'Bounded, paginated metadata for observed statute corpus changes; no full text.' });
     tools.push({ name: 'cite_provision', description: 'Resolve a federal statute provision exactly, including repealed provisions.' });
     tools.push({ name: 'statute_changes', description: 'Read observed federal statute corpus changes, with source citations and provenance.' });
   }
   if (semantic) {
-    endpoints.push({ path: '/api/statutes', description: 'Search current federal statutes and regulations by topic in English or French.' });
     endpoints.push({ path: '/api/chat', description: 'Cited federal statute chat using the caller\'s generation key. Retrieval uses the CivicSignal key.' });
-    tools.push({ name: 'brief_topic', description: 'A federal statute brief; news, debate, bills, coverage tone and geography are unavailable in v1.' });
+    tools.push({ name: 'brief_topic', description: 'Build a cited federal statute brief.' });
     tools.push({ name: 'statute_lookup', description: 'Search the current federal statute corpus in English or French.' });
   }
   if (populated && env.VECTORIZE) {
     endpoints.push({ path: '/api/match', description: 'Nearest vector matches using the published 768-dimension encoder contract; matches do not assert answerability.' });
   }
+  const listed = new Set(endpoints.map(endpoint => endpoint.path));
+  for (const source of sources) {
+    for (const edition of source.editions) {
+      const path = edition.request.split('?')[0];
+      if (path && !listed.has(path)) {
+        endpoints.push({ path, description: source.name + '. See sources for supported editions and examples.' });
+        listed.add(path);
+      }
+    }
+  }
   return {
+    sources, researchQuestions: apprenticeshipQuestions(sources),
     product: env.PRODUCT_NAME ?? 'CivicSignal',
-    description: 'Cited retrieval of Canadian federal statutes and regulations in English and French. Corpus changes report observed source updates. News, debates, bills, provincial law, coverage tone and geographic filtering are unavailable in v1.',
+    description: 'Canadian federal policy research. Use sources for queryable editions, dates, example requests and API specifications on this deployment.',
     baseUrl, version: '1.0.0-rc', encoder: ENCODER_CONTRACT,
     pricing: {
       model: 'metered successful retrievals', freeMonthlyAllowance: Number(env.FREE_MONTHLY_ALLOWANCE ?? 1000),
@@ -66,12 +86,12 @@ export function buildCapabilities(env: Env, origin: string, availability: Corpus
     coverage: CORPUS_POLICIES.filter((policy) => policy.id === 'statutes-canada' && populated).map((policy) => ({
       corpusId: policy.id, title: policy.title, publisher: policy.publisher, licence: policy.licence,
       licenceUrl: policy.licenceUrl, redistribution: policy.redistribution, attribution: policy.attribution,
-      conditions: policy.conditions, rowCount: statutes!.rowCount ?? 0, revision: statutes!.revision,
-      parserVersion: statutes!.parserVersion, asOf: statutes!.asOf, lastRunAt: statutes!.lastRunAt,
+      conditions: policy.conditions, rowCount: statutes?.rowCount ?? 0, revision: statutes?.revision,
+      parserVersion: statutes?.parserVersion, asOf: statutes?.asOf, lastRunAt: statutes?.lastRunAt,
     })),
-    unavailableCoverage: CORPUS_POLICIES.filter((policy) => policy.id !== 'statutes-canada' || !populated).map((policy) => ({
+    unavailableCoverage: CORPUS_POLICIES.filter(policy => !policyAvailable(policy.id, sources)).map((policy) => ({
       corpusId: policy.id, title: policy.title,
-      reason: policy.id === 'statutes-canada' ? statutes?.reason ?? 'A non-empty published corpus has not been verified.' : 'No production ingestion is available for this corpus in v1.',
+      reason: 'No queryable edition was verified on this deployment.',
     })),
     auth: {
       serverKeys: 'Authorization: Bearer <workspace API key>', browserKeys: 'Public pk_ keys are not accepted. Keep server keys out of public browser code.',
@@ -93,46 +113,39 @@ export function buildCapabilities(env: Env, origin: string, availability: Corpus
   };
 }
 
+export async function deploymentCapabilities(env: Env, origin: string): Promise<Capabilities> {
+  const [publication, context] = await Promise.all([loadD1CorpusPublication(env.CIVIC_DB), discoveryContext(env)]);
+  const [statutes, previews] = await Promise.all([statuteSource(context, publication.availability['statutes-canada']), discoverSources(context)]);
+  return buildCapabilities(env, origin, publication.availability, [statutes, ...previews]);
+}
+
 export async function capabilitiesResponse(env: Env, origin: string, correlationId: string): Promise<Response> {
-  const availability = await loadCorpusAvailability({ db: env.CIVIC_DB, fetch, now: () => new Date() });
-  return new Response(JSON.stringify(buildCapabilities(env, origin, availability), null, 2), {
+  return new Response(JSON.stringify(await deploymentCapabilities(env, origin), null, 2), {
     headers: { 'content-type': 'application/json; charset=UTF-8', ...corsHeaders(env, null, correlationId) },
   });
 }
 
-export function llmsTxt(env: Env, origin: string): string {
-  const baseUrl = (env.PUBLIC_API_BASE_URL ?? origin).replace(/\/$/, '');
-  return `# ${env.PRODUCT_NAME ?? 'CivicSignal'}
+function sourceInstructions(source: DiscoverySource): string {
+  if (source.status !== 'available') return `- ${source.name} (${source.status})`;
+  const rows = source.editions.map(row => {
+    const dates = [row.observedAt && 'observed ' + row.observedAt, row.publishedAt && 'published locally ' + row.publishedAt,
+      row.coverageThrough && 'coverage through ' + row.coverageThrough, row.latestRecordDate && 'latest record ' + row.latestRecordDate];
+    return `  - ${row.scope} (${row.language}), ${dates.filter(Boolean).join(', ') || 'freshness unknown'}. GET ${row.request}`;
+  });
+  return [`- ${source.name}. ${source.question}`, ...rows, ...(source.openapi ? ['  - OpenAPI: ' + source.openapi] : [])].join('\n');
+}
 
-> Cited retrieval of Canadian federal statutes and regulations, in English and French.
-
-This v1 provides authenticated, metered HTTP and MCP retrieval. Use
-[live capabilities](${baseUrl}/.well-known/civicsignal.json) for verified corpus
-population, revision, freshness and configured routes. A configured database alone
-does not establish that a corpus is populated.
-
-News, debate, bills, provincial law, coverage tone and geographic distribution are
-unavailable in v1. Riding, municipality, region and provincial filters are rejected.
-Statute search uses the current published corpus; it does not provide historical
-versions or legal advice. Source revision dates are not a guarantee of legal currency.
-
-The MCP endpoint is \`${baseUrl}/mcp\`. Use \`cite_provision\` when a question names
-a provision. Where semantic retrieval is configured, \`statute_lookup\` and
-\`brief_topic\` search federal law. \`statute_changes\` and \`${baseUrl}/api/changes\`
-return paginated metadata for observed corpus changes, without full provision text.
-See live capabilities for which tools are available on this deployment.
-
-Send \`Authorization: Bearer <workspace API key>\` with capability
-\`civicsignal.retrieve\`. Public browser keys and OAuth are unavailable. A successful
-retrieval consumes one workspace unit. Validation and retrieval failures, plus MCP
-bookkeeping, consume no units. A lost usage acknowledgement can return
-\`USAGE_UNAVAILABLE\` with \`uncertain:true\` after a unit was committed. Retain its
-\`operationId\` and \`month\` for reconciliation; a new request is a new operation.
-BYOK chat additionally requires \`X-CivicSignal-BYOK-Provider\` and
-\`X-CivicSignal-BYOK-Key\`. The generation key is sent only to that provider.
-
-Statutes and regulations are reproduced under the Open Government Licence - Canada.
-Every result carries its source citation and attribution. This is not an official
-version of the law; consult the linked official source.
-`;
+export function llmsTxt(caps: Capabilities): string {
+  return [`# ${caps.product}`, '',
+    `Start with [live capabilities](${caps.baseUrl}/.well-known/civicsignal.json). Resolve request paths on this API origin.`,
+    'Use only available editions. Dates describe the stored records. Recheck the official source for later changes.',
+    'Discovery is public and free. Retrieval requires Authorization: Bearer <workspace API key> with civicsignal.retrieve.',
+    caps.pricing.note, '', '## Sources', ...caps.sources.map(sourceInstructions), '', '## Research questions',
+    ...caps.researchQuestions.flatMap(q => [`- ${q.question} (${q.status})`,
+      ...q.steps.map(step => `  - ${step.instruction} GET ${step.request}`),
+      ...(q.missingSources.length ? ['  - Missing coverage: ' + q.missingSources.join(', ')] : []), '  - ' + q.limits]),
+    '', `Statute MCP tools at ${caps.mcp.url}: ${caps.mcp.tools.map(tool => tool.name).join(', ') || 'none available'}.`,
+    ...(caps.endpoints.some(e => e.path === '/api/chat') ? ['Chat also requires X-CivicSignal-BYOK-Provider and X-CivicSignal-BYOK-Key.'] : []),
+    'Consult each available source’s OpenAPI document for supported filters, lookup operations, and citation fields.', '',
+  ].join('\n');
 }

@@ -1,6 +1,9 @@
 import type { Env } from './types';
 import type { RetrievalObservation } from './corpora/retrieval-observation';
 import { isByokProvider, type GenerationFailure } from './byok';
+import { securityHeaders } from './security-headers';
+
+export { securityHeaders } from './security-headers';
 
 /** CORS + security headers, in one place so every route agrees. */
 export function resolveCorsOrigin(
@@ -18,14 +21,6 @@ export function resolveCorsOrigin(
     return { allowOrigin: origin, allowCredentials: true };
   }
   return { allowOrigin: allowlist[0] ?? '*', allowCredentials: false };
-}
-
-export function securityHeaders(): Record<string, string> {
-  return {
-    'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'X-Frame-Options': 'DENY',
-  };
 }
 
 export function corsHeaders(

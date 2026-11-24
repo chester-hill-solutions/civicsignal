@@ -1,0 +1,16 @@
+{
+  "source": "https://www.ourcommons.ca/Members/en/votes/44/1/338/xml",
+  "sha256": "0650b924bf65d8139f6b1a7175466dfe5942ebb17541b57ab1bce719413fc92b",
+  "ParliamentNumber": "44",
+  "SessionNumber": "1",
+  "DivisionNumber": "338",
+  "DecisionEventDateTime": "2023-05-30T15:25:26",
+  "DecisionResultName": "Agreed To",
+  "DivisionSubjectEn": "3rd reading and adoption of Bill S-5, An Act to amend the Canadian Environmental Protection Act, 1999, to make related amendments to the Food and Drugs Act and to repeal the Perfluorooctane Sulfonate Virtual Elimination Act",
+  "DivisionSubjectFr": "3e lecture et adoption du projet de loi S-5, Loi modifiant la Loi canadienne sur la protection de l’environnement (1999), apportant des modifications connexes à la Loi sur les aliments et drogues et abrogeant la Loi sur la quasi-élimination du sulfonate de perfluorooctane",
+  "counts": {
+    "yeas": 208,
+    "nays": 116,
+    "paired": 0
+  }
+}

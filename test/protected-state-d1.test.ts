@@ -53,6 +53,7 @@ beforeAll(async()=>{
    const db=new Proxy(env.RESTORE_DB,{get(target,key){if(key==='batch')return async(statements:D1PreparedStatement[])=>{
     const once=fault;fault=null;
     if(once==='publication')await target.prepare("UPDATE corpus_state SET last_run_at='changed'").run();
+    if(once==='publication-guard')await target.prepare("INSERT INTO corpus_publication_guard(corpus_id,generation) VALUES('statutes-canada',1)").run();
     if(once==='sequence')await target.prepare("INSERT INTO sqlite_sequence(name,seq) VALUES('corpus_runs',0)").run();
     if(once==='session')await target.prepare('UPDATE protected_state_d1_session SET version=version+1').run();
     if(once==='null-marker')await target.prepare('DELETE FROM protected_state_restore').run();
@@ -324,6 +325,19 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('protected pages
   await f.db.exec("CREATE INDEX workspace_api_key_workspace_idx ON workspace_api_key(workspace_id) WHERE status='revoked'");
   expect(await f.begin()).toMatchObject({status:409,code:'PROTECTED_D1_SCHEMA_OBJECT'});
  },30_000);
+ it('refuses a target with publication history before begin and finish',async()=>{
+  const f=await fixture();
+  const insert=()=>f.db.prepare("INSERT INTO corpus_publication_guard(corpus_id,generation) VALUES('statutes-canada',1)").run();
+  await insert();
+  expect(await f.begin()).toMatchObject({status:409,code:'PROTECTED_D1_POPULATED'});
+  expect(await f.db.prepare("SELECT name FROM sqlite_master WHERE name='protected_state_restore'").first()).toBeNull();
+  await f.db.prepare('DELETE FROM corpus_publication_guard').run();
+  await f.ready();await f.apply();await f.verify();await f.corpus();
+  await insert();
+  expect(await f.call('status')).toMatchObject({status:409,code:'PROTECTED_D1_PREIMAGE'});
+  expect(await f.call('finish')).toMatchObject({status:409,code:'PROTECTED_D1_PREIMAGE'});
+  expect(await f.db.prepare('SELECT complete FROM protected_state_restore').first()).toEqual({complete:0});
+ },30_000);
  it('refuses a bounded schema inventory overflow',async()=>{
   const f=await fixture();for(let n=0;n<64;n++)await f.db.exec(`CREATE TABLE excess_${n}(id TEXT)`);
   expect(await f.begin()).toMatchObject({status:409,code:'PROTECTED_D1_SCHEMA_BOUND'});
@@ -336,7 +350,7 @@ describe.skipIf(process.env['CIVICSIGNAL_WORKERD_TESTS']!=='1')('protected pages
   await f.db.prepare('UPDATE corpus_compact_restore SET bundle_sha256=?').bind('f'.repeat(64)).run();
   expect(await f.call('corpus',{page:f.compactPages[0]})).toMatchObject({status:409,code:'PROTECTED_D1_COMPACT_MARKER'});
  },30_000);
- it.each(['publication','sequence','session','null-marker'])('atomically fences a late %s change after preflight',async(fault)=>{
+ it.each(['publication','publication-guard','sequence','session','null-marker'])('atomically fences a late %s change after preflight',async(fault)=>{
   const f=await fixture();await f.ready();expect(await f.call('apply',{page:f.pages[0],fault})).toMatchObject({status:409,code:'PROTECTED_D1_FAILURE'});
   expect(await f.db.prepare('SELECT (SELECT count(*) FROM workspace) AS rows,(SELECT count(*) FROM protected_state_pages) AS pages').first()).toEqual({rows:0,pages:0});
   expect(JSON.parse((await f.db.prepare('SELECT state_json FROM protected_state_d1_session').first<{state_json:string}>())!.state_json).load.page).toBe(0);

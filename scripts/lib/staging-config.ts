@@ -23,7 +23,7 @@ export function stagingNames(suffix: string) {
     snapshot: `${prefix}snapshot-${suffix}`, restore: `${prefix}restore-${suffix}` };
 }
 
-function readConfig(root: string, path: string): Record<string, unknown> {
+export function readWorkerConfig(root: string, path: string): Record<string, unknown> {
   const parsed = ts.parseConfigFileTextToJson(path, readFileSync(resolve(root, path), 'utf8'));
   if (parsed.error || !parsed.config || typeof parsed.config !== 'object') throw new Error('Cannot parse the source Worker config.');
   return parsed.config as Record<string, unknown>;
@@ -48,24 +48,24 @@ export function prepareStagingConfigs(root: string, input: unknown): Record<stri
     observability: { enabled: true }, workers_dev: true };
   const d1 = { binding: 'CIVIC_DB', database_name: names.d1, database_id: inventory.d1.id,
     migrations_dir: resolve(root, 'migrations') };
-  const api = { ...readConfig(root, 'wrangler.jsonc'), ...common, name: names.api, main: resolve(root, 'src/index.ts'),
+  const api = { ...readWorkerConfig(root, 'wrangler.jsonc'), ...common, name: names.api, main: resolve(root, 'src/index.ts'),
     vars: { PRODUCT_NAME: 'CivicSignal v1 staging', FREE_MONTHLY_ALLOWANCE: '1000', CORPUS_TEXT_MODE: 'r2' },
     routes: [], kv_namespaces: [{ binding: 'CIVIC_CACHE', id: inventory.cache.id }],
     d1_databases: [d1], r2_buckets: [{ binding: 'CORPORA', bucket_name: names.corpus }],
     vectorize: [{ binding: 'VECTORIZE', index_name: names.vectorize }], services: [{ binding: 'ENCODER_SERVICE', service: names.encoder }] };
   delete (api as Record<string, unknown>)['ai'];
-  const pipeline = { ...readConfig(root, 'services/pipeline/wrangler.jsonc'), ...common,
+  const pipeline = { ...readWorkerConfig(root, 'services/pipeline/wrangler.jsonc'), ...common,
     name: names.pipeline, main: resolve(root, 'services/pipeline/worker.ts'), routes: [], triggers: { crons: [] },
     vars: { CORPUS_RETAIN_D1_TEXT: 'false', PIPELINE_PINNED_COMMIT: STAGING_SOURCE.commit,
       PIPELINE_PINNED_DATE: STAGING_SOURCE.date, PIPELINE_EMBEDDING_ATTEMPT_CAP: '1112' },
     d1_databases: [d1], r2_buckets: [{ binding: 'CORPUS', bucket_name: names.corpus }],
     vectorize: [{ binding: 'VECTORIZE', index_name: names.vectorize }], services: [{ binding: 'ENCODER_SERVICE', service: names.encoder }] };
-  const snapshot = { ...readConfig(root, 'services/snapshot/wrangler.jsonc'), ...common,
+  const snapshot = { ...readWorkerConfig(root, 'services/snapshot/wrangler.jsonc'), ...common,
     name: names.snapshot, main: resolve(root, 'services/snapshot/worker.ts'), routes: [], triggers: { crons: [] },
     vars: { SNAPSHOT_PINNED_COMMIT: STAGING_SOURCE.commit, SNAPSHOT_PINNED_DATE: STAGING_SOURCE.date },
     r2_buckets: [{ binding: 'CORPUS', bucket_name: names.corpus }],
     workflows: [{ binding: 'SNAPSHOT', name: names.snapshot, class_name: 'CorpusSnapshot' }] };
-  const sourceEncoder = readConfig(root, 'services/encoder/wrangler.jsonc');
+  const sourceEncoder = readWorkerConfig(root, 'services/encoder/wrangler.jsonc');
   const containers = sourceEncoder['containers'];
   if (!Array.isArray(containers) || containers.length !== 1 || typeof containers[0] !== 'object') throw new Error('Expected one pinned encoder container.');
   const encoder = { ...sourceEncoder, ...common, name: names.encoder, main: resolve(root, 'services/encoder/worker.ts'), routes: [],

@@ -96,6 +96,7 @@ export async function verifyTextRestore(options: { bundle: string; output: strin
       fresh.exec(pipelineSchema.slice(pipelineSchema.indexOf('CREATE TABLE IF NOT EXISTS corpus_state')));
       fresh.exec(await readFile(resolve('migrations/0006_corpus_mutations.sql'), 'utf8'));
       fresh.exec(await readFile(resolve('migrations/0008_corpus_parser.sql'), 'utf8'));
+      fresh.exec(await readFile(resolve('migrations/0009_corpus_publication_guard.sql'), 'utf8'));
       const [source, parser = 'legacy'] = manifest.revision.split(':');
       const publication=manifest.publication??{commit:source!,parser:parser==='legacy'?null:parser,date:manifest.createdAt.slice(0,10),asOf:manifest.createdAt,lastRunAt:manifest.createdAt};
       fresh.prepare(`INSERT INTO corpus_state(corpus_id,commit_sha,commit_date,as_of,row_count,last_run_at,parser_version) VALUES(?,?,?,?,?,?,?)`)

@@ -208,6 +208,7 @@ export interface TextParityCheckpoint {
   revision: string;
   rowCount: number;
   mutationCount: number;
+  generation?: number;
   after: string;
   rowsVerified: number;
   bytesVerified: number;
@@ -215,16 +216,22 @@ export interface TextParityCheckpoint {
 }
 
 async function publication(db: CorpusDatabase) {
-  const result = await db.prepare(`SELECT commit_sha, parser_version, row_count,
+  const result = await db.prepare(`SELECT s.commit_sha, s.parser_version, s.row_count,
+    g.target_commit, COALESCE(g.generation, 0) AS generation,
     (SELECT count(*) FROM corpus_mutations WHERE corpus_id='statutes-canada') AS mutation_count,
     (SELECT count(*) FROM corpus_mutations WHERE corpus_id='statutes-canada' AND payload IS NOT NULL) AS pending
-    FROM corpus_state WHERE corpus_id=?`).bind('statutes-canada').all<Record<string, unknown>>();
+    FROM corpus_state s LEFT JOIN corpus_publication_guard g USING (corpus_id)
+    WHERE s.corpus_id=?`).bind('statutes-canada').all<Record<string, unknown>>();
   const state = result.results?.[0];
   if (!state || !Number.isSafeInteger(Number(state['row_count'])) || Number(state['row_count']) < 1 || Number(state['pending']) !== 0) {
     throw new ProvisionTextError('A non-empty published corpus with a drained ingestion outbox is required for text parity.');
   }
+  const generation = Number(state['generation']);
+  if (state['target_commit'] != null || !Number.isSafeInteger(generation) || generation < 0) {
+    throw new ProvisionTextError('A settled corpus publication is required for text parity.');
+  }
   return { revision: `${String(state['commit_sha'])}:${String(state['parser_version'] ?? 'legacy')}`,
-    rowCount: Number(state['row_count']), mutationCount: Number(state['mutation_count']) };
+    rowCount: Number(state['row_count']), mutationCount: Number(state['mutation_count']), generation };
 }
 
 /** One bounded Workflow/operations step. Reuse its checkpoint until complete.
@@ -239,7 +246,8 @@ export async function auditProvisionTextPage(db: CorpusDatabase, bucket: TextObj
   const before = await publication(db);
   const previous = options.checkpoint;
   if (before.revision !== options.expectedRevision || (previous &&
-      (previous.revision !== before.revision || previous.rowCount !== before.rowCount || previous.mutationCount !== before.mutationCount))) {
+      (previous.revision !== before.revision || previous.rowCount !== before.rowCount ||
+      previous.mutationCount !== before.mutationCount || (previous.generation ?? 0) !== before.generation))) {
     throw new ProvisionTextError('The corpus changed during text parity; start a new audit from its verified publication.');
   }
   if (previous?.complete) return previous;
@@ -249,7 +257,8 @@ export async function auditProvisionTextPage(db: CorpusDatabase, bucket: TextObj
   const rows = (result.results ?? []).slice(0, pageSize);
   const hydrated = await createR2ProvisionTextStore(db, bucket, options.mode).hydrate(rows);
   const after = await publication(db);
-  if (before.revision !== after.revision || before.rowCount !== after.rowCount || before.mutationCount !== after.mutationCount) {
+  if (before.revision !== after.revision || before.rowCount !== after.rowCount ||
+    before.mutationCount !== after.mutationCount || before.generation !== after.generation) {
     throw new ProvisionTextError('The corpus changed during text parity; start a new audit from its verified publication.');
   }
   const rowsVerified = (previous?.rowsVerified ?? 0) + rows.length;

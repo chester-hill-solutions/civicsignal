@@ -39,7 +39,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { CoordinatorAdmissionError, DurableSingleFlight, type CoordinatorObservation } from './single-flight';
 import { readJsonBody, RequestInputError } from '../../src/http';
-import { D1CorpusStore } from '../../src/corpora/d1-store';
+import { CorpusPublicationPending, D1CorpusStore } from '../../src/corpora/d1-store';
 import { CORPUS_ID } from '../../src/ingest/corpus-rows';
 import { httpEncoder } from '../../src/ingest/encoder-client';
 import { runIncrementalPipeline } from '../../src/ingest/incremental-pipeline';
@@ -240,7 +240,13 @@ export class PipelineCoordinator extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env, recovery?: StageRecoveryAuthorization) {
     super(ctx, env);
     this.budget = new DurableAttemptBudget(ctx.storage, pipelineControl(env), recovery);
-    this.runner = new DurableSingleFlight(ctx.storage, () => cycle(this.env, this.budget), Date.now,
+    this.runner = new DurableSingleFlight(ctx.storage, async () => {
+      try { return await cycle(this.env, this.budget); }
+      catch (error) {
+        if (error instanceof CorpusPublicationPending) return { ok: true, at: error.commit, remaining: true };
+        throw error;
+      }
+    }, Date.now,
       { suspendOnFailure: recovery !== undefined });
     // Only checkpoint initialization is blocked; a corpus cycle can run for
     // minutes and must not sit in blockConcurrencyWhile's 30-second window.
@@ -275,12 +281,20 @@ interface CycleSummary {
   /** True when the store was already at that revision. */
   nothing?: boolean;
   /** Which reconciliation ran, and why it matters which. */
-  cycle?: 'snapshot' | 'files';
+  cycle?: 'snapshot' | 'files' | 'publish';
   counts?: { added: number; changed: number; removed: number; unchanged: number };
   embedded?: number;
   durationMs?: number;
-  /** True when the cycle stopped on its budget with the store still behind. */
+  /** True when the coordinator must continue ingestion or publication. */
   remaining?: boolean;
+}
+
+async function finishPublication(store: D1CorpusStore, remaining: boolean): Promise<CycleSummary> {
+  await store.recoverPendingWrites();
+  const run = await store.completeStagedPublication();
+  if (!run) throw new Error('The active corpus completion checkpoint could not be read.');
+  return { ok: true, at: run.commit, cycle: 'publish', counts: run.counts, embedded: run.embedded,
+    durationMs: run.durationMs, remaining };
 }
 
 async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSummary> {
@@ -289,10 +303,23 @@ async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSumma
   const store = new D1CorpusStore(env.CIVIC_DB, env.VECTORIZE, CORPUS_ID, { textBucket: env.CORPUS,
     retainD1Text: retainD1Text(env.CORPUS_RETAIN_D1_TEXT, !!env.CORPUS) });
   await budget.initialize();
+  const active = await store.activePublication();
+  // The completion is already pinned and only needs the Vectorize watermark.
+  // Check for a newer upstream revision in the next cycle.
+  if (active?.completionJson && !budget.control) return finishPublication(store, true);
   const head = await source.head();
   budget.assertHead(head);
-  const reader = new SnapshotReader(env.CORPUS, head.commit, { parser: SNAPSHOT_PARSER_VERSION });
+  if (budget.control && active && (active.commit !== head.commit || active.date !== head.date)) {
+    throw new Error('The controlled cycle cannot replace an active corpus revision.');
+  }
+  // A partial file reconciliation must finish its original comparison. If a
+  // provision changed and then reverted, a direct comparison to the newer head
+  // could omit the provision that this store has already modified.
+  const target = active ?? head;
+  const reader = new SnapshotReader(env.CORPUS, target.commit, { parser: SNAPSHOT_PARSER_VERSION });
   if (budget.control) budget.assertSnapshot(await reader.manifest());
+  if (active?.completionJson) return finishPublication(store, target.commit !== head.commit);
+  await store.recoverPendingWrites();
   const encoder = httpEncoder({
     // Budget reservations are durable before the actual binding HTTP call.
     url: 'https://encoder', token: env.ENCODER_TOKEN,
@@ -302,13 +329,12 @@ async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSumma
     }),
   });
 
-  await store.recoverPendingWrites();
   const state = await store.currentCommit(CORPUS_ID);
-  if (state && state.commit === head.commit && state.parserVersion === SNAPSHOT_PARSER_VERSION) {
-    log(`already at ${head.commit.slice(0, 9)} (${head.date}) — nothing to do`);
-    return { ok: true, at: head.commit, nothing: true };
+  if (!active && state && state.commit === target.commit && state.parserVersion === SNAPSHOT_PARSER_VERSION) {
+    log(`already at ${target.commit.slice(0, 9)} (${target.date}) — nothing to do`);
+    return { ok: true, at: target.commit, nothing: true };
   }
-  log(`the corpus is at ${head.commit.slice(0, 9)} (${head.date})`);
+  log(`reconcile the corpus to ${target.commit.slice(0, 9)} (${target.date})`);
 
   await assertFingerprinted(env);
 
@@ -317,12 +343,12 @@ async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSumma
   // It is the path that can fill a gap of any size, and it needs nothing from
   // the store except its fingerprints — so it also works on a store that has
   // never been through a cycle, which the file path cannot.
-  const snapshot = await env.CORPUS.head(manifestKey(head.commit, SNAPSHOT_PARSER_VERSION));
+  const snapshot = await env.CORPUS.head(manifestKey(target.commit, SNAPSHOT_PARSER_VERSION));
   if (snapshot) {
-    log(`the snapshot at ${head.commit.slice(0, 9)} is published — diffing against its index`);
+    log(`the snapshot at ${target.commit.slice(0, 9)} is published — diffing against its index`);
     const run = await runSnapshotPipeline({
       corpusId: CORPUS_ID,
-      revision: { commit: head.commit, date: head.date },
+      revision: { commit: target.commit, date: target.date },
       source: reader,
       store,
       encoder,
@@ -331,12 +357,12 @@ async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSumma
     });
     return {
       ok: true,
-      at: head.commit,
+      at: target.commit,
       cycle: 'snapshot',
       counts: run.counts,
       embedded: run.embedded,
       durationMs: run.durationMs,
-      remaining: run.remaining,
+      remaining: run.remaining || target.commit !== head.commit,
     };
   }
 
@@ -355,7 +381,7 @@ async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSumma
   if (!state) {
     throw new Error(
       `${CORPUS_ID} has no revision recorded in corpus_state, and there is no snapshot ` +
-        `at ${head.commit.slice(0, 9)} to reconcile against. Run ` +
+      `at ${target.commit.slice(0, 9)} to reconcile against. Run ` +
         `\`bun scripts/backfill-fingerprints.ts\` to prepare the store, or publish a snapshot.`,
     );
   }
@@ -368,7 +394,7 @@ async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSumma
       date: state.commitDate,
       rowCount: state.rowCount,
     },
-    next: { commit: head.commit, date: head.date },
+    next: { commit: target.commit, date: target.date },
     source,
     store,
     encoder,
@@ -380,11 +406,12 @@ async function cycle(env: Env, budget: DurableAttemptBudget): Promise<CycleSumma
   log(`  ${provisions} provision(s) in the changed file(s)`);
   return {
     ok: true,
-    at: head.commit,
+    at: target.commit,
     cycle: 'files',
     counts: run.counts,
     embedded: run.embedded,
     durationMs: run.durationMs,
+    remaining: target.commit !== head.commit,
   };
 }
 

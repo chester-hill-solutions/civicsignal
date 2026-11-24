@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emitCorpusItem, emitCorpusItems } from '@chester-hill-solutions/corpus';
-import { CORPUS_POLICIES, STATUTES_CANADA, HANSARD_FEDERAL, NEWS_CANADA, GDELT } from '../src/corpora/policies';
+import { CANADA_GAZETTE, CORPUS_POLICIES, STATUTES_CANADA, HANSARD_FEDERAL, NEWS_CANADA, GDELT } from '../src/corpora/policies';
 
 /**
  * The product's licence declarations.
@@ -57,8 +57,8 @@ describe('the corpora this product serves', () => {
     expect(item.attribution).toContain('Crown copyright');
   });
 
-  it('surfaces news and global press as metadata only, because the publisher terms forbid republication', () => {
-    for (const policy of [NEWS_CANADA, GDELT]) {
+  it('returns metadata only for Gazette and press records', () => {
+    for (const policy of [CANADA_GAZETTE, NEWS_CANADA, GDELT]) {
       expect(policy.redistribution).toBe('metadata-only');
       expect(policy.allowFullText).toBe(false);
       expect(policy.excerptMaxChars).toBe(0);

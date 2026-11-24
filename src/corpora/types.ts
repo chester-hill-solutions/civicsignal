@@ -6,6 +6,7 @@ import type {
 import { normalizeForSearch } from '../text';
 import type { RetrievalObservation } from './retrieval-observation';
 import type { ProvisionTextReader } from './text-store';
+import type { HybridSearch } from './hybrid';
 
 export type { Corpus };
 
@@ -23,6 +24,8 @@ export interface CorpusContext extends BaseCorpusContext {
   /** Explicit authenticated evaluation requests may measure the uncached path. */
   retrievalCacheMode?: 'default' | 'bypass';
   jev?: { key: string };
+  /** Opt-in authority and evidence search for the Cloudflare serving candidate. */
+  hybrid?: HybridSearch;
   /** Verified corpus state; callers may share one metadata read across surfaces. */
   corpusAvailability?: CorpusAvailabilityMap | Promise<CorpusAvailabilityMap>;
   /**
@@ -101,19 +104,16 @@ export function resolveLimit(limit: number | undefined): number {
   return Math.min(MAX_LIMIT, Math.max(1, Math.floor(limit)));
 }
 
-/**
- * Build a `LIKE` pattern set for a topic and its keywords.
- *
- * Corpus search is over a normalised token column; the pattern is escaped so a topic
- * containing `%` or `_` does not turn into a wildcard.
- */
-export function likePatterns(query: CorpusQuery): string[] {
-  const terms = [query.topic, ...(query.keywords ?? [])].filter(
+/** Fold the topic and keywords the same way as the corpus's `search_text`. */
+export function normalizedSearchTerms(query: CorpusQuery): string[] {
+  return [query.topic, ...(query.keywords ?? [])].filter(
     (t): t is string => typeof t === "string" && t.trim().length > 0,
-  );
-  // Folded the same way the corpus's `search_text` is folded, so that an
-  // unaccented query finds an accented provision. See `normalizeForSearch`.
-  return terms.map((t) => `%${escapeLike(normalizeForSearch(t.trim()))}%`);
+  ).map((term) => normalizeForSearch(term.trim()));
+}
+
+/** Escape literal wildcard characters before constructing the `LIKE` patterns. */
+export function likePatterns(query: CorpusQuery): string[] {
+  return normalizedSearchTerms(query).map((term) => `%${escapeLike(term)}%`);
 }
 
 export function escapeLike(value: string): string {

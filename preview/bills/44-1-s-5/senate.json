@@ -1,0 +1,206 @@
+{
+  "parliament": 44,
+  "session": 1,
+  "billNumber": "S-5",
+  "legisinfoId": 11558854,
+  "source": "senate",
+  "records": [
+    {
+      "id": "senate:study",
+      "kind": "study",
+      "chamber": "senate",
+      "sourceId": "44-1-S-5",
+      "date": "2022-04-07",
+      "label": {
+        "en": "The committee studied Bill S-5, which proposed modernizing CEPA 1999, recognizing a right to a healthy environment and revising chemical assessment and management.",
+        "fr": "Le comité a étudié le projet de loi S-5, qui proposait de moderniser la LCPE (1999), de reconnaître le droit à un environnement sain et de réviser l’évaluation et la gestion des substances chimiques."
+      },
+      "url": {
+        "en": "https://sencanada.ca/en/committees/ENEV/studiesandbills/44-1",
+        "fr": "https://sencanada.ca/fr/comites/enev/etudesetprojetsdeloi/44-1"
+      },
+      "links": [
+        {
+          "relation": "studies",
+          "target": "version:first-reading"
+        }
+      ],
+      "committee": {
+        "organizationId": 16096,
+        "acronym": "ENEV",
+        "name": {
+          "en": "Standing Senate Committee on Energy, the Environment and Natural Resources",
+          "fr": "Comité sénatorial permanent de l’énergie, de l’environnement et des ressources naturelles"
+        }
+      }
+    },
+    {
+      "id": "senate:meeting-12",
+      "kind": "meeting",
+      "chamber": "senate",
+      "sourceId": "578036",
+      "date": "2022-05-17",
+      "label": {
+        "en": "ENEV meeting 12 heard witnesses on Bill S-5, including David Boyd, Shannon Joseph and Elisabeth Ormandy.",
+        "fr": "À la réunion 12 du comité ENEV, des témoins ont comparu au sujet du projet de loi S-5, dont David Boyd, Shannon Joseph et Elisabeth Ormandy."
+      },
+      "url": {
+        "en": "https://sencanada.ca/en/committees/ENEV/Meeting/12/44-1",
+        "fr": "https://sencanada.ca/fr/comites/ENEV/Convocation/12/44-1"
+      },
+      "links": [
+        {
+          "relation": "part-of",
+          "target": "senate:study"
+        }
+      ]
+    },
+    {
+      "id": "senate:evidence-12",
+      "kind": "evidence",
+      "chamber": "senate",
+      "sourceId": "12EV-55537",
+      "date": "2022-05-17",
+      "label": {
+        "en": "Witnesses discussed Bill S-5’s environmental and chemicals policy provisions.",
+        "fr": "Les témoins ont discuté des dispositions du projet de loi S-5 sur l’environnement et la politique relative aux substances chimiques."
+      },
+      "witnesses": [
+        "David Boyd",
+        "Shannon Joseph",
+        "Elisabeth Ormandy"
+      ],
+      "url": {
+        "en": "https://sencanada.ca/en/content/sen/committee/441/enev/12ev-55537-e",
+        "fr": "https://sencanada.ca/fr/content/sen/committee/441/enev/12ev-55537-f"
+      },
+      "links": [
+        {
+          "relation": "part-of",
+          "target": "senate:meeting-12"
+        }
+      ]
+    },
+    {
+      "id": "senate:minutes-12",
+      "kind": "minutes",
+      "chamber": "senate",
+      "sourceId": "12MN-55537",
+      "date": "2022-05-17",
+      "label": {
+        "en": "Minutes record the committee’s continued examination of Bill S-5 and the witness panel.",
+        "fr": "Le procès-verbal consigne la poursuite de l’examen du projet de loi S-5 et le panel de témoins."
+      },
+      "url": {
+        "en": "https://sencanada.ca/en/content/sen/committee/441/enev/12mn-55537-e",
+        "fr": "https://sencanada.ca/fr/content/sen/committee/441/enev/12mn-55537-f"
+      },
+      "links": [
+        {
+          "relation": "part-of",
+          "target": "senate:meeting-12"
+        }
+      ]
+    },
+    {
+      "id": "senate:meeting-20",
+      "kind": "meeting",
+      "chamber": "senate",
+      "sourceId": "580975",
+      "date": "2022-06-16",
+      "label": {
+        "en": "ENEV meeting 20 reconsidered amendments from June 7 and 9 and finalized Bill S-5 for reporting to the Senate.",
+        "fr": "À la réunion 20, le comité ENEV a réexaminé les amendements des 7 et 9 juin et a finalisé le projet de loi S-5 en vue de le présenter au Sénat."
+      },
+      "url": {
+        "en": "https://sencanada.ca/en/committees/ENEV/Meeting/20/44-1",
+        "fr": "https://sencanada.ca/fr/comites/ENEV/Convocation/20/44-1"
+      },
+      "links": [
+        {
+          "relation": "part-of",
+          "target": "senate:study"
+        }
+      ]
+    },
+    {
+      "id": "senate:minutes-20",
+      "kind": "minutes",
+      "chamber": "senate",
+      "sourceId": "20MN-55614",
+      "date": "2022-06-16",
+      "label": {
+        "en": "Minutes record the reconsideration, adopted amendments and authorization to report Bill S-5 with amendments and observations.",
+        "fr": "Le procès-verbal consigne le réexamen, les amendements adoptés et l’autorisation de présenter le projet de loi S-5 avec amendements et observations."
+      },
+      "url": {
+        "en": "https://sencanada.ca/en/content/sen/committee/441/enev/20mn-55614-e",
+        "fr": "https://sencanada.ca/fr/content/sen/committee/441/enev/20mn-55614-f"
+      },
+      "links": [
+        {
+          "relation": "part-of",
+          "target": "senate:meeting-20"
+        }
+      ]
+    },
+    {
+      "id": "senate:report",
+      "kind": "report",
+      "chamber": "senate",
+      "sourceId": "103542",
+      "date": "2022-06-20",
+      "label": {
+        "en": "Third ENEV report on Bill S-5, presented June 20, 2022, with committee amendments and observations.",
+        "fr": "Troisième rapport du comité ENEV sur le projet de loi S-5, présenté le 20 juin 2022, avec des amendements et des observations."
+      },
+      "url": {
+        "en": "https://sencanada.ca/en/committees/ENEV/Report/103542/44-1",
+        "fr": "https://sencanada.ca/fr/comites/rapport/103542/44-1"
+      },
+      "links": [
+        {
+          "relation": "reports-on",
+          "target": "senate:study"
+        },
+        {
+          "relation": "documents",
+          "target": "senate:meeting-20"
+        }
+      ]
+    },
+    {
+      "id": "senate:amendment-clause-21",
+      "kind": "amendment",
+      "chamber": "senate",
+      "sourceId": "20MN-55614",
+      "date": "2022-06-16",
+      "amendment": {
+        "clause": "21",
+        "disposition": "adopted"
+      },
+      "label": {
+        "en": "On reconsideration, the committee adopted a clause 21 change specifying inherent toxicity and persistence with bioaccumulation in the assessment criteria. The report includes that language.",
+        "fr": "Lors du réexamen, le comité a adopté une modification à l’article 21 précisant la toxicité intrinsèque, la persistance et la bioaccumulation dans les critères d’évaluation. Le rapport reprend cette formulation."
+      },
+      "url": {
+        "en": "https://sencanada.ca/en/content/sen/committee/441/enev/20mn-55614-e",
+        "fr": "https://sencanada.ca/fr/content/sen/committee/441/enev/20mn-55614-f"
+      },
+      "links": [
+        {
+          "relation": "amends",
+          "target": "version:first-reading"
+        },
+        {
+          "relation": "reported-in",
+          "target": "senate:report"
+        },
+        {
+          "relation": "part-of",
+          "target": "senate:meeting-20"
+        }
+      ]
+    }
+  ]
+}

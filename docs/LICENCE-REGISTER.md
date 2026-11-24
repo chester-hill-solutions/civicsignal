@@ -17,6 +17,7 @@ redistribute. If you change one, change the other. The test suite in
 | Ontario statutes and regulations | Crown copyright — reproduction permitted | **Yes** | Full section text, with attribution |
 | Federal and provincial election results | Open Government Licence – Canada | **Yes** | Full data |
 | House of Commons debates (Hansard) | Crown copyright | **No** | Short excerpt + speaker + date + link |
+| Senate debates (Hansard) | Senate reproduction terms | **No** | Short excerpt + speaker + date + section link |
 | Provincial legislative debates | Crown copyright | **No** | Short excerpt + speaker + date + link |
 | Canada Gazette | Crown copyright, mixed provenance | **No** | Metadata only |
 | Bill status and identifiers | Crown copyright | Metadata only (facts are not copyrightable) | Identifiers, sponsor, stage, dates, link |
@@ -58,36 +59,30 @@ official source for every item, and we do not present any output as the official
 
 ### Debates — the boundary that shapes the design
 
-Debates are **not** covered by the Reproduction of Federal Law Order, which reaches
-"enactments and consolidations of enactments" and court decisions. Hansard is
-information authored by public servants, so the copyright and licensing policy of the
-jurisdiction applies. The general Crown copyright policy permits reproduction for
-personal and public non-commercial purposes with attribution, and requires permission
-for commercial distribution.
+Use the House Speaker's permission for federal Hansard. It permits accurate
+non-commercial reproduction presented as unofficial. The general permission
+excludes commercial use. The Office of the Speaker accepts written applications
+for authorization. The House publishes XML as open data, subject to the source's
+reuse terms. [House terms](https://www.ourcommons.ca/en/important-notices) ·
+[House open data](https://www.ourcommons.ca/en/open-data)
+
+The Senate publishes separate terms permitting accurate, unofficial reproduction and
+excluding use for financial gain. The local Senate adapter applies its own `cite-only`
+policy and links to the official transcript section. Commercial use remains a D-08
+decision. [Senate terms](https://sencanada.ca/en/intellectual-property/)
 
 Ontario is explicit: the Speaker's permission covers using excerpts "without charge"
 for uses that are "reasonable, fair and non-commercial, and must credit the Assembly."
 **Non-commercial only.**
 
-So the debates corpus is `cite-only`. We may:
+CivicSignal's debates policy is `cite-only`. It retains the speaker, sitting date,
+and official citation. Where excerpt use is permitted, the adapter can return
+up to 400 characters of attributed text. The cap is CivicSignal's product limit.
+Commercial plans for indexing and excerpt delivery need a documented basis for
+the intended use. Confirm that basis before publishing a commercial Hansard feature.
 
-- index it
-- derive facts from it — that a member said something on a date, how often a term
-  appeared, who spoke most about a topic
-- quote a short excerpt (capped at 400 characters by policy) with the speaker, the
-  sitting date and a link to the official record
-- answer "what did Parliament say about X" with citations
-
-We may **not** ship a searchable full-text archive of Hansard as a paid product, or
-serve full speeches. The corpus in `gpt-hansard-11m` — 806M characters, 258M tokens,
-twenty years of speech-level text — is published as an independent research artifact
-under `license_name: crown-copyright-canada` and **is not a commercial asset**. What is
-a commercial asset is the index over it, and the citations derived from it.
-
-**Design consequence:** every debate item in a response carries `excerpt`, `speaker`,
-`publishedAt` and `citationUrl`, and no debate item ever carries `body`. The `body`
-field is not stripped by the caller; it is never present, because the ingest job does
-not store the full speech and the policy would strip it if it did.
+The local importer stores short excerpts. The shared corpus policy excludes full
+speech bodies from cite-only responses.
 
 ## News
 
@@ -110,6 +105,10 @@ submitted by private parties (public notices, applications), for which Crown cop
 is not assured. The Gazette is therefore `metadata-only` until the provenance of each
 notice type is settled, and the ingest job must record which part of the Gazette a
 notice came from.
+
+The Gazette preview stores edition metadata, record titles, official links and
+explicitly sourced dates. The API applies the `canada-gazette` metadata-only
+policy. Hosted source use and refresh frequency remain open under D-08.
 
 ## What is deliberately excluded
 

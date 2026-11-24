@@ -1,0 +1,228 @@
+{
+  "parliament": 44,
+  "session": 1,
+  "billNumber": "S-5",
+  "legisinfoId": 11558854,
+  "source": "house",
+  "records": [
+    {
+      "id": "house:study",
+      "kind": "study",
+      "chamber": "house",
+      "sourceId": "studyActivityId=11908825",
+      "label": {
+        "en": "ENVI study of Bill S-5: House committee consideration",
+        "fr": "Étude du projet de loi S-5 par le Comité ENVI : examen en comité"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/Committees/en/ENVI/StudyActivity?studyActivityId=11908825",
+        "fr": "https://www.ourcommons.ca/Committees/fr/ENVI/StudyActivity?studyActivityId=11908825"
+      },
+      "links": [
+        {
+          "relation": "studies",
+          "target": "version:senate-passed"
+        }
+      ],
+      "committee": {
+        "organizationId": 27181,
+        "acronym": "ENVI",
+        "name": {
+          "en": "Standing Committee on Environment and Sustainable Development",
+          "fr": "Comité permanent de l'environnement et du développement durable"
+        }
+      }
+    },
+    {
+      "id": "house:meeting-38",
+      "kind": "meeting",
+      "chamber": "house",
+      "sourceId": "ENVI-38",
+      "date": "2022-11-22",
+      "label": {
+        "en": "ENVI Meeting 38: first witness panel on Bill S-5",
+        "fr": "Réunion 38 du Comité ENVI : premier groupe de témoins sur le projet de loi S-5"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/meeting-38/notice",
+        "fr": "https://www.noscommunes.ca/documentviewer/fr/44-1/ENVI/reunion-38/avis-convocation"
+      },
+      "links": [
+        {
+          "relation": "part-of",
+          "target": "house:study"
+        }
+      ]
+    },
+    {
+      "id": "house:evidence-38",
+      "kind": "evidence",
+      "chamber": "house",
+      "sourceId": "EV12089741 (ENVI-38)",
+      "date": "2022-11-22",
+      "label": {
+        "en": "Lisa Gue of the David Suzuki Foundation said CEPA citizen-enforcement provisions remained a gap and urged the committee to strengthen them",
+        "fr": "Lisa Gue, de la Fondation David Suzuki, a dit que les mécanismes d’application citoyenne de la LCPE demeuraient lacunaires et a exhorté le comité à les renforcer"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/meeting-38/evidence",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/44-1/ENVI/reunion-38/temoignages"
+      },
+      "links": [
+        {
+          "relation": "documents",
+          "target": "house:meeting-38"
+        }
+      ],
+      "witnesses": [
+        "Lisa Gue"
+      ]
+    },
+    {
+      "id": "house:minutes-38",
+      "kind": "minutes",
+      "chamber": "house",
+      "sourceId": "ENVI-38 minutes",
+      "date": "2022-11-22",
+      "label": {
+        "en": "Official minutes of ENVI Meeting 38",
+        "fr": "Procès-verbal officiel de la réunion 38 du Comité ENVI"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/meeting-38/minutes",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/44-1/ENVI/reunion-38/proces-verbal"
+      },
+      "links": [
+        {
+          "relation": "documents",
+          "target": "house:meeting-38"
+        }
+      ]
+    },
+    {
+      "id": "house:meeting-52",
+      "kind": "meeting",
+      "chamber": "house",
+      "sourceId": "ENVI-52",
+      "date": "2023-03-09",
+      "label": {
+        "en": "ENVI Meeting 52: clause-by-clause consideration of Bill S-5",
+        "fr": "Réunion 52 du Comité ENVI : examen article par article du projet de loi S-5"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/meeting-52/notice",
+        "fr": "https://www.noscommunes.ca/documentviewer/fr/44-1/ENVI/reunion-52/avis-convocation"
+      },
+      "links": [
+        {
+          "relation": "part-of",
+          "target": "house:study"
+        }
+      ]
+    },
+    {
+      "id": "house:evidence-52",
+      "kind": "evidence",
+      "chamber": "house",
+      "sourceId": "EV12277410 (ENVI-52)",
+      "date": "2023-03-09",
+      "label": {
+        "en": "Meeting 52 evidence on clause-by-clause amendments to Bill S-5",
+        "fr": "Témoignages de la réunion 52 sur les amendements article par article au projet de loi S-5"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/meeting-52/evidence",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/44-1/ENVI/reunion-52/temoignages"
+      },
+      "links": [
+        {
+          "relation": "documents",
+          "target": "house:meeting-52"
+        },
+        {
+          "relation": "documents",
+          "target": "house:amendment-ndp-8"
+        }
+      ]
+    },
+    {
+      "id": "house:minutes-52",
+      "kind": "minutes",
+      "chamber": "house",
+      "sourceId": "ENVI-52 minutes",
+      "date": "2023-03-09",
+      "label": {
+        "en": "Official minutes of ENVI Meeting 52",
+        "fr": "Procès-verbal officiel de la réunion 52 du Comité ENVI"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/meeting-52/minutes",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/44-1/ENVI/reunion-52/proces-verbal"
+      },
+      "links": [
+        {
+          "relation": "documents",
+          "target": "house:meeting-52"
+        },
+        {
+          "relation": "documents",
+          "target": "house:amendment-ndp-8"
+        }
+      ]
+    },
+    {
+      "id": "house:report",
+      "kind": "report",
+      "chamber": "house",
+      "sourceId": "ENVI Report 7",
+      "date": "2023-03-22",
+      "label": {
+        "en": "ENVI Seventh Report: Bill S-5, reported with amendments",
+        "fr": "Septième rapport du Comité ENVI : projet de loi S-5, avec amendements"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/report-7",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/44-1/ENVI/rapport-7"
+      },
+      "links": [
+        {
+          "relation": "reports-on",
+          "target": "house:study"
+        }
+      ]
+    },
+    {
+      "id": "house:amendment-ndp-8",
+      "kind": "amendment",
+      "chamber": "house",
+      "sourceId": "NDP-8; ENVI-52; ENVI Report 7, clause 3",
+      "date": "2023-03-09",
+      "label": {
+        "en": "Committee amendment NDP-8 adopted: clause 3 adds duties concerning environmental justice, non-regression and intergenerational equity",
+        "fr": "Amendement NDP-8 adopté en comité : l’article 3 ajoute des obligations liées à la justice environnementale, à la non-régression et à l’équité intergénérationnelle"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/meeting-52/evidence",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/44-1/ENVI/reunion-52/temoignages"
+      },
+      "links": [
+        {
+          "relation": "amends",
+          "target": "version:senate-passed"
+        },
+        {
+          "relation": "reported-in",
+          "target": "house:report"
+        },
+        {
+          "relation": "part-of",
+          "target": "house:meeting-52"
+        }
+      ],
+      "amendment": {
+        "clause": "3",
+        "disposition": "adopted"
+      }
+    }
+  ]
+}

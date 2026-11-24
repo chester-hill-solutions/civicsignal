@@ -223,14 +223,7 @@ describe('the incremental cycle', () => {
     ).rejects.toThrow(/the change list is incomplete/);
   });
 
-  /**
-   * The files are fetched at the same time.
-   *
-   * One at a time is two round trips per file — ninety-six of them for a
-   * commit that moved forty-eight files, which is three and a half minutes
-   * of waiting. Eight at a time is the same work in a fraction of the time.
-   */
-  it('fetches the changed files concurrently', async () => {
+  it('keeps only one changed source file in flight', async () => {
     const store = new FakeStore([]);
     const source = new FakeSource();
     source.changed = Array.from({ length: 24 }, (_, index) => ({
@@ -248,8 +241,7 @@ describe('the incremental cycle', () => {
       now,
     });
 
-    expect(source.peak).toBeGreaterThan(1);
-    expect(source.peak).toBeLessThanOrEqual(8);
+    expect(source.peak).toBe(1);
   });
 
   it('compares against the revision the store is at', async () => {

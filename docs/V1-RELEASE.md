@@ -167,15 +167,15 @@ Use the dated entries below for source-specific outcomes.
 
 | ID | Outcome | Acceptance evidence | Status |
 | --- | --- | --- | --- |
-| V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local checks pass; hosted migration pending |
-| V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Complete locally |
-| V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries; warm hits avoid reranking; input bounds, Google credentials and browser CORS pass regression tests | Complete locally |
-| V1-04 | Recoverable ingestion | Injected faults between row/vector/feed/state writes recover without missing changes or duplicate events; Postgres transactions and D1 recovery cover the same contract | Full hosted metadata, composite changed-text proof and complete vector backup pass |
-| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Manual hosted parity and new native qualification pass; hosted scheduled discovery/first publication remain unverified |
+| V1-01 | One CHS identity and metering path for HTTP and MCP | Existing key hashes, customer IDs and counter identities survive migration; revoked/missing keys fail; capabilities apply; each successful retrieval consumes one confirmed unit; retrieval failures and protocol bookkeeping consume none; unresolved post-commit acknowledgements return an explicit uncertain 503 with operation ID for reconciliation | Local counter, receipt, and pre-generation admission checks pass. Hosted migration remains open. |
+| V1-02 | Reproducible package installation and builds | Fresh tracked checkout installs with the frozen lockfile and imports every vendored export; package provenance recorded; Worker dry-run builds | Clean Linux install, package checks, and dry-run builds pass for `3f16f93`. |
+| V1-03 | Retrieval and BYOK correctness | Language and decision versions isolate cache entries. Warm hits avoid reranking. Search survives a cache fault. Chat checks input and citation links and admits provider work within the hard limit. Check input bounds, Google credentials, and browser CORS. | Search, cache, and concurrent BYOK admission regressions pass locally. Hosted acceptance remains open. |
+| V1-04 | Recoverable ingestion | Injected faults between row, vector, feed, and state writes recover with complete change history and unique events. Serving reads a coherent revision or reports unavailability during the transition. | Local publication, interrupted serving, and watermark retry checks pass. Hosted vector visibility and coherent serving remain open for this candidate. |
+| V1-05 | Automated immutable snapshots | Cloudflare Workflow creates bounded row parts and sorted index partitions per revision, publishes only complete manifests, and resumes after failure | Earlier manual hosted parity and local native qualification pass. The exact-reference verifier passes locally. Hosted scheduled discovery and first publication remain open. |
 | V1-06 | Verified restore and corpus-text migration | Manifest/index/fingerprint integrity is enforced; backup and rollback exist; old/new reads and complete non-empty ingestion agree before live cutover | Full local and stage baseline audit passes; production cutover pending |
-| V1-07 | Broad, measured retrieval quality | Held-out English/French answerable and unsupported cases; backend-specific acceptance calibration; reported false acceptance/rejection and end-to-end latency/throughput/freshness | Calibration collected; holdout measured with misses, false accept and one encoder error; acceptance unresolved |
-| V1-08 | Honest, complete v1 surfaces | Every advertised route/tool is usable; unavailable corpora and geography are explicit; change-feed and exact citation flows are verified | Local routes and 21 hosted smokes pass; both bounded Zen attempts failed acceptance |
-| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | Full local and exact-source clean Linux gates pass at `9771a8b`; independent review accepts the scoped chat changes |
+| V1-07 | Broad, measured retrieval quality | Test held-out English and French answerable and unsupported cases. Calibrate the Cloudflare serving backend and report false accepts, false refusals, latency, throughput, and freshness. | The November 22 floor repair passes local regressions. The earlier calibration and failed holdout retain their original policy. The product owner approved D-01. Hosted acceptance remains open. |
+| V1-08 | Honest, complete v1 surfaces | Every advertised route and tool works and states coverage limits. Check change-feed and exact citation flows. Verify every factual claim in the predeclared chat cases under D-02. | The offline claim evidence checker passes. Both earlier hosted Zen attempts failed acceptance. Positive hosted chat and independent claim reviews remain open. |
+| V1-09 | Complete engineering gates | Worker, Bun and scripts type-check; endpoint and recovery tests pass; CI validates clean checkouts and builds without production credentials | The complete clean Linux gate and affected local checks pass for `3f16f93`. |
 | V1-10 | Reviewable release candidate | Current runbook, migration/restore/deploy/rollback commands, verified limitations, and item-by-item completion audit; required final approvals occur after preparation | Draft candidate; production acquisition, hosted acceptance and final audit pending |
 
 ## Original work order — 2026-10-22
@@ -1057,9 +1057,320 @@ Serving source binding, types, and unchanged evaluation/benchmark graph checks p
 Zen contains the current source wrapper and a skipped-generation regression; its final integration remains pending.
 No execution approval or current hosted target proof follows. All four release gates remain open.
 
+## November 22 local code assessment
+
+The audit used a tracked copy of `518aab0912858d48a405c7060ae91951ec908894` on macOS arm64 with Node 24.22.3, Bun 1.3.5, and Python 3.14.3.
+The runtime and test inputs match the earlier qualified `9771a8b` source.
+The commands below ran against local fixtures and disposable resources.
+
+| Command | Observed result |
+| --- | --- |
+| `bun install --frozen-lockfile --ignore-scripts` | Bun 1.4.4 installed the locked dependencies in the temporary copy. The suite and builds used Bun 1.3.5. |
+| `CIVICSIGNAL_WORKERD_TESTS=1 bun run test --maxWorkers=4 --minWorkers=1` | 2,192 tests passed in 102 files in 106.72 seconds. |
+| `python3 -I -B test/protected-state-d1-owned.test.py` | 31 tests passed. |
+| `bun run typecheck` and `bun run build` | Four compiler projects and five Worker dry-run builds passed. |
+| `bun run check:vendor`, `bun run check:billing-invariants`, `bun run check:corpus-invariants` | 117 vendored files matched. Both invariant checks passed. The corpus check skipped absent SQL and both language JSONL artifacts. |
+| `bun run check:runtime` | In local workerd, 12 calls with one operation ID consumed one unit. Three of 20 competing operations consumed the remaining three units. R2 duplicate writes preserved the original bytes. |
+
+Five separate probes exercised the real HTTP handler against fixture state. The generation, encoder, and index responses used test doubles.
+
+| Requirement | Trigger and observation | Source |
+| --- | --- | --- |
+| V1-04 | Seed a published revision. Update a provision and fail the vector write after the row commit. Exact HTTP lookup returned `200` with the changed text and the previous revision. | [D1 write order](../src/corpora/d1-store.ts#L94), [API revision read](../src/index.ts#L138) |
+| V1-03, V1-07 | Disable Jev. For a topic plus keyword, return scores `0.90` and `0.10`. Only the lower match contains the keyword. The API returned that match with `decision: answer` and a floor of `0.62`. | [Vector floor](../src/corpora/adapters.ts#L259), [keyword filter](../src/corpora/adapters.ts#L309) |
+| V1-01, V1-03 | Start two chats with one workspace unit left. Hold both provider replies until both calls start. Complete one request first. HTTP results were `200` and `429`. The provider stub received two calls and the ledger recorded one unit. | [Chat handler](../src/index.ts#L71), [usage order](../src/metering.ts#L61) |
+| V1-08 | Return an invented entitlement with a valid retrieved link from the generation stub. Chat accepted the unsupported claim with HTTP `200`. | [Citation URL check](../src/routes/chat.ts#L168) |
+| V1-03 | Fail a KV read and keep the encoder and index healthy. Normal search returned `502`. A repeat with cache bypass returned `200` and used the index once. | [Cache read path](../src/corpora/adapters.ts#L233) |
+
+These checks add local evidence for the [serving prerequisites](PLAN.md#local-serving-prerequisites). Hosted quality, charges, freshness, and performance remain open.
+The existing hosted results, failures, and request ledger retain their scope. Hosted execution still requires its own approval.
+
+## November 22 search eligibility and cache repair
+
+The local patch on `518aab0` introduces `federal-authority-v4-eligible-floor` for the shared search adapter.
+With Jev off or failed, at least one returned provision must meet the backend floor.
+A valid Jev authority decision still uses the existing rerank path.
+The new policy changes the cache key. A cache read fault triggers fresh search. A write fault preserves the result.
+Evaluation reports count both faults separately. The raw pre-refusal score retains its definition.
+
+The Worker cache-fault regression returns HTTP `200` with the provision and consumes one workspace unit.
+The Bun/Postgres brief rejects a weak provision if its stronger candidate fails the keyword filter.
+Both tests reproduced the defect before the repair. Further fixtures cover the Jev fallback, missing rows, cache write faults, and retained text hydration errors.
+
+The first full run found two failures in a benchmark fixture that expected the old policy. The fixture now uses the serving policy constant.
+The full rerun passed 2,203 tests in 102 files with local workerd enabled.
+The same runtime patch passed 31 Python tests, four compiler projects, both native runtime probes, and five Worker dry-run builds.
+Vendor and invariant checks passed. The corpus check skipped the three absent generated artifacts.
+The local checks used Node 24.22.3 and Bun 1.3.5.
+The SHA-256 of `git diff --binary HEAD -- src test` at verification was `5b3d5204605826565aef2a473052d1109c3ba643adfd74d183e90e08abd7b2c9`.
+
+The patch changes the retrieval policy and adds optional cache diagnostics. It uses the existing store schema and cache expiry.
+The earlier build retains its original policy when selected for rollback.
+Coherent revision, BYOK hard-limit admission, hosted calibration, and independent holdout remain open.
+
+## November 22 integrated v1 local work
+
+The local worktree on `518aab0` adds publication and quota guards. It also composes the offline production capture and checks claim-review evidence.
+The [rollout procedure](V1-OPERATIONS.md#authorization-migration) requires a drained writer and coherent corpus and index before it applies migration 0009.
+
+| Package | Verified increment | Evidence still required |
+| --- | --- | --- |
+| MP-01 and MP-06 | Frozen install, all four compilers, five dry-run bundles, and local tests passed. | Exact final source, clean Linux CI, operation binding, and the final release decision. |
+| MP-02 | The local workerd scheduled-publication tests passed in the integrated suite. | Fresh namespace, distinct instance, both calendar checks, bounded event, and hosted artifacts and cleanup. |
+| MP-03 | A request crossing a publication returns unavailable without a usage charge. The writer waits for its vector mutation and resumes finalization without encoding the same rows again. | Hosted visibility, decision D-01, fresh bilingual holdout, benchmark, and positive Zen. |
+| MP-03 | The existing usage object admits one generation hold for one remaining unit. Mixed requests share that limit. Failed work releases capacity and repeated settlement charges one unit. | Qualify this version in hosted staging with the same usage identities. |
+| MP-03 and D-02 | The offline checker binds a complete independent review to each captured answer, retrieved text, candidate, revision, provider, and model. | Preregister real bilingual answer and refusal cases. Capture them on the candidate and independently verify every factual claim. |
+| MP-04 | The offline owner checks D1 facts before and after both KV views and export. It downloads the exact signed SQL under the same budget. | Live owner, actual writer controls and freeze, credential lifetime, and approved capture budget. |
+| MP-05 | Local text audits, vector export, and protected restore refuse conflicting publication state. | Authentic capture and isolated hosted copy. Qualify the production adapter and both switch targets. |
+
+The integrated run passed 2,219 tests in 103 files, 31 Python tests, and both native runtime probes.
+The independent claim checker passed 17 fixture tests. The command-line check accepted a complete synthetic review and refused a review with one unsupported claim.
+The vendor and invariant checks passed. The corpus check skipped three absent generated artifacts.
+The local runtime used Node 24.22.3 and Bun 1.3.5.
+No hosted operation ran. Existing hosted measurements and consumed budgets retain their scope.
+
+## November 22 Cloudflare release preparation
+
+| Package | Local evidence |
+| --- | --- |
+| MP-02 | The offline snapshot check pins the exact reference manifest before it reads the artifact set. The CLI fixture refuses a different, internally valid snapshot with the same source revision. |
+| MP-03 and D-02 | The case plan pins the hash of the exact chat request body. The review also pins the captured request, answer, and retrieved text. The CLI accepts the complete synthetic review and refuses a substituted request under the same case ID. |
+| MP-04 and MP-05 | Repair dry runs issue read-only D1 statements even with `--prune`. The old D1 load, repair, and fingerprint backfill paths refuse writes after migration 0009. The old index loader refuses the configured API and pipeline indexes. |
+
+The affected suites passed 213 tests in 11 files, with local workerd enabled.
+Four TypeScript projects, five Worker dry-run builds, vendor checks, and both invariant commands passed.
+The corpus invariant check skipped the three absent local ingest artifacts.
+The exact candidate still needed a clean Linux CI receipt at this checkpoint.
+Hosted publication and serving acceptance still need their own execution evidence.
+
+## November 22 draft candidate qualification
+
+Draft PR #1 is pinned to [`711b4f8`](https://github.com/chester-hill-solutions/civicsignal/commit/711b4f8c80ce60a6e2d65857c8608cd75726e0ad).
+The independent review checked the D1 and Vectorize writer boundaries, CHS quota and chat evidence, and snapshot and restore operations.
+Legacy bootstrap checks now catch alternate spellings of the D1 guard and generated staging index names.
+Claim reviews bind to the provider's effective supported model and the exact candidate and corpus revision.
+The ordinary pipeline can finish an already indexed publication during a GitHub outage. A later cycle checks upstream freshness.
+Fresh isolated restores create their guard during initialization. Existing stores use the reviewed additive migration.
+
+The complete local gate passed on macOS with Node 24.22.3 and Bun 1.3.5.
+The frozen-lockfile check reused the previously installed dependency graph. All 117 vendor files matched.
+Four compiler projects, 2,261 Vitest cases in 106 files, 31 Python cases, native Durable Object and R2 probes, both invariant commands, and five Worker dry-run builds passed.
+The corpus invariant check skipped the three absent generated ingest artifacts.
+An earlier run exposed a multi-line SQL setup error in the native fixture. The fixed fixture passed the complete rerun.
+Local native checks used disposable localhost bindings.
+
+[Linux CI run 45090204686](https://github.com/chester-hill-solutions/civicsignal/actions/runs/45090204686) uses PR merge commit `8f0df91a0806af1e8abd62db92ef50f95134bea8`.
+Its Git tree `91d8f2988d8879e835def7c461f5652b87bb97c7` matches all 697 tracked files in the candidate.
+The job log confirms checkout of that merge commit. Clean frozen install, the full validation command, the 31 Python checks, and all five Worker dry-run builds passed.
+
+## November 22 live source freshness audit
+
+Cloudflare management reads on November 23 UTC confirm the production pipeline calendar `23 11 * * *` and an empty staging snapshot Worker calendar. The configured production snapshot Worker and Workflow both return 404. The account inventory shows only the October staging snapshot Workflow, whose native schedule field is absent.
+
+Production D1 records 277,857 federal provisions at `0507465`, dated October 15, with its last completed cycle on October 22. The live schema has no parser version, vector mutation journal, immutable text-reference table, or publication guard. The audit used read-only D1 queries.
+
+Justice Canada published `855cdfc` on November 16. A read of the seven-day pipeline invocation metrics found one success before that revision appeared and one `exceededMemory` outcome at the daily run time on each of November 17–22. Detailed Workers Logs access returned 403. The observed memory failures establish why those runs stopped. Their internal allocation site remains unverified.
+
+The exact public Git comparison has one commit and 274 changed files. An offline replay with the candidate parser, a counting store, and a stub encoder projects 1,027 added, 471 changed, and 1,218 removed provisions. That replay requested 1,450 document embeddings across 46 batches. These counts describe the source delta. A production allowance needs the actual target fingerprint and parser state.
+
+The complete November 16 `statutes-v2` reference was built locally from the pinned Justice Canada Git tree using the candidate's snapshot builder. A separate source pass checked all 277,666 serialized rows and UTF-8 index offsets and lengths. The offline verifier also checked all 238 published-format artifacts totaling 389,760,843 bytes and pinned the manifest at SHA-256 `43fdb9961b0980769552df1993e106beba8f3a354ecf9bd3fbd11091ea25ba34`. The independently hashed local staging inventory contains 243 logical objects totaling 760,573,309 bytes. These artifacts remain local.
+
+The stage qualification entry was rebuilt from `711b4f8`. Its 260,281-byte bundle hashes to `1a6e7a090cda96876f91bebb9eab6b3aa57926bf8db6ae7c940e3c2f9ac49f20` across 29 build inputs. That bundle embeds the retained October reference. The next stage packet needs a rebuilt runtime policy pinned to the new inventory, fresh resource evidence, and a bounded execution window. Production recovery also needs the guarded reader and writer rollout.
+
+## November 22 incremental ingestion memory fix
+
+[Draft candidate `3f16f93`](https://github.com/chester-hill-solutions/civicsignal/commit/3f16f933e1806d0a9327db00c36ff31e13b9c6a5) reads and parses one changed XML file at a time. The comparison retains prior fingerprints, unchanged IDs, and changed rows. Cross-file moves and duplicate precedence retain their existing behavior. The cycle finishes reading the source before it requests embeddings or writes row changes.
+
+The local workerd replay used the same 274 changed files and 520 file responses from the two exact Git trees. With a 113 MiB V8 old-space limit and 2 MiB semispaces, the preceding candidate exhausted the heap and the fix completed. The fixed run's 1,257 DevTools samples measured a maximum combined heap and backing storage of 114,797,988 bytes. It produced the same provision changes and sent 1,450 documents to a local stub encoder. Earlier four-file and two-file trials failed under more tightly constrained heaps. The local sample supports the memory repair. Hosted execution and latency still need their own evidence.
+
+All 46 affected regression tests, all four TypeScript checks, and the pipeline dry-run bundle passed locally. [Linux CI run 45093819484](https://github.com/chester-hill-solutions/civicsignal/actions/runs/45093819484) passed 2,261 tests, 31 Python checks, native runtime probes, and five Worker dry runs. The CI checkout `64f2eb49fb8f6a9b7eea9388c4f2310bd99d9fb1` has the exact candidate source tree.
+
+The snapshot-backed recovery rehearsal derived all 277,857 predecessor fingerprints from the pinned October source. It applied the verified November snapshot across two bounded cycles, with 2,000 then 716 provision writes and 1,450 synthetic embeddings. The first cycle left publication open. The second published once, and all 277,666 resulting fingerprints matched the November index. This evidence uses local counting storage and synthetic vectors. Hosted staging and the coordinated production rollout remain open.
+
+## November 22 scheduled-publication preparation
+
+An isolated staging source commit `07689eb09e2593c27dc0d1566a2509d0873c0054` builds on qualified candidate `3f16f93`. It binds the stage-only qualifier and proposal checker to the November 16 reference. The October source and receipts remain available for historical verification.
+
+An independent whole-archive local replay reproduced all 481 staged and final payload hashes from the pinned Git tree. The final 238 artifacts cover 277,666 provisions. The resulting successful-pass estimate is 982 logical R2 operations. The callback policy permits at most 1,937 R2 operations per Workflow traversal and 16 per scheduled callback. These numerators describe different execution scopes. Delivery, reconstruction, and in-flight operations still need reviewed handling.
+
+The offline proposal passed, including refusal of the October source under the November pin. All 105 proposal and runtime tests and all four compiler checks passed. The stage-only dry build preserved the exact bundle SHA-256 `79fffe09dad44a47dc78568f52af9fc7ec83ffc889d40ebef8d8218fb3aa38c8`. Its configuration has an empty Worker cron list and only the isolated Workflow and R2 bindings. The proposal file marks the illustrative event and budget as prepared and unapproved.
+
+November 23 UTC read-only Cloudflare observations confirmed the staging deployment and bindings, an empty Worker cron list, an unused proposal namespace, and a 404 for the proposed Workflow instance. The retained October staging manifest's size and SHA-256 metadata matched the existing reference. The API omitted the native Workflow schedule field, so its calendar remains unknown. The observed credential expires before the illustrative event and cleanup. The earlier hosted operator and guards must be rebound to an approved live window and credential before deployment or arming.
+
+Wrangler subsequently refreshed the existing OAuth login through 02:59:31 UTC. The illustrative event is later, so reissue the packet for the actual window with a credential valid through cleanup. The local Chester Hill Solutions checkout, available Git history, and organization code searches returned no matching operator or cleanup-guard source. The dashboard was at sign-in and did not resolve the native calendar. The disk had less free space than a duplicate artifact download. A streaming checker verified all 238 retained artifacts in place and rejected substituted, truncated, and oversized bodies in local tests. Hosted publication remains open.
+
+The `cf` CLI authenticated using its own profile. The `cf workflows get` read reached the intended staging Workflow and again found the native schedule field absent.
+
+The tracked calendar runner now owns singleton arming, two detached cleanup guards, and independent final readback. Its local tests include both guard entry points in separate Bun processes and a lost arming response that still leads to cleanup. The latest `cf` read again omitted the native schedule field. Hosted admission and publication remain open. [Calendar runner and guard evidence](V1-SCHEDULED-PUBLICATION-REVIEW.md#before-a-hosted-proposal-is-executable)
+
+## November 22 isolated Cloudflare staging bootstrap
+
+At 02:29 UTC on November 23, `cf` deployed `civicsignal-v1-stage-nov16-snapshot` as a new Worker and Workflow after confirming both names returned 404. The [preparation command](../scripts/prepare-snapshot-cf-stage.ts) uses the exact 259,948-byte November bundle with SHA-256 `79fffe09dad44a47dc78568f52af9fc7ec83ffc889d40ebef8d8218fb3aa38c8`. The prepared Worker config hashes to `900d2be16bb66ab8c03f700efbcf12cbeabfb8debf2ff0635cde6ca5f79b9908`. It binds only its own Workflow and configures zero Worker crons, native schedules, public routes, and R2 bindings. Preview and `workers.dev` URLs are disabled in that configuration.
+
+`cf` confirmed deployment `f538622c-74d8-4d50-93c6-7e27b9481b0a` serves version `4f24cb2f-cbf9-46d0-85ee-7749282ebd84` at 100%. The new Workflow is `c8ba63d3-a002-4c62-8669-45c7c4c2bf40`. Its creation and modification timestamps match, and its instance list returned zero entries. The 02:30:42 UTC read still omitted `schedules`. The creation configuration proves zero schedules were configured by this deployment. Direct provider confirmation of an empty native calendar remains open. The publication runner still needs to bind to the new identities and a reviewed staging event. [Hosted preflight](../scripts/check-snapshot-hosted.ts)
+
+At 02:36:07 UTC, the strict read-only `cf` check passed for the pinned deployment and version. Both Workflow timestamps and its ID matched the [creation record](evidence/2026-11-22/november-workflow-creation.json), yielding `unscheduled-creation` evidence. The API still omitted the schedule field. The calendar runner and both guards now accept the exact fresh Worker target. The publication runtime configuration and concrete event remain pending.
+
+## November 22 staging publication version
+
+`cf workers versions create` uploaded the publication configuration, and `cf workers deployments create` activated it at 100% without applying triggers. Deployment `4cbfc139-4d85-416d-967c-f90ea4e9b343` serves version `ce6deccb-c345-43ca-9fe5-b6c7d0b04836`. A `cf` version read independently hashed the 259,948-byte module and matched `79fffe09dad44a47dc78568f52af9fc7ec83ffc889d40ebef8d8218fb3aa38c8`. The nine bindings include `CORPUS` on `civicsignal-v1-stage-corpus-20261022`, the isolated November Workflow, and seven pinned qualification controls. The version reports zero public URLs. The strict `cf` admission check still matched the Workflow's unscheduled creation record after activation.
+
+The [publication preparation command](../scripts/prepare-snapshot-cf-stage.ts) pinned November 23 at **03:47 UTC** (`47 3 23 11 *`), calendar cleanup at **04:07 UTC** with a **04:10 UTC** deadline, and the Workflow runtime deadline at **05:47 UTC**. Its prebuilt configuration hashes to `0f2f1287701e64a5b7bb8829267f241f9eb616af005f55787ac9422b8335a5a5`. The qualification digest `b2b763a9599803fe0ed7aa1c8dd2575cbf78590ed666f755a48f2308e6a55b54` links the distinct Workflow instance and R2 namespace. `cf` observed zero namespace objects and a 404 for that instance. The canonical October manifest size, ETag, and SHA-256 metadata matched before and after deployment.
+
+The Worker is unarmed. The observed `cf` credential expires at 03:16:39 UTC, and the schedules API guards have no supplied `CLOUDFLARE_API_TOKEN` valid through cleanup and final readback. If the propagation cutoff passes, prepare a new event and version. No snapshot publication ran in this window as part of deployment verification.
+
+Cloudflare rejected a single-Worker user token with `1001` because granular roles require an account-owned token. The account-owned attempt with the default identity returned `9109`. The existing provisioning profile also returned `9109`, and its permission listing marked `Individual Workers Editor` as unavailable. Automatic approval review refused a new OAuth profile with broader write access. No credential was issued. Each November guard now verifies token expiry with Cloudflare and requires an acknowledged empty calendar write before it reports readiness.
+
+## November 22 streaming snapshot verification
+
+The [tracked streaming command](../scripts/verify-staged-snapshot.ts) verified the full retained November reference locally. All 238 artifacts totaled 389,760,843 bytes, and the row parts and checked index agreed on 277,666 rows. Both canonical reads matched the 44,627-byte October manifest pinned at `78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e`. The staging request path also passed an offline replay using the actual prepared packet and reference bytes, with exactly 240 logical GETs. All 198 affected tests and four TypeScript checks passed. Hosted artifact verification remains open until the qualified November instance publishes its output. [Verification procedure](V1-SCHEDULED-PUBLICATION-REVIEW.md#before-a-hosted-proposal-is-executable)
+
+## November 22 serving and acquisition preparation
+
+The November serving dataset combines 20 original calibration cases and 64 independent holdout cases. The existing label verifier checked 30 immutable November XML blobs and all 60 positive labels. Four blobs changed. The questions, gold identifiers, row text digests, source excerpts, and 24 scope exclusions were preserved. A separate local check matched all 60 positive rows in the retained November snapshot. [November label proof](evidence/2026-11-22/november-serving-label-verification.json)
+
+The D-02 suite contains eight English and French answer and refusal cases. The offline preparation command pins the target and named reviewer and hashes each serialized request body. The checker refuses reviewer substitution and requires the reviewer to record the answer language and account for the entire answer. The shared chat route localizes empty-material refusals with no generation call. The cases need a hosted target, named independent reviewer, and reviewed request budget before capture. [Chat acceptance procedure](V1-EVALUATION.md#d-02-bilingual-chat-claim-review)
+
+The MP-04 fixture session checks the capture producer's sizes and digests, then reopens the sealed source facts, raw capture, normalized auth, and downloaded SQL before issuing its receipt. Nine fault cases cover same-size edits during and after capture phases, including a changed export descriptor during the second KV view and SQL changed just after download acknowledgement. The tests preserve failure evidence and the existing request budget. Production ownership, maintenance controls, and authenticated acquisition remain open. [Acquisition seal checks](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md#offline-session-seal-checks--2026-11-22)
+
+The 466 serving and chat tests, 193 acquisition tests, all four TypeScript checks, and both local workerd probes passed. Local disk exhaustion interrupted the full suite and subsequent combined reruns. The protected-copy case that failed during the serial run passed in isolation. The corpus invariant check skipped three absent generated artifacts.
+
+After disk cleanup, the full local suite passed **2,342 tests in 111 files** with workerd enabled and the repository-pinned Bun 1.3.5. All four TypeScript checks passed on the same runtime. The first post-cleanup run used the machine's default Bun 1.4.4 and failed the exact runtime check in five protected-copy cases. The pinned rerun passed those cases. This evidence covers the local working tree. The release still requires clean-source qualification and hosted acceptance.
+
+The product owner approved D-01 with accuracy first, speed second, and freshness third. The approved limits cover both official languages and distinguish the currently observed head from a separately approved recent ancestor. The offline acceptance checker now recomputes quality, latency, and freshness from the reviewed inputs and report observations. All 74 focused tests and four TypeScript checks passed. The hosted serving packet still needs exact candidate binding, integration with the approved freshness check, and its reviewed request budget. [Approved serving bar and checker](V1-EVALUATION.md#d-01-serving-decision)
+
+## November 22 MP-03 staging packet preparation
+
+The [request packet](STAGING-REQUEST-BUDGET.md#november-d-01-run-packet) accounts for 131 relay attempts across calibration, holdout, and benchmark, including three discovery requests. The commands select the verified November dataset explicitly. Its offline source check again matched all 60 positive labels and retained all 24 scope controls. The D-01 checker now requires the reviewed encoder model and dimensions in all three discovery responses. All 124 focused tests and four TypeScript checks passed.
+
+The retained November Git source makes the Linux-qualified `3f16f93` commit available for comparison. Its fixed empty chat reply predates the French response in the current worktree. The previously reviewed API and serving operator source was absent from the checked local and Chester Hill Solutions packet locations. MP-03 still needs a clean exact candidate, a reviewed successor operator, current API and corpus provenance, and finite approved request windows. The role-separated D-02 capture and one-request Zen diagnosis have their own scope.
+
+## November 23 clean MP-03 candidate
+
+The isolated candidate `44ce56fb7cf3a23c7cc22b88d42221b10dd9c6a3` freezes the current release inputs on `3f16f93`. Its source tree is `0a4fdd0a888d43fdaf7b570a30dae7f3469ba031`. The verified Git bundle and successor review archive are retained locally under `dist/release/mp03-44ce56f/`. The checkout remained clean after validation.
+
+The frozen Bun 1.3.5 install and Node 24.22.3 rerun passed 2,356 tests across 112 files, 31 Python process-owner tests, all four TypeScript projects, both workerd probes, and 117 vendored file checks. Billing and corpus invariant checks passed. The latter skipped three generated ingest files absent from the checkout. The first run used Node 26 and failed two Unicode citation cases. Both passed on Node 24.
+
+All five Worker modules bundled locally with esbuild. The exact API module hashes to `744a275609a49838942b99118a5cfbb45508a19c3d1d792f864611a8344b13a2` and passed its local workerd health, encoder discovery, and authentication smoke with outbound access disabled. The D-02 draft binds this candidate and November source with the product owner as reviewer and proposes Zen `claude-haiku-4-5`.
+
+Draft PR #1 fast-forwarded to `44ce56f`, and its [Linux validation run](https://github.com/chester-hill-solutions/civicsignal/actions/runs/45171176702) passed. Before the staging upgrade, version `3efd1935-39ea-41da-b19c-e8bbf495b50d` served 100% of isolated staging traffic. Its D1 database reported October revision `0507465`, parser `statutes-v2`, 277,857 rows, and no publication guard table. The upstream head was the verified November revision `855cdfc`.
+
+## November 23 isolated staging refresh
+
+Cloudflare acknowledged migration `0009` on staging D1, and a schema query confirmed `corpus_publication_guard`. Staging deployment `fb86549b-9c48-4043-8e6f-70f251352942` routes 100% of traffic to API version `5e17cb94-2365-40c8-a0e0-6418e26cd3cb`. The uploaded module matches the reviewed `44ce56f` bundle by SHA-256. All 13 existing bindings matched, including the authorization database and usage Durable Object namespace. The staging health endpoint returned success.
+
+The staging R2 bucket returned all 238 verified November objects, totaling 389,760,843 bytes. The November manifest was written after the data and matched SHA-256 `43fdb9961b0980769552df1993e106beba8f3a354ecf9bd3fbd11091ea25ba34`. An independent read matched the October manifest byte for byte.
+
+The November pipeline uses a separate coordinator instance with a 1,450-document embedding cap. The original October coordinator stayed paused. The initial run stopped before any embedding or corpus writes because GitHub returned HTTP 401 for the inherited credential. A staging-only probe confirmed that the public source returned the pinned revision and that R2 returned the matching manifest. Pipeline version `78e326dc-39be-4a7b-bc96-deff1a493359` resumed from the public source with the same commit and date checks. The November coordinator resumed at revision 2 with its budget intact.
+
+The staging encoder spent several minutes on each of its first full embedding batches at 0.5 vCPU. The November coordinator closed admission at revision 3. Container rollout `e43f42de-6544-4103-b4b5-76987128fb9e` routed the single staging instance to the same image with 4 vCPUs. Staging-only pipeline version `d6c68e65-1e23-4b9a-85ad-a1e79869305a` limits each reconciliation cycle to 384 row changes. The drained checkpoint contained 96 row changes and 72 written document vectors, matching all 72 reservations. The same coordinator resumed at revision 4 with the original 1,450-document cap.
+
+The next cycle committed its 25 submitted document vectors before GitHub's anonymous REST quota returned HTTP 403. Version `96022882-378f-4aec-9b33-07fdb8b91ce6` checks Justice Canada's public Git advertisement at the same boundaries. It verifies that both `HEAD` and `refs/heads/main` identify the pinned commit. The hosted probe passed. The coordinator resumed at revision 6 from 97 written vectors and 128 row changes with its original budget. [Git HTTP ref discovery](https://git-scm.com/docs/gitprotocol-http)
+
+At 13:53 UTC the staging publication finished at `855cdfc65207a6906c414e09a77d7f93267c5356` with parser `statutes-v2`. D1 reported 277,666 physical rows and 1,027 added, 471 changed, and 1,218 removed provisions. All 1,450 submitted document embeddings were written. The 768-dimensional Vectorize index held 254,478 vectors and processed the exact final mutation, `aa10c074-8753-4846-9a19-ba3c82da9455`. The guard cleared, the outbox was empty, and the coordinator was suspended at revision 7 with no active work or alarm. Bilingual serving and independent claim verification remain open.
+
+Container rollout `d37230d2-53b3-427d-805f-cf1b0c73d8cf` returned the staging encoder to its original 0.5 vCPU and 4 GiB configuration. Cloudflare reported all traffic on that configuration with the same image.
+
+## November 23 hosted serving and chat acceptance
+
+The isolated staging API served candidate `44ce56f`, Worker version `5e17cb94-2365-40c8-a0e0-6418e26cd3cb`, and corpus `855cdfc`. The upstream observation matched the published revision. The run verified the deployed bundle and bindings, settled D1 publication, a matching R2 provision sample, the Vectorize watermark, and the existing encoder image. The local relay used Bun 1.4.4.
+
+D-01 spent all 131 relay attempts. The three discovery requests and 128 retrieval requests completed, including 20 fresh calibration cases and all benchmark warm-ups. Jev returned upstream HTTP 402 on all 128 retrieval calls, which used uncached vector fallback. The offline checker accepted freshness and the completed-client benchmark p95 of 2.17 seconds at concurrency 1 and 2.46 seconds at concurrency 4. It rejected accuracy in both languages.
+
+| Holdout measure | English | French |
+| --- | ---: | ---: |
+| Correct provision at rank 1 | 13/24 | 10/24 |
+| Correct provision in the top 5 | 17/24 | 15/24 |
+| False refusals | 4/24 | 6/24 |
+| Nonempty results missing the correct provision | 3/24 | 3/24 |
+| Unsupported cases accepted | 0/8 | 0/8 |
+
+Both languages found the correct provision in 11 of 24 answerable pairs. The held-out answers remain evaluation evidence for this candidate.
+
+D-02 used a separate eight-attempt relay and the fixed bilingual plan for OpenCode Zen `claude-haiku-4-5`, with product owner review. All four unsupported questions returned the fixed refusal without generation. The answerable English federal election question also refused because retrieval returned no material. The other three answerable requests reached Zen and returned staging HTTP 502 with provider HTTP 402. There were no generated answers for independent factual claim review. The operator revoked and verified the temporary staging retrieval key. The local reports, bounded ledgers, exact chat captures, and review template are in `dist/evaluation/2026-11-23-mp03/`.
+
+## November 23 labour-board query probe
+
+Two English searches used the November staging corpus `855cdfc` and returned HTTP 200 through vector fallback. “labour board law” returned zero results. Its best vector score was `0.61503243`, below the `0.62` floor. The phrase leaves the board, jurisdiction, and legal issue open.
+
+“What powers does the Canada Industrial Relations Board have under the Canada Labour Code?” returned five results. Section 9 of the Code ranked first and establishes the Board. The other four results were from its regulations. Section 16, which sets out the Board's powers in proceedings, was absent from the top five. This search reached the right federal instrument and missed the provision that answers the question. [Canada Labour Code, section 9](https://laws-lois.justice.gc.ca/eng/acts/L-2/section-9.html) · [Canada Labour Code, section 16](https://laws-lois.justice.gc.ca/eng/acts/L-2/section-16.html)
+
+The two responses are preserved locally in `dist/evaluation/2026-11-23-recall-hillclimb/labour-board-staging.json`. Use them as separate development cases for scope clarification and provision ranking. [Query interpretation experiment](V1-EVALUATION.md#plain-language-query-interpretation-experiment)
+
+## November 23 staging DeepSeek Zen recovery
+
+At 10:19 a.m. Toronto time, one approved `/api/chat` request on OpenCode Zen `deepseek-v4.1-flash` returned HTTP 200 under the 128-output-token cap. The answer named the Canada Health Act and used the retrieved section 8 citation. Exact retrieval used the November corpus `855cdfc`, parser `statutes-v2`, and no encoder, Vectorize, or Jev calls. The relay recorded one attempt and the temporary staging retrieval key was revoked. [Canada Health Act section 8](https://laws-lois.justice.gc.ca/en/acts/C-6/section-8.html)
+
+Staging deployment `8161714d-4f9f-433b-84a7-cf89e1a4d7cb` serves version `43b5ef59-48dc-4de5-94e6-08da3e410fa6` at 100%. The verified bundle adds the DeepSeek adapter to the `44ce56f` base and preserves the 13 staging bindings. The local acceptance receipt is under `dist/evaluation/2026-11-23-zen-deepseek/`. The eight-case bilingual claim review remains open.
+
+## November 23 hybrid serving candidate
+
+The isolated staging API served Worker version `e48cedbc-d147-4113-99e7-c3fd266a2aab` at 100% through deployment `3f445cb8-cd9c-4079-ad41-d5d80f55d7b7`. The module readback matched SHA-256 `0d632b725f822bc39cd27822142df513e051fac9ed50637463b70a00dfa11173`. The existing 13 staging bindings matched. The version added a staging-only hybrid toggle and an encrypted retrieval-provider credential. The November corpus uses the same staged D1, R2, encoder, and Vectorize resources. A two-object R2 lexical index contains 84,285 canonical in-force provisions across 1,781 Act-language scopes.
+
+The first hybrid HTTP calibration found all ten expected provisions and refused all four unsupported cases. A French clarification returned HTTP 502, and client p95 was 8.687 seconds. The second version added a jurisdiction guard for personal employment questions, shortened the requested evidence quote, and recorded stage timings. Its authenticated replay completed all 16 requests, found all ten expected provisions, refused all four unsupported requests, and recorded both clarifications. Client p95 was 6.069 seconds at concurrency four. The exact-citation smoke used the existing exact path. Both temporary retrieval keys were revoked and verified. The replay used the same calibration prompts. D-01 still requires the independent holdout and two-level benchmark.
+
+All four TypeScript projects and all 2,364 tests passed on the repository's pinned Bun and Node runtime with local workerd enabled. The bundle, source, deployment proof, both calibration reports, and frozen calibration inputs are recorded in `dist/evaluation/2026-11-23-hybrid-serving/`. [Hybrid evaluation](V1-EVALUATION.md#november-23-hybrid-jurisdiction-and-evidence-check)
+
+## November 23 hybrid D-01 calibration
+
+The formal run opened at 17:14 UTC for Worker version `e48cedbc` and source `3d2c6af`. The module, bindings, settled D1 publication, R2 provision sample, both lexical index objects, encoder image, and Vectorize watermark passed readback. The November dataset matched Justice Canada's upstream head `855cdfc` at 17:13 UTC.
+
+The relay reserved 21 of 131 attempts. Discovery passed. Nineteen of 20 fresh searches completed. Top-five results covered four of six English and all six French answerable cases. All eight unsupported questions returned no provisions.
+
+The English Criminal Code provision 334 question returned HTTP 502 after the evidence quote failed the source-text check. The English Privacy Act provision 8 question returned an insufficient-evidence refusal. An offline replay put the Privacy Act provision first in literal lexical ranking. The hosted candidate set and evidence decision need separate diagnosis. The operator stopped before holdout and benchmark. It verified temporary key revocation and relay shutdown.
+
+The local repair retries a nonmatching quote once within the existing five-second evidence deadline. It still requires a literal match before it returns a provision. The HTTP regression reproduced the 502, then confirmed recovery with matching evidence and continued failure for a second mismatch. All four TypeScript checks passed.
+
+The first clean-checkout run found a stale Postgres fixture and two protected-state test timeouts. The successor includes the existing fixture correction and rebuilds the same Worker module. The isolated recheck passed all 337 tests across the two affected suites and the HTTP endpoint suite. The repair needs fresh staging evidence.
+
+The report, provenance, calibration ledger, and revocation receipt are in `dist/evaluation/2026-11-23-hybrid-serving/`. Its `evidence-retry/` directory holds repaired source `65bd7ff`, module, staging dry run, and proposed request scope. The eight-case D-02 draft pins this successor and needs a D-01 pass before capture. [D-01 criteria](V1-EVALUATION.md#d-01-serving-decision)
+
+## November 23 repaired hybrid D-01
+
+Isolated staging deployment `6942c513-3556-4ee9-b28e-1a80320745fe` serves version `17dcf4a5-a750-417f-b8f2-8736d053a659` at 100%. Source `65bd7ff` uses the new evidence retry policy. Readback matched module SHA-256 `74745d0ad135bfd4df3095848b7a629af794e638ae60d75a48c807e1ca2f07a6` and all 15 staging bindings.
+
+The served November revision `855cdfc` matched the observed Justice Canada head. D1 publication was settled. The provision text sample, both R2 lexical objects, the Vectorize watermark, and the encoder image matched the approved inputs. The D-01 packet uses a new ledger for 131 attempts over 20 minutes. It binds the frozen source, exact Worker version, and unchanged evaluation labels. [Request budget](STAGING-REQUEST-BUDGET.md#november-d-01-run-packet)
+
+All 20 fresh calibration searches completed with valid observations. Top-five results covered five of six English and six of six French answerable cases. All eight unsupported cases returned no provisions. The Criminal Code provision 334 case returned the expected English provision on the first evidence call. The English Privacy Act provision 8 case still refused.
+
+The independent holdout attempted all 64 searches and completed 61. Discovery passed. Both languages found the correct provision in 20 of 24 answerable pairs, up from 11 pairs on the earlier vector run.
+
+| Holdout measure | English | French |
+| --- | ---: | ---: |
+| Correct provision at rank 1 | 20/24 | 23/24 |
+| Correct provision in the top 5 | 20/24 | 23/24 |
+| Earlier vector run, top 5 | 17/24 | 15/24 |
+| False refusals | 1 | 0 |
+| Nonempty results missing the correct provision | 1 | 0 |
+| HTTP 502 responses | 2 | 1 |
+| Unsupported cases accepted | 0/8 | 0/8 |
+
+One failure reached the five-second interpretation deadline. One evidence exchange failed before returning a valid decision. One quote mismatch triggered the retry and reached the five-second evidence deadline. Encoder and Vectorize calls succeeded on all 64 requests.
+
+D-01 failed completeness and missed the English top-five bar of 22 of 24. The relay stopped at 86 of 131 attempts before either benchmark level. Completed holdout p95 was 6.14 seconds at concurrency one. That measure applies to the holdout. The operator closed the relay and verified temporary key revocation at 17:57 UTC.
+
+The deployment readback, provenance, reports, relay ledger, and cleanup receipt are in `dist/evaluation/2026-11-23-hybrid-serving/evidence-retry/`. Keep these holdout results separate from development input. D-02 remains open. [D-01 criteria](V1-EVALUATION.md#d-01-serving-decision)
+
+## November 23 D-02 offline packet
+
+The product owner accepted the measured recall for continued pre-alpha work and deferred further recall tuning. The D-01 result and release checks remain open.
+
+The packet pins source `65bd7ff`, staging version `17dcf4a5`, corpus `855cdfc`, and OpenCode Zen `deepseek-v4.1-flash`. Offline checks reproduced all eight request bodies and hashes from the frozen source. The checker rejected the empty capture and review templates. All 390 focused local tests passed.
+
+The proposed scope is eight chat POSTs in 12 minutes with a 256-token generation cap per case and a new ledger. No hosted window opened. Execution needs separate budget approval. Capturing before D-01 qualification also needs an explicit staging sequencing decision. The independent product owner reviews every factual claim against literal excerpts from the same request's retrieved material.
+
+The plan, requests, proposed scope, templates, and offline checker receipt are in `dist/evaluation/2026-11-23-hybrid-serving/evidence-retry/d02-offline/`. [D-02 procedure](V1-EVALUATION.md#d-02-bilingual-chat-claim-review)
+
+## November 24 citation boundary repair
+
+The MP-03 packet recorded two citation tests that failed only on Node 26. The destination check compared the two code units before a URL, so an astral character such as U+10400 or U+1D7D9 passed as a separate prefix instead of a word character glued to the link. V8 also mis-evaluates the anchored Unicode property class that rule used. The check now reads one code point and tests the class without the anchor.
+
+All 146 citation cases pass on Node 26.3.1, where they previously failed, and the complete `bun run validate` passes on the pinned Bun 1.3.5: 146 test files, 2,541 passed and 8 skipped, four TypeScript projects, both workerd probes, and the runtime, billing and corpus invariants. This source is not the reviewed MP-03 candidate; a hosted operation still needs its own refresh and approval.
+
 ## Remaining release gates
 
 All four gates remain open: scheduled first publication, serving acceptance, production migration, and the final release audit.
+The matching MP-01 local and Linux receipts qualify the current draft source. Bind each hosted operation to its reviewed source and actual target according to the [MP-01 checklist](PLAN.md#mp-01-reconcile-the-exact-candidate).
 The [master gate table](PLAN.md#release-gates-at-a-glance) defines completion evidence.
 The [master package checklist](PLAN.md#phase-1-close-the-v1-release) defines remaining work, dependencies, and responsible roles.
 The [decision register](PLAN.md#decisions-still-required) records the required dispositions before execution.

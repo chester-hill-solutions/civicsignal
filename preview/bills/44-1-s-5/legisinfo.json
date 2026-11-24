@@ -1,0 +1,128 @@
+{
+  "source": "https://www.parl.ca/legisinfo/en/bill/44-1/s-5/xml",
+  "sha256": "522dfd0983a449563758b3cd2d182edf2325f434ab8b3917abc682a0b94d10ef",
+  "bill": {
+    "Id": "11558854",
+    "ParliamentNumber": "44",
+    "SessionNumber": "1",
+    "NumberCode": "S-5"
+  },
+  "billId": "11558854",
+  "stages": [
+    {
+      "BillStageId": "60029",
+      "ChamberOrganizationId": "1",
+      "EventTypeId": "60111",
+      "EventNameEn": "First reading",
+      "EventNameFr": "Première lecture",
+      "EventDateTime": "2022-09-28T00:00:00"
+    },
+    {
+      "BillStageId": "60030",
+      "ChamberOrganizationId": "1",
+      "EventTypeId": "60121",
+      "EventNameEn": "Second reading and referral to committee",
+      "EventNameFr": "Deuxième lecture et renvoi en comité",
+      "EventDateTime": "2022-11-03T00:00:00"
+    },
+    {
+      "BillStageId": "60049",
+      "ChamberOrganizationId": "1",
+      "EventTypeId": "60124",
+      "EventNameEn": "Committee report presented with amendments",
+      "EventNameFr": "Présentation du rapport de comité avec des amendements",
+      "EventDateTime": "2023-03-22T00:00:00"
+    },
+    {
+      "BillStageId": "60032",
+      "ChamberOrganizationId": "1",
+      "EventTypeId": "60285",
+      "EventNameEn": "Concurrence at report stage",
+      "EventNameFr": "Adoption à l’étape du rapport",
+      "EventDateTime": "2023-05-16T00:00:00"
+    },
+    {
+      "BillStageId": "60031",
+      "ChamberOrganizationId": "1",
+      "EventTypeId": "60134",
+      "EventNameEn": "Third reading",
+      "EventNameFr": "Troisième lecture",
+      "EventDateTime": "2023-05-30T00:00:00"
+    },
+    {
+      "BillStageId": "60029",
+      "ChamberOrganizationId": "2",
+      "EventTypeId": "60110",
+      "EventNameEn": "Introduction and first reading",
+      "EventNameFr": "Dépôt et première lecture",
+      "EventDateTime": "2022-02-09T00:00:00"
+    },
+    {
+      "BillStageId": "60030",
+      "ChamberOrganizationId": "2",
+      "EventTypeId": "60120",
+      "EventNameEn": "Second reading",
+      "EventNameFr": "Deuxième lecture",
+      "EventDateTime": "2022-04-07T16:15:00"
+    },
+    {
+      "BillStageId": "60030",
+      "ChamberOrganizationId": "2",
+      "EventTypeId": "60123",
+      "EventNameEn": "Referral to committee",
+      "EventNameFr": "Renvoi en comité",
+      "EventDateTime": "2022-04-07T16:18:00"
+    },
+    {
+      "BillStageId": "60049",
+      "ChamberOrganizationId": "2",
+      "EventTypeId": "60124",
+      "EventNameEn": "Committee report presented with amendments",
+      "EventNameFr": "Présentation du rapport de comité avec des amendements",
+      "EventDateTime": "2022-06-20T00:00:00"
+    },
+    {
+      "BillStageId": "60031",
+      "ChamberOrganizationId": "2",
+      "EventTypeId": "60134",
+      "EventNameEn": "Third reading",
+      "EventNameFr": "Troisième lecture",
+      "EventDateTime": "2022-06-22T22:00:00"
+    },
+    {
+      "BillStageId": "60050",
+      "ChamberOrganizationId": "2",
+      "EventTypeId": "60149",
+      "EventNameEn": "Royal assent",
+      "EventNameFr": "Sanction royale",
+      "EventDateTime": "2023-06-13T20:00:00"
+    }
+  ],
+  "publications": [
+    {
+      "PublicationId": "11558861",
+      "PublicationTypeId": "80701",
+      "PublicationTypeNameEn": "First Reading",
+      "PublicationTypeNameFr": "Première lecture"
+    },
+    {
+      "PublicationId": "11903126",
+      "PublicationTypeId": "80703",
+      "PublicationTypeNameEn": "As passed by the Senate",
+      "PublicationTypeNameFr": "Tel qu’adopté par le Sénat"
+    },
+    {
+      "PublicationId": "12541741",
+      "PublicationTypeId": "80704",
+      "PublicationTypeNameEn": "Royal Assent",
+      "PublicationTypeNameFr": "Royal Assent"
+    }
+  ],
+  "concurrence": {
+    "EventNameEn": "Concurrence in the motion respecting House of Commons Amendments",
+    "EventNameFr": "Adoption de la motion relative aux amendements de la Chambre des communes",
+    "Date": "2023-06-13T17:30:00",
+    "MeetingNumber": "133",
+    "ChamberOrganizationId": "2"
+  }
+}

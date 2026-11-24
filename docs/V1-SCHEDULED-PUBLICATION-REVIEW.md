@@ -132,14 +132,53 @@ It supplies no approved ceiling or capacity claim.
    observation windows. A missed admission window means no arming. Obtain the
    separate concrete approval before deployment/arming or source work.
 
+The qualification uses a Worker Cron Trigger to invoke the [staging `scheduled()` handler](../services/snapshot/qualification-worker.ts).
+The handler admits the exact `cron` and `scheduledTime` in the frozen proposal before starting the isolated Workflow.
+Leave the native Workflow calendar empty. The five-field UTC expression recurs annually when pinned to a day and month, so retain the exact event and runtime deadline checks and explicitly clear the Worker calendar after the observation.
+Allow for Cloudflare’s documented propagation window of up to 15 minutes when adding or removing a schedule.
+Use `cf dev` and its local scheduled endpoint to exercise the event tuple before the hosted run. See [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/).
+
+Keep `cf` for Worker deployment and inspection. The broader [`cf workers triggers deploy`](https://developers.cloudflare.com/cf/projects/#deploy-triggers) can also apply routes, domains, queue consumers and Workflow settings.
+A local conversion check with installed `cf` v1.0.0-beta.10 emitted the configured cron for a singleton trigger and omitted the cron field for an empty trigger list. Both prebuilt dry runs succeeded, so dry-run success alone gives no evidence that cleanup clears the calendar.
+Before arming, qualify the operator and both guards against the dedicated Worker Script Schedules API. Use a singleton `PUT` and matching `GET` for arming, then `PUT []` and an independent empty `GET` for cleanup. See Cloudflare’s [update](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/schedules/methods/update/) and [read](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/schedules/methods/get/) endpoints.
+
+The [staging calendar runner](../scripts/lib/snapshot-calendar-window.ts) calls the hosted operator's admission check and starts two separate [cleanup guard processes](../scripts/snapshot-calendar-guard.ts). Each guard uses its own supplied credential, reads an empty calendar before recording readiness, and waits for the reviewed cleanup instant. The runner rechecks both processes immediately before the one allowed singleton `PUT`. It waits for both guards to settle after an uncertain write and makes a fresh final `GET`. Each run claims a new private journal and records both guards' readbacks separately.
+
+Allocate three arming requests, seven requests per November guard including readiness, and one final calendar `GET`. Each request allows up to ten seconds and 16 KiB of response data. Before a November guard records readiness, Cloudflare must report its account token active with a verified expiry through final observation. The guard then requires an acknowledged empty calendar write and a separate readback. Pin the exact UTC event, cleanup instant, and deadline. The local tests cover both actual guard entry points, lost arming acknowledgement, refusal when a guard exits early, and an empty final calendar with a failed guard. [Cloudflare account token verification](https://developers.cloudflare.com/api/resources/accounts/subresources/tokens/methods/verify/)
+
+For targeted cleanup or independent readback, use the [staging calendar command](../scripts/snapshot-calendar.ts). Supply `CLOUDFLARE_API_TOKEN` in the process environment and use the exact reviewed UTC instant, including `.000Z`.
+
+```sh
+bun --no-env-file scripts/snapshot-calendar.ts --fresh clear --scheduled-at "$SNAPSHOT_SCHEDULED_AT"
+bun --no-env-file scripts/snapshot-calendar.ts --fresh verify-empty
+```
+
+The command targets the fixed qualification Worker. It checks the current calendar before writing and refuses any schedule other than the expected singleton. It accepts an already empty calendar so both guards can run independently. A lost `PUT` acknowledgement still leads to one `GET`. The receipt separates `putAcknowledged` from the observed `empty` state.
+The schedules API replaces the whole list. Reserve exclusive ownership of the staging calendar through both guards and the final observation. A successful readback records the control plane at that instant. Allow for trigger removal to propagate and for both guards to finish before reusing the calendar. Hosted publication admission and artifact verification still need to call the calendar runner.
+
+Run `bun --no-env-file scripts/check-snapshot-hosted.ts --fresh` for a read-only observation of the [new November Worker and Workflow](V1-RELEASE.md#november-22-isolated-cloudflare-staging-bootstrap). Add `--deployment-id` and `--version-id` from the reviewed upload receipt to enforce the expected active deployment. A direct empty schedule list qualifies. When Cloudflare omits the field, only the November Workflow qualifies through the [pinned creation record](evidence/2026-11-22/november-workflow-creation.json). The live response must match the account, Worker and Workflow identities, and both recorded Workflow timestamps. A reported schedule overrides the creation evidence and blocks admission. The check preserves `nativeCalendar: unknown` in the raw observation and reports `nativeCalendarEvidence: unscheduled-creation` separately.
+
+Upload and activate the publication Worker version without applying Workflow triggers, then repeat the calendar check. An adjusted Workflow definition requires fresh calendar evidence. Namespace, instance, staging R2, canonical backup, and artifact checks remain separate gates. [Cloudflare version and trigger commands](https://developers.cloudflare.com/cf/projects/#upload-a-version)
+
+The [first publication version](V1-RELEASE.md#november-22-staging-publication-version) pinned 03:47 UTC and passed the deployed bundle, R2 binding, namespace, instance, and native calendar checks. Guard startup must begin before 03:30:45 UTC to allow for readiness checks and Cloudflare propagation. Each credential must expire after 04:10:10 UTC. An account administrator can issue a short-lived account-owned token with `Individual Workers Editor` limited to `civicsignal-v1-stage-nov16-snapshot`. Regenerate the prebuilt configuration and recheck its exact deployment for any later event. [Cloudflare Workers roles](https://developers.cloudflare.com/workers/authorization/workers/)
+
 Successful hosted evidence must connect the admitted scheduled event to the
 distinct instance, show no qualified manifest before the event, and show that
 instance creating and publishing its complete snapshot. Verify every qualified
-artifact against the pinned reference: the existing complete reference has
-240 artifacts totaling **390,423,509 bytes**, plus verification of all 277,857
-rows. Count additional qualification diagnostics separately. A health fetch,
+artifact against the pinned reference. The November reference has 238 artifacts
+totaling **389,760,843 bytes** and 277,666 rows. Count additional qualification diagnostics separately. A health fetch,
 manual API creation, an existing-publication no-op or absent metrics cannot close
 this gate. Reconcile the canonical backup unchanged and the calendar empty.
+
+Use the [tracked November verifier](../scripts/verify-staged-snapshot.ts) after the scheduled Workflow publishes its qualified manifest. Supply a staging R2 read credential in `CLOUDFLARE_API_TOKEN` and the `prepared-stage.json` from the admitted publication version.
+
+```sh
+bun --no-env-file scripts/verify-staged-snapshot.ts --staging --packet /path/to/prepared-stage.json
+```
+
+The verifier recomputes the qualification namespace and fixes the bucket and November manifest SHA-256. It streams one object per request, counts physical rows, and uses the shared reader to validate index offsets, order, count, fingerprint digest, and exact bytes. It compares the canonical October manifest's exact bytes against the retained baseline before and after the scan. A successful run issues 240 logical GETs with a two-hour total deadline and a 15-second per-object deadline. The run keeps no duplicate artifact files. Retain the separate pre-event canonical preservation, event-to-instance, and cleanup receipts. [Cloudflare R2 Get Object](https://developers.cloudflare.com/api/resources/r2/subresources/buckets/subresources/objects/methods/get/)
+
+For a local replay, pass `--local /path/to/snapshot-root` and optionally `--canonical-root /path/to/canonical-root`. The canonical root holds the October manifest at its usual snapshot object key. The existing [offline snapshot verifier](../scripts/publish-snapshot.ts) remains available for other revisions and vectors.
 
 The local implementation does not close this hosted gate or establish a new
 full-corpus 128-MiB measurement. Another hosted event requires its own concrete

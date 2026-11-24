@@ -18,6 +18,23 @@ export interface Env {
   DEMO_BROWSER_API_KEY?: string;
   /** Corpus store. */
   CIVIC_DB?: D1Database;
+  /** Enables the Hansard HTTP preview when set to on. */
+  HANSARD_PREVIEW?: string;
+  /** Local Gazette metadata preview, backed by its own edition store. */
+  GAZETTE_PREVIEW?: string;
+  GAZETTE_DB?: D1Database;
+  /** Opt-in House written-question retrieval from normalized local/D1 materialization. */
+  WRITTEN_QUESTIONS_PREVIEW?: string;
+  /** Local bilingual parliamentary catalogues and federal directory in CIVIC_DB. */
+  PARLIAMENT_CATALOGUE_PREVIEW?: string;
+  FUNDING_PREVIEW?: string;
+  GEDS_PREVIEW?: string;
+  /** Opt-in bilingual bill trace and historical committee study previews. */
+  BILL_PREVIEW?: string;
+  BILL_DB?: D1Database;
+  /** Session-wide committee research API backed by an isolated corpus database. */
+  COMMITTEE_CORPUS_PREVIEW?: string;
+  COMMITTEE_DB?: D1Database;
   /** CHS keys and workspace billing; defaults to CIVIC_DB. Keep fixed during corpus rollback. */
   AUTH_DB?: D1Database;
   /** Static corpus snapshots and rendered briefs. */
@@ -33,6 +50,9 @@ export interface Env {
    * behaves as it did before. See `src/jev.ts`.
    */
   JEV_KEY?: string;
+  /** Enables the Cloudflare hybrid search candidate on one Worker version. */
+  HYBRID_SEARCH?: string;
+  SEARCH_ZEN_KEY?: string;
   /** Corridators for ingest jobs. */
   INGEST_QUEUE?: Queue;
   /** Stripe secret for Billing Meter events. */

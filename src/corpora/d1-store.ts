@@ -9,6 +9,17 @@ import { SNAPSHOT_PARSER_VERSION } from '../ingest/snapshot-format';
 import { mutationId, removalFeedEntry } from '../ingest/mutations';
 import type { PipelineRun, PipelineState, FingerprintEntry } from '../ingest/reconcile';
 
+export class CorpusPublicationPending extends Error {
+  constructor(readonly commit: string) { super('Waiting for Vectorize to process the corpus publication mutation.'); }
+}
+
+interface ActivePublication {
+  commit: string;
+  date: string;
+  vectorMutation: string | null;
+  completionJson: string | null;
+}
+
 /**
  * The store.
  *
@@ -27,6 +38,14 @@ export class D1CorpusStore implements CorpusStore {
     if (options.retainD1Text === false && !options.textBucket) throw new Error('external corpus text requires a verified text bucket');
   }
 
+  /** Read the revision that an interrupted writer must finish first. */
+  async activePublication(): Promise<ActivePublication | null> {
+    return this.db.prepare(
+      `SELECT target_commit AS "commit", target_date AS date, vector_mutation AS vectorMutation, completion_json AS completionJson
+       FROM corpus_publication_guard WHERE corpus_id = ? AND target_commit IS NOT NULL`,
+    ).bind(this.corpusId).first<ActivePublication>();
+  }
+
   /** Replay bounded pages without holding a corpus of embedding payloads. */
   async recoverPendingWrites(): Promise<void> {
     for (;;) {
@@ -34,29 +53,45 @@ export class D1CorpusStore implements CorpusStore {
         'SELECT id, payload FROM corpus_mutations WHERE corpus_id = ? AND payload IS NOT NULL ORDER BY id LIMIT 16',
       ).bind(this.corpusId).all<{ id: string; payload: string }>();
       if (!pending.results.length) return;
-      await this.completeVectorWrites(pending.results);
+      const active = await this.activePublication();
+      if (!active || pending.results.some(({ id }) => {
+        const identity: unknown = JSON.parse(id);
+        return !Array.isArray(identity) || identity[0] !== this.corpusId || identity[1] !== active.commit;
+      })) throw new Error('The vector outbox must belong to one active corpus publication.');
+      await this.completeVectorWrites(active.commit, pending.results);
     }
   }
 
-  private async completeVectorWrites(entries: { id: string; payload: string }[]): Promise<void> {
+  private async completeVectorWrites(revision: string, entries: { id: string; payload: string }[]): Promise<void> {
     if (!entries.length) return;
     const operations = entries.map((entry) => JSON.parse(entry.payload) as {
       upsert?: VectorizeVector; remove?: string;
     });
     const vectors = operations.flatMap((operation) => operation.upsert ? [operation.upsert] : []);
     const removals = operations.flatMap((operation) => operation.remove ? [operation.remove] : []);
-    if (vectors.length) await this.vector.upsert(vectors);
-    if (removals.length) await this.vector.deleteByIds(removals);
-    // Clearing the outbox is itself atomic. An uncertain acknowledgement causes
-    // replay of the same vectors, never omission of their change feed entries.
-    await this.db.batch(entries.map((entry) => this.db.prepare(
-      'UPDATE corpus_mutations SET payload = NULL, completed_at = ? WHERE id = ?',
-    ).bind(new Date().toISOString(), entry.id)));
+    let lastMutation: string | undefined;
+    if (vectors.length) lastMutation = (await this.vector.upsert(vectors)).mutationId;
+    if (removals.length) lastMutation = (await this.vector.deleteByIds(removals)).mutationId;
+    if (!lastMutation) throw new Error('Vectorize did not return its last mutation ID.');
+    // The outbox records enqueue success. The publication guard retains the
+    // latest mutation so a later cycle can check visibility without another write.
+    const at = new Date().toISOString();
+    await this.db.batch([
+      this.db.prepare('UPDATE corpus_publication_guard SET vector_mutation = ? WHERE corpus_id = ? AND target_commit = ?')
+        .bind(lastMutation, this.corpusId, revision),
+      ...entries.map((entry) => this.db.prepare(
+        'UPDATE corpus_mutations SET payload = NULL, completed_at = ? WHERE id = ?',
+      ).bind(at, entry.id)),
+    ]);
   }
 
   async applyBatch(batch: CorpusBatch): Promise<void> {
     if (batch.corpusId !== this.corpusId) throw new Error('corpus store identity mismatch');
     await this.recoverPendingWrites();
+    let active = await this.activePublication();
+    if (active && (active.commit !== batch.revision || active.date !== batch.occurredAt || active.completionJson !== null)) {
+      throw new Error('Finish the active corpus revision before starting another one.');
+    }
     const feed = new Map(batch.changes.map((entry) => [entry.rowId, entry]));
     const units = [
       ...batch.upserts.map((row) => ({ id: mutationId(batch, row.row.id, row.hash), row, rowId: row.row.id })),
@@ -102,8 +137,20 @@ export class D1CorpusStore implements CorpusStore {
         statements.push(this.changeStatement(change));
         pending.push({ id, payload });
       }
-      if (statements.length) await this.db.batch(statements);
-      await this.completeVectorWrites(pending);
+      if (!statements.length) continue;
+      if (!active) {
+        // The coordinator admits one writer. Open the fence in the same
+        // transaction as the first visible row, event and outbox entry.
+        statements.unshift(this.db.prepare(
+          `INSERT INTO corpus_publication_guard (corpus_id, generation, target_commit, target_date)
+           VALUES (?, 1, ?, ?)
+           ON CONFLICT(corpus_id) DO UPDATE SET generation = generation + 1,
+             target_commit = excluded.target_commit, target_date = excluded.target_date`,
+        ).bind(this.corpusId, batch.revision, batch.occurredAt));
+      }
+      await this.db.batch(statements);
+      active ??= { commit: batch.revision, date: batch.occurredAt, vectorMutation: null, completionJson: null };
+      await this.completeVectorWrites(batch.revision, pending);
     }
   }
 
@@ -290,7 +337,49 @@ export class D1CorpusStore implements CorpusStore {
   /** Record the run in the run log. */
   async finishRun(run: PipelineRun, state?: PipelineState): Promise<void> {
     await this.recoverPendingWrites();
-    await this.db.batch([this.runStatement(run), ...(state ? [this.stateStatement(state)] : [])]);
+    if (!state) {
+      await this.runStatement(run).run();
+      return;
+    }
+    if (state.corpusId !== this.corpusId || run.corpusId !== this.corpusId || state.commit !== run.commit ||
+        state.commitDate !== run.commitDate) throw new Error('The finished run and publication target must match.');
+    const active = await this.activePublication();
+    if (!active) {
+      await this.db.batch([this.runStatement(run), this.stateStatement(state)]);
+      return;
+    }
+    if (active.commit !== state.commit || active.date !== state.commitDate || !active.vectorMutation || active.completionJson) {
+      throw new Error('The active corpus publication has no matching completion checkpoint.');
+    }
+    await this.db.prepare(
+      'UPDATE corpus_publication_guard SET completion_json = ? WHERE corpus_id = ? AND target_commit = ?',
+    ).bind(JSON.stringify({run,state}), this.corpusId, state.commit).run();
+    await this.completeStagedPublication();
+  }
+
+  /** Resume after asynchronous vector indexing without re-reading or re-embedding rows. */
+  async completeStagedPublication(): Promise<PipelineRun | null> {
+    const active = await this.activePublication();
+    if (!active?.completionJson) return null;
+    const {run,state} = JSON.parse(active.completionJson) as {run:PipelineRun;state:PipelineState};
+    if (!active.vectorMutation || run.corpusId !== this.corpusId || state.corpusId !== this.corpusId ||
+        run.commit !== active.commit || state.commit !== active.commit ||
+        run.commitDate !== active.date || state.commitDate !== active.date) {
+      throw new Error('Invalid corpus publication checkpoint.');
+    }
+    const index = await this.vector.describe();
+    // Mutation IDs are opaque. This index has one writer, and only exact
+    // equality proves that its latest acknowledged mutation is processed.
+    if (String(index.processedUpToMutation) !== active.vectorMutation) throw new CorpusPublicationPending(active.commit);
+    await this.db.batch([
+      this.runStatement(run), this.stateStatement(state),
+      this.db.prepare(
+        `UPDATE corpus_publication_guard
+         SET target_commit = NULL, target_date = NULL, vector_mutation = NULL, completion_json = NULL
+         WHERE corpus_id = ? AND target_commit = ?`,
+      ).bind(this.corpusId, active.commit),
+    ]);
+    return run;
   }
 
   async recordRun(run: PipelineRun): Promise<void> {

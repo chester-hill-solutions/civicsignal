@@ -1,0 +1,3609 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com https://persistent.oaistatic.com/plugins/visualize/; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com https://persistent.oaistatic.com/plugins/visualize/charts/; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>CivicSignal workspace — approved mockup</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+
+</head>
+<body>
+<iframe id="codex-visualization" sandbox="allow-scripts" referrerpolicy="no-referrer" title="CivicSignal workspace — approved mockup" data-srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com https://persistent.oaistatic.com/plugins/visualize/; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com https://persistent.oaistatic.com/plugins/visualize/charts/; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;CivicSignal workspace — approved mockup&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 16px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: light-dark(rgb(51 156 255), rgb(131 195 255));
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans:
+    -apple-system-body, ui-sans-serif, -apple-system, system-ui, &quot;Segoe UI&quot;,
+    Helvetica, &quot;Apple Color Emoji&quot;, Arial, sans-serif, &quot;Segoe UI Emoji&quot;,
+    &quot;Segoe UI Symbol&quot;;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 8px);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  font-size: var(--font-size-base);
+  line-height: calc(var(--font-size-base) * 1.625);
+  font-weight: var(--font-weight-normal);
+}
+
+.cursor-interaction {
+  cursor: var(--cursor-interaction, pointer);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+  text-underline-offset: 2px;
+  font-weight: inherit;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+.table {
+  font-family: var(--font-sans);
+}
+
+h1 {
+  font-size: calc(var(--font-size-base) * 1.5);
+  line-height: 1.3333333333;
+}
+
+h2 {
+  font-size: calc(var(--font-size-base) * 1.25);
+  line-height: 1.4;
+}
+h3 {
+  font-size: calc(var(--font-size-base) * 1.125);
+  line-height: 1.5555555556;
+}
+h4 {
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+}
+h5,
+h6 {
+  font-size: var(--font-size-base);
+  line-height: calc(var(--font-size-base) * 1.625);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+b,
+strong,
+th {
+  font-weight: 600;
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+pre,
+pre code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: calc(var(--font-size-base) * 0.875);
+  line-height: calc(var(--font-size-base) * 1.625);
+  font-family: var(--font-sans);
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.table :is(th, td):not(:last-child) {
+  padding-inline-end: calc(var(--font-size-base) * 1.5);
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead :is(th, td) {
+  border-bottom-color: var(--border-strong, var(--input));
+  padding-block: calc(var(--font-size-base) / 2);
+  line-height: var(--font-size-base);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+.table tbody :is(th, td) {
+  padding-block: calc(var(--font-size-base) * 0.625);
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 8px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+.widget {
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 0 0 0.5px var(--border-strong, var(--border));
+  color: var(--foreground);
+  background: var(--background);
+}
+
+#widget &gt; :not(.card, .widget, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  border: 1px solid var(--border);
+  corner-shape: var(--corner-shape);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-sans);
+  padding: 5px 12px;
+  border-color: color-mix(
+    in oklab,
+    light-dark(var(--primary-foreground), var(--foreground)) 5%,
+    transparent
+  );
+  border-radius: var(--radius-2xl);
+  color: light-dark(var(--primary-foreground), var(--foreground));
+  background: light-dark(var(--foreground), var(--popover));
+  box-shadow: 0 8px 18px rgb(15 23 42 / 20%);
+  letter-spacing: -0.15px;
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  color: color-mix(in srgb, var(--foreground) 40%, var(--muted-foreground));
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  font-family: var(--font-sans);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 1;
+}
+
+small,
+.text-small {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+/* Match inline alignment without overriding a containing flex or grid layout. */
+.btn,
+.nav-link,
+.form-control,
+.form-select,
+.form-range,
+.form-check {
+  vertical-align: middle;
+}
+
+.btn,
+.nav-link {
+  --btn-size: calc(12px + 2 * var(--control-spacing, 12px));
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  corner-shape: var(--corner-shape);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: inherit;
+  font-family: var(--font-sans);
+  height: fit-content;
+  min-height: var(--btn-size);
+  padding-inline: var(--control-spacing, 12px);
+  border-color: transparent;
+  border-radius: var(--radius-full);
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+}
+
+.btn {
+  border-color: var(--border);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+}
+
+/* Codex Button size=&quot;compact&quot;; appearance stays with the button variant. */
+.btn-sm {
+  --btn-size: 24px;
+  padding-inline: 8px;
+  font-size: calc(var(--font-size-base) * 12 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 12 / 16), 1px);
+  line-height: 16px;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.btn-primary {
+  border-color: var(--border);
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: border-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: border-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--muted-foreground);
+  background: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+/* Shared preview chrome; product styles stay inside each variant. */
+.viz-dotted-background {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--foreground) 14%, transparent) 0.8px,
+    transparent 0.8px
+  );
+  background-position: center;
+  background-size: 16px 16px;
+}
+
+.viz-carousel {
+  position: relative;
+  min-width: 0;
+}
+
+.viz-carousel:has(&gt; .viz-carousel-controls) {
+  min-height: calc(60px + var(--viz-carousel-picker-height, 0px));
+  padding-bottom: 60px;
+}
+
+.viz-carousel &gt; [data-variant][hidden] {
+  display: none !important;
+}
+
+.viz-carousel &gt; [data-variant] {
+  isolation: isolate;
+}
+
+.viz-carousel-controls {
+  --viz-carousel-hover: light-dark(
+    color-mix(in srgb, var(--foreground) 5.4%, transparent),
+    color-mix(in srgb, var(--foreground) 7.8%, transparent)
+  );
+  position: absolute;
+  z-index: 2;
+  bottom: 8px;
+  left: 50%;
+  display: flex;
+  width: max-content;
+  /* Leave room for the host&#x27;s design-controls launcher at the trailing edge. */
+  max-width: calc(100% - 96px);
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans);
+  /* Match the settings dropdown chrome independently of the content font size. */
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+  transform: translateX(-50%);
+  user-select: none;
+}
+
+/* Keep authored mockup button styles out of the shared carousel chrome. */
+.viz-carousel-controls button,
+.viz-carousel-picker &gt; summary {
+  display: flex !important;
+  height: auto !important;
+  min-height: 30px;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px;
+  padding: 0 6px !important;
+  -webkit-app-region: no-drag;
+  border: 0 !important;
+  border-radius: 14px !important;
+  color: inherit !important;
+  background: transparent !important;
+  font: inherit !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.viz-carousel-controls &gt; button,
+.viz-carousel-picker &gt; summary {
+  position: relative;
+  isolation: isolate;
+}
+
+.viz-carousel-controls &gt; button {
+  --icon-size: 16px;
+  width: 30px !important;
+  padding: 0 !important;
+}
+
+.viz-carousel-picker &gt; summary {
+  padding-inline: 12px !important;
+}
+
+.viz-carousel-controls .viz-carousel-caret {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin: 0;
+  color: inherit;
+  transform: rotate(180deg);
+}
+
+.viz-carousel-controls &gt; button &gt; svg,
+.viz-carousel-controls .viz-carousel-caret,
+.viz-carousel-count {
+  opacity: 0.5;
+}
+
+.viz-carousel-controls &gt; button::before,
+.viz-carousel-picker &gt; summary::before {
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  border-radius: 12px;
+  content: &quot;&quot;;
+  pointer-events: none;
+}
+
+.viz-carousel-controls &gt; button:hover::before,
+.viz-carousel-picker &gt; summary:hover::before {
+  background: var(--viz-carousel-hover);
+}
+
+.viz-carousel-controls &gt; button,
+.viz-carousel-controls [data-lucide],
+.viz-carousel-controls .lucide {
+  flex-shrink: 0;
+}
+
+.viz-carousel-picker {
+  min-width: 0;
+}
+
+.viz-carousel-picker &gt; summary {
+  min-width: 0;
+  list-style: none;
+}
+
+.viz-carousel-picker &gt; summary::-webkit-details-marker {
+  display: none;
+}
+
+.viz-carousel-count {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.viz-carousel-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viz-carousel-options {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  max-height: 240px;
+  flex-direction: column;
+  gap: 2px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  box-shadow: 0 4px 12px light-dark(rgb(0 0 0 / 6%), rgb(0 0 0 / 25%));
+}
+
+.viz-carousel-options &gt; button {
+  border-radius: max(0px, calc(var(--radius-lg) - 5px)) !important;
+  width: 100% !important;
+  min-height: 28px;
+  justify-content: flex-start !important;
+  padding: 4px 8px !important;
+  font-size: var(--font-size-small) !important;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.viz-carousel-options &gt; [aria-current=&quot;true&quot;],
+.viz-carousel-options &gt; button:hover {
+  background: var(--viz-carousel-hover) !important;
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  padding-inline: calc(4px + var(--control-spacing, 12px) / 2);
+  border-color: var(--input);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--popover) 96%, transparent);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4285714286;
+}
+.form-control:is(
+  [type=&quot;file&quot;],
+  [type=&quot;date&quot;],
+  [type=&quot;datetime-local&quot;],
+  [type=&quot;month&quot;],
+  [type=&quot;week&quot;],
+  [type=&quot;color&quot;]
+) {
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  line-height: 18px;
+}
+.form-control:is(
+  [type=&quot;date&quot;],
+  [type=&quot;datetime-local&quot;],
+  [type=&quot;month&quot;],
+  [type=&quot;week&quot;]
+) {
+  padding-inline: var(--control-spacing, 12px);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+  padding: 0;
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+  min-height: calc(10px + 2 * var(--control-spacing, 12px));
+  padding-inline: var(--control-spacing, 12px);
+  margin-inline-end: var(--control-spacing, 12px);
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  resize: vertical;
+  min-height: 96px;
+  padding: 8px 10px;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: none;
+}
+.form-control:disabled {
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  opacity: 1;
+}
+.form-control[aria-invalid=&quot;true&quot;] {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 20%, transparent);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: fit-content;
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  margin: 0;
+  /* The secondary icon role is 14px at compact density and 16px at web density. */
+  --icon-size: calc(10px + var(--control-spacing, 12px) / 2);
+  /* Settings dropdowns retain a 12px inset and a 4px text-to-chevron gap. */
+  padding: 0 calc(16px + var(--icon-size)) 0 12px;
+  outline: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent calc(50% - 0.6px),
+      var(--muted-foreground) calc(50% - 0.6px) calc(50% + 0.6px),
+      transparent calc(50% + 0.6px)
+    ),
+    linear-gradient(
+      135deg,
+      transparent calc(50% - 0.6px),
+      var(--muted-foreground) calc(50% - 0.6px) calc(50% + 0.6px),
+      transparent calc(50% + 0.6px)
+    );
+  background-position:
+    calc(100% - 12px - var(--icon-size) / 2) 50%,
+    calc(100% - 12px - var(--icon-size) * 0.18) 50%;
+  background-repeat: no-repeat;
+  background-size: calc(var(--icon-size) * 0.32) calc(var(--icon-size) * 0.32);
+  cursor: var(--cursor-interaction, default);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+}
+
+.form-select :is(option, optgroup) {
+  color: var(--popover-foreground);
+  background-color: var(--popover);
+}
+
+.form-select :is(option, optgroup):disabled {
+  color: var(--muted-foreground);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.form-select:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+.form-select:disabled {
+  opacity: 0.4;
+}
+
+.form-check {
+  display: flex;
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  corner-shape: round;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  width: calc(10px + var(--control-spacing, 12px) / 2);
+  height: calc(10px + var(--control-spacing, 12px) / 2);
+  border-color: var(--border-strong, var(--input));
+  border-radius: calc(var(--radius-sm) / 2);
+  background-color: transparent;
+  color: var(--foreground);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:is(:checked, :indeterminate) {
+  border-color: var(--border-strong, var(--input));
+  background-color: color-mix(in srgb, var(--popover) 96%, transparent);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+  background-color: var(--foreground);
+}
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:indeterminate::before {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 65%;
+  height: 6.65%;
+  margin: auto;
+  border-radius: var(--radius-full);
+  background: var(--foreground);
+  mask: none;
+  content: &quot;&quot;;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  border-radius: var(--radius-full);
+  width: 16px;
+  height: 16px;
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--input);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 0;
+  background: radial-gradient(
+    circle,
+    var(--primary-foreground) 0 3px,
+    var(--foreground) 3px
+  );
+  box-shadow: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:focus-visible {
+  border-color: var(--ring);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+.form-check:not(.form-switch) .form-check-input[type=&quot;radio&quot;]:disabled,
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;radio&quot;]:disabled
+  + .form-check-label {
+  opacity: 0.5;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+  border-color: #fff;
+  background: #fff;
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--blue);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+  outline: none;
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  accent-color: var(--primary);
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  outline: none;
+  border-radius: var(--radius-full);
+  color: var(--foreground);
+  background: transparent;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  background: var(--form-range-track, var(--border));
+  height: 2px;
+  border-radius: var(--radius-full);
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  margin-top: -9px;
+  border-color: transparent;
+  background: currentColor;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Outline the native track and thumb, preserving the larger input hit area. */
+.form-range:focus-visible::-webkit-slider-runnable-track {
+  outline: 2px auto Highlight;
+  outline-color: -webkit-focus-ring-color;
+}
+
+.form-range::-moz-range-track {
+  background: var(--form-range-track, var(--border));
+  height: 2px;
+  border-radius: var(--radius-full);
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  border-color: transparent;
+  background: currentColor;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid Highlight;
+  outline-offset: 2px;
+}
+
+.form-range:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--blue);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.viz-carousel-controls :is(button, summary):focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* Web recipes are the default, including on renderers without inline style queries. */
+@supports (border-radius: if(style(--corner-shape: round): 1px; else: 2px)) {
+  /* Match the host&#x27;s proportional text-sm scale at every text preference. */
+  .tooltip,
+  .viz-badge,
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    font-size: if(
+      style(--corner-shape: round): round(
+          nearest,
+          calc(var(--font-size-base) * 14 / 16),
+          1px
+        );
+        else: round(nearest, calc(var(--font-size-base) * 13 / 14), 1px)
+    );
+  }
+
+  .btn-sm {
+    font-size: if(
+      style(--corner-shape: round): round(
+          nearest,
+          calc(var(--font-size-base) * 12 / 16),
+          1px
+        );
+        else: round(nearest, calc(var(--font-size-base) * 12 / 14), 1px)
+    );
+  }
+
+  .btn,
+  .nav-link,
+  .form-select {
+    border-radius: if(
+      style(--corner-shape: round): var(--radius-full); else: var(--radius-lg)
+    );
+  }
+
+  .form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+    border-radius: if(
+      style(--corner-shape: round): calc(var(--radius-sm) / 2);
+        else: calc(var(--radius-lg) * 0.4)
+    );
+  }
+
+  .tooltip {
+    font-weight: if(
+      style(--corner-shape: round): 600; else: var(--font-weight-normal)
+    );
+  }
+}
+
+@media (pointer: coarse) {
+  .viz-carousel:has(&gt; .viz-carousel-controls) {
+    min-height: calc(76px + var(--viz-carousel-picker-height, 0px));
+    padding-bottom: 76px;
+  }
+
+  .btn,
+  .nav-link,
+  .viz-carousel-controls button,
+  .viz-carousel-picker &gt; summary,
+  .form-control,
+  .form-select {
+    --btn-size: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, calc(var(--font-size-base) * 14 / 16));
+    font-size: max(
+      16px,
+      round(nearest, calc(var(--font-size-base) * 14 / 16), 1px)
+    );
+  }
+  .form-control:is(
+    [type=&quot;file&quot;],
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;week&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;color&quot;]
+  ) {
+    height: 44px;
+    min-height: 44px;
+    font-size: max(16px, calc(var(--font-size-base) * 14 / 16));
+    font-size: max(
+      16px,
+      round(nearest, calc(var(--font-size-base) * 14 / 16), 1px)
+    );
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;script type=&quot;application/json&quot; id=&quot;codex-visualization-widget-state&quot;&gt;__CODEX_VISUALIZATION_WIDGET_STATE__&lt;/script&gt;
+&lt;script&gt;(() =&gt; {
+  const root = document.documentElement;
+  const mediaQuery = globalThis.matchMedia(&quot;(prefers-color-scheme: dark)&quot;);
+  const apply = Reflect.apply;
+  const isArray = Array.isArray;
+  const hasOwn = Object.hasOwn;
+  const parentWindow = globalThis.parent;
+  const stringify = JSON.stringify;
+  const parse = JSON.parse;
+  const encode = TextEncoder.prototype.encode.bind(new TextEncoder());
+  const initialStateElement = document.getElementById(
+    &quot;codex-visualization-widget-state&quot;,
+  );
+  const initialGlobals = parse(initialStateElement?.textContent ?? &quot;{}&quot;);
+  initialStateElement?.remove();
+  /** @type {Record&lt;string, unknown&gt; | null} */
+  let state = initialGlobals.widgetState ?? null;
+  const statePersistence = initialGlobals.statePersistence ?? &quot;none&quot;;
+  let nextStateRequestId = 0;
+  /** @type {Map&lt;number, { resolve: () =&gt; void; reject: (error: Error) =&gt; void; timeout: ReturnType&lt;typeof globalThis.setTimeout&gt;; serializedState: string }&gt;} */
+  const pendingStateWrites = new Map();
+  const persistenceError = () =&gt;
+    Object.assign(
+      new Error(&quot;The host could not persist the widget state update&quot;),
+      {
+        code: -32000,
+        data: { code: &quot;widget_state_persistence_failed&quot;, retryable: false },
+      },
+    );
+  /**
+   * @param {object} prototype
+   * @param {string} property
+   */
+  const getPrototypeGetter = (prototype, property) =&gt; {
+    // oxlint-disable-next-line typescript/unbound-method -- invoked through captured Reflect.apply
+    const getter = Object.getOwnPropertyDescriptor(prototype, property)?.get;
+    if (getter == null) {
+      throw new Error(`Missing ${property} getter`);
+    }
+    return getter;
+  };
+  const getMessageData = getPrototypeGetter(MessageEvent.prototype, &quot;data&quot;);
+  const getMessagePorts = getPrototypeGetter(MessageEvent.prototype, &quot;ports&quot;);
+  const getMessageSource = getPrototypeGetter(MessageEvent.prototype, &quot;source&quot;);
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const addHostMessageListener = MessagePort.prototype.addEventListener;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const postHostMessage = MessagePort.prototype.postMessage;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const startHostPort = MessagePort.prototype.start;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const stopMessagePropagation = Event.prototype.stopImmediatePropagation;
+  /** @type {MessagePort | null} */
+  let hostPort = null;
+  const postToHost = (type, payload) =&gt; {
+    if (hostPort != null) {
+      apply(postHostMessage, hostPort, [{ type, ...payload }]);
+    }
+  };
+  const openExternal = ({ href }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;open-external&quot;, { href });
+    }
+  };
+  const sendFollowUpMessage = ({ context, prompt, title }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;follow-up&quot;, { context, prompt, title });
+    }
+    return Promise.resolve();
+  };
+  /**
+   * @param {Record&lt;string, unknown&gt; | ((previous: Record&lt;string, unknown&gt; | null) =&gt; Record&lt;string, unknown&gt;)} next
+   * @returns {Promise&lt;void&gt;}
+   */
+  const setWidgetState = async (next) =&gt; {
+    const nextState = typeof next === &quot;function&quot; ? next(state) : next;
+    if (
+      nextState == null ||
+      typeof nextState !== &quot;object&quot; ||
+      isArray(nextState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const inputState = stringify(
+      nextState,
+      (_key, /** @type {unknown} */ value) =&gt; {
+        if (
+          typeof value === &quot;undefined&quot; ||
+          typeof value === &quot;function&quot; ||
+          typeof value === &quot;symbol&quot; ||
+          (typeof value === &quot;number&quot; &amp;&amp; !Number.isFinite(value))
+        ) {
+          throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+        }
+        return value;
+      },
+    );
+    const parsedState = parse(inputState);
+    if (
+      parsedState == null ||
+      typeof parsedState !== &quot;object&quot; ||
+      isArray(parsedState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const storedState = {
+      modelContent: null,
+      privateContent: null,
+      ...parsedState,
+    };
+    const serializedState = stringify(storedState);
+    if (encode(serializedState).length &gt; 16 * 1024) {
+      throw new TypeError(
+        &quot;Widget state must be a JSON object of at most 16 KiB&quot;,
+      );
+    }
+    if (
+      hasOwn(storedState, &quot;imageIds&quot;) &amp;&amp;
+      (!isArray(storedState.imageIds) ||
+        storedState.imageIds.some(
+          (/** @type {unknown} */ id) =&gt; typeof id !== &quot;string&quot;,
+        ))
+    ) {
+      throw new TypeError(&quot;Widget state imageIds must be an array of strings&quot;);
+    }
+    if (storedState.imageIds?.length &gt; 0) {
+      throw Object.assign(
+        new TypeError(&quot;Visualization state does not support image attachments&quot;),
+        { code: -32602, data: { code: &quot;images_unsupported&quot; } },
+      );
+    }
+    state = storedState;
+    globalThis.openai.widgetState = state;
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: { widgetState: state } },
+      }),
+    );
+    if (statePersistence === &quot;none&quot;) {
+      throw persistenceError();
+    }
+    const id = ++nextStateRequestId;
+    return new Promise((resolve, reject) =&gt; {
+      const timeout = globalThis.setTimeout(() =&gt; {
+        pendingStateWrites.delete(id);
+        reject(persistenceError());
+      }, 30_000);
+      pendingStateWrites.set(id, { resolve, reject, timeout, serializedState });
+      postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+    });
+  };
+  const bindingElement = document.getElementById(&quot;codex-visualization-bindings&quot;);
+  const mockElement = document.getElementById(&quot;codex-connector-mocks&quot;);
+  const fileElement = document.getElementById(&quot;codex-preview-files&quot;);
+  const connectorGlobals = {};
+  if (bindingElement != null || mockElement != null || fileElement != null) {
+    const bindings = parse(bindingElement?.textContent ?? &quot;{}&quot;);
+    bindingElement?.remove();
+    const values = new Map();
+    for (const [name, binding] of Object.entries(bindings)) {
+      if (binding.type === &quot;json&quot;) values.set(name, structuredClone(binding.value));
+    }
+    const pending = [bindings];
+    while (pending.length) {
+      const object = pending.pop();
+      Object.freeze(object);
+      for (const child of Object.values(object)) {
+        if (child !== null &amp;&amp; typeof child === &quot;object&quot;) pending.push(child);
+      }
+    }
+    const updates = [];
+    if (mockElement != null) {
+      const mocks = Object.entries(parse(mockElement.textContent));
+      mockElement.remove();
+      for (const [name, value] of mocks) {
+        values.set(name, value);
+        updates.push({ name, revision: 1, state: &quot;ready&quot;, value: { type: &quot;json&quot;, value } });
+      }
+    }
+    if (fileElement != null) {
+      const files = parse(fileElement.textContent);
+      fileElement.remove();
+      const blobs = new Map();
+      const urls = [];
+      for (const [name, binding] of Object.entries(bindings)) {
+        if (binding.type !== &quot;file&quot; || !hasOwn(files, binding.path)) continue;
+        const file = files[binding.path];
+        let blob = blobs.get(binding.path);
+        if (blob == null) {
+          const bytes = Uint8Array.fromBase64?.(file.base64) ??
+            Uint8Array.from(atob(file.base64), (char) =&gt; char.charCodeAt(0));
+          blob = new Blob([bytes], { type: file.mimeType });
+          blobs.set(binding.path, blob);
+        }
+        const url = URL.createObjectURL(blob);
+        urls.push(url);
+        values.set(name, { name: file.name, blob, url });
+        updates.push({ name, revision: 1, state: &quot;ready&quot;, value: { type: &quot;file&quot;, ...file } });
+      }
+      globalThis.addEventListener(&quot;pagehide&quot;, (event) =&gt; {
+        // A persisted pagehide can restore this same document and its subscriptions.
+        if (event.persisted) return;
+        for (const url of urls) URL.revokeObjectURL(url);
+        urls.length = 0;
+      });
+    }
+    if (mockElement != null || fileElement != null) connectorGlobals.visualizationData = { updates };
+    connectorGlobals.visualization = {
+      get bindings() {
+        return bindings;
+      },
+      /** @param {string} name @param {(value: unknown) =&gt; void} callback */
+      onData(name, callback) {
+        if (typeof callback !== &quot;function&quot;) {
+          throw new TypeError(&quot;onData requires a callback&quot;);
+        }
+        try {
+          callback(values.get(name));
+        } catch (error) {
+          // oxlint-disable-next-line no-console -- Keep authored callback failures local.
+          console.error(&quot;Live visualization data callback failed&quot;, error);
+        }
+        // A static preview delivers the current value once per subscription.
+        return () =&gt; {};
+      },
+    };
+  }
+  const syncTheme = () =&gt; {
+    const theme = mediaQuery.matches ? &quot;dark&quot; : &quot;light&quot;;
+    root.dataset.theme = theme;
+    globalThis.openai = {
+      ...globalThis.openai,
+      ...connectorGlobals,
+      openExternal,
+      sendFollowUpMessage,
+      setWidgetState,
+      theme,
+      visualizationStyleVariables: {},
+      visualizationTheme: theme,
+      widgetState: state,
+      statePersistence,
+      stateModelContext: &quot;none&quot;,
+    };
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: globalThis.openai },
+      }),
+    );
+  };
+  const sendHeight = () =&gt; {
+    postToHost(&quot;height&quot;, {
+      height: Math.ceil(
+        Math.max(
+          document.body.scrollHeight,
+          document.body.getBoundingClientRect().height,
+        ),
+      ),
+    });
+  };
+
+  globalThis.addEventListener(
+    &quot;message&quot;,
+    (event) =&gt; {
+      const data = apply(getMessageData, event, []);
+      const ports = apply(getMessagePorts, event, []);
+      const source = apply(getMessageSource, event, []);
+      if (
+        hostPort != null ||
+        source !== parentWindow ||
+        typeof data !== &quot;object&quot; ||
+        data?.type !== &quot;codex-visualization-initialize&quot; ||
+        !isArray(ports) ||
+        ports.length !== 1
+      ) {
+        return;
+      }
+      apply(stopMessagePropagation, event, []);
+      const nextHostPort = ports[0];
+      try {
+        apply(addHostMessageListener, nextHostPort, [
+          &quot;message&quot;,
+          (event) =&gt; {
+            const data = apply(getMessageData, event, []);
+            if (typeof data === &quot;object&quot; &amp;&amp; data?.type === &quot;measure&quot;) {
+              sendHeight();
+            } else if (
+              typeof data === &quot;object&quot; &amp;&amp;
+              data?.type === &quot;widget-state-result&quot;
+            ) {
+              /** @type {unknown} */
+              const id = data.id;
+              if (typeof id !== &quot;number&quot;) {
+                return;
+              }
+              const pending = pendingStateWrites.get(id);
+              if (pending != null) {
+                pendingStateWrites.delete(id);
+                globalThis.clearTimeout(pending.timeout);
+                if (data.ok === true) {
+                  pending.resolve();
+                } else {
+                  pending.reject(persistenceError());
+                }
+              }
+            }
+          },
+        ]);
+        apply(startHostPort, nextHostPort, []);
+      } catch {
+        return;
+      }
+      hostPort = nextHostPort;
+      for (const [id, { serializedState }] of pendingStateWrites) {
+        postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+      }
+      sendHeight();
+    },
+    { capture: true },
+  );
+  document.currentScript?.remove();
+  mediaQuery.addEventListener(&quot;change&quot;, syncTheme);
+  globalThis.addEventListener(&quot;click&quot;, (event) =&gt; {
+    if (event.defaultPrevented) {
+      return;
+    }
+    let element = null;
+    if (event.target instanceof globalThis.Element) {
+      element = event.target;
+    } else if (event.target instanceof globalThis.Node) {
+      element = event.target.parentElement;
+    }
+    const link = element?.closest(&quot;a[href]&quot;);
+    const href = link?.getAttribute(&quot;href&quot;);
+    if (href == null) {
+      return;
+    }
+    if (href.startsWith(&quot;#&quot;)) {
+      let id;
+      try {
+        id = decodeURIComponent(href.slice(1));
+      } catch {
+        return;
+      }
+      const target = id.length === 0 ? root : document.getElementById(id);
+      if (
+        target == null ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      event.preventDefault();
+      postToHost(&quot;scroll-to&quot;, {
+        top: target.getBoundingClientRect().top + globalThis.scrollY,
+      });
+      return;
+    }
+    event.preventDefault();
+    openExternal({ href });
+  });
+  new ResizeObserver(sendHeight).observe(document.body);
+  syncTheme();
+})();
+&lt;/script&gt;
+&lt;style&gt;
+@import url(&#x27;https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600..750&amp;family=Lato:wght@900&amp;family=Noto+Sans:wght@400;500;600;700&amp;family=Noto+Sans+Mono:wght@500;600&amp;display=swap&#x27;);
+#cs-workspace {
+  --ink:#242329; --action:#2d2e33; --action-hover:#42424a; --red:#a63d2e; --link:#6f3a32; --focus:#903f33;
+  --paper:#fbfaf8; --white:#fff; --inspector:#f8f6f3; --line:#d7d2ce; --edge:#807974; --dim:#595456; --selection:#eeebe8; --tint:#f2eeeb;
+  --heading:&quot;Instrument Sans&quot;,system-ui,sans-serif; --wordmark:Lato,system-ui,sans-serif; --body:&quot;Noto Sans&quot;,system-ui,sans-serif; --mono:&quot;Noto Sans Mono&quot;,monospace;
+  color:var(--ink);background:var(--paper);font:400 .9rem/1.45 var(--body);color-scheme:light;text-align:start;
+}
+#cs-workspace *,#cs-workspace *::before,#cs-workspace *::after {box-sizing:border-box}
+#cs-workspace [hidden] {display:none!important}
+#cs-workspace :is(h1,h2,h3,p,ol,ul,dl,dd) {margin:0}
+#cs-workspace :is(h1,h2,h3) {font-family:var(--heading);font-weight:750;line-height:1.13}
+#cs-workspace h1 {font-size:clamp(1.85rem,1.47rem + 1.45vw,2.7rem);letter-spacing:-.038em}
+#cs-workspace h2 {font-size:clamp(1.45rem,1.1rem + 1.1vw,2.15rem);letter-spacing:-.029em}
+#cs-workspace h3 {font-size:1.15rem;letter-spacing:-.016em}
+#cs-workspace a {color:var(--link);text-decoration:underline;text-underline-offset:.2em}
+#cs-workspace :is(button,input,textarea,select) {font:inherit;color:inherit}
+#cs-workspace :is(a,button,input,textarea,select,summary):focus-visible {outline:3px solid var(--focus);outline-offset:2px;z-index:1}
+#cs-workspace :is(button,summary) {cursor:pointer}
+#cs-workspace .sr {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#cs-workspace .skip {position:absolute;z-index:5;background:var(--white);padding:.65rem;inset-block-start:.4rem;inset-inline-start:.4rem;transform:translateY(-150%)}
+#cs-workspace .skip:focus {transform:none}
+#cs-workspace .mast {
+ display:grid;grid-template-columns:auto minmax(13rem,1fr) auto;align-items:center;
+ gap:.8rem clamp(.85rem,2.35vw,2.25rem);padding:.55rem clamp(.85rem,2.65vw,2rem);
+ min-block-size:3.75rem;border-block-end:1px solid var(--line);background:var(--white);
+}
+#cs-workspace .mast-brand {display:flex;align-items:center;gap:clamp(.65rem,1.6vw,1.5rem)}
+#cs-workspace .lockup {display:inline-flex;align-items:center;gap:.64rem;min-block-size:2.75rem;color:inherit;text-decoration:none}
+#cs-workspace .wordmark {font:900 clamp(1.25rem,1.05rem + 1vw,1.75rem)/1 var(--wordmark);letter-spacing:-.037em;white-space:nowrap}
+#cs-workspace .mark {display:grid;place-items:center;inline-size:2.1rem;aspect-ratio:1;flex:none;background:var(--red);color:#fff}
+#cs-workspace .bars {display:grid;align-content:center;gap:.16rem;inline-size:62%;transform:skewY(-17deg)}
+#cs-workspace .bars b {display:block;block-size:.16rem;background:currentColor}
+#cs-workspace .bars b:first-child {inline-size:47%;justify-self:end}
+#cs-workspace .bars b:nth-child(2) {inline-size:74%;justify-self:center}
+#cs-workspace .tagline {border-inline-start:1px solid var(--line);padding:.4rem 0 .4rem clamp(.65rem,1.5vw,1.2rem);font-size:.78rem;color:var(--dim)}
+#cs-workspace .global-search {display:grid;grid-template-columns:2.65rem minmax(0,1fr);border:1px solid var(--edge);border-radius:.3rem;background:var(--white);min-inline-size:0}
+#cs-workspace .global-search button {display:grid;place-items:center;min-block-size:2.65rem;background:none;border:0;padding:0}
+#cs-workspace .global-search input {min-inline-size:0;inline-size:100%;padding:.35rem .55rem .35rem 0;border:0;background:none;font-size:.89rem}
+#cs-workspace .global-search:focus-within {outline:2px solid var(--focus);outline-offset:2px}
+#cs-workspace .global-search input:focus-visible {outline:0}
+#cs-workspace .locale {display:flex;align-items:center;gap:.35rem}
+#cs-workspace .locale button {min-inline-size:2.4rem;min-block-size:2.75rem;padding:0 .25rem;background:none;border:0;font-weight:700;color:var(--link);text-decoration:underline;text-underline-offset:.18em}
+#cs-workspace .locale button+button {border-inline-start:1px solid var(--line);border-radius:0}
+#cs-workspace .locale [aria-pressed=&quot;true&quot;] {color:var(--ink);text-decoration:none}
+#cs-workspace .layout {display:grid;grid-template-columns:minmax(8.8rem,1fr) minmax(0,3.4fr) minmax(15.2rem,1.9fr);align-items:stretch;min-block-size:35rem}
+#cs-workspace .rail {min-inline-size:0;border-inline-end:1px solid var(--line);padding:1rem .68rem .8rem}
+#cs-workspace .rail ul {list-style:none;padding:0;display:grid;gap:.05rem}
+#cs-workspace .rail a {display:flex;align-items:center;min-block-size:2.75rem;padding:.35rem .7rem;color:var(--ink);text-decoration:none;line-height:1.23;font-size:.9rem}
+#cs-workspace .rail a:hover {background:var(--tint)}
+#cs-workspace .rail a[aria-current=&quot;page&quot;] {font-weight:700;background:var(--selection);border-radius:.35rem;box-shadow:inset 0 0 0 1px #dcd6d2}
+#cs-workspace .rail details {border-block-start:1px solid var(--line);padding-block-start:.6rem;margin-block-start:.72rem}
+#cs-workspace .rail summary {min-block-size:2.75rem;padding:.56rem .7rem;font-size:.76rem;font-weight:650;color:var(--dim)}
+#cs-workspace .rail .brand-link {font-size:.74rem;color:var(--link);text-decoration:underline;text-underline-offset:.17em;margin-block-start:.6rem}
+#cs-workspace .work {min-inline-size:0;padding:clamp(1rem,2.05vw,1.6rem) clamp(.9rem,1.92vw,1.55rem) 2rem}
+#cs-workspace .heading-row {display:flex;align-items:center;justify-content:space-between;gap:.5rem 1rem;flex-wrap:wrap;margin-block-end:.85rem}
+#cs-workspace .dek {margin-block-start:.22rem;color:var(--dim);font-size:.92rem}
+#cs-workspace .button {display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-block-size:2.75rem;padding:.42rem .78rem;border-radius:.4rem;border:1px solid var(--action);background:var(--action);color:#fff;font-weight:700;text-decoration:none;text-align:center;line-height:1.25}
+#cs-workspace .button:hover {background:var(--action-hover);color:#fff}
+#cs-workspace .button.secondary {background:transparent;color:var(--ink)}
+#cs-workspace .button.secondary:hover {background:var(--tint)}
+#cs-workspace .queue {padding:0;list-style:none;border-block-start:1px solid var(--line)}
+#cs-workspace .queue li {display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.75rem;padding:.57rem 0 .57rem .54rem;border-block-end:1px solid var(--line)}
+#cs-workspace .queue h3 {font-size:clamp(1rem,.89rem + .4vw,1.24rem)}
+#cs-workspace .queue p {color:var(--dim);font-size:.84rem;margin-block-start:.18rem}
+#cs-workspace .queue .button {min-inline-size:5.8rem}
+#cs-workspace .queue-state {font-weight:700;color:var(--ink)}
+#cs-workspace .policy-feature {margin-block-start:1.15rem}
+#cs-workspace .policy-feature .dek {margin-block-start:.43rem}
+#cs-workspace .timeline {list-style:none;padding:0;margin-block:1rem .75rem}
+#cs-workspace .timeline li {position:relative}
+#cs-workspace .timeline li:not(:last-child)::after {content:&quot;&quot;;position:absolute;inline-size:1px;background:#ada39d;inset-inline-start:.49rem;inset-block-start:50%;inset-block-end:-50%;pointer-events:none}
+#cs-workspace .step {display:grid;grid-template-columns:1rem minmax(6.1rem,.82fr) minmax(0,1.7fr);align-items:center;column-gap:.62rem;min-block-size:2.78rem;inline-size:100%;text-align:start;border:0;background:transparent;padding:.36rem 0;font-family:var(--heading);font-weight:700;letter-spacing:-.006em;font-size:clamp(.92rem,.83rem + .35vw,1.15rem)}
+#cs-workspace .step:hover,#cs-workspace .step[aria-current=&quot;true&quot;] {background:var(--tint)}
+#cs-workspace .dot {inline-size:.68rem;aspect-ratio:1;border-radius:50%;justify-self:center;background:var(--paper);border:2px solid #706864;z-index:1}
+#cs-workspace .timeline li:last-child .dot {background:var(--red);border-color:var(--red)}
+#cs-workspace .step-label {border-inline-start:1px solid var(--line);padding-inline-start:.73rem;line-height:1.25}
+#cs-workspace .citation-line {display:flex;align-items:baseline;gap:.34rem .55rem;flex-wrap:wrap;border-block-start:1px solid var(--line);padding-block-start:.32rem;font-size:.88rem}
+#cs-workspace .citation-line a {display:inline-flex;align-items:center;min-block-size:2.75rem;font-weight:700}
+#cs-workspace .mono {font:600 .8rem/1.38 var(--mono);overflow-wrap:anywhere}
+#cs-workspace .inspector {min-inline-size:0;background:var(--inspector);border-inline-start:1px solid var(--line);padding:clamp(.95rem,1.95vw,1.5rem) clamp(.8rem,1.62vw,1.34rem) 1.55rem}
+#cs-workspace .caption {font-size:.77rem;line-height:1.35;font-weight:650;color:var(--dim)}
+#cs-workspace .inspector h2 {margin-block:.48rem .2rem;overflow-wrap:anywhere}
+#cs-workspace .inspector h3 {font-size:clamp(1.12rem,.97rem + .55vw,1.45rem)}
+#cs-workspace .inspector .block {border-block-start:1px solid var(--line);padding-block:.64rem;margin-block-start:.7rem}
+#cs-workspace .inspector .description {margin-block-start:.35rem}
+#cs-workspace .inspector .meta {color:var(--dim);font-size:.89rem}
+#cs-workspace .inspector .buttons {display:grid;gap:.45rem;padding-block:.8rem .15rem}
+#cs-workspace .inspector .buttons &gt; * {inline-size:100%}
+#cs-workspace .inspector dl {display:grid;gap:.47rem}
+#cs-workspace .inspector dl div {display:grid;grid-template-columns:minmax(4.4rem,1fr) minmax(0,1.95fr);column-gap:.45rem;align-items:baseline}
+#cs-workspace .inspector dt {font-size:.74rem;line-height:1.3;font-weight:650;color:var(--dim);overflow-wrap:anywhere}
+#cs-workspace .inspector dd {font-size:.8rem}
+#cs-workspace .inspector dd a {display:inline-flex;align-items:center;min-block-size:2.75rem}
+#cs-workspace .feedback {color:var(--ink);font-weight:700;font-size:.8rem;margin-block-start:.42rem}
+#cs-workspace .feedback:empty {display:none}
+#cs-workspace .pill {font-weight:700;font-size:.76rem;color:var(--ink)}
+#cs-workspace .result-controls {display:flex;align-items:center;justify-content:space-between;gap:.55rem;flex-wrap:wrap;margin-block:1rem .45rem}
+#cs-workspace .result-controls select {min-block-size:2.75rem;max-inline-size:100%;background:var(--white);border:1px solid var(--edge);border-radius:.3rem;padding:.36rem}
+#cs-workspace .result-count {font-size:.8rem;color:var(--dim);overflow-wrap:anywhere;margin-block:.5rem}
+#cs-workspace .results,#cs-workspace .brief-sources {padding:0;list-style:none;border-block-start:1px solid var(--line)}
+#cs-workspace .results li,#cs-workspace .brief-sources li {border-block-end:1px solid var(--line)}
+#cs-workspace .result {display:grid;gap:.28rem;text-align:start;inline-size:100%;min-block-size:2.75rem;padding:.64rem .5rem;background:none;border:0}
+#cs-workspace .result:hover,#cs-workspace .result[aria-current=&quot;true&quot;] {background:var(--tint)}
+#cs-workspace .result-name {color:var(--link);font-weight:700;text-decoration:underline;text-underline-offset:.18em}
+#cs-workspace .result-sub {font-size:.77rem;color:var(--dim)}
+#cs-workspace .draft-fields {display:grid;gap:.35rem;margin-block:1rem}
+#cs-workspace .draft-fields label {font-weight:700}
+#cs-workspace .draft-fields :is(input,textarea,select) {background:var(--white);border:1px solid var(--edge);border-radius:.3rem;padding:.58rem;min-block-size:2.75rem;min-inline-size:0;inline-size:100%}
+#cs-workspace .draft-fields textarea {min-block-size:7rem;resize:vertical;margin-block-end:.2rem}
+#cs-workspace .draft-fields label:not(:first-child) {margin-block-start:.35rem}
+#cs-workspace .brief-sources {margin-block-start:.55rem}
+#cs-workspace .brief-sources li {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.4rem;align-items:center}
+#cs-workspace .brief-sources button:not(.result) {margin-inline-end:.2rem}
+#cs-workspace .brief-empty {margin-block-start:.55rem;color:var(--dim)}
+#cs-workspace .foot {border-block-start:1px solid var(--line);padding:.7rem clamp(.85rem,2.65vw,2rem);font-size:.72rem;color:var(--dim)}
+#cs-workspace .guide {margin-block-start:1rem}
+#cs-workspace .guide h2 {margin-block:1.15rem .53rem}
+#cs-workspace .guide-locks {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+#cs-workspace .guide-lock {padding:.8rem;background:var(--paper)}
+#cs-workspace .guide-lock.inverse {background:var(--action);color:#fff}
+#cs-workspace .guide-lock.inverse .mark {background:#fff;color:var(--red)}
+#cs-workspace .swatches {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,5.2rem),1fr));gap:.55rem;padding:0;list-style:none}
+#cs-workspace .swatches li {font-size:.72rem}
+#cs-workspace .swatches i {display:block;block-size:2.35rem;background:var(--swatch);border:1px solid #2d2e3340;margin-block-end:.28rem}
+#cs-workspace .guide-type {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));gap:.8rem}
+#cs-workspace .guide-type div {border-block-start:1px solid var(--line);padding-block-start:.5rem}
+#cs-workspace .guide-type h3 {margin-block-start:.24rem}
+#cs-workspace .guide-example {border:1px solid var(--line);padding:.85rem;margin-block-start:.6rem;background:var(--white)}
+#cs-workspace .guide-example h3 {margin-block:.32rem .24rem}
+@media (max-width:55rem) {
+ #cs-workspace .tagline {display:none}
+ #cs-workspace .mast {grid-template-columns:auto minmax(9rem,1fr) auto}
+ #cs-workspace .layout {grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+ #cs-workspace .rail {grid-column:1/-1;border-inline-end:0;border-block-end:1px solid var(--line);padding:.15rem .85rem;display:flex;align-items:flex-start;flex-wrap:wrap;gap:0 .5rem}
+ #cs-workspace .rail ul {display:flex;flex-wrap:wrap}
+ #cs-workspace .rail a {padding-inline:.45rem;font-size:.82rem}
+ #cs-workspace .rail details {margin:0;padding:0;border:0}
+ #cs-workspace .rail summary {padding-inline:.45rem}
+ #cs-workspace .rail details[open] {flex-basis:100%}
+ #cs-workspace .rail .brand-link {margin:0}
+}
+@media (max-width:42rem) {
+ #cs-workspace .layout {grid-template-columns:minmax(0,1fr)}
+ #cs-workspace .inspector {border-inline-start:0;border-block-start:1px solid var(--line)}
+}
+@media (max-width:32rem) {
+ #cs-workspace .mast {grid-template-columns:minmax(0,1fr) auto;gap:.28rem .5rem}
+ #cs-workspace .global-search {grid-row:2;grid-column:1/-1}
+ #cs-workspace .global-search input {font-size:1rem}
+ #cs-workspace .locale {grid-column:2;grid-row:1}
+ #cs-workspace .rail {padding-inline:.45rem}
+ #cs-workspace .rail a {padding-inline:.36rem;font-size:.76rem}
+ #cs-workspace .rail summary {font-size:.66rem}
+ #cs-workspace .queue li {padding-inline-start:0}
+ #cs-workspace .queue .button {min-inline-size:0}
+}
+&lt;/style&gt;
+
+&lt;div id=&quot;cs-workspace&quot; lang=&quot;en&quot;&gt;
+  &lt;a class=&quot;skip&quot; href=&quot;#cs-work&quot; data-t=&quot;skip&quot;&gt;Skip to main content&lt;/a&gt;
+  &lt;header class=&quot;mast&quot;&gt;
+    &lt;div class=&quot;mast-brand&quot;&gt;
+      &lt;a class=&quot;lockup&quot; href=&quot;#workspace&quot; data-view=&quot;workspace&quot; aria-label=&quot;CivicSignal&quot;&gt;
+        &lt;span class=&quot;mark&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;bars&quot;&gt;&lt;b&gt;&lt;/b&gt;&lt;b&gt;&lt;/b&gt;&lt;b&gt;&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;wordmark&quot;&gt;CivicSignal&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;p class=&quot;tagline&quot; data-t=&quot;tagline&quot;&gt;Canadian policy research&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;global-search&quot; role=&quot;search&quot; data-label=&quot;searchLabel&quot; aria-label=&quot;Search source records&quot;&gt;
+      &lt;button type=&quot;button&quot; data-search data-label=&quot;search&quot; aria-label=&quot;Search&quot;&gt;&lt;i data-lucide=&quot;search&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+      &lt;label class=&quot;sr&quot; for=&quot;cs-workspace-search&quot; data-t=&quot;searchLabel&quot;&gt;Search source records&lt;/label&gt;
+      &lt;input id=&quot;cs-workspace-search&quot; data-query type=&quot;search&quot; data-placeholder=&quot;searchPlaceholder&quot; placeholder=&quot;Search bills, topics, or citations&quot; maxlength=&quot;160&quot;&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;locale&quot; role=&quot;group&quot; data-label=&quot;languageLabel&quot; aria-label=&quot;Language&quot;&gt;
+      &lt;button type=&quot;button&quot; lang=&quot;en&quot; aria-label=&quot;English&quot; data-lang=&quot;0&quot; aria-pressed=&quot;true&quot;&gt;EN&lt;/button&gt;
+      &lt;button type=&quot;button&quot; lang=&quot;fr&quot; aria-label=&quot;Français&quot; data-lang=&quot;1&quot; aria-pressed=&quot;false&quot;&gt;FR&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;div class=&quot;layout&quot;&gt;
+    &lt;nav class=&quot;rail&quot; data-label=&quot;navLabel&quot; aria-label=&quot;Workspace navigation&quot;&gt;
+      &lt;ul&gt;
+        &lt;li&gt;&lt;a href=&quot;#workspace&quot; data-view=&quot;workspace&quot; data-t=&quot;workspace&quot; aria-current=&quot;page&quot;&gt;Workspace&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;#files&quot; data-view=&quot;files&quot; data-t=&quot;files&quot;&gt;Policy files&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;#records&quot; data-view=&quot;records&quot; data-t=&quot;records&quot;&gt;Source records&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;#briefings&quot; data-view=&quot;briefings&quot; data-t=&quot;briefings&quot;&gt;Briefings&lt;/a&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+      &lt;details data-browse-menu open&gt;
+        &lt;summary data-t=&quot;browseLabel&quot;&gt;Browse&lt;/summary&gt;
+        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#records&quot; data-browse=&quot;legislation&quot; data-t=&quot;legislation&quot;&gt;Bills &amp;amp; legislation&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#records&quot; data-browse=&quot;regulation&quot; data-t=&quot;regulation&quot;&gt;Regulations&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#records&quot; data-browse=&quot;gazette&quot; data-t=&quot;indexGazette&quot;&gt;Canada Gazette&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#records&quot; data-browse=&quot;committee&quot; data-t=&quot;committees&quot;&gt;Committees&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#records&quot; data-browse=&quot;hansard&quot; data-t=&quot;hansard&quot;&gt;Hansard&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/details&gt;
+      &lt;a class=&quot;brand-link&quot; href=&quot;#brand&quot; data-view=&quot;brand&quot; data-t=&quot;brand&quot;&gt;Brand guide&lt;/a&gt;
+    &lt;/nav&gt;
+
+    &lt;main id=&quot;cs-work&quot; class=&quot;work&quot; tabindex=&quot;-1&quot;&gt;
+      &lt;section data-screen=&quot;workspace&quot;&gt;
+        &lt;div class=&quot;heading-row&quot;&gt;
+          &lt;div&gt;&lt;h1 tabindex=&quot;-1&quot; data-t=&quot;workspace&quot;&gt;Workspace&lt;/h1&gt;&lt;p class=&quot;dek&quot; data-t=&quot;attention&quot;&gt;What needs your attention.&lt;/p&gt;&lt;/div&gt;
+          &lt;button type=&quot;button&quot; class=&quot;button&quot; data-create data-t=&quot;create&quot;&gt;Create briefing&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;ul class=&quot;queue&quot; data-label=&quot;attention&quot; aria-label=&quot;What needs your attention&quot;&gt;
+          &lt;li&gt;
+            &lt;div&gt;&lt;h3 data-t=&quot;reviewTitle&quot;&gt;Review Canada Gazette publication&lt;/h3&gt;&lt;p&gt;&lt;span data-t=&quot;exampleGazette&quot;&gt;SOR/2026-222&lt;/span&gt; · &lt;time data-date=&quot;2026-11-04&quot; datetime=&quot;2026-11-04&quot;&gt;Nov. 4, 2026&lt;/time&gt;&lt;span class=&quot;queue-state&quot; data-reviewed hidden&gt;&lt;/span&gt;&lt;/p&gt;&lt;/div&gt;
+            &lt;button type=&quot;button&quot; class=&quot;button secondary&quot; data-review data-t=&quot;review&quot;&gt;Review&lt;/button&gt;
+          &lt;/li&gt;
+          &lt;li&gt;
+            &lt;div&gt;&lt;h3 data-t=&quot;prepareTitle&quot;&gt;Prepare Bill S-5 briefing&lt;/h3&gt;&lt;p data-t=&quot;prepareMeta&quot;&gt;Environmental protection · Policy file&lt;/p&gt;&lt;/div&gt;
+            &lt;button type=&quot;button&quot; class=&quot;button secondary&quot; data-policy-brief data-t=&quot;open&quot;&gt;Open&lt;/button&gt;
+          &lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;section class=&quot;policy-feature&quot; aria-labelledby=&quot;cs-feature-title&quot;&gt;
+          &lt;h2 id=&quot;cs-feature-title&quot; data-t=&quot;featureTitle&quot;&gt;Bill S-5 · Environmental protection&lt;/h2&gt;
+          &lt;p class=&quot;dek&quot; data-t=&quot;actName&quot;&gt;Strengthening Environmental Protection for a Healthier Canada Act&lt;/p&gt;
+          &lt;ol class=&quot;timeline&quot; data-timeline data-label=&quot;traceLabel&quot; aria-label=&quot;Selected milestones&quot;&gt;&lt;/ol&gt;
+          &lt;div class=&quot;citation-line&quot;&gt;&lt;span class=&quot;mono&quot; data-t=&quot;assentCitation&quot;&gt;S.C. 2023, c. 12&lt;/span&gt;&lt;span aria-hidden=&quot;true&quot;&gt;·&lt;/span&gt;&lt;a data-official-bill target=&quot;_blank&quot; rel=&quot;noopener&quot; data-t=&quot;viewOfficial&quot;&gt;View official record&lt;/a&gt;&lt;/div&gt;
+        &lt;/section&gt;
+      &lt;/section&gt;
+
+      &lt;section data-screen=&quot;files&quot; hidden&gt;
+        &lt;div class=&quot;heading-row&quot;&gt;&lt;div&gt;&lt;h1 tabindex=&quot;-1&quot; data-t=&quot;files&quot;&gt;Policy files&lt;/h1&gt;&lt;p class=&quot;dek&quot; data-t=&quot;session&quot;&gt;44th Parliament · 1st session&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;section class=&quot;policy-feature&quot; aria-labelledby=&quot;cs-files-title&quot;&gt;
+          &lt;h2 id=&quot;cs-files-title&quot; data-t=&quot;featureTitle&quot;&gt;Bill S-5 · Environmental protection&lt;/h2&gt;
+          &lt;p class=&quot;dek&quot; data-t=&quot;actName&quot;&gt;Strengthening Environmental Protection for a Healthier Canada Act&lt;/p&gt;
+          &lt;ol class=&quot;timeline&quot; data-timeline data-label=&quot;traceLabel&quot; aria-label=&quot;Selected milestones&quot;&gt;&lt;/ol&gt;
+          &lt;div class=&quot;citation-line&quot;&gt;&lt;span class=&quot;mono&quot; data-t=&quot;assentCitation&quot;&gt;S.C. 2023, c. 12&lt;/span&gt;&lt;span aria-hidden=&quot;true&quot;&gt;·&lt;/span&gt;&lt;a data-official-bill target=&quot;_blank&quot; rel=&quot;noopener&quot; data-t=&quot;viewOfficial&quot;&gt;View official record&lt;/a&gt;&lt;/div&gt;
+          &lt;button type=&quot;button&quot; class=&quot;button secondary&quot; data-policy-brief data-t=&quot;prepareTitle&quot;&gt;Prepare Bill S-5 briefing&lt;/button&gt;
+        &lt;/section&gt;
+      &lt;/section&gt;
+
+      &lt;section data-screen=&quot;records&quot; hidden&gt;
+        &lt;div class=&quot;heading-row&quot;&gt;&lt;div&gt;&lt;h1 tabindex=&quot;-1&quot; data-t=&quot;records&quot;&gt;Source records&lt;/h1&gt;&lt;p class=&quot;dek&quot; data-t=&quot;recordsLead&quot;&gt;Search the sample collection by bill, subject or citation.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;div class=&quot;result-controls&quot;&gt;
+          &lt;label for=&quot;cs-record-filter&quot; data-t=&quot;filterLabel&quot;&gt;Filter by source type&lt;/label&gt;
+          &lt;select id=&quot;cs-record-filter&quot; data-filter&gt;
+            &lt;option value=&quot;all&quot; data-t=&quot;all&quot;&gt;All sources&lt;/option&gt;
+            &lt;option value=&quot;legislation&quot; data-t=&quot;legislation&quot;&gt;Bills &amp;amp; legislation&lt;/option&gt;
+            &lt;option value=&quot;regulation&quot; data-t=&quot;regulation&quot;&gt;Regulations&lt;/option&gt;
+            &lt;option value=&quot;gazette&quot; data-t=&quot;indexGazette&quot;&gt;Canada Gazette&lt;/option&gt;
+            &lt;option value=&quot;committee&quot; data-t=&quot;committees&quot;&gt;Committees&lt;/option&gt;
+            &lt;option value=&quot;hansard&quot; data-t=&quot;hansard&quot;&gt;Hansard&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+        &lt;p class=&quot;result-count&quot; role=&quot;status&quot; data-result-count&gt;&lt;/p&gt;
+        &lt;ul class=&quot;results&quot; data-results&gt;&lt;/ul&gt;
+        &lt;p data-empty hidden data-t=&quot;noResultsBody&quot;&gt;Try a bill number, a broader topic, or another source type.&lt;/p&gt;
+        &lt;button type=&quot;button&quot; class=&quot;button secondary&quot; data-reset hidden data-t=&quot;reset&quot;&gt;Clear filters&lt;/button&gt;
+      &lt;/section&gt;
+
+      &lt;section data-screen=&quot;briefings&quot; hidden&gt;
+        &lt;div class=&quot;heading-row&quot;&gt;&lt;div&gt;&lt;h1 tabindex=&quot;-1&quot; data-t=&quot;briefings&quot;&gt;Briefings&lt;/h1&gt;&lt;p class=&quot;dek&quot; data-t=&quot;draftHelp&quot;&gt;Your working draft in this preview.&lt;/p&gt;&lt;/div&gt;&lt;button type=&quot;button&quot; class=&quot;button&quot; data-create data-t=&quot;create&quot;&gt;Create briefing&lt;/button&gt;&lt;/div&gt;
+        &lt;div class=&quot;draft-fields&quot;&gt;
+          &lt;label for=&quot;cs-draft-select&quot; data-draft-picker-label data-t=&quot;drafts&quot; hidden&gt;Working draft&lt;/label&gt;
+          &lt;select id=&quot;cs-draft-select&quot; data-draft-select hidden&gt;&lt;/select&gt;
+          &lt;label for=&quot;cs-draft-title&quot; data-t=&quot;draftTitle&quot;&gt;Title&lt;/label&gt;
+          &lt;input id=&quot;cs-draft-title&quot; type=&quot;text&quot; data-draft-title maxlength=&quot;120&quot; data-placeholder=&quot;untitled&quot; placeholder=&quot;Untitled briefing&quot;&gt;
+          &lt;label for=&quot;cs-draft-notes&quot; data-t=&quot;notes&quot;&gt;Notes&lt;/label&gt;
+          &lt;textarea id=&quot;cs-draft-notes&quot; data-draft-notes maxlength=&quot;4000&quot; data-placeholder=&quot;notePlaceholder&quot; placeholder=&quot;What should the reader know?&quot;&gt;&lt;/textarea&gt;
+          &lt;p class=&quot;feedback&quot; data-draft-status role=&quot;status&quot;&gt;&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;h2 data-t=&quot;records&quot;&gt;Source records&lt;/h2&gt;
+        &lt;p class=&quot;brief-empty&quot; data-brief-empty data-t=&quot;briefEmpty&quot;&gt;Select a source record and choose Add to briefing.&lt;/p&gt;
+        &lt;ul class=&quot;brief-sources&quot; data-brief-sources&gt;&lt;/ul&gt;
+      &lt;/section&gt;
+
+      &lt;section data-screen=&quot;brand&quot; hidden&gt;
+        &lt;h1 tabindex=&quot;-1&quot; data-t=&quot;brandHeading&quot;&gt;The CivicSignal brand&lt;/h1&gt;
+        &lt;p class=&quot;dek&quot; data-t=&quot;guideIntro&quot;&gt;Instrument Sans for headings, Noto Sans for reading, and a consistent citation format across the workspace.&lt;/p&gt;
+        &lt;div class=&quot;guide&quot;&gt;
+          &lt;div class=&quot;guide-locks&quot;&gt;
+            &lt;div class=&quot;guide-lock&quot;&gt;&lt;span class=&quot;lockup&quot;&gt;&lt;span class=&quot;mark&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;bars&quot;&gt;&lt;b&gt;&lt;/b&gt;&lt;b&gt;&lt;/b&gt;&lt;b&gt;&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;wordmark&quot;&gt;CivicSignal&lt;/span&gt;&lt;/span&gt;&lt;p class=&quot;caption&quot; data-t=&quot;primaryLock&quot;&gt;Primary wordmark&lt;/p&gt;&lt;/div&gt;
+            &lt;div class=&quot;guide-lock inverse&quot;&gt;&lt;span class=&quot;lockup&quot;&gt;&lt;span class=&quot;mark&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;bars&quot;&gt;&lt;b&gt;&lt;/b&gt;&lt;b&gt;&lt;/b&gt;&lt;b&gt;&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;wordmark&quot;&gt;CivicSignal&lt;/span&gt;&lt;/span&gt;&lt;p class=&quot;caption&quot; data-t=&quot;reverseLock&quot;&gt;Reversed wordmark&lt;/p&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;h2 data-t=&quot;palette&quot;&gt;Palette&lt;/h2&gt;
+          &lt;ul class=&quot;swatches&quot;&gt;
+            &lt;li style=&quot;--swatch:var(--action)&quot;&gt;&lt;i aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;strong data-t=&quot;actionColor&quot;&gt;Graphite&lt;/strong&gt;&lt;br&gt;#2D2E33&lt;/li&gt;
+            &lt;li style=&quot;--swatch:var(--red)&quot;&gt;&lt;i aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;strong data-t=&quot;colorRed&quot;&gt;Signal red&lt;/strong&gt;&lt;br&gt;#A63D2E&lt;/li&gt;
+            &lt;li style=&quot;--swatch:var(--link)&quot;&gt;&lt;i aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;strong data-t=&quot;linkColor&quot;&gt;Link colour&lt;/strong&gt;&lt;br&gt;#6F3A32&lt;/li&gt;
+            &lt;li style=&quot;--swatch:var(--paper)&quot;&gt;&lt;i aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;strong data-t=&quot;colorPaper&quot;&gt;Paper&lt;/strong&gt;&lt;br&gt;#FBFAF8&lt;/li&gt;
+          &lt;/ul&gt;
+          &lt;h2 data-t=&quot;type&quot;&gt;Typesetting&lt;/h2&gt;
+          &lt;div class=&quot;guide-type&quot;&gt;
+            &lt;div&gt;&lt;p class=&quot;caption&quot;&gt;Instrument Sans&lt;/p&gt;&lt;h3 data-t=&quot;workspace&quot;&gt;Workspace&lt;/h3&gt;&lt;/div&gt;
+            &lt;div&gt;&lt;p class=&quot;caption&quot;&gt;Noto Sans&lt;/p&gt;&lt;p data-t=&quot;tagline&quot;&gt;Canadian policy research&lt;/p&gt;&lt;/div&gt;
+            &lt;div&gt;&lt;p class=&quot;caption&quot;&gt;Noto Sans Mono&lt;/p&gt;&lt;p class=&quot;mono&quot; data-t=&quot;assentCitation&quot;&gt;S.C. 2023, c. 12&lt;/p&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;h2 data-t=&quot;applications&quot;&gt;Editorial applications&lt;/h2&gt;
+          &lt;div class=&quot;guide-example&quot;&gt;&lt;p class=&quot;caption&quot; data-t=&quot;briefLabel&quot;&gt;CivicSignal · Policy brief&lt;/p&gt;&lt;h3 data-t=&quot;featureTitle&quot;&gt;Bill S-5 · Environmental protection&lt;/h3&gt;&lt;p class=&quot;mono&quot; data-t=&quot;assentCitation&quot;&gt;S.C. 2023, c. 12&lt;/p&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/main&gt;
+
+    &lt;aside class=&quot;inspector&quot; id=&quot;cs-source&quot; data-inspector data-label=&quot;detailLabel&quot; aria-label=&quot;Source record details&quot;&gt;
+      &lt;p class=&quot;caption&quot; data-t=&quot;sourceRecord&quot;&gt;Source record&lt;/p&gt;
+      &lt;h2 tabindex=&quot;-1&quot; data-inspector-heading&gt;&lt;/h2&gt;
+      &lt;p class=&quot;meta&quot; data-inspector-meta&gt;&lt;/p&gt;
+      &lt;div class=&quot;block&quot; data-inspector-summary&gt;
+        &lt;h3 data-inspector-title&gt;&lt;/h3&gt;
+        &lt;p class=&quot;description&quot; data-inspector-body&gt;&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;block buttons&quot; data-inspector-actions&gt;
+        &lt;a class=&quot;button&quot; data-inspector-url target=&quot;_blank&quot; rel=&quot;noopener&quot; data-t=&quot;original&quot;&gt;Open official source&lt;/a&gt;
+        &lt;button type=&quot;button&quot; class=&quot;button secondary&quot; data-add data-t=&quot;add&quot;&gt;Add to briefing&lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;button secondary&quot; data-mark-reviewed hidden data-t=&quot;markReviewed&quot;&gt;Mark reviewed&lt;/button&gt;
+        &lt;p class=&quot;feedback&quot; role=&quot;status&quot; data-source-status&gt;&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;dl class=&quot;block&quot; data-inspector-fields&gt;&lt;/dl&gt;
+    &lt;/aside&gt;
+  &lt;/div&gt;
+  &lt;footer class=&quot;foot&quot; data-t=&quot;footer&quot;&gt;CivicSignal · Independent policy research · Design preview&lt;/footer&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+(() =&gt; {
+  const root = document.getElementById(&#x27;cs-workspace&#x27;);
+  const find = (selector) =&gt; root.querySelector(selector);
+  const all = (selector) =&gt; Array.from(root.querySelectorAll(selector));
+  const copy = {
+    skip:[&#x27;Skip to main content&#x27;,&#x27;Passer au contenu principal&#x27;],
+    tagline:[&#x27;Canadian policy research&#x27;,&#x27;Recherche sur les politiques canadiennes&#x27;],
+    searchLabel:[&#x27;Search source records&#x27;,&#x27;Rechercher dans les documents sources&#x27;],
+    search:[&#x27;Search&#x27;,&#x27;Rechercher&#x27;],
+    searchPlaceholder:[&#x27;Search bills, topics, or citations&#x27;,&#x27;Projets de loi, sujets ou références&#x27;],
+    languageLabel:[&#x27;Language&#x27;,&#x27;Langue&#x27;],
+    navLabel:[&#x27;Workspace navigation&#x27;,&#x27;Navigation de l’espace de travail&#x27;],
+    workspace:[&#x27;Workspace&#x27;,&#x27;Espace de travail&#x27;],
+    files:[&#x27;Policy files&#x27;,&#x27;Dossiers&#x27;],
+    records:[&#x27;Source records&#x27;,&#x27;Documents sources&#x27;],
+    briefings:[&#x27;Briefings&#x27;,&#x27;Notes de synthèse&#x27;],
+    brand:[&#x27;Brand guide&#x27;,&#x27;Guide de marque&#x27;],
+    browseLabel:[&#x27;Browse&#x27;,&#x27;Parcourir&#x27;],
+    legislation:[&#x27;Bills &amp; legislation&#x27;,&#x27;Lois et projets de loi&#x27;],
+    regulation:[&#x27;Regulations&#x27;,&#x27;Règlements&#x27;],
+    indexGazette:[&#x27;Canada Gazette&#x27;,&#x27;Gazette du Canada&#x27;],
+    committees:[&#x27;Committees&#x27;,&#x27;Comités&#x27;],
+    hansard:[&#x27;Hansard&#x27;,&#x27;Hansard&#x27;],
+    attention:[&#x27;What needs your attention.&#x27;,&#x27;À traiter.&#x27;],
+    create:[&#x27;Create briefing&#x27;,&#x27;Créer une note&#x27;],
+    reviewTitle:[&#x27;Review Canada Gazette publication&#x27;,&#x27;Examiner la publication de la Gazette&#x27;],
+    exampleGazette:[&#x27;SOR/2026-222&#x27;,&#x27;DORS/2026-222&#x27;],
+    review:[&#x27;Review&#x27;,&#x27;Examiner&#x27;],
+    reviewed:[&#x27;Reviewed&#x27;,&#x27;Examiné&#x27;],
+    markReviewed:[&#x27;Mark reviewed&#x27;,&#x27;Marquer comme examiné&#x27;],
+    reviewSaved:[&#x27;Publication marked as reviewed.&#x27;,&#x27;Publication marquée comme examinée.&#x27;],
+    prepareTitle:[&#x27;Prepare Bill S-5 briefing&#x27;,&#x27;Préparer une note sur le projet de loi S-5&#x27;],
+    prepareMeta:[&#x27;Environmental protection · Policy file&#x27;,&#x27;Protection de l’environnement · Dossier&#x27;],
+    open:[&#x27;Open&#x27;,&#x27;Ouvrir&#x27;],
+    featureTitle:[&#x27;Bill S-5 · Environmental protection&#x27;,&#x27;Projet de loi S-5 · Protection de l’environnement&#x27;],
+    actName:[&#x27;Strengthening Environmental Protection for a Healthier Canada Act&#x27;,&#x27;Loi sur le renforcement de la protection de l’environnement pour un Canada en santé&#x27;],
+    traceLabel:[&#x27;Selected milestones&#x27;,&#x27;Principales étapes&#x27;],
+    stepCommittee:[&#x27;Committee report&#x27;,&#x27;Rapport du comité&#x27;],
+    stepVote:[&#x27;House third-reading vote&#x27;,&#x27;Vote de troisième lecture à la Chambre&#x27;],
+    stepAssent:[&#x27;Royal Assent&#x27;,&#x27;Sanction royale&#x27;],
+    assentCitation:[&#x27;S.C. 2023, c. 12&#x27;,&#x27;L.C. 2023, ch. 12&#x27;],
+    viewOfficial:[&#x27;View official record&#x27;,&#x27;Voir le document officiel&#x27;],
+    session:[&#x27;44th Parliament · 1st session&#x27;,&#x27;44ᵉ législature · 1ʳᵉ session&#x27;],
+    recordsLead:[&#x27;Search the sample collection by bill, subject or citation.&#x27;,&#x27;Recherchez dans les documents de démonstration par projet de loi, sujet ou référence.&#x27;],
+    filterLabel:[&#x27;Filter by source type&#x27;,&#x27;Filtrer par type de source&#x27;],
+    all:[&#x27;All sources&#x27;,&#x27;Toutes les sources&#x27;],
+    noResults:[&#x27;No matching records&#x27;,&#x27;Aucun document trouvé&#x27;],
+    noResultsBody:[&#x27;Try a bill number, a broader topic, or another source type.&#x27;,&#x27;Essayez un numéro de projet de loi, un sujet plus général ou un autre type de source.&#x27;],
+    reset:[&#x27;Clear filters&#x27;,&#x27;Effacer les filtres&#x27;],
+    draftHelp:[&#x27;Drafts and source selections are kept while this preview is open.&#x27;,&#x27;Les brouillons et les sources sont conservés tant que cet aperçu reste ouvert.&#x27;],
+    draftTitle:[&#x27;Title&#x27;,&#x27;Titre&#x27;],
+    drafts:[&#x27;Working draft&#x27;,&#x27;Brouillon en cours&#x27;],
+    notes:[&#x27;Notes&#x27;,&#x27;Notes&#x27;],
+    untitled:[&#x27;Untitled briefing&#x27;,&#x27;Note sans titre&#x27;],
+    notePlaceholder:[&#x27;What should the reader know?&#x27;,&#x27;Que doit savoir le lecteur?&#x27;],
+    briefEmpty:[&#x27;Select a source record and choose Add to briefing.&#x27;,&#x27;Sélectionnez un document source, puis choisissez Ajouter à la note.&#x27;],
+    sourceRecord:[&#x27;Source record&#x27;,&#x27;Document source&#x27;],
+    detailLabel:[&#x27;Source record details&#x27;,&#x27;Détails du document source&#x27;],
+    original:[&#x27;Open official source&#x27;,&#x27;Ouvrir la source officielle&#x27;],
+    add:[&#x27;Add to briefing&#x27;,&#x27;Ajouter à la note&#x27;],
+    viewDraft:[&#x27;View briefing&#x27;,&#x27;Voir la note&#x27;],
+    added:[&#x27;Added to briefing.&#x27;,&#x27;Ajouté à la note.&#x27;],
+    removed:[&#x27;Source removed from briefing.&#x27;,&#x27;Source retirée de la note.&#x27;],
+    remove:[&#x27;Remove&#x27;,&#x27;Retirer&#x27;],
+    fieldType:[&#x27;Type&#x27;,&#x27;Type&#x27;],
+    fieldStatus:[&#x27;Status&#x27;,&#x27;État&#x27;],
+    fieldAuthority:[&#x27;Authority&#x27;,&#x27;Fondement&#x27;],
+    fieldRelated:[&#x27;Related&#x27;,&#x27;Connexe&#x27;],
+    fieldRegistered:[&#x27;Registered&#x27;,&#x27;Enregistré&#x27;],
+    authorityName:[&#x27;Canadian Environmental Protection Act, 1999&#x27;,&#x27;Loi canadienne sur la protection de l’environnement (1999)&#x27;],
+    relatedBill:[&#x27;Bill S-5 · S.C. 2023, c. 12&#x27;,&#x27;Projet de loi S-5 · L.C. 2023, ch. 12&#x27;],
+    brandHeading:[&#x27;The CivicSignal brand&#x27;,&#x27;La marque CivicSignal&#x27;],
+    guideIntro:[&#x27;Instrument Sans for headings, Noto Sans for reading, and a consistent citation format across the workspace.&#x27;,&#x27;Des titres en Instrument Sans, du texte en Noto Sans et un format de citation uniforme dans l’espace de travail.&#x27;],
+    primaryLock:[&#x27;Primary wordmark&#x27;,&#x27;Signature principale&#x27;],
+    reverseLock:[&#x27;Reversed wordmark&#x27;,&#x27;Signature sur fond foncé&#x27;],
+    palette:[&#x27;Palette&#x27;,&#x27;Palette&#x27;],
+    actionColor:[&#x27;Graphite&#x27;,&#x27;Graphite&#x27;],
+    colorRed:[&#x27;Signal red&#x27;,&#x27;Rouge signal&#x27;],
+    linkColor:[&#x27;Link colour&#x27;,&#x27;Couleur des liens&#x27;],
+    colorPaper:[&#x27;Paper&#x27;,&#x27;Papier&#x27;],
+    type:[&#x27;Typesetting&#x27;,&#x27;Typographie&#x27;],
+    applications:[&#x27;Editorial applications&#x27;,&#x27;Applications éditoriales&#x27;],
+    briefLabel:[&#x27;CivicSignal · Policy brief&#x27;,&#x27;CivicSignal · Note de synthèse&#x27;],
+    footer:[&#x27;CivicSignal · Independent policy research · Design preview&#x27;,&#x27;CivicSignal · Recherche indépendante sur les politiques publiques · Aperçu du concept&#x27;]
+  };
+
+  const records = [
+    {
+      id:&#x27;gazette-222&#x27;, kind:&#x27;gazette&#x27;, date:&#x27;2026-11-04&#x27;,
+      title:[&#x27;Order adding talc to the toxic substances list&#x27;,&#x27;Décret inscrivant le talc à la liste des substances toxiques&#x27;],
+      source:[&#x27;Canada Gazette · Part II · SOR/2026-222&#x27;,&#x27;Gazette du Canada · Partie II · DORS/2026-222&#x27;],
+      type:[&#x27;Order (SOR)&#x27;,&#x27;Décret (DORS)&#x27;], status:[&#x27;Published&#x27;,&#x27;Publié&#x27;],
+      inspector:[&#x27;Adds talc to Part 2 of Schedule 1 to the Canadian Environmental Protection Act, 1999.&#x27;,&#x27;Inscrit le talc à la partie 2 de l’annexe 1 de la Loi canadienne sur la protection de l’environnement (1999).&#x27;],
+      body:[&#x27;The order adds talc to Part 2 of Schedule 1 to the Canadian Environmental Protection Act, 1999. It was registered on October 23 and published in Part II of the Canada Gazette on November 4.&#x27;,&#x27;Le décret inscrit le talc à la partie 2 de l’annexe 1 de la Loi canadienne sur la protection de l’environnement (1999). Il a été enregistré le 23 octobre et publié dans la partie II de la Gazette du Canada le 4 novembre.&#x27;],
+      url:[&#x27;https://gazette.gc.ca/rp-pr/p2/2026/2026-11-04/html/sor-dors222-eng.html&#x27;,&#x27;https://gazette.gc.ca/rp-pr/p2/2026/2026-11-04/html/sor-dors222-fra.html&#x27;]
+    },
+    {
+      id:&#x27;s5&#x27;, kind:&#x27;bill&#x27;, date:&#x27;2023-06-13&#x27;,
+      title:[&#x27;Bill S-5 · Strengthening Environmental Protection for a Healthier Canada Act&#x27;,&#x27;Projet de loi S-5 · Loi sur le renforcement de la protection de l’environnement pour un Canada en santé&#x27;],
+      source:[&#x27;Parliament of Canada · S.C. 2023, c. 12&#x27;,&#x27;Parlement du Canada · L.C. 2023, ch. 12&#x27;],
+      type:[&#x27;Bill&#x27;,&#x27;Projet de loi&#x27;], status:[&#x27;Royal Assent&#x27;,&#x27;Sanction royale&#x27;],
+      body:[&#x27;Bill S-5 received Royal Assent after the Senate agreed to the House amendments. LEGISinfo records passage through both chambers and links to each published version.&#x27;,&#x27;Le projet de loi S-5 a reçu la sanction royale après l’adoption des amendements de la Chambre par le Sénat. LEGISinfo retrace son parcours dans les deux chambres et donne accès à ses versions publiées.&#x27;],
+      citation:[&#x27;S.C. 2023, c. 12&#x27;,&#x27;L.C. 2023, ch. 12&#x27;],
+      timeline:[&#x27;The Senate agreed to the House amendments. The bill received Royal Assent the same day.&#x27;,&#x27;Le Sénat a approuvé les amendements de la Chambre. Le projet de loi a reçu la sanction royale le même jour.&#x27;],
+      url:[&#x27;https://www.parl.ca/legisinfo/en/bill/44-1/s-5&#x27;,&#x27;https://www.parl.ca/legisinfo/fr/projet-de-loi/44-1/s-5&#x27;]
+    },
+    {
+      id:&#x27;vote-338&#x27;, kind:&#x27;house&#x27;, date:&#x27;2023-05-30&#x27;,
+      title:[&#x27;Bill S-5 · House third-reading vote&#x27;,&#x27;Projet de loi S-5 · Vote à la Chambre en troisième lecture&#x27;],
+      source:[&#x27;House of Commons · Vote 338&#x27;,&#x27;Chambre des communes · Vote 338&#x27;],
+      type:[&#x27;Recorded vote&#x27;,&#x27;Vote par appel nominal&#x27;], status:[&#x27;Carried&#x27;,&#x27;Adopté&#x27;],
+      body:[&#x27;The House passed Bill S-5 at third reading with 208 yeas, 116 nays and no paired votes. The official division lists how each member voted.&#x27;,&#x27;La Chambre a adopté le projet de loi S-5 en troisième lecture par 208 voix contre 116, sans vote pairé. Le registre officiel indique le vote de chaque député.&#x27;],
+      citation:[&#x27;Vote 338&#x27;,&#x27;Vote 338&#x27;],
+      timeline:[&#x27;Third reading carried, with 208 yeas and 116 nays.&#x27;,&#x27;La troisième lecture a été adoptée par 208 voix contre 116.&#x27;],
+      url:[&#x27;https://www.ourcommons.ca/Members/en/votes/44/1/338&#x27;,&#x27;https://www.noscommunes.ca/Members/fr/votes/44/1/338&#x27;]
+    },
+    {
+      id:&#x27;envi-7&#x27;, kind:&#x27;house&#x27;, date:&#x27;2023-03-22&#x27;,
+      title:[&#x27;Bill S-5 · Environment committee report&#x27;,&#x27;Projet de loi S-5 · Rapport du comité de l’environnement&#x27;],
+      source:[&#x27;House of Commons · ENVI Report 7&#x27;,&#x27;Chambre des communes · 7ᵉ rapport du comité ENVI&#x27;],
+      type:[&#x27;Committee report&#x27;,&#x27;Rapport de comité&#x27;], status:[&#x27;Presented&#x27;,&#x27;Présenté&#x27;],
+      body:[&#x27;The House environment committee reported Bill S-5 with amendments. Report 7 records changes concerning environmental justice, non-regression, and intergenerational equity.&#x27;,&#x27;Le comité de l’environnement de la Chambre a fait rapport du projet de loi S-5 avec des amendements. Le 7ᵉ rapport consigne des changements liés à la justice environnementale, à la non-régression et à l’équité intergénérationnelle.&#x27;],
+      citation:[&#x27;ENVI Report 7&#x27;,&#x27;Rapport ENVI nᵒ 7&#x27;],
+      timeline:[&#x27;The House environment committee presented Bill S-5 with amendments.&#x27;,&#x27;Le comité de l’environnement de la Chambre a présenté le projet de loi S-5 avec des amendements.&#x27;],
+      url:[&#x27;https://www.ourcommons.ca/DocumentViewer/en/44-1/ENVI/report-7/&#x27;,&#x27;https://www.noscommunes.ca/DocumentViewer/fr/44-1/ENVI/rapport-7&#x27;]
+    },
+    {
+      id:&#x27;cepa-2&#x27;, kind:&#x27;law&#x27;,
+      title:[&#x27;Canadian Environmental Protection Act, 1999 · Section 2&#x27;,&#x27;Loi canadienne sur la protection de l’environnement (1999) · Article 2&#x27;],
+      source:[&#x27;Justice Laws Website · S.C. 1999, c. 33&#x27;,&#x27;Site Web de la législation · L.C. 1999, ch. 33&#x27;],
+      type:[&#x27;Statutory provision&#x27;,&#x27;Disposition législative&#x27;], status:[&#x27;Consolidated text&#x27;,&#x27;Texte consolidé&#x27;],
+      body:[&#x27;Section 2 sets out federal administrative duties under the Act. Paragraph 2(1)(a.2) addresses the right to a healthy environment within the scope of the Act, subject to reasonable limits.&#x27;,&#x27;L’article 2 énonce les obligations administratives fédérales prévues par la loi. L’alinéa 2(1)a.2) porte sur le droit à un environnement sain dans le cadre de la loi, sous réserve de limites raisonnables.&#x27;],
+      url:[&#x27;https://laws-lois.justice.gc.ca/eng/acts/C-15.31/section-2.html&#x27;,&#x27;https://www.laws-lois.justice.gc.ca/fra/lois/C-15.31/page-1.html&#x27;]
+    },
+    {
+      id:&#x27;cepa-90&#x27;, kind:&#x27;law&#x27;,
+      title:[&#x27;Canadian Environmental Protection Act, 1999 · Section 90&#x27;,&#x27;Loi canadienne sur la protection de l’environnement (1999) · Article 90&#x27;],
+      source:[&#x27;Justice Laws Website · S.C. 1999, c. 33&#x27;,&#x27;Site Web de la législation · L.C. 1999, ch. 33&#x27;],
+      type:[&#x27;Statutory provision&#x27;,&#x27;Disposition législative&#x27;], status:[&#x27;Consolidated text&#x27;,&#x27;Texte consolidé&#x27;],
+      body:[&#x27;Subsection 90(1) gives the Governor in Council authority to add a substance to Part 1 or 2 of Schedule 1 by order when the statutory conditions are met. The Gazette cites this provision as authority for the talc order.&#x27;,&#x27;Le paragraphe 90(1) autorise le gouverneur en conseil à inscrire une substance à la partie 1 ou 2 de l’annexe 1 par décret lorsque les conditions prévues sont remplies. Le décret sur le talc cite cette disposition.&#x27;],
+      url:[&#x27;https://laws-lois.justice.gc.ca/eng/acts/C-15.31/section-90.html&#x27;,&#x27;https://laws-lois.justice.gc.ca/fra/lois/C-15.31/section-90.html?txthl=convaincu&#x27;]
+    },
+    {
+      id:&#x27;gazette-65&#x27;, kind:&#x27;gazette&#x27;, date:&#x27;2026-04-22&#x27;,
+      title:[&#x27;Regulations amending the Canadian Turkey Marketing Quota Regulations, 1990&#x27;,&#x27;Règlement modifiant le Règlement canadien sur le contingentement de la commercialisation du dindon (1990)&#x27;],
+      source:[&#x27;Canada Gazette · Part II · SOR/2026-65&#x27;,&#x27;Gazette du Canada · Partie II · DORS/2026-65&#x27;],
+      type:[&#x27;Regulation (SOR)&#x27;,&#x27;Règlement (DORS)&#x27;], status:[&#x27;Published&#x27;,&#x27;Publié&#x27;],
+      citation:[&#x27;SOR/2026-65&#x27;,&#x27;DORS/2026-65&#x27;],
+      body:[&#x27;The amendment replaces the provincial quota schedule for the control period from April 26, 2026, to April 24, 2027.&#x27;,&#x27;La modification remplace le tableau des contingents provinciaux pour la période du 26 avril 2026 au 24 avril 2027.&#x27;],
+      url:[&#x27;https://gazette.gc.ca/rp-pr/p2/2026/2026-04-22/html/sor-dors65-eng.html&#x27;,&#x27;https://gazette.gc.ca/rp-pr/p2/2026/2026-04-22/html/sor-dors65-fra.html&#x27;]
+    },
+    {
+      id:&#x27;hansard-202&#x27;, kind:&#x27;hansard&#x27;, date:&#x27;2023-05-30&#x27;,
+      title:[&#x27;House Debates · Bill S-5 proceedings&#x27;,&#x27;Débats de la Chambre · Délibérations sur le projet de loi S-5&#x27;],
+      source:[&#x27;House of Commons · Sitting 202&#x27;,&#x27;Chambre des communes · Séance 202&#x27;],
+      type:[&#x27;Hansard&#x27;,&#x27;Hansard&#x27;], status:[&#x27;Published&#x27;,&#x27;Publié&#x27;],
+      citation:[&#x27;Sitting 202&#x27;,&#x27;Séance 202&#x27;],
+      body:[&#x27;The official transcript records House proceedings on Bill S-5, including third reading and adoption.&#x27;,&#x27;Le compte rendu officiel consigne les délibérations de la Chambre sur le projet de loi S-5, dont la troisième lecture et l’adoption.&#x27;],
+      url:[&#x27;https://www.ourcommons.ca/DocumentViewer/en/44-1/house/sitting-202/hansard&#x27;,&#x27;https://www.noscommunes.ca/DocumentViewer/fr/44-1/chambre/seance-202/debats&#x27;]
+    }
+  ];
+
+  const sourceRefs = {
+    &#x27;gazette-222&#x27;:[&#x27;SOR/2026-222&#x27;,&#x27;DORS/2026-222&#x27;],
+    &#x27;s5&#x27;:[&#x27;Bill S-5&#x27;,&#x27;Projet de loi S-5&#x27;],
+    &#x27;cepa-2&#x27;:[&#x27;Section 2&#x27;,&#x27;Article 2&#x27;],
+    &#x27;cepa-90&#x27;:[&#x27;Section 90&#x27;,&#x27;Article 90&#x27;]
+  };
+  const steps = [
+    [&#x27;envi-7&#x27;,&#x27;stepCommittee&#x27;],
+    [&#x27;vote-338&#x27;,&#x27;stepVote&#x27;],
+    [&#x27;s5&#x27;,&#x27;stepAssent&#x27;]
+  ];
+  const state = {language:0, view:&#x27;workspace&#x27;, query:&#x27;&#x27;, facet:&#x27;all&#x27;, selected:&#x27;gazette-222&#x27;, reviews:new Set(), reviewing:false, drafts:[], activeDraft:null, sourceStatus:&#x27;&#x27;, draftStatus:&#x27;&#x27;};
+  const local = (pair) =&gt; pair[state.language];
+  const t = (key) =&gt; local(copy[key]);
+  const getRecord = (id) =&gt; records.find((record) =&gt; record.id === id);
+  const getDraft = () =&gt; state.drafts.find((draft) =&gt; draft.id === state.activeDraft);
+  const small = matchMedia(&#x27;(max-width:42rem)&#x27;);
+  const compact = matchMedia(&#x27;(max-width:55rem)&#x27;);
+  const dateFormat = (date) =&gt; new Intl.DateTimeFormat(state.language ? &#x27;fr-CA&#x27; : &#x27;en-CA&#x27;, {
+    dateStyle:&#x27;medium&#x27;, timeZone:&#x27;UTC&#x27;
+  }).format(new Date(date + &#x27;T00:00:00Z&#x27;));
+  const ref = (record) =&gt; local(sourceRefs[record.id] ?? record.citation);
+  const sourceMeta = (record) =&gt; {
+    const source = local(record.source).split(&#x27; · &#x27;);
+    if (record.kind === &#x27;gazette&#x27;) source.splice(2);
+    else source.splice(1);
+    if (record.date) source.push(dateFormat(record.date));
+    return source.join(&#x27; · &#x27;);
+  };
+  const fold = (value) =&gt; value.toLowerCase().normalize(&#x27;NFD&#x27;).replace(/\p{Diacritic}/gu,&#x27;&#x27;);
+
+  function el(tag, value, className) {
+    const node = document.createElement(tag);
+    if (value) node.textContent = value;
+    if (className) node.className = className;
+    return node;
+  }
+
+  function recordButton(record) {
+    const button = el(&#x27;button&#x27;, &#x27;&#x27;, &#x27;result&#x27;);
+    button.type = &#x27;button&#x27;;
+    button.dataset.pick = record.id;
+    button.setAttribute(&#x27;aria-controls&#x27;,&#x27;cs-source&#x27;);
+    button.append(el(&#x27;span&#x27;,local(record.title),&#x27;result-name&#x27;),el(&#x27;span&#x27;,ref(record) + &#x27; · &#x27; + sourceMeta(record),&#x27;result-sub&#x27;));
+    return button;
+  }
+
+  function field(key, value) {
+    const fieldRow = el(&#x27;div&#x27;);
+    const detail = el(&#x27;dd&#x27;);
+    detail.append(value);
+    fieldRow.append(el(&#x27;dt&#x27;,t(key)),detail);
+    return fieldRow;
+  }
+
+  function recordLink(id, label) {
+    const link = el(&#x27;a&#x27;,label);
+    link.href = &#x27;#cs-source&#x27;;
+    link.dataset.pick = id;
+    return link;
+  }
+
+  function renderSelection() {
+    for (const item of all(&#x27;button[data-pick]&#x27;)) {
+      if (item.dataset.pick === state.selected) item.setAttribute(&#x27;aria-current&#x27;,&#x27;true&#x27;);
+      else item.removeAttribute(&#x27;aria-current&#x27;);
+    }
+  }
+
+  function renderInspector() {
+    const record = getRecord(state.selected);
+    const summary = find(&#x27;[data-inspector-summary]&#x27;);
+    const actions = find(&#x27;[data-inspector-actions]&#x27;);
+    const fields = find(&#x27;[data-inspector-fields]&#x27;);
+    find(&#x27;[data-inspector-heading]&#x27;).textContent = record ? ref(record) : t(&#x27;noResults&#x27;);
+    find(&#x27;[data-inspector-meta]&#x27;).textContent = record ? sourceMeta(record) : t(&#x27;noResultsBody&#x27;);
+    summary.hidden = actions.hidden = fields.hidden = !record;
+    renderSelection();
+    if (!record) return;
+    const draft = getDraft();
+    find(&#x27;[data-inspector-title]&#x27;).textContent = local(record.title);
+    find(&#x27;[data-inspector-body]&#x27;).textContent = local(record.inspector ?? record.body);
+    find(&#x27;[data-inspector-url]&#x27;).href = local(record.url);
+    const add = find(&#x27;[data-add]&#x27;);
+    add.textContent = t(draft?.refs.has(record.id) ? &#x27;viewDraft&#x27; : &#x27;add&#x27;);
+    find(&#x27;[data-mark-reviewed]&#x27;).hidden = record.id !== &#x27;gazette-222&#x27; || !state.reviewing || state.reviews.has(record.id);
+    find(&#x27;[data-source-status]&#x27;).textContent = state.sourceStatus ? t(state.sourceStatus) : &#x27;&#x27;;
+    const rows = [field(&#x27;fieldType&#x27;,local(record.type))];
+    if (record.id === &#x27;gazette-222&#x27;) {
+      const authority = recordLink(&#x27;cepa-90&#x27;,t(&#x27;authorityName&#x27;));
+      authority.style.fontStyle = &#x27;italic&#x27;;
+      rows.push(field(&#x27;fieldAuthority&#x27;,authority),field(&#x27;fieldRelated&#x27;,recordLink(&#x27;s5&#x27;,t(&#x27;relatedBill&#x27;))),field(&#x27;fieldRegistered&#x27;,dateFormat(&#x27;2026-10-23&#x27;)));
+    } else {
+      rows.push(field(&#x27;fieldStatus&#x27;,local(record.status)));
+      if (record.id !== &#x27;s5&#x27; &amp;&amp; record.id !== &#x27;gazette-65&#x27;) rows.push(field(&#x27;fieldRelated&#x27;,recordLink(&#x27;s5&#x27;,t(&#x27;relatedBill&#x27;))));
+    }
+    fields.replaceChildren(...rows);
+    const reviewed = find(&#x27;[data-reviewed]&#x27;);
+    reviewed.hidden = !state.reviews.has(&#x27;gazette-222&#x27;);
+    reviewed.textContent = &#x27; · &#x27; + t(&#x27;reviewed&#x27;);
+    find(&#x27;[data-review]&#x27;).textContent = t(reviewed.hidden ? &#x27;review&#x27; : &#x27;open&#x27;);
+  }
+
+  function filterMatches(record) {
+    if (state.facet === &#x27;all&#x27;) return true;
+    if (state.facet === &#x27;legislation&#x27;) return [&#x27;bill&#x27;,&#x27;law&#x27;].includes(record.kind);
+    if (state.facet === &#x27;gazette&#x27;) return record.kind === &#x27;gazette&#x27;;
+    if (state.facet === &#x27;regulation&#x27;) return record.id === &#x27;gazette-65&#x27;;
+    if (state.facet === &#x27;committee&#x27;) return record.id === &#x27;envi-7&#x27;;
+    return record.kind === state.facet;
+  }
+
+  function renderResults() {
+    const words = fold(state.query).split(/\s+/).filter(Boolean);
+    const matches = records.filter((record) =&gt; filterMatches(record) &amp;&amp; words.every((word) =&gt;
+      fold([record.id,...record.title,...record.source,...record.body,...(sourceRefs[record.id] ?? record.citation)].join(&#x27; &#x27;)).includes(word)
+    ));
+    if (!matches.some(({id}) =&gt; id === state.selected)) state.selected = matches[0]?.id ?? null;
+    find(&#x27;[data-filter]&#x27;).value = state.facet;
+    find(&#x27;[data-result-count]&#x27;).textContent = (state.language ? matches.length + (matches.length === 1 ? &#x27; document source&#x27; : &#x27; documents sources&#x27;) : matches.length + (matches.length === 1 ? &#x27; source record&#x27; : &#x27; source records&#x27;)) + (state.query ? &#x27; · “&#x27; + state.query + &#x27;”&#x27; : &#x27;&#x27;);
+    find(&#x27;[data-results]&#x27;).replaceChildren(...matches.map((record) =&gt; {
+      const item = el(&#x27;li&#x27;);
+      item.append(recordButton(record));
+      return item;
+    }));
+    find(&#x27;[data-empty]&#x27;).hidden = Boolean(matches.length);
+    find(&#x27;[data-reset]&#x27;).hidden = state.facet === &#x27;all&#x27; &amp;&amp; !state.query;
+  }
+
+  function renderTimeline() {
+    for (const list of all(&#x27;[data-timeline]&#x27;)) {
+      list.replaceChildren(...steps.map(([id,key]) =&gt; {
+        const record = getRecord(id);
+        const item = el(&#x27;li&#x27;);
+        const button = el(&#x27;button&#x27;,&#x27;&#x27;,&#x27;step&#x27;);
+        button.type = &#x27;button&#x27;;
+        button.dataset.pick = id;
+        button.setAttribute(&#x27;aria-controls&#x27;,&#x27;cs-source&#x27;);
+        const date = el(&#x27;time&#x27;,dateFormat(record.date));
+        date.dateTime = record.date;
+        const dot = el(&#x27;span&#x27;,&#x27;&#x27;,&#x27;dot&#x27;);
+        dot.setAttribute(&#x27;aria-hidden&#x27;,&#x27;true&#x27;);
+        button.append(dot,date,el(&#x27;span&#x27;,t(key),&#x27;step-label&#x27;));
+        item.append(button);
+        return item;
+      }));
+    }
+    for (const link of all(&#x27;[data-official-bill]&#x27;)) link.href = local(getRecord(&#x27;s5&#x27;).url);
+  }
+
+  function createDraft(policy = false) {
+    const draft = {id:String(state.drafts.length + 1), title:null, notes:&#x27;&#x27;, refs:new Set(policy ? steps.map(([id]) =&gt; id) : []), policy};
+    state.drafts.push(draft);
+    state.activeDraft = draft.id;
+    state.sourceStatus = &#x27;&#x27;;
+    state.draftStatus = &#x27;&#x27;;
+    return draft;
+  }
+
+  function renderDraft() {
+    const draft = getDraft();
+    const selector = find(&#x27;[data-draft-select]&#x27;);
+    selector.hidden = state.drafts.length &lt; 2;
+    find(&#x27;[data-draft-picker-label]&#x27;).hidden = selector.hidden;
+    selector.replaceChildren(...state.drafts.map((item) =&gt; {
+      const option = el(&#x27;option&#x27;, item.title?.trim() || (item.policy ? t(&#x27;featureTitle&#x27;) : t(&#x27;untitled&#x27;) + &#x27; &#x27; + item.id));
+      option.value = item.id;
+      return option;
+    }));
+    if (draft) selector.value = draft.id;
+    find(&#x27;[data-draft-title]&#x27;).value = draft?.title ?? (draft?.policy ? t(&#x27;featureTitle&#x27;) : &#x27;&#x27;);
+    find(&#x27;[data-draft-notes]&#x27;).value = draft?.notes ?? &#x27;&#x27;;
+    find(&#x27;[data-brief-empty]&#x27;).hidden = Boolean(draft?.refs.size);
+    find(&#x27;[data-draft-status]&#x27;).textContent = state.draftStatus ? t(state.draftStatus) : &#x27;&#x27;;
+    find(&#x27;[data-brief-sources]&#x27;).replaceChildren(...Array.from(draft?.refs ?? [], id =&gt; {
+      const record = getRecord(id);
+      const item = el(&#x27;li&#x27;);
+      const remove = el(&#x27;button&#x27;,t(&#x27;remove&#x27;),&#x27;button secondary&#x27;);
+      remove.type = &#x27;button&#x27;;
+      remove.dataset.remove = id;
+      remove.setAttribute(&#x27;aria-label&#x27;,t(&#x27;remove&#x27;) + &#x27; · &#x27; + ref(record));
+      item.append(recordButton(record),remove);
+      return item;
+    }));
+    renderSelection();
+  }
+
+  function renderNav() {
+    for (const link of all(&#x27;.rail a&#x27;)) {
+      const current = link.dataset.browse ?
+        state.view === &#x27;records&#x27; &amp;&amp; state.facet === link.dataset.browse :
+        state.view === link.dataset.view &amp;&amp; (state.view !== &#x27;records&#x27; || state.facet === &#x27;all&#x27;);
+      if (current) link.setAttribute(&#x27;aria-current&#x27;,&#x27;page&#x27;);
+      else link.removeAttribute(&#x27;aria-current&#x27;);
+    }
+  }
+
+  function showView(view) {
+    state.view = view;
+    if (view === &#x27;briefings&#x27;) {
+      if (!getDraft()) createDraft();
+      renderDraft();
+    }
+    if (view === &#x27;records&#x27;) renderResults();
+    else if (!state.selected) state.selected = &#x27;gazette-222&#x27;;
+    for (const panel of all(&#x27;[data-screen]&#x27;)) panel.hidden = panel.dataset.screen !== view;
+    renderNav();
+    renderInspector();
+    find(&#x27;[data-screen=&quot;&#x27; + view + &#x27;&quot;] h1&#x27;).focus();
+  }
+
+  function selectRecord(id, fromInspector = false, reviewing = false) {
+    state.selected = id;
+    state.sourceStatus = &#x27;&#x27;;
+    state.reviewing = reviewing;
+    renderInspector();
+    if (small.matches || fromInspector) find(&#x27;[data-inspector-heading]&#x27;).focus();
+  }
+
+  function search(query, facet = &#x27;all&#x27;) {
+    state.query = query.trim();
+    state.facet = facet;
+    state.reviewing = false;
+    state.sourceStatus = &#x27;&#x27;;
+    find(&#x27;[data-query]&#x27;).value = state.query;
+    showView(&#x27;records&#x27;);
+  }
+
+  function renderLanguage() {
+    root.lang = state.language ? &#x27;fr&#x27; : &#x27;en&#x27;;
+    for (const node of all(&#x27;[data-lang]&#x27;)) node.setAttribute(&#x27;aria-pressed&#x27;,String(Number(node.dataset.lang) === state.language));
+    for (const node of all(&#x27;[data-t]&#x27;)) node.textContent = t(node.dataset.t);
+    for (const node of all(&#x27;[data-label]&#x27;)) node.setAttribute(&#x27;aria-label&#x27;,t(node.dataset.label));
+    for (const node of all(&#x27;[data-placeholder]&#x27;)) node.placeholder = t(node.dataset.placeholder);
+    for (const node of all(&#x27;[data-date]&#x27;)) node.textContent = dateFormat(node.dataset.date);
+    renderTimeline();
+    if (state.view === &#x27;records&#x27;) renderResults();
+    renderDraft();
+    renderNav();
+    renderInspector();
+  }
+
+  function onClick(event) {
+    const control = event.target.closest(&#x27;button,a[data-view],a[data-browse],a[data-pick]&#x27;);
+    if (!control || !root.contains(control)) return;
+    const key = control.dataset;
+    if (key.view) {
+      event.preventDefault();
+      if (key.view === &#x27;records&#x27;) search(&#x27;&#x27;);
+      else showView(key.view);
+    } else if (key.browse) {
+      event.preventDefault();
+      search(&#x27;&#x27;,key.browse);
+    } else if (key.lang !== undefined) {
+      state.language = Number(key.lang);
+      renderLanguage();
+    } else if (key.search !== undefined) search(find(&#x27;[data-query]&#x27;).value);
+    else if (key.reset !== undefined) search(&#x27;&#x27;);
+    else if (key.pick) {
+      event.preventDefault();
+      selectRecord(key.pick,Boolean(control.closest(&#x27;[data-inspector]&#x27;)));
+    } else if (key.review !== undefined) selectRecord(&#x27;gazette-222&#x27;,false,true);
+    else if (key.markReviewed !== undefined) {
+      state.reviews.add(&#x27;gazette-222&#x27;);
+      state.sourceStatus = &#x27;reviewSaved&#x27;;
+      renderInspector();
+      find(&#x27;[data-inspector-heading]&#x27;).focus();
+    } else if (key.create !== undefined) {
+      createDraft();
+      showView(&#x27;briefings&#x27;);
+      find(&#x27;[data-draft-title]&#x27;).focus();
+    } else if (key.policyBrief !== undefined) {
+      const existing = state.drafts.find((draft) =&gt; draft.policy);
+      if (existing) {
+        state.activeDraft = existing.id;
+        state.sourceStatus = &#x27;&#x27;;
+        state.draftStatus = &#x27;&#x27;;
+      } else createDraft(true);
+      showView(&#x27;briefings&#x27;);
+    } else if (key.add !== undefined) {
+      const draft = getDraft() ?? createDraft();
+      if (draft.refs.has(state.selected)) showView(&#x27;briefings&#x27;);
+      else {
+        draft.refs.add(state.selected);
+        state.sourceStatus = &#x27;added&#x27;;
+        if (state.view === &#x27;briefings&#x27;) renderDraft();
+        renderInspector();
+      }
+    } else if (key.remove) {
+      getDraft().refs.delete(key.remove);
+      state.draftStatus = &#x27;removed&#x27;;
+      state.sourceStatus = &#x27;&#x27;;
+      renderDraft();
+      renderInspector();
+      (find(&#x27;[data-brief-sources] [data-remove]&#x27;) ?? find(&#x27;[data-draft-notes]&#x27;)).focus();
+    }
+  }
+
+  root.addEventListener(&#x27;click&#x27;,onClick);
+  root.addEventListener(&#x27;keydown&#x27;,(event) =&gt; {
+    if (event.key !== &#x27;Enter&#x27; || event.isComposing || !event.target.matches(&#x27;[data-query]&#x27;)) return;
+    event.preventDefault();
+    search(event.target.value);
+  });
+  root.addEventListener(&#x27;change&#x27;,(event) =&gt; {
+    if (event.target.matches(&#x27;[data-filter]&#x27;)) {
+      state.facet = event.target.value;
+      state.sourceStatus = &#x27;&#x27;;
+      renderResults();
+      renderNav();
+      renderInspector();
+    } else if (event.target.matches(&#x27;[data-draft-select]&#x27;)) {
+      state.activeDraft = event.target.value;
+      state.sourceStatus = &#x27;&#x27;;
+      state.draftStatus = &#x27;&#x27;;
+      renderDraft();
+      renderInspector();
+    }
+  });
+  root.addEventListener(&#x27;input&#x27;,(event) =&gt; {
+    if (event.target.matches(&#x27;[data-draft-title]&#x27;)) getDraft().title = event.target.value;
+    else if (event.target.matches(&#x27;[data-draft-notes]&#x27;)) getDraft().notes = event.target.value;
+  });
+  root.addEventListener(&#x27;blur&#x27;,(event) =&gt; {
+    if (!event.target.matches(&#x27;[data-draft-title]&#x27;)) return;
+    const draft = getDraft();
+    const option = Array.from(find(&#x27;[data-draft-select]&#x27;).options).find((item) =&gt; item.value === draft.id);
+    if (option) option.textContent = draft.title?.trim() || (draft.policy ? t(&#x27;featureTitle&#x27;) : t(&#x27;untitled&#x27;) + &#x27; &#x27; + draft.id);
+  },true);
+  function updateBrowse() {find(&#x27;[data-browse-menu]&#x27;).open = !compact.matches;}
+  compact.addEventListener(&#x27;change&#x27;,updateBrowse);
+  updateBrowse();
+  renderLanguage();
+})();
+&lt;/script&gt;
+
+&lt;script&gt;
+(() =&gt; {
+  let positioningReady = window.FloatingUIDOM
+    ? Promise.resolve(window.FloatingUIDOM)
+    : null;
+  const loadScript = (src) =&gt; new Promise((resolve, reject) =&gt; {
+    const script = document.createElement(&quot;script&quot;);
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () =&gt; {
+      script.remove();
+      reject(new Error(&quot;Could not load tooltip positioning&quot;));
+    };
+    document.head.appendChild(script);
+  });
+  const loadPositioning = async () =&gt; {
+    const domUrl = &quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;;
+    const preload = document.createElement(&quot;link&quot;);
+    preload.rel = &quot;preload&quot;;
+    preload.as = &quot;script&quot;;
+    preload.href = domUrl;
+    document.head.appendChild(preload);
+    try {
+      if (window.FloatingUICore == null) {
+        await loadScript(&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;);
+      }
+      await loadScript(domUrl);
+      return window.FloatingUIDOM;
+    } finally {
+      preload.remove();
+    }
+  };
+  const getPositioning = () =&gt; positioningReady ??= loadPositioning().catch((error) =&gt; {
+    positioningReady = null;
+    throw error;
+  });
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (event) =&gt; {
+    for (const target of event.composedPath()) {
+      if (target?.nodeType === Node.ELEMENT_NODE) {
+        const trigger = target.closest(&quot;[data-tooltip]&quot;);
+        if (trigger) return trigger;
+      }
+    }
+    return null;
+  };
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating, { computePosition, flip, offset, shift, size }) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    const request = positionRequest;
+    void getPositioning().then((positioning) =&gt; {
+      if (request !== positionRequest || !trigger.isConnected) return;
+      autoUpdateCleanup = positioning.autoUpdate(trigger, floating, () =&gt; {
+        updatePosition(trigger, floating, positioning);
+      });
+    }).catch(() =&gt; {
+      if (request === positionRequest) closeTooltip(false);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handlers = {
+    pointerover: handlePointerOpen,
+    pointerdown: handlePointer,
+    pointercancel: handlePointer,
+    click: handleTouchClick,
+    pointerout: handleLeave,
+    focusin: handleFocusIn,
+    focusout: handleLeave,
+    keydown: handleKeyDown,
+    contextmenu: handleContextMenu,
+  };
+  const roots = new Map();
+  const handledEvents = new WeakSet();
+  const handleEvent = (event) =&gt; {
+    if (handledEvents.has(event)) return;
+    handledEvents.add(event);
+    handlers[event.type](event);
+  };
+  const discoverRoots = (node) =&gt; {
+    if (node.shadowRoot) listen(node.shadowRoot);
+    for (const element of node.querySelectorAll(&quot;*&quot;)) {
+      if (element.shadowRoot) listen(element.shadowRoot);
+    }
+  };
+  const listen = (root) =&gt; {
+    if (roots.has(root)) return;
+    for (const type of Object.keys(handlers)) root.addEventListener(type, handleEvent);
+    const observer = new window.MutationObserver((records) =&gt; {
+      for (const { addedNodes } of records) {
+        for (const node of addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) discoverRoots(node);
+        }
+      }
+      for (const [root, cleanup] of roots) {
+        if (root.host &amp;&amp; !root.host.isConnected) {
+          cleanup();
+          roots.delete(root);
+        }
+      }
+      if (activeTrigger &amp;&amp; !activeTrigger.isConnected) closeTooltip(false);
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    roots.set(root, () =&gt; {
+      observer.disconnect();
+      for (const type of Object.keys(handlers)) root.removeEventListener(type, handleEvent);
+    });
+    discoverRoots(root);
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    for (const cleanup of roots.values()) cleanup();
+    roots.clear();
+    tooltip = null;
+  };
+
+  // Events between children of one shadow root never reach the document.
+  listen(document);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-carousel&quot;&gt;
+  (() =&gt; {
+    for (const root of document.querySelectorAll(&quot;.viz-carousel&quot;)) {
+      const panels = Array.from(
+        root.querySelectorAll(&quot;:scope &gt; [data-variant]&quot;),
+      );
+      if (panels.length === 0) {
+        continue;
+      }
+      root.setAttribute(&quot;role&quot;, &quot;group&quot;);
+      panels.forEach((panel, index) =&gt; {
+        panel.hidden = index !== 0;
+        panel.setAttribute(&quot;role&quot;, &quot;group&quot;);
+        if (!panel.hasAttribute(&quot;aria-label&quot;)) {
+          panel.setAttribute(&quot;aria-label&quot;, panel.dataset.variant);
+        }
+      });
+      root.dataset.activeVariant = panels[0].dataset.variant;
+      if (panels.length === 1) {
+        continue;
+      }
+
+      const controls = document.createElement(&quot;div&quot;);
+      controls.className = &quot;viz-carousel-controls&quot;;
+      // Portable copy of the settings dropdown&#x27;s legacy glyph; no 14px icon-package preset matches it.
+      // https://github.com/openai/openai/blob/master/codex/codex-apps/webview/src/icons/chevron.svg
+      controls.innerHTML = `
+      &lt;button type=&quot;button&quot; class=&quot;viz-carousel-previous cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chevron-left&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+      &lt;details class=&quot;viz-carousel-picker&quot;&gt;
+        &lt;summary class=&quot;cursor-interaction&quot;&gt;
+          &lt;span class=&quot;viz-carousel-count tabular-nums&quot;&gt;&lt;/span&gt;
+          &lt;span class=&quot;viz-carousel-name&quot;&gt;&lt;/span&gt;
+          &lt;svg class=&quot;viz-carousel-caret&quot; width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 20 21&quot; fill=&quot;none&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+            &lt;path d=&quot;M15.2793 7.71101C15.539 7.45131 15.961 7.45131 16.2207 7.71101C16.4804 7.97071 16.4804 8.39272 16.2207 8.65242L10.4707 14.4024C10.211 14.6621 9.78902 14.6621 9.52932 14.4024L3.77932 8.65242L3.69436 8.54792C3.52385 8.28979 3.55205 7.93828 3.77932 7.71101C4.00659 7.48374 4.3581 7.45554 4.61623 7.62605L4.72073 7.71101L10 12.9903L15.2793 7.71101Z&quot; fill=&quot;currentColor&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;0.6&quot; /&gt;
+          &lt;/svg&gt;
+        &lt;/summary&gt;
+        &lt;div class=&quot;viz-carousel-options&quot;&gt;&lt;/div&gt;
+      &lt;/details&gt;
+      &lt;button type=&quot;button&quot; class=&quot;viz-carousel-next cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;`;
+      const previous = controls.querySelector(&quot;.viz-carousel-previous&quot;);
+      const next = controls.querySelector(&quot;.viz-carousel-next&quot;);
+      const picker = controls.querySelector(&quot;.viz-carousel-picker&quot;);
+      const summary = picker.querySelector(&quot;summary&quot;);
+      const count = controls.querySelector(&quot;.viz-carousel-count&quot;);
+      const name = controls.querySelector(&quot;.viz-carousel-name&quot;);
+      const options = controls.querySelector(&quot;.viz-carousel-options&quot;);
+      const status = document.createElement(&quot;span&quot;);
+      status.className = &quot;sr-only&quot;;
+      status.setAttribute(&quot;role&quot;, &quot;status&quot;);
+      status.setAttribute(&quot;aria-live&quot;, &quot;polite&quot;);
+      status.setAttribute(&quot;aria-atomic&quot;, &quot;true&quot;);
+      previous.setAttribute(
+        &quot;aria-label&quot;,
+        root.dataset.previousLabel ?? &quot;Previous variant&quot;,
+      );
+      next.setAttribute(&quot;aria-label&quot;, root.dataset.nextLabel ?? &quot;Next variant&quot;);
+
+      let active = 0;
+      let mousePointerId = null;
+      let summaryPointerHandled = false;
+      summary.addEventListener(&quot;pointerdown&quot;, (event) =&gt; {
+        summaryPointerHandled =
+          event.pointerType === &quot;mouse&quot; &amp;&amp; event.button === 0 &amp;&amp; !event.ctrlKey;
+        if (!summaryPointerHandled) {
+          return;
+        }
+        event.preventDefault();
+        summary.focus({ preventScroll: true });
+        picker.open = !picker.open;
+        mousePointerId = picker.open ? event.pointerId : null;
+      });
+      summary.addEventListener(&quot;click&quot;, (event) =&gt; {
+        if (summaryPointerHandled &amp;&amp; event.detail &gt; 0) {
+          event.preventDefault();
+        }
+      });
+      const choices = panels.map((panel, index) =&gt; {
+        const choice = document.createElement(&quot;button&quot;);
+        choice.type = &quot;button&quot;;
+        choice.className = &quot;cursor-interaction&quot;;
+        choice.textContent = panel.dataset.variant;
+        choice.addEventListener(&quot;click&quot;, () =&gt; {
+          select(index);
+          summary.focus();
+        });
+        choice.addEventListener(&quot;pointerup&quot;, (event) =&gt; {
+          if (
+            picker.open &amp;&amp;
+            event.pointerType === &quot;mouse&quot; &amp;&amp;
+            event.button === 0 &amp;&amp;
+            event.pointerId === mousePointerId
+          ) {
+            choice.click();
+          }
+        });
+        options.appendChild(choice);
+        return choice;
+      });
+      const select = (index) =&gt; {
+        const changed = active !== index;
+        active = index;
+        panels.forEach((panel, position) =&gt; {
+          panel.hidden = position !== active;
+          choices[position].setAttribute(
+            &quot;aria-current&quot;,
+            String(position === active),
+          );
+        });
+        root.dataset.activeVariant = panels[active].dataset.variant;
+        count.textContent = `${active + 1} / ${panels.length}`;
+        name.textContent = panels[active].dataset.variant;
+        picker.open = false;
+        mousePointerId = null;
+        if (changed) {
+          status.textContent = `${count.textContent}: ${name.textContent}`;
+        }
+      };
+      previous.addEventListener(&quot;click&quot;, () =&gt;
+        select((active + panels.length - 1) % panels.length),
+      );
+      next.addEventListener(&quot;click&quot;, () =&gt;
+        select((active + 1) % panels.length),
+      );
+      picker.addEventListener(&quot;keydown&quot;, (event) =&gt; {
+        if (event.key === &quot;Escape&quot; &amp;&amp; picker.open) {
+          event.preventDefault();
+          picker.open = false;
+          mousePointerId = null;
+          summary.focus();
+          return;
+        }
+        if (event.altKey || event.ctrlKey || event.metaKey) {
+          return;
+        }
+        const index = choices.indexOf(document.activeElement);
+        let nextIndex;
+        if (event.key === &quot;ArrowDown&quot;) {
+          nextIndex = index &lt; 0 ? active : (index + 1) % choices.length;
+        } else if (event.key === &quot;ArrowUp&quot;) {
+          nextIndex = index &lt; 0 ? active : (index + choices.length - 1) % choices.length;
+        } else if (picker.open &amp;&amp; event.key === &quot;Home&quot;) {
+          nextIndex = 0;
+        } else if (picker.open &amp;&amp; event.key === &quot;End&quot;) {
+          nextIndex = choices.length - 1;
+        } else {
+          return;
+        }
+        event.preventDefault();
+        picker.open = true;
+        choices[nextIndex].focus();
+      });
+      picker.addEventListener(&quot;focusout&quot;, (event) =&gt; {
+        if (!picker.contains(event.relatedTarget)) {
+          picker.open = false;
+          mousePointerId = null;
+        }
+      });
+      const dismiss = (event) =&gt; {
+        if (!summary.contains(event.target)) {
+          mousePointerId = null;
+        }
+        if (!picker.contains(event.target)) {
+          picker.open = false;
+        }
+      };
+      const endPointerSelection = () =&gt; {
+        mousePointerId = null;
+      };
+      const sizePicker = () =&gt; {
+        root.style.setProperty(
+          &quot;--viz-carousel-picker-height&quot;,
+          `${picker.open ? options.offsetHeight : 0}px`,
+        );
+      };
+      picker.addEventListener(&quot;toggle&quot;, sizePicker);
+      window.addEventListener(&quot;resize&quot;, sizePicker);
+      document.addEventListener(&quot;pointerdown&quot;, dismiss);
+      document.addEventListener(&quot;pointerup&quot;, endPointerSelection);
+      document.addEventListener(&quot;pointercancel&quot;, endPointerSelection);
+      window.addEventListener(&quot;blur&quot;, endPointerSelection);
+      window.addEventListener(
+        &quot;pagehide&quot;,
+        () =&gt; {
+          document.removeEventListener(&quot;pointerdown&quot;, dismiss);
+          document.removeEventListener(&quot;pointerup&quot;, endPointerSelection);
+          document.removeEventListener(&quot;pointercancel&quot;, endPointerSelection);
+          window.removeEventListener(&quot;blur&quot;, endPointerSelection);
+          window.removeEventListener(&quot;resize&quot;, sizePicker);
+        },
+        { once: true },
+      );
+      root.append(controls, status);
+      select(0);
+    }
+  })();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+
+<script>(() => {
+  const frame = document.getElementById("codex-visualization");
+  if (!(frame instanceof HTMLIFrameElement)) {
+    return;
+  }
+  const isShare = document.documentElement.classList.contains(
+    "visualization-share-root",
+  );
+  let viewportHeight = globalThis.innerHeight;
+  let sizeFingerprint = null;
+  let sizeWriteTimeout;
+  let lastSize = null;
+  let pendingSize = null;
+  const storageKey = `codex:visualization-widget-state-v2:${JSON.stringify([
+    globalThis.location.pathname,
+    globalThis.location.search,
+  ])}`;
+  const sizeStorageKey = `${storageKey}:share-size-v1`;
+  const parseState = (serializedState) => {
+    if (
+      typeof serializedState !== "string" ||
+      new TextEncoder().encode(serializedState).length > 16 * 1024
+    ) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    /** @type {unknown} */
+    const state = JSON.parse(serializedState);
+    if (
+      state == null ||
+      typeof state !== "object" ||
+      Array.isArray(state) ||
+      ("imageIds" in state &&
+        (!Array.isArray(state.imageIds) || state.imageIds.length > 0))
+    ) {
+      throw new TypeError("Widget state must be a JSON object");
+    }
+    const storedState = { modelContent: null, privateContent: null, ...state };
+    const canonicalState = JSON.stringify(
+      storedState,
+      (_key, /** @type {unknown} */ value) => {
+        if (typeof value === "number" && !Number.isFinite(value)) {
+          throw new TypeError("Widget state must contain finite numbers");
+        }
+        return value;
+      },
+    );
+    if (new TextEncoder().encode(canonicalState).length > 16 * 1024) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    return storedState;
+  };
+  let storage = null;
+  let state = null;
+  try {
+    const localStorage = globalThis.localStorage;
+    const probeKey = `${storageKey}:probe`;
+    localStorage.setItem(probeKey, "1");
+    localStorage.removeItem(probeKey);
+    storage = localStorage;
+    const savedState = storage.getItem(storageKey);
+    if (savedState != null) {
+      try {
+        state = parseState(savedState);
+      } catch {
+        // Invalid saved state does not disable future writes.
+      }
+    }
+  } catch {
+    storage = null;
+  }
+  const persistSize = () => {
+    globalThis.clearTimeout(sizeWriteTimeout);
+    if (pendingSize == null) {
+      return;
+    }
+    try {
+      storage?.setItem(sizeStorageKey, pendingSize);
+    } catch {
+      // A denied or full cache must not affect the visualization.
+    }
+    pendingSize = null;
+  };
+  if (isShare) {
+    globalThis.addEventListener("pagehide", persistSize);
+  }
+  const initialGlobals = {
+    widgetState: state,
+    statePersistence: storage == null ? "none" : "local",
+  };
+
+  const channel = new MessageChannel();
+  channel.port1.addEventListener("message", (event) => {
+    const data = event.data;
+    if (typeof data !== "object" || data == null) {
+      return;
+    }
+    if (data.type === "widget-state-write") {
+      if (!Number.isSafeInteger(data.id) || data.id <= 0) {
+        return;
+      }
+      let ok = false;
+      try {
+        if (storage != null) {
+          const state = parseState(data.state);
+          storage.setItem(storageKey, JSON.stringify(state));
+          ok = true;
+        }
+      } catch {
+        // Storage denial, quota limits, and invalid state return a failed receipt.
+      }
+      channel.port1.postMessage({
+        type: "widget-state-result",
+        id: data.id,
+        ok,
+      });
+      return;
+    }
+    if (data.type === "height") {
+      const height = data.height;
+      if (
+        typeof height !== "number" ||
+        !Number.isFinite(height) ||
+        height < 0
+      ) {
+        return;
+      }
+      if (height <= 10_000) {
+        const width = isShare && storage != null ? frame.clientWidth : null;
+        frame.style.height = Math.ceil(height) + "px";
+        if (isShare && storage != null) {
+          const size = JSON.stringify({
+            fingerprint: sizeFingerprint,
+            width,
+            viewportHeight: globalThis.innerHeight,
+            dark: globalThis.matchMedia("(prefers-color-scheme: dark)").matches,
+            scale: globalThis.devicePixelRatio,
+            height: Math.ceil(height),
+          });
+          if (size !== lastSize) {
+            lastSize = size;
+            pendingSize = size;
+            globalThis.clearTimeout(sizeWriteTimeout);
+            sizeWriteTimeout = globalThis.setTimeout(persistSize, 100);
+          }
+        }
+      }
+      if (isShare) {
+        // Keep unusually tall content accessible without accepting an unbounded height.
+        if (height > 10_000 && Number.parseFloat(frame.style.height) === 0) {
+          frame.style.removeProperty("height");
+        }
+        frame.scrolling = height > 10_000 ? "auto" : "no";
+        document.documentElement.classList.add("visualization-share-ready");
+      }
+      return;
+    }
+    if (data.type === "scroll-to") {
+      const top = data.top;
+      if (
+        typeof top === "number" &&
+        Number.isFinite(top) &&
+        top >= 0 &&
+        globalThis.navigator.userActivation?.isActive === true
+      ) {
+        globalThis.scrollTo({
+          top: Math.ceil(
+            globalThis.scrollY + frame.getBoundingClientRect().top + top,
+          ),
+        });
+      }
+      return;
+    }
+    if (data.type === "open-external") {
+      const rawHref = data.href;
+      if (typeof rawHref !== "string") {
+        return;
+      }
+      let href;
+      try {
+        const url = new URL(rawHref, document.baseURI);
+        if (url.protocol !== "https:") {
+          return;
+        }
+        href = url.href;
+      } catch {
+        return;
+      }
+      if (globalThis.navigator.userActivation?.isActive === true) {
+        const anchor = document.createElement("a");
+        anchor.href = href;
+        anchor.rel = "noopener noreferrer";
+        anchor.target = "_blank";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      }
+      return;
+    }
+    if (data.type === "follow-up") {
+      const prompt = data.prompt;
+      if (
+        typeof prompt !== "string" ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      const title = data.title;
+      globalThis.prompt(typeof title === "string" ? title : prompt, prompt);
+    }
+  });
+  channel.port1.start();
+  const srcdoc = frame.dataset.srcdoc;
+  if (srcdoc == null) {
+    return;
+  }
+  globalThis.addEventListener("resize", () => {
+    const height = Number.parseFloat(frame.style.height);
+    if (!isShare && (!Number.isFinite(height) || height <= viewportHeight)) {
+      frame.style.removeProperty("height");
+    }
+    viewportHeight = globalThis.innerHeight;
+    channel.port1.postMessage({ type: "measure" });
+  });
+  frame.addEventListener(
+    "load",
+    () => {
+      frame.contentWindow?.postMessage(
+        { type: "codex-visualization-initialize" },
+        "*",
+        [channel.port2],
+      );
+    },
+    { once: true },
+  );
+  // Match the trusted bootstrap element, not the same text in an authored title.
+  const frameHtml = srcdoc.replace(
+    '<script type="application/json" id="codex-visualization-widget-state">__CODEX_VISUALIZATION_WIDGET_STATE__<\/script>',
+    () =>
+      '<script type="application/json" id="codex-visualization-widget-state">' +
+      JSON.stringify(initialGlobals).replaceAll("<", "\\u003c") +
+      "<\/script>",
+  );
+  if (isShare && storage != null) {
+    // Fingerprint the rendered document, including restored widget state, without
+    // storing its content. This is a layout cache, not a security identity.
+    let hash = 5381;
+    for (let index = 0; index < frameHtml.length; index += 1) {
+      hash = (hash * 33 + frameHtml.charCodeAt(index)) % 4_294_967_296;
+    }
+    sizeFingerprint = hash.toString(36);
+    try {
+      const size = JSON.parse(storage.getItem(sizeStorageKey) ?? "null");
+      if (
+        size?.fingerprint === sizeFingerprint &&
+        size.width === frame.clientWidth &&
+        size.viewportHeight === globalThis.innerHeight &&
+        size.dark ===
+          globalThis.matchMedia("(prefers-color-scheme: dark)").matches &&
+        size.scale === globalThis.devicePixelRatio &&
+        typeof size.height === "number" &&
+        Number.isFinite(size.height) &&
+        size.height >= 0 &&
+        size.height <= 10_000
+      ) {
+        frame.style.height = size.height + "px";
+      }
+    } catch {
+      // Ignore missing or invalid cache entries and measure the live frame.
+    }
+  }
+  frame.srcdoc = frameHtml;
+  delete frame.dataset.srcdoc;
+})();
+</script>
+</body>
+</html>

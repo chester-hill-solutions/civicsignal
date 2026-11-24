@@ -1,0 +1,36 @@
+{
+  "issues": [
+    {
+      "part": "I",
+      "language": "en",
+      "issueDate": "2026-04-25",
+      "volume": 160,
+      "issueNumber": 17,
+      "file": "part-i-en.html"
+    },
+    {
+      "part": "I",
+      "language": "fr",
+      "issueDate": "2026-04-25",
+      "volume": 160,
+      "issueNumber": 17,
+      "file": "part-i-fr.html"
+    },
+    {
+      "part": "II",
+      "language": "en",
+      "issueDate": "2026-04-22",
+      "volume": 160,
+      "issueNumber": 8,
+      "file": "part-ii-en.html"
+    },
+    {
+      "part": "II",
+      "language": "fr",
+      "issueDate": "2026-04-22",
+      "volume": 160,
+      "issueNumber": 8,
+      "file": "part-ii-fr.html"
+    }
+  ]
+}

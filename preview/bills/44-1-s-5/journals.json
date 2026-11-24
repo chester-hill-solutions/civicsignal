@@ -1,0 +1,56 @@
+{
+  "source": "https://www.ourcommons.ca/DocumentViewer/en/44-1/house/sitting-202/journals",
+  "retrieved": "2026-11-23",
+  "scope": "Selected parliamentary decisions and source identifiers from House sitting 202 and Senate sitting 133.",
+  "records": [
+    {
+      "id": "journal:house-202",
+      "kind": "journal",
+      "chamber": "house",
+      "sourceId": "12467737",
+      "date": "2023-05-30",
+      "label": {
+        "en": "Journals No. 202: Vote 338 recorded 208 yeas to 116 nays, no paired members. the bill was read a third time and passed.",
+        "fr": "Journaux no 202 : vote no 338, 208 pour et 116 contre, aucun député pairé. le projet de loi est lu une troisième fois et adopté."
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/44-1/house/sitting-202/journals",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/44-1/chambre/seance-202/journaux"
+      },
+      "links": [
+        {
+          "relation": "reports-on",
+          "target": "vote:338"
+        }
+      ],
+      "division": {
+        "number": 338,
+        "yeas": 208,
+        "nays": 116,
+        "paired": 0,
+        "result": "agreed"
+      }
+    },
+    {
+      "id": "journal:senate-133",
+      "kind": "journal",
+      "chamber": "senate",
+      "sourceId": "133",
+      "date": "2023-06-13",
+      "label": {
+        "en": "Senate Journals, Issue 133: concurrence in the House amendments to Bill S-5 adopted, 59 yeas to 19 nays. no abstentions.",
+        "fr": "Journaux du Sénat, fascicule 133 : adoption des amendements de la Chambre des communes au projet de loi S-5, 59 pour et 19 contre. aucune abstention."
+      },
+      "url": {
+        "en": "https://sencanada.ca/en/content/sen/chamber/441/journals/133jr_2023-06-13-e",
+        "fr": "https://sencanada.ca/fr/content/sen/chamber/441/journals/133jr_2023-06-13-f"
+      },
+      "links": [
+        {
+          "relation": "reports-on",
+          "target": "stage:senate:concurrence"
+        }
+      ]
+    }
+  ]
+}

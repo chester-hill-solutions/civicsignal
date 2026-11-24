@@ -93,6 +93,8 @@ function ctx(
 }
 
 describe('the vector arm', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it('is used when the deployment has an index and an embedder', async () => {
     const { db, calls } = fakeDb([row('acts-en-c-34-36')]);
     const index = fakeIndex([{ id: 'acts-en-c-34-36', score: 0.9, metadata: {} }]);
@@ -261,6 +263,49 @@ describe('the vector arm', () => {
     expect(items.map((i) => i.id)).toEqual(['c', 'a', 'b']);
   });
 
+  it('promotes provisions from the uniquely named statute after an accepted vector fallback', async () => {
+    const { db, calls } = fakeDb([
+      row('other', { act: 'Telecommunications Act', citation: 'T-3.4' }),
+      row('named-first', { act: 'Loi sur la concurrence' }),
+      row('named-second', { act: 'Loi sur la concurrence' }),
+    ]);
+    const index = fakeIndex([
+      { id: 'other', score: 0.75, metadata: {} },
+      { id: 'named-first', score: 0.7, metadata: {} },
+      { id: 'named-second', score: 0.6, metadata: {} },
+    ]);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 402 })));
+    const onRetrieval = vi.fn();
+    const items = await statutesCorpus.retrieve({ topic: 'Selon la Loi sur la concurrence, quels recours existent?', limit: 2 },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1], jev: { key: 'test-key' }, onRetrieval }));
+
+    expect(items.map(({ id }) => id)).toEqual(['named-first', 'named-second']);
+    expect(calls).toHaveLength(1);
+    expect(onRetrieval).toHaveBeenCalledWith(expect.objectContaining({ preRefusalTopScore: 0.75, fallback: true, decision: 'answer' }));
+  });
+
+  it('keeps vector ordering when the named title identifies multiple citations', async () => {
+    const { db } = fakeDb([row('other', { act: 'Telecommunications Act', citation: 'T-3.4' }),
+      row('first', { citation: 'C-1' }), row('second', { citation: 'C-2' })]);
+    const index = fakeIndex(['other', 'first', 'second'].map((id, at) => ({ id, score: 0.9 - at * 0.05, metadata: {} })));
+    const items = await statutesCorpus.retrieve({ topic: 'What does the Competition Act require?' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1] }));
+
+    expect(items.map(({ id }) => id)).toEqual(['other', 'first', 'second']);
+  });
+
+  it('requires the fallback floor before and after promoting a named statute', async () => {
+    const { db } = fakeDb([row('other', { act: 'Telecommunications Act', citation: 'T-3.4' }), row('named')]);
+    const query = { topic: 'Under the Competition Act, when does the last ferry depart?', limit: 1 };
+    const retrieve = (topScore: number) => statutesCorpus.retrieve(query, ctx(db, {
+      vector: fakeIndex([{ id: 'other', score: topScore, metadata: {} }, { id: 'named', score: 0.6, metadata: {} }]).index,
+      embedQuery: async () => [0.1],
+    }));
+
+    expect(await retrieve(VECTOR_FLOOR - 0.01)).toEqual([]);
+    expect((await retrieve(VECTOR_FLOOR)).map(({ id }) => id)).toEqual(['other']);
+  });
+
   /**
    * A row the index names but the database does not have is a row that has
    * been removed since the index was written. It is skipped, not returned
@@ -341,15 +386,52 @@ describe('the vector arm', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('answers when the best match is at the floor', async () => {
-    const { db } = fakeDb([row('acts-en-c-34-36')]);
-    const index = fakeIndex([{ id: 'acts-en-c-34-36', score: VECTOR_FLOOR, metadata: {} }]);
+  it('keeps weaker companions when a returned match is at the floor', async () => {
+    const { db } = fakeDb([row('at-floor'), row('companion')]);
+    const index = fakeIndex([
+      { id: 'at-floor', score: VECTOR_FLOOR, metadata: {} },
+      { id: 'companion', score: VECTOR_FLOOR - 0.01, metadata: {} },
+    ]);
     const items = await statutesCorpus.retrieve(
       { topic: 'recovery of damages' },
       ctx(db, { vector: index.index, embedQuery: async () => [0.1] }),
     );
 
-    expect(items).toHaveLength(1);
+    expect(items.map((item) => item.id)).toEqual(['at-floor', 'companion']);
+  });
+
+  it.each([false, true])('refuses when the keyword filter leaves only a weak match (Jev configured: %s)', async useJev => {
+    const { db, calls } = fakeDb([row('leader'), row('weak', { text: 'Compensation applies.' })]);
+    const index = fakeIndex([
+      { id: 'leader', score: 0.91, metadata: {} },
+      { id: 'weak', score: VECTOR_FLOOR - 0.01, metadata: {} },
+    ]);
+    const send = vi.fn(async () => new Response(null, { status: 503 }));
+    vi.stubGlobal('fetch', send);
+    const onRetrieval = vi.fn();
+    const items = await statutesCorpus.retrieve({ topic: 'recovery of damages', keywords: ['compensation'] },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1], onRetrieval, jev: useJev ? { key: 'test-key' } : undefined }));
+
+    expect(items).toEqual([]);
+    expect(calls).toHaveLength(1);
+    expect(send).toHaveBeenCalledTimes(useJev ? 1 : 0);
+    expect(onRetrieval).toHaveBeenCalledWith(expect.objectContaining({
+      decision: 'refuse', mode: 'vector-floor', preRefusalTopScore: 0.91, fallback: useJev,
+      candidateCount: 2, resultCount: 0,
+    }));
+  });
+
+  it('refuses when the highest-scoring match has no row and the returned row is below the floor', async () => {
+    const { db } = fakeDb([row('weak')]);
+    const index = fakeIndex([
+      { id: 'missing', score: 0.9, metadata: {} },
+      { id: 'weak', score: VECTOR_FLOOR - 0.01, metadata: {} },
+    ]);
+
+    const items = await statutesCorpus.retrieve({ topic: 'recovery of damages' },
+      ctx(db, { vector: index.index, embedQuery: async () => [0.1] }));
+
+    expect(items).toEqual([]);
   });
 
   /**

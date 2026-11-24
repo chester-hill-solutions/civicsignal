@@ -32,9 +32,12 @@ export interface ProviderSpec {
 }
 
 export const OPENCODE_ZEN_MODEL = "claude-haiku-4-5";
+export const OPENCODE_ZEN_DEEPSEEK_MODEL = "deepseek-v4.1-flash";
+export const OPENCODE_ZEN_MODEL_ERROR = `OpenCode Zen supports only ${OPENCODE_ZEN_MODEL} and ${OPENCODE_ZEN_DEEPSEEK_MODEL}.`;
 export const BYOK_LIMITS = { timeoutMs: 30_000, responseBytes: 256 * 1024 } as const;
 export const OPENCODE_ZEN_LIMITS = BYOK_LIMITS;
 const OPENCODE_ZEN_ENDPOINT = "https://opencode.ai/inference/anthropic/v1/messages";
+const OPENCODE_ZEN_COMPLETIONS_ENDPOINT = "https://opencode.ai/inference/openai/v1/chat/completions";
 
 export interface GenerationFailure {
   provider: ByokProvider;
@@ -150,9 +153,10 @@ export function isByokProvider(value: string): value is ByokProvider {
   return Object.hasOwn(PROVIDERS, value);
 }
 
-/** The initial Zen adapter supports one reviewed Messages-family model. */
 export function supportsByokModel(provider: ByokProvider, model?: string): boolean {
-  return provider !== "opencode-zen" || !model?.trim() || model.trim() === OPENCODE_ZEN_MODEL;
+  if (provider !== "opencode-zen") return true;
+  const name = model?.trim() || OPENCODE_ZEN_MODEL;
+  return name === OPENCODE_ZEN_MODEL || name === OPENCODE_ZEN_DEEPSEEK_MODEL;
 }
 
 /** One retrieved item, ready to be put in front of a model. */
@@ -256,17 +260,23 @@ export async function chatByok(options: {
   validateAnswer?: (answer: string) => void;
 }): Promise<ByokChatResult> {
   const provider = options.provider, apiKey = options.apiKey;
-  const spec = PROVIDERS[provider], parse = spec.parse;
-  const model = options.model?.trim() || spec.defaultModel;
+  const providerSpec = PROVIDERS[provider];
+  const model = options.model?.trim() || providerSpec.defaultModel;
 
-  if (!supportsByokModel(provider, model)) throw new Error("OpenCode Zen supports only " + OPENCODE_ZEN_MODEL + ".");
+  if (!supportsByokModel(provider, model)) throw new Error(OPENCODE_ZEN_MODEL_ERROR);
+  const spec = provider === 'opencode-zen' && model === OPENCODE_ZEN_DEEPSEEK_MODEL ? {
+    ...providerSpec,
+    endpoint: () => OPENCODE_ZEN_COMPLETIONS_ENDPOINT,
+    body: PROVIDERS.openai.body,
+    parse: PROVIDERS.openai.parse,
+  } : providerSpec;
   const requestBody = spec.body({ system: options.system, messages: options.messages, model, maxTokens: options.maxTokens ?? 1200 });
   try {
     const answer = await providerJsonOnce({
       url: spec.endpoint(model), headers: spec.headers(apiKey), body: requestBody,
       timeoutMs: BYOK_LIMITS.timeoutMs, responseBytes: BYOK_LIMITS.responseBytes, signal: options.signal,
       parse(value) {
-        const answer = parse(value);
+        const answer = spec.parse(value);
         if (typeof answer !== 'string' || !answer.trim() || apiKey && answer.includes(apiKey)) {
           throw invalidGenerationResponse();
         }

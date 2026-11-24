@@ -100,6 +100,20 @@ async function fixture(alterSchema:(name:string,sql:string)=>string=(_name,sql)=
 }
 
 describe('offline protected state',()=>{
+  it.each([false,true])('admits the publication-guard schema and treats an active target as incomplete (%s)',async active=>{
+    const f=await fixture(undefined,'0009');
+    f.edit(f.source,active
+      ? `INSERT INTO corpus_publication_guard(corpus_id,generation,target_commit,target_date) VALUES('statutes-canada',1,'newer','${date}')`
+      : "INSERT INTO corpus_publication_guard(corpus_id,generation) VALUES('statutes-canada',1)");
+    const prepared=prepareProtectedState(await f.options());
+    if(active){
+      await expect(prepared).rejects.toMatchObject({code:'CORPUS_PUBLICATION_ACTIVE'});
+      expect(await lstat(f.output).catch(()=>null)).toBeNull();
+    }else{
+      await expect(prepared).resolves.toMatchObject({sourceSchemaProfile:'migrations-through-0009'});
+    }
+  });
+
   it('refuses a source with an undeclared key workspace FK before creating output',async()=>{
     const f=await fixture((name,sql)=>name==='0005_workspace_auth.sql'?sql.replace(' REFERENCES workspace(id) ON DELETE CASCADE',''):sql);
     await expect(prepareProtectedState(await f.options())).rejects.toMatchObject({code:'PROTECTED_SCHEMA_MISMATCH'});
@@ -199,6 +213,20 @@ describe('offline protected state',()=>{
     await expect(applyProtectedState({...options,...(phase==='before'?{beforeCommit:fail}:{afterCommit:fail})})).rejects.toMatchObject({code:'PROTECTED_STATE_FAILURE',message:'PROTECTED_STATE_FAILURE'});
     const db=openProtectedDatabase(f.target);try{expect(db.prepare('SELECT count(*) AS n FROM protected_state_pages').get()?.['n']).toBe(phase==='before'?0:1);}finally{db.close();}
     expect(await applyProtectedState(options)).toMatchObject({verified:true,skippedPages:phase==='before'?0:1});
+  });
+  it.each(['resume','verify'] as const)('refuses an unjournaled publication guard during offline %s',async phase=>{
+    const f=await fixture(),prepared=await prepareProtectedState(await f.options());
+    const options={directory:f.output,manifestSha256:prepared.manifestSha256,targetSqlite:f.target};
+    if(phase==='resume'){
+      await expect(applyProtectedState({...options,afterCommit:()=>{throw new Error('lost acknowledgement');}})).rejects.toThrow();
+    }else{
+      expect(await applyProtectedState(options)).toMatchObject({verified:true});
+    }
+    f.edit(f.target,"INSERT INTO corpus_publication_guard(corpus_id,generation) VALUES('statutes-canada',1)");
+    const before=await sha256File(f.target);
+    await expect((phase==='resume'?applyProtectedState:verifyProtectedState)(options))
+      .rejects.toMatchObject({code:'TARGET_PROTECTED_DATA_PRESENT'});
+    expect(await sha256File(f.target)).toBe(before);
   });
   it('refuses altered replay rows, unjournaled data and receipt corruption before applying another page',async()=>{
     const f=await fixture(),prepared=await prepareProtectedState(await f.options()),options={directory:f.output,manifestSha256:prepared.manifestSha256,targetSqlite:f.target};

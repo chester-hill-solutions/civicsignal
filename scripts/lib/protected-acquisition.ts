@@ -55,6 +55,7 @@ export interface ProtectedAcquisitionFixtureOptions {
  limits?:Partial<Limits>;
  clock?:{monotonic:()=>number;wall:()=>number;sleep:(ms:number)=>Promise<void>};
 }
+export interface FixtureCaptureFilePin { readonly bytes:number; readonly sha256:string }
 export class ProtectedAcquisitionError extends Error {
  constructor(readonly code:string,readonly ioSettled=true){super(code);this.name='ProtectedAcquisitionError';}
 }
@@ -99,9 +100,11 @@ const EXPORT=`/accounts/${PROTECTED_ACQUISITION_SOURCE.accountId}/d1/database/${
 const PREFIXES=['customer:','key:','keyhash:'];
 type View={names:string[];entries:Map<string,string>;values:Map<string,{sha256:string;row:Record<string,unknown>}>;rawBytes:number;pages:number};
 
-/** A successful fixture capture stops BEFORE downloading SQL or qualifying a
- * production source. Any failed/uncertain/persisted attempt is non-resumable. */
-export async function captureProtectedAcquisitionFixture(options:ProtectedAcquisitionFixtureOptions){
+/** A successful fixture capture stops before downloading SQL or qualifying a
+ * production source. Its optional private handoff carries pins from the bytes
+ * written by this producer. Failed or uncertain attempts are non-resumable. */
+export async function captureProtectedAcquisitionFixture(options:ProtectedAcquisitionFixtureOptions,
+ onPrivateCapture?:(url:string,files:ReadonlyMap<string,FixtureCaptureFilePin>)=>void){
  let directory:string|undefined,attempts=0,sent=0,ioSettled=true,exportPolls=0;
  try{
   requireFact(options.mode==='fixture-only'&&options.io.fixtureOnly===true,'ACQUISITION_FIXTURE_ONLY');
@@ -121,7 +124,13 @@ export async function captureProtectedAcquisitionFixture(options:ProtectedAcquis
   // reviewed caller; this core has no resume/restart or marker deletion path.
   mkdirSync(requested,{mode:0o700});directory=requested;syncDirectory(dirname(requested));
   await privatePath(directory,true);check();
-  const save=(name:string,value:unknown)=>exclusive(directory!,name,bytes(value));
+  const pins = new Map<string,FixtureCaptureFilePin>();
+  const saveBytes=(name:string,value:Uint8Array)=>{
+   const sha256=exclusive(directory!,name,value);
+   if(onPrivateCapture)pins.set(name,{bytes:value.byteLength,sha256});
+   return sha256;
+  };
+  const save=(name:string,value:unknown)=>saveBytes(name,bytes(value));
   const startSha256=save('capture.intent.json',{format:1,fixtureOnly:true,source:PROTECTED_ACQUISITION_SOURCE,limits:cap,startedAt,validUntil,providerAuthenticated:false,globalQuiescenceEstablished:false,productionAcquisitionQualified:false});check();
   const receipts:{intentSha256:string;rawSha256:string;ackSha256:string}[]=[];
   async function request<T>(kind:CaptureKind,path:string,body:string|null,parse:(body:Uint8Array)=>T):Promise<T>{
@@ -142,7 +151,7 @@ export async function captureProtectedAcquisitionFixture(options:ProtectedAcquis
     const settled=pending.then(value=>{ioSettled=true;return value;},error=>{ioSettled=true;throw !dispatched&&error instanceof ProtectedAcquisitionError?error:new ProtectedAcquisitionError('ACQUISITION_IO');});
     const reply=await Promise.race([settled,expired]);check(end);
     const bodyWithinCap=reply.body instanceof Uint8Array&&reply.body.byteLength<=cap.responseBytes;
-    const rawSha256=bodyWithinCap?exclusive(directory!,stem+'.raw',reply.body):null;check(end);
+    const rawSha256=bodyWithinCap?saveBytes(stem+'.raw',reply.body):null;check(end);
     const validStatus=Number.isInteger(reply.status)&&reply.status>=100&&reply.status<=599;
     // This acknowledges the private transport capture, not domain acceptance.
     // Keep actual HTTP status even if HTTP/schema validation fails next.
@@ -214,7 +223,8 @@ export async function captureProtectedAcquisitionFixture(options:ProtectedAcquis
   }catch{return fail('ACQUISITION_AUTH_CONTRACT');}})();
   check();save('legacy-auth.private.json',normalized);check();
   const summary={format:1,fixtureOnly:true,fixtureCaptureComplete:true,standaloneAcceptance:false,acceptanceRequiresSuccessfulSettledOwner:true,requests:sent,kvNames:first.names.length,kvPages:[first.pages,second.pages],exportPolls,downloadPending:true,downloadRequests:0,sqlFactsCaptured:false,providerAuthenticated:false,globalQuiescenceEstablished:false,productionAcquisitionQualified:false,automaticRetry:false,automaticResume:false} as const;
-  save('capture.result.json',{...summary,receipts});check();return summary;
+  save('capture.result.json',{...summary,receipts});check();
+  onPrivateCapture?.(signed,pins);check();return summary;
  }catch(error){
   const code=error instanceof ProtectedAcquisitionError?error.code:'ACQUISITION_LOCAL';
   if(directory){try{exclusive(directory,'capture.failure.json',bytes({format:1,code,attempts,sent,exportPolls,ioSettled,automaticRetry:false,automaticResume:false,preserved:true,productionAcquisitionQualified:false}));}catch{/* Retain the exclusive claim and every partial; never restart. */}}

@@ -1,7 +1,7 @@
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite';
 
 /** Local-only SQLite boundary for exercising the same bound D1 statements. */
-export function localD1(sqlite: DatabaseSync): D1Database {
+export function localD1(sqlite: DatabaseSync, options: { existingReadTransaction?: boolean } = {}): D1Database {
   const meta = { changed_db: false, changes: 0, duration: 0, last_row_id: 0,
     rows_read: 0, rows_written: 0, size_after: 0 };
   class Statement {
@@ -21,6 +21,11 @@ export function localD1(sqlite: DatabaseSync): D1Database {
   const adapter = {
     prepare(query: string) { return new Statement(query); },
     async batch(statements: Statement[]) {
+      if (options.existingReadTransaction) {
+        const results = [];
+        for (const statement of statements) results.push(await statement.all());
+        return results;
+      }
       sqlite.exec('BEGIN');
       try {
         const results = [];

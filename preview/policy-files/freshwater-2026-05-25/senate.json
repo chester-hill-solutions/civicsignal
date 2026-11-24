@@ -1,0 +1,70 @@
+[
+  {
+    "date": "2026-05-25",
+    "checked": [
+      {
+        "en": "https://sencanada.ca/en/content/sen/chamber/451/journals/073jr_2026-05-07-e",
+        "fr": "https://sencanada.ca/fr/content/sen/chamber/451/journals/073jr_2026-05-07-f"
+      },
+      {
+        "en": "https://sencanada.ca/en/content/sen/chamber/451/journals/074jr_2026-05-26-e",
+        "fr": "https://sencanada.ca/fr/content/sen/chamber/451/journals/074jr_2026-05-26-f"
+      }
+    ],
+    "matches": [],
+    "note": "No Senate sitting. Journal issue 73 (May 7) records adoption of the adjournment motion and says the Senate continued until Tuesday, May 26, 2026, at 2 p.m.; the next sequential Journal, issue 74, is dated Tuesday, May 26. This interval establishes no May 25 floor sitting, subject to an extraordinary recall (none found). English and French Journals are linked in checked.",
+    "status": "no-sitting"
+  },
+  {
+    "date": "2026-05-26",
+    "checked": [
+      {
+        "en": "https://sencanada.ca/en/content/sen/chamber/451/debates/074db_2026-05-26-e",
+        "fr": "https://sencanada.ca/fr/content/sen/chamber/451/debates/074db_2026-05-26-f"
+      }
+    ],
+    "matches": [],
+    "note": "Checked Senate Debates issue 74, confirmed by its heading as a 45th Parliament, 1st Session sitting on May 26. Reviewed the English and French leads and searched the full visible HTML text for freshwater/fresh water, eau douce/eaux douces, Canada Water Agency/Agence canadienne de l’eau (also Agence de l'eau du Canada), Canada Water Act/Loi sur les ressources en eau du Canada, ENVI Report 5, Sustaining Canada’s Freshwater for Today and Tomorrow / Rapport 5, Préserver l’eau douce du Canada pour aujourd’hui et pour l’avenir, and Bill C-241, the National Strategy on Flood and Drought Forecasting Act / Loi prévoyant l’élaboration d’une stratégie nationale sur la prévision des inondations et des sécheresses. No policy-relevant matches; apparent generic substrings in unrelated bill or agency names were excluded. Complete HTML scan: fetched both official pages to /private/tmp/senate-pages and parsed the full main content; normalized Unicode, apostrophes, hyphen variants, and whitespace; 0 hits across 16 groups (C-241 and both EN/FR bill titles; flood/drought forecasting; freshwater/fresh water/eau douce; official EN/FR Agency names; Canada Water Act / Loi sur les ressources en eau du Canada; both ENVI Report 5 titles). EN 074-en.html: 223388 bytes, 120799 main-text chars, SHA-256 8dc11f0d1cd23316a17573d0a26bed8c5f7353e951435112b1885c5ecd940196. FR 074-fr.html: 254194 bytes, 143916 main-text chars, SHA-256 75145ec17761df1917febc77f83118bcf6998b0945115ea11d404a88af115a45.",
+    "status": "checked"
+  },
+  {
+    "date": "2026-05-27",
+    "checked": [
+      {
+        "en": "https://sencanada.ca/en/content/sen/chamber/451/debates/075db_2026-05-27-e",
+        "fr": "https://sencanada.ca/fr/content/sen/chamber/451/debates/075db_2026-05-27-f"
+      }
+    ],
+    "matches": [],
+    "note": "Checked Senate Debates issue 75, confirmed by its heading as a 45th Parliament, 1st Session sitting on May 27. Reviewed the English and French leads and searched the full visible HTML text for freshwater/fresh water, eau douce/eaux douces, Canada Water Agency/Agence canadienne de l’eau (also Agence de l'eau du Canada), Canada Water Act/Loi sur les ressources en eau du Canada, ENVI Report 5, Sustaining Canada’s Freshwater for Today and Tomorrow / Rapport 5, Préserver l’eau douce du Canada pour aujourd’hui et pour l’avenir, and Bill C-241, the National Strategy on Flood and Drought Forecasting Act / Loi prévoyant l’élaboration d’une stratégie nationale sur la prévision des inondations et des sécheresses. No policy-relevant matches; apparent generic substrings in unrelated bill or agency names were excluded. Complete HTML scan: fetched both official pages to /private/tmp/senate-pages and parsed the full main content; normalized Unicode, apostrophes, hyphen variants, and whitespace; 0 hits across 16 groups (C-241 and both EN/FR bill titles; flood/drought forecasting; freshwater/fresh water/eau douce; official EN/FR Agency names; Canada Water Act / Loi sur les ressources en eau du Canada; both ENVI Report 5 titles). EN 075-en.html: 172147 bytes, 86060 main-text chars, SHA-256 3422f47c037a726954cc3aa32cc8b9b7864e70d77d8b9537eea62c0c277ab332. FR 075-fr.html: 193490 bytes, 101865 main-text chars, SHA-256 a7bf6e4dc24bd3ec11acc729e85c7782d83e1d13822a89bc1f97d62c09e345f9.",
+    "status": "checked"
+  },
+  {
+    "date": "2026-05-28",
+    "checked": [
+      {
+        "en": "https://sencanada.ca/en/content/sen/chamber/451/debates/076db_2026-05-28-e",
+        "fr": "https://sencanada.ca/fr/content/sen/chamber/451/debates/076db_2026-05-28-f"
+      }
+    ],
+    "matches": [],
+    "note": "Checked Senate Debates issue 76, confirmed by its heading as a 45th Parliament, 1st Session sitting on May 28. Reviewed the English and French leads and searched the full visible HTML text for freshwater/fresh water, eau douce/eaux douces, Canada Water Agency/Agence canadienne de l’eau (also Agence de l'eau du Canada), Canada Water Act/Loi sur les ressources en eau du Canada, ENVI Report 5, Sustaining Canada’s Freshwater for Today and Tomorrow / Rapport 5, Préserver l’eau douce du Canada pour aujourd’hui et pour l’avenir, and Bill C-241, the National Strategy on Flood and Drought Forecasting Act / Loi prévoyant l’élaboration d’une stratégie nationale sur la prévision des inondations et des sécheresses. No policy-relevant matches; apparent generic substrings in unrelated bill or agency names were excluded. Complete HTML scan: fetched both official pages to /private/tmp/senate-pages and parsed the full main content; normalized Unicode, apostrophes, hyphen variants, and whitespace; 0 hits across 16 groups (C-241 and both EN/FR bill titles; flood/drought forecasting; freshwater/fresh water/eau douce; official EN/FR Agency names; Canada Water Act / Loi sur les ressources en eau du Canada; both ENVI Report 5 titles). EN 076-en.html: 352335 bytes, 212557 main-text chars, SHA-256 73c10172381678c9b1f61ffd39c92318f47ca57ba645027836e4a209177a650a. FR 076-fr.html: 407089 bytes, 255012 main-text chars, SHA-256 49c7f9ba7605de0995e144639905407175f0f7de36748015823a45eafaa019c4.",
+    "status": "checked"
+  },
+  {
+    "date": "2026-05-29",
+    "checked": [
+      {
+        "en": "https://sencanada.ca/en/content/sen/chamber/451/journals/076jr_2026-05-28-e",
+        "fr": "https://sencanada.ca/fr/content/sen/chamber/451/journals/076jr_2026-05-28-f"
+      },
+      {
+        "en": "https://sencanada.ca/en/content/sen/chamber/451/journals/077jr_2026-06-02-e",
+        "fr": "https://sencanada.ca/fr/content/sen/chamber/451/journals/077jr_2026-06-02-f"
+      }
+    ],
+    "matches": [],
+    "note": "No Senate sitting. Journal issue 76 (May 28) records adoption of the adjournment motion and says the Senate continued until Tuesday, June 2, 2026, at 2 p.m.; the next sequential Journal, issue 77, is dated Tuesday, June 2. This interval establishes no May 29 floor sitting, subject to an extraordinary recall (none found). English and French Journals are linked in checked.",
+    "status": "no-sitting"
+  }
+]

@@ -36,6 +36,8 @@ async function load(db:D1Database,identity:ProtectedD1Identity):Promise<Loaded>{
  return {session:record,manifest,admission,state,identity};
 }
 function expectedCounts(s:State):Counts {const c={...s.load.counts};if(c.corpus_state===0)c.corpus_state=1;c.sqlite_sequence=Object.values(s.sequences).filter(v=>v!==null).length;return c;}
+const noPublicationGuard='NOT EXISTS (SELECT 1 FROM corpus_publication_guard)';
+async function publicationGuardEmpty(db:D1Database){return (await db.prepare(`SELECT ${noPublicationGuard} AS empty`).first<{empty:number}>())?.empty===1;}
 const publicationSelect=`SELECT ${columns.corpus_state.join(',')} FROM corpus_state ORDER BY corpus_id LIMIT 2`;
 async function currentPublication(db:D1Database){const r=(await db.prepare(publicationSelect).all<Record<string,unknown>>()).results;demand(r.length===1,'PROTECTED_D1_PUBLICATION');return protectedRowValues('corpus_state',r[0]!);}
 async function currentCounts(db:D1Database){const sql=tables.map(t=>`(SELECT count(*) FROM ${t}${t==='sqlite_sequence'?" WHERE name IN ('corpus_runs','corpus_changes')":''}) AS ${t}`).join(',');const row=await db.prepare(`SELECT ${sql}`).first<Counts>();demand(row,'PROTECTED_D1_COUNTS');return row;}
@@ -47,7 +49,7 @@ async function compactMarker(db:D1Database,l:Loaded){
  const stage=await db.prepare(`SELECT ${stageColumns.join(',')} FROM stage_restore_session WHERE id=1`).first<Record<string,unknown>>();demand(stage&&same(stageColumns.map(k=>stage[k]),stageProof(l)),'PROTECTED_D1_STAGE_PROOF');
 }
 async function preimage(db:D1Database,l:Loaded){
- demand(same(await currentCounts(db),expectedCounts(l.state))&&same(await currentPublication(db),l.state.publication)&&same(await sequences(db),l.state.sequences),'PROTECTED_D1_PREIMAGE');await compactMarker(db,l);
+ demand(await publicationGuardEmpty(db)&&same(await currentCounts(db),expectedCounts(l.state))&&same(await currentPublication(db),l.state.publication)&&same(await sequences(db),l.state.sequences),'PROTECTED_D1_PREIMAGE');await compactMarker(db,l);
  const marker=await db.prepare('SELECT manifest_sha256,complete FROM protected_state_restore WHERE id=1').first<{manifest_sha256:string;complete:number}>();
  demand(marker?.manifest_sha256===l.identity.manifestSha256&&marker.complete===(l.state.phase==='complete'?1:0),'PROTECTED_D1_MARKER');
  demand((await db.prepare('SELECT count(*) AS n FROM protected_state_pages').first<{n:number}>())?.n===l.state.load.page,'PROTECTED_D1_RECEIPTS');
@@ -56,7 +58,7 @@ async function preimage(db:D1Database,l:Loaded){
 function guard(db:D1Database,l:Loaded,s:State,version:number,complete=0):D1PreparedStatement {
  const predicates=['(SELECT admission_sha256 FROM protected_state_d1_session WHERE id=1)=?','(SELECT version FROM protected_state_d1_session WHERE id=1)=?','(SELECT state_json FROM protected_state_d1_session WHERE id=1)=?',
  '(SELECT manifest_sha256 FROM protected_state_restore WHERE id=1)=?','(SELECT complete FROM protected_state_restore WHERE id=1)=?','(SELECT count(*) FROM protected_state_pages)=?',
- '(SELECT bundle_sha256 FROM corpus_compact_restore WHERE id=1)=?','(SELECT revision FROM corpus_compact_restore WHERE id=1)=?'];
+ '(SELECT bundle_sha256 FROM corpus_compact_restore WHERE id=1)=?','(SELECT revision FROM corpus_compact_restore WHERE id=1)=?',noPublicationGuard];
  const values:ProtectedScalar[]=[l.identity.admissionSha256,version,JSON.stringify(s),l.identity.manifestSha256,complete,s.load.page,l.admission.compactPlan.pagesSha256,l.admission.compactPlan.revision];
  for(const [n,name]of stageColumns.entries()){predicates.push(`(SELECT ${name} FROM stage_restore_session WHERE id=1) IS ?`);values.push(stageProof(l)[n]!);}
  predicates.push('(SELECT manifest_sha256 FROM protected_state_d1_session WHERE id=1)=?','(SELECT target_sha256 FROM protected_state_d1_session WHERE id=1)=?');values.push(l.identity.manifestSha256,l.admission.targetSha256);
@@ -82,6 +84,7 @@ export async function beginProtectedD1(db:D1Database,options:{manifest:Protected
  if(old){await checkProtectedD1Schema(db,true);const l=await load(db,identity);await preimage(db,l);return result(l.state,l.session.version);}
  const schema=await checkProtectedD1Schema(db,false),publication=await currentPublication(db),seq=await sequences(db);
  demand(same(publication,manifest.initialPublication[0])&&same(seq,{corpus_runs:null,corpus_changes:null}),'PROTECTED_D1_INITIAL_PUBLICATION');
+ demand(await publicationGuardEmpty(db),'PROTECTED_D1_POPULATED');
  const counts=await currentCounts(db).catch(()=>null);
  // Missing auth tables are allowed, but every existing protected table is empty.
  const nonAuth=tables.filter(t=>!['workspace','civic_workspace_billing','workspace_api_key','corpus_state','sqlite_sequence'].includes(t));

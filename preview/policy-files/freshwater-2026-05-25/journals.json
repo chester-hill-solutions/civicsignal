@@ -1,0 +1,129 @@
+[
+  {
+    "date": "2026-05-25",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-121/journals",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-121/journaux"
+      }
+    ],
+    "matches": [
+      {
+        "id": "q1010-water-infrastructure",
+        "related": true,
+        "title": "The House received the government’s answer to Q-1010.",
+        "reason": "The question asks which First Nations under long-term drinking-water advisories received federal infrastructure funding and for their project timelines. It is a potential service-delivery lead. The tabling record alone establishes no date for lifting an advisory.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/written-questions/45-1/q-1010",
+          "fr": "https://www.ourcommons.ca/questions-ecrites?sessionalpaperid=14112406"
+        }
+      }
+    ],
+    "note": "The return to written question Q-1010 concerned water infrastructure for First Nations under long-term drinking-water advisories. Retained as a related lead for review."
+  },
+  {
+    "date": "2026-05-26",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-122/journals",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-122/journaux"
+      },
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/report-4/",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/rapport-4/"
+      }
+    ],
+    "matches": [
+      {
+        "id": "c241-study-extension",
+        "title": "The House gave ENVI 30 more sitting days to consider Bill C-241.",
+        "reason": "The bill proposes a national flood and drought forecasting strategy. The House concurred in Report 4, which asked for more committee study time.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-122/journals",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-122/journaux"
+        },
+        "also": [
+          {
+            "source": "Report 4",
+            "urls": {
+              "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/report-4/",
+              "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/rapport-4/"
+            }
+          }
+        ]
+      }
+    ],
+    "note": "Sitting 122 and ENVI Report 4 establish the order and its duration."
+  },
+  {
+    "date": "2026-05-27",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-123/journals",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-123/journaux"
+      }
+    ],
+    "matches": [],
+    "note": "Sitting 123 returned no item on the named report, Agency estimates or forecasting bill."
+  },
+  {
+    "date": "2026-05-28",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-124/journals",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-124/journaux"
+      },
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/report-5/page-21",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/rapport-5/page-21"
+      }
+    ],
+    "matches": [
+      {
+        "id": "freshwater-report-presented",
+        "title": "ENVI presented its freshwater report and asked the government to respond.",
+        "reason": "Recommendations 50 and 52 address long-term support for Indigenous freshwater monitoring and consistent data collection across governments. These are committee proposals.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-124/journals",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-124/journaux"
+        },
+        "also": [
+          {
+            "source": "Recommendations",
+            "urls": {
+              "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/report-5/page-21",
+              "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/rapport-5/page-21"
+            }
+          }
+        ]
+      }
+    ],
+    "note": "Sitting 124 records Report 5 as sessional paper 8510-451-149. The report contains the recommendations."
+  },
+  {
+    "date": "2026-05-29",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-125/journals",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-125/journaux"
+      }
+    ],
+    "matches": [
+      {
+        "id": "agency-estimates-reported",
+        "title": "ENVI presented Report 6 on the main estimates to the House.",
+        "reason": "The report includes Canada Water Agency operating and contribution votes. This records a supply proceeding, separate from Thursday’s freshwater recommendations.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-125/journals",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-125/journaux"
+        }
+      }
+    ],
+    "note": "Sitting 125 records Report 6 as sessional paper 8510-451-150."
+  }
+]

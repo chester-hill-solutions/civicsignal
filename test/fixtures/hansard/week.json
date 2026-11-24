@@ -1,0 +1,11 @@
+{
+  "weekOf": "2026-03-30",
+  "sittings": [
+    {
+      "sittingId": "45-1-999",
+      "sittingDate": "2026-04-01",
+      "en": "sitting-en.xml",
+      "fr": "sitting-fr.xml"
+    }
+  ]
+}

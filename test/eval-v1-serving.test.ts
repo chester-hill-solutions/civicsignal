@@ -3,7 +3,7 @@ import { once } from 'node:events';
 import { describe, expect, it } from 'vitest';
 import { InMemoryUsageLedger } from '@chester-hill-solutions/api-billing';
 import { createPortabilityHandler } from '../services/api/handler';
-import { RETRIEVAL_POLICY_VERSION } from '../src/corpora/retrieval-observation';
+import { retrievalPolicyVersion } from '../src/corpora/retrieval-observation';
 import type { CorpusContext } from '../src/corpora/types';
 import raw from '../src/eval/data/v1-questions.json';
 import { observedCalibration } from '../src/eval/v1-observed';
@@ -56,7 +56,7 @@ describe('20-case calibration serving-path contract', () => {
         corpusRevision: dataset.revision, parserVersion: 'statutes-v2', corpusAsOf: '2026-10-20', corpusLastRunAt: '2026-10-22T00:00:00Z',
         upstream: { revision: dataset.revision, committedAt: '2026-10-20T00:00:00Z', observedAt: '2026-10-22T00:00:00Z' },
         encoderModel: 'embeddinggemma-2-270m', encoderArtifact: 'deterministic fixture, not the model', encoderDimensions: 1,
-        retrievalPolicy: `postgres-cosine:${RETRIEVAL_POLICY_VERSION}`, reranker: 'disabled',
+        retrievalPolicy: `postgres-cosine:${retrievalPolicyVersion('postgres-cosine')}`, reranker: 'disabled',
         evidence: { source: 'local serving fixture', observedAt: '2026-10-22T00:00:00Z', note: 'Synthetic vectors/scores; no production accuracy or performance claim' } };
       const calibration = observedCalibration(dataset.questions, collected.observations, provenance);
       expect(calibration.ready, JSON.stringify(calibration.rejected)).toBe(true);

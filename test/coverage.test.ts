@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildBrief } from '../src/routes/brief';
 import { ALL_CORPUSES, CORPUSES, loadCorpusAvailability, UnsupportedCoverageError } from '../src/corpora/registry';
-import { buildCapabilities, capabilitiesResponse, llmsTxt } from '../src/routes/capabilities';
+import { deploymentCapabilities, capabilitiesResponse, llmsTxt } from '../src/routes/capabilities';
+import { readFileSync } from 'node:fs';
+import { localD1 } from '../scripts/lib/local-d1';
 import { sqliteCorpus } from './helpers/sqlite-corpus';
 import type { CorpusContext } from '../src/corpora/types';
 import type { Env } from '../src/types';
@@ -71,9 +73,12 @@ describe('truthful v1 coverage', () => {
 
 describe('machine-readable discovery', () => {
   it('advertises only verified populated coverage and usable v1 tools', async () => {
-    const { ctx } = fixture();
-    const env = { CIVIC_DB: ctx.db, VECTORIZE: {}, ENCODER_SERVICE: {}, ENCODER_TOKEN: 'configured' } as Env;
-    const capabilities = buildCapabilities(env, 'https://api.example', await loadCorpusAvailability(ctx));
+    const { sqlite } = fixture();
+    sqlite.exec(readFileSync('migrations/0005_workspace_auth.sql', 'utf8'));
+    sqlite.exec(`INSERT INTO statute_sections(id,corpus_id,act,section,text,source_url,search_text,language)
+      VALUES('one','statutes-canada','Test Act','1','Text','https://laws.example','text','en')`);
+    const env = { CIVIC_DB: localD1(sqlite), API_KEY_USAGE: {}, VECTORIZE: {}, ENCODER_SERVICE: {}, ENCODER_TOKEN: 'configured' } as Env;
+    const capabilities = await deploymentCapabilities(env, 'https://api.example');
     expect(capabilities.coverage.map((entry) => entry.corpusId)).toEqual(['statutes-canada']);
     expect(capabilities.coverage[0]).toMatchObject({ rowCount: 2, revision: 'revision-1', lastRunAt: '2026-10-22T00:00:00Z' });
     expect(capabilities.unavailableCoverage.map((entry) => entry.corpusId)).toEqual(expect.arrayContaining(['statutes-ontario', 'news-canada', 'hansard-federal', 'bills-canada']));
@@ -85,8 +90,8 @@ describe('machine-readable discovery', () => {
   });
 
   it('does not advertise ready corpora or retrieval tools when only bindings exist', async () => {
-    const { ctx } = fixture(false);
-    const capabilities = buildCapabilities({ CIVIC_DB: ctx.db } as Env, 'https://api.example', await loadCorpusAvailability(ctx));
+    const { sqlite } = fixture(false);
+    const capabilities = await deploymentCapabilities({ CIVIC_DB: localD1(sqlite) }, 'https://api.example');
     expect(capabilities.coverage).toEqual([]);
     expect(capabilities.endpoints).toEqual([]);
     expect(capabilities.mcp.tools).toEqual([]);
@@ -95,12 +100,12 @@ describe('machine-readable discovery', () => {
     expect(response.headers.get('content-type')).toContain('application/json');
   });
 
-  it('does not publish nonexistent documentation, OAuth or unsupported endpoints in llms.txt', () => {
-    const content = llmsTxt({} as Env, 'https://api.example');
+  it('does not publish nonexistent documentation, OAuth or unsupported endpoints in llms.txt', async () => {
+    const content = llmsTxt(await deploymentCapabilities({}, 'https://api.example'));
     expect(content).not.toContain('/api/news');
     expect(content).not.toContain('/auth.md');
     expect(content).not.toContain('/docs');
-    expect(content).toContain('unavailable in v1');
+    expect(content).toContain('Missing coverage: committees, esdc');
     expect(content).toContain('live capabilities');
   });
 });

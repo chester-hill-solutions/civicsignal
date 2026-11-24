@@ -1,0 +1,111 @@
+[
+  {
+    "date": "2026-05-25",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/Content/House/451/Debates/121/HAN121-E.XML",
+        "fr": "https://www.ourcommons.ca/Content/House/451/Debates/121/HAN121-F.XML"
+      }
+    ],
+    "matches": [],
+    "note": "Both official editions were parsed and all 371 interventions per edition were scanned in full. Target-term ParaText hits: 0 in each language. Incidental flooding language concerned a domestic military response and a metaphor about housing supply; neither concerned freshwater governance."
+  },
+  {
+    "date": "2026-05-26",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/Content/House/451/Debates/122/HAN122-E.XML",
+        "fr": "https://www.ourcommons.ca/Content/House/451/Debates/122/HAN122-F.XML"
+      }
+    ],
+    "matches": [
+      {
+        "id": "c241-study-extension",
+        "title": "House adopts ENVI Report 4 extending study of Bill C-241 by 30 sitting days",
+        "reason": "Mark Gerretsen moved concurrence in ENVI's fourth report on Bill C-241, the national flood and drought forecasting strategy bill; the Deputy Speaker confirmed adoption. This is a watched governance event about the committee's study timeline, not a substantive freshwater policy intervention.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-122/hansard#Int-13519077",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-122/debats#Int-13519077"
+        }
+      }
+    ],
+    "note": "Both official editions were parsed and all 785 interventions per edition were scanned in full. Target-term ParaText hits: 1 in each language, the C-241 motion. Other flood wording was metaphorical or incidental and was excluded."
+  },
+  {
+    "date": "2026-05-27",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/Content/House/451/Debates/123/HAN123-E.XML",
+        "fr": "https://www.ourcommons.ca/Content/House/451/Debates/123/HAN123-F.XML"
+      }
+    ],
+    "matches": [],
+    "note": "Both official editions were parsed and all 217 interventions per edition were scanned in full. Target-term ParaText hits: 0 in each language. Two incidental flooding references concerned general emergency preparedness and climate politics; neither addressed freshwater governance or Report 5."
+  },
+  {
+    "date": "2026-05-28",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/Content/House/451/Debates/124/HAN124-E.XML",
+        "fr": "https://www.ourcommons.ca/Content/House/451/Debates/124/HAN124-F.XML"
+      }
+    ],
+    "matches": [
+      {
+        "id": "freshwater-report-presented",
+        "title": "ENVI presents Report 5, Sustaining Canada’s Freshwater for Today and Tomorrow",
+        "reason": "Chair Shannon Miedema tabled ENVI's fifth report and requested a comprehensive government response.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-124/hansard#Int-13528442",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-124/debats#Int-13528442"
+        }
+      },
+      {
+        "id": "freshwater-dissent",
+        "title": "Branden Leslie tabled the Conservative dissent.",
+        "reason": "He challenged the committee’s approach to federal coordination and its treatment of legal personhood for the St. Lawrence River. He called for measurable results for watersheds.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-124/hansard#Int-13528447",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-124/debats#Int-13528447"
+        }
+      }
+    ],
+    "note": "Both official editions were parsed and all 909 interventions per edition were scanned in full. Target-term ParaText hits: 3 in each language: one report-tabling paragraph and two paragraphs in the dissent. General climate-related flood mentions elsewhere were excluded."
+  },
+  {
+    "date": "2026-05-29",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/Content/House/451/Debates/125/HAN125-E.XML",
+        "fr": "https://www.ourcommons.ca/Content/House/451/Debates/125/HAN125-F.XML"
+      }
+    ],
+    "matches": [
+      {
+        "id": "agency-estimates-reported",
+        "title": "ENVI reports Main Estimates votes for the Canada Water Agency",
+        "reason": "Eric St-Pierre presented ENVI's sixth report on the 2026–27 Main Estimates, naming Canada Water Agency Votes 1 and 5 alongside Environment, the Impact Assessment Agency, and Parks Canada votes. This is an agency-related floor event, not a substantive freshwater policy debate.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-125/hansard#Int-13535829",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-125/debats#Int-13535829"
+        }
+      },
+      {
+        "id": "groundwater-hatchery-investment",
+        "related": true,
+        "title": "A New Brunswick MP reported funding for groundwater access in Charlo.",
+        "reason": "Guillaume Deschênes-Thériault said he had announced more than $210,000 for the salmonid centre. He identified an artesian well as one use of the funding. This is a local infrastructure lead.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-125/hansard#Int-13535327",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-125/debats#Int-13535327"
+        }
+      }
+    ],
+    "note": "Both official editions were parsed and all 204 interventions per edition were scanned in full. Target-term ParaText hits: 1 in each language for the Canada Water Agency estimates report. The adjacent groundwater hatchery speech is a broader relevant-variant match; it falls outside the exact-term count."
+  }
+]

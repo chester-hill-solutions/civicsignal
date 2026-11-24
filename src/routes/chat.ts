@@ -3,7 +3,7 @@ import {
   chatByok,
   isByokProvider,
   supportsByokModel,
-  OPENCODE_ZEN_MODEL,
+  OPENCODE_ZEN_MODEL_ERROR,
   PROVIDERS,
   type ByokProvider,
   type CitedItem,
@@ -15,6 +15,7 @@ import { parseCitation } from '@chester-hill-solutions/corpus';
 import { errorResponse, RequestInputError } from '../http';
 import type { CorpusItem } from '@chester-hill-solutions/corpus';
 import type { Env } from '../types';
+import { detectLanguage } from '../language';
 
 /**
  * The chat and match surfaces.
@@ -165,6 +166,35 @@ export function buildSystemPrompt(cited: CitedItem[]): string {
   ].join('\n');
 }
 
+/**
+ * The character immediately before a destination, read as one code point.
+ *
+ * An astral character must not slip past the boundary check as two separate
+ * code units.
+ */
+function precedingCharacter(text: string, at: number): string {
+  if (at <= 0) return '';
+  const low = text.charCodeAt(at - 1);
+  if (low >= 0xdc00 && low <= 0xdfff && at >= 2) {
+    const high = text.charCodeAt(at - 2);
+    if (high >= 0xd800 && high <= 0xdbff) return text.slice(at - 2, at);
+  }
+  return text.charAt(at - 1);
+}
+
+/**
+ * Whether the destination is glued to a word character before it.
+ *
+ * A URL that follows a letter, digit or mark without a break is part of a longer
+ * token, such as a prefix or a domain suffix, not the retrieved destination.
+ * The class is tested without a `$` anchor because V8 mis-evaluates an anchored
+ * property class whose subject ends in an astral character.
+ */
+function gluedToWord(text: string, at: number): boolean {
+  const previous = precedingCharacter(text, at);
+  return previous !== '' && (/[\p{L}\p{N}\p{M}]/u.test(previous) || '+._/-'.includes(previous));
+}
+
 /** Check link destinations only. This does not check whether the text supports a claim. */
 export function validateAnswerCitationLinks(answer: string, citationUrls: readonly string[]): void {
   const invalid = () => { throw new Error('Invalid generation response.'); };
@@ -234,7 +264,7 @@ export function validateAnswerCitationLinks(answer: string, citationUrls: readon
       while (end < answer.length && /[a-z\d+.-]/i.test(answer[end]!)) end++;
       const scheme = answer.slice(at, end);
       if (answer[end] === ':' && (answer.slice(end + 1, end + 3) === '//' || /^(?:mailto|javascript|data)$/i.test(scheme) && /\S/u.test(answer[end + 1] ?? ''))) {
-        if (!/^https?$/i.test(scheme) || /[\p{L}\p{N}\p{M}+._/-]$/u.test(answer.slice(Math.max(0, at - 2), at))) invalid();
+        if (!/^https?$/i.test(scheme) || gluedToWord(answer, at)) invalid();
         const rest = answer.slice(at);
         const boundary = rest.search(/[\s<>()[\]\\"'`]/u);
         const length = boundary < 0 ? rest.length : boundary;
@@ -268,6 +298,8 @@ export interface ChatDeps {
   env: Env;
   /** Retrieves the material supplied to generation. */
   retrieve: (request: BriefRequest) => Promise<BriefResponse>;
+  /** Confirms quota immediately before the caller-paid provider request. */
+  reserveGeneration?: () => Promise<void>;
   /** The caller's provider key. Never stored, never logged. */
   byokKey: string;
   byokProvider: string;
@@ -289,12 +321,13 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
     throw new ChatInputError('The provider in the body must match the BYOK provider header.');
   }
   if (!supportsByokModel(deps.byokProvider, request.model)) {
-    throw new ChatInputError('OpenCode Zen supports only ' + OPENCODE_ZEN_MODEL + '.');
+    throw new ChatInputError(OPENCODE_ZEN_MODEL_ERROR);
   }
   if (!deps.byokKey.trim() || deps.byokKey.length > 4096) {
     throw new ChatInputError('A generation key is required. Send it in the ' + BYOK_KEY_HEADER + ' header.');
   }
-  const topic = request.topic ?? request.messages.at(-1)!.content;
+  const question = request.messages.at(-1)!.content;
+  const topic = request.topic ?? question;
   if (topic.length > CHAT_LIMITS.topicChars) {
     throw new ChatInputError(`The retrieval question must not exceed ${CHAT_LIMITS.topicChars} characters. Supply a shorter topic.`);
   }
@@ -307,7 +340,9 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
   const cited = citedItemsFromBrief(brief);
   if (cited.length === 0) {
     return {
-      answer: 'The retrieved material does not contain an answer to this question.',
+      answer: detectLanguage(question, { accentsBreakTies: true }) === 'fr'
+        ? 'Les sources consultées ne contiennent pas de réponse à cette question.'
+        : 'The retrieved material does not contain an answer to this question.',
       provider: deps.byokProvider,
       model: request.model?.trim() || PROVIDERS[deps.byokProvider].defaultModel,
       cited,
@@ -315,11 +350,13 @@ export async function runChat(deps: ChatDeps, request: ChatRequest): Promise<Cha
       generation: { status: 'skipped', reason: 'no-retrieved-material' },
     };
   }
+  const system = buildSystemPrompt(cited);
+  await deps.reserveGeneration?.();
   const result = await chatByok({
     provider: deps.byokProvider,
     apiKey: deps.byokKey,
     model: request.model,
-    system: buildSystemPrompt(cited),
+    system,
     messages: request.messages,
     maxTokens: request.maxTokens,
     validateAnswer: (answer) => validateAnswerCitationLinks(answer, cited.map((item) => item.citationUrl)),

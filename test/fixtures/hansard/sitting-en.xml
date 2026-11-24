@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Hansard xml:lang="EN" id="99001">
+  <ExtractedInformation>
+    <ExtractedItem Name="Number">No. 999</ExtractedItem>
+    <ExtractedItem Name="Session">1st SESSION</ExtractedItem>
+    <ExtractedItem Name="Parliament">45th PARLIAMENT</ExtractedItem>
+    <ExtractedItem Name="Date">Wednesday, April 1, 2026</ExtractedItem>
+  </ExtractedInformation>
+  <HansardBody>
+    <OrderOfBusiness>
+      <Intervention id="99002">
+        <PersonSpeaking><Affiliation DbId="100">Synthetic Speaker</Affiliation></PersonSpeaking>
+        <Content>
+          <FloorLanguage>French</FloorLanguage>
+          <Timestamp>1200</Timestamp>
+          <ParaText>We discussed the <I>housing regulation</I> &amp; its reach.</ParaText>
+          <ParaText>The committee will study it.</ParaText>
+        </Content>
+      </Intervention>
+    </OrderOfBusiness>
+  </HansardBody>
+</Hansard>

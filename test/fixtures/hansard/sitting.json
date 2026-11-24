@@ -1,0 +1,20 @@
+{
+  "sittingId": "fixture-123",
+  "sittingDate": "2026-10-20",
+  "speeches": [
+    {
+      "interventionId": "fixture-turn-1",
+      "language": "en",
+      "speaker": "Synthetic Speaker",
+      "excerpt": "We discussed the housing regulation and its intended reach.",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-123/hansard#fixture-turn-1"
+    },
+    {
+      "interventionId": "fixture-turn-1",
+      "language": "fr",
+      "speaker": "Intervenante fictive",
+      "excerpt": "Nous avons discuté du règlement sur le logement et de sa portée.",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-123/debats#fixture-turn-1"
+    }
+  ]
+}

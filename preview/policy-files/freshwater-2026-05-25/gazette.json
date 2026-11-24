@@ -1,0 +1,82 @@
+[
+  {
+    "date": "2026-05-25",
+    "checked": [
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p1/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p1/2026/index-fra.html"
+      },
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p2/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p2/2026/index-fra.html"
+      }
+    ],
+    "matches": [],
+    "note": "No regular Part I or Part II edition was dated or published online this day. Part I follows the Saturday issue/Friday online schedule; Part II is every other Wednesday. The official indexes list no extra edition in this interval.",
+    "status": "no-issue"
+  },
+  {
+    "date": "2026-05-26",
+    "checked": [
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p1/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p1/2026/index-fra.html"
+      },
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p2/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p2/2026/index-fra.html"
+      }
+    ],
+    "matches": [],
+    "note": "No regular Part I or Part II edition was dated or published online this day. Part I follows the Saturday issue/Friday online schedule; Part II is every other Wednesday. The official indexes list no extra edition in this interval.",
+    "status": "no-issue"
+  },
+  {
+    "date": "2026-05-27",
+    "checked": [
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p1/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p1/2026/index-fra.html"
+      },
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p2/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p2/2026/index-fra.html"
+      }
+    ],
+    "matches": [],
+    "note": "No regular Part I or Part II edition was dated or published online this day. Part I follows the Saturday issue/Friday online schedule; Part II is every other Wednesday. The official indexes list no extra edition in this interval.",
+    "status": "no-issue"
+  },
+  {
+    "date": "2026-05-28",
+    "checked": [
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p1/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p1/2026/index-fra.html"
+      },
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p2/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p2/2026/index-fra.html"
+      }
+    ],
+    "matches": [],
+    "note": "No regular Part I or Part II edition was dated or published online this day. Part I follows the Saturday issue/Friday online schedule; Part II is every other Wednesday. The official indexes list no extra edition in this interval.",
+    "status": "no-issue"
+  },
+  {
+    "date": "2026-05-29",
+    "checked": [
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p1/2026/2026-05-30/html/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p1/2026/2026-05-30/pdf/g1-16022.pdf"
+      },
+      {
+        "en": "https://gazette.gc.ca/rp-pr/p2/2026/index-eng.html",
+        "fr": "https://gazette.gc.ca/rp-pr/p2/2026/index-fra.html"
+      }
+    ],
+    "matches": [],
+    "note": "The regular Part I edition is dated Saturday May 30 (Vol. 160, no. 22). Its bilingual official PDF and English HTML index were checked and contain no freshwater governance match. The official schedule says regular Part I editions are published Saturdays and available online Friday at 2 pm Eastern; May 29 is therefore the scheduled online date, not independently timestamp-verified here. Part II had no edition this week: its annual index shows regular editions May 20 and June 3. The official indexes list no extra edition dated May 25–29.",
+    "status": "checked"
+  }
+]

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Hansard xml:lang="FR" id="99001">
+  <ExtractedInformation>
+    <ExtractedItem Name="Number">N<Sup>o</Sup> 999</ExtractedItem>
+    <ExtractedItem Name="Session">1<Sup>re</Sup> SESSION</ExtractedItem>
+    <ExtractedItem Name="Parliament">45<Sup>e</Sup> LÉGISLATURE</ExtractedItem>
+    <ExtractedItem Name="Date">Le mercredi 1<Sup>er</Sup> avril 2026</ExtractedItem>
+  </ExtractedInformation>
+  <HansardBody>
+    <OrderOfBusiness>
+      <Intervention id="99002">
+        <PersonSpeaking><Affiliation DbId="100">Intervenante fictive</Affiliation></PersonSpeaking>
+        <Content><ParaText>Nous avons discuté du <I>r&#232;glement sur le logement</I> et de sa port&#xE9;e.</ParaText></Content>
+      </Intervention>
+    </OrderOfBusiness>
+  </HansardBody>
+</Hansard>

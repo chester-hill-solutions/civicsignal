@@ -1,0 +1,212 @@
+{
+  "publisher": {
+    "en": "House of Commons of Canada",
+    "fr": "Chambre des communes du Canada"
+  },
+  "study": {
+    "title": {
+      "en": "Freshwater",
+      "fr": "Eaux douces"
+    },
+    "url": {
+      "en": "https://www.ourcommons.ca/committees/en/ENVI/StudyActivity?studyActivityId=13298665",
+      "fr": "https://www.noscommunes.ca/Committees/fr/ENVI/StudyActivity?studyActivityId=13298665"
+    }
+  },
+  "coverageThrough": "2026-09-25",
+  "presentationDate": "2026-05-28",
+  "events": [
+    {
+      "id": "freshwater-draft-report-meeting",
+      "date": "2026-04-30",
+      "type": "meeting",
+      "label": {
+        "en": "Notice and minutes record consideration of the freshwater draft report",
+        "fr": "L'avis et le procès-verbal consignent l'examen du projet de rapport sur les eaux douces"
+      },
+      "citations": [
+        {
+          "label": {
+            "en": "ENVI Meeting 36 notice (amended)",
+            "fr": "Avis de convocation modifié de la réunion 36 d'ENVI"
+          },
+          "url": {
+            "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-36/notice",
+            "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-36/avis-convocation"
+          }
+        },
+        {
+          "label": {
+            "en": "Minutes of ENVI meeting 36",
+            "fr": "Procès-verbal de la réunion 36 du Comité ENVI"
+          },
+          "url": {
+            "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-36/minutes",
+            "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-36/proces-verbal"
+          }
+        }
+      ]
+    },
+    {
+      "id": "freshwater-report-adopted",
+      "date": "2026-05-05",
+      "type": "report",
+      "label": {
+        "en": "Committee adopted the report and requested a comprehensive government response within 120 calendar days of presentation under Standing Order 109",
+        "fr": "Le Comité a adopté le rapport et demandé une réponse globale du gouvernement dans les 120 jours civils suivant sa présentation, conformément à l'article 109 du Règlement"
+      },
+      "citations": [
+        {
+          "label": {
+            "en": "Minutes of ENVI meeting 37",
+            "fr": "Procès-verbal de la réunion 37 du Comité ENVI"
+          },
+          "url": {
+            "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-37/minutes",
+            "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-37/proces-verbal"
+          }
+        }
+      ]
+    },
+    {
+      "id": "freshwater-report-presented",
+      "date": "2026-05-28",
+      "type": "presentation",
+      "label": {
+        "en": "Report 5, Sustaining Canada's Freshwater for Today and Tomorrow, presented to the House",
+        "fr": "Le rapport 5, Préserver l'eau douce du Canada pour aujourd'hui et pour l'avenir, est présenté à la Chambre"
+      },
+      "citations": [
+        {
+          "label": {
+            "en": "ENVI freshwater study record",
+            "fr": "Fiche de l’étude sur les eaux douces du Comité ENVI"
+          },
+          "url": {
+            "en": "https://www.ourcommons.ca/committees/en/ENVI/StudyActivity?studyActivityId=13298665",
+            "fr": "https://www.noscommunes.ca/Committees/fr/ENVI/StudyActivity?studyActivityId=13298665"
+          }
+        },
+        {
+          "label": {
+            "en": "House Journals for May 28, 2026",
+            "fr": "Journaux de la Chambre du 28 mai 2026"
+          },
+          "url": {
+            "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-124/journals",
+            "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-124/journaux"
+          }
+        }
+      ]
+    },
+    {
+      "id": "freshwater-government-response",
+      "date": "2026-09-25",
+      "type": "government-response",
+      "label": {
+        "en": "The government presented its response to Report 5 on the due date",
+        "fr": "Le gouvernement a présenté sa réponse au rapport 5 à la date limite"
+      },
+      "citations": [
+        {
+          "label": {
+            "en": "ENVI publication dates for Report 5 and the government response",
+            "fr": "Dates de publication du rapport 5 et de la réponse du gouvernement selon le Comité ENVI"
+          },
+          "url": {
+            "en": "https://www.ourcommons.ca/committees/en/ENVI/Work?parl=45&session=1",
+            "fr": "https://www.noscommunes.ca/Committees/fr/ENVI/Work?parl=45&session=1&show=reports"
+          }
+        },
+        {
+          "label": {
+            "en": "Government response to ENVI Report 5",
+            "fr": "Réponse du gouvernement au rapport 5 d'ENVI"
+          },
+          "url": {
+            "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/report-5/response-8512-451-149",
+            "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/rapport-5/reponse-8512-451-149"
+          }
+        },
+        {
+          "label": {
+            "en": "Government response (PDF)",
+            "fr": "Réponse du gouvernement (PDF)"
+          },
+          "url": {
+            "en": "https://www.ourcommons.ca/content/Committee/451/ENVI/GovResponse/RP14237518/451_ENVI_Rpt5_GR_PDF/451_ENVI_Rpt5_GR-e.pdf",
+            "fr": "https://www.noscommunes.ca/Content/Committee/451/ENVI/GovResponse/RP14237518/451_ENVI_Rpt5_GR_PDF/451_ENVI_Rpt5_GR-f.pdf"
+          }
+        }
+      ]
+    }
+  ],
+  "responseCitations": [
+    {
+      "date": "2017-12-13",
+      "label": {
+        "en": "Privy Council Office guidance on counting calendar days from presentation",
+        "fr": "Lignes directrices du Bureau du Conseil privé sur le calcul du délai à compter de la présentation"
+      },
+      "url": {
+        "en": "https://www.canada.ca/en/privy-council/services/publications/guidelines-preparing-government-responses-parliamentary-committee-reports.html",
+        "fr": "https://www.canada.ca/fr/conseil-prive/services/publications/lignes-directrices-preparation-reponses-gouvernement-rapports-comites-parlementaires.html"
+      }
+    },
+    {
+      "date": "2026-04-27",
+      "label": {
+        "en": "Standing Order 109 on government responses",
+        "fr": "Article 109 du Règlement sur les réponses du gouvernement"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/procedure/standing-orders/chap13-e.html",
+        "fr": "https://www.ourcommons.ca/procedure/standing-orders/chap13-f.html"
+      }
+    },
+    {
+      "date": "2026-05-05",
+      "label": {
+        "en": "ENVI request for a response under Standing Order 109",
+        "fr": "Demande de réponse du Comité ENVI au titre de l’article 109 du Règlement"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-37/minutes",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-37/proces-verbal"
+      }
+    },
+    {
+      "date": "2026-05-28",
+      "label": {
+        "en": "Report presentation in the House Journals",
+        "fr": "Présentation du rapport selon les Journaux de la Chambre"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-124/journals",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/chambre/seance-124/journaux"
+      }
+    },
+    {
+      "date": "2026-09-25",
+      "label": {
+        "en": "ENVI Work page records the government response presented September 25, 2026",
+        "fr": "La page Travaux d'ENVI indique que la réponse du gouvernement a été présentée le 25 septembre 2026"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/committees/en/ENVI/Work?parl=45&session=1",
+        "fr": "https://www.noscommunes.ca/Committees/fr/ENVI/Work?parl=45&session=1&show=reports"
+      }
+    },
+    {
+      "date": "2026-09-25",
+      "label": {
+        "en": "Government response (PDF)",
+        "fr": "Réponse du gouvernement (PDF)"
+      },
+      "url": {
+        "en": "https://www.ourcommons.ca/content/Committee/451/ENVI/GovResponse/RP14237518/451_ENVI_Rpt5_GR_PDF/451_ENVI_Rpt5_GR-e.pdf",
+        "fr": "https://www.noscommunes.ca/Content/Committee/451/ENVI/GovResponse/RP14237518/451_ENVI_Rpt5_GR_PDF/451_ENVI_Rpt5_GR-f.pdf"
+      }
+    }
+  ]
+}

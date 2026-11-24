@@ -110,6 +110,26 @@ export async function query<T = Record<string, unknown>>(
   return statement?.results ?? [];
 }
 
+/** Bootstrap writers are only valid before the coordinated publisher takes ownership. */
+export async function assertLegacyD1CorpusWritable(
+  read: (sql: string) => Promise<{ guard_installed: number }[]> = query,
+): Promise<void> {
+  let result: { guard_installed: number }[];
+  try {
+    result = await read(`SELECT EXISTS (
+      SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'corpus_publication_guard' COLLATE NOCASE
+    ) AS guard_installed`);
+  } catch {
+    throw new Error('Could not verify the D1 publication schema. Legacy writes are unavailable.');
+  }
+  if (result.length !== 1 || (result[0]?.guard_installed !== 0 && result[0]?.guard_installed !== 1)) {
+    throw new Error('Could not verify the D1 publication schema. Legacy writes are unavailable.');
+  }
+  if (result[0]?.guard_installed === 1) {
+    throw new Error('The D1 publication guard is installed. Use the corpus pipeline to change this store.');
+  }
+}
+
 /**
  * Write rows, and report what happened.
  *
@@ -127,6 +147,7 @@ export async function writeRows(
     onRow?: (index: number, ok: boolean) => void;
   } = {},
 ): Promise<{ sent: number; failed: number; failures: { id: string; error: string }[] }> {
+  if (rows.length) await assertLegacyD1CorpusWritable();
   const concurrency = options.concurrency ?? CONCURRENCY;
   let sent = 0;
   let failed = 0;

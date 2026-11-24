@@ -215,3 +215,54 @@ checks containment as well as ancestry.
 4. **the index manifest names rows the corpus has**, and holds no placeholder.
 
 Each was verified by planting the violation and watching the check fail.
+
+## Proposed platform corpus model
+
+Store each record type in its own table. Each source record has its own identity and citation.
+Users can search and cite a speech even when the bill or member link is missing.
+A brief reads the source records and their links for the question at hand.
+
+| Table | What one row holds |
+| --- | --- |
+| `members` | One member, with an official identifier, name, and source link. |
+| `house_sittings` | One House of Commons sitting, with its official identifier, date, Parliament, session, and source link. |
+| `hansard_speeches` | One published speaking turn, with its passage ID, sitting ID, member ID where known, speaker label, language, sequence, published times where available, permitted excerpt, and passage link. |
+| `committees` | One committee or subcommittee in its parliamentary session, with its House, Senate or joint identity, official identifier, name, parent where published, and source link. |
+| `committee_studies` | One study or order of reference, with its committee, session, title, official identifier, and source link. |
+| `committee_submissions` | One published brief, exhibit, correspondence item or other submission. Preserve the study, submitting organizations and individuals as published, date, language edition, original file and related appearance. |
+| `committee_meetings` | One public committee meeting, with its committee ID, official meeting identifier, date, and source link. |
+| `committee_interventions` | One published speaking turn at a committee meeting, with its passage ID, speaker label, member ID where known, language, sequence, published time where available, and citation. |
+| `bills` | One bill, with its official identifier, bill number, Parliament, session, title, and source link. |
+| `hansard_speech_bills` | One relationship between a speech and a bill. Store `speech_id` and `bill_id` as foreign keys. Record whether the bill was the subject of debate or a mention. Include the source for that relationship. |
+| `parliamentary_recordings` | One official recording of a House sitting or committee meeting, with its official player link and available media type and languages. |
+| `statute_sections` | One provision in one official language, with its citation and source link. |
+| `gazette_notices` | One Canada Gazette Part I proposal or notice, with its issue, publication date, official link, and any stated consultation deadline. |
+| `gazette_instruments` | One Canada Gazette Part II instrument, with its issue, official registration identifier where available, publication date, any stated effective date, and official link. |
+| `votes` | One recorded vote, with the decision, date, totals, and official source link. |
+| `member_votes` | One member's recorded vote, with links to the member and the vote. |
+| `news_items` | One published news article, with its headline, outlet, publication time, source link, and permitted content. |
+| `workspace_notes` | One staff or analyst note, with a workspace, author, text, timestamps, and references to the records it discusses. |
+
+Use the official bill identifier to identify the bill row. Include Parliament and session when you resolve a bill number.
+Keep the published speaker label when the transcript names a role or the member ID is unknown.
+Preserve the party as published if the source includes it.
+Use the transcript sequence to preserve order when Hansard gives no time for a speech.
+Keep any official transcript annotations with their source and cite them as part of the transcript.
+Link an intervention to its recording when the official source identifies the match.
+Store a verified playback offset where available. Keep the offset distinct from the published time of the intervention.
+Retain the published speaker label for committee witnesses and other speakers without a member ID.
+
+For example, a member can debate Bill C-10 and mention Bill C-20 in the same speech.
+Store one speech and two links. Mark one as the subject of debate and the other as a mention.
+A speech on a topic with no bill can have zero links.
+
+The [initial schema](../migrations/0001_init.sql) has separate speech and bill tables.
+It stores the speaker as text and the sitting as a date. The relationships above are proposed for the platform.
+
+The [S-5 bill preview](BILL-TRACE-API.md) stores bilingual metadata from the bill history, House and Senate committee records, recorded division, and Journals. Its dedicated database contains the selected sources and an append-only record-change journal. Clients can traverse citations with stable IDs in either language. [Bill trace schema](../preview/bills/migrations/0001_bill_trace.sql)
+
+The session-wide committee store links English and French editions of committee, study, meeting and publication records to their official sources. A single file can have several credited submitters, study links and edition records. Compressed originals retain their SHA-256 digest over the original bytes. Ordered passages keep a speaking-turn, page or section location. Search can identify a third-party submission and return its official citation while keeping its indexed text private. The coverage operation reports the observed cutoff and outstanding publication IDs. [Committee API](COMMITTEES-API.md) · [Committee schema](../preview/committees/migrations/0001_committee_preview.sql)
+
+The [Gazette preview migration](../preview/gazette/migrations/0001_gazette.sql) implements the two Gazette record tables in a dedicated database. The `gazette_records` view gives search and exact lookup a common metadata projection. An edition row in `gazette_editions` identifies the language, issue date, volume and issue number and records its replay digest and record count. The edition and its records are replaced in one transaction. [Local replay and API](GAZETTE-API.md)
+
+Both the Gazette and Hansard importers initialize their [source change journal](../preview/source-feed/migrations/0001_source_feed.sql) alongside the source records. Replaying a complete edition commits record changes and feed events atomically. The journal keeps separate edition coverage and immutable observations for each source and language. [Reading the feeds](SOURCE-CHANGE-FEEDS.md)

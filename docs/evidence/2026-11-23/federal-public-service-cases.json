@@ -1,0 +1,225 @@
+{
+  "observed": "2026-11-23",
+  "status": "proposed-handler-acceptance",
+  "observed_publisher_records": [
+    {
+      "legal_name_en": "Department of the Environment",
+      "identity_evidence": "https://www.canada.ca/en/public-service-commission/services/public-service-hiring-guides/information-staffing-obligations/reference-list-organizations.html",
+      "case_ids": ["lake-winnipeg-owner", "appendix-k-status", "freshwater-edition", "eccc-briefing-title", "winnipeg-grant", "water-agency-engagement"]
+    },
+    {
+      "legal_name_en": "Department of Citizenship and Immigration",
+      "identity_evidence": "https://www.canada.ca/en/public-service-commission/services/public-service-hiring-guides/information-staffing-obligations/reference-list-organizations.html",
+      "case_ids": ["ircc-op8-cutoff"]
+    },
+    {
+      "legal_name_en": "Canadian Food Inspection Agency",
+      "identity_evidence": "https://laws-lois.justice.gc.ca/eng/acts/f-11/page-24.html",
+      "case_ids": ["cfia-impact-assessment", "cfia-review-stage"]
+    }
+  ],
+  "cases": [
+    {
+      "id": "roster-cbsa",
+      "family": "mandates",
+      "series": "official-titles",
+      "query": {
+        "en": "Where is the Canada Border Services Agency listed?",
+        "fr": "Où figure l’Agence des services frontaliers du Canada?"
+      },
+      "required": [
+        "Schedule IV",
+        "Two distinct legislative annotations for one bilingual name"
+      ],
+      "reject": [
+        "Two agencies inferred solely from duplicate schedule entries"
+      ],
+      "sources": [
+        "https://laws-lois.justice.gc.ca/eng/acts/f-11/page-23.html"
+      ]
+    },
+    {
+      "id": "ircc-op8-cutoff",
+      "family": "delivery",
+      "series": "ircc-guidance",
+      "query": {
+        "en": "Which manual applies to self-employed applications received May 2 and May 3, 2017?",
+        "fr": "Quelles instructions s’appliquent aux demandes de travailleurs autonomes reçues les 2 et 3 mai 2017?"
+      },
+      "required": [
+        "Receipt on 2017-05-02 uses OP 8",
+        "Receipt on 2017-05-03 uses the program delivery instructions",
+        "Cite the selected language’s receipt-date rule"
+      ],
+      "reject": [
+        "Treating today’s online wording as a verified historical snapshot"
+      ],
+      "sources": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/corporate/publications-manuals/operational-bulletins-manuals.html",
+        "https://www.canada.ca/fr/immigration-refugies-citoyennete/organisation/publications-guides/bulletins-guides-operationnels.html"
+      ]
+    },
+    {
+      "id": "cfia-impact-assessment",
+      "family": "management",
+      "series": "algorithmic-assessments",
+      "query": {
+        "en": "Find CFIA’s published algorithmic impact assessment for the ERA-Food model.",
+        "fr": "Retrouver l’évaluation de l’incidence algorithmique de l’ACIA pour le modèle d’évaluation du risque des établissements alimentaires."
+      },
+      "required": [
+        "Issuing institution is CFIA",
+        "Catalogue record f77faef4-27d8-4929-929e-bfb1371affde",
+        "Separate catalogue metadata from the cited assessment edition"
+      ],
+      "reject": [
+        "Inferring approval or a model performance metric from its listing"
+      ],
+      "sources": [
+        "https://open.canada.ca/data/en/dataset/f77faef4-27d8-4929-929e-bfb1371affde"
+      ]
+    },
+    {
+      "id": "eccc-briefing-title",
+      "family": "advice",
+      "series": "briefing-titles",
+      "query": {
+        "en": "What did ECCC disclose about freshwater briefing MIN - 262510?",
+        "fr": "Qu’a divulgué ECCC sur la note d’information sur l’eau douce MIN - 262510?"
+      },
+      "required": [
+        "Institution and reference MIN - 262510",
+        "Received 2020-02-04",
+        "Strategic Policy Branch; minister; for information",
+        "Return the title in the requested language where evidenced"
+      ],
+      "reject": [
+        "Inventing memo text or treating the register entry as a full-text source"
+      ],
+      "sources": [
+        "https://search.open.canada.ca/briefingt/record/ec%2CMIN%20-%20262510"
+      ]
+    },
+    {
+      "id": "water-agency-engagement",
+      "family": "research",
+      "series": "consultations",
+      "query": {
+        "en": "What did ECCC publish about engagement on creating a Canada Water Agency?",
+        "fr": "Qu’a publié ECCC au sujet de la consultation sur la création d’une Agence canadienne de l’eau?"
+      },
+      "required": [
+        "Locate ECCC’s engagement summary and its reference to the December 2020 discussion paper",
+        "Credit the consultation publisher and distinguish submissions from departmental findings"
+      ],
+      "reject": [
+        "Attributing every participant’s view to the department"
+      ],
+      "sources": [
+        "https://www.canada.ca/en/environment-climate-change/services/water-overview/protecting-freshwater/canada-water-agency-stakeholder-public-engagement-what-we-heard.html"
+      ]
+    },
+    {
+      "id": "cfia-review-stage",
+      "family": "regulation",
+      "series": "regulatory-plans",
+      "query": {
+        "en": "Which reviews did CFIA propose in its 2024–2026 regulatory stock review plan?",
+        "fr": "Quels examens l’ACIA a-t-elle proposés dans son plan d’examen de l’inventaire des règlements de 2024 à 2026?"
+      },
+      "required": [
+        "Identify CFIA, the plan period, and the entry’s stated review status",
+        "Cite the plan entry"
+      ],
+      "reject": [
+        "Inferring enactment or regulatory commencement from a planned review"
+      ],
+      "sources": [
+        "https://inspection.canada.ca/en/about-cfia/acts-and-regulations/forward-regulatory-plan/regulatory-stock-review-plan"
+      ]
+    },
+    {
+      "id": "winnipeg-grant",
+      "family": "resources",
+      "series": "grant-awards",
+      "query": {
+        "en": "What value did ECCC publish for agreement GCXE20P030?",
+        "fr": "Quelle valeur ECCC a-t-il publiée pour l’accord GCXE20P030?"
+      },
+      "required": [
+        "Agreement GCXE20P030",
+        "Agreement value 287280.00 CAD",
+        "Cite the award and distinguish agreement value from disbursements"
+      ],
+      "reject": [
+        "Treating the agreement value as verified actual expenditure",
+        "Linking this agreement to the Lake Winnipeg research vessel on topic alone"
+      ],
+      "sources": [
+        "https://search.open.canada.ca/grants/record/ec%2C099-2019-2020-02-00030%2Ccurrent"
+      ]
+    },
+    {
+      "id": "lake-winnipeg-owner",
+      "family": "assurance",
+      "series": "eccc-evaluation",
+      "query": {
+        "en": "Who owned the Lake Winnipeg research platform funding-model action, and when was it due?",
+        "fr": "À qui incombait le modèle de financement de la plateforme de recherche du lac Winnipeg et quelle était l’échéance?"
+      },
+      "required": [
+        "Recommendation 1; assigned office ARDG West and North Region or DGRA, région de l’Ouest et du Nord",
+        "Target 2027-03-31; cite section 3.2"
+      ],
+      "reject": [
+        "Treating the due date as proof of completion"
+      ],
+      "sources": [
+        "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations/freshwater-action-plan-lake-winnipeg-basin.html",
+        "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/evaluations/plan-action-eau-douce-bassin-lac-winnipeg.html"
+      ]
+    },
+    {
+      "id": "appendix-k-status",
+      "family": "assurance",
+      "series": "eccc-audit",
+      "query": {
+        "en": "Did ECCC implement the Appendix K guidance from its 2021 grants and contributions review?",
+        "fr": "ECCC a-t-il mis en œuvre les instructions sur l’annexe K issues de son examen des subventions et contributions de 2021?"
+      },
+      "required": [
+        "June 2024, table 1",
+        "Centre of Expertise reported completed",
+        "Audit assessed in progress because the documents had been withdrawn",
+        "Return both attributed cells with their row headers"
+      ],
+      "reject": [
+        "Single unattributed completion status"
+      ],
+      "sources": [
+        "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/internal-audits/audit-administration-grants-contributions-eccc-2024/progress-2021-review-insights.html",
+        "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/audits-internes/audit-administration-subventions-contributions-eccc-2024/progres-2021-examen-observations.html"
+      ]
+    },
+    {
+      "id": "freshwater-edition",
+      "family": "assurance",
+      "series": "eccc-evaluation",
+      "query": {
+        "en": "Find the French edition of the freshwater quality science evaluation.",
+        "fr": "Retrouver l’édition française de l’évaluation de la science de la qualité de l’eau douce."
+      },
+      "required": [
+        "French report resolves via publisher language link",
+        "Preserve edition URL and discovery path"
+      ],
+      "reject": [
+        "Reporting missing translation solely because one index omits it"
+      ],
+      "sources": [
+        "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations/evaluation-eccc-freshwater-quality-science-report-preliminary-apr-2026.html",
+        "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/evaluations/evaluation-execution-science-qualite-eau-douce-eccc-preliminaire-rapport-avr-2026.html"
+      ]
+    }
+  ]
+}

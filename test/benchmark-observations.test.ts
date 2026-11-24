@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import raw from '../src/eval/data/v1-questions.json';
-import { retrievalTrace } from '../src/corpora/retrieval-observation';
+import { RETRIEVAL_POLICY_VERSION, retrievalTrace } from '../src/corpora/retrieval-observation';
 import type { V1Observation } from '../src/eval/v1';
 import type { TargetProvenance } from '../src/eval/v1-target';
 
@@ -10,7 +10,7 @@ const provenance: TargetProvenance = {
   corpusLastRunAt: '2026-10-22T00:00:00Z',
   upstream: { revision: raw.revision, committedAt: '2026-10-15T00:00:00Z', observedAt: '2026-10-22T00:00:00Z' },
   encoderModel: 'embeddinggemma-2-270m', encoderArtifact: 'synthetic-no-model', encoderDimensions: 768,
-  retrievalPolicy: 'vectorize:federal-authority-v3-observed', reranker: 'synthetic-no-provider',
+  retrievalPolicy: `vectorize:${RETRIEVAL_POLICY_VERSION}`, reranker: 'synthetic-no-provider',
   evidence: { source: 'local injected observations', observedAt: '2026-10-22T00:00:00Z', note: 'No network or model execution.' },
 };
 const originalArgv = process.argv;

@@ -6,14 +6,13 @@ The [release evidence ledger](V1-RELEASE.md) records completed checks and dated 
 
 ## Platform and identity
 
-Use Cloudflare for the production API and corpus pipeline.
+Use Cloudflare for the entire v1 runtime, including the API, corpus pipeline, storage, vector search, and encoder.
 Keep the current Vectorize index, encoder artifact, usage namespace, and account identity.
-Keep existing Railway services unchanged during this release. Keep the Bun API as undeployed portability code.
-Railway is outside the v1 deployment and release gate. The old Railway workflow
-has been removed. Retained Railway configuration is inactive legacy material;
-the Bun/Postgres implementation does not depend on Railway hosting.
-Existing Railway services have not been decommissioned. Any change to those
-services requires a separate decision.
+The Worker uses CHS `auth-d1` for workspace-key verification and `api-billing/durable-object` for the usage ledger.
+CHS `auth` supplies the capability check. CHS `corpus` supplies citation parsing and result emission.
+The Bun/Postgres implementation and Railway configuration describe an alternative stack outside the v1 deployment and release gate.
+That implementation uses `api-billing/postgres`. The CHS source also supplies a separate `auth-postgres` package for a future Postgres deployment.
+Any change to legacy infrastructure requires a separate decision.
 
 | Resource | Identity |
 | --- | --- |
@@ -40,15 +39,17 @@ Use Bun 1.3.5 and Node 24 or later.
 Run these commands from the repository root.
 
 ```sh
+export CI=true WRANGLER_SEND_METRICS=false CIVICSIGNAL_WORKERD_TESTS=1
 bun install --frozen-lockfile
 bun run validate
+python3 -I -B test/protected-state-d1-owned.test.py
 bun run build
 ```
 
-The build commands create local bundles. They do not deploy Workers or containers.
-Use a clean checkout for the final check. Retain its commit, lockfile, logs, and package manifest.
-The package manifest pins CHS source commit `9abf87ed3f47c83d1ddf9547d28bac979cd0c478`.
-It includes the API billing 0.1.1 source patch over base commit `853ffc5a606e5526cb64cf453238180223a39d12`.
+The build commands create local dry-run bundles. The local gate and the [Linux CI job](../.github/workflows/validate.yml) run directly on their respective hosts.
+Include new migrations, fixture inputs, and vendored files in the frozen candidate. Run both checks from clean checkouts of that exact source. Retain its commit, lockfile, logs, and package manifest.
+The package manifest pins CHS source commit `592aa6cbe4d1f84d6fa57db14e022d1c9681a1f4`.
+It includes the API billing 0.1.2 source patch over base commit `853ffc5a606e5526cb64cf453238180223a39d12`.
 The manifest also pins the reconstructed Git tree and each built file.
 The five built packages use local Bun workspaces.
 The runtime package files must pass `bun run check:vendor`.
@@ -109,12 +110,14 @@ Use exact schedules PUT/GET for temporary calendar changes: the locked Wrangler
 ## Read-only production preflight
 
 Check the selected account before any remote command.
-Keep credentials in Wrangler or the process environment. Do not copy them into this repository.
+Use the Cloudflare `cf` CLI for remote checks. Keep credentials in the `cf` profile or process environment.
 
 ```sh
-bun x --no-install wrangler whoami --json
-bun x --no-install wrangler d1 list --json
-bun x --no-install wrangler d1 execute civicsignal --remote --json --command "SELECT corpus_id,commit_sha,as_of,row_count,last_run_at FROM corpus_state"
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+cf auth whoami | jq '{authenticated, tokenValid}'
+cf d1 list
+cf d1 query 8056b1a0-f858-4f89-a332-91f7f350eb7b \
+  --sql 'SELECT corpus_id,commit_sha,as_of,row_count,last_run_at FROM corpus_state'
 ```
 
 Check the live capabilities document.
@@ -167,9 +170,25 @@ The candidate also requires these additive migrations:
 - `0006_corpus_mutations.sql`: recovery journal.
 - `0007_provision_text_refs.sql`: immutable text references.
 - `0008_corpus_parser.sql`: parser identity in state and cycle logs.
+- `0009_corpus_publication_guard.sql` adds publication progress and generation to each corpus store.
 
 None removes provision text or changes vectors.
 Remote application remains a release action after review.
+
+Suspend and drain the old corpus writer before the publication-guard rollout.
+Check for a coherent source revision, an empty pending outbox, and matching visible vectors.
+For existing serving and rollback stores, inspect `corpus_publication_guard` and the migration history during the approved drain. Apply `0009` if the table is absent. If the table already exists, verify its schema against `0009` before guarded use and reconcile how it was installed before running any migration that would create it again.
+Start a fresh staging compact restore with an empty D1 database. The restore initializer creates the guard table with its other support tables. Verify the table before starting protected copy.
+For a staging restore initialized by an earlier version, inspect the existing schema under the approved drain and apply `0009` if the guard is absent before starting or resuming protected copy. Repeating restore initialization does not upgrade its support schema.
+Switch the guarded reader and writer during the same reviewed maintenance window. Keep `AUTH_DB` and the usage namespace fixed.
+Use the pipeline for updates to the guarded corpus and the configured Vectorize index.
+The old D1 bootstrap tools refuse writes when this migration exists.
+The old index loader refuses the index configured in either Worker.
+Repair dry runs use read-only D1 statements, including with `--prune`.
+During a publication the reader returns unavailable until the writer observes the matching Vectorize mutation.
+Vectorize queues writes asynchronously. The publication guard waits for the exact recorded mutation at the index watermark. [Vectorize write behavior](https://developers.cloudflare.com/vectorize/reference/client-api/) · [Index mutation watermark](https://developers.cloudflare.com/vectorize/get-started/intro/)
+If the writer cannot finish, keep the guard and its checkpoint. Resume only the pinned revision through the reviewed recovery path.
+Before any rollback, stop writers and check the selected corpus and vector state. An open publication guard is a stop condition.
 
 After migration, check an existing key before the API switch.
 Check its workspace ID, capability, plan, and current usage count.
@@ -325,17 +344,17 @@ that the counter stayed unchanged.
 After connectivity recovers, read the receipt for the same workspace, operation ID, and original UTC month.
 For the Durable Object, use an authenticated operator binding and its read-only `GET` receipt protocol.
 Supply `X-Usage-Operation` with the original operation ID and `month` with the original UTC month.
-For Postgres, read `usage_operations` by `customer_id`, `period`, and `operation_id`.
 An accepted receipt confirms the committed unit. An absent receipt does not authorize another increment.
 Do not blindly call `consumeMonthly` to inspect a missing receipt.
 Keep the returned correlation ID with the receipt evidence.
 V1 exposes no public reconciliation endpoint.
 
-The DO namespace and `month:<YYYY-MM>` keys stay unchanged. DO operation receipts
-use `operation:month:<YYYY-MM>:<operationId>`. PG requires the additive
-`USAGE_OPERATIONS_DDL` receipt table and a transaction-capable runner on one
-connection before operation-aware consumption. Keep receipts during migrations
-and rollback. Any later retention policy must preserve the reconciliation window.
+The DO namespace and `month:<YYYY-MM>` keys stay unchanged.
+DO operation receipts use `operation:month:<YYYY-MM>:<operationId>`.
+Keep receipts during migrations and rollback.
+Before a build rollback that removes reservation support, stop new chat admission and let active calls settle.
+Wait for the 60-second holds to expire and reconcile ambiguous settlements before admission resumes.
+Any later retention policy must preserve the reconciliation window.
 
 Stripe delivery remains best effort. A recovered copy must reuse the operation ID
 and month so its event identifier is stable. There is no durable Stripe outbox or

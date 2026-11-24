@@ -14,8 +14,12 @@ const arg = (flag: string) => { const at = args.indexOf(flag); return at < 0 ? u
 const commit = arg('--commit');
 const parser = arg('--parser') ?? SNAPSHOT_PARSER_VERSION;
 const dir = arg('--dir') ?? 'dist/snapshot';
-if (!commit || !/^[a-f0-9]{40}$/.test(commit) || parser !== SNAPSHOT_PARSER_VERSION || args.includes('--publish') || args.includes('--remote')) {
-  throw new Error('usage: bun scripts/publish-snapshot.ts --commit <full-sha> --dir <artifact-root> [--vectors]; verification only. Publish with the snapshot Workflow; export-vectors.ts publishes verified vector backups. Legacy root writes are retired.');
+const referenceFlag = '--reference-manifest-sha256';
+const expectedManifestSha256 = arg(referenceFlag);
+const referenceArguments = args.filter(value => value === referenceFlag || value.startsWith(referenceFlag + '='));
+if (!commit || !/^[a-f0-9]{40}$/.test(commit) || parser !== SNAPSHOT_PARSER_VERSION || args.includes('--publish') || args.includes('--remote') ||
+    (referenceArguments.length > 0 && (referenceArguments.length !== 1 || !/^[a-f0-9]{64}$/.test(expectedManifestSha256 ?? '')))) {
+  throw new Error('usage: bun scripts/publish-snapshot.ts --commit <full-sha> --dir <artifact-root> [--reference-manifest-sha256 <sha256>] [--vectors]; verification only. Publish with the snapshot Workflow; export-vectors.ts publishes verified vector backups. Legacy root writes are retired.');
 }
 async function verify(key: string, bytes: number, sha256: string | undefined) {
   const hash = createHash('sha256');
@@ -23,7 +27,7 @@ async function verify(key: string, bytes: number, sha256: string | undefined) {
   for await (const chunk of createReadStream(join(dir, key))) { count += chunk.length; hash.update(chunk); }
   if (!sha256 || count !== bytes || hash.digest('hex') !== sha256) throw new Error(`local immutable artifact integrity failed: ${key}`);
 }
-const reader = new SnapshotReader(new FileSnapshotBucket(dir), commit, { parser });
+const reader = new SnapshotReader(new FileSnapshotBucket(dir), commit, { parser, expectedManifestSha256 });
 const manifest = await reader.manifest();
 for (const part of manifest.rows.parts) await verify(part.key, part.bytes, part.sha256);
 let count = 0;
@@ -36,3 +40,4 @@ if (args.includes('--vectors')) {
   for (const part of vectors.parts) await verify(part.key, part.bytes, part.sha256);
 }
 console.log(`Verified local ${parser}/${commit}: ${count} rows${args.includes('--vectors') ? ' and positional vector bytes' : ''}. No remote reads or writes. Publish snapshots with the Workflow; export-vectors.ts publishes vector backups.`);
+if (expectedManifestSha256) console.log(`Pinned reference manifest SHA-256: ${expectedManifestSha256}`);

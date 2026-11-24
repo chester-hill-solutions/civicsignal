@@ -1,0 +1,95 @@
+[
+  {
+    "date": "2026-05-25",
+    "status": "no-meeting",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/committees/en/ENVI/Meetings?parl=45&session=1",
+        "fr": "https://www.noscommunes.ca/committees/fr/ENVI/Meetings?parl=45&session=1"
+      }
+    ],
+    "matches": [],
+    "note": "No ENVI meeting on the weekly record."
+  },
+  {
+    "date": "2026-05-26",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-39/evidence",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-39/temoignages"
+      }
+    ],
+    "matches": [
+      {
+        "id": "c241-hearing",
+        "title": "ENVI heard evidence on flood and drought forecasting.",
+        "reason": "The committee examined Bill C-241. Canada Water Agency official Gemma Boag described coordination with other governments and federal departments on freshwater management.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-39/evidence",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-39/temoignages"
+        }
+      }
+    ],
+    "note": "Meeting 39 evidence includes the chair’s written-amendment deadline."
+  },
+  {
+    "date": "2026-05-27",
+    "status": "no-meeting",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/committees/en/ENVI/Meetings?parl=45&session=1",
+        "fr": "https://www.noscommunes.ca/committees/fr/ENVI/Meetings?parl=45&session=1"
+      }
+    ],
+    "matches": [],
+    "note": "No ENVI meeting on the weekly record."
+  },
+  {
+    "date": "2026-05-28",
+    "status": "checked",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-40/minutes",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-40/proces-verbal"
+      },
+      {
+        "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-40/evidence",
+        "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-40/temoignages"
+      }
+    ],
+    "matches": [
+      {
+        "id": "agency-estimates-approved",
+        "title": "ENVI agreed on division to both Canada Water Agency estimates votes.",
+        "reason": "Vote 1 listed $34,693,471 for operations and Vote 5 listed $42,244,658 for contributions. These are committee estimates figures. Final appropriations fall outside this check.",
+        "urls": {
+          "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-40/evidence",
+          "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-40/temoignages"
+        },
+        "also": [
+          {
+            "source": "Minutes",
+            "urls": {
+              "en": "https://www.ourcommons.ca/DocumentViewer/en/45-1/ENVI/meeting-40/minutes",
+              "fr": "https://www.noscommunes.ca/DocumentViewer/fr/45-1/ENVI/reunion-40/proces-verbal"
+            }
+          }
+        ]
+      }
+    ],
+    "note": "Meeting 40 minutes establish the committee decision. Evidence lists the votes and amounts."
+  },
+  {
+    "date": "2026-05-29",
+    "status": "no-meeting",
+    "checked": [
+      {
+        "en": "https://www.ourcommons.ca/committees/en/ENVI/Meetings?parl=45&session=1",
+        "fr": "https://www.noscommunes.ca/committees/fr/ENVI/Meetings?parl=45&session=1"
+      }
+    ],
+    "matches": [],
+    "note": "No ENVI meeting on the weekly record. Report 6 appeared in the House Journals."
+  }
+]

@@ -1,3 +1,8 @@
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { fingerprint } from '../src/ingest/reconcile';
 import {
@@ -9,10 +14,12 @@ import {
 import {
   cutRows,
   DEFAULT_PART_BYTES,
+  IndexDigester,
   indexKey,
   manifestKey,
   partKey,
   SNAPSHOT_FORMAT,
+  SNAPSHOT_PARSER_VERSION,
 } from '../src/ingest/snapshot-format';
 import type { PipelineRow } from '../src/ingest/pipeline';
 
@@ -136,6 +143,51 @@ function snapshotOf(rows: PipelineRow[], partBytes?: number) {
   });
   return files;
 }
+
+it('verifies a downloaded snapshot CLI against exact independently pinned manifest bytes', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'snapshot-manifest-pin-'));
+  const commit = 'a'.repeat(40);
+  const parser = SNAPSHOT_PARSER_VERSION;
+  const manifestPath = join(directory, manifestKey(commit, parser));
+  const rowsPath = `snapshots/${parser}/${partKey(commit, 0)}`;
+  const indexPath = indexKey(commit, parser);
+  const hash = (value: string) => createHash('sha256').update(value).digest('hex');
+  const writeCandidate = async (text: string) => {
+    const provision = row('a-1', text);
+    const rowBytes = JSON.stringify(provision) + '\n';
+    const entry = { id: provision.id, fp: fingerprint(provision), off: 0, len: Buffer.byteLength(rowBytes) };
+    const indexBytes = JSON.stringify(entry) + '\n';
+    const digester = new IndexDigester();
+    digester.add(entry);
+    const manifest = JSON.stringify({
+      format: SNAPSHOT_FORMAT, commit, parser, date: '2026-10-15',
+      rows: { count: 1, bytes: entry.len, partBytes: DEFAULT_PART_BYTES,
+        parts: [{ key: rowsPath, bytes: entry.len, sha256: hash(rowBytes) }] },
+      index: { key: indexPath, bytes: Buffer.byteLength(indexBytes), entries: 1,
+        digest: digester.digest(), sha256: hash(indexBytes) },
+    });
+    await writeFile(manifestPath, manifest);
+    await writeFile(join(directory, rowsPath), rowBytes);
+    await writeFile(join(directory, indexPath), indexBytes);
+    return hash(manifest);
+  };
+  const check = (...options: string[]) => spawnSync('bun', ['scripts/publish-snapshot.ts', '--commit', commit, '--dir', directory, ...options],
+    { encoding: 'utf8', timeout: 10_000 });
+  try {
+    await mkdir(dirname(manifestPath), { recursive: true });
+    const reference = await writeCandidate('Independently checked provision');
+    const flag = '--reference-manifest-sha256';
+    expect(check(flag, reference)).toMatchObject({ status: 0, stdout: expect.stringContaining(reference) });
+    expect(check(flag)).toMatchObject({ status: 1, stderr: expect.stringContaining('usage:') });
+    expect(check(flag, reference, flag, reference)).toMatchObject({ status: 1, stderr: expect.stringContaining('usage:') });
+    const changed = await writeCandidate('Different provision with a new index and matching manifest');
+    expect(changed).not.toBe(reference);
+    expect(check()).toMatchObject({ status: 0 });
+    expect(check(flag, reference)).toMatchObject({
+      status: 1, stdout: '', stderr: expect.stringContaining('snapshot manifest differs from the pinned reference SHA-256'),
+    });
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 describe('the snapshot in a bucket', () => {
   const rows = [row('a-1', 'one'), row('a-2', 'two')];

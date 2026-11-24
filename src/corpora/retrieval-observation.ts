@@ -17,19 +17,28 @@ export const retrievalObservationSchema = z.object({
   version: z.literal(1), corpusId: z.literal('statutes-canada'),
   backend: z.enum(['vectorize', 'postgres-cosine']), revision: z.string().max(64).nullable(), parserVersion: z.string().max(120).nullable(),
   policy: z.string().max(120), encoderModel: z.string().max(120),
-  mode: z.enum(['exact', 'rerank', 'vector-floor', 'unavailable']),
+  mode: z.enum(['exact', 'rerank', 'vector-floor', 'hybrid', 'unavailable']),
   decision: z.enum(['answer', 'web', 'refuse', 'error', 'unavailable']),
   languageFilter: z.string().max(16).nullable(), preRefusalTopScore: z.number().finite().nullable(),
   scoreSource: z.enum(['computed', 'cached', 'none']), scoredAt: z.string().datetime().nullable(),
   vectorFloor: z.number().finite().nullable(), candidateCount: z.number().int().nonnegative(), resultCount: z.number().int().nonnegative(),
-  cache: z.enum(['disabled', 'miss', 'hit', 'stale', 'bypass']), fallback: z.boolean(),
+  cache: z.enum(['disabled', 'miss', 'hit', 'stale', 'bypass']), cacheFailure: z.enum(['read', 'write']).optional(), fallback: z.boolean(),
   providers: z.object({ encoder: providerStatus, vector: providerStatus, reranker: providerStatus, rows: providerStatus }),
   rerankerFailure: rerankerFailureSchema.optional(),
+  hybrid: z.object({ interpretation: z.boolean(), lexical: z.boolean(), evidence: z.boolean(),
+    evidenceRetry: z.literal(true).optional(),
+    scope: z.enum(['supported', 'outside', 'clarify', 'insufficient']),
+    timingsMs: z.object({ interpretation: z.number().nonnegative().optional(), lexical: z.number().nonnegative().optional(),
+      rows: z.number().nonnegative().optional(), evidence: z.number().nonnegative().optional() }).optional() }).optional(),
   elapsedMs: z.number().finite().nonnegative(),
 });
 export type RetrievalObservation = z.infer<typeof retrievalObservationSchema>;
 export type RetrievalBackend = RetrievalObservation['backend'];
-export const RETRIEVAL_POLICY_VERSION = 'federal-authority-v3-observed';
+export const RETRIEVAL_POLICY_VERSION = 'federal-authority-v5-named-statute';
+
+export function retrievalPolicyVersion(backend: string): string {
+  return backend === 'vectorize' ? RETRIEVAL_POLICY_VERSION : 'federal-authority-v4-eligible-floor';
+}
 
 export async function retrievalTrace(ctx: CorpusContext, query: CorpusQuery, backend: RetrievalBackend,
   mode: RetrievalObservation['mode'], floor: number | null) {
@@ -41,7 +50,7 @@ export async function retrievalTrace(ctx: CorpusContext, query: CorpusQuery, bac
     version: 1, corpusId: 'statutes-canada', backend,
     revision: separator >= 0 ? revisionKey!.slice(0, separator) : revisionKey,
     parserVersion: separator >= 0 ? revisionKey!.slice(separator + 1) : null,
-    policy: `${backend}:${RETRIEVAL_POLICY_VERSION}`, encoderModel: ENCODER_CONTRACT.model,
+    policy: `${backend}:${retrievalPolicyVersion(backend)}`, encoderModel: ENCODER_CONTRACT.model,
     mode, decision: 'unavailable', languageFilter: query.language?.toLowerCase() ?? null,
     preRefusalTopScore: null, scoreSource: 'none', scoredAt: null,
     vectorFloor: floor, candidateCount: 0, resultCount: 0,

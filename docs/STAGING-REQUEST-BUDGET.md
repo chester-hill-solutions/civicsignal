@@ -1,31 +1,35 @@
 # Shared staging serving-request budget
 
-The local relay enforces one cumulative allowance of **160 HTTP/MCP attempts**
-for the approved staging API origin. It performs no request on startup. Its only
+The local relay enforces one cumulative allowance for the reviewed staging API origin. It performs no request on startup. Its only
 upstream is the explicit HTTPS
 `civicsignal-v1-stage-api-*.<account>.workers.dev` origin returned by the approved
 stage deployment. There is no default target, production target, cross-origin
 forwarding, redirect following, budget-reset flag or automatic stale-lock repair.
-No hosted request or hosted metric is established by the local relay tests.
 
-All manual smokes, MCP messages/notifications, eval discovery, warmups, measured
-calls and retries must use this same loopback relay and ledger. A separate direct
-encoder-origin HTTP smoke is omitted. Use one proxied stage API semantic smoke
-and its successful serving encoder observation to verify hosted query inference
-with the configured stage encoder service/secret and pinned model. Deployment
-image/pin verification is a separate read-only metadata check. The proposed
-allocation remains 20 calibration + 64 holdout + 44 benchmark retrievals, their
-three discovery calls, and 21 manual smoke/protocol calls: 152 planned attempts,
-with eight shared diagnostic/retry attempts. Failed attempts consume allowance.
+## November D-01 run packet
+
+This packet is prepared for review. D‑01 needs **131 fresh relay attempts**, including up to 128 billable retrievals. Approve the exact staging origin, candidate, date window, and ledger before running it. The [historical ledger](V1-ZEN-RECHECK.md) retains its original **159/160** reservations and final single slot.
+
+The earlier November 23 vector run spent 131 D-01 attempts and eight D-02 chat attempts. The first hybrid run stopped at 21 attempts. The repaired hybrid run stopped at 86 attempts after holdout. A successor needs a new reviewed scope. [Earlier hosted results](V1-RELEASE.md#november-23-hosted-serving-and-chat-acceptance) · [Repaired hybrid D-01 result](V1-RELEASE.md#november-23-repaired-hybrid-d-01)
+
+| Phase | Retrieval attempts | Discovery attempts | Cumulative ledger offset |
+| --- | ---: | ---: | ---: |
+| Calibration, with the fresh-evaluation header | 20 | 1 | 21 |
+| Independent bilingual holdout | 64 | 1 | 86 |
+| Benchmark at concurrency 1 and 4, with two warm-ups and 20 measured requests each | 44 | 1 | 131 |
+
+Pin the exact qualified source and API Worker version to a fresh read of the active deployment, staging bindings, encoder model and image, and retrieval policy. Confirm migration 0009, settled D1 publication state, R2 provision text, and Vectorize visibility for the same served revision. Verify the staging key can cover up to 128 retrieval units. The November labels pin `855cdfc65207a6906c414e09a77d7f93267c5356` and parser `statutes-v2`. Capture the authoritative upstream observation before the run and use one provenance file for all three phases. A different served revision needs matching verified labels. An ancestor of the observed head needs separate approval and the D‑01 ancestry and age checks. [Dataset proof](V1-EVALUATION.md#november-revision)
+
+The serving owner uses one fresh ledger for this scope after approval, one run per phase, and an approved finite window. Check the ledger offset, discovery response, and settled process state at each boundary. Confirm calibration readiness and freeze the policy before the independent holdout. A calibration-driven policy change requires a newly qualified candidate and reviewed packet before the holdout. Retain failed attempts and reports. A failed phase stops the run, and follow-up attempts require their own scope.
+
+HTTP and MCP smoke checks have their own request scope. D‑02 needs up to eight staging POSTs and eight BYOK calls per qualified provider/model, with 256 requested output tokens per case. The positive Zen smoke needs a separately reviewed one-request successor capped at 128 output tokens. Its historical request packet binds the earlier API version and ledger. Preserve that packet and prove the identity of the successor before asking for a fresh budget. [Chat and Zen procedures](V1-EVALUATION.md#d-02-bilingual-chat-claim-review) · [Historical Zen packet](V1-ZEN-RECHECK.md)
 
 ## Start and use the relay
 
-Set `STAGE_API_ORIGIN` to the actual reviewed stage API origin. Create the local
-parent directory, then start one relay process in a dedicated terminal:
+After approval, set `STAGE_API_ORIGIN` and `D01_LEDGER` to the actual reviewed origin and new ledger path. The ledger's parent directory must already exist.
 
 ```sh
-mkdir -p dist/release/staging
-bun scripts/staging-request-proxy.ts --target "$STAGE_API_ORIGIN" --ledger dist/release/staging/serving-requests.jsonl --limit 160 --port 8788 --timeout-ms 60000
+bun scripts/staging-request-proxy.ts --target "$STAGE_API_ORIGIN" --ledger "$D01_LEDGER" --limit 131 --port 8788 --timeout-ms 60000
 ```
 
 It binds only `127.0.0.1`. `--port 0` selects an available local port and prints
@@ -42,16 +46,17 @@ actual deployed revision/parser/model/policy. The provenance `evidence.note` mus
 this relay/ledger and the added local fsync/forwarding measurement overhead.
 Use the operator's normal `CIVICSIGNAL_KEY` environment variable; do not put it
 in a command or ledger.
-For the fixed port above, example commands are:
+For the fixed port above, set `STAGE_PROVENANCE` to the reviewed provenance file and `D01_REPORT_DIR` to a new reports directory. Use the verified November dataset and the declared `all` benchmark split. Run each command as its own phase after checking the prior result and ledger offset.
 
 ```sh
-bun scripts/eval-v1.ts --target http://127.0.0.1:8788 --provenance dist/release/staging/provenance.json --route /api/statutes --split calibration --calibrate-observed true --concurrency 1 --timeout-ms 65000 --output dist/release/staging/eval-calibration.json
-bun scripts/eval-v1.ts --target http://127.0.0.1:8788 --provenance dist/release/staging/provenance.json --route /api/statutes --split holdout --concurrency 1 --timeout-ms 65000 --output dist/release/staging/eval-holdout.json
-bun scripts/bench-v1.ts --target http://127.0.0.1:8788 --provenance dist/release/staging/provenance.json --route /api/statutes --requests 20 --warmup 2 --concurrency 1,4 --timeout-ms 65000 --output dist/release/staging/benchmark.json
+dataset=src/eval/data/v1-november-questions.json
+relay_origin=http://127.0.0.1:8788
+bun scripts/eval-v1.ts --target "$relay_origin" --provenance "$STAGE_PROVENANCE" --dataset "$dataset" --route /api/statutes --limit 10 --split calibration --calibrate-observed true --concurrency 1 --timeout-ms 65000 --output "$D01_REPORT_DIR/eval-calibration.json"
+bun scripts/eval-v1.ts --target "$relay_origin" --provenance "$STAGE_PROVENANCE" --dataset "$dataset" --route /api/statutes --limit 10 --split holdout --concurrency 1 --timeout-ms 65000 --output "$D01_REPORT_DIR/eval-holdout.json"
+bun scripts/bench-v1.ts --target "$relay_origin" --provenance "$STAGE_PROVENANCE" --dataset "$dataset" --route /api/statutes --limit 10 --split all --requests 20 --warmup 2 --concurrency 1,4 --timeout-ms 65000 --output "$D01_REPORT_DIR/benchmark.json"
 ```
 
-Verify the selected dataset contains the approved 20/64 split before sending
-these commands. The relay limits aggregate attempts even if the schedule is
+Supply these reports, exact provenance, relay origin, and benchmark split to the [offline checker](V1-EVALUATION.md#d-01-serving-decision). It requires a successful discovery response with the reviewed encoder model and dimensions in each phase. The relay limits aggregate attempts even if the schedule is
 larger or a runner restarts. It returns HTTP 429 after the allowance is spent;
 those locally rejected requests do not reach the stage API. All upstream HTTP
 attempts count, including transport failures, HTTP errors, timeouts, aborted
@@ -97,7 +102,7 @@ Ctrl-C/SIGTERM stops the listener and removes its process lock while preserving
 all reservations. Inspect the file without binding a port or making a request:
 
 ```sh
-bun scripts/staging-request-proxy.ts --target "$STAGE_API_ORIGIN" --ledger dist/release/staging/serving-requests.jsonl --limit 160 --inspect
+bun scripts/staging-request-proxy.ts --target "$STAGE_API_ORIGIN" --ledger "$D01_LEDGER" --limit 131 --inspect
 ```
 
 Restart with the exact same target, limit and ledger path; no credits reset.

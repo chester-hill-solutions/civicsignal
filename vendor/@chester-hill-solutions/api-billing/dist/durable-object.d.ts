@@ -1,10 +1,15 @@
 import type { DurableObjectState } from '@cloudflare/workers-types';
 import type { UsageConsumeOptions, UsageLedger, UsageLedgerResult } from './types.js';
+export interface UsageReservationResult extends UsageLedgerResult {
+    expiresAt?: number;
+}
 /** Existing customer objects and month/count keys remain compatible. */
 export declare class ApiKeyUsageDO {
     private readonly state;
     constructor(state: DurableObjectState);
     fetch(request: Request): Promise<Response>;
+    private hasSpareCapacity;
+    private reservation;
     private pruneOldDays;
     private json;
 }
@@ -31,6 +36,12 @@ export declare class DurableObjectUsageLedger implements UsageLedger {
     private readonly timeoutMs;
     constructor(namespace: DurableObjectNamespaceLike, options?: DurableObjectLedgerOptions);
     consumeMonthly(customerId: string, monthlyLimit: number, nowMs?: number, options?: UsageConsumeOptions): Promise<UsageLedgerResult>;
+    consumeReservedMonthly(customerId: string, monthlyLimit: number, nowMs: number, options?: UsageConsumeOptions): Promise<UsageLedgerResult>;
+    reserveMonthly(customerId: string, limit: number, nowMs: number, operationId: string): Promise<UsageReservationResult>;
+    releaseMonthly(customerId: string, limit: number, nowMs: number, operationId: string): Promise<void>;
+    private reservationCall;
+    private consume;
     peekMonthly(customerId: string, monthlyLimit: number, nowMs?: number): Promise<UsageLedgerResult>;
+    private fetchUsage;
     private call;
 }

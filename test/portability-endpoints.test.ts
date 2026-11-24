@@ -15,6 +15,45 @@ function fixture() {
 }
 
 describe('Bun portability billing boundary', () => {
+  it('applies the Postgres floor to the eligible provisions on the brief route', async () => {
+    const ledger = new InMemoryUsageLedger();
+    const provisions = [
+      { id: 'strong', instrument: 'Test Act', section: '1', text: 'A rule about notice.' },
+      { id: 'weak', instrument: 'Test Act', section: '2', text: 'A rule about payment.' },
+    ];
+    const handler = createPortabilityHandler({
+      context: {
+        now: () => new Date(), fetch, corpusRevision: 'fixture-revision',
+        corpusAvailability: { 'statutes-canada': { available: true, reason: 'Fixture' } },
+        db: { prepare: () => ({ bind: (...ids: unknown[]) => ({
+          async all<T>() {
+            return { results: provisions.filter((row) => ids.includes(row.id)).map((row) => ({
+              ...row, corpus_id: 'statutes-canada', jurisdiction: 'CA', in_force: true, language: 'en',
+              source_url: `https://example.test/act/${row.section}`,
+            })) as T[] };
+          },
+        }) }) },
+        embedQuery: async () => [1],
+        vector: { async query() {
+          return [{ id: 'strong', score: 0.95, metadata: {} }, { id: 'weak', score: 0.75, metadata: {} }];
+        } },
+      },
+      ledger,
+      meter: { freeFuseLimit: 1, meterEventName: 'test' },
+      authorize: async () => ({ id: 'preserved_customer', plan: 'free', fuseLimit: 1, fuseSoftWarn: false }),
+    });
+
+    const response = await handler(new Request('https://example.test/api/brief?topic=test+rule&keyword=payment&language=en'));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      legislation: [],
+      retrieval: [{
+        backend: 'postgres-cosine', preRefusalTopScore: 0.95, vectorFloor: 0.81, decision: 'refuse', resultCount: 0,
+      }],
+    });
+    expect((await ledger.peekMonthly('preserved_customer', 1)).count).toBe(1);
+  });
+
   it('does not consume a unit for malformed bodies, invalid vectors or failed retrieval', async () => {
     const test = fixture();
     expect((await test.send('{')).status).toBe(400);

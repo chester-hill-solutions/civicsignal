@@ -55,11 +55,16 @@ validate the full Workflow on a separate staging R2 bucket before production.
 ## Publication and recovery
 
 Deployment and live schema changes require the release approval. The pipeline
-needs additive D1 migrations 0006, 0007 and 0008 plus its
+needs additive D1 migrations 0006 through 0009 plus its
 `PipelineCoordinator` Durable Object migration. Snapshot publication needs the
 configured private R2 bucket and the Workflow binding. Do not apply historical
 migration 0004 to the large live table as a shortcut for the text migration.
 The writer supports both the existing and clean-migration schema.
+
+For a large corpus gap, verify the pinned snapshot before opening the writer.
+Rehearse the snapshot-backed reconciliation and verify the final published
+revision and Vectorize watermark. Follow the coordinated production rollout in
+[v1 operations](../../docs/V1-OPERATIONS.md#authorization-migration).
 
 After approval, an operator can trigger the pinned revision using the current
 Wrangler syntax (replace the example SHA/date with verified source values):

@@ -12,3 +12,9 @@ dist/
 # does not exist for anyone who clones the repository.
 !vendor/@chester-hill-solutions/*/dist/
 !vendor/@chester-hill-solutions/*/dist/**
+
+# Local Python ingestion bytecode
+__pycache__/
+
+# Finder metadata
+.DS_Store
