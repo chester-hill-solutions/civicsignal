@@ -8,7 +8,8 @@ from pathlib import Path
 import sqlite3
 import subprocess
 import tempfile
-from urllib.parse import quote, urldefrag, urlsplit
+import time
+from urllib.parse import quote, urldefrag, urlsplit, urlunsplit
 
 from .wq_catalog import UA
 
@@ -23,14 +24,32 @@ HOSTS = {
 }
 
 
+# Any Government of Canada host may publish an indexed departmental report.
+# The suffix rule still rejects wrappers and lookalikes such as
+# `nserc.canada.ca.example.org`.
+GOVERNMENT_SUFFIXES = (".canada.ca", ".gc.ca")
+
+
 def official(url):
     parsed = urlsplit(url)
+    host = parsed.hostname or ""
+    government = host in ("canada.ca", "gc.ca") or host.endswith(GOVERNMENT_SUFFIXES)
     return (
         parsed.scheme == "https"
-        and parsed.hostname in HOSTS
+        and (government or host in HOSTS)
         and not parsed.username
         and not parsed.password
     )
+
+
+def fetchable(url):
+    """Whether a published link may be archived, upgrading legacy http to https."""
+    parsed = urlsplit(url)
+    if parsed.scheme == "https":
+        return official(url)
+    if parsed.scheme == "http" and (parsed.hostname or "").endswith(GOVERNMENT_SUFFIXES):
+        return official(urlunsplit(("https", parsed.netloc, parsed.path, parsed.query, parsed.fragment)))
+    return False
 
 
 def cache_db(root):
@@ -76,13 +95,40 @@ def verify_objects(root):
         db.close()
 
 
+def complete_body(path, url):
+    """The media type of a body that ended cleanly, when curl lost the status.
+
+    A reset after a complete transfer is common on the canada.ca CDN. Only two
+    shapes are accepted, both self-delimiting: an HTML document that ends with
+    its closing tag, and a PDF that ends with its end-of-file marker.
+    """
+    try:
+        data = Path(path).read_bytes()
+    except OSError:
+        return None
+    if not data:
+        return None
+    head = data[:2048].lstrip().lower()
+    tail = data.rstrip()[-64:]
+    if head.startswith(b"%pdf-") and b"%%eof" in tail.lower():
+        return "application/pdf"
+    if (head.startswith(b"<!doctype html") or head.startswith(b"<html")) and tail.lower().endswith(b"</html>"):
+        return "text/html"
+    return None
+
+
 def download(root, url):
     from datetime import datetime, timezone
 
     checked = datetime.now(timezone.utc).isoformat()
-    if not official(url):
-        return (url, None, None, 0, "unrecognized publication host", checked, None)
     current = url
+    parsed_url = urlsplit(current)
+    if parsed_url.scheme == "http" and (parsed_url.hostname or "").endswith(GOVERNMENT_SUFFIXES):
+        # Some legacy catalogue links are still published as http; the same host
+        # serves https, and the archived copy comes from there.
+        current = urlunsplit(("https", parsed_url.netloc, parsed_url.path, parsed_url.query, parsed_url.fragment))
+    if not official(current):
+        return (url, None, None, 0, "unrecognized publication host", checked, None)
     with tempfile.TemporaryDirectory(dir=root) as directory:
         raw = Path(directory) / "source"
         for hop in range(6):
@@ -107,8 +153,7 @@ def download(root, url):
                     "https://publications.gc.ca/site/archivee-archived.html?url="
                     + quote(current, safe=""),
                 ]
-            result = subprocess.run(
-                [
+            command = [
                     "curl",
                     *referral,
                     "--silent",
@@ -117,12 +162,11 @@ def download(root, url):
                     "--proto",
                     "=https",
                     "--retry",
-                    "2",
-                    "--retry-delay",
                     "1",
-                    "--retry-all-errors",
+                    "--retry-delay",
+                    "2",
                     "--max-time",
-                    "60",
+                    "30",
                     "--connect-timeout",
                     "10",
                     "--user-agent",
@@ -132,21 +176,47 @@ def download(root, url):
                     "--write-out",
                     "%{http_code}\n%{content_type}\n%{redirect_url}",
                     encoded,
-                ],
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode:
-                return (
-                    url,
-                    None,
-                    None,
-                    0,
-                    result.stderr.strip()[:500],
-                    checked,
-                    current,
+            ]
+            result = subprocess.run(command, capture_output=True, text=True)
+            if result.returncode or not result.stdout.strip():
+                # canada.ca intermittently resets the stream for the stricter
+                # request set above, sometimes after sending the body. A plain
+                # redirect-following request is the reliable path; the final URL
+                # still has to be an official publisher.
+                time.sleep(1.5)
+                fallback = subprocess.run(
+                    [
+                        "curl",
+                        "--silent",
+                        "--http1.1",
+                        "--location",
+                        "--max-time",
+                        "30",
+                        "--user-agent",
+                        UA,
+                        "--output",
+                        str(raw),
+                        "--write-out",
+                        "%{url_effective}",
+                        encoded,
+                    ],
+                    capture_output=True,
+                    text=True,
                 )
-            status, media, redirect = result.stdout.split("\n", 2)
+                media = complete_body(raw, current)
+                if fallback.returncode or not media or not official(fallback.stdout.strip()):
+                    return (
+                        url,
+                        None,
+                        None,
+                        0,
+                        (result.stderr or fallback.stderr).strip()[:500],
+                        checked,
+                        current,
+                    )
+                status, redirect = "200", ""
+            else:
+                status, media, redirect = result.stdout.split("\n", 2)
             if status in {"301", "302", "303", "307", "308"} and redirect:
                 current = redirect
                 continue

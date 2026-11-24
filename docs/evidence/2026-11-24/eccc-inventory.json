@@ -1,0 +1,240 @@
+{
+  "generatedAt": "2026-11-24T19:34:56.413511+00:00",
+  "slice": "inventory and originals",
+  "commands": [
+    "python3 -B scripts/eccc-intake.py --root data/corpus/eccc --db data/corpus/eccc/catalogue.sqlite --receipt dist/eccc/inventory.json --workers 1",
+    "python3 -B scripts/eccc-intake.py --root data/corpus/eccc --db data/corpus/eccc/catalogue.sqlite --receipt dist/eccc/replay.json --from-cache"
+  ],
+  "live": {
+    "archivedBytes": 22218169,
+    "changeCounts": {
+      "added": 246
+    },
+    "documentsByKindAndStatus": {
+      "evaluation-summary": {
+        "stored": 1
+      },
+      "other": {
+        "stored": 54
+      },
+      "plan": {
+        "stored": 3
+      },
+      "report": {
+        "fetch-failed": 6,
+        "stored": 103
+      },
+      "summary": {
+        "fetch-failed": 6,
+        "stored": 73
+      }
+    },
+    "duplicatedIndexAppearances": 18,
+    "durationMs": 565149,
+    "editionsByLanguage": {
+      "en": 67,
+      "fr": 70
+    },
+    "entriesBySeriesLanguage": {
+      "audit": {
+        "en": 33,
+        "fr": 33
+      },
+      "eval": {
+        "en": 45,
+        "fr": 44
+      }
+    },
+    "gapsByKind": {
+      "document": 12,
+      "pairing": 29
+    },
+    "indexHashes": {
+      "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations.html": "c7e4137436c9d062a49810044c255341388e3076d8243a08ff8402a5df67fbac",
+      "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/internal-audits.html": "aa5170cac8e0544c39cb85f604b7689895165fd839a205563e9533cdd0258178",
+      "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/audits-internes.html": "6cfbe5255d8019cdf9f5023ff5563a9bc8bbaab3f6ed8e656a0656dbd17d7a6a",
+      "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/evaluations.html": "77fe29a525bbe400c5a62a86512b37c36b9b3e9f76699b49f4cd726eb63d7f76"
+    },
+    "indexes": [
+      {
+        "bytes": 43509,
+        "entries": 45,
+        "language": "en",
+        "series": "eval",
+        "sha256": "c7e4137436c9d062a49810044c255341388e3076d8243a08ff8402a5df67fbac",
+        "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations.html"
+      },
+      {
+        "bytes": 45442,
+        "entries": 44,
+        "language": "fr",
+        "series": "eval",
+        "sha256": "77fe29a525bbe400c5a62a86512b37c36b9b3e9f76699b49f4cd726eb63d7f76",
+        "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/evaluations.html"
+      },
+      {
+        "bytes": 43193,
+        "entries": 33,
+        "language": "en",
+        "series": "audit",
+        "sha256": "aa5170cac8e0544c39cb85f604b7689895165fd839a205563e9533cdd0258178",
+        "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/internal-audits.html"
+      },
+      {
+        "bytes": 44692,
+        "entries": 33,
+        "language": "fr",
+        "series": "audit",
+        "sha256": "6cfbe5255d8019cdf9f5023ff5563a9bc8bbaab3f6ed8e656a0656dbd17d7a6a",
+        "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/audits-internes.html"
+      }
+    ],
+    "observedAt": "2026-11-24T19:24:58.115452Z",
+    "pairingGaps": 29,
+    "reconciliation": {
+      "baselineDate": "2026-11-23",
+      "baselineLinkAppearances": 316,
+      "baselineTitleAppearances": 181,
+      "explanation": "The baseline counted 181 title paragraphs; 155 of them carry links. The 26 audit paragraphs without links are notes inside a fiscal-year group, not entries. The 318 anchors include 36 links in those notes; the intake inventories 282 link appearances.",
+      "liveSnapshotAnchors": 318,
+      "observedLinkAppearances": 282,
+      "observedTitleAppearances": 155
+    },
+    "toolVersion": "1.0.0",
+    "uniqueWorks": 83,
+    "versions": 234
+  },
+  "replay": {
+    "changeCounts": {},
+    "versions": 234,
+    "durationMs": 1285
+  },
+  "database": {
+    "works": 83,
+    "editions": 137,
+    "documents": 246,
+    "documentsStored": 234,
+    "versions": 234,
+    "changes": 246,
+    "gaps": 82
+  },
+  "acceptanceTargets": {
+    "lakeWinnipeg": {
+      "id": "eccc-eval-freshwater-action-plan-lake-winnipeg-basin",
+      "title_en": "Evaluation of Freshwater Action Plan: Lake Winnipeg Basin Program",
+      "title_fr": "Évaluation Plan d’action sur l’eau douce : Programme du bassin du lac Winnipeg",
+      "documents": [
+        {
+          "language": "en",
+          "kind": "report",
+          "label": "Report",
+          "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations/freshwater-action-plan-lake-winnipeg-basin.html"
+        },
+        {
+          "language": "en",
+          "kind": "summary",
+          "label": "Summary",
+          "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations/freshwater-action-plan-lake-winnipeg-basin/at-a-glance.html"
+        },
+        {
+          "language": "fr",
+          "kind": "report",
+          "label": "Rapport",
+          "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/evaluations/plan-action-eau-douce-bassin-lac-winnipeg.html"
+        },
+        {
+          "language": "fr",
+          "kind": "summary",
+          "label": "Sommaire",
+          "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/evaluations/plan-action-eau-douce-bassin-lac-winnipeg/regards.html"
+        }
+      ]
+    },
+    "freshwaterQualityScience": {
+      "id": "eccc-eval-evaluation-eccc-freshwater-quality-science-report-preliminary-apr-2026",
+      "title_en": "Evaluation of ECCC’s Freshwater Quality Science",
+      "title_fr": "Évaluation de l’exécution de la science de la qualité de l’eau douce par ECCC",
+      "documents": [
+        {
+          "language": "en",
+          "kind": "report",
+          "label": "Report",
+          "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations/evaluation-eccc-freshwater-quality-science-report-preliminary-apr-2026.html"
+        },
+        {
+          "language": "en",
+          "kind": "summary",
+          "label": "Summary",
+          "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations/evaluation-eccc-freshwater-quality-science-report-preliminary-apr-2026/at-a-glance.html"
+        },
+        {
+          "language": "fr",
+          "kind": "report",
+          "label": "Rapport",
+          "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/evaluations/evaluation-execution-science-qualite-eau-douce-eccc-preliminaire-rapport-avr-2026.html"
+        },
+        {
+          "language": "fr",
+          "kind": "summary",
+          "label": "Sommaire",
+          "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/evaluations/evaluation-execution-science-qualite-eau-douce-eccc-preliminaire-rapport-avr-2026/regards.html"
+        }
+      ]
+    },
+    "grantsAndContributions": {
+      "id": "eccc-audit-at-a-glance",
+      "title_en": "Audit of the Administration of Grants and Contributions at ECCC",
+      "title_fr": "Audit de l’administration des subventions et des contributions à ECCC",
+      "documents": [
+        {
+          "language": "en",
+          "kind": "other",
+          "label": "Report summary",
+          "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/internal-audits/audit-administration-grants-contributions-eccc-2024/at-a-glance.html"
+        },
+        {
+          "language": "en",
+          "kind": "other",
+          "label": "Final report",
+          "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/internal-audits/audit-administration-grants-contributions-eccc-2024.html"
+        },
+        {
+          "language": "en",
+          "kind": "other",
+          "label": "Progress report",
+          "url": "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/internal-audits/audit-administration-grants-contributions-eccc-2024/progress-2021-review-insights.html"
+        },
+        {
+          "language": "fr",
+          "kind": "other",
+          "label": "Sommaire du rapport",
+          "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/audits-internes/audit-administration-subventions-contributions-eccc-2024/apercu.html"
+        },
+        {
+          "language": "fr",
+          "kind": "other",
+          "label": "Rapport sur les progrès réalisés",
+          "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/audits-internes/audit-administration-subventions-contributions-eccc-2024/progres-2021-examen-observations.html"
+        },
+        {
+          "language": "fr",
+          "kind": "report",
+          "label": "Rapport final",
+          "url": "https://www.canada.ca/fr/environnement-changement-climatique/organisation/transparence/priorites-gestion/audits-internes/audit-administration-subventions-contributions-eccc-2024.html"
+        }
+      ]
+    }
+  },
+  "acquisitionOutcomes": {
+    "http202PartnerPages": "12 Natural Resources Canada pages answer HTTP 202 with no body to a non-browser client; they are recorded as fetch failures, not confirmed gaps.",
+    "unpairedWorks": "29 works have one edition because the publisher provides no explicit language alternate (mostly audit PDFs and partner-department reports). They are not merged by translated title.",
+    "duplicateAppearances": "18 index appearances repeat an entry already present for the same series and language; the edition is written once and the repetition is counted.",
+    "baselineDifference": "181 baseline title paragraphs vs 155 link-bearing entries: 26 audit paragraphs are notes without links. 318 anchors include 36 links inside those notes; 282 link appearances are inventoried."
+  },
+  "transport": {
+    "userAgent": "civicsignal.ca research crawler (info@civicsignal.ca)",
+    "note": "canada.ca resets HTTP/2 streams for the previous \"read-only\" crawler string; the new honest string is accepted.",
+    "legacyHttp": "http publications.gc.ca links are fetched over https and keep the published URL as the citation.",
+    "contentDigest": "Change detection hashes the page after removing scripts, styles and comments, because canada.ca injects a fresh analytics script on every response."
+  }
+}

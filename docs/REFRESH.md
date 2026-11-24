@@ -62,6 +62,7 @@ On Linux, use the same command from cron:
 | GEDS directory | Weekly, or change-triggered | The export's `Last-Modified` was 2026-10-25 when imported on November 24; a full import takes ~7 minutes and the snapshot is ~1.1 GB |
 | Full committee corpus (catalogue, download, expand, corpus) | Weekly | Walks thousands of originals; the calls intake already refreshes the time-sensitive surface |
 | Parliamentary catalogues, Journals, written questions | Weekly operator run | Follow the routine checks in [the plan](PLAN.md#routine-current-session-refresh) |
+| ECCC departmental publications | Weekly, currently manual | `python3 -B scripts/eccc-intake.py --workers 1`; 155 entries, 246 documents, ~9 minutes and 22 MB. [Intake](DEPARTMENTAL-PUBLICATIONS.md) |
 
 Use the daily report as the reliable signal for the three fast collections, and run the weekly sets by hand until their publication intervals are measured the same way.
 

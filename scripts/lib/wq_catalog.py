@@ -26,7 +26,9 @@ BASE = "https://www.ourcommons.ca"
 EN_LIST = BASE + "/written-questions/questions"
 FR_LIST = BASE + "/questions-ecrites/questions"
 OUT = Path(__file__).resolve().parents[2] / "data/corpus/written-questions/catalogue.json"
-UA = "CivicSignal public research inventory (read-only; contact civicsignal.ca)"
+# canada.ca resets HTTP/2 streams for the former "read-only" phrasing; this
+# honest crawler string is accepted and stays identifiable.
+UA = "civicsignal.ca research crawler (info@civicsignal.ca)"
 
 
 class Node:
