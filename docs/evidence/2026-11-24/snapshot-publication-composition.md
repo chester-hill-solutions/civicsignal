@@ -48,3 +48,7 @@ The historical `9109` failures and automatic approval refusal for broader
 OAuth remain the account-authority evidence for that attempt. The new baseline
 establishes scoped read access. MP-02 remains open until the hosted event and
 complete publication qualify. [Prior attempt](../../V1-RELEASE.md#november-22-staging-publication-version) · [Qualification procedure](../../V1-SCHEDULED-PUBLICATION-REVIEW.md#before-a-hosted-proposal-is-executable)
+
+Aboiteau Work returned a retained review in `turn_124b8d60-d27a-4849-8f49-56cf4597485e`. It called for a complete, untruncated listing of the event-specific prefix, a separate missing qualified manifest, and the pinned canonical manifest. The read-only adapter uses the Cloudflare REST pagination envelope for this check. It forwards the outer admission deadline to the source, instance and R2 readers. Its five reads comprise one anonymous Justice Canada head request, one exact Workflow instance GET through `cf`, and three R2 GETs. Controlled responses exercised R2 admission. The exact-instance CLI returned 404/10400 against the expired event, and the public head still matched the November reference. [Exact instance evidence](staging-workflow-instance-absence.json) · [Operator procedure](../../V1-SCHEDULED-PUBLICATION-REVIEW.md)
+
+With the acquired source databases enabled, 386 tests passed across the eleven endpoint, Hansard, calendar, admission and artifact verification files. All four TypeScript projects and the lint ratchet passed.

@@ -1,9 +1,10 @@
 #!/usr/bin/env bun
 import { createHash } from 'node:crypto';
 import { FRESH_SNAPSHOT_STAGE_ID } from './lib/snapshot-calendar';
-import { observeSnapshotHostedDeployment, readSnapshotCfBytes, requireSnapshotHostedDeployment, snapshotDeploymentPin } from './lib/snapshot-hosted-admission';
+import { observeSnapshotHostedDeployment, readSnapshotCfBytes, requireSnapshotHostedDeployment, requireSnapshotWorkflowInstanceAbsent,
+  snapshotDeploymentPin } from './lib/snapshot-hosted-admission';
 import { stagingNames } from './lib/staging-config';
-import { stagedPublicationPins } from './verify-staged-snapshot';
+import { loadStagedPublication, stagedPublicationPins } from './verify-staged-snapshot';
 
 async function freshBaseline(pin: ReturnType<typeof snapshotDeploymentPin.parse>) {
   const worker = FRESH_SNAPSHOT_STAGE_ID;
@@ -23,6 +24,13 @@ async function freshBaseline(pin: ReturnType<typeof snapshotDeploymentPin.parse>
 }
 
 async function main(args: string[]) {
+  if (args[0] === '--fresh' && args[1] === '--instance-absent' && args.length === 4 && args[3]) {
+    if (args[2] === '--instance-id') return requireSnapshotWorkflowInstanceAbsent(args[3]);
+    if (args[2] === '--packet') {
+      const { publication: { qualification } } = await loadStagedPublication(args[3]);
+      return requireSnapshotWorkflowInstanceAbsent(qualification.instanceId);
+    }
+  }
   if (args[0] === '--fresh' && args[1] === '--baseline' && args.length === 6 &&
     args[2] === '--deployment-id' && args[4] === '--version-id') {
     return freshBaseline(snapshotDeploymentPin.parse({ deploymentId: args[3], versionId: args[5] }));

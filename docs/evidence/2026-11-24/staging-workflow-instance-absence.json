@@ -1,0 +1,43 @@
+{
+  "scope": "read-only observation of the expired November 23 staging qualification",
+  "worker": "civicsignal-v1-stage-nov16-snapshot",
+  "workflowId": "c8ba63d3-a002-4c62-8669-45c7c4c2bf40",
+  "workflowIdSource": "staging-publication-cf-baseline.json",
+  "scheduledAt": "2026-11-23T03:47:00.000Z",
+  "instanceId": "qual-b2b763a9599803fe0ed7aa1c8dd2575cbf78590ed666f755a48f2308e6a55b54",
+  "provider": {
+    "cliVersion": "1.0.0-beta.10",
+    "method": "GET",
+    "arguments": [
+      "workflows",
+      "instances",
+      "get",
+      "qual-b2b763a9599803fe0ed7aa1c8dd2575cbf78590ed666f755a48f2308e6a55b54",
+      "--workflow-name",
+      "civicsignal-v1-stage-nov16-snapshot",
+      "--simple",
+      "true"
+    ],
+    "providerReadCount": 3,
+    "codeObservedAt": "2026-11-24T22:14:46.234Z",
+    "exactPathConfirmedAt": "2026-11-24T22:15:37.040Z",
+    "exitCode": 1,
+    "httpStatus": 404,
+    "providerCode": 10400,
+    "providerMessage": "workflows.api.error.instance.not_found",
+    "exactAccountWorkflowInstancePathMatched": true,
+    "exactQueryMatched": "simple=true"
+  },
+  "recheckCommand": "bun --no-env-file scripts/check-snapshot-hosted.ts --fresh --instance-absent --instance-id qual-b2b763a9599803fe0ed7aa1c8dd2575cbf78590ed666f755a48f2308e6a55b54",
+  "futurePacketCommand": "bun --no-env-file scripts/check-snapshot-hosted.ts --fresh --instance-absent --packet <prepared-stage.json>",
+  "instanceAbsentAtObservation": true,
+  "freshEventAdmitted": false,
+  "workerCalendarRead": false,
+  "hostedWrites": 0,
+  "implementedCliRecheck": {
+    "observedAt": "2026-11-24T22:21:42.286Z",
+    "instanceAbsent": true,
+    "httpStatus": 404,
+    "providerCode": 10400
+  }
+}

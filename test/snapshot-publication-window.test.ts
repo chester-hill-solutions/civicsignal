@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import creation from '../docs/evidence/2026-11-22/november-workflow-creation.json';
 import { FRESH_SNAPSHOT_STAGE_ID as worker } from '../scripts/lib/snapshot-calendar';
-import { missingSnapshotDiagnosticKey, MissingSnapshotDiagnostic } from '../scripts/lib/snapshot-hosted-admission';
-import { createSnapshotCfOutcomeReader } from '../scripts/lib/snapshot-publication-cf';
+import { missingSnapshotDiagnosticKey, MissingSnapshotDiagnostic, MissingSnapshotWorkflowInstance } from '../scripts/lib/snapshot-hosted-admission';
+import { createSnapshotCfAdmissionReader, createSnapshotCfOutcomeReader } from '../scripts/lib/snapshot-publication-cf';
 import { runStagedSnapshotPublication } from '../scripts/lib/snapshot-publication-window';
 import * as verifier from '../scripts/verify-staged-snapshot';
 import { QUALIFICATION_STAGE_ID, qualificationIdentity, qualificationRecord } from '../services/snapshot/qualification';
@@ -103,6 +103,36 @@ function cfFixture(f: Awaited<ReturnType<typeof fixture>>) {
     workflowId: creation.workflow.id, configSha256, deployment: f.options.deployment, pins: verifier.stagedPublicationPins, evidenceTime: f.options.evidenceTime };
   return { read, bytes, completed, objects, confirmMissing, instanceArgv, create, preparedTarget };
 }
+
+it('binds anonymous Justice head, exact instance and R2 admission reads to the reviewed packet', async () => {
+  const f = await fixture();
+  const { preparedTarget: target, instanceArgv } = cfFixture(f);
+  const signal = new AbortController().signal;
+  const options = { packetPath: f.options.packetPath, reviewId: 'review', r2ReadToken: 'fixture-token' };
+  const github = (sha: string) => Response.json([{ sha, commit: { committer: { date: reference.date + 'T12:00:00Z' } } }]);
+  const send = vi.fn<typeof fetch>().mockResolvedValueOnce(github(reference.commit));
+  const cf = vi.fn().mockRejectedValue(new MissingSnapshotWorkflowInstance(f.qualification.instanceId));
+  const r2 = { scope: 'staging-r2-admission', bucket: target.bucket, qualification: f.qualification.digest,
+    namespace: f.qualification.prefix, observedAt: scheduledAt, prefixEmpty: true as const, manifestAbsent: true as const,
+    canonical, reads: { requests: 3, responseBytes: 45000 } };
+  const storage = vi.spyOn(verifier, 'verifyStagedR2Admission').mockResolvedValue(r2);
+  const admit = createSnapshotCfAdmissionReader(options, send, cf);
+  await expect(admit(target, signal)).resolves.toMatchObject({ reviewId: 'review', currentSource: f.qualification.identity.revision,
+    observedAt: scheduledAt, prefixEmpty: true, manifestAbsent: true, instanceAbsent: true, canonical });
+  const [url, init] = send.mock.calls[0] ?? [];
+  expect(url).toBe('https://api.github.com/repos/justicecanada/laws-lois-xml/commits?sha=main&per_page=1');
+  expect(new Headers(init?.headers).has('authorization')).toBe(false);
+  expect(cf).toHaveBeenCalledWith(instanceArgv, signal);
+  expect(storage).toHaveBeenCalledWith(options.packetPath, options.r2ReadToken, send, signal);
+
+  send.mockResolvedValueOnce(github('a'.repeat(40)));
+  await expect(admit(target, signal)).rejects.toThrow('SNAPSHOT_CF_PUBLICATION_SOURCE');
+  expect(cf).toHaveBeenCalledTimes(1);
+  expect(storage).toHaveBeenCalledTimes(1);
+  send.mockResolvedValueOnce(github(reference.commit));
+  storage.mockResolvedValueOnce({ ...r2, qualification: 'f'.repeat(64) });
+  await expect(admit(target, signal)).rejects.toThrow('SNAPSHOT_CF_PUBLICATION_PACKET');
+});
 
 describe('staging first-publication evidence composition', () => {
   it('binds reviewed preflight, fixed deployment, settled calendar, completed instance and pinned verification', async () => {

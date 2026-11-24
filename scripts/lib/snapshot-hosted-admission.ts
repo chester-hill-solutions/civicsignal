@@ -22,6 +22,18 @@ export class MissingSnapshotDiagnostic extends Error {
   constructor(readonly key: string) { super('SNAPSHOT_HOSTED_DIAGNOSTIC_MISSING'); }
 }
 
+export class MissingSnapshotWorkflowInstance extends Error {
+  constructor(readonly instanceId: string) { super('SNAPSHOT_HOSTED_INSTANCE_MISSING'); }
+}
+
+const snapshotInstanceId = z.string().regex(/^qual-[a-f0-9]{64}$/);
+const cfExitWithStderr = z.object({ code: z.literal(1), stderr: z.instanceof(Buffer) });
+
+function cfErrorLines(error: unknown) {
+  const failure = cfExitWithStderr.safeParse(error);
+  return failure.success ? stripVTControlCharacters(failure.data.stderr.toString('utf8')).split(/\r?\n/) : undefined;
+}
+
 /** cf beta.10 reports the provider code and the exact object path on stderr. */
 export function missingSnapshotDiagnosticKey(args: string[], error: unknown): string | undefined {
   const key = args[3] ?? '';
@@ -29,11 +41,21 @@ export function missingSnapshotDiagnosticKey(args: string[], error: unknown): st
   if (args.length !== 6 || args.slice(0, 3).join(' ') !== 'r2 objects get' ||
     args[4] !== '--bucket-name' || args[5] !== bucket ||
     !/^qualifications\/[a-z][a-z0-9-]{0,39}\/[0-9a-f]{64}\/diagnostics\/(?:failed|existing)\.json$/.test(key)) return;
-  const failure = z.object({ code: z.literal(1), stderr: z.instanceof(Buffer) }).safeParse(error);
-  if (!failure.success) return;
-  const lines = stripVTControlCharacters(failure.data.stderr.toString('utf8')).split(/\r?\n/);
+  const lines = cfErrorLines(error);
   const path = `/accounts/${STAGING_ACCOUNT}/r2/buckets/${bucket}/objects/${encodeURIComponent(key)}`;
-  if (lines.includes('│ [10007] The specified key does not exist.') && lines.includes(`│ 404 Not Found · HTTP ${path}`)) return key;
+  if (lines?.includes('│ [10007] The specified key does not exist.') && lines.includes(`│ 404 Not Found · HTTP ${path}`)) return key;
+}
+
+export function snapshotWorkflowInstanceArgs(instanceId: string) {
+  return ['workflows', 'instances', 'get', snapshotInstanceId.parse(instanceId), '--workflow-name', FRESH_SNAPSHOT_STAGE_ID, '--simple', 'true'];
+}
+
+export function missingSnapshotWorkflowInstanceId(args: string[], error: unknown): string | undefined {
+  const instance = snapshotInstanceId.safeParse(args[3]);
+  if (!instance.success || args.length !== 8 || !snapshotWorkflowInstanceArgs(instance.data).every((arg, index) => args[index] === arg)) return;
+  const lines = cfErrorLines(error);
+  const path = `/accounts/${STAGING_ACCOUNT}/workflows/${FRESH_SNAPSHOT_STAGE_ID}/instances/${instance.data}?simple=true`;
+  if (lines?.includes('│ [10400] workflows.api.error.instance.not_found') && lines.includes(`│ 404 Not Found · HTTP ${path}`)) return instance.data;
 }
 
 /** The staging metadata and canonical reference reads fit in 64 KiB. */
@@ -43,10 +65,29 @@ export async function readSnapshotCfBytes(args: string[], signal?: AbortSignal):
       env: { ...process.env, CLOUDFLARE_ACCOUNT_ID: STAGING_ACCOUNT, CF_TELEMETRY_DISABLED: '1' } });
     return stdout;
   } catch (error) {
-    const missing = missingSnapshotDiagnosticKey(args, error);
-    if (!signal?.aborted && missing) throw new MissingSnapshotDiagnostic(missing);
+    if (!signal?.aborted) {
+      const diagnostic = missingSnapshotDiagnosticKey(args, error);
+      if (diagnostic) throw new MissingSnapshotDiagnostic(diagnostic);
+      const instanceId = missingSnapshotWorkflowInstanceId(args, error);
+      if (instanceId) throw new MissingSnapshotWorkflowInstance(instanceId);
+    }
     throw new Error('SNAPSHOT_HOSTED_CF_READ');
   }
+}
+
+/** Read only the requested ID. A successful response establishes presence,
+ * and only the matching instance-specific provider error establishes absence. */
+export async function requireSnapshotWorkflowInstanceAbsent(instanceId: string, signal?: AbortSignal, read = readSnapshotCfBytes) {
+  const args = snapshotWorkflowInstanceArgs(instanceId);
+  signal?.throwIfAborted();
+  try { await read(args, signal); }
+  catch (error) {
+    signal?.throwIfAborted();
+    if (!(error instanceof MissingSnapshotWorkflowInstance) || error.instanceId !== instanceId) throw error;
+    return { scope: 'staging-workflow-instance-absence', worker: FRESH_SNAPSHOT_STAGE_ID, instanceId, instanceAbsent: true as const,
+      httpStatus: 404, providerCode: 10400, observedAt: new Date().toISOString() };
+  }
+  throw new Error('SNAPSHOT_HOSTED_INSTANCE_PRESENT');
 }
 
 async function readCf(args: string[]): Promise<unknown> {

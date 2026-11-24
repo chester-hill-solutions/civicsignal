@@ -2,12 +2,16 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import { QUALIFICATION_RECEIPT_BYTES } from '../../services/snapshot/qualification-store';
+import { CORPUS_REPO } from '../../src/ingest/source';
+import { requestSourceHead } from '../../src/ingest/source-head';
+import { verifyStagedR2Admission } from '../verify-staged-snapshot';
 import { FRESH_SNAPSHOT_STAGE_ID } from './snapshot-calendar';
-import { MissingSnapshotDiagnostic, readSnapshotCfBytes } from './snapshot-hosted-admission';
+import { MissingSnapshotDiagnostic, readSnapshotCfBytes, requireSnapshotWorkflowInstanceAbsent, snapshotWorkflowInstanceArgs } from './snapshot-hosted-admission';
 import type { runStagedSnapshotPublication } from './snapshot-publication-window';
 import { stagingNames } from './staging-config';
 
 type ObservePublication = Parameters<typeof runStagedSnapshotPublication>[1]['observePublication'];
+type AdmitPublication = Parameters<typeof runStagedSnapshotPublication>[1]['admit'];
 type Target = Parameters<ObservePublication>[0];
 type MissingDiagnostics = Record<'failed' | 'existing', null>;
 
@@ -41,6 +45,35 @@ function boundTarget(target: Target) {
     !/^[a-f0-9]{64}$/.test(digest) || instanceId !== `qual-${digest}` || prefix !== `qualifications/${id}/${digest}/`) {
     throw new Error('SNAPSHOT_CF_PUBLICATION_TARGET');
   }
+}
+
+export function requireSnapshotCfUnusedInstance(target: Target, signal: AbortSignal, read = readSnapshotCfBytes) {
+  boundTarget(target);
+  return requireSnapshotWorkflowInstanceAbsent(target.qualification.instanceId, signal, read);
+}
+
+/** Called inside the guarded publication window after the owner approves the packet and its read budget. */
+export function createSnapshotCfAdmissionReader(options: { packetPath: string; reviewId: string; r2ReadToken: string },
+  send = fetch, read = readSnapshotCfBytes): AdmitPublication {
+  if (!options.reviewId.trim() || options.reviewId.length > 128) throw new Error('SNAPSHOT_CF_PUBLICATION_REVIEW');
+  return async (target, signal) => {
+    boundTarget(target);
+    signal.throwIfAborted();
+    const currentSource = await requestSourceHead(`https://api.github.com/repos/${CORPUS_REPO}`, 'main',
+      { Accept: 'application/vnd.github+json', 'User-Agent': 'CivicSignal-staging-admission' }, (url, init) =>
+        send(url, { ...init, signal: init.signal ? AbortSignal.any([signal, init.signal]) : signal }));
+    if (!isDeepStrictEqual(currentSource, target.qualification.identity.revision)) throw new Error('SNAPSHOT_CF_PUBLICATION_SOURCE');
+    signal.throwIfAborted();
+    const instance = await requireSnapshotCfUnusedInstance(target, signal, read);
+    signal.throwIfAborted();
+    const r2 = await verifyStagedR2Admission(options.packetPath, options.r2ReadToken, send, signal);
+    signal.throwIfAborted();
+    if (r2.qualification !== target.qualification.digest || r2.namespace !== target.qualification.prefix || r2.bucket !== target.bucket) {
+      throw new Error('SNAPSHOT_CF_PUBLICATION_PACKET');
+    }
+    return { reviewId: options.reviewId, currentSource, observedAt: r2.observedAt, instanceAbsent: instance.instanceAbsent,
+      prefixEmpty: r2.prefixEmpty, manifestAbsent: r2.manifestAbsent, canonical: r2.canonical };
+  };
 }
 
 async function requireMissing(keys: Readonly<Record<'failed' | 'existing', string>>, signal: AbortSignal,
@@ -79,8 +112,7 @@ export function createSnapshotCfOutcomeReader(options: {
     };
     for (let attempt = 0; attempt < maxInstanceReads; attempt++) {
       signal.throwIfAborted();
-      const instance = responseMetadata(await read(
-        ['workflows', 'instances', 'get', q.instanceId, '--workflow-name', FRESH_SNAPSHOT_STAGE_ID, '--simple', 'true'], signal));
+      const instance = responseMetadata(await read(snapshotWorkflowInstanceArgs(q.instanceId), signal));
       const terminal = completed.safeParse(instance);
       if (terminal.success) {
         const { start, end, params, output } = terminal.data;
