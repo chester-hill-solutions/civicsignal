@@ -39,7 +39,7 @@ bun scripts/written-questions-read.ts search data/corpus/written-questions/quest
 bun scripts/written-questions-read.ts coverage data/corpus/written-questions/questions.sqlite 45-1
 ```
 
-To test authenticated Worker requests against the full local collection, set `CIVICSIGNAL_WRITTEN_QUESTIONS_D1` to the generated CIVIC_DB SQLite file, then run the endpoint test.
+To test authenticated Worker requests against the full local collection, set `CIVICSIGNAL_WRITTEN_QUESTIONS_D1` to the generated CIVIC_DB SQLite file. The test reconciles both languages with the publisher totals and acquisition states in `data/corpus/written-questions/coverage.json`. Set `CIVICSIGNAL_WRITTEN_QUESTIONS_COVERAGE` to the matching receipt when verifying another snapshot.
 
 ```sh
 bun run test test/endpoints.test.ts -t 'House written questions through the Worker'

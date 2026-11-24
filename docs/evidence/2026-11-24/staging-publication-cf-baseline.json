@@ -1,0 +1,67 @@
+{
+  "scope": "staging-read-only-baseline",
+  "deployment": {
+    "worker": "civicsignal-v1-stage-nov16-snapshot",
+    "deploymentId": "4cbfc139-4d85-416d-967c-f90ea4e9b343",
+    "versions": [
+      {
+        "version_id": "ce6deccb-c345-43ca-9fe5-b6c7d0b04836",
+        "percentage": 100
+      }
+    ],
+    "workflowId": "c8ba63d3-a002-4c62-8669-45c7c4c2bf40",
+    "workflowModifiedOn": "2026-11-23T02:29:06.701Z",
+    "nativeCalendar": "unknown",
+    "nativeCalendarEvidence": "unscheduled-creation",
+    "observedAt": "2026-11-24T21:27:03.289Z"
+  },
+  "anyWorkflowInstances": false,
+  "canonical": {
+    "bucket": "civicsignal-v1-stage-corpus-20261022",
+    "key": "snapshots/statutes-v2/0507465393c224c0491fc8c17c88340217acc656.manifest.json",
+    "bytes": 44627,
+    "sha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e"
+  },
+  "finishedAt": "2026-11-24T21:27:05.610Z",
+  "runtime": {
+    "cli": "cf 1.0.0-beta.10",
+    "command": "bun --no-env-file scripts/check-snapshot-hosted.ts --fresh --baseline --deployment-id 4cbfc139-4d85-416d-967c-f90ea4e9b343 --version-id ce6deccb-c345-43ca-9fe5-b6c7d0b04836"
+  },
+  "upstream": {
+    "repository": "justicecanada/laws-lois-xml",
+    "branch": "main",
+    "sha": "855cdfc65207a6906c414e09a77d7f93267c5356",
+    "committedAt": "2026-11-16T15:21:51Z",
+    "matchesReference": true,
+    "recheckAtAdmission": true
+  },
+  "calendarAccess": {
+    "nativeWorkflowEvidence": "unscheduled-creation",
+    "workerScriptScheduleListObserved": false,
+    "workerScriptScheduleWriteTested": false,
+    "workerScriptScheduleCleanupTested": false,
+    "installedCf": "1.0.0-beta.10",
+    "latestCfMetadataInspected": "1.0.0-rc.5",
+    "commandAvailable": "cf workers triggers deploy",
+    "standaloneScriptSchedulesGetOrPutCommandFound": false,
+    "defaultProfilePermissionGroupRead": {
+      "status": 403,
+      "providerCode": 9109
+    },
+    "existingProvisioningProfileRole": {
+      "name": "Individual Workers Editor",
+      "scopes": [
+        "com.cloudflare.edge.worker.script"
+      ],
+      "isSelectable": false
+    }
+  },
+  "firstPublicationObserved": false,
+  "missingDiagnosticProbe": {
+    "scope": "expired November 23 staging namespace",
+    "key": "qualifications/nov16-20261123-0347/b2b763a9599803fe0ed7aa1c8dd2575cbf78590ed666f755a48f2308e6a55b54/diagnostics/failed.json",
+    "httpStatus": 404,
+    "providerCode": 10007,
+    "exactRequestPathMatched": true
+  }
+}

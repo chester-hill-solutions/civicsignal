@@ -3,7 +3,8 @@ import sqlite3
 import sys
 import tempfile
 import unittest
-from contextlib import closing
+from contextlib import closing, redirect_stderr
+from io import StringIO
 from pathlib import Path
 from stat import S_IMODE
 
@@ -98,6 +99,72 @@ class CommitteeMaterializationTests(unittest.TestCase):
         self.assertEqual(db.execute("SELECT cutoff FROM cc_snapshot WHERE session='45-1'").fetchone()[0],
                          "2026-11-22T00:00:00Z")
         db.close()
+
+    def seed_calls(self):
+        with closing(sqlite3.connect(self.source)) as db, db:
+            for language, title in (("en", "Watersheds"), ("fr", "Bassins versants")):
+                write_record(db, {"session": "45-1", "id": "envi-study-1", "language": language,
+                                  "kind": "study", "title": title})
+                write_record(db, {"session": "45-1", "id": "envi-call-1", "language": language,
+                                  "kind": "call", "title": title, "metadata": {"listed": True}})
+                write_link(db, "45-1", language, "envi-study-1", "envi-call-1", "study-call")
+
+    def test_call_overlay_updates_only_scoped_rows_and_repeats_without_writes(self):
+        materializer.materialize(self.source, self.target)
+        with closing(sqlite3.connect(self.target)) as db, db:
+            write_record(db, {"session": "45-1", "id": "envi-study-1", "language": "en",
+                              "kind": "study", "title": "Participate"})
+            write_record(db, {"session": "45-1", "id": "envi-study-1", "language": "fr",
+                              "kind": "study", "title": "Conserver ce titre"})
+        self.seed_calls()
+        first = materializer.publish_calls(self.source, self.target)
+        self.assertEqual((first["calls"], first["rowsWritten"], first["linksAdded"]), (2, 2, 2))
+        self.assertEqual(first["studyTitlesRepaired"], 1)
+
+        with closing(sqlite3.connect(self.source)) as db, db:
+            db.execute("""UPDATE cc_records SET metadata_json='{"listed":false}'
+                          WHERE id='envi-call-1' AND language='fr'""")
+            db.execute("DELETE FROM cc_links WHERE child_id='envi-call-1' AND language='fr'")
+        changed = materializer.publish_calls(self.source, self.target)
+        self.assertEqual((changed["rowsWritten"], changed["linksRemoved"]), (1, 1))
+        replay = materializer.publish_calls(self.source, self.target)
+        self.assertEqual((replay["rowsWritten"], replay["linksAdded"], replay["linksRemoved"]), (0, 0, 0))
+        with closing(sqlite3.connect(self.target)) as db:
+            self.assertEqual(db.execute("SELECT title FROM cc_records WHERE id='envi-study-1' ORDER BY language")
+                             .fetchall(), [("Watersheds",), ("Conserver ce titre",)])
+            self.assertEqual(db.execute("SELECT metadata_json FROM cc_records WHERE id='envi-call-1' AND language='fr'")
+                             .fetchone(), ('{"listed":false}',))
+            self.assertEqual(db.execute("SELECT count(*) FROM cc_fts WHERE cc_fts MATCH 'Freshwater'")
+                             .fetchone(), (1,))
+            self.assertEqual(db.execute("SELECT count(*) FROM d1_migrations").fetchone(), (1,))
+
+    def test_call_overlay_rejects_different_generations_and_rolls_back_writes(self):
+        self.seed_calls()
+        with self.assertRaisesRegex(ValueError, "matching .* cutoffs"):
+            materializer.publish_calls(self.source, self.target)
+        with closing(sqlite3.connect(self.target)) as db, db:
+            mark_snapshot(db, "45-1", "2026-11-23T20:00:00Z")
+            db.execute("""CREATE TRIGGER stop_call BEFORE INSERT ON cc_links
+                WHEN NEW.relation='study-call' BEGIN SELECT RAISE(ABORT,'fixture interrupt'); END""")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "fixture interrupt"):
+            materializer.publish_calls(self.source, self.target)
+        with closing(sqlite3.connect(self.target)) as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM cc_records WHERE kind='call'").fetchone(), (0,))
+            self.assertEqual(db.execute("SELECT id FROM cc_records").fetchall(), [("prior",)])
+
+    def test_call_cli_requires_the_unique_documented_local_d1_file(self):
+        directory = Path(self.temp.name) / "v3/d1/miniflare-D1DatabaseObject"
+        directory.mkdir(parents=True)
+        self.target.rename(directory / "different.sqlite")
+        args = ["--source", str(self.source), "--persist-to", self.temp.name, "--calls-only"]
+        with redirect_stderr(StringIO()) as error:
+            self.assertEqual(materializer.main(args), 1)
+        self.assertIn("documented local committee D1 binding", error.getvalue())
+
+        (directory / materializer.CALLS_D1_FILE).touch()
+        with redirect_stderr(StringIO()) as error:
+            self.assertEqual(materializer.main(args), 1)
+        self.assertIn("found 2", error.getvalue())
 
     @unittest.skipUnless(sys.platform == "darwin", "APFS local publication")
     def test_apfs_clone_materializes_a_fresh_migrated_target_and_repeats(self):

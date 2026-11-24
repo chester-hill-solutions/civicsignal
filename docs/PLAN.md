@@ -12,6 +12,11 @@ Use the [reference map](#reference-map) for contracts, procedures, and historica
 
 ## Immediate work order
 
+### Pipeline verification priorities
+
+1. **Verify unattended daily refresh through the serving databases.** The November 24 calendar rehearsal passed all three intakes and all four authenticated Worker checks in the updated serving stores. For the next regular 06:15 Toronto occurrence, match the installed agent’s run and exit status to the dated full report and serving results. [Routine refresh](#routine-current-session-refresh)
+2. **Qualify scheduled statutes publication on the isolated staging Worker.** Recheck the Justice Canada head and use `cf` to bind the active deployment and Workflow to the new event. Admission requires an unused instance, an empty publication namespace, the canonical backup, and two cleanup guards with schedule access through final readback. Close MP-02 after the scheduled event produces a first publication that matches the frozen reference and both guards leave the calendar empty. [MP-02 acceptance](#mp-02-qualify-scheduled-first-publication)
+
 ### Release work
 
 1. **Bind the candidate under MP-01.** Match each operation to its source, checks, and target identities. Use the [candidate inventory](#implementation-progress) to keep local, staging, and production evidence distinct.
@@ -21,6 +26,8 @@ Use the [reference map](#reference-map) for contracts, procedures, and historica
 5. **Complete MP-06 after MP-02, MP-03, and MP-05 close.** Audit all ten requirements. Submit the exact production candidate and rollback procedure for the release decision. Record the approved operation's outcome. [Final release](#mp-06-qualify-the-final-source-and-release-packet)
 
 ### Local source and staffer work
+
+Resume source expansion after the unattended refresh check. The staffer review can proceed independently.
 
 1. Review the [five freshwater briefs for May 25–29, 2026](../preview/policy-files/freshwater-2026-05-25/BRIEFS.md) with a staffer. Check who owns the two deadlines. Decide where to put Q-1010 and the Charlo groundwater lead. Revise the watch terms from misses and false positives. Replay the week. [Pilot checks](#parliament-monitor-workflow-benchmark)
 2. Continue the [current-session Hansard replay](#hansard-http-preview) with the week of October 26. Use the repaired committee clone and deterministic House Journals replay checks in the [refresh work](#routine-current-session-refresh).
@@ -236,6 +243,8 @@ Use the [release evidence ledger](V1-RELEASE.md), [operations procedure](V1-OPER
 
 The November runtime and offline proposal pass in an isolated checkout of `3f16f93` with the updated qualification reference. Hosted operator rebinding, execution admission, and hosted qualification remain open.
 The retained October reference is historical. The November 16 reference passed local byte and row checks. The qualification admits only the current upstream head at execution, so the next proposal must bind the verified reference and confirm that head again at admission.
+
+On November 24, `cf` confirmed the pinned staging deployment at 100%, its Workflow identity, and an empty instance list. The canonical backup matched the expected 44,627 bytes and SHA-256. Justice Canada's current head remained `855cdfc`. The default `cf` profile received HTTP 403 (9109) on the single-Worker role lookup. The provisioning profile reported that role as unavailable for selection. The installed CLI exposes a broader trigger deployment command. The remaining Worker calendar check requires an exact schedule read, bounded arm, two acknowledged cleanup writes, and independent empty readback on the isolated Worker. [Live cf baseline](evidence/2026-11-24/staging-publication-cf-baseline.json) · [Operator and verifier checks](evidence/2026-11-24/snapshot-publication-composition.md)
 **Requirements:** V1-04, V1-05, V1-09.
 
 - [x] Reuse the Workflow, parser, builder, archive checks, and manifest-last publication path.
@@ -254,7 +263,8 @@ The retained October reference is historical. The November 16 reference passed l
 - [x] Verify the new native calendar from its creation record and live metadata. Bind Worker calendar arming, both guards, and final readback to the selected staging identity.
 - [x] Upload and activate the November publication Worker version with the staging R2 binding and concrete UTC controls. Verify the deployed bytes, exact bindings, empty qualification prefix, unused instance, and preserved Workflow definition.
 - [ ] Prepare a new version for a fresh UTC event. Bind schedule authority through both cleanup guards and final observation. Check the new arming window.
-- [ ] Bind the calendar runner to hosted publication admission and artifact verification. Recheck the bundle, namespace, instance, canonical backup, and native Workflow calendar before execution.
+- [x] Connect the calendar runner to publication admission, exact event and Workflow outcome checks, and the pinned artifact verifier. Exercise the operator with controlled evidence and verify the current staging baseline through `cf`.
+- [ ] Bind the fresh deployed configuration, exact namespace and instance, backup, and event budget to the live operator. Repeat admission and verify the actual scheduled publication and artifacts.
 - [ ] Qualify exact Worker calendar arming and cleanup, including an independent empty readback, before selecting the executable event and budgets. Keep the native Workflow calendar empty.
 - [ ] Prepare finite admission windows, credential checks, stop conditions, and independent cleanup guards.
 - [ ] Run the tracked read-only verifier against the admitted staging namespace and retain the artifact and canonical-manifest result.
@@ -556,6 +566,12 @@ The two participation intakes can be assigned separately. Use one typed opportun
 ### Routine current-session refresh
 
 Use these checks in the operation of the collections already built. Each collection's dated evidence receipt provides its initial cutoff.
+
+The November 24 local run passed 2,627 Vitest cases across 151 files with Workerd and the acquired databases enabled. Its one skipped case passed separately against the pinned Justice Canada archive. The final endpoint run passed all 252 cases. Python discovery and the three separate Python suites passed 209 cases in total. All four TypeScript projects and six Worker dry-run builds passed.
+
+For tests against refreshed data, take expected totals, edition identities and citations from the acquisition that supplied the serving database. Keep exact historical counts with the identified snapshot. The November 24 audit covered consultations, committee calls and publications, funding, written questions, parliamentary inventories, GEDS and the statutes tar reader. Disposable written-question and Parliament updates passed against their matching databases. All three authenticated cases failed when the packet and database came from different observations, in either order. Separate committee and funding checks passed on the recorded baselines, the daily refresh and a disposable update with a dropped call, recovered French minutes and a reopened program. The statutes reader matched the independent tar listing of Justice Canada revision `855cdfc`. [Worker acceptance tests](../test/endpoints.test.ts) · [Parliament acquisition checks](../test/helpers/parliament-archives.ts) · [Statutes archive check](../test/tar.test.ts)
+
+For the daily job, inspect the latest full attempt and latest successful full run separately. A selective retry has its own report. Check committee calls against the dedicated session 45-1 D1 binding. A November 24 comparison found 30 acquired editions and zero calls in that binding before publication. The daily operator now publishes the calls there and checks each served edition. The 16:41 Toronto calendar job completed in 16m 49.643s with exit 0. It published 30 committee call editions, verified one added consultation and one revision, and checked NSERC and ESDC funding. The regular agent now uses standard scheduling priority. Its first regular 06:15 occurrence is still pending. [Calendar and authenticated Worker evidence](evidence/2026-11-24/daily-calendar-refresh.json) · [Daily operator](../scripts/refresh-daily.ts) · [Refresh runbook](REFRESH.md)
 
 1. **Written questions.** Compare the full English and French 45-1 listings to the last successful inventory. Acquire new questions and newly tabled replies, including replies to previously pending questions. Recheck Q-105 and Q-338 and use the existing detail and reply recheck paths to catch revised attachments at the same URL. Record which gaps closed and which are still visible to API clients. [Acquisition commands](WRITTEN-QUESTIONS-PREVIEW.md#acquire-and-materialize-locally)
 2. **Committees.** Rewalk the current House, Senate and joint indexes in both languages. Follow newly listed studies, meetings, evidence, submissions, reports and responses. Recheck previously listed material for corrected originals and late editions. Record a disappearance only after the relevant index was successfully read. [Committee operator guide](COMMITTEES-API.md)

@@ -39,19 +39,10 @@ jobs:
         run: bun run validate
       - name: Check the protected-copy process owner
         run: python3 -I -B test/protected-state-d1-owned.test.py
-      - name: Check parliamentary catalogue intakes
+      - name: Check Python source intakes and materializers
         run: |
-          python3 -B test/test_parliament_bills.py
+          python3 -B -m unittest discover -s test -p 'test_*.py'
           python3 -B test/parliament-votes.test.py
-          python3 -B test/test_parliament_senate_votes.py
-          python3 -B test/test_parliament_house_journals.py
-          python3 -B test/test_parliament_senate_journals.py
-          python3 -B test/test_parliament_roll_calls.py
-          python3 -B test/test_reconcile_parliament_senate_journals.py
-          python3 -B test/test_parliament_journal_roll_calls.py
-      - name: Check funding catalogue intakes
-        run: python3 -B -m unittest discover -s test -p 'test_funding_*.py'
-      - name: Check committee intakes
-        run: python3 -B -m unittest discover -s test -p 'test_committee_*.py'
+          python3 -B -m unittest scripts.lib.test_wq_catalog
       - name: Bundle every Cloudflare Worker without deployment
         run: bun run build

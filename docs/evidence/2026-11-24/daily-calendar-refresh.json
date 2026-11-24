@@ -1,0 +1,280 @@
+{
+  "recordedAt": "2026-11-24T21:58:25.471+00:00",
+  "purpose": "Local macOS launchd calendar-trigger proof with the installed daily refresh command",
+  "calendar": {
+    "targetAt": "2026-11-24T16:41:00-05:00",
+    "armedAt": "2026-11-24T21:39:41.443+00:00",
+    "calendarFields": {
+      "Month": 11,
+      "Day": 24,
+      "Hour": 16,
+      "Minute": 41
+    },
+    "temporarySibling": true,
+    "launchdCalendarRegistrationVerified": true,
+    "runAtLoad": false,
+    "manualStartInvoked": false
+  },
+  "equivalence": {
+    "programArgumentsMatched": true,
+    "workingDirectoryMatched": true,
+    "pathMatched": true,
+    "processTypeMatched": true,
+    "lowPriorityIoMatched": true,
+    "temporaryProcessType": "Standard",
+    "temporaryLowPriorityIO": false,
+    "installedProcessType": "Standard",
+    "installedLowPriorityIO": false,
+    "regularPlistSha256": "e250996c8c4245639d232776b7af8518443b577066f16f344a1d70365b4a3716",
+    "runnerSha256": "e810cf6bfb954de84c788b17ed56de52bbae4b5e1426b099fdd276dde47201c5",
+    "workingTreeCommit": "a353f344214dbb9ceed6802726d44226ad76d2b1"
+  },
+  "launchd": {
+    "beforeTrigger": {
+      "loaded": true,
+      "state": "not running",
+      "runs": 0,
+      "exitCode": null,
+      "pidPresent": false
+    },
+    "firstRunningObservation": {
+      "observedAt": "2026-11-24T21:41:05.646+00:00",
+      "loaded": true,
+      "state": "running",
+      "runs": 1,
+      "exitCode": null,
+      "pidPresent": true
+    },
+    "final": {
+      "loaded": true,
+      "state": "not running",
+      "runs": 1,
+      "exitCode": 0,
+      "pidPresent": false
+    },
+    "runnerLockCorrelation": {
+      "observedAt": "2026-11-24T21:41:39.814+00:00",
+      "state": "running",
+      "runs": 1,
+      "pidMatchesRunnerLock": true,
+      "lockStartedAt": "2026-11-24T21:41:17.013Z"
+    }
+  },
+  "report": {
+    "path": "dist/refresh/2026-11-24T21-41-17-013Z.json",
+    "sha256": "c8fcebac78391da7dd316ff2b3da6fb86fded010fbe52445d8d5f808470fb73f",
+    "startedAt": "2026-11-24T21:41:17.013Z",
+    "finishedAt": "2026-11-24T21:58:06.656Z",
+    "durationMs": 1009643,
+    "ok": true,
+    "scope": "full",
+    "matchingAliases": [
+      "latest.json",
+      "latest-full.json",
+      "latest-successful-full.json"
+    ],
+    "matchedIsolatedJobStdout": true,
+    "steps": [
+      {
+        "name": "consultations",
+        "ok": true,
+        "durationMs": 162298,
+        "commandExitCodes": [
+          0
+        ],
+        "servingCheck": {
+          "languages": [
+            "en",
+            "fr"
+          ],
+          "observedAt": "2026-11-24T21:41:21.298Z"
+        },
+        "acquisition": {
+          "counts": {
+            "rows": 5209,
+            "added": 1,
+            "changed": 1,
+            "unchanged": 5207,
+            "stale": 0,
+            "removed": 0
+          },
+          "csvSha256": "b434c6247f14fc20fa049317d12d967398da2b306fcbc08fbc93c811fa885a58",
+          "schemaSha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da",
+          "changeSample": [
+            {
+              "id": "nrcan-rncan_C-0000735",
+              "event": "changed",
+              "categories": [
+                "end-shortened",
+                "start-moved",
+                "report-changed",
+                "edition-changed",
+                "other"
+              ]
+            },
+            {
+              "id": "nrcan-rncan_C-0000743",
+              "event": "added",
+              "categories": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "committee-calls",
+        "ok": true,
+        "durationMs": 94282,
+        "commandExitCodes": [
+          0,
+          0
+        ],
+        "servingCheck": {
+          "localDatabase": ".wrangler/committees-45-1/v3/d1/miniflare-D1DatabaseObject/21e0ab396fd62e1eeaf532f6704b8dfa8072d2e2260a28be72ef20eef45d34b8.sqlite",
+          "observedAt": "2026-11-24T21:45:04.000Z",
+          "listedEditions": 30,
+          "droppedEditions": 0,
+          "publicationCounts": {
+            "calls": 30,
+            "rowsWritten": 30,
+            "linksAdded": 60,
+            "linksRemoved": 0,
+            "studyTitlesRepaired": 26
+          },
+          "binding": "COMMITTEE_DB",
+          "databaseId": "2e6f6b5d-bddd-4ae9-b879-92114cc37799"
+        }
+      },
+      {
+        "name": "funding",
+        "ok": true,
+        "durationMs": 752374,
+        "commandExitCodes": [
+          0,
+          0,
+          0
+        ],
+        "servingCheck": {
+          "sources": [
+            {
+              "source": "esdc",
+              "languages": [
+                "en",
+                "fr"
+              ],
+              "observedAt": "2026-11-24T21:58:01.412Z"
+            },
+            {
+              "source": "nserc",
+              "languages": [
+                "en",
+                "fr"
+              ],
+              "observedAt": "2026-11-24T21:45:58.720Z"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "cleanup": {
+    "bootoutExitCode": 0,
+    "siblingStillLoaded": false,
+    "temporaryPlistRemoved": true,
+    "runnerLockReleased": true,
+    "regularSchedule": {
+      "Hour": 6,
+      "Minute": 15
+    },
+    "regularJobStateUnchanged": true
+  },
+  "limits": [
+    "The temporary sibling was observed during a logged-in local session.",
+    "The regular 06:15 trigger was not observed. No hosted scheduling or publication was exercised."
+  ],
+  "calendarVerificationRecordedAt": "2026-11-24T21:58:09.500+00:00",
+  "startupDiagnosis": {
+    "previousSettings": {
+      "processType": "Background",
+      "lowPriorityIO": true
+    },
+    "fullProbeFirstObservedAt": "2026-11-24T21:30:03.618+00:00",
+    "comparison": {
+      "calendarAt": "2026-11-24T16:38:00-05:00",
+      "input": "Both probes used the installed Bun, runner, working directory and PATH with the same invalid argument. The argument prevents acquisition.",
+      "standardExitObservedAt": "2026-11-24T21:38:03.922+00:00",
+      "standardExpectedExitCode": 2
+    },
+    "cleanupObservation": {
+      "recordedAt": "2026-11-24T21:39:32.704+00:00",
+      "probeStates": {
+        "full": {
+          "state": "running",
+          "runs": 1,
+          "exitCode": null,
+          "childPresent": true
+        },
+        "installed": {
+          "state": "running",
+          "runs": 1,
+          "exitCode": null,
+          "childPresent": true,
+          "invalidOptionReached": false
+        },
+        "standard": {
+          "state": "not running",
+          "runs": 1,
+          "exitCode": 2,
+          "childPresent": false,
+          "invalidOptionReached": true
+        }
+      },
+      "temporaryJobsUnloaded": true,
+      "ownedProcessesStopped": true,
+      "noAcquisitionLockOrReportChange": true,
+      "regularJobUnchangedDuringProbeCleanup": true
+    },
+    "repair": "The installed daily agent switched to Standard process type and omitted LowPriorityIO. Its daily time remained 06:15."
+  },
+  "authenticatedWorkerChecks": {
+    "mode": "Local Worker fetch with synthetic workspace keys and a local usage ledger; refreshed SQLite stores opened read-only.",
+    "testPath": "test/endpoints.test.ts",
+    "testSha256": "67735187931b4f726cf364d9d528e5927087fd1a95860866f2bb1ab0c00b4fb3",
+    "startedAt": "2026-11-24T21:58:16.952+00:00",
+    "finishedAt": "2026-11-24T21:58:25.471+00:00",
+    "testFilter": "Polytechnics Canada funding recommendations against the acquired catalogues|committee calls through the Worker against the acquired corpus|consultations through the Worker against the acquired catalogue",
+    "exitCode": 0,
+    "testsPassed": 4,
+    "nodeVersion": "v24.22.3",
+    "bunVersion": "1.3.5",
+    "stores": {
+      "CIVICSIGNAL_COMMITTEES_D1": ".wrangler/committees-45-1/v3/d1/miniflare-D1DatabaseObject/21e0ab396fd62e1eeaf532f6704b8dfa8072d2e2260a28be72ef20eef45d34b8.sqlite",
+      "CIVICSIGNAL_CONSULTATIONS_SQLITE": "data/corpus/consultations/catalogue.sqlite",
+      "CIVICSIGNAL_FUNDING_SQLITE": "data/corpus/funding/catalogue.sqlite"
+    },
+    "consultationAcquisitionReceipt": "dist/refresh/receipts/consultations.json",
+    "checks": [
+      {
+        "area": "funding",
+        "checks": "Bilingual ESDC and NSERC search and exact lookup with citation details and usage counts.",
+        "testsPassed": [
+          "follows both recommendations to the brief and related published terms in 'en'",
+          "follows both recommendations to the brief and related published terms in 'fr'"
+        ]
+      },
+      {
+        "area": "committeeCalls",
+        "checks": "English listing and dated empty result, English and French exact lookups against the refreshed dedicated D1, and four billed successes.",
+        "testsPassed": [
+          "computes the open state, answers a dated zero, and follows a real call to its study"
+        ]
+      },
+      {
+        "area": "consultations",
+        "checks": "English and French search, dated state, exact lookup, archive-reconciled coverage, the added and changed live revisions, unauthenticated 401, and usage-ledger reconciliation.",
+        "testsPassed": [
+          "serves reconciled coverage, bilingual results and revisions from the acquired observation"
+        ]
+      }
+    ]
+  }
+}

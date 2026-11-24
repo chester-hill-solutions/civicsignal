@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { snapshotCalendarMain } from '../scripts/snapshot-calendar';
 
 const worker = 'civicsignal-v1-stage-snapshot-20261022';
@@ -13,6 +13,12 @@ const verifyCleanup = ['--fresh', 'verify-cleanup', '--cleanup-deadline', '2030-
 const accountToken = (expiresOn: string) => Response.json({ success: true, result: { status: 'active', expires_on: expiresOn } });
 
 describe('staging snapshot calendar', () => {
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2030-11-23T03:00:00.000Z'));
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
   it('proves the fresh cleanup credential lifetime and confirms an acknowledged empty write', async () => {
     const expiresAt = '2030-11-23T04:15:00.000Z';
     const send = mockFetch().mockResolvedValueOnce(accountToken(expiresAt)).mockResolvedValueOnce(schedules())

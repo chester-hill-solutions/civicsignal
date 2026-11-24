@@ -56,6 +56,8 @@ bun scripts/materialize-parliament.ts "$p/catalogues.sqlite" "$p/bills.json" "$p
 CIVICSIGNAL_CHAMBERS_SQLITE="$p/catalogues.sqlite" CIVICSIGNAL_PARLIAMENT_SQLITE="$p/catalogues.sqlite" bun run test test/endpoints.test.ts -t 'current parliamentary catalogues through the Worker'
 ```
 
+The acquired-store checks reconcile current inventory counts and observation times against the source packets beside the database. Set `CIVICSIGNAL_PARLIAMENT_ARCHIVE` when those packets are stored separately.
+
 The materializer also accepts a local `CIVIC_DB` SQLite file as its first argument. It creates the dedicated parliamentary tables and publishes one complete bilingual collection per transaction. An unchanged observation advances the cutoff and keeps its content revision. An older observation or a conflicting snapshot at the same instant is rejected. The returned receipt records the revision and the per-language count. Publish the combined Senate roll-call packet after reconciling the Journal and vote index. The materializer rejects an index-only replacement for a session that already serves supplemental Journal roll calls.
 
 Official sources include the [English LEGISinfo export](https://www.parl.ca/legisinfo/en/bills/json), [French LEGISinfo export](https://www.parl.ca/legisinfo/fr/projets-de-loi/json), [English House vote listing](https://www.ourcommons.ca/Members/en/votes), [French House vote listing](https://www.ourcommons.ca/deputes/fr/votes) and the [Senate standing-vote index](https://sencanada.ca/en/in-the-chamber/votes/45-1).

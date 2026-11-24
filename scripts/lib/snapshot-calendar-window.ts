@@ -208,7 +208,8 @@ export async function runSnapshotCalendarWindow(options: SnapshotCalendarRunOpti
     ? readGuardRecord(journal, role, 'cleared', children[i]!.pid!, window, target) : undefined));
   const result = { worker: target, window, armReceipt, armingFailure, cleanup: { primary: finished[0]?.receipt ?? null,
     backup: finished[1]?.receipt ?? null, final: calendarEmpty || null },
-    passed: !!armReceipt && !armingFailure && finished.length === roles.length && finished.every(Boolean) && !!calendarEmpty };
+    passed: !!armReceipt && !armingFailure && finished.length === roles.length &&
+      finished.every(guard => guard?.receipt?.putAcknowledged === true) && !!calendarEmpty };
   await writeReceipt(journal, 'calendar-result.json', result);
   return result;
 }

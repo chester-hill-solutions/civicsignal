@@ -1466,6 +1466,10 @@ On macOS arm64, Node 24.22.3 and Bun 1.3.5 passed 2,587 Vitest tests across 149 
 
 All four TypeScript projects, the lint ratchet, vendor verification, billing checks, and five Worker dry-run builds passed. The Workerd usage and R2 checks passed. The corpus invariant check skipped three absent generated statute exports.
 
+## November 24 staging publication readback
+
+The isolated November Worker still served the pinned version at 100%. Its Workflow listed zero instances. The staging backup matched the pinned October manifest byte for byte. The source revision remained `855cdfc`. The local operator now checks both cleanup acknowledgements, the scheduled event and Workflow receipts, and the reference artifacts. No staging event was armed during this observation. [Live cf receipt](evidence/2026-11-24/staging-publication-cf-baseline.json) · [Acceptance checks](evidence/2026-11-24/snapshot-publication-composition.md) · [Master plan](PLAN.md#mp-02-qualify-scheduled-first-publication)
+
 ## Remaining release gates
 
 All four gates remain open: scheduled first publication, serving acceptance, production migration, and the final release audit.

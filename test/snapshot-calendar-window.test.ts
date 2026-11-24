@@ -31,7 +31,7 @@ async function fixture(target?: SnapshotStageTarget) {
     guards: { primary: { token: 'primary', validUntil }, backup: { token: 'backup', validUntil } },
     admit: vi.fn().mockResolvedValue(undefined) };
   const state = { now: Date.parse(scheduledAt) - 30 * 60_000, crons: [] as string[],
-    loseArmResponse: false, loseBackup: false, exitBackupOnArmRead: false };
+    loseArmResponse: false, loseBackup: false, loseBackupWriteResponse: false, exitBackupOnArmRead: false };
   const calls: string[] = [];
   const children: Array<{ finish(): Promise<void>; kill(): void }> = [];
   const send = vi.fn<typeof fetch>().mockImplementation(async (_url, init) => {
@@ -44,6 +44,7 @@ async function fixture(target?: SnapshotStageTarget) {
       if (state.loseArmResponse) throw new Error('fixture lost arm acknowledgement');
     } else if (init?.method === 'PUT') {
       state.crons = [];
+      if (token === 'backup' && state.loseBackupWriteResponse) throw new Error('fixture lost backup cleanup acknowledgement');
     } else if (token === 'operator' && state.exitBackupOnArmRead && calls.at(-1) === 'operator:GET') {
       children[1]?.kill();
     }
@@ -112,6 +113,14 @@ describe('staging calendar window', () => {
     f.state.loseBackup = true;
     await expect(f.run()).resolves.toMatchObject({ passed: false,
       cleanup: { primary: { empty: true }, backup: null, final: { empty: true } } });
+  });
+
+  it('retains the empty readback but fails qualification when a guard lacks a cleanup acknowledgement', async () => {
+    const f = await fixture(FRESH_SNAPSHOT_STAGE_ID);
+    f.state.loseBackupWriteResponse = true;
+    await expect(f.run()).resolves.toMatchObject({ passed: false,
+      cleanup: { primary: { putAcknowledged: true }, backup: { empty: true, putAcknowledged: false }, final: { empty: true } } });
+    expect(f.calls.filter(call => call === 'backup:PUT')).toHaveLength(1);
   });
 
   it('refuses arming if a guard exits during the final pre-write read', async () => {

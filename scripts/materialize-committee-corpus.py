@@ -20,6 +20,9 @@ from lib.committee_store import MIGRATION, initialize
 
 
 SESSION = "45-1"
+CALLS_D1_ID = "2e6f6b5d-bddd-4ae9-b879-92114cc37799"
+# Workerd's complete local object ID for this UUID in the v3 D1 state.
+CALLS_D1_FILE = "21e0ab396fd62e1eeaf532f6704b8dfa8072d2e2260a28be72ef20eef45d34b8.sqlite"
 INTAKE_TABLES = ("cc_revision", "cc_changes", "cc_link_changes", "cc_extracted")
 D1_METADATA_TABLES = ("d1_migrations", "_cf_METADATA")
 TABLES = {
@@ -78,12 +81,8 @@ def database_file(state: Path) -> Path:
 def connect(
     path: Path, *, readonly: bool = False, timeout: float = 5.0
 ) -> sqlite3.Connection:
-    if readonly:
-        db = sqlite3.connect(
-            f"file:{path.resolve()}?mode=ro", uri=True, timeout=timeout
-        )
-    else:
-        db = sqlite3.connect(path, timeout=timeout)
+    mode = "ro" if readonly else "rw"
+    db = sqlite3.connect(f"{path.resolve().as_uri()}?mode={mode}", uri=True, timeout=timeout)
     db.row_factory = sqlite3.Row
     db.execute(f"PRAGMA busy_timeout={int(timeout * 1000)}")
     return db
@@ -333,6 +332,101 @@ def materialize(
         target.close()
 
 
+def _call_rows(db: sqlite3.Connection, session: str) -> dict[tuple[str, str], tuple]:
+    return {
+        (row["id"], row["language"]): tuple(row)
+        for row in db.execute(
+            f"SELECT {','.join(TABLES['cc_records'])} FROM cc_records WHERE session=? AND kind='call'",
+            (session,),
+        )
+    }
+
+
+def _call_links(db: sqlite3.Connection, session: str, calls: Iterable[tuple[str, str]]) -> set[tuple]:
+    return {
+        tuple(row)
+        for call_id, language in calls
+        for row in db.execute(
+            """SELECT session,language,parent_id,child_id,relation FROM cc_links
+            WHERE session=? AND language=? AND child_id=? AND relation IN ('publishes','study-call')""",
+            (session, language, call_id),
+        )
+    }
+
+
+def _publish_call_study_titles(source: sqlite3.Connection, target: sqlite3.Connection, links: set[tuple]) -> int:
+    repaired = 0
+    studies = {(session, parent, language) for session, language, parent, _, relation in links
+               if relation == "study-call"}
+    for key in sorted(studies):
+        row = source.execute(
+            "SELECT title FROM cc_records WHERE session=? AND id=? AND language=? AND kind='study'",
+            key,
+        ).fetchone()
+        if not row or not row["title"] or row["title"].strip().casefold() in {"participate", "participez"}:
+            continue
+        repaired += target.execute(
+            """UPDATE cc_records SET title=? WHERE session=? AND id=? AND language=? AND kind='study'
+               AND lower(trim(title)) IN ('participate','participez')""",
+            (row["title"], *key),
+        ).rowcount
+    return repaired
+
+
+def publish_calls(source_path: Path, target_path: Path, session: str = SESSION, timeout: float = 5.0) -> dict:
+    """Publish the daily call overlay into a previously materialized local D1."""
+    if not target_path.is_file() or source_path.samefile(target_path):
+        raise ValueError("call overlay requires a distinct existing local D1 database")
+    with (
+        closing(connect(source_path, readonly=True, timeout=timeout)) as source,
+        closing(connect(target_path, timeout=timeout)) as target,
+        target,
+    ):
+        source.execute("BEGIN")
+        target.execute("BEGIN IMMEDIATE")
+        _validate_schema(source, label="source")
+        _validate_schema(target, label="local D1")
+        _validate_local_migration(target, exact=True)
+        cutoffs = [db.execute("SELECT cutoff FROM cc_snapshot WHERE session=?", (session,)).fetchone()
+                   for db in (source, target)]
+        if not cutoffs[0] or cutoffs[0] != cutoffs[1]:
+            raise ValueError("call overlay requires matching source and local D1 base cutoffs")
+        incoming = _call_rows(source, session)
+        previous = _call_rows(target, session)
+        if previous.keys() - incoming.keys():
+            raise ValueError("local D1 contains call records missing from the acquisition store")
+        writes = [row for key, row in incoming.items() if previous.get(key) != row]
+        updates = ",".join(f"{column}=excluded.{column}" for column in TABLES["cc_records"][3:])
+        result = target.executemany(
+            f"{INSERTS['cc_records']} ON CONFLICT({KEYS['cc_records']}) DO UPDATE SET {updates} "
+            "WHERE cc_records.kind='call'",
+            writes,
+        )
+        if result.rowcount != len(writes):
+            raise ValueError("a source call key matches a non-call record in local D1")
+        links = _call_links(source, session, incoming)
+        old_links = _call_links(target, session, incoming)
+        removed = old_links - links
+        added = links - old_links
+        target.executemany(
+            "DELETE FROM cc_links WHERE session=? AND language=? AND parent_id=? AND child_id=? AND relation=?",
+            removed,
+        )
+        target.executemany(INSERTS["cc_links"], added)
+        repaired = _publish_call_study_titles(source, target, links)
+        if _call_rows(target, session) != incoming or _call_links(target, session, incoming) != links:
+            raise ValueError("call rows or links differ after local D1 publication")
+    return {
+        "database": str(target_path.resolve()),
+        "session": session,
+        "calls": len(incoming),
+        "rowsWritten": len(writes),
+        "linksAdded": len(added),
+        "linksRemoved": len(removed),
+        "studyTitlesRepaired": repaired,
+    }
+
+
 def clone_local(
     source_path: Path, target_path: Path, session: str, timeout: float
 ) -> dict:
@@ -456,11 +550,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--session", default=SESSION)
     parser.add_argument("--timeout-seconds", type=float, default=5.0)
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--clone-local",
         action="store_true",
         help="Use an APFS copy-on-write clone for an offline local D1 candidate.",
     )
+    mode.add_argument("--calls-only", action="store_true", help="Update only the daily call overlay in local D1.")
     args = parser.parse_args(argv)
     if args.session != SESSION:
         parser.error(f"this preview materializer is scoped to session {SESSION}")
@@ -470,6 +566,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"source database not found: {args.source}")
     try:
         target = database_file(args.persist_to)
+        if args.calls_only:
+            if target.name != CALLS_D1_FILE or target.is_symlink():
+                raise ValueError("calls-only publication requires the documented local committee D1 binding")
+            summary = publish_calls(args.source, target, args.session, args.timeout_seconds)
+            print(json.dumps({"binding": "COMMITTEE_DB", "databaseId": CALLS_D1_ID, **summary}))
+            return 0
         build = clone_local if args.clone_local else materialize
         summary = build(args.source, target, args.session, args.timeout_seconds)
     except (OSError, sqlite3.Error, ValueError) as exc:

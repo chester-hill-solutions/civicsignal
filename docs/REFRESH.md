@@ -17,23 +17,19 @@ bun run refresh:daily
 bun run refresh:daily --only consultations --report dist/refresh/one.json
 ```
 
-Each step writes its own receipt under `dist/refresh/receipts/`. The run report lands at `dist/refresh/<timestamp>.json` and `dist/refresh/latest.json`:
+Every invocation writes a dated report in `dist/refresh/`. Use `latest-full.json` for the most recent attempt covering all three intakes, including a failed attempt. Use `latest-successful-full.json` for the last successful full run. A selective retry updates `latest-partial.json`. The existing `latest.json` follows the latest invocation of either scope. For older reports, check the step names and whether serving verification was recorded.
 
-```json
-{
-  "startedAt": "2026-11-25T11:15:00.000Z",
-  "ok": true,
-  "durationMs": 168000,
-  "steps": [
-    { "name": "consultations", "ok": true, "durationMs": 5100,
-      "summary": { "counts": { "added": 0, "removed": 0, "unchanged": 5208 } } },
-    { "name": "committee-calls", "ok": true, "durationMs": 31000,
-      "summary": { "calls": 30, "added": 0, "changed": 0, "dropped": 0, "pending": 2, "conflicts": 0 } },
-    { "name": "funding", "ok": true, "durationMs": 152000,
-      "summary": { "sources": [{ "source": "esdc", "events": { "changed": 0 } }] } }
-  ]
-}
+The daily run checks consultations and funding in their local catalogue databases. It publishes House calls into the dedicated committee D1 database and checks the served editions against the intake. Each step records its exit status, elapsed time, acquisition summary, and serving checks. Use the dated report to look up an edition in the same database served by the Worker.
+
+To verify the current consultation observation through authenticated Worker requests, point the endpoint test at the matching database and intake receipt. It checks both languages against the archived publisher files and verifies the usage charged for the requests.
+
+```sh
+CIVICSIGNAL_CONSULTATIONS_SQLITE=data/corpus/consultations/catalogue.sqlite \
+CIVICSIGNAL_CONSULTATIONS_RECEIPT=dist/refresh/receipts/consultations.json \
+bun run test test/endpoints.test.ts -t 'consultations through the Worker against the acquired catalogue'
 ```
+
+For the committee and funding checks, set `CIVICSIGNAL_COMMITTEES_D1` to the serving database file identified in the full report. Set `CIVICSIGNAL_COMMITTEES_SOURCE_SQLITE` to the acquisition database (normally `data/corpus/committees/committee.sqlite`) and `CIVICSIGNAL_COMMITTEE_CALLS_RECEIPT` to `dist/refresh/receipts/committee-calls.json`. Set `CIVICSIGNAL_FUNDING_SQLITE` to `data/corpus/funding/catalogue.sqlite`. Its sibling `esdc.json` and `nserc.json` identify the acquired observations, and the archived copies verify the packet bytes. Run the same endpoint file with the test filter `committee calls through the Worker|Polytechnics Canada funding recommendations`.
 
 A quiet day shows zero additions, removals and changes in each summary. A step that reports changes you did not expect is the signal to open its receipt and the collection's contract before trusting the serving data.
 
@@ -47,13 +43,22 @@ scripts/schedule/uninstall-daily.sh   # remove it; local data stays
 launchctl kickstart -k gui/$(id -u)/com.civicsignal.refresh-daily   # run now
 ```
 
-The agent runs `bun scripts/refresh-daily.ts` with the repository as its working directory and appends to `~/Library/Logs/civicsignal-refresh.log`. It is a per-user agent: it runs when you are logged in, and it does not run missed schedules after a shutdown. Check `launchctl print gui/$(id -u)/com.civicsignal.refresh-daily` when a run does not appear.
+The agent runs `bun scripts/refresh-daily.ts` with the repository as its working directory and appends to `~/Library/Logs/civicsignal-refresh.log`. It is a per-user agent that runs while the user is logged in. To verify the regular 06:15 Toronto event, correlate the agent's run count and exit status with the full report path in its own log, the dated report's start and finish, and the serving checks for all three intakes. A manual kickstart or a sibling job has its own evidence.
+
+Inspect only the job status fields when troubleshooting. Launchd's full diagnostic can include inherited credentials.
+
+```sh
+launchctl print "gui/$(id -u)/com.civicsignal.refresh-daily" |
+  awk '/^[[:space:]]*(state|runs|last exit code) = / { print }'
+```
 
 On Linux, use the same command from cron:
 
 ```
 15 6 * * * cd /path/to/civicsignal && /path/to/bun run refresh:daily >> "$HOME/.local/state/civicsignal-refresh.log" 2>&1
 ```
+
+On November 24 a temporary calendar job with the installed command, standard process priority, working directory and PATH finished the full intake in 16m 49.643s. Four authenticated Worker checks passed against the refreshed stores. The 06:15 job uses those same settings. [Calendar verification](evidence/2026-11-24/daily-calendar-refresh.json)
 
 ## What stays off the daily job
 

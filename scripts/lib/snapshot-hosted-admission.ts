@@ -1,9 +1,9 @@
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { promisify, stripVTControlCharacters } from 'node:util';
 import { z } from 'zod';
 import novemberWorkflowCreation from '../../docs/evidence/2026-11-22/november-workflow-creation.json';
 import { QUALIFICATION_STAGE_ID } from '../../services/snapshot/qualification';
-import { STAGING_ACCOUNT } from './staging-config';
+import { STAGING_ACCOUNT, stagingNames } from './staging-config';
 import { FRESH_SNAPSHOT_STAGE_ID, snapshotStageTarget, type SnapshotStageTarget } from './snapshot-calendar';
 import { runSnapshotCalendarWindow, type SnapshotCalendarRunOptions } from './snapshot-calendar-window';
 
@@ -18,14 +18,41 @@ const workflow = z.object({ name: snapshotStageTarget, script_name: snapshotStag
 export const snapshotDeploymentPin = z.object({ deploymentId: z.uuid(), versionId: z.uuid() }).strict();
 type DeploymentPin = z.infer<typeof snapshotDeploymentPin>;
 
-async function readCf(args: string[]): Promise<unknown> {
+export class MissingSnapshotDiagnostic extends Error {
+  constructor(readonly key: string) { super('SNAPSHOT_HOSTED_DIAGNOSTIC_MISSING'); }
+}
+
+/** cf beta.10 reports the provider code and the exact object path on stderr. */
+export function missingSnapshotDiagnosticKey(args: string[], error: unknown): string | undefined {
+  const key = args[3] ?? '';
+  const bucket = stagingNames('20261022').corpus;
+  if (args.length !== 6 || args.slice(0, 3).join(' ') !== 'r2 objects get' ||
+    args[4] !== '--bucket-name' || args[5] !== bucket ||
+    !/^qualifications\/[a-z][a-z0-9-]{0,39}\/[0-9a-f]{64}\/diagnostics\/(?:failed|existing)\.json$/.test(key)) return;
+  const failure = z.object({ code: z.literal(1), stderr: z.instanceof(Buffer) }).safeParse(error);
+  if (!failure.success) return;
+  const lines = stripVTControlCharacters(failure.data.stderr.toString('utf8')).split(/\r?\n/);
+  const path = `/accounts/${STAGING_ACCOUNT}/r2/buckets/${bucket}/objects/${encodeURIComponent(key)}`;
+  if (lines.includes('│ [10007] The specified key does not exist.') && lines.includes(`│ 404 Not Found · HTTP ${path}`)) return key;
+}
+
+/** The staging metadata and canonical reference reads fit in 64 KiB. */
+export async function readSnapshotCfBytes(args: string[], signal?: AbortSignal): Promise<Buffer> {
   try {
-    const { stdout } = await exec('cf', args, { timeout: 10_000, maxBuffer: 64 * 1024,
+    const { stdout } = await exec('cf', args, { signal, timeout: 10_000, maxBuffer: 64 * 1024, encoding: 'buffer',
       env: { ...process.env, CLOUDFLARE_ACCOUNT_ID: STAGING_ACCOUNT, CF_TELEMETRY_DISABLED: '1' } });
-    return JSON.parse(stdout);
-  } catch {
+    return stdout;
+  } catch (error) {
+    const missing = missingSnapshotDiagnosticKey(args, error);
+    if (!signal?.aborted && missing) throw new MissingSnapshotDiagnostic(missing);
     throw new Error('SNAPSHOT_HOSTED_CF_READ');
   }
+}
+
+async function readCf(args: string[]): Promise<unknown> {
+  const bytes = await readSnapshotCfBytes(args);
+  try { return JSON.parse(bytes.toString('utf8')); }
+  catch { throw new Error('SNAPSHOT_HOSTED_CF_READ'); }
 }
 
 export async function observeSnapshotHostedDeployment(read = readCf, target: SnapshotStageTarget = QUALIFICATION_STAGE_ID) {
@@ -68,12 +95,14 @@ export async function requireSnapshotHostedDeployment(expected: DeploymentPin, r
 
 /** Bind the calendar phase to the IDs from the reviewed bundle's upload receipt.
  * The publication caller supplies namespace, instance, backup and budget admission. */
-export function runHostedSnapshotCalendarWindow(options: SnapshotCalendarRunOptions & { deployment: DeploymentPin },
+export function runHostedSnapshotCalendarWindow(options: SnapshotCalendarRunOptions & { deployment: DeploymentPin; workflowId?: string },
   read = readCf, run = runSnapshotCalendarWindow) {
   const pin = snapshotDeploymentPin.parse(options.deployment);
+  const workflowId = z.uuid().optional().parse(options.workflowId);
   const target = snapshotStageTarget.parse(options.target ?? QUALIFICATION_STAGE_ID);
   return run({ ...options, target, async admit(window) {
     await options.admit(window);
-    await requireSnapshotHostedDeployment(pin, read, target);
+    const observed = await requireSnapshotHostedDeployment(pin, read, target);
+    if (workflowId && observed.workflowId !== workflowId) throw new Error('SNAPSHOT_HOSTED_WORKFLOW_DRIFT');
   } });
 }

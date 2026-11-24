@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { readTar } from '../src/ingest/source';
+import { execFileSync } from 'node:child_process';
+import { createReadStream } from 'node:fs';
+import { createGunzip } from 'node:zlib';
+import { FRENCH_INSTRUMENT_PATHS, INSTRUMENT_PATHS, readTar } from '../src/ingest/source';
 
 /**
  * The tar reader.
@@ -165,23 +168,19 @@ describe('the tar reader', () => {
     expect(entries).toHaveLength(2);
   });
 
-  it('reads the corpus archive itself', async () => {
-    // The real archive, if it is on disk. It is not fetched by the test; it is
-    // whatever the last local run left behind.
-    const { existsSync, readFileSync } = await import('node:fs');
-    const path = '/tmp/corpus.tar.gz';
-    if (!existsSync(path)) return;
-    const { gunzipSync } = await import('node:zlib');
-    const raw = gunzipSync(readFileSync(path));
-    let xml = 0;
-    let english = 0;
-    for await (const entry of readTar(chunks(raw, 1 << 20))) {
-      if (!entry.path.endsWith('.xml')) continue;
-      xml++;
-      const normalised = entry.path.replace(/^[^/]+\//, '');
-      if (normalised.startsWith('eng/acts/') || normalised.startsWith('eng/regulations/')) english++;
+  const corpusArchive = process.env.CIVICSIGNAL_STATUTES_ARCHIVE;
+  it.skipIf(!corpusArchive)('matches the XML inventory of the supplied corpus archive', async () => {
+    if (!corpusArchive) throw new Error('The statutes archive path is required.');
+    const expected = execFileSync('tar', ['-tzf', corpusArchive], {
+      encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, timeout: 60_000,
+    }).split('\n').filter(path => path.endsWith('.xml'));
+    for (const prefixes of [INSTRUMENT_PATHS, FRENCH_INSTRUMENT_PATHS]) {
+      expect(expected.some(path => prefixes.some(prefix => ('/' + path).includes('/' + prefix)))).toBe(true);
     }
-    expect(xml).toBeGreaterThan(15000);
-    expect(english).toBe(5868);
-  });
+    const actual: string[] = [];
+    for await (const entry of readTar(createReadStream(corpusArchive).pipe(createGunzip()))) {
+      if (entry.path.endsWith('.xml')) actual.push(entry.path);
+    }
+    expect(actual.sort()).toEqual(expected.sort());
+  }, 120_000);
 });

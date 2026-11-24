@@ -6,14 +6,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { DatabaseSync as SqliteDatabase } from 'node:sqlite';
 import { CommitteeCallDetailResponseSchema, CommitteeCallsResponseSchema, CommitteeCorpusPageSchema, CommitteeCorpusSearchResponseSchema, CommitteeCorpusCoverageSchema } from '../src/corpora/committee-corpus';
-import { ConsultationCoverageSchema, ConsultationLookupResponseSchema, ConsultationSearchResponseSchema } from '../src/corpora/consultations';
-import { FundingSearchResponse, FundingLookupResponse } from '../src/corpora/funding';
+import { ConsultationCoverageSchema, ConsultationLookupResponseSchema, ConsultationSearchResponseSchema,
+  type ConsultationCoverage, type ConsultationFacts, type ConsultationLookupResponse, type ConsultationSearchResponse,
+} from '../src/corpora/consultations';
+import { FundingCatalogueCoverage, FundingSearchResponse, FundingLookupResponse,
+  type FundingEdition, type FundingSource,
+} from '../src/corpora/funding';
 import { localD1 } from '../scripts/lib/local-d1';
 import { ApiKeyUsageDO, DurableObjectUsageLedger } from '@chester-hill-solutions/api-billing/durable-object';
 import worker from '../src/index';
 import type { Capabilities } from '../src/routes/capabilities';
 import type { Env } from '../src/types';
 import { testD1 } from './helpers/d1';
+import { acquiredParliamentInventory, acquiredWrittenCoverage, archivedSenateVote } from './helpers/parliament-archives';
 import { prepareWorkspaceKey } from '../src/key-operations';
 import { COMPACT_CORPUS_SCHEMA, COMPACT_STATUTE_COLUMNS, INSERT_COMPACT_STATUTE_SQL, applyCompactRestorePage, compactPageDigest } from '../src/corpora/compact-restore';
 import { prepareProvisionText, rowFingerprintWithText, textReferenceBindings, UPSERT_TEXT_REFERENCE_SQL, writeImmutableProvisionText } from '../src/corpora/text-store';
@@ -32,6 +37,16 @@ import { billTraceOpenApi } from '../src/routes/bill-trace-openapi';
 import { COMMITTEE_STUDY_BRIEF_PATH } from '../src/routes/committee-study';
 import { SourceFeedResponseSchema } from '../src/routes/source-feed-contract';
 import { normalizeForSearch } from '../src/text';
+import {
+  acquiredConsultations, archivedConsultationCoverage, archivedConsultationSearch, baselineConsultations,
+  isBaselineConsultationObservation, type ConsultationObservation, type ConsultationReceipt,
+} from './helpers/consultations-archive';
+import {
+  archivedCommitteeCoverage, archivedCommitteeEvidenceMatches, archivedCommitteeRecord, committeeAcquisitionPath, committeeCallExpected,
+  committeeCallRelated, committeeCallRows, committeeCallTime,
+  committeeCutoff, committeeSession, frozenCalls, originalCommitteeCutoff, type CommitteeCallsReceipt,
+} from './helpers/acquired-committee';
+import { acquiredFunding, archivedFundingSearch, baselineFundingRevisions } from './helpers/acquired-funding';
 
 const closed: (() => void)[] = [];
 type RequestOptions = { method?: string; body?: string; headers?: Record<string, string> };
@@ -152,13 +167,43 @@ describe('Polytechnics Canada funding recommendations against the acquired catal
   const fundingPath = process.env.CIVICSIGNAL_FUNDING_SQLITE;
   const committeePath = process.env.CIVICSIGNAL_COMMITTEES_D1;
 
+  function verifyFrozenFundingTerms(source: FundingSource, edition: FundingEdition | null, revision: string) {
+    if (revision !== baselineFundingRevisions[source]) return;
+    if (!edition) throw new Error('The frozen source is missing its policy-example edition.');
+    if (source === 'nserc') {
+      expect(edition.sections.some(s => s.field === 'amount' && /150[ ,  ]000/.test(s.text))).toBe(true);
+      expect(edition.sections.some(s => s.field === 'partners' && /partn|parten/i.test(s.text))).toBe(true);
+      expect(edition.sections.some(s => /polytechni/i.test(s.text))).toBe(true);
+      return;
+    }
+    expect(edition.status).toBe('closed');
+    const terms = edition.sections.map(section => section.text).join(' ');
+    expect(terms).toMatch(/union|syndic/i);
+    expect(terms).toMatch(/Red Seal|Sceau rouge/i);
+    expect(terms).toMatch(/November 12|12 novembre/i);
+    const amount = edition.sections.filter(section => section.field === 'amount').map(section => section.text).join(' ');
+    expect(amount).toMatch(/\$3M|3\s000\s000\s*\$/);
+    expect(amount).toMatch(/\$10M|10\s000\s000\s*\$/);
+  }
+
+  function verifyFundingSearchPage(page: ReturnType<typeof FundingSearchResponse.parse>,
+    expected: ReturnType<typeof archivedFundingSearch>, limit: number) {
+    const expectedById = new Map(expected.map(row => [row.id, row]));
+    expect(page.items).toHaveLength(Math.min(expected.length, limit));
+    expect(page.nextOffset).toBe(expected.length > limit ? limit : null);
+    expect(new Set(page.items.map(hit => hit.id)).size).toBe(page.items.length);
+    for (const { id, title, url, status, availability } of page.items) {
+      expect(expectedById.get(id)).toMatchObject({ title, url, status, availability });
+    }
+  }
+
   it.skipIf(!fundingPath || !committeePath).each([
     { language: 'en', brief: '559b791939da59abd8bd6d51', asks: ['100M/year applied AI', 'apprentice waitlists'],
       grant: 'Applied Research and Development', infrastructure: 'infrastructure expansion' },
     { language: 'fr', brief: '29cd8309b3885e7f4b96e874', asks: ['100 millions artificielle appliquée', 'attente apprentis capacité'],
       grant: 'recherche et développement appliquée', infrastructure: 'expansion des infrastructures' },
-  ])('follows both recommendations to the brief and related published terms in $language', async (example) => {
-    const fixture = await setup(12);
+  ] as const)('follows both recommendations to the brief and related published terms in $language', async (example) => {
+    const fixture = await setup(20);
     const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
     fixture.env.AUTH_DB = fixture.db;
     if (!fundingPath || !committeePath) throw new Error('Funding and committee snapshots are required.');
@@ -168,6 +213,8 @@ describe('Polytechnics Canada funding recommendations against the acquired catal
       return localD1(db);
     };
     fixture.env.CIVIC_DB = open(fundingPath);
+    const committeeArchive = new DatabaseSync(committeeAcquisitionPath, { readOnly: true });
+    closed.push(() => committeeArchive.close());
     fixture.env.COMMITTEE_DB = open(committeePath);
     fixture.env.FUNDING_PREVIEW = fixture.env.COMMITTEE_CORPUS_PREVIEW = 'on';
     const read = async (path: string, parameters: Record<string, string>) => {
@@ -175,6 +222,22 @@ describe('Polytechnics Canada funding recommendations against the acquired catal
       expect(response.status, path).toBe(200);
       return response.json();
     };
+    async function inventory(source: FundingSource) {
+      const response = await fixture.send('/api/funding-programs/coverage?source=' + source);
+      expect(response.status).toBe(200);
+      const coverage = FundingCatalogueCoverage.parse(await response.json());
+      const { archive, observedAt, revision } = acquiredFunding(fundingPath ?? '', source);
+      expect(coverage).toMatchObject({ source, observedAt, revision, records: archive.records.length, indexes: archive.indexes });
+      expect(coverage.gaps).toHaveLength(archive.gaps.length);
+      expect(coverage.gaps).toEqual(expect.arrayContaining(archive.gaps));
+      for (const language of ['en', 'fr'] as const) {
+        const editions = archive.records.filter(row => row.language === language);
+        const searchable = editions.filter(row => row.availability === 'published').length;
+        expect(coverage.recordsPerLanguage[language]).toEqual({ total: editions.length, searchable,
+          metadataOnly: editions.length - searchable });
+      }
+      return { archive, revision };
+    }
     const capabilities = await manifest(fixture);
     const guide = await (await fixture.send('/llms.txt', {}, false)).text();
     const home = await (await fixture.send('/', {}, false)).text();
@@ -189,19 +252,25 @@ describe('Polytechnics Canada funding recommendations against the acquired catal
       expect(home).toContain(`href="${src?.openapi}"`);
     }
     expect(await fixture.count()).toBe(0);
+    const funding = { nserc: await inventory('nserc'), esdc: await inventory('esdc') };
     for (const step of recipe.steps) {
       expect(guide).toContain(step.request);
       const response = await fixture.send(step.request);
       expect(response.status, step.request).toBe(200);
       if (step.source === 'esdc') {
         const page = FundingSearchResponse.parse(await response.json());
-        expect(page.items.some(item => normalizeForSearch(item.title).includes(normalizeForSearch(example.infrastructure)))).toBe(true);
+        const parameters = new URL(step.request, 'https://local.test').searchParams;
+        const query = parameters.get('query') ?? '';
+        const expected = archivedFundingSearch(funding.esdc.archive, example.language, query);
+        expect(page.revision).toBe(funding.esdc.revision);
+        verifyFundingSearchPage(page, expected, Number(parameters.get('limit') ?? 25));
       } else {
         const page = CommitteeCorpusSearchResponseSchema.parse(await response.json());
         expect(page.items.length).toBeGreaterThan(0);
-        if (step.request.includes('kind=brief')) expect(page.items.some(item => item.citation.url.includes('/BR14118467/'))).toBe(true);
-        else expect(page.items.some(item => item.citation.url.startsWith('https://') && item.speaker &&
-          item.parents.some(parent => parent.id === 'house-huma'))).toBe(true);
+        for (const hit of page.items) {
+          const record = archivedCommitteeRecord(committeeArchive, hit.citation.id, example.language);
+          expect(record).toMatchObject({ url: hit.citation.url, title: hit.citation.title, kind: hit.citation.kind });
+        }
       }
     }
     const document = 'house-fina-submission-' + example.brief;
@@ -209,35 +278,34 @@ describe('Polytechnics Canada funding recommendations against the acquired catal
       const page = CommitteeCorpusSearchResponseSchema.parse(await read('/api/committees/search', {
         query, session: '45-1', committeeId: 'house-fina', studyId: document, kind: 'brief', limit: '10',
       }));
-      expect(page.items).toContainEqual(expect.objectContaining({ position: 1, citation: expect.objectContaining({
+      expect(page.items).toContainEqual(expect.objectContaining({ citation: expect.objectContaining({
         id: document, language: example.language, url: expect.stringContaining('/BR14118467/'),
       }) }));
+      if (committeeCutoff(committeeArchive) === originalCommitteeCutoff) {
+        expect(page.items.some(hit => hit.citation.id === document && hit.position === 1 && hit.location === 'page:2')).toBe(true);
+      }
     }
 
-    async function program(source: string, query: string) {
+    async function program(source: FundingSource, query: string, id: string) {
       const path = '/api/funding-programs';
+      const { archive, revision } = funding[source];
+      const expected = archivedFundingSearch(archive, example.language, query);
       const page = FundingSearchResponse.parse(await read(path, { query, source, limit: '100' }));
-      const hit = page.items.find(item => normalizeForSearch(item.title).includes(normalizeForSearch(query)));
-      if (!hit) throw new Error('Missing funded program for ' + query);
-      const { item } = FundingLookupResponse.parse(await read(path + '/' + hit.id, {}));
-      if (!item) throw new Error('Missing edition for ' + hit.id);
-      expect(item).toMatchObject({ language: example.language, availability: 'published', id: hit.id });
+      expect(page.revision).toBe(revision);
+      verifyFundingSearchPage(page, expected, 100);
+      const expectedEdition = archive.records.find(row => row.id === id && row.language === example.language);
+      const lookup = FundingLookupResponse.parse(await read(path + '/' + id, {}));
+      expect(lookup.revision).toBe(revision);
+      if (expectedEdition) expect(lookup.item).toMatchObject(expectedEdition);
+      else expect(lookup.item).toBeNull();
+      const { item } = lookup;
       return item;
     }
-    const grant = await program('nserc', example.grant);
-    expect(grant.sections.some(s => s.field === 'amount' && /150[ ,  ]000/.test(s.text))).toBe(true);
-    expect(grant.sections.some(s => s.field === 'partners' && /partn|parten/i.test(s.text))).toBe(true);
-    expect(grant.sections.some(s => /polytechni/i.test(s.text))).toBe(true);
-    const infrastructure = await program('esdc', example.infrastructure);
-    expect(infrastructure.status).toBe('closed');
-    const terms = infrastructure.sections.map(section => section.text).join(' ');
-    expect(terms).toMatch(/union|syndic/i);
-    expect(terms).toMatch(/Red Seal|Sceau rouge/i);
-    expect(terms).toMatch(/November 12|12 novembre/i);
-    const amount = infrastructure.sections.filter(section => section.field === 'amount').map(section => section.text).join(' ');
-    expect(amount).toMatch(/\$3M|3\s000\s000\s*\$/);
-    expect(amount).toMatch(/\$10M|10\s000\s000\s*\$/);
-    expect(await fixture.count()).toBe(6 + recipe.steps.length);
+    const grant = await program('nserc', example.grant, 'nserc-applied-research-and-development-grants');
+    verifyFrozenFundingTerms('nserc', grant, funding.nserc.revision);
+    const infrastructure = await program('esdc', example.infrastructure, 'esdc-utip-infrastructure-expansion');
+    verifyFrozenFundingTerms('esdc', infrastructure, funding.esdc.revision);
+    expect(await fixture.count()).toBe(8 + recipe.steps.length);
   }, 30_000);
 });
 
@@ -485,9 +553,9 @@ describe('House written questions through the Worker', () => {
       return response.json();
     };
     const paper = WrittenQuestionLookupResponseSchema.parse(await read('/45-1/1/en'));
-    expect(paper).toMatchObject({ state: 'found', answerState: 'available', documents: [
+    expect(paper).toMatchObject({ state: 'found', answerState: 'available', documents: expect.arrayContaining([
       expect.objectContaining({ attribution: { publisher: 'House of Commons of Canada', surrogate: 'Library of Parliament' } }),
-    ] });
+    ]) });
     const french = WrittenQuestionLookupResponseSchema.parse(await read('/45-1/1010/fr'));
     expect(french).toMatchObject({ state: 'found', documents: expect.arrayContaining([
       expect.objectContaining({ kind: 'reply', respondent: 'Ministère des Services aux Autochtones' }),
@@ -499,7 +567,7 @@ describe('House written questions through the Worker', () => {
     const results = WrittenQuestionSearchResponseSchema.parse(await read('?query=logement&language=fr&kind=reply&limit=5'));
     expect(results.items.length).toBeGreaterThan(0);
     const coverage = WrittenQuestionCoverageResponseSchema.parse(await read('/coverage?session=45-1'));
-    expect(coverage.coverage.map(row => row.questions)).toEqual([1709, 1709]);
+    expect(coverage.coverage).toMatchObject(acquiredWrittenCoverage());
     const big = WrittenQuestionLookupResponseSchema.parse(await read('/45-1/280/en'));
     if (big.state !== 'found') throw new Error('Q-280 missing from authenticated full-session lookup.');
     const item = big.documents.find(document => document.hasMore);
@@ -642,7 +710,11 @@ describe('session committee corpus through the Worker', () => {
     const fixture = await setup(20);
     const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
     const sqlite = new DatabaseSync(databasePath, { readOnly: true });
+    const archive = new DatabaseSync(committeeAcquisitionPath, { readOnly: true });
     closed.push(() => sqlite.close());
+    closed.push(() => archive.close());
+    sqlite.exec('BEGIN');
+    archive.exec('BEGIN');
     fixture.env.COMMITTEE_CORPUS_PREVIEW = 'on';
     fixture.env.COMMITTEE_DB = localD1(sqlite);
     let successful = 0;
@@ -652,39 +724,74 @@ describe('session committee corpus through the Worker', () => {
       successful++;
       return response.json();
     };
+    const cutoff = committeeCutoff(archive);
+    expect(committeeCutoff(sqlite)).toBe(cutoff);
+    const original = cutoff === originalCommitteeCutoff;
+    async function verifyRecord(path: string, id: string, language: 'en' | 'fr') {
+      const response = await read(path);
+      const expected = archivedCommitteeRecord(archive, id, language);
+      expect(response).toMatchObject(expected ? { state: 'found', record: expected } : { state: 'not-found', id, language });
+      return response;
+    }
 
-    const joint = await read('/45-1/joint-regs?language=fr');
-    expect(joint).toMatchObject({ state: 'found', record: { chamber: 'joint', kind: 'committee', language: 'fr' } });
+    const joint = await verifyRecord('/45-1/joint-regs?language=fr', 'joint-regs', 'fr');
+    if (original) expect(joint).toMatchObject({ state: 'found', record: { chamber: 'joint', kind: 'committee', language: 'fr' } });
     const studies = CommitteeCorpusPageSchema.parse(await read('/45-1/house-envi/studies?language=en&limit=1'));
     const later = CommitteeCorpusPageSchema.parse(await read('/45-1/house-envi/studies?language=en&limit=1&offset=1'));
-    expect(studies.hasMore).toBe(true);
-    expect(later.items[0]?.id).not.toBe(studies.items[0]?.id);
-    const report = await read('/45-1/documents/house-envi-report-2?language=en');
-    expect(report).toMatchObject({ state: 'found', links: expect.arrayContaining([
-      expect.objectContaining({ relation: 'government-response' }),
-    ]) });
-    const english = CommitteeCorpusSearchResponseSchema.parse(await read('/search?session=45-1&committeeId=house-envi&language=en&kind=evidence&query=water&limit=5'));
-    expect(english.items.some(hit => hit.citation.url.includes('ourcommons.ca') && hit.text && hit.speaker)).toBe(true);
-    const french = CommitteeCorpusSearchResponseSchema.parse(await read('/search?session=45-1&committeeId=house-envi&language=fr&kind=evidence&query=eau&limit=5'));
-    expect(french.items.some(hit => hit.text && hit.citation.language === 'fr')).toBe(true);
+    const firstStudies = archive.prepare(`SELECT id FROM cc_records WHERE session=? AND kind='study'
+      AND committee_id='house-envi' AND language='en' ORDER BY id LIMIT 3`).all(committeeSession).map(row => row.id);
+    expect(studies.items.map(row => row.id)).toEqual(firstStudies.slice(0, 1));
+    expect(later.items.map(row => row.id)).toEqual(firstStudies.slice(1, 2));
+    expect(studies.hasMore).toBe(firstStudies.length > 1);
+    expect(later.hasMore).toBe(firstStudies.length > 2);
+    const report = await verifyRecord('/45-1/documents/house-envi-report-2?language=en&limit=100', 'house-envi-report-2', 'en');
+    if (original) expect(report).toMatchObject({ state: 'found', links: expect.arrayContaining([
+      expect.objectContaining({ relation: 'government-response' }) ]) });
+    for (const [language, term] of [['en', 'water'], ['fr', 'eau']] as const) {
+      const page = CommitteeCorpusSearchResponseSchema.parse(await read(
+        `/search?session=45-1&committeeId=house-envi&language=${language}&kind=evidence&query=${term}&limit=5`));
+      const count = archivedCommitteeEvidenceMatches(archive, language, term);
+      expect(page.items).toHaveLength(Math.min(count, 5));
+      expect(page.hasMore).toBe(count > 5);
+      if (original) expect(page.items.some(hit => hit.text && (language === 'fr' || hit.speaker))).toBe(true);
+      for (const hit of page.items) {
+        const archived = archivedCommitteeRecord(archive, hit.citation.id, language);
+        expect(archived).toMatchObject({ url: hit.citation.url, kind: 'evidence' });
+        const passage = archive.prepare(`SELECT location,text,speaker FROM cc_passages
+          WHERE session=? AND language=? AND document_id=? AND position=?`)
+          .get(committeeSession, language, hit.citation.id, hit.position);
+        expect(passage).toMatchObject({ location: hit.location, speaker: hit.speaker });
+        if (archived?.metadata.delivery === 'excerpt') expect(hit.text).toBe(String(passage?.text ?? '').slice(0, 400));
+      }
+    }
 
     const brief = '/45-1/documents/senate-soci-submission-7ac33f1fab2a138082b2997a';
-    const submission = await read(brief + '?language=en');
-    expect(submission).toMatchObject({ state: 'found', record: { metadata: { organization: 'Digital Research Alliance of Canada' } },
+    const briefId = 'senate-soci-submission-7ac33f1fab2a138082b2997a';
+    const submission = await verifyRecord(brief + '?language=en&limit=100', briefId, 'en');
+    if (original) expect(submission).toMatchObject({ state: 'found', record: { metadata: { organization: 'Digital Research Alliance of Canada' } },
       links: expect.arrayContaining([expect.objectContaining({ id: 'senate-soci-study-soci-s-5', direction: 'parent' })]) });
-    expect(await read('/45-1/senate-soci/studies/senate-soci-study-soci-s-5?language=en'))
-      .toMatchObject({ state: 'found', record: { title: expect.stringContaining('S-5'), kind: 'study' } });
-    const pages = await read(brief + '/passages?language=en&limit=1');
-    expect(pages).toMatchObject({ items: [expect.objectContaining({ text: null, position: 0 })] });
-    const nextPage = await read(brief + '/passages?language=en&offset=1&limit=1');
-    expect(nextPage).toMatchObject({ items: [expect.objectContaining({ position: 1 })] });
-    const missingMinutes = await read('/45-1/documents/house-secu-minutes-12?language=fr');
-    expect(missingMinutes).toMatchObject({ state: 'found', record: { status: 'unavailable', metadata: { reason: 'HTTP 404' } } });
-    const coverage = CommitteeCorpusCoverageSchema.parse(await read('/coverage?session=45-1&language=en&limit=1'));
-    expect(coverage.cutoff).toBeTruthy();
-    expect(coverage.counts.length).toBeGreaterThan(0);
+    const study = await verifyRecord('/45-1/senate-soci/studies/senate-soci-study-soci-s-5?language=en',
+      'senate-soci-study-soci-s-5', 'en');
+    if (original) expect(study).toMatchObject({ state: 'found', record: { title: expect.stringContaining('S-5'), kind: 'study' } });
+    const passages = archive.prepare(`SELECT position,location FROM cc_passages WHERE session=? AND document_id=?
+      AND language='en' ORDER BY position LIMIT 2`).all(committeeSession, briefId);
+    for (const offset of [0, 1]) {
+      const page = await read(brief + `/passages?language=en&limit=1&offset=${offset}`);
+      expect(page).toMatchObject(archivedCommitteeRecord(archive, briefId, 'en')
+        ? { state: 'found', items: passages.slice(offset, offset + 1).map(passage => ({ ...passage, text: null })) }
+        : { state: 'not-found', id: briefId });
+    }
+    const minutes = await verifyRecord('/45-1/documents/house-secu-minutes-12?language=fr', 'house-secu-minutes-12', 'fr');
+    if (original) expect(minutes).toMatchObject({ state: 'found', record: { status: 'unavailable', metadata: { reason: 'HTTP 404' } } });
+    const coverage = CommitteeCorpusCoverageSchema.parse(await read('/coverage?session=45-1&committeeId=house-envi&language=en&limit=1'));
+    const counts = archivedCommitteeCoverage(archive);
+    expect(coverage.cutoff).toBe(cutoff);
+    expect(coverage.counts).toMatchObject(counts);
+    expect(coverage.outstanding.total).toBe(counts.filter(row =>
+      ['stored', 'pending', 'unavailable', 'removed'].includes(String(row.status)))
+      .reduce((total, row) => total + Number(row.count), 0));
     expect(await fixture.count()).toBe(successful);
-  });
+  }, 30_000);
 });
 
 describe('source change feeds through authenticated Worker routes', () => {
@@ -1504,13 +1611,19 @@ describe('current parliamentary catalogues through the Worker', () => {
     fixture.env.AUTH_DB = fixture.db;
     fixture.env.CIVIC_DB = localD1(sqlite);
     fixture.env.PARLIAMENT_CATALOGUE_PREVIEW = 'on';
-    for (const collection of ['bills', 'house-votes', 'senate-votes']) {
+    const files = { bills: 'bills.json', 'house-votes': 'votes.json', 'senate-votes': 'senate-votes.json' };
+    for (const [collection, file] of Object.entries(files)) {
+      const inventory = acquiredParliamentInventory(cataloguesPath, file);
+      expect(inventory.collection).toBe(collection);
       const path = '/api/parliament/' + collection;
       for (const language of ['en', 'fr']) {
         const res = await fixture.send(path + '?limit=1&language=' + language);
         expect(res.status).toBe(200);
         const { items, coverage } = await res.json() as { items: { key: string; url: string }[]; coverage: { recordsPerLanguage: number } };
-        expect(coverage.recordsPerLanguage).toBeGreaterThan(0);
+        const editions = inventory.records.filter(record => record.language === language);
+        expect(coverage).toMatchObject({ recordsPerLanguage: editions.length, observedAt: new Date(inventory.observedAt).toISOString(),
+          session: inventory.session, collection });
+        expect(editions.find(item => item.key === items[0].key)?.url).toBe(items[0].url);
         expect(await (await fixture.send(path + '/' + items[0].key + '?language=' + language)).json())
           .toMatchObject({ item: { url: items[0].url, language } });
       }
@@ -1522,7 +1635,12 @@ describe('current parliamentary catalogues through the Worker', () => {
     const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
     const sqlite = new DatabaseSync(chambersPath, { readOnly: true });
     closed.push(() => sqlite.close());
-    const fixture = await setup(32);
+    const rollCalls = acquiredParliamentInventory(chambersPath, 'senate-roll-calls-complete.json');
+    expect(rollCalls.collection).toBe('senate-roll-calls');
+    const examples = ['en', 'fr'].map(language => ({ language, source: archivedSenateVote(rollCalls, language) }));
+    // Twenty-four browse/lookup requests and three dated parliamentary examples precede the Senate checks.
+    const expectedUsage = examples.reduce((sum, { source }) => sum + 1 + Math.max(1, Math.ceil(source.yea.length / 100)), 27);
+    const fixture = await setup(expectedUsage);
     fixture.env.AUTH_DB = fixture.db;
     fixture.env.CIVIC_DB = localD1(sqlite);
     fixture.env.PARLIAMENT_CATALOGUE_PREVIEW = 'on';
@@ -1555,18 +1673,23 @@ describe('current parliamentary catalogues through the Worker', () => {
     expect(await senate.json()).toMatchObject({ items: expect.arrayContaining([
       expect.objectContaining({ edition: expect.objectContaining({ key: '102', date: '2026-11-17' }) }),
     ]) });
-    for (const language of ['en', 'fr']) {
-      const path = '/api/parliament/senate-roll-calls/j16-3';
+    for (const { language, source } of examples) {
+      const path = '/api/parliament/senate-roll-calls/' + encodeURIComponent(source.key);
       const vote = await fixture.send(path + '?language=' + language);
       expect(await vote.json()).toMatchObject({
-        coverage: { journalOnlyRecordsPerLanguage: 1 },
-        item: { details: { journalIssue: '16', journalVoteOrdinal: 3, memberCount: 80, tally: { yeas: 6, nays: 67, abstentions: 7 } } },
+        coverage: { journalOnlyRecordsPerLanguage: source.supplemental, observedAt: new Date(rollCalls.observedAt).toISOString() },
+        item: { key: source.key, url: source.url, details: source.details },
       });
-      const yeas = await fixture.send(path + '/members?position=yea&language=' + language);
-      const body = await yeas.json() as { items: { member: { name: string } }[] };
-      expect(body.items).toHaveLength(6);
-      expect(body.items.map(hit => hit.member.name)).toContain('Pate');
+      const names: string[] = [];
+      for (let offset = 0; offset < Math.max(1, source.yea.length); offset += 100) {
+        const yeas = await fixture.send(path + '/members?position=yea&limit=100&language=' + language + '&offset=' + offset);
+        expect(yeas.status).toBe(200);
+        const body = await yeas.json() as { items: { member: { name: string } }[] };
+        names.push(...body.items.map(hit => hit.member.name));
+      }
+      expect(names.sort()).toEqual(source.yea.sort());
     }
+    expect(await fixture.count()).toBe(expectedUsage);
   });
 });
 
@@ -1601,33 +1724,98 @@ describe('GEDS directory through the Worker', () => {
     fixture.env.CIVIC_DB = localD1(db);
     fixture.env.GEDS_PREVIEW = 'on';
 
-    const english = await fixture.send('/api/organizations?exact=true&lang=en&q=' + encodeURIComponent('Privy Council Office'));
-    expect(english.status).toBe(200);
-    const en = await english.json() as { items: { id: string; nameEn: string; nameFr: string }[] };
-    const unit = en.items[0];
-    if (!unit) throw new Error('The imported export did not resolve Privy Council Office.');
-    expect(unit.nameEn).toBe('Privy Council Office');
-    const french = await fixture.send('/api/organizations?exact=true&lang=fr&q=' + encodeURIComponent(unit.nameFr));
-    expect(french.status).toBe(200);
-    expect((await french.json() as { items: { id: string }[] }).items.map((item) => item.id)).toContain(unit.id);
+    const snapshot = db.prepare(`SELECT seq, snapshot_id FROM geds_snapshots
+      WHERE status = 'published' ORDER BY seq DESC LIMIT 1`).get() as { seq: number; snapshot_id: string } | undefined;
+    if (!snapshot) throw new Error('The GEDS export has no published snapshot.');
+    const { seq } = snapshot;
+    // Choose an unambiguous bilingual unit with a published direct contact.
+    // The underlying export supplies the identities and expected result.
+    type Organization = { org_id: string; name_en: string; name_fr: string };
+    type ContactRole = { person_id: string; role_id: string; contact_value: string; contact_snapshot: string; contact_source_url: string };
+    const candidates = db.prepare(`WITH current_orgs AS MATERIALIZED (
+        SELECT org_id, name_en, name_fr, name_key_en, name_key_fr, acronym
+          FROM geds_organizations WHERE level > 0 AND valid_from_seq <= ?
+          AND (valid_to_seq IS NULL OR valid_to_seq > ?)
+      ), unique_names AS MATERIALIZED (
+        SELECT lookup_key FROM (
+          SELECT org_id, name_key_en AS lookup_key FROM current_orgs
+          UNION SELECT org_id, name_key_fr FROM current_orgs
+          UNION SELECT org_id, lower(acronym) FROM current_orgs
+        ) GROUP BY lookup_key HAVING count(*) = 1
+      )
+      SELECT o.org_id, o.name_en, o.name_fr
+      FROM current_orgs o
+      WHERE o.name_key_en <> '' AND o.name_key_fr <> '' AND o.name_key_en <> o.name_key_fr
+        AND length(o.name_en) <= 200 AND length(o.name_fr) <= 200
+        AND o.name_key_en IN (SELECT lookup_key FROM unique_names)
+        AND o.name_key_fr IN (SELECT lookup_key FROM unique_names)
+      ORDER BY o.org_id`).iterate(seq, seq) as Iterable<Organization>;
+    const findContact = db.prepare(`SELECT r.person_id, r.role_id, s.snapshot_id AS contact_snapshot, s.source_url AS contact_source_url,
+        coalesce(nullif(r.telephone, ''), r.email) AS contact_value
+      FROM geds_roles r JOIN geds_snapshots s ON s.seq = r.valid_from_seq
+      WHERE r.org_id = ? AND r.valid_from_seq <= ? AND (r.valid_to_seq IS NULL OR r.valid_to_seq > ?)
+        AND r.is_general_office = 0 AND (r.telephone <> '' OR r.email <> '')
+      ORDER BY r.role_id LIMIT 1`);
+    let unit: (Organization & ContactRole) | undefined;
+    for (const candidate of candidates) {
+      const contact = findContact.get(candidate.org_id, seq, seq) as ContactRole | undefined;
+      if (contact) {
+        unit = { ...candidate, ...contact };
+        break;
+      }
+    }
+    if (!unit) throw new Error('The GEDS export has no unambiguous bilingual unit with a direct contact.');
 
-    const members = await fixture.send(`/api/organizations/${unit.id}/people?descendants=true&limit=5&lang=en`);
+    for (const [lang, name] of [['en', unit.name_en], ['fr', unit.name_fr]]) {
+      const response = await fixture.send('/api/organizations?exact=true&lang=' + lang + '&q=' + encodeURIComponent(name));
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ language: lang, snapshot: { id: snapshot.snapshot_id },
+        items: [{ id: unit.org_id, name, nameEn: unit.name_en, nameFr: unit.name_fr }] });
+    }
+
+    const count = db.prepare(`SELECT count(DISTINCT person_id) AS total FROM geds_roles
+      WHERE org_id = ? AND valid_from_seq <= ? AND (valid_to_seq IS NULL OR valid_to_seq > ?)
+        AND is_general_office = 0`).get(unit.org_id, seq, seq);
+    const members = await fixture.send(`/api/organizations/${unit.org_id}/people?limit=5&lang=en`);
     expect(members.status).toBe(200);
-    type Member = { id: string; name: string; contact: { value: string; citation: {
-      datasetId: string; resourceUrl: string; text: string; snapshotId: string } } | null };
-    const page = await members.json() as { items: Member[]; page: { total: number } };
-    expect(page.page.total).toBeGreaterThan(0);
-    const cited = page.items.find((person) => person.contact);
-    if (!cited?.contact) throw new Error('No member of the real unit published a contact.');
-    expect(cited.contact.citation.datasetId).toBe('8ec4a9df-b76b-4a67-8f93-cdbc2e040098');
-    expect(cited.contact.citation.resourceUrl).toContain('gedsOpenData.zip');
-    expect(cited.contact.citation.snapshotId).toBeTruthy();
-    expect(cited.contact.citation.text).toContain(cited.contact.value);
+    const page = await members.json() as { items: unknown[]; page: { total: number } };
+    expect(page.page.total).toBe(count?.total);
+    expect(page.items).toHaveLength(Math.min(5, page.page.total));
+    for (const member of page.items) expect(member).toMatchObject({ roles: expect.arrayContaining([
+      expect.objectContaining({ organization: expect.objectContaining({ id: unit.org_id }) }),
+    ]) });
 
-    const historical = await fixture.send('/api/organizations?q=Privy&asOf=2020-01-01&lang=en');
+    const contact = await fixture.send(`/api/people/${unit.person_id}/contact?roleId=${unit.role_id}&organizationId=${unit.org_id}&lang=en`);
+    expect(contact.status).toBe(200);
+    expect(await contact.json()).toMatchObject({ person: { id: unit.person_id }, reachedVia: 'direct',
+      role: { id: unit.role_id, organization: { id: unit.org_id } }, snapshot: { id: snapshot.snapshot_id },
+      contact: { value: unit.contact_value, citation: { datasetId: '8ec4a9df-b76b-4a67-8f93-cdbc2e040098',
+        resourceUrl: unit.contact_source_url, snapshotId: unit.contact_snapshot,
+        text: expect.stringContaining(unit.contact_value) } } });
+
+    const first = db.prepare("SELECT min(effective_at) AS effective_at FROM geds_snapshots WHERE status = 'published'").get();
+    if (typeof first?.effective_at !== 'string') throw new Error('The published GEDS snapshot has no effective date.');
+    const beforeFirst = new Date(Date.parse(first.effective_at) - 1).toISOString();
+    const historical = await fixture.send('/api/organizations?lang=en&asOf=' + encodeURIComponent(beforeFirst));
     expect(historical.status).toBe(404);
     expect((await historical.json() as { code: string }).code).toBe('NO_SNAPSHOT_AS_OF');
-    expect(await fixture.count()).toBe(3);
+
+    const benchmark = JSON.parse(readFileSync(new URL('../docs/evidence/2026-11-24/geds-full-import.json', import.meta.url), 'utf8')) as {
+      source: { snapshotId: string; originalHash: string; csvHash: string };
+      acceptance: { unit: { id: string; nameEn: string; nameFr: string } };
+    };
+    const pinned = db.prepare(`SELECT effective_at FROM geds_snapshots WHERE status = 'published' AND snapshot_id = ?
+      AND zip_sha256 = ? AND csv_sha256 = ?`).get(benchmark.source.snapshotId, benchmark.source.originalHash, benchmark.source.csvHash);
+    if (typeof pinned?.effective_at === 'string') {
+      const expected = benchmark.acceptance.unit;
+      for (const [lang, name] of [['en', expected.nameEn], ['fr', expected.nameFr]]) {
+        const response = await fixture.send('/api/organizations?' + new URLSearchParams({ exact: 'true', lang, q: name, asOf: pinned.effective_at }));
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({ snapshot: { id: benchmark.source.snapshotId },
+          items: expect.arrayContaining([expect.objectContaining({ id: expected.id, name })]) });
+      }
+    }
+    expect(await fixture.count()).toBe(pinned ? 6 : 4);
   });
   it('serves discovery and meters an authenticated French organization lookup', async () => {
     const fixture = await setup(4);
@@ -1654,97 +1842,210 @@ describe('GEDS directory through the Worker', () => {
 
 describe('committee calls through the Worker against the acquired corpus', () => {
   const committeePath = process.env.CIVICSIGNAL_COMMITTEES_D1;
-  it.skipIf(!committeePath)('computes the open state, answers a dated zero, and follows a real call to its study', async () => {
+  const receiptPath = process.env.CIVICSIGNAL_COMMITTEE_CALLS_RECEIPT;
+  it.skipIf(!committeePath)('computes dated states and follows bilingual listings to their acquired studies', async () => {
     if (!committeePath) throw new Error('The committee corpus is required.');
-    const fixture = await setup(6);
+    const fixture = await setup(20);
     const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
     fixture.env.AUTH_DB = fixture.db;
     const db = new DatabaseSync(committeePath, { readOnly: true });
     closed.push(() => db.close());
+    const acquisition = new DatabaseSync(committeeAcquisitionPath, { readOnly: true });
+    closed.push(() => acquisition.close());
+    acquisition.exec('BEGIN');
+    db.exec('BEGIN');
     fixture.env.COMMITTEE_DB = localD1(db);
     fixture.env.COMMITTEE_CORPUS_PREVIEW = 'on';
 
-    const list = await fixture.send('/api/committees/45-1/calls?language=en');
-    expect(list.status).toBe(200);
-    const english = CommitteeCallsResponseSchema.parse(await list.json());
-    expect(english.items.length).toBeGreaterThanOrEqual(15);
-    expect(english.items.every(item => item.committee.id.startsWith('house-'))).toBe(true);
-    expect(english.items.some(item => item.status === 'open' && item.statusBasis === 'deadline')).toBe(true);
-    const health = english.items.find(item => item.id === 'house-hesa-call-13632808');
-    if (!health) throw new Error('The Health committee call is missing.');
-    expect(health.study?.title).toBe('Diagnostic Imaging Capacity');
-    expect(health.instructionUrl).toMatch(/^https:\/\/www\.ourcommons\.ca\/committee-participation\//u);
-
-    const zero = CommitteeCallsResponseSchema.parse(await (await fixture.send(
-      '/api/committees/45-1/calls?language=en&query=apprenticeship')).json());
-    expect(zero.items).toEqual([]);
-    expect(zero.asOf).toMatch(/^\d{4}-\d{2}-\d{2}T/u);
-    expect(zero.hasMore).toBe(false);
-
-    const detail = CommitteeCallDetailResponseSchema.parse(await (await fixture.send(
-      `/api/committees/45-1/calls/${health.id}?language=en`)).json());
-    expect(detail.state).toBe('found');
-    if (detail.state === 'found') {
-      expect(detail.item.instructions).not.toBeNull();
-      expect(detail.related.submissions).toBeGreaterThan(0);
+    const receipt = receiptPath ? JSON.parse(readFileSync(receiptPath, 'utf8')) as CommitteeCallsReceipt : undefined;
+    const archive = committeeCallRows(acquisition);
+    const original = frozenCalls();
+    const stamps = archive.map(row => committeeCallTime(row.metadata.lastListedAt ?? row.metadata.observedAt));
+    const asOf = committeeCallTime(receipt?.observedAt ?? stamps.sort().at(-1) ?? String(committeeCutoff(acquisition)));
+    const all = archive.map(row => committeeCallExpected(acquisition, row, asOf));
+    let requests = 0;
+    async function read(suffix: string, parameters: Record<string, string>) {
+      const query = new URLSearchParams({ asOf, ...parameters });
+      const response = await fixture.send(`/api/committees/${committeeSession}/calls${suffix}?${query}`);
+      expect(response.status).toBe(200);
+      requests++;
+      return response.json() as Promise<unknown>;
     }
-    const french = CommitteeCallDetailResponseSchema.parse(await (await fixture.send(
-      `/api/committees/45-1/calls/${health.id}?language=fr`)).json());
-    expect(french.state).toBe('found');
-    expect(await fixture.count()).toBe(4);
-  });
+    async function verifyPages(language: 'en' | 'fr', expected: typeof all, query?: string) {
+      const limit = 100;
+      for (let offset = 0; ; offset += limit) {
+        const page = CommitteeCallsResponseSchema.parse(await read('', { language, limit: String(limit),
+          offset: String(offset), ...(query ? { query } : {}) }));
+        expect(page).toMatchObject({ asOf, session: committeeSession, offset, limit,
+          items: expected.slice(offset, offset + limit), hasMore: expected.length > offset + limit });
+        if (!page.hasMore) return;
+      }
+    }
+    await verifyPages('en', all.filter(call => call.language === 'en'));
+    await verifyPages('fr', all.filter(call => call.language === 'fr'));
+    const apprenticeship = committeeCallRows(acquisition, 'apprenticeship').filter(call => call.language === 'en')
+      .map(call => committeeCallExpected(acquisition, call, asOf));
+    await verifyPages('en', apprenticeship, 'apprenticeship');
+    if (receipt) verifyCommitteeCallReceipt(receipt, all, asOf);
+    const sample = all.find(call => call.id === original.detail.id) ?? all[0];
+    const details = sample ? await Promise.all((['en', 'fr'] as const).map(async language => {
+      const expected = all.find(call => call.language === language && call.id === sample.id);
+      const detail = CommitteeCallDetailResponseSchema.parse(await read('/' + sample.id, { language }));
+      if (!expected) expect(detail).toMatchObject({ state: 'not-found', id: sample.id, language });
+      else expect(detail).toMatchObject({ state: 'found', item: expected,
+        related: committeeCallRelated(acquisition, language, String(expected.study?.id ?? '') || null) });
+      return detail;
+    })) : [];
+    if (asOf === committeeCallTime(original.acquisition.observedAt)) {
+      expect(all.filter(call => call.language === 'en')).toHaveLength(original.acquisition.callsPerEdition.en);
+      expect(all.filter(call => call.language === 'fr')).toHaveLength(original.acquisition.callsPerEdition.fr);
+      expect(all.filter(call => call.language === 'en' && call.status === 'open')).toHaveLength(original.queries.englishOpenNow);
+      expect(apprenticeship).toHaveLength(original.queries.apprenticeship.items);
+      expect(details[0]).toMatchObject({ state: 'found', related: original.detail.related,
+        item: { id: original.detail.id, study: original.detail.study, instructionUrl: original.detail.instructionUrl,
+          status: original.detail.status, statusBasis: original.detail.statusBasis,
+          instructionsTruncated: original.detail.instructionsTruncated } });
+      if (details[0]?.state === 'found') expect(details[0].item.instructions).toHaveLength(original.detail.instructionsCharacters);
+      expect(details[1]).toMatchObject({ state: 'found', item: { status: original.detail.frenchStatus } });
+    }
+    expect(await fixture.count()).toBe(requests);
+  }, 30_000);
+
+  function verifyCommitteeCallReceipt(receipt: CommitteeCallsReceipt, all: ReturnType<typeof committeeCallExpected>[], asOf: string) {
+    expect(receipt.session).toBe(committeeSession);
+    const key = (call: { id: string; language: string }) => `${call.id}/${call.language}`;
+    const listed = all.filter(call => call.listed);
+    expect(listed.map(key).sort()).toEqual(receipt.calls.map(key).sort());
+    const archived = new Map(all.map(call => [key(call), call]));
+    for (const call of receipt.calls) {
+      expect(archived.get(key(call))).toMatchObject({ title: call.title, url: call.citation,
+        committee: { id: call.committeeId }, lastListedAt: asOf, instructionUrl: call.instructionUrl,
+        deadline: call.deadline, contentWarning: call.hasContentWarning });
+    }
+    for (const call of receipt.droppedCalls ?? []) {
+      expect(archived.get(key(call))).toMatchObject({ listed: false, lastListedAt: committeeCallTime(call.lastListedAt) });
+    }
+  }
 });
 
 describe('consultations through the Worker against the acquired catalogue', () => {
   const cataloguePath = process.env.CIVICSIGNAL_CONSULTATIONS_SQLITE;
-  it.skipIf(!cataloguePath)('serves the applied-AI case, its state as of two dates, and the reconciled coverage', async () => {
+  const receiptPath = process.env.CIVICSIGNAL_CONSULTATIONS_RECEIPT;
+  const aiId = 'esdc-edsc_C-1235757';
+
+  async function verifyAcquiredChanges(receipt: ConsultationReceipt | undefined, records: ConsultationFacts[],
+    lookup: (id: string) => Promise<ConsultationLookupResponse>) {
+    if (!receipt) return 0;
+    const archive = new Map(records.map(record => [record.id, record]));
+    const samples = ['changed', 'added', 'removed'].flatMap(event =>
+      receipt.changes.sample.find(entry => entry.event === event) ?? []);
+    for (const { id, event, changedFields } of samples) {
+      const changed = await lookup(id);
+      expect(changed.revisions[0]).toMatchObject({ observedAt: receipt.observedAt, event, changedFields });
+      expect(changed.revisions[0]?.revision).toBe(changed.item?.revision);
+      expect(changed.item).toMatchObject(event === 'removed'
+        ? { id, removedAt: receipt.observedAt }
+        : { ...archive.get(id), id, removedAt: null });
+      expect(archive.has(id)).toBe(event !== 'removed');
+    }
+    return samples.length;
+  }
+
+  function verifyFrozenConsultations({ english, french, later, detail, coverage }: { english: ConsultationSearchResponse;
+    french: ConsultationSearchResponse; later: ConsultationSearchResponse;
+    detail: ConsultationLookupResponse; coverage: ConsultationCoverage }) {
+    expect(english.items).toHaveLength(12);
+    expect(english.items.filter(item => item.state === 'open').map(item => item.id)).toEqual([aiId]);
+    expect(later.items.find(item => item.id === aiId)?.state).toBe('closed');
+    expect(french.items[0]?.title).toMatch(/intelligence artificielle/i);
+    expect(detail.item).toMatchObject({ id: aiId, statusCode: 'O', revision: 1,
+      dates: { start: '2026-10-27', end: '2027-01-29' },
+      institution: { en: 'Employment and Social Development Canada' },
+      editions: { en: { title: expect.stringMatching(/Digital Technologies/) } } });
+    expect(detail.revisions).toHaveLength(1);
+    expect(detail.revisions[0]).toMatchObject({ revision: 1, event: 'added', changedFields: [] });
+    expect(coverage.counts).toMatchObject({ total: 5208,
+      byState: { open: 71, planned: 10, closed: 5127, unknown: 0 }, stale: 0 });
+    expect(coverage.editions).toMatchObject({ missingDescriptionFr: 8, missingTitleFr: 0,
+      profileLinkKinds: { official: 4890, 'third-party-wrapper': 3, missing: 209, unparsable: 106 } });
+    expect(coverage.reports.available).toBe(772);
+    expect(coverage.revisions.total).toBe(5208);
+  }
+
+  it.skipIf(!cataloguePath)('serves reconciled coverage, bilingual results and revisions from the acquired observation', async () => {
     if (!cataloguePath) throw new Error('The consultation catalogue is required.');
-    const fixture = await setup(8);
+    const fixture = await setup(10);
     const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
     const db = new DatabaseSync(cataloguePath, { readOnly: true });
     closed.push(() => db.close());
+    db.exec('BEGIN');
     fixture.env.AUTH_DB = fixture.db;
-    fixture.env.CIVIC_DB = localD1(db);
+    fixture.env.CIVIC_DB = localD1(db, { existingReadTransaction: true });
     fixture.env.CONSULTATIONS_PREVIEW = 'on';
 
-    const at = '2026-11-24T17:00:00.000Z';
-    const search = await fixture.send(`/api/consultations?language=en&query=artificial%20intelligence&asOf=${at}`);
-    expect(search.status).toBe(200);
-    const english = ConsultationSearchResponseSchema.parse(await search.json());
-    expect(english.items).toHaveLength(12);
-    expect(english.items.filter(item => item.state === 'open').map(item => item.id)).toEqual(['esdc-edsc_C-1235757']);
-    const state = (asOf: string) => fixture.send(`/api/consultations?language=en&query=artificial%20intelligence&asOf=${asOf}`)
-      .then(response => response.json()).then(body => ConsultationSearchResponseSchema.parse(body));
-    expect((await state('2027-03-01T00:00:00.000Z')).items
-      .find(item => item.id === 'esdc-edsc_C-1235757')?.state).toBe('closed');
+    const observation = db.prepare(`SELECT observed_at AS observedAt,revision,csv_sha256 AS csvSha256,
+      schema_sha256 AS schemaSha256 FROM consultations_catalogues WHERE source='canada'`)
+      .get() as ConsultationObservation | undefined;
+    if (!observation) throw new Error('The acquired consultation observation is missing.');
+    const { records, csvBytes, schemaBytes } = acquiredConsultations(cataloguePath, observation);
+    const original = isBaselineConsultationObservation(observation);
+    const at = original ? baselineConsultations.observedAt : observation.observedAt;
+    const receipt = receiptPath
+      ? JSON.parse(readFileSync(receiptPath, 'utf8')) as ConsultationReceipt
+      : undefined;
+    if (receipt) {
+      expect(receipt).toMatchObject({ observedAt: observation.observedAt, revision: observation.revision,
+        csv: { sha256: observation.csvSha256, bytes: csvBytes, rows: records.length },
+        schema: { sha256: observation.schemaSha256, bytes: schemaBytes },
+        counts: { rows: records.length } });
+    }
+    const history = db.prepare(`SELECT count(*) AS revisions,
+      (SELECT count(*) FROM consultations_records WHERE removed_at IS NOT NULL) AS removed,
+      (SELECT count(*) FROM consultations_records WHERE removed_at IS NULL AND observed_at < ?) AS stale
+      FROM consultations_revisions`).get(observation.observedAt);
+    let metered = 0;
+    const read = async (path: string, parameters: Record<string, string>) => {
+      const response = await fixture.send(path + '?' + new URLSearchParams(parameters));
+      expect(response.status, path).toBe(200);
+      metered++;
+      return response.json() as Promise<unknown>;
+    };
+    const coverage = ConsultationCoverageSchema.parse(await read('/api/consultations/coverage', { asOf: at }));
+    expect(coverage).toMatchObject({ observedAt: observation.observedAt, csvSha256: observation.csvSha256,
+      schemaSha256: observation.schemaSha256, ...archivedConsultationCoverage(records, at) });
+    expect(coverage.counts).toMatchObject({ stale: receipt?.counts.stale ?? history?.stale, removed: history?.removed });
+    expect(coverage.revisions.total).toBe(history?.revisions);
 
-    const french = ConsultationSearchResponseSchema.parse(await (await fixture.send(
-      `/api/consultations?language=fr&query=intelligence%20artificielle&asOf=${at}`)).json());
+    const readSearch = async (language: 'en' | 'fr', query: string, asOf: string) => {
+      const expected = archivedConsultationSearch(records, language, query, asOf);
+      const result = ConsultationSearchResponseSchema.parse(await read('/api/consultations',
+        { language, query, asOf, limit: '100' }));
+      expect(result).toMatchObject({ observedAt: observation.observedAt, asOf, nextOffset: null });
+      expect(result.items.map(item => item.id).sort()).toEqual(expected.map(item => item.id).sort());
+      const byId = new Map(result.items.map(item => [item.id, item]));
+      for (const match of expected) expect(byId.get(match.id)).toMatchObject(match);
+      return result;
+    };
+    const sample = records.find(record => record.id === aiId) ?? records[0];
+    if (!sample) throw new Error('The consultation source has no record for a bilingual query.');
+    const queryFor = (language: 'en' | 'fr', query: string) => {
+      const matches = archivedConsultationSearch(records, language, query, at);
+      return matches.length && matches.length <= 100 ? query : sample.editions[language].title.slice(0, 256).trim();
+    };
+    const englishQuery = queryFor('en', 'artificial intelligence');
+    const english = await readSearch('en', englishQuery, at);
+    const french = await readSearch('fr', queryFor('fr', 'intelligence artificielle'), at);
+    expect(english.items.length).toBeGreaterThan(0);
     expect(french.items.length).toBeGreaterThan(0);
-    expect(french.items[0]?.title).toMatch(/intelligence artificielle/i);
+    const later = await readSearch('en', englishQuery, '2027-03-01T00:00:00.000Z');
 
-    const lookup = ConsultationLookupResponseSchema.parse(await (await fixture.send(
-      `/api/consultations/esdc-edsc_C-1235757?asOf=${at}`)).json());
-    expect(lookup.item).toMatchObject({
-      id: 'esdc-edsc_C-1235757', statusCode: 'O', revision: 1,
-      dates: { start: '2026-10-27', end: '2027-01-29' },
-      institution: { en: 'Employment and Social Development Canada' },
-      editions: { en: { title: expect.stringMatching(/Digital Technologies/) } },
-    });
-    expect(lookup.revisions).toHaveLength(1);
-    expect(lookup.revisions[0]).toMatchObject({ revision: 1, event: 'added', changedFields: [] });
-
-    const coverage = ConsultationCoverageSchema.parse(await (await fixture.send(
-      `/api/consultations/coverage?asOf=${at}`)).json());
-    expect(coverage.counts).toMatchObject({
-      total: 5208, byState: { open: 71, planned: 10, closed: 5127, unknown: 0 }, stale: 0,
-    });
-    expect(coverage.editions).toMatchObject({
-      missingDescriptionFr: 8, missingTitleFr: 0,
-      profileLinkKinds: { official: 4890, 'third-party-wrapper': 3, missing: 209, unparsable: 106 },
-    });
-    expect(coverage.reports.available).toBe(772);
-    expect(coverage.revisions.total).toBe(5208);
+    const lookup = async (id: string) => ConsultationLookupResponseSchema.parse(await read(
+      `/api/consultations/${id}`, { asOf: at }));
+    const detail = await lookup(sample.id);
+    expect(detail).toMatchObject({ observedAt: observation.observedAt, item: { ...sample, removedAt: null } });
+    expect(detail.revisions[0]?.revision).toBe(detail.item?.revision);
+    const checkedChanges = await verifyAcquiredChanges(receipt, records, lookup);
+    if (original) verifyFrozenConsultations({ english, french, later, detail, coverage });
 
     const discovery = await (await fixture.send('/.well-known/civicsignal.json', {}, false)).json() as {
       sources: { id: string; status: string; editions: { language: string; request: string }[] }[] };
@@ -1754,8 +2055,9 @@ describe('consultations through the Worker against the acquired catalogue', () =
     expect(source?.editions[0]?.request).toContain('/api/consultations?language=en');
     expect((await fixture.send('/api/consultations/openapi.json', {}, false)).status).toBe(200);
     expect((await fixture.send('/api/consultations?language=en&query=water', {}, false)).status).toBe(401);
-    expect(await fixture.count()).toBe(5);
-  });
+    expect(metered).toBe(5 + checkedChanges);
+    expect(await fixture.count()).toBe(metered);
+  }, 15_000);
 });
 
 describe('funding programme API through the Worker', () => {
