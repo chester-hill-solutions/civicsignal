@@ -1,0 +1,205 @@
+{
+  "chamber": "house",
+  "session": "45-1",
+  "weekOf": "2026-11-02",
+  "through": "2026-11-08",
+  "validatedCommit": "2a5f6ce7e19b29896882c5eee11a56e2a9dc40d6",
+  "runtime": "Bun 1.4.4 on macOS arm64",
+  "parserVersion": "hansard-v1",
+  "calendar": {
+    "sourceUrl": "https://www.ourcommons.ca/documentviewer/en/SessionPublicationCalendarsWidget?organization=HOC&publicationTypeId=37&parliament=45&session=1",
+    "filename": "calendar.html",
+    "bytes": 381753,
+    "sha256": "b2400989379ddb9475639dbabde0eacf7def432e5ffa5f752f7800f9ed5e71a4",
+    "observedAt": "2026-11-24T20:49:42.871Z",
+    "reusedCapturedBytes": true,
+    "coveredDays": 7,
+    "daysWithoutSitting": [
+      "2026-11-07",
+      "2026-11-08"
+    ]
+  },
+  "capture": {
+    "archivePath": "dist/hansard/house-2026-11-02-source",
+    "manifest": "week.json",
+    "manifestSha256": "825f8dc1ee8d55e9a5e61fc785ed30955f36163cd07be22b20878d89eb1f1230",
+    "xmlBytes": 6460507,
+    "transcriptRequests": 10,
+    "startedAt": "2026-11-24T21:01:35.420Z",
+    "finishedAt": "2026-11-24T21:01:36.470Z",
+    "elapsedMs": 1050
+  },
+  "sittings": [
+    {
+      "id": "45-1-160",
+      "date": "2026-11-02",
+      "interventionsPerLanguage": 302,
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/160/HAN160-E.XML",
+          "filename": "HAN160-E.XML",
+          "bytes": 556953,
+          "sha256": "eaf52137f41a9f26768a268d72fa258367047263f2a9d949347cf30a92885d3a",
+          "observedAt": "2026-11-24T21:01:35.745Z"
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/160/HAN160-F.XML",
+          "filename": "HAN160-F.XML",
+          "bytes": 646230,
+          "sha256": "7f98494be3ae6b4a9e988d75b856d1f2f6ef208810c82a3c08562171d92b71ab",
+          "observedAt": "2026-11-24T21:01:35.820Z"
+        }
+      }
+    },
+    {
+      "id": "45-1-161",
+      "date": "2026-11-03",
+      "interventionsPerLanguage": 346,
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/161/HAN161-E.XML",
+          "filename": "HAN161-E.XML",
+          "bytes": 690512,
+          "sha256": "fa73fd77de15c1122afd50056bb3254f64e9b8b8661bd9b71573c82e35a56ee0",
+          "observedAt": "2026-11-24T21:01:35.886Z"
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/161/HAN161-F.XML",
+          "filename": "HAN161-F.XML",
+          "bytes": 796605,
+          "sha256": "2b04f3b8baffd834ca2012726302bbdc2952dd87cf23d3db3820486d8adeb15d",
+          "observedAt": "2026-11-24T21:01:35.980Z"
+        }
+      }
+    },
+    {
+      "id": "45-1-162",
+      "date": "2026-11-04",
+      "interventionsPerLanguage": 397,
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/162/HAN162-E.XML",
+          "filename": "HAN162-E.XML",
+          "bytes": 813681,
+          "sha256": "b8cdf622aa2e9c447c9946361b973719c9a74ddb681bc81a091585e7ede8f209",
+          "observedAt": "2026-11-24T21:01:36.043Z"
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/162/HAN162-F.XML",
+          "filename": "HAN162-F.XML",
+          "bytes": 940305,
+          "sha256": "612a83ca778ed0c8d6960f44813b1b4a6512d279b5b90c92a3136add882a95bc",
+          "observedAt": "2026-11-24T21:01:36.112Z"
+        }
+      }
+    },
+    {
+      "id": "45-1-163",
+      "date": "2026-11-05",
+      "interventionsPerLanguage": 317,
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/163/HAN163-E.XML",
+          "filename": "HAN163-E.XML",
+          "bytes": 563502,
+          "sha256": "6a772a1e68c250e729b8de192b6fcc99356daa15c53d4d0ad1e0c614121695c2",
+          "observedAt": "2026-11-24T21:01:36.256Z"
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/163/HAN163-F.XML",
+          "filename": "HAN163-F.XML",
+          "bytes": 648967,
+          "sha256": "9d91c3a2ddaf2e9fe1d46143a5eb2de15d81e9f509b8ad8b277895b7d567c05a",
+          "observedAt": "2026-11-24T21:01:36.333Z"
+        }
+      }
+    },
+    {
+      "id": "45-1-164",
+      "date": "2026-11-06",
+      "interventionsPerLanguage": 229,
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/164/HAN164-E.XML",
+          "filename": "HAN164-E.XML",
+          "bytes": 373537,
+          "sha256": "2b8068370302353090be706e7e638a4c0e39214d501ccb0f3538d9b0d3bad492",
+          "observedAt": "2026-11-24T21:01:36.401Z"
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/164/HAN164-F.XML",
+          "filename": "HAN164-F.XML",
+          "bytes": 430215,
+          "sha256": "908816621bac942f0dcf0370d895a9674172adbcef941bf0f5ca9affc19801ea",
+          "observedAt": "2026-11-24T21:01:36.469Z"
+        }
+      }
+    }
+  ],
+  "offlineReplay": {
+    "command": "bun --no-env-file scripts/hansard-local.ts replay-week dist/hansard/house-2026-11-02.sqlite dist/hansard/house-2026-11-02-source/week.json",
+    "first": {
+      "editionCounts": {
+        "imported": 10,
+        "unchanged": 0,
+        "missing": 0,
+        "failed": 0
+      },
+      "rowsWritten": 3182,
+      "elapsedSeconds": 1.089
+    },
+    "second": {
+      "editionCounts": {
+        "imported": 0,
+        "unchanged": 10,
+        "missing": 0,
+        "failed": 0
+      },
+      "rowsWritten": 0,
+      "rowsRemoved": 0,
+      "newFeedEvents": 0,
+      "elapsedSeconds": 0.202,
+      "databaseSha256Unchanged": true
+    }
+  },
+  "localStore": {
+    "path": "dist/hansard/house-2026-11-02.sqlite",
+    "sizeBytes": 7282688,
+    "sha256": "79241c0eb1667a84882285f7faff41d08e617ab2de3e064286b9c11ece2fdbe1",
+    "interventionsByLanguage": {
+      "en": 1591,
+      "fr": 1591
+    },
+    "initialFeedEvents": {
+      "added": 3182,
+      "corrected": 0,
+      "removed": 0
+    },
+    "sameSourceInterventionIdsAcrossLanguages": true,
+    "maxExcerptChars": 400,
+    "integrityCheck": "ok",
+    "foreignKeyViolations": 0,
+    "missingOrMismatchedFeedCitations": 0
+  },
+  "localSearchAndExactLookup": {
+    "en": {
+      "phrase": "housing",
+      "resultCount": 25,
+      "limit": 25,
+      "id": "hansard:en:45-1-164:13687828",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-164/hansard#Int-13687828"
+    },
+    "fr": {
+      "phrase": "logement",
+      "resultCount": 25,
+      "limit": 25,
+      "id": "hansard:fr:45-1-164:13687828",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-164/debats#Int-13687828"
+    }
+  },
+  "limits": [
+    "The archive stores local source payload bytes for this week only. The SQLite store and search return cite-only excerpts.",
+    "The replay checked unchanged source bytes. This observation does not cover later publisher corrections or other weeks.",
+    "Hosted publication, cadence and commercial source use remain under D-08."
+  ]
+}

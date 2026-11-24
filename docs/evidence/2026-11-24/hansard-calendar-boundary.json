@@ -1,0 +1,402 @@
+{
+  "session": "45-1",
+  "parserCommit": "2a5f6ce7e19b29896882c5eee11a56e2a9dc40d6",
+  "verification": {
+    "mode": "offline replay of captured publisher bytes",
+    "runtime": "Bun 1.4.4 on macOS arm64",
+    "publisherRequests": 0,
+    "baseReceipt": "hansard-session-calendar.json",
+    "calendarCaptureDigestsMatched": true,
+    "parserFileDigestsMatched": true
+  },
+  "sources": {
+    "house": {
+      "url": "https://www.ourcommons.ca/documentviewer/en/SessionPublicationCalendarsWidget?organization=HOC&publicationTypeId=37&parliament=45&session=1",
+      "bytes": 381753,
+      "sha256": "b2400989379ddb9475639dbabde0eacf7def432e5ffa5f752f7800f9ed5e71a4",
+      "observedAt": "2026-11-24T20:49:42.871Z",
+      "parserPath": "scripts/lib/hansard-house-source.ts",
+      "parserSha256": "349f9d9751edbed7990af122ba17517e19f26336e855b9f76f55e11e63842785",
+      "retainedLocalPath": "dist/hansard/house-2026-11-02-source/calendar.html"
+    },
+    "senate": {
+      "url": "https://sencanada.ca/en/in-the-chamber/debates/45-1",
+      "bytes": 93041,
+      "sha256": "49e2b78c4d0cdeec3351e413215304f20ab88b4b4b172e0ccebe8ec6be8dc7dc",
+      "observedAt": "2026-11-24T20:49:42.219Z",
+      "parserPath": "scripts/lib/hansard-senate-source.ts",
+      "parserSha256": "7e8d229809381878da00b667cd639aae9af2ed6155d1dba2eaa1cad9ede0c8ec",
+      "retainedLocalPath": "/private/tmp/civicsignal-session-calendars.2ndc5x/senate.html"
+    }
+  },
+  "latestEarlierListedWeekBeforeNovember2": {
+    "weekOf": "2026-10-26",
+    "through": "2026-11-01",
+    "house": {
+      "uniquelyCoveredDates": [
+        "2026-10-26",
+        "2026-10-27",
+        "2026-10-28",
+        "2026-10-29",
+        "2026-10-30",
+        "2026-10-31",
+        "2026-11-01"
+      ],
+      "listedSittingCount": 5,
+      "sittings": [
+        {
+          "sittingId": "45-1-155",
+          "sittingDate": "2026-10-26",
+          "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-155/hansard"
+        },
+        {
+          "sittingId": "45-1-156",
+          "sittingDate": "2026-10-27",
+          "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-156/hansard"
+        },
+        {
+          "sittingId": "45-1-157",
+          "sittingDate": "2026-10-28",
+          "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-157/hansard"
+        },
+        {
+          "sittingId": "45-1-158",
+          "sittingDate": "2026-10-29",
+          "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-158/hansard"
+        },
+        {
+          "sittingId": "45-1-159",
+          "sittingDate": "2026-10-30",
+          "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-159/hansard"
+        }
+      ]
+    },
+    "senate": {
+      "linkedIssueCount": 3,
+      "debateIssues": [
+        {
+          "sittingId": "45-1-96",
+          "sittingDate": "2026-10-27",
+          "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/096db_2026-10-27-e"
+        },
+        {
+          "sittingId": "45-1-97",
+          "sittingDate": "2026-10-28",
+          "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/097db_2026-10-28-e"
+        },
+        {
+          "sittingId": "45-1-98",
+          "sittingDate": "2026-10-29",
+          "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/098db_2026-10-29-e"
+        }
+      ]
+    }
+  },
+  "novemberBoundaryWeeks": [
+    {
+      "weekOf": "2026-11-02",
+      "through": "2026-11-08",
+      "house": {
+        "uniquelyCoveredDates": [
+          "2026-11-02",
+          "2026-11-03",
+          "2026-11-04",
+          "2026-11-05",
+          "2026-11-06",
+          "2026-11-07",
+          "2026-11-08"
+        ],
+        "listedSittingCount": 5,
+        "sittings": [
+          {
+            "sittingId": "45-1-160",
+            "sittingDate": "2026-11-02",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-160/hansard"
+          },
+          {
+            "sittingId": "45-1-161",
+            "sittingDate": "2026-11-03",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-161/hansard"
+          },
+          {
+            "sittingId": "45-1-162",
+            "sittingDate": "2026-11-04",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-162/hansard"
+          },
+          {
+            "sittingId": "45-1-163",
+            "sittingDate": "2026-11-05",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-163/hansard"
+          },
+          {
+            "sittingId": "45-1-164",
+            "sittingDate": "2026-11-06",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-164/hansard"
+          }
+        ]
+      },
+      "senate": {
+        "linkedIssueCount": 3,
+        "debateIssues": [
+          {
+            "sittingId": "45-1-99",
+            "sittingDate": "2026-11-03",
+            "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/099db_2026-11-03-e"
+          },
+          {
+            "sittingId": "45-1-100",
+            "sittingDate": "2026-11-04",
+            "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/100db_2026-11-04-e"
+          },
+          {
+            "sittingId": "45-1-101",
+            "sittingDate": "2026-11-05",
+            "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/101db_2026-11-05-e"
+          }
+        ]
+      }
+    },
+    {
+      "weekOf": "2026-11-09",
+      "through": "2026-11-15",
+      "house": {
+        "uniquelyCoveredDates": [
+          "2026-11-09",
+          "2026-11-10",
+          "2026-11-11",
+          "2026-11-12",
+          "2026-11-13",
+          "2026-11-14",
+          "2026-11-15"
+        ],
+        "listedSittingCount": 0,
+        "sittings": []
+      },
+      "senate": {
+        "linkedIssueCount": 0,
+        "debateIssues": [],
+        "senateSittingsConfirmedAbsent": null
+      }
+    },
+    {
+      "weekOf": "2026-11-16",
+      "through": "2026-11-22",
+      "house": {
+        "uniquelyCoveredDates": [
+          "2026-11-16",
+          "2026-11-17",
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20",
+          "2026-11-21",
+          "2026-11-22"
+        ],
+        "listedSittingCount": 5,
+        "sittings": [
+          {
+            "sittingId": "45-1-165",
+            "sittingDate": "2026-11-16",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-165/hansard"
+          },
+          {
+            "sittingId": "45-1-166",
+            "sittingDate": "2026-11-17",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-166/hansard"
+          },
+          {
+            "sittingId": "45-1-167",
+            "sittingDate": "2026-11-18",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-167/hansard"
+          },
+          {
+            "sittingId": "45-1-168",
+            "sittingDate": "2026-11-19",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-168/hansard"
+          },
+          {
+            "sittingId": "45-1-169",
+            "sittingDate": "2026-11-20",
+            "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-169/hansard"
+          }
+        ]
+      },
+      "senate": {
+        "linkedIssueCount": 3,
+        "debateIssues": [
+          {
+            "sittingId": "45-1-102",
+            "sittingDate": "2026-11-17",
+            "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/102db_2026-11-17-e"
+          },
+          {
+            "sittingId": "45-1-103",
+            "sittingDate": "2026-11-18",
+            "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/103db_2026-11-18-e"
+          },
+          {
+            "sittingId": "45-1-104",
+            "sittingDate": "2026-11-19",
+            "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/104db_2026-11-19-e"
+          }
+        ]
+      }
+    }
+  ],
+  "continuityAcrossNovember9Week": {
+    "house": {
+      "lastListedBefore": {
+        "sittingId": "45-1-164",
+        "sittingDate": "2026-11-06",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-164/hansard"
+      },
+      "firstListedAfter": {
+        "sittingId": "45-1-165",
+        "sittingDate": "2026-11-16",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-165/hansard"
+      },
+      "ordinalDifference": 1
+    },
+    "senateDebateIssueLinks": {
+      "lastListedBefore": {
+        "sittingId": "45-1-101",
+        "sittingDate": "2026-11-05",
+        "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/101db_2026-11-05-e"
+      },
+      "firstListedAfter": {
+        "sittingId": "45-1-102",
+        "sittingDate": "2026-11-17",
+        "calendarAnchor": "https://sencanada.ca/en/content/sen/chamber/451/debates/102db_2026-11-17-e"
+      },
+      "ordinalDifference": 1
+    }
+  },
+  "houseRecoveredAdjournmentTablingWeeks": {
+    "recoveredDateCount": 10,
+    "linkedLetteredJournalCount": 9,
+    "unlinkedTablingCount": 1,
+    "distinctWeekCount": 10,
+    "weeksWithListedHouseSittings": 0,
+    "weeksWithNoListedHouseSittings": 10,
+    "weeks": [
+      {
+        "weekOf": "2025-07-14",
+        "through": "2025-07-20",
+        "tablingDate": "2025-07-16",
+        "displayedDay": 16,
+        "journal": "20B",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-20B/journals",
+        "ariaLabel": "July 16, 2025 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2025-08-18",
+        "through": "2025-08-24",
+        "tablingDate": "2025-08-20",
+        "displayedDay": 20,
+        "journal": "20C",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-20C/journals",
+        "ariaLabel": "August 20, 2025 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2025-12-15",
+        "through": "2025-12-21",
+        "tablingDate": "2025-12-17",
+        "displayedDay": 17,
+        "journal": "72A",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-72A/journals",
+        "ariaLabel": "December 17, 2025 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2026-01-19",
+        "through": "2026-01-25",
+        "tablingDate": "2026-01-21",
+        "displayedDay": 21,
+        "journal": "72B",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-72B/journals",
+        "ariaLabel": "January 21, 2026 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2026-02-16",
+        "through": "2026-02-22",
+        "tablingDate": "2026-02-18",
+        "displayedDay": 18,
+        "journal": "86A",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-86A/journals",
+        "ariaLabel": "February 18, 2026 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2026-03-16",
+        "through": "2026-03-22",
+        "tablingDate": "2026-03-18",
+        "displayedDay": 18,
+        "journal": null,
+        "calendarAnchor": null,
+        "sameRowNeighborDateClasses": [
+          "2026-03-17",
+          "2026-03-19"
+        ],
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2026-05-18",
+        "through": "2026-05-24",
+        "tablingDate": "2026-05-20",
+        "displayedDay": 20,
+        "journal": "120A",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-120A/journals",
+        "ariaLabel": "May 20, 2026 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2026-07-20",
+        "through": "2026-07-26",
+        "tablingDate": "2026-07-22",
+        "displayedDay": 22,
+        "journal": "139B",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-139B/journals",
+        "ariaLabel": "July 22, 2026 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2026-08-17",
+        "through": "2026-08-23",
+        "tablingDate": "2026-08-19",
+        "displayedDay": 19,
+        "journal": "139C",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-139C/journals",
+        "ariaLabel": "August 19, 2026 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      },
+      {
+        "weekOf": "2026-09-14",
+        "through": "2026-09-20",
+        "tablingDate": "2026-09-16",
+        "displayedDay": 16,
+        "journal": "139D",
+        "calendarAnchor": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-139D/journals",
+        "ariaLabel": "September 16, 2026 Adjournment tabling link to publication",
+        "uniquelyCoveredDateCount": 7,
+        "listedHouseSittingCount": 0
+      }
+    ]
+  },
+  "limitations": [
+    "The House parser requires seven unique day cells per tested week. In the November 9 week, all seven raw cells lack both a chamber-meeting class and a publication anchor.",
+    "The Senate source lists linked debate issues. A week with zero links leaves Senate sitting presence unknown, even when adjacent linked issue numbers are consecutive.",
+    "A lettered House Journal here identifies a tabling during adjournment. The unlinked March cell uses the two neighboring date classes and the displayed day.",
+    "This check concerns the two captured calendar pages. It did not fetch or count transcript editions or confirm subsequent publisher changes."
+  ]
+}

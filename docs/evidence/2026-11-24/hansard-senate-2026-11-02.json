@@ -1,0 +1,120 @@
+{
+  "generatedAt": "2026-11-24T21:02:11Z",
+  "publisher": "Senate of Canada",
+  "session": "45-1",
+  "weekOf": "2026-11-02",
+  "weekThrough": "2026-11-08",
+  "calendarUrl": "https://sencanada.ca/en/in-the-chamber/debates/45-1",
+  "parser": "senate-hansard-html-v1",
+  "runtime": {
+    "bun": "1.4.4",
+    "platform": "darwin arm64"
+  },
+  "sources": [
+    {
+      "sittingId": "45-1-99",
+      "date": "2026-11-03",
+      "editions": {
+        "en": {
+          "url": "https://sencanada.ca/en/content/sen/chamber/451/debates/099db_2026-11-03-e",
+          "sha256": "461fc37051ba7f46658ed57aff2157bb2888b28ee5492526d01f757f19f2190e",
+          "bytes": 329862,
+          "indexedOpeningTurns": 124
+        },
+        "fr": {
+          "url": "https://sencanada.ca/fr/content/sen/chamber/451/debates/099db_2026-11-03-f",
+          "sha256": "b4675732f02149c7823ff02aa384b044570b097831a015ef128ed195b1c7039e",
+          "bytes": 379845,
+          "indexedOpeningTurns": 124
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-100",
+      "date": "2026-11-04",
+      "editions": {
+        "en": {
+          "url": "https://sencanada.ca/en/content/sen/chamber/451/debates/100db_2026-11-04-e",
+          "sha256": "b32cf0fb9856d1332651949653329a0c0a37ea4d43ccfded9723c6de0e72ed9f",
+          "bytes": 171655,
+          "indexedOpeningTurns": 120
+        },
+        "fr": {
+          "url": "https://sencanada.ca/fr/content/sen/chamber/451/debates/100db_2026-11-04-f",
+          "sha256": "49d7308c1310f812e8edb537ac13bf8b7ab978c1b373e748157f8ec50491a10a",
+          "bytes": 193515,
+          "indexedOpeningTurns": 120
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-101",
+      "date": "2026-11-05",
+      "editions": {
+        "en": {
+          "url": "https://sencanada.ca/en/content/sen/chamber/451/debates/101db_2026-11-05-e",
+          "sha256": "1e3a39a967e912e276637b01fd04bfbbf260da05d3dab3b3c55b468ed9c1cbeb",
+          "bytes": 158644,
+          "indexedOpeningTurns": 87
+        },
+        "fr": {
+          "url": "https://sencanada.ca/fr/content/sen/chamber/451/debates/101db_2026-11-05-f",
+          "sha256": "65dd19e8c01d040c824d8db56d02008f2dbe7c6219df099e94baf855548b8836",
+          "bytes": 176928,
+          "indexedOpeningTurns": 87
+        }
+      }
+    }
+  ],
+  "localReplay": {
+    "manifest": "dist/hansard/senate-2026-11-02-week/week.json",
+    "database": "dist/hansard/senate-2026-11-02.sqlite",
+    "command": "bun --no-env-file scripts/hansard-local.ts replay-senate-week dist/hansard/senate-2026-11-02.sqlite dist/hansard/senate-2026-11-02-week/week.json",
+    "first": {
+      "imported": 6,
+      "unchanged": 0,
+      "missing": 0,
+      "failed": 0
+    },
+    "identicalRepeat": {
+      "imported": 0,
+      "unchanged": 6,
+      "missing": 0,
+      "failed": 0
+    },
+    "indexedOpeningTurns": {
+      "en": 331,
+      "fr": 331
+    },
+    "changeFeedBaselineAdded": {
+      "en": 331,
+      "fr": 331
+    },
+    "newChangeEventsOnRepeat": 0,
+    "speechWritesOnRepeat": 0,
+    "databaseSha256UnchangedOnRepeat": "bf57f571917c6a6dcc28a2e90deaaa7ce7ede523eef596ea317d47e6d2a3bd79",
+    "orderedRowDigestsUnchangedOnRepeat": {
+      "hansard_speeches": {
+        "rows": 662,
+        "sha256": "de3ca33d068a83c082c9a6fa0b68057723b8607537a2374f74b965cb2d367207"
+      },
+      "local_hansard_editions": {
+        "rows": 6,
+        "sha256": "8055c6d0ff779990281a51221f0d015b0aee3dcf3796a4ae1b68814dcb38e220"
+      },
+      "source_feed_editions": {
+        "rows": 6,
+        "sha256": "5595911faba4dd724bcec7256eb8f0f60f97e609b8d008ec366d945522b7076c"
+      },
+      "source_feed_events": {
+        "rows": 662,
+        "sha256": "1bc8c07661cdfca272816b235d4931054d6e489e6020a74c0c8ae890d66c8bc3"
+      }
+    }
+  },
+  "limits": [
+    "Bounded to issues 99–101 in the official November 2–8, 2026 calendar window and the published English and French editions.",
+    "Local noncommercial preview of speaker-labelled opening paragraphs, up to 400 characters per turn. Citations point to the official transcript section.",
+    "Exact publisher HTML stays in the private Git-ignored packet. The feed establishes a local baseline and does not measure earlier publisher changes."
+  ]
+}
