@@ -1,0 +1,307 @@
+{
+  "generatedAt": "2026-11-24T22:18:53Z",
+  "chamber": "senate",
+  "session": "45-1",
+  "weekOf": "2026-10-26",
+  "through": "2026-11-01",
+  "validatedCommit": "8a261d11d140d1ef30b0c1590cc3472b58946c2b",
+  "runtime": "Bun 1.4.4 on macOS arm64",
+  "parserVersion": "senate-hansard-html-v1",
+  "calendar": {
+    "sourceUrl": "https://sencanada.ca/en/in-the-chamber/debates/45-1",
+    "archivedAs": "calendar.html",
+    "observedAt": "2026-11-24T20:49:42.219Z",
+    "sha256": "49e2b78c4d0cdeec3351e413215304f20ab88b4b4b172e0ccebe8ec6be8dc7dc",
+    "bytes": 93041,
+    "publisherRequests": 0,
+    "filenameAfterReplay": "dist/hansard/senate-2026-10-26-week/calendar.html",
+    "linkedIssueCount": 3
+  },
+  "capture": {
+    "archivePath": "dist/hansard/senate-2026-10-26-week",
+    "manifest": "dist/hansard/senate-2026-10-26-week/week.json",
+    "manifestSha256": "1aac5e2edcfaab80536cbdc0e9cf22170462acbf00cac04d4756e85e211981d2",
+    "transcriptRequests": 6,
+    "transcriptBytes": 1228390,
+    "startedAt": "2026-11-24T22:14:46.994Z",
+    "finishedAt": "2026-11-24T22:14:48.358Z"
+  },
+  "sources": [
+    {
+      "sittingId": "45-1-96",
+      "sittingDate": "2026-10-27",
+      "editions": {
+        "en": {
+          "sourceUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/096db_2026-10-27-e",
+          "filename": "45-1-96-en.html",
+          "status": 200,
+          "sha256": "05b752c325ee6d252770635037fd1f083de3121ad98a975015d21943d83b5c4f",
+          "bytes": 258424,
+          "observedAt": "2026-11-24T22:14:47.666Z",
+          "indexedRecords": 132
+        },
+        "fr": {
+          "sourceUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/096db_2026-10-27-f",
+          "filename": "45-1-96-fr.html",
+          "status": 200,
+          "sha256": "f68ce2195c4c7fd49d22e438a4112307fa25af1a30d1712fe0b21e760a07c0fb",
+          "bytes": 296272,
+          "observedAt": "2026-11-24T22:14:47.825Z",
+          "indexedRecords": 132
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-97",
+      "sittingDate": "2026-10-28",
+      "editions": {
+        "en": {
+          "sourceUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/097db_2026-10-28-e",
+          "filename": "45-1-97-en.html",
+          "status": 200,
+          "sha256": "7512ee1146b475c9f69c78d9a1282afe9ac5a6f2e66e5767eb6b27172458dd05",
+          "bytes": 145332,
+          "observedAt": "2026-11-24T22:14:47.947Z",
+          "indexedRecords": 79
+        },
+        "fr": {
+          "sourceUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/097db_2026-10-28-f",
+          "filename": "45-1-97-fr.html",
+          "status": 200,
+          "sha256": "aefd1671809c51a8b952e5e8380ab69e701349af256eeebc3a6fe71ea53e9405",
+          "bytes": 162362,
+          "observedAt": "2026-11-24T22:14:48.096Z",
+          "indexedRecords": 79
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-98",
+      "sittingDate": "2026-10-29",
+      "editions": {
+        "en": {
+          "sourceUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/098db_2026-10-29-e",
+          "filename": "45-1-98-en.html",
+          "status": 200,
+          "sha256": "ea630e3e836b981e3736c914a01f793db88b8d5c8d574642b8bef7b20de04e9f",
+          "bytes": 172408,
+          "observedAt": "2026-11-24T22:14:48.234Z",
+          "indexedRecords": 96
+        },
+        "fr": {
+          "sourceUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/098db_2026-10-29-f",
+          "filename": "45-1-98-fr.html",
+          "status": 200,
+          "sha256": "eadc49b0b5095e9be9a1ddf7557c469c7f627db77d558ae147e84ce346143a01",
+          "bytes": 193592,
+          "observedAt": "2026-11-24T22:14:48.358Z",
+          "indexedRecords": 96
+        }
+      }
+    }
+  ],
+  "lookupSamples": [
+    {
+      "id": "senate-hansard:en:45-1-96:6-1",
+      "sittingId": "45-1-96",
+      "sittingDate": "2026-10-27",
+      "language": "en",
+      "speaker": "Hon. Victor Boudreau",
+      "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/096db_2026-10-27-e#6",
+      "sourceSha256": "05b752c325ee6d252770635037fd1f083de3121ad98a975015d21943d83b5c4f"
+    },
+    {
+      "id": "senate-hansard:fr:45-1-96:6-1",
+      "sittingId": "45-1-96",
+      "sittingDate": "2026-10-27",
+      "language": "fr",
+      "speaker": "L’honorable Victor Boudreau",
+      "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/096db_2026-10-27-f#6",
+      "sourceSha256": "f68ce2195c4c7fd49d22e438a4112307fa25af1a30d1712fe0b21e760a07c0fb"
+    },
+    {
+      "id": "senate-hansard:en:45-1-97:6-1",
+      "sittingId": "45-1-97",
+      "sittingDate": "2026-10-28",
+      "language": "en",
+      "speaker": "Hon. Leo Housakos (Leader of the Opposition)",
+      "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/097db_2026-10-28-e#6",
+      "sourceSha256": "7512ee1146b475c9f69c78d9a1282afe9ac5a6f2e66e5767eb6b27172458dd05"
+    },
+    {
+      "id": "senate-hansard:fr:45-1-97:6-1",
+      "sittingId": "45-1-97",
+      "sittingDate": "2026-10-28",
+      "language": "fr",
+      "speaker": "L’honorable Leo Housakos (leader de l’opposition)",
+      "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/097db_2026-10-28-f#6",
+      "sourceSha256": "aefd1671809c51a8b952e5e8380ab69e701349af256eeebc3a6fe71ea53e9405"
+    },
+    {
+      "id": "senate-hansard:en:45-1-98:6-1",
+      "sittingId": "45-1-98",
+      "sittingDate": "2026-10-29",
+      "language": "en",
+      "speaker": "Hon. Rodger Cuzner",
+      "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/098db_2026-10-29-e#6",
+      "sourceSha256": "ea630e3e836b981e3736c914a01f793db88b8d5c8d574642b8bef7b20de04e9f"
+    },
+    {
+      "id": "senate-hansard:fr:45-1-98:6-1",
+      "sittingId": "45-1-98",
+      "sittingDate": "2026-10-29",
+      "language": "fr",
+      "speaker": "L’honorable Rodger Cuzner",
+      "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/098db_2026-10-29-f#6",
+      "sourceSha256": "eadc49b0b5095e9be9a1ddf7557c469c7f627db77d558ae147e84ce346143a01"
+    }
+  ],
+  "offlineReplay": {
+    "command": "bun --no-env-file scripts/hansard-local.ts replay-senate-week dist/hansard/senate-2026-10-26.sqlite dist/hansard/senate-2026-10-26-week/week.json",
+    "first": {
+      "imported": 6,
+      "unchanged": 0,
+      "missing": 0,
+      "failed": 0
+    },
+    "identicalRepeat": {
+      "imported": 0,
+      "unchanged": 6,
+      "missing": 0,
+      "failed": 0
+    },
+    "recordsByLanguage": {
+      "en": 307,
+      "fr": 307
+    },
+    "newChangeEventsOnRepeat": 0,
+    "writtenOnRepeat": 0,
+    "removedOnRepeat": 0,
+    "databaseSha256UnchangedOnRepeat": "5185b2ca40133ecbabd51a3b61935051f2e0cf453b6d8b6867544f5ebd04499c"
+  },
+  "localStore": {
+    "path": "dist/hansard/senate-2026-10-26.sqlite",
+    "sha256": "5185b2ca40133ecbabd51a3b61935051f2e0cf453b6d8b6867544f5ebd04499c",
+    "sizeBytes": 954368,
+    "integrityCheck": "ok",
+    "foreignKeyViolations": 0,
+    "mismatchedFeedCitations": 0,
+    "feedCounts": {
+      "added": 614
+    },
+    "records": 614,
+    "languageEditions": 6,
+    "exactSourceParsedRowsComparedInIsolatedAndCombinedStores": 614,
+    "parsedSpeechRowsSha256": "a41ab4f8656c4eb6e256084a027e8b16c1ed60d420d8b172ed4fdb275b6e849a",
+    "sameOrderedSourceInterventionIdsWithinEveryBilingualSitting": true
+  },
+  "combinedStore": {
+    "path": "dist/hansard/session-45-1.sqlite",
+    "previousEditions": 32,
+    "verifiedEditions": 48,
+    "previousRecords": 7348,
+    "recordsAndInitialChangeEvents": 11302,
+    "newOctoberRecordsAcrossBothChambers": 3954,
+    "newOctoberEditionsAcrossBothChambers": 16,
+    "verifiedSessionCalendarCandidates": 48,
+    "totalSessionCalendarCandidates": 546,
+    "sha256": "42d5eab01e00d3e95560b4941e36c63be8da0c12af552ddabad4565909aca249",
+    "preservedPriorRows": {
+      "hansard_speeches": 7348,
+      "local_hansard_editions": 32,
+      "source_feed_editions": 32,
+      "source_feed_events": 7348,
+      "source_feed_identity": 1
+    },
+    "noChangeOnIdenticalReplay": true,
+    "integrityCheck": "ok",
+    "foreignKeyViolations": 0
+  },
+  "authenticatedWorker": {
+    "languageResults": {
+      "en": {
+        "query": "budget",
+        "id": "senate-hansard:en:45-1-98:48-3",
+        "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/098db_2026-10-29-e#48",
+        "sittingDate": "2026-10-29",
+        "citationGranularity": "section",
+        "searchWithoutOctoberData": 0,
+        "priorCursorAcceptedAfterAppend": true,
+        "cursorPages": [
+          {
+            "id": 10718,
+            "recordId": "senate-hansard:en:45-1-96:33-1",
+            "date": "2026-10-27",
+            "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/096db_2026-10-27-e#33"
+          },
+          {
+            "id": 10782,
+            "recordId": "senate-hansard:en:45-1-96:48-1",
+            "date": "2026-10-27",
+            "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/096db_2026-10-27-e#48"
+          }
+        ]
+      },
+      "fr": {
+        "query": "budget",
+        "id": "senate-hansard:fr:45-1-98:48-3",
+        "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/098db_2026-10-29-f#48",
+        "sittingDate": "2026-10-29",
+        "citationGranularity": "section",
+        "searchWithoutOctoberData": 0,
+        "priorCursorAcceptedAfterAppend": true,
+        "cursorPages": [
+          {
+            "id": 10850,
+            "recordId": "senate-hansard:fr:45-1-96:33-1",
+            "date": "2026-10-27",
+            "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/096db_2026-10-27-f#33"
+          },
+          {
+            "id": 10865,
+            "recordId": "senate-hansard:fr:45-1-96:39-3",
+            "date": "2026-10-27",
+            "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/096db_2026-10-27-f#39"
+          }
+        ]
+      }
+    },
+    "successfulMeteredRequests": 12,
+    "unauthorizedStatus": 401,
+    "perEditionLookup": {
+      "test": "retrieves a cited speech from each archived Hansard edition",
+      "database": "dist/hansard/session-45-1.sqlite",
+      "verifiedEditions": 6,
+      "checks": [
+        "archived source SHA-256",
+        "sitting and edition identity",
+        "speaker and publisher citation",
+        "authenticated HTTP 200",
+        "billed requests equal verified editions"
+      ]
+    }
+  },
+  "nextCandidateWeek": {
+    "weekOf": "2026-10-19",
+    "sittings": [
+      {
+        "sittingId": "45-1-93",
+        "sittingDate": "2026-10-20"
+      },
+      {
+        "sittingId": "45-1-94",
+        "sittingDate": "2026-10-21"
+      },
+      {
+        "sittingId": "45-1-95",
+        "sittingDate": "2026-10-22"
+      }
+    ]
+  },
+  "limits": [
+    "The publisher fetches cover the transcripts linked for this single completed week. Earlier candidate IDs were read from the retained calendar without fetching earlier transcripts.",
+    "The replay verifies this observation of the saved source bytes. Later corrections still need a fresh source check.",
+    "Hansard retrieval remains a local cite-only preview. Hosted scheduling, publication and commercial source use remain under D-08.",
+    "The Senate calendar gives linked debate issues. Blank dates leave sitting status unknown. Search covers speaker-labelled opening turns with section citations."
+  ]
+}

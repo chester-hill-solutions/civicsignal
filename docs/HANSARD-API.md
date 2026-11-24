@@ -47,3 +47,14 @@ CIVICSIGNAL_HANSARD_SQLITE=dist/hansard/session-45-1.sqlite bun run test test/en
 The authenticated checks cover search, exact lookup, and two cursor pages per language and chamber. On a second live check, all ten House XML files matched their previous hashes. The Senate pages changed bytes and produced the same indexed turns. Neither chamber produced a new change event. Compare the source hashes and change feed when checking later weeks. [House receipt](evidence/2026-11-24/hansard-house.json) · [Senate receipt](evidence/2026-11-24/hansard-senate.json)
 
 The November 2–8 replay added House sittings 160–164 and Senate issues 99–101 to the same local store. To rebuild that week, repeat both sync commands above with `2026-11-02`. The two weeks together have 32 language editions, 7,348 cited excerpts, and 7,348 initial change events. Replaying all 16 saved November 2 editions left the combined database byte-identical. The November 16 authenticated route checks also passed against this larger store. [November 2 House receipt](evidence/2026-11-24/hansard-house-2026-11-02.json) · [November 2 Senate receipt](evidence/2026-11-24/hansard-senate-2026-11-02.json)
+
+For October 26–November 1, the combined store includes 3,340 more House interventions and 614 more Senate turns. The dated receipts include one speech ID, speaker, citation and source hash per edition. To repeat the authenticated exact lookups for a chamber, supply its acquisition receipt and captured week manifest alongside the combined store.
+
+```sh
+CIVICSIGNAL_HANSARD_SQLITE=dist/hansard/session-45-1.sqlite \
+CIVICSIGNAL_HANSARD_WEEK_RECEIPT=docs/evidence/2026-11-24/hansard-house-2026-10-26.json \
+CIVICSIGNAL_HANSARD_WEEK_MANIFEST=dist/hansard/house-2026-10-26-source/week.json \
+bun run test test/endpoints.test.ts -t 'each archived Hansard edition'
+```
+
+For the Senate, use `hansard-senate-2026-10-26.json` and `dist/hansard/senate-2026-10-26-week/week.json`. [House receipt](evidence/2026-11-24/hansard-house-2026-10-26.json) · [Senate receipt](evidence/2026-11-24/hansard-senate-2026-10-26.json)

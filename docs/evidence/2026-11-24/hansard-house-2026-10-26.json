@@ -1,0 +1,402 @@
+{
+  "generatedAt": "2026-11-24T22:18:53Z",
+  "chamber": "house",
+  "session": "45-1",
+  "weekOf": "2026-10-26",
+  "through": "2026-11-01",
+  "validatedCommit": "8a261d11d140d1ef30b0c1590cc3472b58946c2b",
+  "runtime": "Bun 1.4.4 on macOS arm64",
+  "parserVersion": "hansard-v1",
+  "calendar": {
+    "sourceUrl": "https://www.ourcommons.ca/documentviewer/en/SessionPublicationCalendarsWidget?organization=HOC&publicationTypeId=37&parliament=45&session=1",
+    "archivedAs": "calendar.html",
+    "observedAt": "2026-11-24T20:49:42.871Z",
+    "sha256": "b2400989379ddb9475639dbabde0eacf7def432e5ffa5f752f7800f9ed5e71a4",
+    "bytes": 381753,
+    "publisherRequests": 0,
+    "filenameAfterReplay": "dist/hansard/house-2026-10-26-source/calendar.html",
+    "uniqueDatesCovered": 7,
+    "confirmedDatesWithoutSitting": [
+      "2026-10-31",
+      "2026-11-01"
+    ]
+  },
+  "capture": {
+    "archivePath": "dist/hansard/house-2026-10-26-source",
+    "manifest": "dist/hansard/house-2026-10-26-source/week.json",
+    "manifestSha256": "7a30ce722db7d88e2ac4e3a2d7f8b938df946185d90344f403deaace9a463601",
+    "transcriptRequests": 10,
+    "transcriptBytes": 6866827,
+    "startedAt": "2026-11-24T22:14:46.972Z",
+    "finishedAt": "2026-11-24T22:14:48.260Z"
+  },
+  "sources": [
+    {
+      "sittingId": "45-1-155",
+      "sittingDate": "2026-10-26",
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/155/HAN155-E.XML",
+          "filename": "HAN155-E.XML",
+          "status": 200,
+          "sha256": "7d2b6cb85125b3c1b154cffd0b1cff2cd40a909e6cc6c657512796771c22a2b3",
+          "bytes": 609994,
+          "observedAt": "2026-11-24T22:14:47.544Z",
+          "indexedRecords": 311
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/155/HAN155-F.XML",
+          "filename": "HAN155-F.XML",
+          "status": 200,
+          "sha256": "9a04d0dde9494fbd5cd7bb5ca8f6c8d8d1eeff7494607da5cbb6ab5c4ea2c075",
+          "bytes": 704584,
+          "observedAt": "2026-11-24T22:14:47.608Z",
+          "indexedRecords": 311
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-156",
+      "sittingDate": "2026-10-27",
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/156/HAN156-E.XML",
+          "filename": "HAN156-E.XML",
+          "status": 200,
+          "sha256": "f7d4cd9bde411dcd01b5b3d71f449dd66ae43db371187ad9f07df770a0375b1e",
+          "bytes": 792847,
+          "observedAt": "2026-11-24T22:14:47.683Z",
+          "indexedRecords": 419
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/156/HAN156-F.XML",
+          "filename": "HAN156-F.XML",
+          "status": 200,
+          "sha256": "59c20ee7b0285a29c8b995c5c3ccfb55517f67373cdd045976906edfaabacdff",
+          "bytes": 906227,
+          "observedAt": "2026-11-24T22:14:47.792Z",
+          "indexedRecords": 419
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-157",
+      "sittingDate": "2026-10-28",
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/157/HAN157-E.XML",
+          "filename": "HAN157-E.XML",
+          "status": 200,
+          "sha256": "50f409e0dffb9d60a815cb5442422f5ddaee2fc18ceabdb6c628b07355260277",
+          "bytes": 865491,
+          "observedAt": "2026-11-24T22:14:47.861Z",
+          "indexedRecords": 399
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/157/HAN157-F.XML",
+          "filename": "HAN157-F.XML",
+          "status": 200,
+          "sha256": "e51e5548328407cd89f8daa6621b94709f346086d359b020b7bee9e1de7ee0e7",
+          "bytes": 985757,
+          "observedAt": "2026-11-24T22:14:47.932Z",
+          "indexedRecords": 399
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-158",
+      "sittingDate": "2026-10-29",
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/158/HAN158-E.XML",
+          "filename": "HAN158-E.XML",
+          "status": 200,
+          "sha256": "3429ee7a114141f4767b9aaa50c487088b8f0bc2882b5eab70c0e61568dd7ef5",
+          "bytes": 646193,
+          "observedAt": "2026-11-24T22:14:48.077Z",
+          "indexedRecords": 354
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/158/HAN158-F.XML",
+          "filename": "HAN158-F.XML",
+          "status": 200,
+          "sha256": "f8070c80d131b40ada82b5a362ae356879b2085ec67f2e76f8983c95516ffca5",
+          "bytes": 747069,
+          "observedAt": "2026-11-24T22:14:48.140Z",
+          "indexedRecords": 354
+        }
+      }
+    },
+    {
+      "sittingId": "45-1-159",
+      "sittingDate": "2026-10-30",
+      "editions": {
+        "en": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/159/HAN159-E.XML",
+          "filename": "HAN159-E.XML",
+          "status": 200,
+          "sha256": "87d7d0ec2b4b961377ee6a9c1048fac7308ebdde609c412e7379a12dac294d2d",
+          "bytes": 286392,
+          "observedAt": "2026-11-24T22:14:48.203Z",
+          "indexedRecords": 187
+        },
+        "fr": {
+          "sourceUrl": "https://www.ourcommons.ca/Content/House/451/Debates/159/HAN159-F.XML",
+          "filename": "HAN159-F.XML",
+          "status": 200,
+          "sha256": "d14042b2a5fd0ecbda8fda4c53fe31a19e13f1fa9ba0511faa887ecd02d9f6aa",
+          "bytes": 322273,
+          "observedAt": "2026-11-24T22:14:48.260Z",
+          "indexedRecords": 187
+        }
+      }
+    }
+  ],
+  "lookupSamples": [
+    {
+      "id": "hansard:en:45-1-155:13650469",
+      "sittingId": "45-1-155",
+      "sittingDate": "2026-10-26",
+      "language": "en",
+      "speaker": "Hon. Kevin Lamoureux (Parliamentary Secretary to the Leader of the Government in the House of Commons, Lib.)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-155/hansard#Int-13650469",
+      "sourceSha256": "7d2b6cb85125b3c1b154cffd0b1cff2cd40a909e6cc6c657512796771c22a2b3"
+    },
+    {
+      "id": "hansard:fr:45-1-155:13650469",
+      "sittingId": "45-1-155",
+      "sittingDate": "2026-10-26",
+      "language": "fr",
+      "speaker": "L’hon. Kevin Lamoureux (secrétaire parlementaire du leader du gouvernement à la Chambre des communes, Lib.)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-155/debats#Int-13650469",
+      "sourceSha256": "9a04d0dde9494fbd5cd7bb5ca8f6c8d8d1eeff7494607da5cbb6ab5c4ea2c075"
+    },
+    {
+      "id": "hansard:en:45-1-156:13655736",
+      "sittingId": "45-1-156",
+      "sittingDate": "2026-10-27",
+      "language": "en",
+      "speaker": "Hon. Sean Fraser (Minister of Justice and Attorney General of Canada, Lib.)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-156/hansard#Int-13655736",
+      "sourceSha256": "f7d4cd9bde411dcd01b5b3d71f449dd66ae43db371187ad9f07df770a0375b1e"
+    },
+    {
+      "id": "hansard:fr:45-1-156:13655736",
+      "sittingId": "45-1-156",
+      "sittingDate": "2026-10-27",
+      "language": "fr",
+      "speaker": "L’hon. Sean Fraser (ministre de la Justice et procureur général du Canada, Lib.)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-156/debats#Int-13655736",
+      "sourceSha256": "59c20ee7b0285a29c8b995c5c3ccfb55517f67373cdd045976906edfaabacdff"
+    },
+    {
+      "id": "hansard:en:45-1-157:13660546",
+      "sittingId": "45-1-157",
+      "sittingDate": "2026-10-28",
+      "language": "en",
+      "speaker": "The Speaker",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-157/hansard#Int-13660546",
+      "sourceSha256": "50f409e0dffb9d60a815cb5442422f5ddaee2fc18ceabdb6c628b07355260277"
+    },
+    {
+      "id": "hansard:fr:45-1-157:13660546",
+      "sittingId": "45-1-157",
+      "sittingDate": "2026-10-28",
+      "language": "fr",
+      "speaker": "Le Président",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-157/debats#Int-13660546",
+      "sourceSha256": "e51e5548328407cd89f8daa6621b94709f346086d359b020b7bee9e1de7ee0e7"
+    },
+    {
+      "id": "hansard:en:45-1-158:13664131",
+      "sittingId": "45-1-158",
+      "sittingDate": "2026-10-29",
+      "language": "en",
+      "speaker": "The Speaker",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-158/hansard#Int-13664131",
+      "sourceSha256": "3429ee7a114141f4767b9aaa50c487088b8f0bc2882b5eab70c0e61568dd7ef5"
+    },
+    {
+      "id": "hansard:fr:45-1-158:13664131",
+      "sittingId": "45-1-158",
+      "sittingDate": "2026-10-29",
+      "language": "fr",
+      "speaker": "Le Président",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-158/debats#Int-13664131",
+      "sourceSha256": "f8070c80d131b40ada82b5a362ae356879b2085ec67f2e76f8983c95516ffca5"
+    },
+    {
+      "id": "hansard:en:45-1-159:13668803",
+      "sittingId": "45-1-159",
+      "sittingDate": "2026-10-30",
+      "language": "en",
+      "speaker": "Hon. Sean Fraser (Minister of Justice and Attorney General of Canada and Minister responsible for the Atlantic Canada Opportunities Agency, Lib.)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-159/hansard#Int-13668803",
+      "sourceSha256": "87d7d0ec2b4b961377ee6a9c1048fac7308ebdde609c412e7379a12dac294d2d"
+    },
+    {
+      "id": "hansard:fr:45-1-159:13668803",
+      "sittingId": "45-1-159",
+      "sittingDate": "2026-10-30",
+      "language": "fr",
+      "speaker": "L’hon. Sean Fraser (ministre de la Justice et procureur général du Canada et ministre responsable de l’Agence de promotion économique du Canada atlantique, Lib.)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-159/debats#Int-13668803",
+      "sourceSha256": "d14042b2a5fd0ecbda8fda4c53fe31a19e13f1fa9ba0511faa887ecd02d9f6aa"
+    }
+  ],
+  "offlineReplay": {
+    "command": "bun --no-env-file scripts/hansard-local.ts replay-week dist/hansard/house-2026-10-26.sqlite dist/hansard/house-2026-10-26-source/week.json",
+    "first": {
+      "imported": 10,
+      "unchanged": 0,
+      "missing": 0,
+      "failed": 0
+    },
+    "identicalRepeat": {
+      "imported": 0,
+      "unchanged": 10,
+      "missing": 0,
+      "failed": 0
+    },
+    "recordsByLanguage": {
+      "en": 1670,
+      "fr": 1670
+    },
+    "newChangeEventsOnRepeat": 0,
+    "writtenOnRepeat": 0,
+    "removedOnRepeat": 0,
+    "databaseSha256UnchangedOnRepeat": "3e2389e6748ec04422a8d549f33ccb69aee30b436e9c4f40bcf95b9cfb3315e2"
+  },
+  "localStore": {
+    "path": "dist/hansard/house-2026-10-26.sqlite",
+    "sha256": "3e2389e6748ec04422a8d549f33ccb69aee30b436e9c4f40bcf95b9cfb3315e2",
+    "sizeBytes": 7577600,
+    "integrityCheck": "ok",
+    "foreignKeyViolations": 0,
+    "mismatchedFeedCitations": 0,
+    "feedCounts": {
+      "added": 3340
+    },
+    "records": 3340,
+    "languageEditions": 10,
+    "exactSourceParsedRowsComparedInIsolatedAndCombinedStores": 3340,
+    "parsedSpeechRowsSha256": "842dc7d8364070d99b5a1094be28bf6b6d07e747198617c64a41600abf412d55",
+    "sameOrderedSourceInterventionIdsWithinEveryBilingualSitting": true
+  },
+  "combinedStore": {
+    "path": "dist/hansard/session-45-1.sqlite",
+    "previousEditions": 32,
+    "verifiedEditions": 48,
+    "previousRecords": 7348,
+    "recordsAndInitialChangeEvents": 11302,
+    "newOctoberRecordsAcrossBothChambers": 3954,
+    "newOctoberEditionsAcrossBothChambers": 16,
+    "verifiedSessionCalendarCandidates": 48,
+    "totalSessionCalendarCandidates": 546,
+    "sha256": "42d5eab01e00d3e95560b4941e36c63be8da0c12af552ddabad4565909aca249",
+    "preservedPriorRows": {
+      "hansard_speeches": 7348,
+      "local_hansard_editions": 32,
+      "source_feed_editions": 32,
+      "source_feed_events": 7348,
+      "source_feed_identity": 1
+    },
+    "noChangeOnIdenticalReplay": true,
+    "integrityCheck": "ok",
+    "foreignKeyViolations": 0
+  },
+  "authenticatedWorker": {
+    "languageResults": {
+      "en": {
+        "query": "housing",
+        "id": "hansard:en:45-1-159:13669329",
+        "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-159/hansard#Int-13669329",
+        "sittingDate": "2026-10-30",
+        "citationGranularity": "intervention",
+        "searchWithoutOctoberData": 0,
+        "priorCursorAcceptedAfterAppend": true,
+        "cursorPages": [
+          {
+            "id": 7394,
+            "recordId": "hansard:en:45-1-155:13652326",
+            "date": "2026-10-26",
+            "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-155/hansard#Int-13652326"
+          },
+          {
+            "id": 7413,
+            "recordId": "hansard:en:45-1-155:13652441",
+            "date": "2026-10-26",
+            "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-155/hansard#Int-13652441"
+          }
+        ]
+      },
+      "fr": {
+        "query": "logement",
+        "id": "hansard:fr:45-1-159:13669329",
+        "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-159/debats#Int-13669329",
+        "sittingDate": "2026-10-30",
+        "citationGranularity": "intervention",
+        "searchWithoutOctoberData": 0,
+        "priorCursorAcceptedAfterAppend": true,
+        "cursorPages": [
+          {
+            "id": 7705,
+            "recordId": "hansard:fr:45-1-155:13652326",
+            "date": "2026-10-26",
+            "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-155/debats#Int-13652326"
+          },
+          {
+            "id": 7724,
+            "recordId": "hansard:fr:45-1-155:13652441",
+            "date": "2026-10-26",
+            "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-155/debats#Int-13652441"
+          }
+        ]
+      }
+    },
+    "successfulMeteredRequests": 13,
+    "unauthorizedStatus": 401,
+    "perEditionLookup": {
+      "test": "retrieves a cited speech from each archived Hansard edition",
+      "database": "dist/hansard/session-45-1.sqlite",
+      "verifiedEditions": 10,
+      "checks": [
+        "archived source SHA-256",
+        "sitting and edition identity",
+        "speaker and publisher citation",
+        "authenticated HTTP 200",
+        "billed requests equal verified editions"
+      ]
+    }
+  },
+  "nextCandidateWeek": {
+    "weekOf": "2026-10-19",
+    "sittings": [
+      {
+        "sittingDate": "2026-10-19",
+        "sittingId": "45-1-150"
+      },
+      {
+        "sittingDate": "2026-10-20",
+        "sittingId": "45-1-151"
+      },
+      {
+        "sittingDate": "2026-10-21",
+        "sittingId": "45-1-152"
+      },
+      {
+        "sittingDate": "2026-10-22",
+        "sittingId": "45-1-153"
+      },
+      {
+        "sittingDate": "2026-10-23",
+        "sittingId": "45-1-154"
+      }
+    ]
+  },
+  "limits": [
+    "The publisher fetches cover the transcripts linked for this single completed week. Earlier candidate IDs were read from the retained calendar without fetching earlier transcripts.",
+    "The replay verifies this observation of the saved source bytes. Later corrections still need a fresh source check.",
+    "Hansard retrieval remains a local cite-only preview. Hosted scheduling, publication and commercial source use remain under D-08."
+  ]
+}

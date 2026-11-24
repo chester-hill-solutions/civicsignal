@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -37,6 +38,7 @@ import { billTraceOpenApi } from '../src/routes/bill-trace-openapi';
 import { COMMITTEE_STUDY_BRIEF_PATH } from '../src/routes/committee-study';
 import { SourceFeedResponseSchema } from '../src/routes/source-feed-contract';
 import { normalizeForSearch } from '../src/text';
+import { readHansardWeekFiles } from '../scripts/lib/hansard-week';
 import {
   acquiredConsultations, archivedConsultationCoverage, archivedConsultationSearch, baselineConsultations,
   isBaselineConsultationObservation, type ConsultationObservation, type ConsultationReceipt,
@@ -363,6 +365,48 @@ describe('deployment discovery', () => {
 
 describe('Hansard preview HTTP contract', () => {
   const databasePath = process.env.CIVICSIGNAL_HANSARD_SQLITE;
+  const weekManifest = process.env.CIVICSIGNAL_HANSARD_WEEK_MANIFEST;
+  const weekReceipt = process.env.CIVICSIGNAL_HANSARD_WEEK_RECEIPT;
+  it.skipIf(!weekReceipt && !weekManifest)('retrieves a cited speech from each archived Hansard edition', async () => {
+    if (!databasePath || !weekManifest || !weekReceipt) throw new Error('Supply the Hansard database, week manifest and acquisition receipt.');
+    const week = readHansardWeekFiles(weekManifest);
+    type Sample = { id: string; sittingId: string; sittingDate: string; language: HansardLanguage;
+      speaker: string; citationUrl: string; sourceSha256: string };
+    const receipt = JSON.parse(readFileSync(weekReceipt, 'utf8')) as {
+      weekOf: string; chamber: HansardChamber; lookupSamples: Sample[];
+    };
+    expect(receipt.weekOf).toBe(week.weekOf);
+    expect(['house', 'senate']).toContain(receipt.chamber);
+    const fixture = await setup(receipt.lookupSamples.length);
+    const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
+    const db = new DatabaseSync(databasePath, { readOnly: true });
+    closed.push(() => db.close());
+    fixture.env.AUTH_DB = fixture.db;
+    fixture.env.CIVIC_DB = localD1(db);
+    fixture.env.HANSARD_PREVIEW = 'on';
+    let checked = 0;
+    for (const sitting of week.sittings) {
+      for (const language of ['en', 'fr'] as const) {
+        const bytes = week.load({ ...sitting, edition: language });
+        if (!bytes) continue;
+        const matches = receipt.lookupSamples.filter(sample => sample.sittingId === sitting.sittingId && sample.language === language);
+        expect(matches).toHaveLength(1);
+        const sample = matches[0];
+        if (!sample) throw new Error(`Missing acquired speech for ${sitting.sittingId} ${language}`);
+        const { sourceSha256, ...speech } = sample;
+        expect(sourceSha256).toBe(createHash('sha256').update(bytes).digest('hex'));
+        expect(speech.sittingDate).toBe(sitting.sittingDate);
+        const response = await fixture.send(HANSARD_PATHS[receipt.chamber] + '/' + encodeURIComponent(speech.id));
+        expect(response.status, speech.id).toBe(200);
+        expect(HansardLookupResponseSchema.parse(await response.json()).item)
+          .toMatchObject({ ...speech, chamber: receipt.chamber, redistribution: 'cite-only' });
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+    expect(checked).toBe(receipt.lookupSamples.length);
+    expect(await fixture.count()).toBe(checked);
+  });
   it.skipIf(!databasePath).each(['house', 'senate'] as const)(
     'reads the November 16 week from the acquired %s Hansard', async (chamber) => {
       if (!databasePath) throw new Error('Supply the combined local Hansard store.');
