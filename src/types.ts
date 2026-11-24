@@ -28,6 +28,8 @@ export interface Env {
   /** Local bilingual parliamentary catalogues and federal directory in CIVIC_DB. */
   PARLIAMENT_CATALOGUE_PREVIEW?: string;
   FUNDING_PREVIEW?: string;
+  /** Enables the departmental consultations preview. */
+  CONSULTATIONS_PREVIEW?: string;
   GEDS_PREVIEW?: string;
   /** Opt-in bilingual bill trace and historical committee study previews. */
   BILL_PREVIEW?: string;

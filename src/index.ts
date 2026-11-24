@@ -39,6 +39,8 @@ import { writtenQuestionOpenApi } from './routes/written-questions-openapi';
 
 import { prepareFunding, FUNDING_OPENAPI_PATH } from './routes/funding';
 import { fundingOpenApi } from './routes/funding-openapi';
+import { prepareConsultations, CONSULTATIONS_OPENAPI_PATH } from './routes/consultations';
+import { consultationsOpenApi } from './routes/consultations-openapi';
 import { PARLIAMENT_OPENAPI_PATH, prepareParliamentCatalogue } from './routes/parliament-catalogue';
 import { parliamentCatalogueOpenApi } from './routes/parliament-catalogue-openapi';
 
@@ -65,7 +67,7 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(env, origin, correlationId) });
     }
     try {
-      if (['/', '/health', '/.well-known/civicsignal.json', '/llms.txt', HANSARD_OPENAPI_PATH, GAZETTE_OPENAPI_PATH, BILL_OPENAPI_PATH, COMMITTEE_OPENAPI_PATH, FUNDING_OPENAPI_PATH, PARLIAMENT_OPENAPI_PATH, GEDS_OPENAPI_PATH, WRITTEN_QUESTIONS_OPENAPI_PATH].includes(url.pathname)) {
+      if (['/', '/health', '/.well-known/civicsignal.json', '/llms.txt', HANSARD_OPENAPI_PATH, GAZETTE_OPENAPI_PATH, BILL_OPENAPI_PATH, COMMITTEE_OPENAPI_PATH, FUNDING_OPENAPI_PATH, CONSULTATIONS_OPENAPI_PATH, PARLIAMENT_OPENAPI_PATH, GEDS_OPENAPI_PATH, WRITTEN_QUESTIONS_OPENAPI_PATH].includes(url.pathname)) {
         requireMethod(request, 'GET');
         return publicGet(url, env, origin, correlationId);
       }
@@ -151,7 +153,7 @@ function isRetrievalPath(path: string): boolean {
 }
 
 function matchPreview(url: URL): ((env: Env) => () => Promise<unknown>) | undefined {
-  const brief = prepareFunding(url) ?? prepareGeds(url) ?? prepareParliamentCatalogue(url) ?? prepareBillBrief(url) ?? prepareCommitteeStudyBrief(url) ?? prepareCommitteeCorpus(url);
+  const brief = prepareFunding(url) ?? prepareConsultations(url) ?? prepareGeds(url) ?? prepareParliamentCatalogue(url) ?? prepareBillBrief(url) ?? prepareCommitteeStudyBrief(url) ?? prepareCommitteeCorpus(url);
   if (brief) return brief;
   const source = matchSourceFeed(url.pathname);
   if (source) return (env) => {
@@ -187,6 +189,7 @@ async function publicGet(url: URL, env: Env, origin: string | null, correlationI
     case '/.well-known/civicsignal.json': return capabilitiesResponse(env, url.origin, correlationId);
     case GEDS_OPENAPI_PATH: return jsonResponse(buildGedsOpenApi(url.origin, env.PRODUCT_NAME), env, origin, correlationId);
     case FUNDING_OPENAPI_PATH: return jsonResponse(fundingOpenApi(), env, origin, correlationId);
+    case CONSULTATIONS_OPENAPI_PATH: return jsonResponse(consultationsOpenApi(), env, origin, correlationId);
     case PARLIAMENT_OPENAPI_PATH: return jsonResponse(parliamentCatalogueOpenApi(), env, origin, correlationId);
     case BILL_OPENAPI_PATH: return jsonResponse(billTraceOpenApi(), env, origin, correlationId);
     case COMMITTEE_OPENAPI_PATH: return jsonResponse(committeeStudyOpenApi(), env, origin, correlationId);

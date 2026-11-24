@@ -20,6 +20,7 @@
     "embed:statutes": "bun scripts/embed-corpus.ts",
     "eval:retrieval": "bun scripts/eval-retrieval.ts",
     "seed:act-titles": "bun scripts/seed-act-titles.ts",
+    "materialize:consultations": "bun scripts/materialize-consultations.ts",
     "typecheck:worker": "tsc -p tsconfig.worker.json",
     "typecheck:bun": "tsc -p tsconfig.bun.json",
     "typecheck:tooling": "tsc -p tsconfig.tooling.json",

@@ -1,0 +1,271 @@
+{
+  "generatedAt": "2026-11-24T16:57:12.259Z",
+  "environment": {
+    "bun": "1.4.4",
+    "node": "v26.3.1",
+    "platform": "darwin arm64"
+  },
+  "source": {
+    "datasetUrl": "https://open.canada.ca/data/en/dataset/7c03f039-3753-4093-af60-74b0f7b2385d",
+    "csvUrl": "https://open.canada.ca/static/consultations_open.csv",
+    "schemaUrl": "https://open.canada.ca/data/recombinant-published-schema/consultations.json",
+    "csvSha256": "8f34ce7ba8806f8f65ea68cfe89edaadd8faae3dd874d7ea95c58886c05007fe",
+    "csvBytes": 6795661,
+    "schemaSha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da",
+    "schemaBytes": 42120,
+    "rows": 5208
+  },
+  "commands": [
+    "bun scripts/materialize-consultations.ts --csv https://open.canada.ca/static/consultations_open.csv --schema https://open.canada.ca/data/recombinant-published-schema/consultations.json --db data/corpus/consultations/catalogue.sqlite --observed-at 2026-11-24T17:00:00Z --receipt dist/consultations/receipt.json",
+    "bun scripts/materialize-consultations.ts --csv <same> --observed-at 2026-11-24T18:00:00Z --receipt dist/consultations/receipt-replay.json",
+    "cp data/corpus/consultations/catalogue.sqlite /tmp/consultations-demo.sqlite",
+    "bun scripts/materialize-consultations.ts --csv <one row extended> --db /tmp/consultations-demo.sqlite --observed-at 2026-11-25T12:00:00Z",
+    "bun scripts/materialize-consultations.ts --csv <same extended> --db /tmp/consultations-demo.sqlite --observed-at 2026-12-15T12:00:00Z",
+    "bun scripts/materialize-consultations.ts --csv <extended minus one row> --db /tmp/consultations-demo.sqlite --observed-at 2026-12-16T12:00:00Z",
+    "CIVICSIGNAL_CONSULTATIONS_SQLITE=data/corpus/consultations/catalogue.sqlite bun run test test/endpoints.test.ts -t \"consultations through the Worker\""
+  ],
+  "runs": {
+    "catalogue": {
+      "source": "canada",
+      "observedAt": "2026-11-24T17:00:00.000Z",
+      "revision": "7888621d0aecf4e73cb412dbb481c1cd929f45df7911ef6cd2c01f7b453da278",
+      "csv": {
+        "input": "/tmp/consultations.csv",
+        "sha256": "8f34ce7ba8806f8f65ea68cfe89edaadd8faae3dd874d7ea95c58886c05007fe",
+        "bytes": 6795661,
+        "rows": 5208
+      },
+      "schema": {
+        "input": "/tmp/schema.json",
+        "sha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da",
+        "bytes": 42120
+      },
+      "counts": {
+        "rows": 5208,
+        "added": 5208,
+        "changed": 0,
+        "unchanged": 0,
+        "stale": 0
+      },
+      "durationMs": 1544,
+      "versions": {
+        "bun": "1.4.4"
+      }
+    },
+    "replay": {
+      "source": "canada",
+      "observedAt": "2026-11-24T18:00:00.000Z",
+      "revision": "7888621d0aecf4e73cb412dbb481c1cd929f45df7911ef6cd2c01f7b453da278",
+      "csv": {
+        "input": "/tmp/consultations.csv",
+        "sha256": "8f34ce7ba8806f8f65ea68cfe89edaadd8faae3dd874d7ea95c58886c05007fe",
+        "bytes": 6795661,
+        "rows": 5208
+      },
+      "schema": {
+        "input": "/tmp/schema.json",
+        "sha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da",
+        "bytes": 42120
+      },
+      "counts": {
+        "rows": 5208,
+        "added": 0,
+        "changed": 0,
+        "unchanged": 5208,
+        "stale": 0
+      },
+      "durationMs": 1619,
+      "versions": {
+        "bun": "1.4.4"
+      }
+    },
+    "extended": {
+      "source": "canada",
+      "observedAt": "2026-11-25T12:00:00.000Z",
+      "revision": "7365a3819fdec08c0606fe84a8dbe385c044465312d5209a9d0bff9fb31882e0",
+      "csv": {
+        "input": "/tmp/consultations-extended.csv",
+        "sha256": "35296638515197abf5f8bf72357b81e6ffd1bcf7e92c576b5b90d9bec19c9a71",
+        "bytes": 6795873,
+        "rows": 5208
+      },
+      "schema": {
+        "input": "/tmp/schema.json",
+        "sha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da",
+        "bytes": 42120
+      },
+      "counts": {
+        "rows": 5208,
+        "added": 0,
+        "changed": 1,
+        "unchanged": 5207,
+        "stale": 0
+      },
+      "durationMs": 2082,
+      "versions": {
+        "bun": "1.4.4"
+      }
+    },
+    "laterReplay": {
+      "source": "canada",
+      "observedAt": "2026-12-15T12:00:00.000Z",
+      "revision": "7365a3819fdec08c0606fe84a8dbe385c044465312d5209a9d0bff9fb31882e0",
+      "csv": {
+        "input": "/tmp/consultations-extended.csv",
+        "sha256": "35296638515197abf5f8bf72357b81e6ffd1bcf7e92c576b5b90d9bec19c9a71",
+        "bytes": 6795873,
+        "rows": 5208
+      },
+      "schema": {
+        "input": "/tmp/schema.json",
+        "sha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da",
+        "bytes": 42120
+      },
+      "counts": {
+        "rows": 5208,
+        "added": 0,
+        "changed": 0,
+        "unchanged": 5208,
+        "stale": 0
+      },
+      "durationMs": 1631,
+      "versions": {
+        "bun": "1.4.4"
+      }
+    },
+    "stale": {
+      "source": "canada",
+      "observedAt": "2026-12-16T12:00:00.000Z",
+      "revision": "0396d82ca80f8931836f1226d18f5cb972fa86b790ce22d156765e06f4463af5",
+      "csv": {
+        "input": "/tmp/consultations-dropped.csv",
+        "sha256": "df50168921d36a155222b91de8a5a2ddb7c3e3d94c48e34015c9a559f5c9955b",
+        "bytes": 6794901,
+        "rows": 5207
+      },
+      "schema": {
+        "input": "/tmp/schema.json",
+        "sha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da",
+        "bytes": 42120
+      },
+      "counts": {
+        "rows": 5207,
+        "added": 0,
+        "changed": 0,
+        "unchanged": 5207,
+        "stale": 1
+      },
+      "durationMs": 1480,
+      "versions": {
+        "bun": "1.4.4"
+      }
+    }
+  },
+  "revisionTrace": {
+    "record": "esdc-edsc_C-1235757",
+    "revisions": [
+      {
+        "observedAt": "2026-11-24T17:00:00.000Z",
+        "revision": 1,
+        "event": "added",
+        "changedFields": []
+      },
+      {
+        "observedAt": "2026-11-25T12:00:00.000Z",
+        "revision": 2,
+        "event": "changed",
+        "changedFields": [
+          "dates.end",
+          "editions.en.reportUrl.kind",
+          "editions.en.reportUrl.published",
+          "editions.en.reportUrl.url",
+          "editions.fr.reportUrl.published",
+          "editions.fr.reportUrl.url",
+          "report.available"
+        ]
+      }
+    ],
+    "laterReplayChanged": 0,
+    "note": "The same extended catalogue observed 20 days later records no publisher change while 5,208 records keep their dates."
+  },
+  "stale": {
+    "droppedRecord": "ic_C-0058",
+    "retained": {
+      "id": "ic_C-0058",
+      "observed_at": "2026-12-15T12:00:00.000Z"
+    },
+    "counts": {
+      "rows": 5207,
+      "added": 0,
+      "changed": 0,
+      "unchanged": 5207,
+      "stale": 1
+    }
+  },
+  "coverage": {
+    "total": 5208,
+    "byState": {
+      "open": 71,
+      "planned": 10,
+      "closed": 5127,
+      "unknown": 0
+    },
+    "statusCodes": {
+      "C": 5028,
+      "O": 122,
+      "P": 58
+    },
+    "stale": 0,
+    "editions": {
+      "missingDescriptionFr": 8,
+      "missingTitleFr": 0,
+      "profileLinkKinds": {
+        "official": 4890,
+        "third-party-wrapper": 3,
+        "missing": 209,
+        "unparsable": 106
+      }
+    },
+    "reports": {
+      "available": 772
+    },
+    "revisions": {
+      "total": 5208
+    }
+  },
+  "acceptance": {
+    "appliedAi": {
+      "asOf": "2026-11-24T17:00:00.000Z",
+      "matches": 12,
+      "open": [
+        "esdc-edsc_C-1235757"
+      ],
+      "closedLater": "closed",
+      "frenchMatches": 13,
+      "frenchTitle": "Registre de l’intelligence artificielle du gouvernement du Canada"
+    },
+    "lookup": {
+      "id": "esdc-edsc_C-1235757",
+      "statusCode": "O",
+      "dates": {
+        "start": "2026-10-27",
+        "end": "2027-01-29"
+      },
+      "institution": {
+        "en": "Employment and Social Development Canada",
+        "fr": "Emploi et Développement social Canada"
+      },
+      "revisions": 1,
+      "firstEvent": {
+        "observedAt": "2026-11-24T17:00:00.000Z",
+        "revision": 1,
+        "event": "added",
+        "changedFields": []
+      }
+    }
+  },
+  "deferred": {
+    "participation": "The catalogue supplies the policy question, dates, status, department links and published report links. The intake does not yet parse each department notice for who may participate or how to respond; those pages remain cited links only.",
+    "removals": "A row absent from a later full catalogue is retained with its last observation and counted as stale rather than served as current."
+  }
+}

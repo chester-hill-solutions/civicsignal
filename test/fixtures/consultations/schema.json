@@ -1,0 +1,173 @@
+{
+ "dataset_type": "consultations",
+ "resources": [
+  {
+   "resource_name": "consultations",
+   "fields": [
+    {
+     "id": "subjects",
+     "title": null,
+     "description": {
+      "en": "This field indicates the different subjects related to the engagement process.",
+      "fr": "Cette zone indique les différents sujets sur lesquels porte le processus de participation."
+     },
+     "choices": {
+      "DV": {
+       "en": "Development",
+       "fr": "Développement"
+      },
+      "RE": {
+       "en": "Regulations",
+       "fr": "Règlements"
+      },
+      "TF": {
+       "en": "Training and careers",
+       "fr": "Formation et carrières"
+      },
+      "SO": {
+       "en": "Society",
+       "fr": "Société"
+      },
+      "PD": {
+       "en": "Persons with disabilities",
+       "fr": "Personnes handicapées"
+      },
+      "EC": {
+       "en": "Economy",
+       "fr": "Économie"
+      },
+      "SA": {
+       "en": "Seniors",
+       "fr": "Aînés"
+      },
+      "CD": {
+       "en": "Children",
+       "fr": "Enfants"
+      },
+      "TX": {
+       "en": "Taxes",
+       "fr": "Impôts et taxes"
+      },
+      "IP": {
+       "en": "Indigenous Peoples",
+       "fr": "Peuples autochtones"
+      },
+      "YJ": {
+       "en": "Youth",
+       "fr": "Jeunes"
+      },
+      "AG": {
+       "en": "Agriculture",
+       "fr": "Agriculture"
+      },
+      "EM": {
+       "en": "Employment",
+       "fr": "Emploi"
+      },
+      "GP": {
+       "en": "Government procurement",
+       "fr": "Marché public"
+      },
+      "SE": {
+       "en": "Service",
+       "fr": "Service"
+      },
+      "PR": {
+       "en": "Private sector",
+       "fr": "Secteur privé"
+      },
+      "ED": {
+       "en": "Economic development",
+       "fr": "Développement économique"
+      },
+      "RU": {
+       "en": "Rural and remote services",
+       "fr": "Services aux régions rurales et isolées"
+      },
+      "NR": {
+       "en": "Natural resources",
+       "fr": "Ressources naturelles"
+      },
+      "PO": {
+       "en": "Policy",
+       "fr": "Politique"
+      },
+      "HL": {
+       "en": "Housing",
+       "fr": "Logement"
+      },
+      "TR": {
+       "en": "Transportation",
+       "fr": "Transport"
+      },
+      "EN": {
+       "en": "Environment",
+       "fr": "Environnement"
+      },
+      "HS": {
+       "en": "Health",
+       "fr": "Santé"
+      },
+      "ST": {
+       "en": "Science and technology",
+       "fr": "Sciences et technologie"
+      },
+      "CM": {
+       "en": "Communication",
+       "fr": "Communication"
+      },
+      "FA": {
+       "en": "Financial assistance and entitlements",
+       "fr": "Aide financière et droits"
+      }
+     }
+    },
+    {
+     "id": "partner_departments",
+     "title": null,
+     "description": {
+      "en": "This field identifies the name(s) of the departments who are collaborating on the identified engagement process. Please provide the numerical code associated to each department and separated by commas.",
+      "fr": "Cette zone indique le ministère ou les ministères qui collaborent au processus de participation en question. Il faut indiquer le nom complet des ministères (aucun acronyme)."
+     },
+     "choices": {}
+    },
+    {
+     "id": "status",
+     "title": null,
+     "description": {
+      "en": "The field indicates the current status of the engagement process.",
+      "fr": "Cette zone indique l’état d’avancement du processus de participation."
+     },
+     "choices": {
+      "O": {
+       "en": "Open – Accepting Input",
+       "fr": "Ouverte – Avis acceptés"
+      },
+      "P": {
+       "en": "Planned",
+       "fr": "Prévue"
+      }
+     }
+    },
+    {
+     "id": "report_available_online",
+     "title": null,
+     "description": {
+      "en": "This field indicates if the “What we Heard” report is completed, published and made available online on the Consulting with Canadians website.",
+      "fr": "Cette zone indique si le rapport intitulé « Ce que nous avons entendu » est terminé, publié et disponible sur le site Web « Consultations auprès des Canadiens »."
+     },
+     "choices": {
+      "Y": {
+       "en": "Yes",
+       "fr": "Oui"
+      },
+      "N": {
+       "en": "No",
+       "fr": "Non"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { DatabaseSync as SqliteDatabase } from 'node:sqlite';
 import { CommitteeCallDetailResponseSchema, CommitteeCallsResponseSchema, CommitteeCorpusPageSchema, CommitteeCorpusSearchResponseSchema, CommitteeCorpusCoverageSchema } from '../src/corpora/committee-corpus';
+import { ConsultationCoverageSchema, ConsultationLookupResponseSchema, ConsultationSearchResponseSchema } from '../src/corpora/consultations';
 import { FundingSearchResponse, FundingLookupResponse } from '../src/corpora/funding';
 import { localD1 } from '../scripts/lib/local-d1';
 import { ApiKeyUsageDO, DurableObjectUsageLedger } from '@chester-hill-solutions/api-billing/durable-object';
@@ -1577,6 +1578,69 @@ describe('committee calls through the Worker against the acquired corpus', () =>
       `/api/committees/45-1/calls/${health.id}?language=fr`)).json());
     expect(french.state).toBe('found');
     expect(await fixture.count()).toBe(4);
+  });
+});
+
+describe('consultations through the Worker against the acquired catalogue', () => {
+  const cataloguePath = process.env.CIVICSIGNAL_CONSULTATIONS_SQLITE;
+  it.skipIf(!cataloguePath)('serves the applied-AI case, its state as of two dates, and the reconciled coverage', async () => {
+    if (!cataloguePath) throw new Error('The consultation catalogue is required.');
+    const fixture = await setup(8);
+    const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
+    const db = new DatabaseSync(cataloguePath, { readOnly: true });
+    closed.push(() => db.close());
+    fixture.env.AUTH_DB = fixture.db;
+    fixture.env.CIVIC_DB = localD1(db);
+    fixture.env.CONSULTATIONS_PREVIEW = 'on';
+
+    const at = '2026-11-24T17:00:00.000Z';
+    const search = await fixture.send(`/api/consultations?language=en&query=artificial%20intelligence&asOf=${at}`);
+    expect(search.status).toBe(200);
+    const english = ConsultationSearchResponseSchema.parse(await search.json());
+    expect(english.items).toHaveLength(12);
+    expect(english.items.filter(item => item.state === 'open').map(item => item.id)).toEqual(['esdc-edsc_C-1235757']);
+    const state = (asOf: string) => fixture.send(`/api/consultations?language=en&query=artificial%20intelligence&asOf=${asOf}`)
+      .then(response => response.json()).then(body => ConsultationSearchResponseSchema.parse(body));
+    expect((await state('2027-03-01T00:00:00.000Z')).items
+      .find(item => item.id === 'esdc-edsc_C-1235757')?.state).toBe('closed');
+
+    const french = ConsultationSearchResponseSchema.parse(await (await fixture.send(
+      `/api/consultations?language=fr&query=intelligence%20artificielle&asOf=${at}`)).json());
+    expect(french.items.length).toBeGreaterThan(0);
+    expect(french.items[0]?.title).toMatch(/intelligence artificielle/i);
+
+    const lookup = ConsultationLookupResponseSchema.parse(await (await fixture.send(
+      `/api/consultations/esdc-edsc_C-1235757?asOf=${at}`)).json());
+    expect(lookup.item).toMatchObject({
+      id: 'esdc-edsc_C-1235757', statusCode: 'O', revision: 1,
+      dates: { start: '2026-10-27', end: '2027-01-29' },
+      institution: { en: 'Employment and Social Development Canada' },
+      editions: { en: { title: expect.stringMatching(/Digital Technologies/) } },
+    });
+    expect(lookup.revisions).toHaveLength(1);
+    expect(lookup.revisions[0]).toMatchObject({ revision: 1, event: 'added', changedFields: [] });
+
+    const coverage = ConsultationCoverageSchema.parse(await (await fixture.send(
+      `/api/consultations/coverage?asOf=${at}`)).json());
+    expect(coverage.counts).toMatchObject({
+      total: 5208, byState: { open: 71, planned: 10, closed: 5127, unknown: 0 }, stale: 0,
+    });
+    expect(coverage.editions).toMatchObject({
+      missingDescriptionFr: 8, missingTitleFr: 0,
+      profileLinkKinds: { official: 4890, 'third-party-wrapper': 3, missing: 209, unparsable: 106 },
+    });
+    expect(coverage.reports.available).toBe(772);
+    expect(coverage.revisions.total).toBe(5208);
+
+    const discovery = await (await fixture.send('/.well-known/civicsignal.json', {}, false)).json() as {
+      sources: { id: string; status: string; editions: { language: string; request: string }[] }[] };
+    const source = discovery.sources.find(entry => entry.id === 'consultations');
+    expect(source?.status).toBe('available');
+    expect(source?.editions.map(edition => edition.language)).toEqual(['en', 'fr']);
+    expect(source?.editions[0]?.request).toContain('/api/consultations?language=en');
+    expect((await fixture.send('/api/consultations/openapi.json', {}, false)).status).toBe(200);
+    expect((await fixture.send('/api/consultations?language=en&query=water', {}, false)).status).toBe(401);
+    expect(await fixture.count()).toBe(5);
   });
 });
 

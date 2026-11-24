@@ -9,6 +9,7 @@ import type { Env } from '../types';
 import { BILL_OPENAPI_PATH, readBillBrief } from './bill-trace';
 import { COMMITTEE_OPENAPI_PATH, COMMITTEE_STUDY_BRIEF_PATH } from './committee-study';
 import { FUNDING_OPENAPI_PATH } from './funding';
+import { CONSULTATIONS_OPENAPI_PATH } from './consultations';
 import { GAZETTE_OPENAPI_PATH } from './gazette-contract';
 import { HANSARD_OPENAPI_PATH, HANSARD_PATHS } from './hansard-contract';
 import { PARLIAMENT_OPENAPI_PATH } from './parliament-catalogue';
@@ -94,6 +95,17 @@ function funding({ env, accessReady }: DiscoveryContext, source: typeof FundingS
       r => requestPath('/api/funding-programs', { source, language: r.language, query: esdc
         ? (r.language === 'fr' ? 'expansion des infrastructures' : 'infrastructure expansion')
         : (r.language === 'fr' ? 'recherche et développement appliquée' : 'applied research and development') }), [source]));
+}
+
+function consultations({ env, accessReady }: DiscoveryContext) {
+  return inspect(definition('consultations', 'Government of Canada consultations',
+      'Which federal consultations ask about artificial intelligence, and when do they close?', CONSULTATIONS_OPENAPI_PATH),
+    env.CONSULTATIONS_PREVIEW === 'on', accessReady, () =>
+      editions(env.CIVIC_DB, languages + `SELECT c.source AS scope,l.language,c.observed_at AS observedAt,c.revision
+      FROM consultations_catalogues c CROSS JOIN languages l
+      WHERE c.source='canada' AND EXISTS (SELECT 1 FROM consultations_records r WHERE r.owner_org<>'')`,
+      r => requestPath('/api/consultations', { language: r.language,
+        query: r.language === 'fr' ? 'intelligence artificielle' : 'artificial intelligence' })));
 }
 
 function committees({ env, accessReady }: DiscoveryContext) {
@@ -194,7 +206,7 @@ function changes({ env, accessReady }: DiscoveryContext, source: keyof typeof SO
 export function discoverSources(context: DiscoveryContext) {
   return Promise.all([
     ...FundingSource.options.map(source => funding(context, source)),
-    committees(context), parliament(context), writtenQuestions(context), directory(context),
+    consultations(context), committees(context), parliament(context), writtenQuestions(context), directory(context),
     hansard(context, 'house'), hansard(context, 'senate'), gazetteIssues(context), billTrace(context), freshwater(context),
     changes(context, 'gazette'), changes(context, 'house'), changes(context, 'senate'),
   ]);

@@ -1,4 +1,7 @@
 import type { GedsRawRow } from './types';
+import { CsvError, CsvParser } from '../csv';
+
+export { CsvError } from '../csv';
 
 /**
  * The export's CSV reader.
@@ -14,6 +17,12 @@ import type { GedsRawRow } from './types';
  *
  * The parser is streaming: it holds one row rather than the 245 MB file. That
  * matters because the same code runs in a Worker's refresh path.
+ *
+ * The shared state machine in `src/csv.ts` also repairs the publisher's 15
+ * malformed records in the October 25, 2026 export, which repeat an unescaped
+ * quote inside a quoted field (for example `"... SERVICES D"IDENTITÉ NUMÉrique"`).
+ * A strict reader closes the field there and splits the record into extra
+ * columns; this one keeps the quote as text and the row whole.
  */
 
 export const GEDS_COLUMNS = [
@@ -92,93 +101,6 @@ export function decodeLatin1(bytes: Uint8Array): string {
     out += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
   return out;
-}
-
-export class CsvError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'CsvError';
-  }
-}
-
-/**
- * Carries quote and line-ending state across arbitrarily split input chunks.
- *
- * The publisher's export is not always well formed: 15 of the 189,994 records in
- * the October 25, 2026 export carry an unescaped quote inside a quoted field,
- * such as `"... SERVICES D"IDENTITÉ NUMÉrique"`. A strict reader closes the field
- * at that quote and turns the remaining commas into extra fields. Such a quote
- * cannot end a field because a field ends only before a delimiter, a line break
- * or end of file, so it is kept as text and the field stays quoted. The rule
- * decides from the next character, so a quoted field split across chunks waits
- * one character rather than guessing.
- */
-class CsvParser {
-  private row: string[] = [];
-  private field = '';
-  private quoted = false;
-  private pendingQuote = false;
-  private afterCR = false;
-
-  private endRow(): string[] | undefined {
-    this.row.push(this.field);
-    const row = this.row;
-    this.row = [];
-    this.field = '';
-    return row.length === 1 && row[0] === '' ? undefined : row;
-  }
-
-  *read(text: string): Generator<string[]> {
-    for (const char of text) {
-      if (this.afterCR) {
-        this.afterCR = false;
-        if (char === '\n') continue;
-      }
-      if (this.pendingQuote) {
-        this.pendingQuote = false;
-        if (char === '"') {
-          // `""` inside a quoted field is one literal quote.
-          this.field += '"';
-          continue;
-        }
-        if (char !== ',' && char !== '\r' && char !== '\n') {
-          // A quote that no delimiter follows is text the publisher left unescaped.
-          this.field += '"' + char;
-          continue;
-        }
-        this.quoted = false;
-      }
-      if (this.quoted) {
-        if (char === '"') this.pendingQuote = true;
-        else this.field += char;
-        continue;
-      }
-      if (char === '"' && this.field === '') {
-        this.quoted = true;
-        continue;
-      }
-      if (char === ',') {
-        this.row.push(this.field);
-        this.field = '';
-      } else if (char === '\r' || char === '\n') {
-        this.afterCR = char === '\r';
-        const row = this.endRow();
-        if (row) yield row;
-      } else this.field += char;
-    }
-  }
-
-  *finish(): Generator<string[]> {
-    if (this.pendingQuote) {
-      // A field that ends with a quote and then the end of the file is closed,
-      // not unterminated.
-      this.pendingQuote = false;
-      this.quoted = false;
-    }
-    if (this.quoted) throw new CsvError('unterminated quoted field at end of file');
-    const row = this.endRow();
-    if (row) yield row;
-  }
 }
 
 export async function* csvRows(source: ChunkSource): AsyncGenerator<string[]> {

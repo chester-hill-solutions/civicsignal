@@ -58,6 +58,7 @@ The [Canada Gazette preview](docs/GAZETTE-API.md) covers local replay, bilingual
 The [parliamentary catalogues](docs/PARLIAMENT-CATALOGUE-API.md) cover current-session bills, House and Senate Journals, vote totals and member-by-member voting records. Staff can search a Journal passage or a voting history and open the cited parliamentary edition.
 
 The [funding programs API](docs/FUNDING-PROGRAMS-API.md) serves bilingual NSERC College and Community Innovation and ESDC funding catalogues, with cited program terms, edition history and coverage.
+The [consultations API](docs/CONSULTATIONS-API.md) serves the federal Open Dialogue catalogue in both languages, with the published dates, status, department and report links and an open state computed for a queried date.
 The [federal directory](docs/GEDS-API.md) provides dated people, contact, organization and hierarchy lookups from GEDS snapshots.
 The [bilingual bill and committee brief](docs/BILL-TRACE-API.md) follows S-5 through both chambers, committee amendments, a recorded division and Royal Assent.
 The [committee study brief](docs/BILL-TRACE-API.md#committee-study-action) follows ENVI's freshwater report and government response as of a selected date.
