@@ -63,5 +63,35 @@
     "httpStatus": 404,
     "providerCode": 10007,
     "exactRequestPathMatched": true
+  },
+  "scheduleAccessRecheck": {
+    "baselineRecheckedAt": "2026-11-24T22:28:31.411Z",
+    "pinnedDeploymentAndVersionMatched": true,
+    "anyWorkflowInstances": false,
+    "canonicalBytesAndSha256Matched": true,
+    "cli": "cf 1.0.0-beta.10",
+    "defaultProfile": {
+      "singleWorkerRoleLookup": {
+        "httpStatus": 403,
+        "providerCode": 9109
+      },
+      "accountTokenVerify": {
+        "httpStatus": 401,
+        "providerCode": 1000
+      }
+    },
+    "chs-monitor-provisioning": {
+      "singleWorkerRole": "Individual Workers Editor",
+      "isSelectable": false,
+      "accountTokenVerify": {
+        "httpStatus": 401,
+        "providerCode": 1000
+      }
+    },
+    "operatorScheduleAccess": "unverified",
+    "primaryGuardCleanupAccess": "unverified",
+    "backupGuardCleanupAccess": "unverified",
+    "scheduleWrites": 0,
+    "freshEventArmed": false
   }
 }
