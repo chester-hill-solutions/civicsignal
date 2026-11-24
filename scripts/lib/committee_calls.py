@@ -224,8 +224,15 @@ def build_call(
     observed_at: str,
     parsed: dict,
     existing: dict | None = None,
+    conflict: bool = False,
 ) -> dict:
-    """The record the committee store receives. IDs are CivicSignal's, not the source's."""
+    """The record the committee store receives. IDs are CivicSignal's, not the source's.
+
+    The House occasionally serves another study's motion block on a study page, and
+    alternates between variants. A changed block therefore has to be observed twice
+    in a row before it replaces the confirmed content: one contradictory page load
+    records a pending candidate instead of rewriting the record.
+    """
     history = (existing or {}).get("metadata") or {}
     content = {
         "studyId": study_id,
@@ -233,10 +240,20 @@ def build_call(
         "deadline": parsed["deadline"],
         "instructions": parsed["instructions"],
     }
-    content_digest = digest(content)
+    candidate = digest(content)
+    confirmed = history.get("contentDigest")
     revision = int(history.get("revision") or 1)
-    if history and history.get("contentDigest") not in (None, content_digest):
-        revision += 1
+    pending = None
+    if history and candidate != confirmed:
+        if conflict:
+            pending = candidate                # another study published this same block
+            content = {key: history.get(key) for key in content}
+        elif history.get("pendingDigest") == candidate:
+            revision += 1                      # second consecutive observation: commit
+        else:
+            pending = candidate                # first sighting: hold it
+            content = {key: history.get(key) for key in content}
+    committed = digest(content)
     return {
         "session": session,
         "id": call_id(committee, study_id),
@@ -254,13 +271,52 @@ def build_call(
             "listingUrl": PARTICIPATE_INDEX[language],
             "contentWarning": parsed["content_warning"],
             "contentWarningText": parsed["content_warning_text"],
+            # Listing presence is an observation, not publisher content: a call that
+            # leaves the current list keeps its last listed date and gains no revision.
+            "listed": True,
+            "lastListedAt": observed_at,
             "observedAt": observed_at,
             "firstObservedAt": history.get("firstObservedAt", observed_at),
             "revision": revision,
-            "contentDigest": content_digest,
+            "contentDigest": committed,
+            "pendingDigest": pending,
+            "contentConflict": conflict,
             **content,
         },
     }
+
+
+def mark_unlisted(db, session: str, present: set[tuple[str, str]]) -> list[dict]:
+    """Flag stored calls that the current listing no longer names.
+
+    Listing presence is an observation, not publisher content: the store's
+    signature ignores ``listed`` and ``lastListedAt``, so this creates no
+    revision. The call keeps its published deadline and instructions, and the
+    API reports the last observation that listed it.
+    """
+    from .committee_store import update
+
+    dropped = []
+    for row in db.execute(
+        "SELECT session,id,language,kind,chamber,committee_id,title,url,status,metadata_json "
+        "FROM cc_records WHERE session=? AND kind='call'",
+        (session,),
+    ):
+        if (row["id"], row["language"]) in present:
+            continue
+        metadata = json.loads(row["metadata_json"])
+        if metadata.get("listed") is False:
+            continue
+        metadata["listed"] = False
+        update(db, {
+            "session": row["session"], "id": row["id"], "language": row["language"],
+            "kind": row["kind"], "chamber": row["chamber"], "committee_id": row["committee_id"],
+            "title": row["title"], "url": row["url"], "status": row["status"],
+            "metadata": metadata,
+        })
+        dropped.append({"id": row["id"], "language": row["language"],
+                        "lastListedAt": metadata.get("lastListedAt")})
+    return dropped
 
 
 def committee_id(code: str) -> str:

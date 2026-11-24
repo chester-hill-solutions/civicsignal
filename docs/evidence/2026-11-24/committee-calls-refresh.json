@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-11-24T17:25:48.881Z",
+  "command": "bun run refresh:committee-calls --receipt dist/committee-calls/receipt.json",
+  "stableRuns": [
+    {
+      "observedAt": "2026-11-24T17:25:02Z",
+      "counts": {
+        "calls": 30,
+        "added": 0,
+        "changed": 0,
+        "unchanged": 30,
+        "dropped": 0,
+        "pending": 2,
+        "conflicts": 2,
+        "committees": 6,
+        "deadlines": 14,
+        "deadlineInstants": 14,
+        "instructionBlocks": 18,
+        "contentWarnings": 7
+      }
+    },
+    {
+      "observedAt": "2026-11-24T17:25:14Z",
+      "counts": {
+        "calls": 30,
+        "added": 0,
+        "changed": 0,
+        "unchanged": 30,
+        "dropped": 0,
+        "pending": 3,
+        "conflicts": 0,
+        "committees": 6,
+        "deadlines": 14,
+        "deadlineInstants": 14,
+        "instructionBlocks": 18,
+        "contentWarnings": 4
+      }
+    }
+  ],
+  "state": {
+    "calls": 30,
+    "changeEvents": 76,
+    "listed": [
+      {
+        "listed": 1,
+        "n": 30
+      }
+    ],
+    "pending": [
+      {
+        "id": "house-srsr-call-13688263",
+        "language": "en",
+        "revision": 5
+      },
+      {
+        "id": "house-srsr-call-13688263",
+        "language": "fr",
+        "revision": 3
+      },
+      {
+        "id": "house-srsr-call-13631120",
+        "language": "fr",
+        "revision": 7
+      }
+    ]
+  },
+  "guards": {
+    "freshPages": "Every run fetches the published pages; --from-cache is an offline rerun only.",
+    "confirmBeforeCommit": "A changed motion replaces stored content only after two consecutive agreeing observations.",
+    "sharedMotion": "Identical study-specific motion text under two study IDs is the House serving one study page on another; both records hold their confirmed text.",
+    "listing": "A study absent from the current list is marked listed=false with lastListedAt unchanged and gains no revision."
+  },
+  "observedPublisherDefects": [
+    "The SRSR study pages served one another the same motion block during the November 24 refreshes; the run reports the pair under conflictingCalls and holds both.",
+    "The content warning block appears and disappears between page variants; it is stored as observed and never makes a revision."
+  ],
+  "note": "No live study left the House consultation list during these runs, so droppedCalls is empty; the unit suite covers the marking path."
+}

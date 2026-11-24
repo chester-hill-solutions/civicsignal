@@ -62,9 +62,81 @@ function changedPaths(previous: unknown, next: unknown, path = ''): string[] {
  * derived from the observation instant, so a later refresh must not record them
  * as a publisher change or move the catalogue revision.
  */
-function publishedFacts(facts: ConsultationFacts): Omit<ConsultationFacts, 'stateAtObservation' | 'statusAgreesWithDates'> {
+type PublishedConsultationFacts = Omit<ConsultationFacts, 'stateAtObservation' | 'statusAgreesWithDates'>;
+
+function publishedFacts(facts: ConsultationFacts): PublishedConsultationFacts {
   const { stateAtObservation: _state, statusAgreesWithDates: _agrees, ...published } = facts;
   return published;
+}
+
+const CHANGE_CATEGORIES = [
+  'end-extended',
+  'end-shortened',
+  'start-moved',
+  'status-changed',
+  'report-changed',
+  'edition-changed',
+  'other',
+] as const;
+type ChangeCategory = typeof CHANGE_CATEGORIES[number];
+
+function classifyChange(
+  previous: PublishedConsultationFacts,
+  next: PublishedConsultationFacts,
+  fields: string[],
+): ChangeCategory[] {
+  const categories = new Set<ChangeCategory>();
+  const handled = new Set<string>();
+  const changed = (field: string) => fields.includes(field);
+
+  if (changed('dates.end')) {
+    handled.add('dates.end');
+    if (previous.dates.end === null || next.dates.end === null) categories.add('other');
+    else categories.add(next.dates.end > previous.dates.end ? 'end-extended' : 'end-shortened');
+  }
+  if (changed('dates.start')) {
+    handled.add('dates.start');
+    categories.add('start-moved');
+  }
+  if (changed('status.code')) {
+    handled.add('status.code');
+    categories.add('status-changed');
+  }
+
+  for (const field of fields) {
+    if (field === 'report.available' || /^editions\.(en|fr)\.reportUrl(?:\.|$)/.test(field)) {
+      handled.add(field);
+      categories.add('report-changed');
+    }
+    if (field === 'institution' || field.startsWith('institution.') ||
+      field === 'subjects' || field.startsWith('subjects.') ||
+      field === 'partnerDepartments' || field.startsWith('partnerDepartments.') ||
+      /^editions\.(en|fr)\.(title|description)(?:\.|$)/.test(field)) {
+      handled.add(field);
+      categories.add('edition-changed');
+    }
+  }
+  if (fields.some((field) => !handled.has(field))) categories.add('other');
+  return CHANGE_CATEGORIES.filter((category) => categories.has(category));
+}
+
+type ConsultationChangeSample = {
+  id: string;
+  event: 'added' | 'changed' | 'removed';
+  categories: string[];
+  changedFields: string[];
+};
+
+function emptyCategories() {
+  return {
+    'end-extended': 0,
+    'end-shortened': 0,
+    'start-moved': 0,
+    'status-changed': 0,
+    'report-changed': 0,
+    'edition-changed': 0,
+    other: 0,
+  };
 }
 
 function normalizedObservedAt(value: string): string {
@@ -104,11 +176,204 @@ function checkedRecords(csvText: string, dictionaryJson: unknown, observedAt: st
   return records;
 }
 
+type MaterializationCounts = {
+  rows: number;
+  added: number;
+  changed: number;
+  unchanged: number;
+  stale: number;
+  removed: number;
+};
+
+type ConsultationChanges = {
+  added: number;
+  removed: number;
+  categories: ReturnType<typeof emptyCategories>;
+  sample: ConsultationChangeSample[];
+};
+
+type ExistingConsultationRow = {
+  id: string;
+  observed_at: string;
+  first_observed_at: string;
+  revision: number;
+  facts_json: string;
+  removed_at: string | null;
+};
+
+type PriorConsultationRecords = {
+  rows: ExistingConsultationRow[];
+  byId: Map<string, ExistingConsultationRow>;
+};
+
+type MaterializedConsultation = ReturnType<typeof consultationFromRow>;
+
+type MaterializationContext = {
+  db: LocalDatabase;
+  observedAt: string;
+  counts: MaterializationCounts;
+  changes: ConsultationChanges;
+};
+
+function readPriorRecords(db: LocalDatabase): PriorConsultationRecords {
+  const rows = db.prepare(
+    'SELECT id, observed_at, first_observed_at, revision, facts_json, removed_at FROM consultations_records',
+  ).all() as ExistingConsultationRow[];
+  return { rows, byId: new Map(rows.map((row) => [row.id, row])) };
+}
+
+function persistPresentRecord(
+  context: MaterializationContext,
+  record: MaterializedConsultation,
+  previous: ExistingConsultationRow | undefined,
+): void {
+  const { db, observedAt, counts, changes } = context;
+  const { facts, searchText } = record;
+  const previousFacts = previous ? JSON.parse(previous.facts_json) as ConsultationFacts : undefined;
+  const reappeared = Boolean(previous && previous.removed_at !== null);
+  const didChange = Boolean(previous && !reappeared &&
+    canonical(publishedFacts(previousFacts as ConsultationFacts)) !== canonical(publishedFacts(facts)));
+  const revision = previous ? previous.revision + (didChange || reappeared ? 1 : 0) : 1;
+  const firstObservedAt = previous?.first_observed_at ?? observedAt;
+  db.prepare(`INSERT INTO consultations_records
+    (id, owner_org, registration_number, status_code, start_date, end_date, state_at_observation,
+     report_available, observed_at, first_observed_at, revision, facts_json, search_en, search_fr, removed_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ON CONFLICT(id) DO UPDATE SET owner_org=excluded.owner_org,
+     registration_number=excluded.registration_number, status_code=excluded.status_code,
+     start_date=excluded.start_date, end_date=excluded.end_date,
+     state_at_observation=excluded.state_at_observation, report_available=excluded.report_available,
+     observed_at=excluded.observed_at, revision=excluded.revision, facts_json=excluded.facts_json,
+     search_en=excluded.search_en, search_fr=excluded.search_fr, removed_at=NULL`)
+    .run(
+      facts.id,
+      facts.ownerOrg,
+      facts.registrationNumber,
+      facts.statusCode,
+      facts.dates.start,
+      facts.dates.end,
+      facts.stateAtObservation,
+      facts.reportAvailableOnline === null ? null : Number(facts.reportAvailableOnline),
+      observedAt,
+      firstObservedAt,
+      revision,
+      canonical(facts),
+      searchText.en,
+      searchText.fr,
+      null,
+    );
+
+  if (!previous || reappeared || didChange) {
+    const event: ConsultationChangeSample['event'] = !previous || reappeared ? 'added' : 'changed';
+    const fields = previous && !reappeared
+      ? changedPaths(publishedFacts(previousFacts as ConsultationFacts), publishedFacts(facts))
+        .sort((a, b) => a.localeCompare(b, 'en'))
+      : [];
+    db.prepare(`INSERT INTO consultations_revisions
+      (id, observed_at, revision, event, changed_fields_json, facts_json) VALUES (?,?,?,?,?,?)
+      ON CONFLICT(id, observed_at) DO UPDATE SET revision=excluded.revision, event=excluded.event,
+       changed_fields_json=excluded.changed_fields_json, facts_json=excluded.facts_json`)
+      .run(facts.id, observedAt, revision, event, JSON.stringify(fields), canonical(facts));
+    counts[event]++;
+    const categories = event === 'changed'
+      ? classifyChange(
+        publishedFacts(previousFacts as ConsultationFacts),
+        publishedFacts(facts),
+        fields,
+      )
+      : [];
+    for (const category of categories) changes.categories[category]++;
+    changes.sample.push({ id: facts.id, event, categories, changedFields: fields });
+  } else {
+    counts.unchanged++;
+  }
+}
+
+function applyPresentRecords(
+  context: MaterializationContext,
+  records: MaterializedConsultation[],
+  priorById: Map<string, ExistingConsultationRow>,
+): void {
+  for (const record of records) {
+    persistPresentRecord(context, record, priorById.get(record.facts.id));
+  }
+}
+
+function markRemovedRecord(
+  context: MaterializationContext,
+  previous: ExistingConsultationRow,
+): void {
+  const { db, observedAt, counts, changes } = context;
+  const revision = previous.revision + 1;
+  db.prepare('UPDATE consultations_records SET revision=?, removed_at=? WHERE id=? AND removed_at IS NULL')
+    .run(revision, observedAt, previous.id);
+  db.prepare(`INSERT INTO consultations_revisions
+    (id, observed_at, revision, event, changed_fields_json, facts_json) VALUES (?,?,?,?,?,?)
+    ON CONFLICT(id, observed_at) DO UPDATE SET revision=excluded.revision, event=excluded.event,
+     changed_fields_json=excluded.changed_fields_json, facts_json=excluded.facts_json`)
+    .run(previous.id, observedAt, revision, 'removed', '[]', previous.facts_json);
+  counts.removed++;
+  changes.sample.push({ id: previous.id, event: 'removed', categories: [], changedFields: [] });
+}
+
+function markAbsentRecords(
+  context: MaterializationContext,
+  priorRows: ExistingConsultationRow[],
+  presentIds: Set<string>,
+): void {
+  for (const previous of priorRows) {
+    if (!presentIds.has(previous.id) && previous.removed_at === null) {
+      markRemovedRecord(context, previous);
+    }
+  }
+}
+
+function countStaleRecords(db: LocalDatabase, observedAt: string): number {
+  const result = db.prepare(
+    'SELECT COUNT(*) AS count FROM consultations_records WHERE removed_at IS NULL AND observed_at < ?',
+  ).get(observedAt) as { count: number };
+  return Number(result.count);
+}
+
+function writeCatalogueRow(
+  db: LocalDatabase,
+  input: ConsultationMaterializerInput,
+  observedAt: string,
+  revision: string,
+): void {
+  db.prepare(`INSERT INTO consultations_catalogues
+    (source, observed_at, revision, csv_sha256, schema_sha256, csv_source_json, schema_source_json)
+    VALUES (?,?,?,?,?,?,?)
+    ON CONFLICT(source) DO UPDATE SET observed_at=excluded.observed_at, revision=excluded.revision,
+     csv_sha256=excluded.csv_sha256, schema_sha256=excluded.schema_sha256,
+     csv_source_json=excluded.csv_source_json, schema_source_json=excluded.schema_source_json`)
+    .run(
+      CONSULTATION_SOURCE,
+      observedAt,
+      revision,
+      input.csvSha256,
+      input.schemaSha256,
+      canonical(input.csvSource ?? {}),
+      canonical(input.schemaSource ?? {}),
+    );
+}
+
+function sortAndLimitSample(changes: ConsultationChanges): void {
+  changes.sample.sort((a, b) => a.id.localeCompare(b.id, 'en'));
+  changes.sample = changes.sample.slice(0, 50);
+}
+
 /** Publish one observed consultations catalogue and its record-level history atomically. */
 export function materializeConsultations(db: LocalDatabase, input: ConsultationMaterializerInput): {
   observedAt: string;
   revision: string;
-  counts: { rows: number; added: number; changed: number; unchanged: number; stale: number };
+  counts: { rows: number; added: number; changed: number; unchanged: number; stale: number; removed: number };
+  changes: {
+    added: number;
+    removed: number;
+    categories: ReturnType<typeof emptyCategories>;
+    sample: ConsultationChangeSample[];
+  };
 } {
   if (!/^[a-f0-9]{64}$/.test(input.csvSha256) || !/^[a-f0-9]{64}$/.test(input.schemaSha256)) {
     throw new Error('Consultation source hashes must be 64 lowercase hexadecimal characters.');
@@ -122,7 +387,9 @@ export function materializeConsultations(db: LocalDatabase, input: ConsultationM
     csvSha256: input.csvSha256,
     schemaSha256: input.schemaSha256,
   }));
-  const counts = { rows: records.length, added: 0, changed: 0, unchanged: 0, stale: 0 };
+  const counts = { rows: records.length, added: 0, changed: 0, unchanged: 0, stale: 0, removed: 0 };
+  const changes = { added: 0, removed: 0, categories: emptyCategories(), sample: [] as ConsultationChangeSample[] };
+  const context = { db, observedAt, counts, changes };
 
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -134,84 +401,17 @@ export function materializeConsultations(db: LocalDatabase, input: ConsultationM
       throw new Error('A newer consultation observation already exists.');
     }
 
-    const priorRows = db.prepare(
-      'SELECT id, first_observed_at, revision, facts_json FROM consultations_records',
-    ).all() as { id: string; first_observed_at: string; revision: number; facts_json: string }[];
-    const priorById = new Map(priorRows.map((row) => [row.id, row]));
-    const present = new Set(records.map(({ facts }) => facts.id));
-    counts.stale = priorRows.filter(({ id }) => !present.has(id)).length;
-
-    const put = db.prepare(`INSERT INTO consultations_records
-      (id, owner_org, registration_number, status_code, start_date, end_date, state_at_observation,
-       report_available, observed_at, first_observed_at, revision, facts_json, search_en, search_fr)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(id) DO UPDATE SET owner_org=excluded.owner_org,
-       registration_number=excluded.registration_number, status_code=excluded.status_code,
-       start_date=excluded.start_date, end_date=excluded.end_date,
-       state_at_observation=excluded.state_at_observation, report_available=excluded.report_available,
-       observed_at=excluded.observed_at, revision=excluded.revision, facts_json=excluded.facts_json,
-       search_en=excluded.search_en, search_fr=excluded.search_fr`);
-    const putRevision = db.prepare(`INSERT INTO consultations_revisions
-      (id, observed_at, revision, event, changed_fields_json, facts_json) VALUES (?,?,?,?,?,?)
-      ON CONFLICT(id, observed_at) DO UPDATE SET revision=excluded.revision, event=excluded.event,
-       changed_fields_json=excluded.changed_fields_json, facts_json=excluded.facts_json`);
-
-    for (const { facts, searchText } of records) {
-      const previous = priorById.get(facts.id);
-      const previousFacts = previous ? JSON.parse(previous.facts_json) as unknown : undefined;
-      const didChange = Boolean(previous &&
-        canonical(publishedFacts(previousFacts as ConsultationFacts)) !==
-        canonical(publishedFacts(facts)));
-      const recordRevision = previous ? previous.revision + (didChange ? 1 : 0) : 1;
-      const firstObservedAt = previous?.first_observed_at ?? observedAt;
-      put.run(
-        facts.id,
-        facts.ownerOrg,
-        facts.registrationNumber,
-        facts.statusCode,
-        facts.dates.start,
-        facts.dates.end,
-        facts.stateAtObservation,
-        facts.reportAvailableOnline === null ? null : Number(facts.reportAvailableOnline),
-        observedAt,
-        firstObservedAt,
-        recordRevision,
-        canonical(facts),
-        searchText.en,
-        searchText.fr,
-      );
-      if (!previous || didChange) {
-        const event = previous ? 'changed' : 'added';
-        const fields = previous
-          ? changedPaths(
-            publishedFacts(previousFacts as ConsultationFacts),
-            publishedFacts(facts),
-          ).sort((a, b) => a.localeCompare(b, 'en'))
-          : [];
-        putRevision.run(facts.id, observedAt, recordRevision, event, JSON.stringify(fields), canonical(facts));
-        counts[event]++;
-      } else {
-        counts.unchanged++;
-      }
-    }
-
-    db.prepare(`INSERT INTO consultations_catalogues
-      (source, observed_at, revision, csv_sha256, schema_sha256, csv_source_json, schema_source_json)
-      VALUES (?,?,?,?,?,?,?)
-      ON CONFLICT(source) DO UPDATE SET observed_at=excluded.observed_at, revision=excluded.revision,
-       csv_sha256=excluded.csv_sha256, schema_sha256=excluded.schema_sha256,
-       csv_source_json=excluded.csv_source_json, schema_source_json=excluded.schema_source_json`)
-      .run(
-        CONSULTATION_SOURCE,
-        observedAt,
-        revision,
-        input.csvSha256,
-        input.schemaSha256,
-        canonical(input.csvSource ?? {}),
-        canonical(input.schemaSource ?? {}),
-      );
+    const prior = readPriorRecords(db);
+    const presentIds = new Set(records.map(({ facts }) => facts.id));
+    applyPresentRecords(context, records, prior.byId);
+    markAbsentRecords(context, prior.rows, presentIds);
+    counts.stale = countStaleRecords(db, observedAt);
+    changes.removed = counts.removed;
+    changes.added = counts.added;
+    writeCatalogueRow(db, input, observedAt, revision);
+    sortAndLimitSample(changes);
     db.exec('COMMIT');
-    return { observedAt, revision, counts };
+    return { observedAt, revision, counts, changes };
   } catch (error) {
     db.exec('ROLLBACK');
     throw error;

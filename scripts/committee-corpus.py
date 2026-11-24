@@ -136,13 +136,7 @@ def run(root, workers, catalogue=None):
                 )
         inventory.add_publication_parts(derived)
     db = initialize(sqlite3.connect(root / "committee.sqlite", timeout=60))
-    db.executescript("""PRAGMA journal_mode=WAL;
-      PRAGMA synchronous=NORMAL;
-      CREATE TABLE IF NOT EXISTS cc_revision(session TEXT,id TEXT,language TEXT,signature TEXT,PRIMARY KEY(session,id,language));
-      CREATE TABLE IF NOT EXISTS cc_changes(seq INTEGER PRIMARY KEY,session TEXT,id TEXT,language TEXT,signature TEXT);
-      CREATE TABLE IF NOT EXISTS cc_link_changes(seq INTEGER PRIMARY KEY,session TEXT,language TEXT,parent_id TEXT,child_id TEXT,relation TEXT,change TEXT);
-      CREATE TABLE IF NOT EXISTS cc_extracted(session TEXT,id TEXT,language TEXT,digest TEXT,version TEXT,status TEXT,reason TEXT,
-        PRIMARY KEY(session,id,language));""")
+    db.executescript("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
     # Each record checkpoints independently. Only a finished graph can be published.
     with db:
         db.execute("DELETE FROM cc_snapshot WHERE session=?", (inventory.session,))

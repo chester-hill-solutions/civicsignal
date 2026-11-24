@@ -162,6 +162,10 @@ export const CommitteeCallSchema = z.strictObject({
   listingUrl: httpsUrl.describe('The publisher page that lists this call as current.'),
   contentWarning: z.boolean(),
   contentWarningText: z.string().nullable().describe("The publisher's warning text, when it publishes one."),
+  listed: z.boolean().describe('Whether the latest observation still lists the call as seeking input.'),
+  lastListedAt: z.iso.datetime({ offset: true }).describe('The observation that last listed the call.'),
+  pendingChange: z.boolean().describe('A published change is waiting for a second agreeing observation.'),
+  contentConflict: z.boolean().describe('The latest observation found another study publishing the same motion text.'),
   observedAt: z.iso.datetime({ offset: true }),
   firstObservedAt: z.iso.datetime({ offset: true }),
 });

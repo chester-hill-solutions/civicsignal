@@ -21,14 +21,17 @@ CREATE TABLE consultations_records (
   id TEXT PRIMARY KEY, owner_org TEXT NOT NULL, registration_number TEXT NOT NULL,
   status_code TEXT NOT NULL, start_date TEXT, end_date TEXT, state_at_observation TEXT NOT NULL,
   report_available INTEGER, observed_at TEXT NOT NULL, first_observed_at TEXT NOT NULL,
-  revision INTEGER NOT NULL, facts_json TEXT NOT NULL, search_en TEXT NOT NULL, search_fr TEXT NOT NULL
+  revision INTEGER NOT NULL, facts_json TEXT NOT NULL, search_en TEXT NOT NULL, search_fr TEXT NOT NULL,
+  removed_at TEXT
 );
 CREATE TABLE consultations_revisions (
   id TEXT NOT NULL, observed_at TEXT NOT NULL, revision INTEGER NOT NULL, event TEXT NOT NULL,
   changed_fields_json TEXT NOT NULL, facts_json TEXT NOT NULL, PRIMARY KEY(id, observed_at)
 );
 `;
-const schema = existsSync(migrationPath) ? readFileSync(migrationPath, 'utf8') : fallbackSchema;
+const migrationSchema = existsSync(migrationPath) ? readFileSync(migrationPath, 'utf8') : fallbackSchema;
+const schema = migrationSchema.includes('removed_at') ? migrationSchema
+  : `${migrationSchema}\nALTER TABLE consultations_records ADD COLUMN removed_at TEXT;\n`;
 const catalogueObservedAt = '2026-11-24T12:00:00.000Z';
 const csv = parseConsultationCsv(readFileSync('test/fixtures/consultations/catalogue.csv', 'utf8'));
 const dictionary = readConsultationDictionary(JSON.parse(readFileSync('test/fixtures/consultations/schema.json', 'utf8')));
@@ -45,11 +48,11 @@ function fixture(options: { catalogue?: boolean; preview?: string } = {}) {
     const { facts, searchText } = materialized;
     state.sqlite.prepare(`INSERT INTO consultations_records
       (id,owner_org,registration_number,status_code,start_date,end_date,state_at_observation,report_available,
-       observed_at,first_observed_at,revision,facts_json,search_en,search_fr)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(facts.id, facts.ownerOrg, facts.registrationNumber, facts.statusCode,
+       observed_at,first_observed_at,revision,facts_json,search_en,search_fr,removed_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(facts.id, facts.ownerOrg, facts.registrationNumber, facts.statusCode,
       facts.dates.start, facts.dates.end, facts.stateAtObservation,
       facts.reportAvailableOnline === null ? null : Number(facts.reportAvailableOnline),
-      observedAt, '2026-11-20T12:00:00.000Z', 2, JSON.stringify(facts), searchText.en, searchText.fr);
+      observedAt, '2026-11-20T12:00:00.000Z', 2, JSON.stringify(facts), searchText.en, searchText.fr, null);
     state.sqlite.prepare(`INSERT INTO consultations_revisions
       VALUES (?,?,?,?,?,?)`).run(facts.id, '2026-11-23T12:00:00.000Z', 1, 'added', '[]', JSON.stringify(facts));
     state.sqlite.prepare(`INSERT INTO consultations_revisions
@@ -142,12 +145,64 @@ it('returns current lookup and newest-first revisions, and null for an unknown i
   } finally { f.close(); }
 });
 
+it('keeps removed records retrievable, excludes them from current coverage, and restores search on reappearance', async () => {
+  const f = fixture();
+  try {
+    const base = ConsultationCoverageSchema.parse(await get(f.env, '/api/consultations/coverage'));
+    const listed = f.records.find(record => record.id === 'ic_C-0058');
+    if (!listed) throw new Error('Expected the fixture consultation.');
+    const id = 'test_removed-ai';
+    const facts = { ...listed, id, registrationNumber: 'removed-ai' };
+    const observedAt = '2026-11-24T11:00:00.000Z';
+    const searchEn = 'consultation responsible adoption artificial intelligence roundtable discussion';
+    const searchFr = 'consultation adoption responsable intelligence artificielle table ronde';
+    f.sqlite.prepare(`INSERT INTO consultations_records
+      (id,owner_org,registration_number,status_code,start_date,end_date,state_at_observation,report_available,
+       observed_at,first_observed_at,revision,facts_json,search_en,search_fr,removed_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, facts.ownerOrg, facts.registrationNumber, facts.statusCode,
+      facts.dates.start, facts.dates.end, facts.stateAtObservation,
+      facts.reportAvailableOnline === null ? null : Number(facts.reportAvailableOnline),
+      observedAt, '2026-11-20T12:00:00.000Z', 3, JSON.stringify(facts), searchEn, searchFr,
+      '2026-11-25T12:00:00.000Z');
+    const putRevision = (at: string, revision: number, event: string) => f.sqlite.prepare(
+      'INSERT INTO consultations_revisions VALUES (?,?,?,?,?,?)',
+    ).run(id, at, revision, event, '[]', JSON.stringify(facts));
+    putRevision('2026-11-20T12:00:00.000Z', 1, 'added');
+    putRevision('2026-11-24T11:00:00.000Z', 2, 'changed');
+    putRevision('2026-11-25T12:00:00.000Z', 3, 'removed');
+
+    const absent = ConsultationSearchResponseSchema.parse(await get(f.env,
+      '/api/consultations?query=artificial%20intelligence&language=en&limit=100'));
+    expect(absent.items.some(item => item.id === id)).toBe(false);
+    const removedLookup = ConsultationLookupResponseSchema.parse(await get(f.env, `/api/consultations/${id}`));
+    expect(removedLookup.item).toMatchObject({ id, removedAt: '2026-11-25T12:00:00.000Z', dates: facts.dates });
+    expect(removedLookup.revisions[0]).toMatchObject({ event: 'removed', revision: 3 });
+
+    const afterRemoval = ConsultationCoverageSchema.parse(await get(f.env, '/api/consultations/coverage'));
+    expect(afterRemoval.counts.total).toBe(base.counts.total);
+    expect(afterRemoval.counts.removed).toBe(1);
+    expect(afterRemoval.counts.byState).toEqual(base.counts.byState);
+    expect(afterRemoval.reports).toEqual(base.reports);
+    expect(afterRemoval.revisions.total).toBe(base.revisions.total + 3);
+
+    f.sqlite.prepare(`UPDATE consultations_records SET removed_at=NULL, revision=4,
+      observed_at='2026-11-26T12:00:00.000Z' WHERE id=?`).run(id);
+    putRevision('2026-11-26T12:00:00.000Z', 4, 'changed');
+    const reappeared = ConsultationSearchResponseSchema.parse(await get(f.env,
+      '/api/consultations?query=artificial%20intelligence&language=en&limit=100'));
+    expect(reappeared.items.some(item => item.id === id)).toBe(true);
+    const reappearedLookup = ConsultationLookupResponseSchema.parse(await get(f.env, `/api/consultations/${id}`));
+    expect(reappearedLookup.item).toMatchObject({ removedAt: null });
+  } finally { f.close(); }
+});
+
 it('computes coverage counts and rejects coverage without a published catalogue', async () => {
   const f = fixture();
   const empty = fixture({ catalogue: false });
   try {
     const coverage = ConsultationCoverageSchema.parse(await get(f.env, '/api/consultations/coverage?asOf=2026-11-24'));
     expect(coverage.counts.total).toBe(csv.rows.length);
+    expect(coverage.counts.removed).toBe(0);
     expect(coverage.counts.stale).toBe(csv.rows.length - 1);
     expect(coverage.revisions.total).toBe(csv.rows.length * 2);
     expect(coverage.reports.available).toBeGreaterThan(0);

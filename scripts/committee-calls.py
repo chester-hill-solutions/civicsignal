@@ -22,6 +22,7 @@ from lib.committee_calls import (
     build_call,
     call_id,
     committee_id,
+    mark_unlisted,
     parse_participate,
     parse_session,
     parse_study,
@@ -83,6 +84,41 @@ def repair_study_title(database: sqlite3.Connection, session: str, language: str
         "metadata": json.loads(row["metadata_json"]),
     })
     return True
+
+
+def repair_study_title(database: sqlite3.Connection, session: str, language: str,
+                       study_record: str, title: str) -> bool:
+    """Replace an action label that an earlier catalogue build stored as a study title."""
+    row = database.execute(
+        "SELECT * FROM cc_records WHERE session=? AND id=? AND language=? AND kind='study'",
+        (session, study_record, language),
+    ).fetchone()
+    if not row or (row["title"] or "").strip().casefold() not in ACTION_LABELS:
+        return False
+    update(database, {
+        "session": row["session"], "id": row["id"], "language": row["language"],
+        "kind": row["kind"], "chamber": row["chamber"], "committee_id": row["committee_id"],
+        "title": title, "url": row["url"], "status": row["status"],
+        "metadata": json.loads(row["metadata_json"]),
+    })
+    return True
+
+
+def call_row(db: sqlite3.Connection, session: str, language: str, record_id: str):
+    """The stored call with its metadata, ready for the store's update."""
+    row = db.execute(
+        "SELECT session,id,language,kind,chamber,committee_id,title,url,status,metadata_json "
+        "FROM cc_records WHERE session=? AND id=? AND language=? AND kind='call'",
+        (session, record_id, language),
+    ).fetchone()
+    if not row:
+        return None
+    return {
+        "session": row["session"], "id": row["id"], "language": row["language"],
+        "kind": row["kind"], "chamber": row["chamber"], "committee_id": row["committee_id"],
+        "title": row["title"], "url": row["url"], "status": row["status"],
+        "metadata": json.loads(row["metadata_json"]),
+    }
 
 
 def existing_record(db: sqlite3.Connection, session: str, language: str, record_id: str):
@@ -149,17 +185,44 @@ def main():
             raise RuntimeError(
                 f"the listed studies belong to {sorted(sessions)}, not session {args.session}"
             )
+        # The House sometimes serves one study's motion block on another study's page.
+        # A committee's standard submission block is legitimately shared by its
+        # studies, so only study-specific motion text counts: identical motion text
+        # under two study ids in the same run is the publisher's defect.
+        shared = {}
+        for edition in editions:
+            text = (edition["parsed"]["instructions"] or "").strip()
+            if text and "motion" in text.casefold():
+                shared.setdefault((edition["language"], text), []).append(edition["study"]["study_id"])
+        conflicts = {}
+        for (language, _text), study_ids in shared.items():
+            unique = sorted(set(study_ids))
+            if len(unique) > 1:
+                for study_id in unique:
+                    conflicts[(study_id, language)] = [other for other in unique if other != study_id]
 
         database = initialize(sqlite3.connect(args.db))
         database.row_factory = sqlite3.Row
         calls = []
         missing_studies = []
         repaired = []
+        dropped = []
+        conflicting = []
+        stats = {"added": 0, "changed": 0, "unchanged": 0, "pending": 0}
         try:
             with database:
+                prior = {
+                    (row["id"], row["language"]): json.loads(row["metadata_json"])
+                    for row in database.execute(
+                        "SELECT id,language,metadata_json FROM cc_records WHERE session=? AND kind='call'",
+                        (args.session,),
+                    )
+                }
+                present = set()
                 for edition in editions:
                     study = edition["study"]
                     language = edition["language"]
+                    shares_with = conflicts.get((study["study_id"], language))
                     record = build_call(
                         session=args.session,
                         language=language,
@@ -174,8 +237,23 @@ def main():
                             language,
                             call_id(study["committee"], study["study_id"]),
                         ),
+                        conflict=bool(shares_with),
                     )
+                    if shares_with:
+                        conflicting.append({"id": record["id"], "language": language,
+                                            "sharesWith": shares_with})
                     update(database, record)
+                    key = (record["id"], language)
+                    present.add(key)
+                    before = prior.get(key)
+                    if before is None:
+                        stats["added"] += 1
+                    elif record["metadata"]["revision"] > int(before.get("revision") or 0):
+                        stats["changed"] += 1
+                    else:
+                        stats["unchanged"] += 1
+                    if record["metadata"].get("pendingDigest"):
+                        stats["pending"] += 1
                     write_link(
                         database,
                         args.session,
@@ -210,6 +288,8 @@ def main():
                         "revision": record["metadata"]["revision"],
                         "sourceSha256": edition["source"]["sha256"],
                     })
+                # A study that left the current list is no longer soliciting briefs.
+                dropped = mark_unlisted(database, args.session, present)
         finally:
             database.close()
 
@@ -248,6 +328,12 @@ def main():
             ] + senate,
             "counts": {
                 "calls": len(calls),
+                "added": stats["added"],
+                "changed": stats["changed"],
+                "unchanged": stats["unchanged"],
+                "dropped": len(dropped),
+                "pending": stats["pending"],
+                "conflicts": len(conflicting),
                 "committees": len({call["committeeId"] for call in calls}),
                 "deadlines": sum(1 for call in calls if call["deadline"]),
                 "deadlineInstants": sum(
@@ -258,6 +344,8 @@ def main():
             },
             "studiesNotYetInCorpus": missing_studies,
             "studyTitlesRepaired": repaired,
+            "droppedCalls": dropped,
+            "conflictingCalls": conflicting,
             "calls": calls,
         }
         save_atomic(args.receipt, receipt)

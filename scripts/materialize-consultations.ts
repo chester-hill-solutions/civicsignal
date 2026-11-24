@@ -101,6 +101,7 @@ async function main() {
       },
       schema: { input: options.schema, sha256: schemaSha256, bytes: schemaBytes.byteLength },
       counts: result.counts,
+      changes: result.changes,
       durationMs: Date.now() - started,
       versions: { bun: process.versions.bun ?? 'unknown' },
     };

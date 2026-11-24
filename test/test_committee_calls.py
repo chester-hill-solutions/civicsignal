@@ -1,5 +1,7 @@
 """Check the House consultation parser against the shapes it was written for."""
 
+import json
+import sqlite3
 import sys
 import unittest
 from pathlib import Path
@@ -8,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from lib.committee_calls import (  # noqa: E402
     build_call,
+    mark_unlisted,
     call_id,
     parse_deadline,
     parse_participate,
@@ -174,20 +177,108 @@ class CallRecordTest(unittest.TestCase):
             "https://www.ourcommons.ca/committee-participation/en/submit-brief/hesa/13632808",
         )
 
-    def test_counts_a_revision_only_when_the_published_call_changes(self):
+    def test_records_the_listing_observation_without_a_revision(self):
+        first = self.build(observed_at="2026-11-24T12:00:00Z")
+        self.assertTrue(first["metadata"]["listed"])
+        self.assertEqual(first["metadata"]["lastListedAt"], "2026-11-24T12:00:00Z")
+        from lib.committee_store import signature
+        dropped = dict(first, metadata=dict(first["metadata"], listed=False))
+        self.assertEqual(signature(first), signature(dropped))
+
+    def test_requires_a_second_observation_before_committing_a_content_change(self):
         first = self.build(observed_at="2026-11-24T12:00:00Z")
         self.assertEqual(first["metadata"]["revision"], 1)
-        unchanged = self.build(observed_at="2026-11-25T12:00:00Z", existing=first)
-        self.assertEqual(unchanged["metadata"]["revision"], 1)
-        self.assertEqual(unchanged["metadata"]["firstObservedAt"], "2026-11-24T12:00:00Z")
-        self.assertEqual(unchanged["metadata"]["observedAt"], "2026-11-25T12:00:00Z")
-        changed = self.build(
-            observed_at="2026-11-26T12:00:00Z",
-            existing=first,
-            parsed=dict(self.parsed, instructions="Written submissions of no more than 1,000 words."),
+        changed_parsed = dict(self.parsed, instructions="Written submissions of no more than 1,000 words.")
+        candidate = self.build(observed_at="2026-11-25T12:00:00Z", existing=first, parsed=changed_parsed)
+        self.assertEqual(candidate["metadata"]["revision"], 1)
+        self.assertEqual(candidate["metadata"]["instructions"], self.parsed["instructions"])
+        self.assertIsNotNone(candidate["metadata"]["pendingDigest"])
+        self.assertEqual(candidate["metadata"]["firstObservedAt"], "2026-11-24T12:00:00Z")
+        committed = self.build(observed_at="2026-11-26T12:00:00Z", existing=candidate, parsed=changed_parsed)
+        self.assertEqual(committed["metadata"]["revision"], 2)
+        self.assertEqual(committed["metadata"]["instructions"], "Written submissions of no more than 1,000 words.")
+        self.assertIsNone(committed["metadata"]["pendingDigest"])
+
+    def test_holds_content_that_another_study_also_published(self):
+        first = self.build(observed_at="2026-11-24T12:00:00Z")
+        shared = dict(self.parsed, instructions="Another study's motion.")
+        seen_twice = self.build(
+            observed_at="2026-11-25T12:00:00Z", existing=first, parsed=shared,
+            conflict=True,
         )
-        self.assertEqual(changed["metadata"]["revision"], 2)
-        self.assertEqual(changed["metadata"]["firstObservedAt"], "2026-11-24T12:00:00Z")
+        self.assertEqual(seen_twice["metadata"]["revision"], 1)
+        self.assertEqual(seen_twice["metadata"]["instructions"], self.parsed["instructions"])
+        self.assertTrue(seen_twice["metadata"]["contentConflict"])
+        self.assertIsNotNone(seen_twice["metadata"]["pendingDigest"])
+
+    def test_does_not_commit_a_page_that_alternates_between_two_blocks(self):
+        first = self.build(observed_at="2026-11-24T12:00:00Z")
+        other = dict(self.parsed, instructions="Another study's motion.")
+        seen_other = self.build(observed_at="2026-11-25T12:00:00Z", existing=first, parsed=other)
+        back = self.build(observed_at="2026-11-26T12:00:00Z", existing=seen_other, parsed=self.parsed)
+        self.assertEqual(back["metadata"]["revision"], 1)
+        self.assertEqual(back["metadata"]["instructions"], self.parsed["instructions"])
+        self.assertIsNone(back["metadata"]["pendingDigest"])
+
+
+class UnlistedCallTest(unittest.TestCase):
+    def setUp(self):
+        from lib.committee_store import initialize, update
+        self.update = update
+        self.db = initialize(sqlite3.connect(":memory:"))
+        self.db.row_factory = sqlite3.Row
+        self.parsed = {
+            "instruction_href": "/committee-participation/en/submit-brief/test/1",
+            "deadline": None,
+            "instructions": None,
+            "content_warning": False,
+            "content_warning_text": None,
+        }
+
+    def tearDown(self):
+        self.db.close()
+
+    def write(self, study_id):
+        record = build_call(
+            session="45-1", language="en", committee="TEST", study_id=study_id,
+            listed_title=f"Study {study_id}", observed_at="2026-11-24T12:00:00Z",
+            parsed=self.parsed,
+        )
+        self.update(self.db, record)
+        return record["id"]
+
+    def test_marks_absent_calls_without_creating_a_revision(self):
+        first = self.write("1")
+        second = self.write("2")
+        changes = self.db.execute("SELECT count(*) AS n FROM cc_changes").fetchone()["n"]
+        dropped = mark_unlisted(self.db, "45-1", {(first, "en")})
+        self.assertEqual([entry["id"] for entry in dropped], [second])
+        self.assertEqual(dropped[0]["lastListedAt"], "2026-11-24T12:00:00Z")
+        row = self.db.execute("SELECT metadata_json FROM cc_records WHERE id=?", (second,)).fetchone()
+        metadata = json.loads(row["metadata_json"])
+        self.assertFalse(metadata["listed"])
+        self.assertEqual(metadata["lastListedAt"], "2026-11-24T12:00:00Z")
+        self.assertEqual(self.db.execute("SELECT count(*) AS n FROM cc_changes").fetchone()["n"], changes)
+        self.assertEqual(mark_unlisted(self.db, "45-1", {(first, "en")}), [])
+
+    def test_relisting_restores_the_flag(self):
+        record = self.write("1")
+        mark_unlisted(self.db, "45-1", set())
+        again = build_call(
+            session="45-1", language="en", committee="TEST", study_id="1",
+            listed_title="Study 1", observed_at="2026-11-25T12:00:00Z", parsed=self.parsed,
+            existing={"metadata": json.loads(self.db.execute(
+                "SELECT metadata_json FROM cc_records WHERE id=?", (record,)
+            ).fetchone()["metadata_json"])},
+        )
+        again["metadata"] = {**again["metadata"]}
+        again["metadata"]["listed"] = True
+        again["metadata"]["lastListedAt"] = "2026-11-25T12:00:00Z"
+        self.update(self.db, again)
+        metadata = json.loads(self.db.execute(
+            "SELECT metadata_json FROM cc_records WHERE id=?", (record,)).fetchone()["metadata_json"])
+        self.assertTrue(metadata["listed"])
+        self.assertEqual(metadata["lastListedAt"], "2026-11-25T12:00:00Z")
 
 
 if __name__ == "__main__":

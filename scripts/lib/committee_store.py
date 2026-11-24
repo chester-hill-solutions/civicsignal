@@ -98,7 +98,12 @@ def mark_snapshot(db: sqlite3.Connection, session: str, cutoff: str) -> None:
                (session, cutoff))
 
 # Fields the publisher refreshes on every visit. They never make a new revision.
-VOLATILE_METADATA = {"lastChecked", "directoryCutoffs", "submissionIndex", "observedAt", "firstObservedAt"}
+# Advisory decoration the publisher serves inconsistently between page variants.
+# It is stored as observed but never makes a revision on its own.
+VOLATILE_METADATA = {"lastChecked", "directoryCutoffs", "submissionIndex", "observedAt",
+                     "firstObservedAt", "listed", "lastListedAt",
+                     "contentWarning", "contentWarningText", "pendingDigest",
+                     "contentConflict"}
 
 
 def signature(record: Mapping[str, Any]) -> str:

@@ -471,7 +471,10 @@ function callFromRow(row: Record<string, unknown>, asOf: string): CommitteeCall 
   const deadline = readDeadline(metadata.deadline);
   const observedAt = instantString(metadata.observedAt);
   const firstObservedAt = instantString(metadata.firstObservedAt ?? metadata.observedAt);
-  const { state, basis } = openStateAsOf(deadline, { firstObservedAt, observedAt }, asOf);
+  const lastListedAt = instantString(metadata.lastListedAt ?? metadata.observedAt);
+  // Without a deadline, the observation that last listed the call is what vouches
+  // for it; a call that left the list does not stay open on an older stamp.
+  const { state, basis } = openStateAsOf(deadline, { firstObservedAt, observedAt: lastListedAt }, asOf);
   const instructions = metadata.delivery === 'excerpt' && typeof metadata.instructions === 'string'
     ? metadata.instructions
     : null;
@@ -493,6 +496,10 @@ function callFromRow(row: Record<string, unknown>, asOf: string): CommitteeCall 
     listingUrl: String(metadata.listingUrl ?? row.url),
     contentWarning: metadata.contentWarning === true,
     contentWarningText: nullableString(metadata.contentWarningText),
+    listed: metadata.listed !== false,
+    lastListedAt,
+    pendingChange: Boolean(metadata.pendingDigest),
+    contentConflict: metadata.contentConflict === true,
     observedAt,
     firstObservedAt,
   });

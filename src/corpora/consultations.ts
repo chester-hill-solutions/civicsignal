@@ -65,12 +65,14 @@ export const ConsultationRecordSchema = ConsultationFactsSchema.extend({
   firstObservedAt: z.iso.datetime({ offset: true }),
   lastObservedAt: z.iso.datetime({ offset: true }),
   revision: z.number().int().nonnegative(),
+  removedAt: z.iso.datetime({ offset: true }).nullable()
+    .describe('When a later full catalogue no longer listed this consultation.'),
 });
 
 export const ConsultationRevisionSchema = z.strictObject({
   observedAt: z.iso.datetime({ offset: true }),
   revision: z.number().int().nonnegative(),
-  event: z.enum(['added', 'changed']),
+  event: z.enum(['added', 'changed', 'removed']),
   changedFields: z.array(z.string()),
 });
 
@@ -123,6 +125,8 @@ export const ConsultationCoverageSchema = z.strictObject({
       unknown: z.number().int().nonnegative(),
     }),
     statusCodes: z.record(z.string(), z.number().int().nonnegative()),
+    removed: z.number().int().nonnegative()
+      .describe('Records absent from the latest full catalogue; still retrievable with their history.'),
     stale: z.number().int().nonnegative()
       .describe('Records last observed before the current catalogue observation.'),
   }),

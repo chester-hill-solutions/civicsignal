@@ -68,6 +68,7 @@ function recordFromRow(row: Record<string, unknown>) {
     firstObservedAt: row.first_observed_at,
     lastObservedAt: row.observed_at,
     revision: numeric(row, 'revision'),
+    removedAt: row.removed_at ?? null,
   });
 }
 
@@ -104,7 +105,8 @@ function titleFor(facts: z.infer<typeof ConsultationFactsSchema>, language: Lang
 async function search(db: D1Database, input: SearchInput, asOf: string) {
   const metaResult = await catalogue(db).first<Record<string, unknown>>();
   const meta = requireCatalogue(metaResult ?? undefined);
-  const clauses = [`${input.language === 'en' ? 'search_en' : 'search_fr'} LIKE '%' || ? || '%' ESCAPE '\\'`];
+  const clauses = ['removed_at IS NULL',
+    `${input.language === 'en' ? 'search_en' : 'search_fr'} LIKE '%' || ? || '%' ESCAPE '\\'`];
   const normalizedQuery = normalizeForSearch(input.query);
   const bindings: (string | number)[] = [escapeLike(normalizedQuery)];
   if (input.institution) { clauses.push('owner_org=?'); bindings.push(input.institution); }
@@ -178,13 +180,17 @@ async function lookup(db: D1Database, id: string, asOf: string) {
 
 async function coverage(db: D1Database, institution: string | undefined, asOf: string) {
   const meta = requireCatalogue((await catalogue(db).first<Record<string, unknown>>()) ?? undefined);
-  const filter = institution ? 'WHERE owner_org=?' : '';
-  const records = await db.prepare(`SELECT * FROM consultations_records ${filter} ORDER BY id`)
+  const currentFilter = institution ? 'WHERE removed_at IS NULL AND owner_org=?' : 'WHERE removed_at IS NULL';
+  const removedFilter = institution ? 'WHERE removed_at IS NOT NULL AND owner_org=?' : 'WHERE removed_at IS NOT NULL';
+  const records = await db.prepare(`SELECT * FROM consultations_records ${currentFilter} ORDER BY id`)
     .bind(...(institution ? [institution] : [])).all<Record<string, unknown>>();
+  const removed = await db.prepare(`SELECT count(*) AS total FROM consultations_records ${removedFilter}`)
+    .bind(...(institution ? [institution] : [])).first<Record<string, unknown>>();
   const revisions = await db.prepare(`SELECT count(*) AS total FROM consultations_revisions r
     ${institution ? 'JOIN consultations_records c ON c.id=r.id WHERE c.owner_org=?' : ''}`)
     .bind(...(institution ? [institution] : [])).first<Record<string, unknown>>();
-  const counts = { total: 0, byState: { open: 0, planned: 0, closed: 0, unknown: 0 }, statusCodes: {} as Record<string, number>, stale: 0 };
+  const counts = { total: 0, byState: { open: 0, planned: 0, closed: 0, unknown: 0 },
+    statusCodes: {} as Record<string, number>, removed: numeric(removed ?? {}, 'total'), stale: 0 };
   const editions = { missingDescriptionFr: 0, missingTitleFr: 0,
     profileLinkKinds: { official: 0, 'third-party-wrapper': 0, missing: 0, unparsable: 0 } };
   let reportsAvailable = 0;

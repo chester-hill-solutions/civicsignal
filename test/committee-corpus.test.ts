@@ -223,6 +223,12 @@ describe('committee corpus HTTP contract', () => {
         deadline: { text: 'before ...', instant: '2026-11-01T04:59:00Z', timeZone: 'EST' } }) });
     await put({ id: 'house-hesa-call-13604489', kind: 'call', committee: 'house-hesa',
       title: 'Food Price Inflation', metadata: call('house-hesa-study-13604489', { deadline: null }) });
+    await put({ id: 'house-hesa-call-13604490', kind: 'call', committee: 'house-hesa',
+      title: 'Employment Insurance Parental Leave', metadata: call('house-hesa-study-13604490', {
+        deadline: null, listed: false, lastListedAt: '2026-11-24T12:00:00Z' }) });
+    await put({ id: 'house-hesa-call-13632806', kind: 'call', committee: 'house-hesa',
+      title: 'Conflicting motion', metadata: call('house-hesa-study-13632806', {
+        deadline: null, contentConflict: true, pendingDigest: 'a'.repeat(64) }) });
     await put({ id: 'house-hesa-call-13631120', language: 'fr', kind: 'call', committee: 'house-hesa',
       title: 'Risques pour la science', metadata: call('house-hesa-study-13631120', { delivery: 'metadata-only' }) });
     await put({ id: 'house-hesa-submission-1', kind: 'submission', committee: 'house-hesa', status: 'searchable',
@@ -242,19 +248,32 @@ describe('committee corpus HTTP contract', () => {
     expect(open.items.map(item => [item.id, item.status, item.statusBasis])).toEqual([
       ['house-hesa-call-13145156', 'closed', 'deadline'],
       ['house-hesa-call-13604489', 'open', 'listing-observation'],
+      ['house-hesa-call-13604490', 'open', 'listing-observation'],
+      ['house-hesa-call-13632806', 'open', 'listing-observation'],
       ['house-hesa-call-13632808', 'open', 'deadline'],
     ]);
-    expect(open.items[2]).toMatchObject({
+    expect(open.items.find(item => item.id === 'house-hesa-call-13632808')).toMatchObject({
       title: 'Diagnostic Imaging Capacity', contentWarning: false,
       committee: { id: 'house-hesa', name: 'Standing Committee on Health' },
       study: { id: 'house-hesa-study-13632808', title: 'Diagnostic Imaging Capacity' },
       deadline: { instant: '2026-12-01T04:59:00Z', timeZone: 'EST' },
       instructionsTruncated: true,
     });
-    expect(open.items[2]?.instructions).toHaveLength(400);
+    expect(open.items.find(item => item.id === 'house-hesa-call-13632808')?.instructions).toHaveLength(400);
 
     const filtered = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=en&status=open&asOf=2026-11-24T18:00:00Z'));
-    expect(filtered.items.map(item => item.id)).toEqual(['house-hesa-call-13604489', 'house-hesa-call-13632808']);
+    expect(filtered.items.map(item => item.id)).toEqual([
+      'house-hesa-call-13604489', 'house-hesa-call-13604490',
+      'house-hesa-call-13632806', 'house-hesa-call-13632808']);
+    const dropped = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=en&asOf=2026-11-25T12:00:00Z'));
+    expect(dropped.items.find(item => item.id === 'house-hesa-call-13604490')).toMatchObject({
+      listed: false, status: 'unknown', statusBasis: 'listing-observation',
+      lastListedAt: '2026-11-24T12:00:00.000Z',
+    });
+    expect(dropped.items.find(item => item.id === 'house-hesa-call-13604489')?.listed).toBe(true);
+    expect(dropped.items.find(item => item.id === 'house-hesa-call-13632806')).toMatchObject({
+      contentConflict: true, pendingChange: true, listed: true,
+    });
     const beforeObservation = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=en&asOf=2026-11-01T00:00:00Z'));
     expect(beforeObservation.items.every(item => item.status === 'unknown' && item.statusBasis === 'unobserved')).toBe(true);
     const afterObservation = CommitteeCallsResponseSchema.parse(await read('/api/committees/45-1/calls?language=en&asOf=2026-11-30T18:00:00Z'));

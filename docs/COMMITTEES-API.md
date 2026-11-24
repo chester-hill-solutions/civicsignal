@@ -56,8 +56,10 @@ is required on the exact route.
 | Basis | Meaning |
 | --- | --- |
 | `deadline` | The publisher published a deadline that names a zone, a date and a weekday. The call is open through that instant. |
-| `listing-observation` | No deadline was published. An observation vouches for the call on the day it was made; before the first observation the state is `unknown`, and without a refresh the next day it returns to `unknown`. |
+| `listing-observation` | No deadline was published. The last observation that listed the call vouches for it on that day; before the first observation the state is `unknown`, and without a refresh the next day it returns to `unknown`. A call that left the current list keeps an older `lastListedAt`, so it does not stay open on a stale stamp. |
 | `unobserved` | The query date precedes every observation. The answer is unknown, not closed. |
+
+Each call also reports whether the latest observation still lists it (`listed`, `lastListedAt`), whether a published change is waiting for a second agreeing observation (`pendingChange`), and whether another study published the same motion text in that run (`contentConflict`). The last two are publisher-integrity signals; the call's published content is held until it is consistent.
 
 `deadline.text` is the publisher's phrase verbatim, for example
 `before 11:59 p.m. (EST) on Monday, November 30, 2026`. `deadline.instant` is
@@ -98,6 +100,10 @@ Authorization: Bearer <workspace-key>
     "listingUrl": "https://www.ourcommons.ca/Committees/en/Participate",
     "contentWarning": false,
     "contentWarningText": null,
+    "listed": true,
+    "lastListedAt": "2026-11-24T16:17:46.000Z",
+    "pendingChange": false,
+    "contentConflict": false,
     "observedAt": "2026-11-24T16:17:46.000Z",
     "firstObservedAt": "2026-11-24T16:17:46.000Z"
   }],
@@ -116,16 +122,19 @@ the call itself has no author.
 ### Refresh the calls
 
 ```sh
-python3 -B scripts/committee-calls.py   --receipt docs/evidence/2026-11-24/committee-calls.json
+bun run refresh:committee-calls --receipt dist/committee-calls/receipt.json
 ```
 
-The intake fetches both editions with the shared committee download cache and
-archives each original by SHA-256. `--from-cache` re-parses archived pages for an
-offline rerun; it is off by default because an earlier corpus copy is not the
-current call. A re-run with unchanged publisher pages adds no revision and no
-change event. The receipt records the two House lists, the checked Senate pages,
-the counts, and any study title repaired in the store.
+The intake fetches both editions with the shared committee download cache and archives each original by SHA-256. `--from-cache` re-parses archived pages for an offline rerun; it is off by default because an earlier corpus copy is not the current call.
 
+The receipt reports `added`, `changed`, `unchanged`, `pending`, `conflicts` and `dropped`. A study that leaves the current list is marked `listed: false` with its `lastListedAt` unchanged; that is an observation, not a publisher change, so it creates no revision. A run whose pages are unchanged reports zero added, changed and dropped.
+
+Two publisher-defect guards run on every refresh:
+
+1. **Confirm before commit.** A changed motion or instruction block replaces the stored content only after two consecutive observations agree. One contradictory page load records `pendingChange` and keeps the confirmed text.
+2. **Shared motion text.** A committee's standard submission block is legitimately shared, so only study-specific motion text is compared. When two study IDs publish the same motion in one run, the House has served one study's block on the other's page; both are held and reported as `contentConflict` until the publisher is consistent.
+
+Measure request volume, run duration and the observed publication interval before setting a hosted cadence under D-08. The November 24 run fetched 30 study pages and eight Senate pages in about 30 seconds.
 
 ## Rights and disclosure
 

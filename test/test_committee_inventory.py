@@ -134,12 +134,6 @@ class CommitteeInventoryTests(unittest.TestCase):
 
     def test_replay_correction_removal_and_late_edition(self):
         db = initialize(sqlite3.connect(":memory:"))
-        db.executescript(
-            "CREATE TABLE cc_revision(session,id,language,signature,PRIMARY KEY(session,id,language));"
-            "CREATE TABLE cc_changes(seq INTEGER PRIMARY KEY,session,id,language,signature);"
-            "CREATE TABLE cc_extracted(session,id,language);"
-            "CREATE TABLE cc_link_changes(seq INTEGER PRIMARY KEY,session,language,parent_id,child_id,relation,change);"
-        )
         base = "https://www.ourcommons.ca/Committees/en/ENVI"
         row = dict(
             session="45-1",

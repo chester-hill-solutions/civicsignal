@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CONSULTATION_SOURCE, parseConsultationCsv } from '../src/corpora/consultations';
+import { CONSULTATION_SOURCE, consultationId, parseConsultationCsv } from '../src/corpora/consultations';
 import { materializeConsultations } from '../src/corpora/consultations-materialize';
 import { testD1 } from './helpers/d1';
 
@@ -37,11 +37,26 @@ describe('consultations catalogue materializer', () => {
     const f = materializerFixture();
     try {
       const first = f.publish(csvText);
-      expect(first.counts).toEqual({ rows: 9, added: 9, changed: 0, unchanged: 0, stale: 0 });
+      expect(first.counts).toEqual({ rows: 9, added: 9, changed: 0, unchanged: 0, stale: 0, removed: 0 });
+      expect(first.changes.added).toBe(9);
       const replay = f.publish(csvText);
       expect(replay).toMatchObject({
         revision: first.revision,
-        counts: { rows: 9, added: 0, changed: 0, unchanged: 9, stale: 0 },
+        counts: { rows: 9, added: 0, changed: 0, unchanged: 9, stale: 0, removed: 0 },
+        changes: {
+          added: 0,
+          removed: 0,
+          categories: {
+            'end-extended': 0,
+            'end-shortened': 0,
+            'start-moved': 0,
+            'status-changed': 0,
+            'report-changed': 0,
+            'edition-changed': 0,
+            other: 0,
+          },
+          sample: [],
+        },
       });
       expect(f.sqlite.prepare('SELECT count(*) AS n FROM consultations_revisions').get()?.n).toBe(9);
     } finally {
@@ -59,7 +74,13 @@ describe('consultations catalogue materializer', () => {
       target.end_date = '2026-11-25';
       target.report_available_online = 'Y';
       const changed = f.publish(serializeCsv(rows), '2026-11-21T12:00:00.000Z');
-      expect(changed.counts).toMatchObject({ added: 0, changed: 1, unchanged: 8, stale: 0 });
+      expect(changed.counts).toMatchObject({ added: 0, changed: 1, unchanged: 8, stale: 0, removed: 0 });
+      expect(changed.changes.categories).toMatchObject({ 'end-extended': 1, 'report-changed': 1 });
+      expect(changed.changes.sample).toEqual([expect.objectContaining({
+        id: 'cwa-aec_C-0000001',
+        event: 'changed',
+        categories: ['end-extended', 'report-changed'],
+      })]);
 
       const id = 'cwa-aec_C-0000001';
       const revisions = f.sqlite.prepare(
@@ -90,21 +111,120 @@ describe('consultations catalogue materializer', () => {
     }
   });
 
-  it('retains records omitted from the latest observation and preserves first observation metadata', () => {
+  it('marks an omitted record removed without counting it stale or erasing its last listing', () => {
     const f = materializerFixture();
     try {
       f.publish(csvText);
-      const rows = parseConsultationCsv(csvText).rows.slice(1);
+      const id = 'cwa-aec_C-0000001';
+      const before = f.sqlite.prepare(
+        'SELECT facts_json, search_en, search_fr FROM consultations_records WHERE id=?',
+      ).get(id) as { facts_json: string; search_en: string; search_fr: string };
+      const rows = parseConsultationCsv(csvText).rows.filter((row) =>
+        consultationId(row.owner_org, row.registration_number) !== id);
       const second = f.publish(serializeCsv(rows), '2026-11-21T12:00:00.000Z');
-      expect(second.counts.stale).toBe(1);
+      expect(second.counts).toMatchObject({ rows: 8, removed: 1, stale: 0 });
+      expect(second.changes.removed).toBe(1);
       expect(f.sqlite.prepare('SELECT count(*) AS n FROM consultations_records').get()?.n).toBe(9);
 
       const record = f.sqlite.prepare(
-        'SELECT state_at_observation, first_observed_at, observed_at FROM consultations_records WHERE id=?',
-      ).get('cwa-aec_C-0000001') as { state_at_observation: string; first_observed_at: string; observed_at: string };
+        'SELECT state_at_observation, first_observed_at, observed_at, removed_at, revision, facts_json, search_en, search_fr FROM consultations_records WHERE id=?',
+      ).get(id) as {
+        state_at_observation: string;
+        first_observed_at: string;
+        observed_at: string;
+        removed_at: string;
+        revision: number;
+        facts_json: string;
+        search_en: string;
+        search_fr: string;
+      };
       expect(record.first_observed_at).toBe(firstAt);
-      expect(record.observed_at).toBe('2026-11-21T12:00:00.000Z');
-      expect(record.state_at_observation).toBe('closed');
+      expect(record.observed_at).toBe(firstAt);
+      expect(record.removed_at).toBe('2026-11-21T12:00:00.000Z');
+      expect(record.revision).toBe(2);
+      expect(record).toMatchObject({
+        facts_json: before.facts_json,
+        search_en: before.search_en,
+        search_fr: before.search_fr,
+      });
+      const removal = f.sqlite.prepare(
+        'SELECT event, revision, changed_fields_json, facts_json FROM consultations_revisions WHERE id=? ORDER BY observed_at DESC LIMIT 1',
+      ).get(id) as { event: string; revision: number; changed_fields_json: string; facts_json: string };
+      expect(removal).toMatchObject({ event: 'removed', revision: 2, changed_fields_json: '[]' });
+      expect(removal.facts_json).toBe(record.facts_json);
+    } finally {
+      f.close();
+    }
+  });
+
+  it('clears removal on reappearance and increments the revision as an added event', () => {
+    const f = materializerFixture();
+    try {
+      const id = 'cwa-aec_C-0000001';
+      f.publish(csvText);
+      const withoutTarget = parseConsultationCsv(csvText).rows.filter((row) =>
+        consultationId(row.owner_org, row.registration_number) !== id);
+      f.publish(serializeCsv(withoutTarget), '2026-11-21T12:00:00.000Z');
+      const reappeared = f.publish(csvText, '2026-11-22T12:00:00.000Z');
+      expect(reappeared.counts).toMatchObject({ added: 1, removed: 0, changed: 0 });
+      expect(reappeared.changes.added).toBe(1);
+      expect(f.sqlite.prepare('SELECT removed_at, revision FROM consultations_records WHERE id=?').get(id))
+        .toEqual({ removed_at: null, revision: 3 });
+      expect(f.sqlite.prepare(
+        'SELECT event, revision FROM consultations_revisions WHERE id=? ORDER BY observed_at',
+      ).all(id)).toEqual([
+        { event: 'added', revision: 1 },
+        { event: 'removed', revision: 2 },
+        { event: 'added', revision: 3 },
+      ]);
+    } finally {
+      f.close();
+    }
+  });
+
+  it('classifies end-date shortening and report-link additions', () => {
+    const f = materializerFixture();
+    try {
+      const rows = parseConsultationCsv(csvText).rows;
+      const target = rows.find((row) => row.owner_org === 'cwa-aec');
+      if (!target) throw new Error('Expected the fixture row.');
+      f.publish(csvText);
+      target.end_date = '2026-10-26';
+      target.report_available_online = 'Y';
+      target.report_link_en = 'https://example.ca/report';
+      const extensionAndReport = f.publish(serializeCsv(rows), '2026-11-21T12:00:00.000Z');
+      expect(extensionAndReport.changes.categories).toMatchObject({
+        'end-extended': 1,
+        'report-changed': 1,
+      });
+
+      target.end_date = '2026-10-24';
+      const shortened = f.publish(serializeCsv(rows), '2026-11-22T12:00:00.000Z');
+      expect(shortened.changes.categories['end-shortened']).toBe(1);
+    } finally {
+      f.close();
+    }
+  });
+
+  it('orders the digest sample by id and caps it at 50 entries', () => {
+    const f = materializerFixture();
+    try {
+      const rows = parseConsultationCsv(csvText).rows;
+      for (let index = 0; index < 55; index++) {
+        rows.push({
+          ...rows[0],
+          owner_org: `sample-${String(index).padStart(2, '0')}`,
+          registration_number: `R-${String(index).padStart(2, '0')}`,
+        });
+      }
+      const result = f.publish(serializeCsv(rows));
+      const ids = result.changes.sample.map((entry) => entry.id);
+      const expected = rows.map((row) => consultationId(row.owner_org, row.registration_number))
+        .sort((a, b) => a.localeCompare(b, 'en'))
+        .slice(0, 50);
+      expect(result.changes.sample).toHaveLength(50);
+      expect(ids).toEqual(expected);
+      expect(result.changes.added).toBe(64);
     } finally {
       f.close();
     }

@@ -27,6 +27,7 @@ Each record carries:
 | `reportAvailableOnline` | The publisher's answer, or null when it is blank |
 | `stateAtObservation`, `statusAgreesWithDates` | Derived from the dates at the time of the stored observation |
 | `firstObservedAt`, `lastObservedAt`, `revision` | When CivicSignal first and last saw the record, and how many publisher changes it has made |
+| `removedAt` | When a later full catalogue stopped listing the consultation; null while it is current |
 
 A description may be missing in one language. It stays null; the API does not translate or borrow the other edition's text.
 
@@ -39,11 +40,11 @@ A description may be missing in one language. It stays null; the API does not tr
 | `/api/consultations/coverage` | Inspect counts, editions, links, reports and stale records |
 | `/api/consultations/openapi.json` | Discover the contract |
 
-Search accepts `query` (1–256 characters), `language` (`en` or `fr`), `state` (`open`, `planned`, `closed` or `unknown`), `institution` (department code), `subject` (publisher subject code), `asOf`, `offset` and `limit` (1–100, default 20). Title matches rank before description matches; the rest are ordered by start date and ID. Each hit gives the selected edition's title, a description excerpt of at most 400 characters, the dates, the computed state and a citation.
+Search accepts only current records; a removed consultation drops out of search but remains retrievable by ID with its history. Search accepts `query` (1–256 characters), `language` (`en` or `fr`), `state` (`open`, `planned`, `closed` or `unknown`), `institution` (department code), `subject` (publisher subject code), `asOf`, `offset` and `limit` (1–100, default 20). Title matches rank before description matches; the rest are ordered by start date and ID. Each hit gives the selected edition's title, a description excerpt of at most 400 characters, the dates, the computed state and a citation.
 
-Lookup accepts `asOf` and returns the record with its revision history, newest first. An unknown ID returns HTTP 200 with `item: null` so a client can distinguish a missing record from a failed request.
+Lookup accepts `asOf` and returns the record with its revision history, newest first, including a `removed` event when the publisher dropped it. An unknown ID returns HTTP 200 with `item: null` so a client can distinguish a missing record from a failed request.
 
-Coverage accepts `institution` and `asOf` and returns the observation and both source hashes, counts by state and status code, per-edition completeness, profile link kinds, the number of published reports, the revision row count, and how many stored records are older than the current observation (`stale`).
+Coverage accepts `institution` and `asOf` and returns the observation and both source hashes, counts by state and status code, per-edition completeness, profile link kinds, the number of published reports, the revision row count, how many records a later catalogue dropped (`removed`), and how many current records are older than the current observation (`stale`).
 
 ## State on a date
 
@@ -118,9 +119,25 @@ bun scripts/materialize-consultations.ts \
   --receipt dist/consultations/receipt.json
 ```
 
+Run it on a cadence and keep the receipt. The November 24 refresh took about 5 seconds including the 6.8 MB download and the schema; measure the interval before scheduling it under D-08. `bun run refresh:consultations` runs the same command against the published URLs.
+
 The materializer archives both originals under `sources/<sha256>`, validates the composite key and the dictionary labels, writes the catalogue and records in one transaction, and refuses an observation older than the stored one. A record's `revision` and a revision row appear only when the **publisher's** facts change: titles, descriptions, dates, links, report availability, subjects or partner departments. The state and its agreement with the status code are derived from the observation time, so a later observation that closes a record updates the row without inventing a publisher change.
 
-Replaying the same CSV produces zero added, changed or stale rows and the same catalogue revision. In the recorded run, extending one consultation's end date and adding its report produced a single `changed` event with `dates.end`, `report.url` and `report.available` paths; observing the same extended catalogue 20 days later produced no event. A row that disappears from a later full catalogue is retained with its last observation and counted as `stale`, not served as current.
+Replaying the same CSV produces zero added, changed, removed or stale rows and the same catalogue revision. In the recorded run, extending one consultation's end date and adding its report produced a single `changed` event with `dates.end`, `report.url` and `report.available` paths; observing the same extended catalogue 20 days later produced no event. A row that disappears from a later full catalogue records a `removed` revision, keeps its last listing data, and is excluded from search; if it reappears it records an `added` revision and is current again.
+
+Each run also writes a change digest to the receipt:
+
+```json
+"changes": {
+  "added": 0,
+  "removed": 1,
+  "categories": { "end-extended": 0, "end-shortened": 0, "start-moved": 0,
+    "status-changed": 0, "report-changed": 0, "edition-changed": 0, "other": 0 },
+  "sample": [{ "id": "ic_C-0058", "event": "removed", "categories": [], "changedFields": [] }]
+}
+```
+
+A record may appear in several categories; `sample` holds at most 50 entries ordered by ID. An unchanged run returns all zeros and an empty sample, which is the operational signal that the publisher has not moved.
 
 The November 24 receipt and acceptance measurements are in
 [consultations-catalogue.json](evidence/2026-11-24/consultations-catalogue.json).
@@ -130,4 +147,4 @@ The November 24 receipt and acceptance measurements are in
 - The intake reads the catalogue, not each department's notice. `who may participate` and `how to respond` remain on the linked page; only its URL is served. Parsing those notices is the next work item for this family.
 - Profile cells published as prose are served as `unparsable` text rather than a guessed URL: 106 English and 124 French cells at this observation.
 - The label for `C` is inferred. The publisher's schema defines `O`, `P` and the longer closed variants (`CA`, `CN`, `CR`, `NF`), but not the `C` the CSV uses.
-- Removals are reported as stale rows; a formal withdrawal is not distinguished from a change of the source catalogue's scope.
+- A row dropped from the catalogue is recorded as removed, but a formal withdrawal is not distinguished from a change in the catalogue's own scope.

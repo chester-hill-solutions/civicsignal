@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS consultations_records (
   revision INTEGER NOT NULL,
   facts_json TEXT NOT NULL,
   search_en TEXT NOT NULL,
-  search_fr TEXT NOT NULL
+  search_fr TEXT NOT NULL,
+  removed_at TEXT
 );
 CREATE INDEX IF NOT EXISTS consultations_by_state ON consultations_records(state_at_observation, start_date, id);
 CREATE INDEX IF NOT EXISTS consultations_by_institution ON consultations_records(owner_org, start_date, id);

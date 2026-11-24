@@ -57,3 +57,21 @@ CREATE TABLE IF NOT EXISTS cc_snapshot (
   session TEXT PRIMARY KEY,
   cutoff TEXT NOT NULL
 );
+
+-- Record signatures and change events belong to the store, not to a full rebuild:
+-- an incremental intake (calls, refreshed records) must run on a fresh database.
+CREATE TABLE IF NOT EXISTS cc_revision (
+  session TEXT, id TEXT, language TEXT, signature TEXT,
+  PRIMARY KEY (session, id, language)
+);
+CREATE TABLE IF NOT EXISTS cc_changes (
+  seq INTEGER PRIMARY KEY, session TEXT, id TEXT, language TEXT, signature TEXT
+);
+CREATE TABLE IF NOT EXISTS cc_link_changes (
+  seq INTEGER PRIMARY KEY, session TEXT, language TEXT, parent_id TEXT, child_id TEXT,
+  relation TEXT, change TEXT
+);
+CREATE TABLE IF NOT EXISTS cc_extracted (
+  session TEXT, id TEXT, language TEXT, digest TEXT, version TEXT, status TEXT, reason TEXT,
+  PRIMARY KEY (session, id, language)
+);
