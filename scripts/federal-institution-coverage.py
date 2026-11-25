@@ -4,6 +4,7 @@ import argparse
 import csv
 import gzip
 import hashlib
+import importlib.util
 import json
 from collections import Counter, defaultdict
 from contextlib import closing
@@ -16,6 +17,10 @@ from lib.parliament_intake import save_atomic
 
 ROSTER = Path("docs/evidence/2026-11-23")
 BULK = Path("data/corpus/federal-bulk")
+_DOCS_SPEC = importlib.util.spec_from_file_location(
+    "departmental_report_documents", Path(__file__).resolve().with_name("departmental-report-documents.py"))
+HTML_DOCUMENTS = importlib.util.module_from_spec(_DOCS_SPEC)
+_DOCS_SPEC.loader.exec_module(HTML_DOCUMENTS)
 
 
 def normal(value):
@@ -72,7 +77,9 @@ def count_eccc_index_editions(corpus, count, provenance, register):
 
 
 def classify_sources(provenance, register):
-    registered_series = {"briefing-notes": "briefing-titles", "federal-procurement": "procurement"}
+    registered_series = {"briefing-notes": "briefing-titles", "federal-procurement": "procurement",
+                         "departmental-report-html-plans": "departmental-plans",
+                         "departmental-report-html-results": "departmental-results"}
     for key, source in provenance.items():
         series = source["series"]
         if series == "federal-disclosures":
@@ -131,6 +138,89 @@ def count_report_documents(corpus, count, provenance):
         if identity not in seen:
             count(family, [citation["issuer_label"]])
             seen.add(identity)
+
+
+def count_html_report_documents(corpus, count, provenance, aliases):
+    root=corpus/"departmental-report-documents"
+    pointer_path=root/"latest-html-attempt.json"
+    pointer=json.loads(pointer_path.read_bytes())
+    report_dir=root/"html-generations"
+    report_path=report_dir/(pointer["runId"]+".json")
+    if report_path.parent!=report_dir or str(report_path.relative_to(root))!=pointer["reportPath"]:
+        raise ValueError("Unexpected latest HTML report generation path")
+    report_raw=report_path.read_bytes()
+    if hashlib.sha256(report_raw).hexdigest()!=pointer["reportSha256"] or len(report_raw)!=pointer.get("reportBytes",len(report_raw)):
+        raise ValueError("HTML report generation differs from its published receipt")
+    receipt=json.loads(report_raw)
+    source_sha=receipt.get("sourceCurrentReportSha256")
+    if not source_sha or receipt["runId"]!=pointer["runId"]:
+        raise ValueError("HTML receipt does not identify its source inventory")
+    edition_root=corpus/"departmental-report-editions"
+    source_raw,_,current_run=HTML_DOCUMENTS.validate_input(edition_root)
+    if hashlib.sha256(source_raw).hexdigest()!=source_sha or current_run!=receipt["sourceEditionRunId"]:
+        raise ValueError("HTML acquisition is not bound to the current immutable publisher inventory")
+    audit=HTML_DOCUMENTS.html_audit(root,edition_root,source_sha)
+    if audit["sourceCurrentReportSha256"]!=source_sha or audit["queueCompleteness"]!="drained" or audit["replayStatus"]!="verified":
+        raise ValueError("HTML queue is incomplete or its batch archive replay failed")
+
+    with closing(sqlite3.connect((root/"documents.sqlite").resolve().as_uri()+"?mode=ro",uri=True)) as db:
+        db.execute("BEGIN")
+        run_ids=[row[0] for row in db.execute("SELECT run_id FROM html_runs WHERE source_report_sha256=? AND report_path IS NOT NULL ORDER BY started_at,run_id",(source_sha,))]
+        if hashlib.sha256("\n".join(run_ids).encode()).hexdigest()!=audit["replayedRunIdsSha256"]:
+            raise ValueError("HTML queue changed while the coverage snapshot was being read")
+        target_counts=dict(db.execute("SELECT status,COUNT(*) FROM html_targets WHERE source_report_sha256=? GROUP BY status",(source_sha,)).fetchall())
+        citation_counts=dict(db.execute("SELECT status,COUNT(*) FROM html_citations WHERE source_report_sha256=? GROUP BY status",(source_sha,)).fetchall())
+        if target_counts!=audit["targetStatusCounts"] or citation_counts!=audit["citationDispositionCounts"]:
+            raise ValueError("HTML queue changed after batch replay; refusing a mixed coverage snapshot")
+        accepted=list(db.execute("""SELECT c.target_url,c.family,c.language,c.issuer_label,c.label,c.year_label,
+                c.landing_url,c.landing_sha256,c.source_index_url,c.source_index_sha256,
+                t.status,t.body_sha256,t.body_bytes,t.readable_chars
+            FROM html_citations c JOIN html_targets t
+              ON t.source_report_sha256=c.source_report_sha256 AND t.target_url=c.target_url
+            WHERE c.source_report_sha256=? AND c.status='accepted'
+            ORDER BY c.family,c.language,c.issuer_label,c.target_url,c.citation_id""",(source_sha,)).fetchall())
+    if len(accepted)!=audit["acceptedCitations"]:
+        raise ValueError("HTML accepted citation count differs from the audited queue")
+    evidence_by_family=defaultdict(list)
+    unresolved=Counter()
+    seen=set()
+    distinct_by_family=Counter()
+    for row in accepted:
+        target_url,family,language,issuer,label,year_label,landing_url,landing_sha,index_url,index_sha,status,body_sha,body_bytes,readable_chars=row
+        if family not in ("departmental-plans","departmental-results") or status!="fetched" or not body_sha or not body_bytes or not readable_chars:
+            raise ValueError("Accepted HTML citation has no corresponding readable page archive")
+        issue_year=HTML_DOCUMENTS.source_year(label,year_label or "")
+        identities=aliases.get(normal(issuer),set())
+        if len(identities)!=1 or not issue_year:
+            unresolved[family]+=1
+            continue
+        institution=next(iter(identities))
+        identity=(institution,family,issue_year,language,body_sha)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        key="departmental-report-html-"+family.removeprefix("departmental-")
+        count(key,[issuer])
+        distinct_by_family[family]+=1
+        evidence_by_family[family].append({"issuerLabel":issuer,"language":language,"issueYear":issue_year,
+            "url":target_url,"bodySha256":body_sha,"sourceLandingUrl":landing_url,
+            "sourceLandingSha256":landing_sha,"sourceIndexUrl":index_url,"sourceIndexSha256":index_sha})
+    runlist_sha=audit["replayedRunIdsSha256"]
+    for family in ("departmental-plans","departmental-results"):
+        key="departmental-report-html-"+family.removeprefix("departmental-")
+        family_accepted=sum(audit["byFamilyLanguage"][f"{family}/{lang}"]["statuses"].get("accepted",0) for lang in ("en","fr"))
+        provenance[key]={"series":key,"recordType":"accepted year/language/issuer-matched HTML report page edition",
+            "receiptPath":str(report_path),"receiptSha256":pointer["reportSha256"],"receiptRunId":pointer["runId"],
+            "sourceInventoryPath":str(root/"inputs"/(source_sha+".json")),"sourceInventorySha256":source_sha,
+            "sourceInventoryRunId":current_run,"auditBatchCount":audit["replayedBatchRuns"],
+            "auditBatchRunListSha256":runlist_sha,"queueCandidateCitations":audit["candidateCitations"],
+            "queueCandidateTargets":audit["candidateTargets"],"acceptedCitations":family_accepted,
+            "distinctAcceptedEditions":distinct_by_family[family],"unresolvedAcceptedCitations":unresolved[family],
+            "dispositions":{language:audit["byFamilyLanguage"][f"{family}/{language}"] for language in ("en","fr")},
+            "evidenceDatabase":str(root/"documents.sqlite"),
+            "evidenceTables":["html_citations","html_targets","html_run_citations","html_run_targets"],
+            "acceptedPageEvidence":evidence_by_family[family],
+            "coverageLimit":"Accepted HTML page title/year/language/issuer match; does not establish complete underlying-document text coverage."}
 
 
 def count_regulatory_plans(corpus, count, provenance):
@@ -265,6 +355,7 @@ def coverage(include_acquisitions=False):
         count_acquisitions(BULK.parent, count, provenance)
         count_eccc_index_editions(BULK.parent, count, provenance, register)
         count_report_documents(BULK.parent, count, provenance)
+        count_html_report_documents(BULK.parent,count,provenance,aliases)
         count_regulatory_plans(BULK.parent, count, provenance)
     classify_sources(provenance, register)
     families = sorted({source["family"] for source in register.values()} - {"all"})
@@ -295,7 +386,7 @@ def coverage(include_acquisitions=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--include-acquisitions", action="store_true",
-                        help="Also attribute the current CanadaBuys, disclosure catalogue and ECCC index records.")
+                        help="Also attribute current acquisition records, ECCC indexes and verified departmental report editions.")
     parser.add_argument("--output", type=Path, help="Atomically publish the complete coverage JSON here.")
     args = parser.parse_args()
     result = coverage(args.include_acquisitions)
