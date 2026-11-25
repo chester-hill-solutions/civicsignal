@@ -227,7 +227,8 @@ def compact_root(
             try:
                 result = compact_one(path, ditto=chosen_ditto, compress=compress, compressed=compressed, allocation=allocation)
             except NoCompressionBenefit as exc:
-                result = {"status": "no_savings", "sha256": path.name, "reason": str(exc)}
+                result = {"status": "no_savings", "sha256": path.name, "logicalBytes": path.lstat().st_size,
+                          "reason": str(exc)}
             except UnsupportedCompression as exc:
                 if if_supported:
                     raise RuntimeError(f"Filesystem behavior changed after successful probe: {exc}") from exc

@@ -100,6 +100,22 @@ class CompactWrittenQuestionObjectsTests(unittest.TestCase):
         result = compact.compact_one(path, ditto="ditto-fixture", compress=reject)
         self.assertEqual(result["status"], "not_html")
 
+    def test_no_savings_keeps_original_and_records_its_logical_size(self):
+        root = self.temp_root()
+        body = b"<html>short</html>"
+        path = make_html(root, body)
+        inode = path.stat().st_ino
+        result = compact.compact_root(
+            root, platform_name="Darwin", ditto_path="ditto-fixture",
+            support_probe=lambda *args, **kwargs: None,
+            compress=fake_compressor({}), compressed=lambda _: False,
+        )
+        expected = hashlib.sha256(path.name.encode() + b"\0" + str(len(body)).encode() + b"\n").hexdigest()
+        self.assertEqual(result["processedNamesAndSizesSha256"], expected)
+        self.assertEqual(result["outcomes"], {"no_savings": 1})
+        self.assertEqual(path.stat().st_ino, inode)
+        self.assertEqual(path.read_bytes(), body)
+
     def test_unsupported_platform_skips_only_when_requested(self):
         root = self.temp_root()
         (root / "objects").mkdir(parents=True)
