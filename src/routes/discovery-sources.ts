@@ -89,7 +89,7 @@ function funding({ env, accessReady }: DiscoveryContext, source: typeof FundingS
   return inspect(definition(source, esdc ? 'ESDC funding calls' : 'NSERC College and Community Innovation',
       esdc ? 'Which calls fund apprenticeship training capacity, who can apply, and when did they close?' :
         'Which grants support applied research partnerships with colleges?', FUNDING_OPENAPI_PATH), env.FUNDING_PREVIEW === 'on', accessReady,
-      () => editions(env.CIVIC_DB, languages + `SELECT c.source AS scope, l.language, c.observed_at AS observedAt, c.revision
+      () => editions(env.FUNDING_DB ?? env.CIVIC_DB, languages + `SELECT c.source AS scope, l.language, c.observed_at AS observedAt, c.revision
       FROM funding_catalogues c CROSS JOIN languages l WHERE c.source=? AND EXISTS
       (SELECT 1 FROM funding_editions e LEFT JOIN funding_sections s USING (source,id,language)
        WHERE e.source=c.source AND e.language=l.language)`,
@@ -111,7 +111,7 @@ function consultations({ env, accessReady }: DiscoveryContext) {
   return inspect(definition('consultations', 'Government of Canada consultations',
       'Which federal consultations ask about artificial intelligence, and when do they close?', CONSULTATIONS_OPENAPI_PATH),
     env.CONSULTATIONS_PREVIEW === 'on', accessReady, () =>
-      editions(env.CIVIC_DB, languages + `SELECT c.source AS scope,l.language,c.observed_at AS observedAt,c.revision
+      editions(env.CONSULTATIONS_DB ?? env.CIVIC_DB, languages + `SELECT c.source AS scope,l.language,c.observed_at AS observedAt,c.revision
       FROM consultations_catalogues c CROSS JOIN languages l
       WHERE c.source='canada' AND EXISTS (SELECT 1 FROM consultations_records r WHERE r.owner_org<>'')`,
       r => requestPath('/api/consultations', { language: r.language,

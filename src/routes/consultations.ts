@@ -103,6 +103,12 @@ function titleFor(facts: z.infer<typeof ConsultationFactsSchema>, language: Lang
   return facts.editions[language].title || facts.editions[language === 'en' ? 'fr' : 'en'].title;
 }
 
+const stateSql = `CASE
+    WHEN start_date IS NULL OR end_date IS NULL THEN 'unknown'
+    WHEN ? < (start_date || 'T00:00:00.000Z') THEN 'planned'
+    WHEN ? > (end_date || 'T23:59:59.999Z') THEN 'closed'
+    ELSE 'open' END`;
+
 async function search(db: D1Database, input: SearchInput, asOf: string) {
   const metaResult = await catalogue(db).first<Record<string, unknown>>();
   const meta = requireCatalogue(metaResult ?? undefined);
@@ -116,11 +122,6 @@ async function search(db: D1Database, input: SearchInput, asOf: string) {
       WHERE json_extract(subject.value, '$.code')=?)`);
     bindings.push(input.subject);
   }
-  const stateSql = `CASE
-    WHEN start_date IS NULL OR end_date IS NULL THEN 'unknown'
-    WHEN ? < (start_date || 'T00:00:00.000Z') THEN 'planned'
-    WHEN ? > (end_date || 'T23:59:59.999Z') THEN 'closed'
-    ELSE 'open' END`;
   if (input.state) {
     clauses.push(`${stateSql}=?`);
     bindings.push(asOf, asOf, input.state);
@@ -312,35 +313,39 @@ function noticeEdition(row: Record<string, unknown>, id: string, revision: strin
 
 async function coverage(db: D1Database, institution: string | undefined, asOf: string) {
   const meta = requireCatalogue((await catalogue(db).first<Record<string, unknown>>()) ?? undefined);
-  const currentFilter = institution ? 'WHERE removed_at IS NULL AND owner_org=?' : 'WHERE removed_at IS NULL';
-  const removedFilter = institution ? 'WHERE removed_at IS NOT NULL AND owner_org=?' : 'WHERE removed_at IS NOT NULL';
-  const records = await db.prepare(`SELECT * FROM consultations_records ${currentFilter} ORDER BY id`)
-    .bind(...(institution ? [institution] : [])).all<Record<string, unknown>>();
-  const removed = await db.prepare(`SELECT count(*) AS total FROM consultations_records ${removedFilter}`)
-    .bind(...(institution ? [institution] : [])).first<Record<string, unknown>>();
-  const revisions = await db.prepare(`SELECT count(*) AS total FROM consultations_revisions r
-    ${institution ? 'JOIN consultations_records c ON c.id=r.id WHERE c.owner_org=?' : ''}`)
-    .bind(...(institution ? [institution] : [])).first<Record<string, unknown>>();
-  const counts = { total: 0, byState: { open: 0, planned: 0, closed: 0, unknown: 0 },
-    statusCodes: {} as Record<string, number>, removed: numeric(removed ?? {}, 'total'), stale: 0 };
-  const editions = { missingDescriptionFr: 0, missingTitleFr: 0,
-    profileLinkKinds: { official: 0, 'third-party-wrapper': 0, missing: 0, unparsable: 0 } };
-  let reportsAvailable = 0;
-  for (const row of records.results) {
-    const facts = ConsultationFactsSchema.parse(json(row.facts_json));
-    counts.total++;
-    counts.byState[stateAsOf(facts.dates, asOf).state]++;
-    counts.statusCodes[facts.statusCode] = (counts.statusCodes[facts.statusCode] ?? 0) + 1;
-    if (Date.parse(String(row.observed_at)) < Date.parse(String(meta.observedAt))) counts.stale++;
-    if (!facts.editions.fr.description) editions.missingDescriptionFr++;
-    if (!facts.editions.fr.title) editions.missingTitleFr++;
-    editions.profileLinkKinds[facts.editions.en.profile.kind]++;
-    if (row.report_available === 1 || row.report_available === true) reportsAvailable++;
-  }
+  const ownerFilter = institution ? 'AND owner_org=?' : '';
+  const revisionFilter = institution ? 'JOIN consultations_records c ON c.id=r.id WHERE c.owner_org=?' : '';
+  const ownerBindings = institution ? [institution, institution, institution] : [];
+  // Keep the bilingual descriptions and search indexes inside D1. Materialize only
+  // the fields needed by the status histogram and the catalogue-wide totals.
+  const row = await db.prepare(`WITH current AS MATERIALIZED (
+    SELECT status_code, ${stateSql} AS state, julianday(observed_at) < julianday(?) AS stale,
+      report_available, json_extract(facts_json,'$.editions.en.profile.kind') AS profile,
+      coalesce(json_extract(facts_json,'$.editions.fr.title'),'')='' AS missing_title,
+      coalesce(json_extract(facts_json,'$.editions.fr.description'),'')='' AS missing_description
+    FROM consultations_records WHERE removed_at IS NULL ${ownerFilter}
+  )
+  SELECT count(*) AS total,
+    count(*) FILTER (WHERE state='open') AS open, count(*) FILTER (WHERE state='planned') AS planned,
+    count(*) FILTER (WHERE state='closed') AS closed, count(*) FILTER (WHERE state='unknown') AS unknown,
+    count(*) FILTER (WHERE stale) AS stale, count(*) FILTER (WHERE report_available=1) AS available,
+    count(*) FILTER (WHERE missing_title) AS missingTitleFr,
+    count(*) FILTER (WHERE missing_description) AS missingDescriptionFr,
+    count(*) FILTER (WHERE profile='official') AS official,
+    count(*) FILTER (WHERE profile='third-party-wrapper') AS wrapped,
+    count(*) FILTER (WHERE profile='missing') AS missing, count(*) FILTER (WHERE profile='unparsable') AS unparsable,
+    (SELECT json_group_object(status_code, n) FROM (SELECT status_code, count(*) AS n FROM current GROUP BY status_code)) AS statuses,
+    (SELECT count(*) FROM consultations_records WHERE removed_at IS NOT NULL ${ownerFilter}) AS removed,
+    (SELECT count(*) FROM consultations_revisions r ${revisionFilter}) AS revisions
+  FROM current`).bind(asOf, asOf, String(meta.observedAt), ...ownerBindings).first<Record<string, unknown>>();
+  if (!row) throw new Error('Consultation coverage totals are unavailable.');
   return ConsultationCoverageSchema.parse({
-    source: CONSULTATION_SOURCE, observedAt: meta.observedAt,
-    csvSha256: meta.csvSha256, schemaSha256: meta.schemaSha256, counts, editions,
-    reports: { available: reportsAvailable }, revisions: { total: numeric(revisions ?? {}, 'total') },
+    source: CONSULTATION_SOURCE, observedAt: meta.observedAt, csvSha256: meta.csvSha256, schemaSha256: meta.schemaSha256,
+    counts: { total: row.total, byState: { open: row.open, planned: row.planned, closed: row.closed, unknown: row.unknown },
+      statusCodes: json(row.statuses), removed: row.removed, stale: row.stale },
+    editions: { missingDescriptionFr: row.missingDescriptionFr, missingTitleFr: row.missingTitleFr,
+      profileLinkKinds: { official: row.official, 'third-party-wrapper': row.wrapped, missing: row.missing, unparsable: row.unparsable } },
+    reports: { available: row.available }, revisions: { total: row.revisions },
   });
 }
 
@@ -357,7 +362,7 @@ export function prepareConsultations(url: URL) {
   if (url.pathname === `${CONSULTATIONS_API_PATH}/coverage`) {
     return (env: Env) => {
       if (env.CONSULTATIONS_PREVIEW !== 'on') throw new AccessError('UNSUPPORTED_COVERAGE', 'The consultations preview is disabled.', 501);
-      const db = env.CIVIC_DB;
+      const db = env.CONSULTATIONS_DB ?? env.CIVIC_DB;
       if (!db) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Consultation storage is unavailable.', 503);
       const input = args(url.searchParams, ConsultationCoverageQuery, 'coverage');
       const asOf = instant(input.asOf);
@@ -367,7 +372,7 @@ export function prepareConsultations(url: URL) {
   if (url.pathname === CONSULTATIONS_API_PATH) {
     return (env: Env) => {
       if (env.CONSULTATIONS_PREVIEW !== 'on') throw new AccessError('UNSUPPORTED_COVERAGE', 'The consultations preview is disabled.', 501);
-      const db = env.CIVIC_DB;
+      const db = env.CONSULTATIONS_DB ?? env.CIVIC_DB;
       if (!db) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Consultation storage is unavailable.', 503);
       const input = args(url.searchParams, ConsultationSearchQuery, 'search');
       const asOf = instant(input.asOf);
@@ -378,7 +383,7 @@ export function prepareConsultations(url: URL) {
   if (!match || match[1] === 'openapi.json') return undefined;
   return (env: Env) => {
     if (env.CONSULTATIONS_PREVIEW !== 'on') throw new AccessError('UNSUPPORTED_COVERAGE', 'The consultations preview is disabled.', 501);
-    const db = env.CIVIC_DB;
+    const db = env.CONSULTATIONS_DB ?? env.CIVIC_DB;
     if (!db) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Consultation storage is unavailable.', 503);
     const id = match[1] ?? '';
     // The registration keeps the publisher's case: `c-ISC0016` and `c-isc0016` are different consultations.

@@ -14,6 +14,8 @@ import { FundingCatalogueCoverage, FundingSearchResponse, FundingLookupResponse,
   type FundingEdition, type FundingSource,
 } from '../src/corpora/funding';
 import { localD1 } from '../scripts/lib/local-d1';
+import { materializeConsultations } from '../src/corpora/consultations-materialize';
+import { checkCommittees, checkConsultations, checkRecommendations } from '../services/daily-checks/acceptance';
 import { ApiKeyUsageDO, DurableObjectUsageLedger } from '@chester-hill-solutions/api-billing/durable-object';
 import worker from '../src/index';
 import type { Capabilities } from '../src/routes/capabilities';
@@ -215,7 +217,7 @@ describe('Polytechnics Canada funding recommendations against the acquired catal
       closed.push(() => db.close());
       return localD1(db);
     };
-    fixture.env.CIVIC_DB = open(fundingPath);
+    fixture.env.FUNDING_DB = open(fundingPath);
     const committeeArchive = new DatabaseSync(committeeAcquisitionPath, { readOnly: true });
     closed.push(() => committeeArchive.close());
     fixture.env.COMMITTEE_DB = open(committeePath);
@@ -312,7 +314,95 @@ describe('Polytechnics Canada funding recommendations against the acquired catal
   }, 30_000);
 });
 
+describe('daily serving acceptance against acquired sources', () => {
+  const committeeReference = process.env.CIVICSIGNAL_DAILY_COMMITTEE_REFERENCE;
+  it.skipIf(!committeeReference)('executes the four hosted checks through one authenticated product with isolated D1 bindings', async () => {
+    const fundingPath = process.env.CIVICSIGNAL_FUNDING_SQLITE, committeesPath = process.env.CIVICSIGNAL_COMMITTEES_D1;
+    const consultationPath = process.env.CIVICSIGNAL_CONSULTATIONS_SQLITE, csvReceipt = process.env.CIVICSIGNAL_CONSULTATIONS_RECEIPT;
+    if (!fundingPath || !committeesPath || !consultationPath || !csvReceipt || !committeeReference) throw new Error('All acquired daily references are required.');
+    const fixture = await setup(100);
+    const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
+    function open(path: string) {
+      const db = new DatabaseSync(path, { readOnly: true });
+      closed.push(() => db.close());
+      return localD1(db);
+    }
+    fixture.env.FUNDING_DB = open(fundingPath);
+    fixture.env.COMMITTEE_DB = open(committeesPath);
+    fixture.env.CONSULTATIONS_DB = open(consultationPath);
+    fixture.env.AUTH_DB = fixture.db;
+    delete fixture.env.CIVIC_DB;
+    fixture.env.FUNDING_PREVIEW = fixture.env.COMMITTEE_CORPUS_PREVIEW = fixture.env.CONSULTATIONS_PREVIEW = 'on';
+    const hash = (value: string) => createHash('sha256').update(value).digest('hex');
+    const committee = readFileSync(committeeReference, 'utf8');
+    const params = { consultations: 'consultations-1', esdc: 'esdc-1', nserc: 'nserc-1', committee: hash(committee) };
+    const objects = new Map([[`daily/references/committee/${params.committee}.json`, committee]]);
+    for (const source of ['esdc','nserc'] as const) {
+      const { archive, revision } = acquiredFunding(fundingPath, source);
+      const body = JSON.stringify(archive), sha256 = hash(body), key = `funding/${source}/inventories/${sha256}.json`;
+      objects.set(key, body);
+      objects.set(`funding/${source}/runs/${params[source]}.json`, JSON.stringify({ instanceId: params[source],
+        observedAt: archive.observedAt, published: { revision }, inventory: { key, sha256 } }));
+    }
+    const receipt: ConsultationReceipt = JSON.parse(readFileSync(csvReceipt,'utf8'));
+    const { records } = acquiredConsultations(consultationPath, { csvSha256: receipt.csv.sha256, schemaSha256: receipt.schema.sha256,
+      revision: receipt.revision, observedAt: receipt.observedAt });
+    const sample = records.find(row => row.editions.en.title && row.editions.fr.title);
+    if (!sample) throw new Error('Missing bilingual reference consultation.');
+    objects.set(`consultations/runs/${params.consultations}.json`, JSON.stringify({ instanceId: params.consultations, observedAt: receipt.observedAt,
+      sources: { csv: receipt.csv, schema: receipt.schema }, published: { rows: records.length, revision: receipt.revision },
+      lookup: { id: sample.id, titles: { en: sample.editions.en.title, fr: sample.editions.fr.title } } }));
+    const bucket = { async get(key: string) {
+      const body = objects.get(key);
+      if (!body) return null;
+      return { size: Buffer.byteLength(body), arrayBuffer: async () => Uint8Array.from(Buffer.from(body)).buffer };
+    } };
+    let requests = 0;
+    async function read(path: string, parameters?: Record<string,string>) {
+      const response = await fixture.send(path + '?' + new URLSearchParams(parameters));
+      expect(response.status, path).toBe(200);
+      requests++;
+      return response.json();
+    }
+    await checkConsultations(read, bucket, params.consultations);
+    await checkCommittees(read, bucket, params.committee);
+    for (const lang of ['en','fr'] as const) await checkRecommendations(read, bucket, params, lang);
+    expect(await fixture.count()).toBe(requests);
+  }, 60000);
+});
+
 describe('deployment discovery', () => {
+  it('discovers and serves the separate consultations and funding databases through one authenticated API', async () => {
+    const fixture = await setup();
+    const consultations = testD1({ schema: '' });
+    const funding = testD1({ schema: readFileSync('preview/funding/migrations/0001_funding.sql', 'utf8') });
+    closed.push(consultations.close, funding.close);
+    Object.assign(fixture.env, { FUNDING_PREVIEW: 'on', CONSULTATIONS_PREVIEW: 'on',
+      AUTH_DB: fixture.db, FUNDING_DB: funding.db, CONSULTATIONS_DB: consultations.db });
+    delete fixture.env.CIVIC_DB;
+    const observedAt = '2026-11-22T09:00:00.000Z';
+    const csvText = readFileSync('test/fixtures/consultations/catalogue.csv', 'utf8');
+    const schema = readFileSync('test/fixtures/consultations/schema.json', 'utf8');
+    const digest = (s: string) => createHash('sha256').update(s).digest('hex');
+    const catalogue = materializeConsultations(consultations.sqlite, { csvText, observedAt, csvSha256: digest(csvText),
+      dictionaryJson: JSON.parse(schema), schemaSha256: digest(schema) });
+    funding.sqlite.prepare("INSERT INTO funding_catalogues VALUES ('esdc',?,'r1',?,'[]')").run(observedAt,
+      JSON.stringify({ en: 'https://www.canada.ca/en/', fr: 'https://www.canada.ca/fr/' }));
+    funding.sqlite.exec(`INSERT INTO funding_editions VALUES ('esdc','esdc-grant','fr','r1','Subvention',
+      'https://www.canada.ca/fr/','open',NULL,'metadata-only','[]','subvention')`);
+    const { sources } = await manifest(fixture);
+    expect(sources.find(source => source.id === 'consultations')).toMatchObject({ status: 'available',
+      editions: [{ language: 'en', revision: catalogue.revision }, { language: 'fr', revision: catalogue.revision }] });
+    expect(sources.find(source => source.id === 'esdc')).toMatchObject({ status: 'available', editions: [{ language: 'fr', revision: 'r1' }] });
+    const coverage = await fixture.send('/api/consultations/coverage');
+    expect(coverage.status).toBe(200);
+    expect(ConsultationCoverageSchema.parse(await coverage.json()).counts.total).toBe(catalogue.counts.rows);
+    const grant = await fixture.send('/api/funding-programs/esdc-grant?language=fr');
+    expect(grant.status).toBe(200);
+    expect(FundingLookupResponse.parse(await grant.json()).item?.title).toBe('Subvention');
+    expect(await fixture.count()).toBe(2);
+  });
+
   it('limits the apprenticeship question to published sources in the requested language', async () => {
     const fixture = await setup();
     fixture.env.FUNDING_PREVIEW = 'on';
@@ -2173,7 +2263,7 @@ describe('consultations through the Worker against the acquired catalogue', () =
     closed.push(() => db.close());
     db.exec('BEGIN');
     fixture.env.AUTH_DB = fixture.db;
-    fixture.env.CIVIC_DB = localD1(db, { existingReadTransaction: true });
+    fixture.env.CONSULTATIONS_DB = localD1(db, { existingReadTransaction: true });
     fixture.env.CONSULTATIONS_PREVIEW = 'on';
 
     const observation = db.prepare(`SELECT observed_at AS observedAt,revision,csv_sha256 AS csvSha256,

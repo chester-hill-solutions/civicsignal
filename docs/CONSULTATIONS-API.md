@@ -1,6 +1,6 @@
 # Federal consultations API
 
-The consultations preview serves the Government of Canada's published catalogue of departmental consultations in both languages. It is enabled only when `CONSULTATIONS_PREVIEW=on`; the tables live in `CIVIC_DB`.
+The consultations preview serves the Government of Canada's published catalogue of departmental consultations in both languages. Set `CONSULTATIONS_PREVIEW=on` and bind the catalogue as `CONSULTATIONS_DB`. Deployments that share the main database use `CIVIC_DB` as the default.
 
 The catalogue is [Open Dialogue – Consultations](https://open.canada.ca/data/en/dataset/7c03f039-3753-4093-af60-74b0f7b2385d) from the Open Government Portal. The intake reads the published CSV and the publisher's schema JSON:
 

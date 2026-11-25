@@ -1,0 +1,37 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-daily-checks",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "limits": { "cpu_ms": 300000, "subrequests": 10000 },
+  "vars": {
+    "FUNDING_PREVIEW": "on",
+    "CONSULTATIONS_PREVIEW": "on",
+    "COMMITTEE_CORPUS_PREVIEW": "on",
+    "FREE_MONTHLY_ALLOWANCE": "1000"
+  },
+  "workflows": [{
+    "binding": "CHECKS",
+    "name": "civicsignal-stage-daily-checks",
+    "class_name": "DailyServingChecks"
+  }],
+  "services": [{ "binding": "PRODUCT", "service": "civicsignal-stage-daily-checks" }],
+  "durable_objects": { "bindings": [{ "name": "API_KEY_USAGE", "class_name": "ApiKeyUsageDO" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApiKeyUsageDO"] }],
+  "d1_databases": [
+    { "binding": "AUTH_DB", "database_name": "civicsignal-stage-daily-checks-auth", "database_id": "5802b38c-56b8-45bf-b807-e8203495ddba" },
+    { "binding": "COMMITTEE_DB", "database_name": "civicsignal-stage-committees-45-1", "database_id": "fb9b6314-4b06-4690-a893-7277a8ea00bb" },
+    { "binding": "FUNDING_DB", "database_name": "civicsignal-stage-funding", "database_id": "0d4ddb86-5b28-44b5-b34d-7aa249ada551" },
+    { "binding": "CONSULTATIONS_DB", "database_name": "civicsignal-stage-consultations", "database_id": "ef80296e-8122-43e9-a8bc-c5e60941bd08" }
+  ],
+  "r2_buckets": [
+    { "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-funding" },
+    { "binding": "CONSULTATION_ARCHIVE", "bucket_name": "civicsignal-stage-consultations" }
+  ],
+  "triggers": { "crons": [] }
+}

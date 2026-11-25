@@ -28,8 +28,10 @@ export interface Env {
   /** Local bilingual parliamentary catalogues and federal directory in CIVIC_DB. */
   PARLIAMENT_CATALOGUE_PREVIEW?: string;
   FUNDING_PREVIEW?: string;
+  FUNDING_DB?: D1Database;
   /** Enables the departmental consultations preview. */
   CONSULTATIONS_PREVIEW?: string;
+  CONSULTATIONS_DB?: D1Database;
   /** Optional local catalogue-matched participation notice editions for consultation lookups. */
   CONSULTATION_NOTICES_DB?: D1Database;
   DEPARTMENTAL_PUBLICATIONS_PREVIEW?: string;

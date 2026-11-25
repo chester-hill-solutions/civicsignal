@@ -138,7 +138,7 @@ export function prepareFunding(url: URL) {
   if (url.pathname === `${FUNDING_API_PATH}/coverage`) {
     return (env: Env) => {
       if (env.FUNDING_PREVIEW !== 'on') throw new AccessError('UNSUPPORTED_COVERAGE', 'The funding programme preview is disabled.', 501);
-      const db = env.CIVIC_DB;
+      const db = env.FUNDING_DB ?? env.CIVIC_DB;
       if (!db) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Funding catalogue storage is unavailable.', 503);
       const { source } = args(url.searchParams, FundingCoverageQuery, 'coverage');
       return () => readPublished(async () => {
@@ -165,7 +165,7 @@ export function prepareFunding(url: URL) {
   if (id === 'openapi.json' || (id === undefined && suffix)) return undefined;
   return (env: Env) => {
     if (env.FUNDING_PREVIEW !== 'on') throw new AccessError('UNSUPPORTED_COVERAGE', 'The funding programme preview is disabled.', 501);
-    const db = env.CIVIC_DB;
+    const db = env.FUNDING_DB ?? env.CIVIC_DB;
     if (!db) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'Funding catalogue storage is unavailable.', 503);
     if (id === undefined) {
       const input = args(url.searchParams, FundingListQuery, 'list');
