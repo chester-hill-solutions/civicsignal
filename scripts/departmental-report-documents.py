@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import datetime as dt
 import gzip
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -40,6 +41,18 @@ MAX_WORKERS = 4
 MAX_REDIRECTS = 5
 USER_AGENT = "CivicSignal local departmental report document index/1.0"
 PDF_EXTENSIONS = {".pdf"}
+MAX_HTML_BYTES = 2 * 1024 * 1024
+MAX_HTML_TARGETS_PER_BATCH = 40
+HTML_FAMILY_TERMS = {
+    "departmental-plans": {
+        "en": ("departmental plan", "plans and priorities"),
+        "fr": ("plan ministériel", "plans ministériels", "plans et priorités"),
+    },
+    "departmental-results": {
+        "en": ("departmental results report", "departmental performance report", "departmental results", "performance report"),
+        "fr": ("rapport sur les résultats ministériels", "rapport ministériel sur le rendement", "rapport ministériel de rendement", "rapport sur les résultats"),
+    },
+}
 
 PLAN_TERMS = {
     "en": ("departmental plan", "plans and priorities", "report on plans and priorities", "reports on plans and priorities"),
@@ -55,6 +68,13 @@ LANGUAGE_MARKERS = {
 }
 YEAR_RANGE = re.compile(r"(?<!\d)((?:19|20)\d{2})\s*(?:[-–—]|\bto\b|\bà\b)\s*((?:(?:19|20)\d{2})|\d{2})(?!\d)", re.I)
 YEAR_TOKEN = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
+HTML_OMIT = {"script", "style", "noscript", "svg", "nav", "footer", "header", "aside", "template"}
+HTML_FAMILY_ALIASES = {
+    "departmental-plans": {"en": ("departmental plan", "plans and priorities"),
+                            "fr": ("plan ministériel", "plans et priorités")},
+    "departmental-results": {"en": ("departmental results report", "departmental performance report"),
+                              "fr": ("rapport sur les résultats ministériels", "rapport ministériel sur le rendement", "rapport ministériel de rendement")},
+}
 
 
 def utc_now() -> str:
@@ -350,6 +370,45 @@ def open_db(root: Path, read_only: bool = False):
       family_disposition TEXT, language_disposition TEXT, year_disposition TEXT,
       issuer_disposition TEXT, detail TEXT,
       PRIMARY KEY(run_id,citation_id), FOREIGN KEY(run_id,target_url) REFERENCES documents(run_id,target_url));
+    CREATE TABLE IF NOT EXISTS html_runs(
+      run_id TEXT PRIMARY KEY, started_at TEXT NOT NULL, completed_at TEXT,
+      source_report_run_id TEXT NOT NULL, source_report_path TEXT NOT NULL,
+      source_report_sha256 TEXT NOT NULL, input_path TEXT NOT NULL,
+      candidate_citations INTEGER NOT NULL, candidate_targets INTEGER NOT NULL,
+      batch_limit INTEGER NOT NULL, processed_targets INTEGER NOT NULL DEFAULT 0,
+      remaining_pending INTEGER NOT NULL DEFAULT 0, report_path TEXT, report_sha256 TEXT,
+      status TEXT NOT NULL, detail TEXT);
+    CREATE TABLE IF NOT EXISTS html_targets(
+      source_report_sha256 TEXT NOT NULL, target_url TEXT NOT NULL, status TEXT NOT NULL,
+      last_run_id TEXT, attempted_at TEXT, fetch_url TEXT, final_url TEXT,
+      http_status INTEGER, media_type TEXT, body_sha256 TEXT, body_bytes INTEGER,
+      object_path TEXT, text_sha256 TEXT, text_bytes INTEGER, text_object_path TEXT,
+      page_title TEXT, h1_json TEXT, html_language TEXT, readable_chars INTEGER,
+      detail TEXT, PRIMARY KEY(source_report_sha256,target_url));
+    CREATE TABLE IF NOT EXISTS html_citations(
+      source_report_sha256 TEXT NOT NULL, citation_id TEXT NOT NULL, target_url TEXT NOT NULL,
+      family TEXT NOT NULL, language TEXT NOT NULL, issuer_key TEXT, issuer_label TEXT NOT NULL,
+      landing_url TEXT NOT NULL, landing_sha256 TEXT, source_index_url TEXT,
+      source_index_sha256 TEXT, label TEXT NOT NULL, heading TEXT, year_label TEXT NOT NULL,
+      evidence TEXT, status TEXT NOT NULL DEFAULT 'pending',
+      family_disposition TEXT, year_disposition TEXT, language_disposition TEXT,
+      issuer_disposition TEXT, detail TEXT,
+      PRIMARY KEY(source_report_sha256,citation_id));
+    CREATE TABLE IF NOT EXISTS html_run_targets(
+      run_id TEXT NOT NULL, target_url TEXT NOT NULL, status TEXT NOT NULL,
+      body_sha256 TEXT, body_bytes INTEGER, object_path TEXT, text_sha256 TEXT,
+      text_bytes INTEGER, text_object_path TEXT, page_title TEXT, h1_json TEXT,
+      html_language TEXT, readable_chars INTEGER, http_status INTEGER, media_type TEXT,
+      final_url TEXT, detail TEXT,
+      PRIMARY KEY(run_id,target_url), FOREIGN KEY(run_id) REFERENCES html_runs(run_id));
+    CREATE TABLE IF NOT EXISTS html_run_citations(
+      run_id TEXT NOT NULL, citation_id TEXT NOT NULL, target_url TEXT NOT NULL,
+      family TEXT NOT NULL, language TEXT NOT NULL, issuer_label TEXT NOT NULL,
+      landing_url TEXT NOT NULL, landing_sha256 TEXT, source_index_url TEXT,
+      source_index_sha256 TEXT, label TEXT NOT NULL, heading TEXT, year_label TEXT NOT NULL,
+      evidence TEXT, status TEXT NOT NULL, family_disposition TEXT, year_disposition TEXT,
+      language_disposition TEXT, issuer_disposition TEXT, detail TEXT,
+      PRIMARY KEY(run_id,citation_id), FOREIGN KEY(run_id) REFERENCES html_runs(run_id));
     """)
     return db
 
@@ -465,6 +524,500 @@ def _candidate_report(candidates: list[dict]) -> dict:
     for row in candidates:
         by_url.setdefault(row["url"], []).append(row)
     return by_url
+
+
+def collect_html_candidates(report: dict) -> list[dict]:
+    """Discover only year- and family-labelled non-PDF links from the captured issuer pages."""
+    candidates = []
+    for page in report.get("issuerPages", []):
+        family, language = page.get("family"), page.get("language")
+        if family not in HTML_FAMILY_TERMS or language not in ("en", "fr"):
+            continue
+        for link in page.get("reportLinks", []):
+            if link.get("link_type") != "index-link":
+                continue
+            label = link.get("label") or ""
+            url = link.get("url") or ""
+            if not YEAR_TOKEN.search(label) or not any(normalized(term) in normalized(label)
+                    for term in HTML_FAMILY_TERMS[family][language]):
+                continue
+            path = urlsplit(url).path
+            suffix = Path(path.rsplit("/", 1)[-1]).suffix.casefold()
+            if suffix and suffix not in {".html", ".htm"}:
+                continue
+            if any(ord(ch) < 32 for ch in url):
+                continue
+            fetch_url = quote(url, safe=":/?#[]@!$&'()*+,;=%")
+            candidates.append({"family": family, "language": language,
+                "issuerLabel": page.get("issuer_label") or page.get("issuer_attribution") or "Unknown issuer",
+                "issuerKey": page.get("issuer_key"), "landingUrl": page.get("published_url"),
+                "landingSha256": link.get("landing_sha256"),
+                "sourceIndexUrl": page.get("source_index_url"), "sourceIndexSha256": page.get("source_index_sha256"),
+                "label": label, "heading": link.get("heading"), "yearLabel": link.get("year_label"),
+                "issueYear": source_year(label, link.get("year_label", "")),
+                "url": url, "fetchUrl": fetch_url, "evidence": link.get("evidence"),
+                "policyDisposition": "allowed" if committee_files.fetchable(url) else "out-of-policy"})
+    return candidates
+
+
+class HtmlReportParser(HTMLParser):
+    HIDDEN = HTML_OMIT
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.title_parts: list[str] = []
+        self.h1_parts: list[str] = []
+        self.h1s: list[str] = []
+        self.body_parts: list[str] = []
+        self.main_parts: list[str] = []
+        self.html_language = ""
+        self.title_depth = 0
+        self.h1_depth = 0
+        self.main_depth = 0
+        self.hidden_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        attr = dict(attrs)
+        if tag == "html":
+            self.html_language = attr.get("lang", "").strip().casefold()
+        if tag in self.HIDDEN:
+            self.hidden_depth += 1
+            return
+        if self.hidden_depth:
+            return
+        if tag == "title": self.title_depth += 1
+        if tag == "h1":
+            self.h1_depth += 1
+            if self.h1_depth == 1:
+                self.h1_parts = []
+        if tag == "main": self.main_depth += 1
+
+    def handle_endtag(self, tag):
+        if tag in self.HIDDEN and self.hidden_depth:
+            self.hidden_depth -= 1
+            return
+        if self.hidden_depth:
+            return
+        if tag == "title" and self.title_depth: self.title_depth -= 1
+        if tag == "h1" and self.h1_depth:
+            self.h1_depth -= 1
+            if not self.h1_depth:
+                value = " ".join("".join(self.h1_parts).split())
+                if value: self.h1s.append(value)
+        if tag == "main" and self.main_depth: self.main_depth -= 1
+
+    def handle_data(self, data):
+        if self.hidden_depth or not data.strip():
+            return
+        clean = " ".join(data.split())
+        self.body_parts.append(clean)
+        if self.main_depth:
+            self.main_parts.append(clean)
+        if self.title_depth: self.title_parts.append(clean)
+        if self.h1_depth: self.h1_parts.append(clean)
+
+    def result(self):
+        return {"title": " ".join(self.title_parts).strip(), "h1s": self.h1s,
+                "htmlLanguage": self.html_language,
+                "text": " ".join(self.main_parts or self.body_parts).strip()}
+
+
+def analyze_html(body: bytes, candidates: list[dict]) -> dict:
+    parser = HtmlReportParser()
+    parser.feed(body.decode("utf-8-sig", errors="replace"))
+    parser.close()
+    page = parser.result()
+    results = []
+    title_heading = normalized(" ".join([page["title"], *page["h1s"]]))
+    text = normalized(page["text"])
+    for candidate in candidates:
+        lang_attr = page["htmlLanguage"].split("-", 1)[0]
+        lang = "match" if lang_attr == candidate["language"] else ("mismatch" if lang_attr in {"en", "fr"} else "unresolved")
+        terms = HTML_FAMILY_ALIASES[candidate["family"]][candidate["language"]]
+        family = "match" if any(normalized(term) in title_heading for term in terms) else "mismatch"
+        year_forms = [candidate["issueYear"] or candidate["yearLabel"] or ""]
+        if year_forms[0] and "-" in year_forms[0]:
+            first, last = year_forms[0].split("-", 1)
+            year_forms.extend([first + " to " + last, first + " à " + last,
+                               first + "-" + last[-2:], first + "–" + last])
+        year = "match" if any(normalized(form) in title_heading for form in year_forms if form) else "mismatch"
+        issuer_label = normalized(candidate["issuerLabel"])
+        issuer = "named-in-text" if issuer_label in text else "mismatch"
+        if len(page["text"]) < 100:
+            disposition = "unreadable"
+        elif candidate["policyDisposition"] != "allowed":
+            disposition = "out-of-policy"
+        elif lang == "mismatch":
+            disposition = "wrong-language"
+        elif family == "match" and year == "match" and lang == "match" and issuer == "named-in-text":
+            disposition = "accepted"
+        else:
+            disposition = "not-report"
+        results.append({**candidate, "disposition": disposition,
+                        "familyDisposition": family, "yearDisposition": year,
+                        "languageDisposition": lang, "issuerDisposition": issuer})
+    return {**page, "citations": results}
+
+
+class HtmlFetchError(FetchError):
+    pass
+
+
+def fetch_html(url: str) -> tuple[bytes, str, int, str]:
+    """Fetch one small official HTML landing document with strict redirects and byte bounds."""
+    if not committee_files.fetchable(url):
+        raise HtmlFetchError("HTML URL outside official HTTPS acquisition policy")
+
+    class CheckedRedirect(urllib.request.HTTPRedirectHandler):
+        def __init__(self):
+            super().__init__()
+            self.count = 0
+
+        def redirect_request(self, request, response, code, message, headers, new_url):
+            self.count += 1
+            target = urljoin(request.full_url, new_url)
+            if self.count > MAX_REDIRECTS or not committee_files.official(target):
+                raise HtmlFetchError("redirect outside official HTTPS hosts or exceeds redirect limit", code)
+            return super().redirect_request(request, response, code, message, headers, target)
+
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml;q=0.9"})
+    try:
+        with urllib.request.build_opener(CheckedRedirect()).open(request, timeout=30) as response:
+            final = response.geturl()
+            if not committee_files.official(final):
+                raise HtmlFetchError("final URL outside official HTTPS hosts")
+            length = response.headers.get("Content-Length")
+            if length and int(length) > MAX_HTML_BYTES:
+                raise HtmlFetchError("HTML exceeds per-page byte limit")
+            body = response.read(MAX_HTML_BYTES + 1)
+            if len(body) > MAX_HTML_BYTES:
+                raise HtmlFetchError("HTML exceeds per-page byte limit")
+            return body, final, response.status, response.headers.get_content_type().casefold()
+    except urllib.error.HTTPError as error:
+        raise HtmlFetchError("HTTP " + str(error.code), error.code) from error
+    except ssl.SSLCertVerificationError as error:
+        return fetch_html_curl(url,error)
+    except urllib.error.URLError as error:
+        if isinstance(error.reason, ssl.SSLCertVerificationError):
+            return fetch_html_curl(url,error.reason)
+        raise HtmlFetchError(str(error.reason)[:1000]) from error
+    except (TimeoutError, OSError) as error:
+        raise HtmlFetchError(str(error)[:1000]) from error
+
+
+def fetch_html_curl(url: str, original_error: Exception) -> tuple[bytes, str, int, str]:
+    """Fallback to curl's normal platform trust only for urllib certificate-validation failures."""
+    current=url
+    with tempfile.TemporaryDirectory(prefix="departmental-report-html-") as temp:
+        target=Path(temp)/"source.html"
+        for _ in range(MAX_REDIRECTS+1):
+            if not committee_files.official(current):
+                raise HtmlFetchError("redirect outside official HTTPS hosts") from original_error
+            command=["curl","--silent","--show-error","--globoff","--proto","=https","--max-redirs","0",
+                     "--max-time","30","--connect-timeout","10","--max-filesize",str(MAX_HTML_BYTES),
+                     "--user-agent",USER_AGENT,"--header","Accept: text/html,application/xhtml+xml;q=0.9",
+                     "--output",str(target),"--write-out","%{http_code}\n%{content_type}\n%{redirect_url}",
+                     quote(current,safe=":/?#[]@!$&'()*+,;=%")]
+            result=subprocess.run(command,capture_output=True,text=True)
+            if result.returncode and result.returncode!=22:
+                raise HtmlFetchError(result.stderr.strip()[:1000] or f"curl exit {result.returncode}") from original_error
+            parts=result.stdout.split("\n",2)
+            if len(parts)!=3:
+                raise HtmlFetchError("curl returned malformed response metadata") from original_error
+            status,media,redirect=parts
+            if status in {"301","302","303","307","308"} and redirect:
+                current=urljoin(current,redirect)
+                continue
+            if not status.isdigit() or int(status)!=200:
+                raise HtmlFetchError("HTTP "+status,int(status) if status.isdigit() else None) from original_error
+            body=target.read_bytes()
+            if len(body)>MAX_HTML_BYTES:
+                raise HtmlFetchError("HTML exceeds per-page byte limit") from original_error
+            return body,current,200,media.partition(";")[0].casefold()
+    raise HtmlFetchError("too many redirects") from original_error
+
+
+def html_target_status(error: Exception | None, media: str = "", parsed: dict | None = None) -> tuple[str, str]:
+    if error:
+        code = error.status if isinstance(error, FetchError) else None
+        if code in (401, 403, 429): return "source-refused", str(error)[:1000]
+        if code == 404: return "not-found", str(error)[:1000]
+        return "fetch-failed", str(error)[:1000]
+    if media not in {"text/html", "application/xhtml+xml"}:
+        return "wrong-kind", "Response media type is not HTML"
+    if not parsed or len(parsed["text"]) < 100:
+        return "unreadable", "HTML response has insufficient visible text"
+    return "fetched", ""
+
+
+def html_refresh(root: Path = DEFAULT_ROOT, edition_root: Path = EDITION_ROOT,
+                 batch_size: int = 24, priority_urls: list[str] | None = None,
+                 fetcher=fetch_html, retry_urls: list[str] | None = None,
+                 recheck_after_days: int = 7) -> dict:
+    if not 1 <= batch_size <= MAX_HTML_TARGETS_PER_BATCH:
+        raise ValueError(f"HTML batch-size must be between 1 and {MAX_HTML_TARGETS_PER_BATCH}")
+    if not 1 <= recheck_after_days <= 365:
+        raise ValueError("recheck-after-days must be between 1 and 365")
+    raw, source, source_run_id = validate_input(edition_root)
+    source_pointer = json.loads((edition_root / "latest-attempt.json").read_text(encoding="utf-8"))
+    candidates = collect_html_candidates(source)
+    source_sha = hashlib.sha256(raw).hexdigest()
+    source_path = root / "inputs" / (source_sha + ".json")
+    source_path.parent.mkdir(parents=True, exist_ok=True)
+    if not source_path.exists(): source_path.write_bytes(raw)
+    if hashlib.sha256(source_path.read_bytes()).hexdigest() != source_sha:
+        raise ValueError("Archived HTML source inventory checksum failed")
+    by_url = _candidate_report(candidates)
+    root.mkdir(parents=True, exist_ok=True)
+    db = open_db(root)
+    now, run_id = utc_now(), hashlib.sha256(os.urandom(32)).hexdigest()[:32]
+    try:
+        with db:
+            for url, rows in by_url.items():
+                inserted = db.execute("INSERT OR IGNORE INTO html_targets(source_report_sha256,target_url,status) VALUES(?,?, 'pending')", (source_sha, url)).rowcount
+                prior_target = None
+                prior_html = {}
+                if inserted:
+                    prior_target = db.execute("SELECT * FROM html_targets WHERE target_url=? AND source_report_sha256<>? AND status<>'pending' AND attempted_at IS NOT NULL ORDER BY attempted_at DESC LIMIT 1", (url,source_sha)).fetchone()
+                    if prior_target:
+                        db.execute("""UPDATE html_targets SET status=?,last_run_id=?,attempted_at=?,fetch_url=?,final_url=?,http_status=?,media_type=?,body_sha256=?,body_bytes=?,object_path=?,text_sha256=?,text_bytes=?,text_object_path=?,page_title=?,h1_json=?,html_language=?,readable_chars=?,detail=? WHERE source_report_sha256=? AND target_url=?""",
+                            (prior_target["status"],prior_target["last_run_id"],prior_target["attempted_at"],prior_target["fetch_url"],prior_target["final_url"],prior_target["http_status"],prior_target["media_type"],prior_target["body_sha256"],prior_target["body_bytes"],prior_target["object_path"],prior_target["text_sha256"],prior_target["text_bytes"],prior_target["text_object_path"],prior_target["page_title"],prior_target["h1_json"],prior_target["html_language"],prior_target["readable_chars"],prior_target["detail"],source_sha,url))
+                        if prior_target["media_type"] in {"text/html","application/xhtml+xml"} and prior_target["body_sha256"]:
+                            prior_body=read_gzip(root,prior_target["object_path"],prior_target["body_sha256"],prior_target["body_bytes"],MAX_HTML_BYTES)
+                            prior_parsed=analyze_html(prior_body,rows)
+                            prior_html={cite_id(c):c for c in prior_parsed["citations"]}
+                for row in rows:
+                    cid = cite_id(row)
+                    db.execute("""INSERT OR IGNORE INTO html_citations(source_report_sha256,citation_id,target_url,family,language,issuer_key,issuer_label,landing_url,landing_sha256,source_index_url,source_index_sha256,label,heading,year_label,evidence)
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (source_sha,cid,url,row["family"],row["language"],row.get("issuerKey"),row["issuerLabel"],row["landingUrl"] or "",row.get("landingSha256"),row.get("sourceIndexUrl"),row.get("sourceIndexSha256"),row["label"],row.get("heading"),row.get("yearLabel") or "",row.get("evidence")))
+                    if inserted and prior_target:
+                        prior_citation=db.execute("SELECT status,family_disposition,year_disposition,language_disposition,issuer_disposition,detail FROM html_citations WHERE source_report_sha256<>? AND citation_id=? ORDER BY rowid DESC LIMIT 1",(source_sha,cid)).fetchone()
+                        assessment=prior_html.get(cid)
+                        if assessment:
+                            db.execute("UPDATE html_citations SET status=?,family_disposition=?,year_disposition=?,language_disposition=?,issuer_disposition=?,detail=? WHERE source_report_sha256=? AND citation_id=?",
+                                (assessment["disposition"],assessment.get("familyDisposition"),assessment.get("yearDisposition"),assessment.get("languageDisposition"),assessment.get("issuerDisposition"),prior_target["detail"],source_sha,cid))
+                        elif prior_citation:
+                            db.execute("UPDATE html_citations SET status=?,family_disposition=?,year_disposition=?,language_disposition=?,issuer_disposition=?,detail=? WHERE source_report_sha256=? AND citation_id=?",
+                                (*tuple(prior_citation),source_sha,cid))
+                        elif prior_target["status"]!="fetched":
+                            db.execute("UPDATE html_citations SET status=?,detail=? WHERE source_report_sha256=? AND citation_id=?",
+                                (prior_target["status"],prior_target["detail"],source_sha,cid))
+            for retry_url in retry_urls or []:
+                if retry_url not in by_url:
+                    raise ValueError("retry URL is not in current HTML candidate inventory")
+                db.execute("UPDATE html_targets SET status='pending' WHERE source_report_sha256=? AND target_url=? AND status='fetch-failed'", (source_sha,retry_url))
+                db.execute("UPDATE html_citations SET status='pending' WHERE source_report_sha256=? AND target_url=? AND status='fetch-failed'", (source_sha,retry_url))
+            db.execute("INSERT INTO html_runs(run_id,started_at,source_report_run_id,source_report_path,source_report_sha256,input_path,candidate_citations,candidate_targets,batch_limit,status) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                       (run_id,now,source_run_id,source_pointer["currentReportPath"],source_sha,str(source_path.relative_to(root)),len(candidates),len(by_url),batch_size,"running"))
+        priority = {u:i for i,u in enumerate(priority_urls or [])}
+        pending = [row[0] for row in db.execute("SELECT target_url FROM html_targets WHERE source_report_sha256=? AND status='pending'", (source_sha,))]
+        pending.sort(key=lambda u: (priority.get(u, len(priority)), u))
+        batch = pending[:batch_size]
+        slots = batch_size-len(batch)
+        if slots:
+            now_dt=dt.datetime.now(dt.timezone.utc)
+            possible=db.execute("SELECT target_url,status,attempted_at FROM html_targets WHERE source_report_sha256=? AND status NOT IN ('pending','out-of-policy') AND attempted_at IS NOT NULL ORDER BY attempted_at,target_url",(source_sha,)).fetchall()
+            due=[]
+            for row in possible:
+                attempted=dt.datetime.fromisoformat(row["attempted_at"])
+                attempts=db.execute("SELECT COUNT(*) FROM html_run_targets WHERE target_url=?",(row["target_url"],)).fetchone()[0]
+                delay=recheck_after_days
+                if row["status"] in {"fetch-failed","source-refused","not-found"}:
+                    delay=min(30,recheck_after_days*(2**max(0,attempts-1)))
+                if (now_dt-attempted).total_seconds()>=delay*86400:
+                    due.append(row["target_url"])
+            due=due[:slots]
+            batch.extend(due)
+            with db:
+                for url in due:
+                    db.execute("UPDATE html_targets SET status='pending' WHERE source_report_sha256=? AND target_url=?",(source_sha,url))
+                    db.execute("UPDATE html_citations SET status='pending' WHERE source_report_sha256=? AND target_url=?",(source_sha,url))
+        outputs = []
+        for url in batch:
+            if not committee_files.fetchable(url):
+                status, detail = "out-of-policy", "Target is outside official HTTPS acquisition policy"
+                body, final, http, media, parsed = None, None, None, None, None
+            else:
+                try:
+                    body, final, http, media = fetcher(quote(url, safe=":/?#[]@!$&'()*+,;=%"))
+                    parsed = analyze_html(body, by_url[url]) if media in {"text/html", "application/xhtml+xml"} else None
+                    status, detail = html_target_status(None, media, parsed)
+                except FetchError as error:
+                    body, final, http, media, parsed = None, None, getattr(error, "status", None), None, None
+                    status, detail = html_target_status(error)
+            body_hash = hashlib.sha256(body).hexdigest() if body is not None else None
+            body_path = store_gzip(root, body_hash, body, "html-objects") if body is not None else None
+            text = parsed["text"].encode("utf-8") if parsed else None
+            text_hash = hashlib.sha256(text).hexdigest() if text is not None else None
+            text_path = store_gzip(root, text_hash, text, "html-text") if text is not None else None
+            dispositions = {cite_id(cite): cite for cite in (parsed["citations"] if parsed else [])}
+            for cite in by_url[url]:
+                assessment = dispositions.get(cite_id(cite))
+                cite_status = assessment["disposition"] if assessment else status
+                cite.update(assessment or {})
+                cite["status"] = cite_status
+                cite["detail"] = detail
+            outputs.append({"url":url,"status":status,"body_sha256":body_hash,"body_bytes":len(body) if body is not None else None,"object_path":body_path,"text_sha256":text_hash,"text_bytes":len(text) if text is not None else None,"text_object_path":text_path,"title":parsed["title"] if parsed else None,"h1s":parsed["h1s"] if parsed else [],"html_language":parsed["htmlLanguage"] if parsed else None,"readable_chars":len(parsed["text"]) if parsed else 0,"http_status":http,"media_type":media,"final_url":final,"detail":detail,"citations":[c for c in by_url[url]]})
+        with db:
+            for result in outputs:
+                db.execute("""UPDATE html_targets SET status=?,last_run_id=?,attempted_at=?,fetch_url=?,final_url=?,http_status=?,media_type=?,body_sha256=?,body_bytes=?,object_path=?,text_sha256=?,text_bytes=?,text_object_path=?,page_title=?,h1_json=?,html_language=?,readable_chars=?,detail=? WHERE source_report_sha256=? AND target_url=?""",
+                    (result["status"],run_id,now,quote(result["url"], safe=":/?#[]@!$&'()*+,;=%"),result["final_url"],result["http_status"],result["media_type"],result["body_sha256"],result["body_bytes"],result["object_path"],result["text_sha256"],result["text_bytes"],result["text_object_path"],result["title"],json.dumps(result["h1s"],ensure_ascii=False),result["html_language"],result["readable_chars"],result["detail"],source_sha,result["url"]))
+                for cite in result["citations"]:
+                    db.execute("UPDATE html_citations SET status=?,family_disposition=?,year_disposition=?,language_disposition=?,issuer_disposition=?,detail=? WHERE source_report_sha256=? AND citation_id=?",
+                        (cite["status"],cite.get("familyDisposition"),cite.get("yearDisposition"),cite.get("languageDisposition"),cite.get("issuerDisposition"),result["detail"],source_sha,cite_id(cite)))
+                    db.execute("""INSERT INTO html_run_citations(run_id,citation_id,target_url,family,language,issuer_label,landing_url,landing_sha256,source_index_url,source_index_sha256,label,heading,year_label,evidence,status,family_disposition,year_disposition,language_disposition,issuer_disposition,detail) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (run_id,cite_id(cite),cite["url"],cite["family"],cite["language"],cite["issuerLabel"],cite["landingUrl"] or "",cite.get("landingSha256"),cite.get("sourceIndexUrl"),cite.get("sourceIndexSha256"),cite["label"],cite.get("heading"),cite.get("yearLabel") or "",cite.get("evidence"),cite["status"],cite.get("familyDisposition"),cite.get("yearDisposition"),cite.get("languageDisposition"),cite.get("issuerDisposition"),result["detail"]))
+                db.execute("""INSERT INTO html_run_targets(run_id,target_url,status,body_sha256,body_bytes,object_path,text_sha256,text_bytes,text_object_path,page_title,h1_json,html_language,readable_chars,http_status,media_type,final_url,detail) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (run_id,result["url"],result["status"],result["body_sha256"],result["body_bytes"],result["object_path"],result["text_sha256"],result["text_bytes"],result["text_object_path"],result["title"],json.dumps(result["h1s"],ensure_ascii=False),result["html_language"],result["readable_chars"],result["http_status"],result["media_type"],result["final_url"],result["detail"]))
+            remaining = db.execute("SELECT COUNT(*) FROM html_targets WHERE source_report_sha256=? AND status='pending'",(source_sha,)).fetchone()[0]
+            possible=db.execute("SELECT target_url,status,attempted_at FROM html_targets WHERE source_report_sha256=? AND status NOT IN ('pending','out-of-policy') AND attempted_at IS NOT NULL ORDER BY attempted_at,target_url",(source_sha,)).fetchall()
+            due_remaining=0
+            now_dt=dt.datetime.now(dt.timezone.utc)
+            for row in possible:
+                attempted=dt.datetime.fromisoformat(row["attempted_at"])
+                attempts=db.execute("SELECT COUNT(*) FROM html_run_targets WHERE target_url=?",(row["target_url"],)).fetchone()[0]
+                delay=min(30,recheck_after_days*(2**max(0,attempts-1))) if row["status"] in {"fetch-failed","source-refused","not-found"} else recheck_after_days
+                if (now_dt-attempted).total_seconds()>=delay*86400: due_remaining+=1
+            counts = dict(db.execute("SELECT status,COUNT(*) FROM html_targets WHERE source_report_sha256=? GROUP BY status",(source_sha,)).fetchall())
+            coverage={}
+            for fam in sorted(FAMILIES):
+                for lang in ("en","fr"):
+                    coverage[f"{fam}/{lang}"]={"citations":sum(1 for c in candidates if c["family"]==fam and c["language"]==lang),"targets":len({c["url"] for c in candidates if c["family"]==fam and c["language"]==lang}),"accepted":db.execute("SELECT COUNT(*) FROM html_citations WHERE source_report_sha256=? AND family=? AND language=? AND status='accepted'",(source_sha,fam,lang)).fetchone()[0],"pending":db.execute("SELECT COUNT(*) FROM html_citations WHERE source_report_sha256=? AND family=? AND language=? AND status='pending'",(source_sha,fam,lang)).fetchone()[0]}
+            status="pending" if remaining or due_remaining else ("complete" if all(x in {"accepted"} for x in [r[0] for r in db.execute("SELECT DISTINCT status FROM html_citations WHERE source_report_sha256=?",(source_sha,))]) else "partial")
+            report={"collection":"departmental-report-html-documents","runId":run_id,"status":status,"observedAt":now,"sourceEditionRunId":source_run_id,"sourceCurrentReportSha256":source_sha,"candidateCitations":len(candidates),"candidateTargets":len(by_url),"batchLimit":batch_size,"processedTargets":len(outputs),"remainingPending":remaining,"dueRecheckTargets":due_remaining,"recheckPolicy":{"days":recheck_after_days,"failedTargetBackoffDays":"7,14,28,30 (capped)","retryableStatuses":["fetch-failed","source-refused","not-found"]},"transportPolicy":{"tls":"urllib verification; curl system trust fallback only after certificate-verification failure","tlsVerificationDisabled":False,"redirects":"manual, official HTTPS hosts only, at most five","maxResponseBytes":MAX_HTML_BYTES},"targetStatusCounts":counts,"byFamilyLanguage":coverage,"targets":[{k:v for k,v in r.items() if k!="citations"} for r in outputs],"citations":[c for r in outputs for c in r["citations"]],"scope":"HTML landing pages are accepted only when title/H1 identify family and year, the html lang matches, and the visible text names the attributed issuer. Matching URLs carry their last archived assessment into a new inventory snapshot until a due recheck. Missing links in one partial inventory are not treated as removals. This is page-level identification, not complete report-text coverage."}
+            rel=f"html-generations/{run_id}.json"; path=root/rel
+            report_sha, report_bytes=write_json(path,report)
+            db.execute("UPDATE html_runs SET completed_at=?,processed_targets=?,remaining_pending=?,report_path=?,report_sha256=?,status=? WHERE run_id=?",(utc_now(),len(outputs),remaining,rel,report_sha,status,run_id))
+        latest={"runId":run_id,"status":status,"reportPath":rel,"reportSha256":report_sha,"reportBytes":report_bytes,"publishedAt":utc_now()}
+        _atomic_pointer(root/"latest-html-attempt.json",latest)
+        if status=="complete": _atomic_pointer(root/"latest-html-complete.json",latest)
+        return report
+    except Exception as error:
+        try:
+            with db:
+                db.execute("UPDATE html_runs SET completed_at=?,status='failed',detail=? WHERE run_id=? AND completed_at IS NULL",
+                           (utc_now(),str(error)[:1000],run_id))
+        except sqlite3.Error:
+            pass
+        raise
+    finally:
+        db.close()
+
+
+def html_replay(run_id: str, root: Path = DEFAULT_ROOT) -> dict:
+    db=open_db(root,read_only=True)
+    try:
+        run=db.execute("SELECT * FROM html_runs WHERE run_id=?",(run_id,)).fetchone()
+        if not run: raise KeyError("unknown HTML document generation "+run_id)
+        source=read_gzip(root,run["input_path"],run["source_report_sha256"],len((root/run["input_path"]).read_bytes()),16*1024*1024) if run["input_path"].endswith(".gz") else (root/run["input_path"]).read_bytes()
+        if hashlib.sha256(source).hexdigest()!=run["source_report_sha256"]: raise ValueError("HTML source inventory hash mismatch")
+        report=json.loads(source)
+        by_url=_candidate_report(collect_html_candidates(report))
+        for row in db.execute("SELECT * FROM html_run_targets WHERE run_id=? AND body_sha256 IS NOT NULL",(run_id,)):
+            body=read_gzip(root,row["object_path"],row["body_sha256"],row["body_bytes"],MAX_HTML_BYTES)
+            if row["media_type"] in {"text/html","application/xhtml+xml"}:
+                parsed=analyze_html(body,by_url[row["target_url"]])
+                text=parsed["text"].encode("utf-8")
+                if hashlib.sha256(text).hexdigest()!=row["text_sha256"] or parsed["title"]!=row["page_title"] or json.dumps(parsed["h1s"],ensure_ascii=False)!=row["h1_json"]:
+                    raise ValueError("HTML replay differs for "+row["target_url"])
+                expected=sorted((c["disposition"],c["familyDisposition"],c["yearDisposition"],c["languageDisposition"],c["issuerDisposition"]) for c in parsed["citations"])
+                recorded=sorted((r["status"],r["family_disposition"],r["year_disposition"],r["language_disposition"],r["issuer_disposition"]) for r in db.execute("SELECT * FROM html_run_citations WHERE run_id=? AND target_url=?",(run_id,row["target_url"])))
+                if expected!=recorded: raise ValueError("HTML citation replay differs for "+row["target_url"])
+        raw=(root/run["report_path"]).read_bytes()
+        if hashlib.sha256(raw).hexdigest()!=run["report_sha256"]: raise ValueError("HTML generation report hash failed")
+        return json.loads(raw)
+    finally: db.close()
+
+
+def html_audit(root: Path = DEFAULT_ROOT, edition_root: Path = EDITION_ROOT,
+               pinned_source_sha256: str | None = None) -> dict:
+    """Reproduce cumulative queue coverage for the exact current inventory and replay its batches."""
+    if pinned_source_sha256:
+        if not re.fullmatch(r"[0-9a-f]{64}",pinned_source_sha256): raise ValueError("source SHA-256 must be 64 lowercase hex characters")
+        input_path=root/"inputs"/(pinned_source_sha256+".json")
+        raw=input_path.read_bytes()
+        if hashlib.sha256(raw).hexdigest()!=pinned_source_sha256: raise ValueError("Pinned HTML source inventory hash mismatch")
+        source=json.loads(raw)
+        source_sha=pinned_source_sha256
+        source_run_id=None
+    else:
+        raw, source, source_run_id=validate_input(edition_root)
+        source_sha=hashlib.sha256(raw).hexdigest()
+    candidates=collect_html_candidates(source)
+    groups=_candidate_report(candidates)
+    db=open_db(root,read_only=True)
+    try:
+        targets=[tuple(row) for row in db.execute("SELECT status,COUNT(*) FROM html_targets WHERE source_report_sha256=? GROUP BY status ORDER BY status",(source_sha,))]
+        citations=[tuple(row) for row in db.execute("SELECT status,COUNT(*) FROM html_citations WHERE source_report_sha256=? GROUP BY status ORDER BY status",(source_sha,))]
+        target_count=db.execute("SELECT COUNT(*) FROM html_targets WHERE source_report_sha256=?",(source_sha,)).fetchone()[0]
+        citation_count=db.execute("SELECT COUNT(*) FROM html_citations WHERE source_report_sha256=?",(source_sha,)).fetchone()[0]
+        if target_count!=len(groups) or citation_count!=len(candidates):
+            raise ValueError("HTML persisted queue does not match current inventory candidate denominator")
+        if source_run_id is None:
+            source_runs=db.execute("SELECT DISTINCT source_report_run_id FROM html_runs WHERE source_report_sha256=?",(source_sha,)).fetchall()
+            if len(source_runs)!=1: raise ValueError("Pinned inventory has no unique local acquisition run provenance")
+            source_run_id=source_runs[0][0]
+        by_family_language={}
+        for family in sorted(FAMILIES):
+            for language in ("en","fr"):
+                status_counts=[tuple(row) for row in db.execute("SELECT status,COUNT(*) FROM html_citations WHERE source_report_sha256=? AND family=? AND language=? GROUP BY status ORDER BY status",(source_sha,family,language))]
+                by_family_language[f"{family}/{language}"]={"candidates":sum(1 for c in candidates if c["family"]==family and c["language"]==language),"statuses":dict(status_counts)}
+        runs=[row[0] for row in db.execute("SELECT run_id FROM html_runs WHERE source_report_sha256=? AND report_path IS NOT NULL ORDER BY started_at,run_id",(source_sha,))]
+        incomplete_runs=[tuple(row) for row in db.execute("SELECT run_id,status,detail FROM html_runs WHERE source_report_sha256=? AND report_path IS NULL ORDER BY started_at,run_id",(source_sha,))]
+    finally:
+        db.close()
+    for run_id in runs: html_replay(run_id,root)
+    targets_by_status=dict(targets); citations_by_status=dict(citations)
+    queue_complete=not targets_by_status.get("pending",0) and not citations_by_status.get("pending",0)
+    all_accepted=queue_complete and set(citations_by_status).issubset({"accepted"})
+    run_ids_sha=hashlib.sha256("\n".join(runs).encode()).hexdigest()
+    return {"collection":"departmental-report-html-audit","sourceEditionRunId":source_run_id,
+            "sourceCurrentReportSha256":source_sha,"candidateTargets":len(groups),"candidateCitations":len(candidates),
+            "targetStatusCounts":targets_by_status,"citationDispositionCounts":citations_by_status,
+            "readableAcquisitions":targets_by_status.get("fetched",0),"acceptedCitations":citations_by_status.get("accepted",0),
+            "byFamilyLanguage":by_family_language,"replayedBatchRuns":len(runs),"replayedRunIdsSha256":run_ids_sha,
+            "failedOrIncompleteRuns":[{"runId":r[0],"status":r[1],"detail":r[2]} for r in incomplete_runs],
+            "status":"complete" if all_accepted else "partial","replayStatus":"verified",
+            "queueCompleteness":"drained" if queue_complete else "pending"}
+
+
+def html_backfill(root: Path = DEFAULT_ROOT, edition_root: Path = EDITION_ROOT,
+                  batch_size: int = 24, minimum_free_bytes: int = 3 * 1024 * 1024 * 1024,
+                  max_batches: int | None = None, fetcher=fetch_html,
+                  recheck_after_days: int = 7) -> list[dict]:
+    """Sequentially exhaust the current pending queue, stopping on a disk floor or no progress."""
+    reports = []
+    batches = 0
+    retried = False
+    while max_batches is None or batches < max_batches:
+        free = shutil.disk_usage(root if root.exists() else root.parent).free
+        if free < minimum_free_bytes + batch_size * MAX_HTML_BYTES:
+            raise RuntimeError("HTML backfill stopped to preserve configured host free-space floor")
+        retry_urls = []
+        if not retried:
+            raw, source, _ = validate_input(edition_root)
+            source_sha = hashlib.sha256(raw).hexdigest()
+            if root.exists() and (root / "documents.sqlite").exists():
+                db = open_db(root, read_only=True)
+                try:
+                    retry_urls = [row[0] for row in db.execute("SELECT target_url FROM html_targets WHERE source_report_sha256=? AND status='fetch-failed'", (source_sha,))]
+                finally:
+                    db.close()
+            retried = True
+        report = html_refresh(root, edition_root, batch_size, fetcher=fetcher, retry_urls=retry_urls,
+                              recheck_after_days=recheck_after_days)
+        reports.append(report)
+        batches += 1
+        free = shutil.disk_usage(root).free
+        print(json.dumps({"runId":report["runId"],"processedTargets":report["processedTargets"],
+                          "remainingPending":report["remainingPending"],"statusCounts":report["targetStatusCounts"],
+                          "freeBytes":free},sort_keys=True),flush=True)
+        if report["remainingPending"] == 0:
+            break
+        if report["processedTargets"] == 0 and report["remainingPending"] > 0:
+            raise RuntimeError("HTML backfill made no pending-queue progress; stopping before a repeated batch")
+    return reports
 
 
 def _write_generation(db, root: Path, run_id: str, report_run_id: str, input_path: str,
@@ -666,15 +1219,61 @@ def main(argv=None):
     replay_parser = sub.add_parser("replay", help="verify local source objects and repeat text extraction")
     replay_parser.add_argument("run_id")
     replay_parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    html_parser = sub.add_parser("html-refresh", help="resume bounded acquisition of year/family-labelled HTML report links")
+    html_parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    html_parser.add_argument("--edition-root", type=Path, default=EDITION_ROOT)
+    html_parser.add_argument("--batch-size", type=int, default=24)
+    html_parser.add_argument("--priority-url", action="append", default=[])
+    html_parser.add_argument("--retry-url", action="append", default=[])
+    html_parser.add_argument("--recheck-after-days", type=int, default=7)
+    html_replay_parser = sub.add_parser("html-replay", help="verify archived HTML source objects and extracted text")
+    html_replay_parser.add_argument("run_id")
+    html_replay_parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    audit_parser = sub.add_parser("html-audit", help="replay all batches and reproduce cumulative coverage for current inventory")
+    audit_parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    audit_parser.add_argument("--edition-root", type=Path, default=EDITION_ROOT)
+    audit_parser.add_argument("--source-sha256", help="pin audit to an archived source inventory hash")
+    backfill_parser = sub.add_parser("html-backfill", help="sequentially drain HTML candidates while preserving disk headroom")
+    backfill_parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    backfill_parser.add_argument("--edition-root", type=Path, default=EDITION_ROOT)
+    backfill_parser.add_argument("--batch-size", type=int, default=24)
+    backfill_parser.add_argument("--minimum-free-bytes", type=int, default=3 * 1024 * 1024 * 1024)
+    backfill_parser.add_argument("--max-batches", type=int)
+    backfill_parser.add_argument("--recheck-after-days", type=int, default=7)
     args = parser.parse_args(argv)
     try:
-        result = refresh(args.root, args.edition_root, args.workers, args.max_archive_bytes) if args.command == "refresh" else replay(args.run_id, args.root)
         if args.command == "refresh":
-            print(json.dumps({"runId": result["runId"], "status": result["status"], "summary": result["summary"],
-                              "report": str((args.root / "generations" / f"{result['runId']}.json").relative_to(ROOT))}, ensure_ascii=False, sort_keys=True))
+            result = refresh(args.root, args.edition_root, args.workers, args.max_archive_bytes)
+        elif args.command == "replay":
+            result = replay(args.run_id, args.root)
+        elif args.command == "html-refresh":
+            result = html_refresh(args.root, args.edition_root, args.batch_size, args.priority_url, retry_urls=args.retry_url,
+                                  recheck_after_days=args.recheck_after_days)
+        elif args.command == "html-backfill":
+            reports = html_backfill(args.root,args.edition_root,args.batch_size,args.minimum_free_bytes,args.max_batches,
+                                    recheck_after_days=args.recheck_after_days)
+            result = reports[-1] if reports else {"runId":None,"status":"complete","candidateCitations":0,"candidateTargets":0,"processedTargets":0,"remainingPending":0,"targetStatusCounts":{}}
+        elif args.command == "html-audit":
+            result = html_audit(args.root,args.edition_root,args.source_sha256)
         else:
-            print(json.dumps({"runId": result["runId"], "status": result["status"], "summary": result["summary"]}, ensure_ascii=False, sort_keys=True))
-        return 0 if result["status"] == "complete" else 2
+            result = html_replay(args.run_id, args.root)
+        if args.command in {"refresh", "html-refresh", "html-backfill"}:
+            print(json.dumps({"runId": result["runId"], "status": result["status"], "summary": result["summary"],
+                              "report": str((args.root / ("generations" if args.command == "refresh" else "html-generations") / f"{result['runId']}.json").relative_to(ROOT))} if args.command == "refresh" else
+                             {"runId": result["runId"], "status": result["status"], "candidateCitations": result["candidateCitations"], "candidateTargets": result["candidateTargets"], "processedTargets": result["processedTargets"], "remainingPending": result["remainingPending"], "targetStatusCounts": result["targetStatusCounts"], "report": str((args.root / "html-generations" / f"{result['runId']}.json").relative_to(ROOT))}, ensure_ascii=False, sort_keys=True))
+        else:
+            if args.command == "replay":
+                output = {"runId": result["runId"], "status": result["status"], "summary": result["summary"]}
+            elif args.command == "html-audit":
+                output = result
+            else:
+                output = {"runId": result["runId"], "status": result["status"],
+                          "candidateCitations": result["candidateCitations"],
+                          "candidateTargets": result["candidateTargets"],
+                          "processedTargets": result["processedTargets"],
+                          "remainingPending": result["remainingPending"]}
+            print(json.dumps(output, ensure_ascii=False, sort_keys=True))
+        return 0 if result["status"] == "complete" else (2 if args.command in {"refresh", "html-refresh", "html-backfill"} else 0)
     except (OSError, RuntimeError, ValueError, KeyError) as error:
         print(f"departmental-report-documents: {error}", file=sys.stderr)
         return 1
