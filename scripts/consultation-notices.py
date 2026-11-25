@@ -16,6 +16,7 @@ import shutil
 import sqlite3
 import sys
 import tempfile
+import zlib
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, unquote, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -185,6 +186,8 @@ def fetch(url: str) -> tuple[bytes, str, str]:
         final_url = response.geturl()
         if not notice_official(final_url):
             raise ValueError("final URL is outside the recognized official-host set")
+        if response.status != 200:
+            raise HTTPError(final_url, response.status, "publisher did not return a complete notice", response.headers, None)
         media = response.headers.get_content_type().lower()
         body = response.read(MAX_BODY + 1)
         if len(body) > MAX_BODY:
@@ -192,6 +195,34 @@ def fetch(url: str) -> tuple[bytes, str, str]:
         if media not in ("text/html", "application/xhtml+xml"):
             raise ValueError("unexpected content type: " + media)
         return body, media, final_url
+
+
+def validate_notice_body(body: bytes, source_url: str) -> None:
+    if not body.strip():
+        raise ValueError("publisher returned an empty notice")
+    lowered = body.lower()
+    if b"<noscript" in lowered and b"we need to verify that you're not a robot" in lowered:
+        raise ValueError("publisher returned a browser verification page")
+    source = urlsplit(source_url)
+    if (source.hostname in ("species-registry.canada.ca", "registre-especes.canada.ca") and source.fragment.startswith("/documents/")
+            and re.search(rb"""<div\s+id=["']?app["']?\s*>\s*</div>""", lowered)):
+        raise ValueError("species registry returned the app shell without the requested document")
+
+
+def verified_original(entry: dict) -> bool:
+    digest = entry.get("bodySha256", "")
+    if not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest):
+        return False
+    path = OBJECTS / digest[:2] / (digest + ".html.gz")
+    if entry.get("objectPath") != str(path.relative_to(ROOT)):
+        return False
+    try:
+        with gzip.open(path, "rb") as stream:
+            body = stream.read(MAX_BODY + 1)
+        validate_notice_body(body, entry["sourceUrl"])
+        return len(body) == entry.get("bodyBytes") and hashlib.sha256(body).hexdigest() == digest
+    except (OSError, EOFError, ValueError, zlib.error):
+        return False
 
 
 def db_open(path: Path = STORE) -> sqlite3.Connection:
@@ -229,16 +260,21 @@ def archive_body(body: bytes) -> tuple[str, str]:
     digest = hashlib.sha256(body).hexdigest()
     path = OBJECTS / digest[:2] / (digest + ".html.gz")
     path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        fd, temporary = tempfile.mkstemp(prefix=".notice-", dir=path.parent)
-        try:
-            with os.fdopen(fd, "wb") as raw:
-                with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as compressed:
-                    compressed.write(body)
-            os.replace(temporary, path)
-        finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
+    try:
+        with gzip.open(path, "rb") as existing:
+            if existing.read(len(body) + 1) == body:
+                return digest, str(path.relative_to(ROOT))
+    except (OSError, EOFError, zlib.error):
+        pass
+    fd, temporary = tempfile.mkstemp(prefix=".notice-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as raw:
+            with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as compressed:
+                compressed.write(body)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
     return digest, str(path.relative_to(ROOT))
 
 
@@ -388,7 +424,7 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                 source_urls = [current_publication_url(source) for source in split_profile_urls(url)]
                 previous = target.execute("SELECT * FROM notices WHERE catalogue_revision=? AND consultation_id=? AND language=?",
                                           (revision, record["id"], language)).fetchone()
-                previous_sources = _previous_sources(previous)
+                previous_sources = [entry for entry in _previous_sources(previous) if verified_original(entry)]
                 source_entries = []
                 source_errors = []
                 latest_attempt = utc_now()
@@ -416,6 +452,7 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                     try:
                         network_attempts += 1
                         body, media, final_url = fetcher(source_url)
+                        validate_notice_body(body, source_url)
                         if bytes_archived + len(body) > total_budget:
                             err = f"response would exceed weekly archive budget of {total_budget} raw bytes"
                             attempted_at = _log_attempt(target, revision, record["id"], language, source_url, "archive-budget", err)

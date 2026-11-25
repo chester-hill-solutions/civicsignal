@@ -115,6 +115,13 @@ export function archivedNoticeEditions(db: DatabaseSync, revision: string, consu
     for (const source of fetched) {
       if (!source.objectPath) throw new Error(`Missing archived notice for ${source.sourceUrl}`);
       const bytes = gunzipSync(readFileSync(source.objectPath));
+      const html = bytes.toString('utf8');
+      const url = new URL(source.sourceUrl);
+      if (!html.trim() || /<noscript\b[^>]*>[\s\S]*?we need to verify that you're not a robot/i.test(html)
+        || (['species-registry.canada.ca', 'registre-especes.canada.ca'].includes(url.hostname) && url.hash.startsWith('#/documents/')
+          && /<div\s+id=["']?app["']?\s*>\s*<\/div>/i.test(html))) {
+        throw new Error(`Archived response has no notice content for ${source.sourceUrl}`);
+      }
       if (createHash('sha256').update(bytes).digest('hex') !== source.bodySha256 || bytes.length !== source.bodyBytes) {
         throw new Error(`Archived consultation notice differs from its receipt for ${source.sourceUrl}`);
       }
