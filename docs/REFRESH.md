@@ -102,6 +102,8 @@ Installation registers the job. It runs while the user is logged in. Removal unl
 | GEDS, parliamentary catalogues, Journals and votes, and written questions | Runs their acquisition and publication commands against the local stores, then checks the corresponding Worker routes. An unchanged GEDS ZIP can replay even when the host lacks space to construct a new snapshot. |
 | Committee corpus | Refreshes Senate meeting notices before extracting their publication links. The downloader checks the digest and timestamp of each parsed notice and fetches the other linked originals. The operator then builds the corpus, verifies its archived files, publishes to local D1, and tests bilingual retrieval. |
 
+The written-questions catalogue retains its last complete generation when a recheck stops early. To resume detail acquisition, run `python3 -B scripts/lib/wq_catalog.py --resume-partial-checkpoint`. The operator checks the new bilingual listings against the saved checkpoint, records which successful details it reused, and fetches the rest. The answer archive, local D1 publication and authenticated lookup still have to pass in the weekly step.
+
 The large rebuilds need room for the existing generation and its replacement. A disk refusal records the measured available and required space in the report. Resume with `--only` after making space. Federal bulk acquisitions keep the last fully published set while building its successor. Cloudflare staging credentials are used separately by the statutes publication runner.
 
 To reconcile an individual session or inventory outside the weekly run, use the same local stores:

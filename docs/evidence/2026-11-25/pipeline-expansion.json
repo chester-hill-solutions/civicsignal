@@ -1113,5 +1113,23 @@
       "out-of-policy": 12,
       "unreadable": 1
     }
+  },
+  "writtenQuestionCatalogueRecovery": {
+    "receipt": "dist/refresh-weekly/written-questions-resume-5db76ee6381b4564b97b93bc5077c992.json",
+    "sha256": "e5b6351e375f2586fe1fbf2a22bfa2ffb7448f38712f003c55371fdc62535bc9",
+    "catalogueSha256": "2dbd7849b535767e2cde6ff17ebe0262e9570a2c809a6b80ff31c1eff9333843",
+    "counts": {
+      "officialReported": 1728,
+      "pages": 87,
+      "pageSize": 20,
+      "enumeratedEn": 1728,
+      "enumeratedFr": 1728,
+      "complete": true,
+      "detailsFetched": 3456,
+      "detailsReused": 3321,
+      "detailsRefetched": 135,
+      "detailsReusedFromCheckpoint": 3321
+    },
+    "scope": "Bilingual listing and detail catalogue only. Full answer acquisition and authenticated Worker publication have their own results."
   }
 }
