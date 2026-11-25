@@ -766,5 +766,9 @@
       "receipt": "dist/hansard/current-week-observations/2026-11-25T07-43-46-059Z/lookup-replay.json",
       "sha256": "d9243fa548245be31e891b360a42b5af6ee64786a2591b671660032245513f58"
     }
+  },
+  "ecccAlternateRecovery": {
+    "receipt": "docs/evidence/2026-11-25/eccc-alternate-replay.json",
+    "sha256": "ea72d9970dadd836687a93ec3e569d6f829d4d9e6de93a7f4e8a4012e6fba25f"
   }
 }

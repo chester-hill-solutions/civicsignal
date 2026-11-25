@@ -1,0 +1,37 @@
+{
+  "verifiedAt": "2026-11-25T07:52:07.583505+00:00",
+  "scope": "recovery from the installed job’s acquired source cache",
+  "intake": {
+    "receipt": "dist/refresh-weekly/eccc-20261125-recovery/canonical-intake.json",
+    "sha256": "d70ee058ca0869483eea80be920b53b556b9d99c4d35ec907fc33b8801d9cb13"
+  },
+  "extraction": {
+    "receipt": "dist/refresh-weekly/eccc-20261125-recovery/canonical-passages.json",
+    "sha256": "c4a18a40d89ba34d53b823eba11cdd5273a34068d6a53d85265a64c2ee233deb"
+  },
+  "independentRebuild": {
+    "receipt": "dist/refresh-weekly/eccc-20261125-recovery/replay-passages.json",
+    "sha256": "c9221ca31a999c43fa12dba605c8710c5d739a54ee10f44691081eb837ac56a1"
+  },
+  "worker": {
+    "receipt": "dist/refresh-weekly/eccc-20261125-recovery/canonical-worker.json",
+    "sha256": "7eb5f48d337b703b7d45f4d4eb3cac8b8a71bf3dde82cf3fababff16489c4e9b",
+    "passedAssertions": [
+      "departmental publications through the Worker publishes the local contract and checks authorization before preview access",
+      "departmental publications through the Worker queries each published language, original and version with the acquired ECCC database"
+    ]
+  },
+  "servedAndOfflineReplay": {
+    "rows": 70310,
+    "sha256SortedByPassageId": "8608a601ee74c4f7080b4d6ddc2cdf62b43610e275e863c5ef630f0b2184a521",
+    "citationOrHashFailures": 0,
+    "alternatePassages": 6136,
+    "worksWithVerifiedAlternates": 19,
+    "verifiedAlternateDocuments": 31
+  },
+  "indexedGaps": {
+    "document": 12,
+    "pairing": 29
+  },
+  "comparison": "SHA-256 of each compact UTF-8 JSON row from every dp_passages column in passage_id order, with a newline after each row."
+}
