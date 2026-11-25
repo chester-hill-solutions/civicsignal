@@ -58,6 +58,10 @@ function updateEditions(db: LocalDatabase, packet: Inventory, observedAt: string
     {id: string; language: Edition['language']; revision: string}[];
   const previous = new Map(prior.map(row => [editionKey(row),row]));
   const change = db.prepare('INSERT INTO funding_versions (source,id,language,observed_at,revision,event,edition_json) VALUES (?,?,?,?,?,?,?)');
+  const dropSections = db.prepare('DELETE FROM funding_sections WHERE source=? AND id=? AND language=?');
+  const insertSection = db.prepare(`INSERT INTO funding_sections
+    (source,id,language,section_index,field,heading,text,url,normalized_heading,normalized_text)
+    VALUES (?,?,?,?,?,?,?,?,?,?)`);
   const put = db.prepare(`INSERT INTO funding_editions
     (source,id,language,revision,title,url,status,status_text,availability,sections_json,search_text) VALUES (?,?,?,?,?,?,?,?,?,?,?)
     ON CONFLICT(source,id,language) DO UPDATE SET revision=excluded.revision,title=excluded.title,url=excluded.url,
@@ -74,6 +78,9 @@ function updateEditions(db: LocalDatabase, packet: Inventory, observedAt: string
     const text = normalizeForSearch([row.title,row.id,row.statusText,...row.sections.map(section => section.heading + ' ' + section.text)].join('\n'));
     put.run(packet.source,row.id,row.language,revision,row.title,row.url,row.status,row.statusText,row.availability,JSON.stringify(row.sections),text);
     change.run(packet.source,row.id,row.language,observedAt,revision,event,JSON.stringify(row));
+    if (old) dropSections.run(packet.source, row.id, row.language);
+    row.sections.forEach((section, index) => insertSection.run(packet.source, row.id, row.language, index,
+      section.field, section.heading, section.text, section.url, normalizeForSearch(section.heading), normalizeForSearch(section.text)));
     events[event]++;
   }
   const last = db.prepare('SELECT edition_json FROM funding_versions WHERE source=? AND id=? AND language=? ORDER BY observed_at DESC LIMIT 1');
@@ -82,21 +89,11 @@ function updateEditions(db: LocalDatabase, packet: Inventory, observedAt: string
     const key = [packet.source,row.id,row.language];
     const entry = last.get(...key) as {edition_json:string};
     change.run(...key,observedAt,row.revision,'removed',entry.edition_json);
+    dropSections.run(...key);
     drop.run(...key);
     events.removed++;
   }
   return events;
-}
-
-function refreshSections(db: LocalDatabase, packet: Inventory) {
-  db.prepare('DELETE FROM funding_sections WHERE source=?').run(packet.source);
-  const insert = db.prepare(`INSERT INTO funding_sections
-    (source,id,language,section_index,field,heading,text,url,normalized_heading,normalized_text)
-    VALUES (?,?,?,?,?,?,?,?,?,?)`);
-  for (const edition of packet.records) {
-    edition.sections.forEach((section, sectionIndex) => insert.run(packet.source, edition.id, edition.language, sectionIndex,
-      section.field, section.heading, section.text, section.url, normalizeForSearch(section.heading), normalizeForSearch(section.text)));
-  }
 }
 
 /** Publish an entire observed source and its edition history atomically. */
@@ -113,7 +110,6 @@ export function materializeFunding(db: LocalDatabase, input: unknown) {
       throw new Error('A newer or conflicting funding observation already exists.');
     }
     const events = old?.revision === revision ? {added:0,changed:0,removed:0} : updateEditions(db,packet,observedAt);
-    if (events.added || events.changed || events.removed) refreshSections(db, packet);
     db.prepare(`INSERT INTO funding_catalogues (source,observed_at,revision,indexes_json,gaps_json) VALUES (?,?,?,?,?)
       ON CONFLICT(source) DO UPDATE SET observed_at=excluded.observed_at,revision=excluded.revision,
       indexes_json=excluded.indexes_json,gaps_json=excluded.gaps_json`)

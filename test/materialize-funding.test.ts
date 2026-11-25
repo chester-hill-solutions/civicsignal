@@ -46,4 +46,32 @@ describe('funding catalogue publication', () => {
       expect(f.sqlite.prepare('SELECT count(*) AS n FROM funding_editions').get()?.n).toBe(2);
     } finally {f.close();}
   });
+
+  it('only changes indexed sections for the affected editions', () => {
+    const f = testD1({schema:''});
+    const sections = (id: string, language: string) => f.sqlite.prepare(
+      'SELECT text,url,normalized_text FROM funding_sections WHERE source=? AND id=? AND language=? ORDER BY section_index',
+    ).all('nserc', id, language);
+    try {
+      const start = dated(11,[a,b]);
+      const english = start.records[0];
+      english.sections.push({...english.sections[0], text:'Obsolete condition'});
+      materializeFunding(f.sqlite,start);
+      const unchanged = sections(a,'fr');
+      for (const [operation, reference] of [['DELETE','OLD'], ['INSERT','NEW'], ['UPDATE','OLD']]) {
+        f.sqlite.exec(`CREATE TRIGGER preserve_fr_${operation} BEFORE ${operation} ON funding_sections
+          WHEN ${reference}.id='nserc-alpha' AND ${reference}.language='fr'
+          BEGIN SELECT RAISE(ABORT, 'wrote unchanged French edition'); END`);
+      }
+      const next = dated(12,[a,'nserc-new']);
+      next.records[0] = edition(a,'en','Updated terms');
+      expect(materializeFunding(f.sqlite,next).events).toEqual({added:2,changed:1,removed:2});
+      expect(sections(a,'en')).toEqual([{text:'Updated terms', url:'https://nserc.canada.ca/en/terms', normalized_text:'updated terms'}]);
+      expect(sections(a,'fr')).toEqual(unchanged);
+      expect(sections(b,'en')).toEqual([]);
+      expect(sections(b,'fr')).toEqual([]);
+      expect(sections('nserc-new','en')).toHaveLength(1);
+      expect(sections('nserc-new','fr')).toHaveLength(1);
+    } finally {f.close();}
+  });
 });
