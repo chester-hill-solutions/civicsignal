@@ -9,10 +9,12 @@ import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from subprocess import CompletedProcess
+from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
-from lib.committee_files import cache_db, checkpoint, fetch_url, indexed_notice_originals, object_path  # noqa: E402
+from lib.committee_files import cache_db, checkpoint, download, fetch_url, indexed_notice_originals, object_path  # noqa: E402
 from lib.committee_inventory import Inventory  # noqa: E402
 from lib.committee_store import initialize  # noqa: E402
 
@@ -24,6 +26,30 @@ spec.loader.exec_module(corpus)
 
 
 class CommitteeInventoryTests(unittest.TestCase):
+    def test_retry_checks_the_real_status_and_follows_only_official_redirects(self):
+        url = "https://www.ourcommons.ca/committee/example"
+        redirected = "https://www.parl.ca/copy"
+        body = b"<html><title>Publication</title><body>complete</body></html>"
+        for response, follow, error in [("404\ntext/html\n", None, "HTTP 404"),
+                ("302\ntext/html\nhttps://outside.example/", None, "redirect outside official publication hosts"),
+                ("302\ntext/html\n" + redirected, redirected, None), ("200\ntext/html\n", None, None)]:
+            with self.subTest(response=response), TemporaryDirectory() as tmp:
+                replies = iter([(56, ""), (0, response)] + ([(0, "200\ntext/html\n")] if follow else []))
+                def curl(argv, **_):
+                    code, metadata = next(replies)
+                    Path(argv[argv.index("--output") + 1]).write_bytes(body)
+                    self.assertNotIn("--location", argv)
+                    return CompletedProcess(argv, code, metadata, "")
+                with patch("lib.committee_files.subprocess.run", side_effect=curl), patch("lib.committee_files.time.sleep"):
+                    _, digest, _, _, reason, _, final = download(Path(tmp), url)
+                self.assertEqual(reason, error)
+                if error:
+                    self.assertIsNone(digest)
+                    self.assertFalse((Path(tmp) / "objects").exists())
+                else:
+                    self.assertEqual(final, follow or url)
+                    self.assertEqual(digest, hashlib.sha256(body).hexdigest())
+
     def test_linked_notice_original_must_match_the_catalogue_and_archived_bytes(self):
         url = "https://sencanada.ca/en/committees/noticeofmeeting/123/45-1"
         body = b"<html>45-1</html>"

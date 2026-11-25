@@ -96,8 +96,8 @@ def verify_objects(root):
         db.close()
 
 
-def complete_body(path, url):
-    """The media type of a body that ended cleanly, when curl lost the status.
+def complete_body(path):
+    """The media type of a complete HTML or PDF body on a retried transfer.
 
     A reset after a complete transfer is common on the canada.ca CDN. Only two
     shapes are accepted, both self-delimiting: an HTML document that ends with
@@ -179,50 +179,30 @@ def download(root, url):
                     encoded,
             ]
             result = subprocess.run(command, capture_output=True, text=True)
-            if result.returncode or not result.stdout.strip():
-                # canada.ca intermittently resets the stream for the stricter
-                # request set above, sometimes after sending the body. A plain
-                # redirect-following request is the reliable path; the final URL
-                # still has to be an official publisher.
+            retry = bool(result.returncode or not result.stdout.strip())
+            if retry:
+                # Retry the same hop over HTTP/1.1. Curl reports the HTTP status
+                # for both requests and the outer loop checks each redirect.
+                initial_error = result.stderr.strip()
                 time.sleep(1.5)
-                fallback = subprocess.run(
-                    [
-                        "curl",
-                        "--silent",
-                        "--http1.1",
-                        "--location",
-                        "--max-time",
-                        "30",
-                        "--user-agent",
-                        UA,
-                        "--output",
-                        str(raw),
-                        "--write-out",
-                        "%{url_effective}",
-                        encoded,
-                    ],
-                    capture_output=True,
-                    text=True,
-                )
-                media = complete_body(raw, current)
-                if fallback.returncode or not media or not official(fallback.stdout.strip()):
-                    return (
-                        url,
-                        None,
-                        None,
-                        0,
-                        (result.stderr or fallback.stderr).strip()[:500],
-                        checked,
-                        current,
-                    )
-                status, redirect = "200", ""
-            else:
-                status, media, redirect = result.stdout.split("\n", 2)
+                raw.unlink(missing_ok=True)
+                result = subprocess.run([*command[:-1], "--http1.1", encoded], capture_output=True, text=True)
+                if result.returncode or not result.stdout.strip():
+                    error = result.stderr.strip() or initial_error or "no response to HTTP/1.1 retry"
+                    return (url, None, None, 0, error[:500], checked, current)
+            metadata = result.stdout.split("\n", 2)
+            if len(metadata) != 3:
+                return (url, None, None, 0, "missing HTTP response metadata", checked, current)
+            status, media, redirect = metadata
             if status in {"301", "302", "303", "307", "308"} and redirect:
                 current = redirect
                 continue
             if status != "200":
                 return (url, None, None, 0, "HTTP " + status, checked, current)
+            if retry:
+                media = complete_body(raw)
+                if media is None:
+                    return (url, None, None, 0, "incomplete retried publication", checked, current)
             sha = hashlib.sha256()
             packed = Path(directory) / "packed"
             with raw.open("rb") as source, packed.open("wb") as out:
