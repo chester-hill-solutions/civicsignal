@@ -20,6 +20,7 @@ spec.loader.exec_module(coverage)
 
 class InstitutionCoverageTests(unittest.TestCase):
     def test_publications_count_only_uniquely_identified_explicit_publishers_and_bind_archives(self):
+        from unittest.mock import patch
         with tempfile.TemporaryDirectory() as temporary:
             corpus = Path(temporary)
             root = corpus / "federal-publications"
@@ -50,7 +51,8 @@ class InstitutionCoverageTests(unittest.TestCase):
                 identities = set().union(*(aliases.get(coverage.normal(n), set()) for n in names))
                 values[(source, "matched" if len(identities) == 1 else "unattributed")] += total
             aliases = {"known agency": {"one"}}
-            coverage.count_publications(corpus, count, provenance, aliases)
+            with patch.object(coverage, "count_weekly_checklists"):
+                coverage.count_publications(corpus, count, provenance, aliases)
             self.assertEqual(values[("publications-monographs", "matched")], 1)
             self.assertEqual(values[("publications-monographs", "unattributed")], 5)
             self.assertEqual(provenance["publications-monographs"]["recordCount"], 6)
@@ -74,6 +76,108 @@ class InstitutionCoverageTests(unittest.TestCase):
         self.assertEqual(result["ircc-guidance"], {"family": "delivery", "sourceGroups": [], "matchedRecords": 0, "unattributedRecords": 0})
         self.assertEqual(result["policy-suite"]["sourceGroups"][0]["recordType"], "Verified policy edition")
         self.assertEqual(result["zero"]["matchedRecords"], 0)
+
+    def test_weekly_checklists_count_once_per_metadata_variant_from_264_publication_publisher(self):
+        digest = lambda value: hashlib.sha256(value.encode()).hexdigest()
+        records = [
+            {"catalogueId": "new", "fingerprint": digest("new"), "presentInBaseSnapshot": False,
+             "publishers": [{"name": "Known Agency", "sourceTag": "264", "function": "publication"},
+                            {"name": "Known Agency FR", "sourceTag": "264", "function": "publication"},
+                            {"name": "Distributor", "sourceTag": "264", "function": "distribution"}],
+             "publicationStatements": [{"tag": "264", "ind2": "1", "function": "publication"},
+                                       {"tag": "264", "ind2": "2", "function": "distribution"}]},
+            {"catalogueId": "base", "fingerprint": digest("base"), "presentInBaseSnapshot": True,
+             "publishers": [{"name": "Unknown Ministry", "sourceTag": "264", "function": "publication"}],
+             "publicationStatements": [{"tag": "264", "ind2": "1", "function": "publication"}]},
+            {"catalogueId": "no-publisher", "fingerprint": digest("no-publisher"), "presentInBaseSnapshot": False,
+             "publishers": [], "publicationStatements": [{"tag": "264", "ind2": "2", "function": "distribution"}]},
+            # An older immutable weekly receipt has no enriched MARC metadata;
+            # its cataloging agency is not treated as the publisher.
+            {"catalogueId": "old", "fingerprint": digest("old"), "presentInBaseSnapshot": False},
+        ]
+        known = ("I", "Known Agency", "Agence connue")
+        aliases = {"known agency": {known}, "known agency fr": {known}}
+        matched, unresolved = [], []
+        def count(source, labels, total=1):
+            identities = set().union(*(aliases.get(coverage.normal(label), set()) for label in labels))
+            (matched if len(identities) == 1 else unresolved).append((source, tuple(labels), total))
+        summary = coverage.attribute_weekly_checklist_records(records, {"base"}, count, aliases)
+        self.assertEqual(summary["recordVersions"], 4)
+        self.assertEqual(summary["overlapWithBaseSnapshot"], 1)
+        self.assertEqual(summary["newSinceBaseSnapshot"], 3)
+        self.assertEqual(summary["eligible264PublisherVariants"], 2)
+        self.assertEqual(summary["variantsWithMultiplePublisherFields"], 1)
+        self.assertEqual(summary["variantsWithout264PublicationStatement"], 1)
+        self.assertEqual(summary["metadataUnavailableVariants"], 1)
+        evidence = {row["label"]: row for row in summary["issuerLabelEvidence"]}
+        self.assertEqual(evidence["Known Agency"]["attributedVariants"], 1)
+        self.assertEqual(evidence["Known Agency"]["candidateInstitutions"], [
+            {"schedule": "I", "legalNameEn": "Known Agency", "legalNameFr": "Agence connue"}])
+        self.assertEqual(evidence["Unknown Ministry"]["attributedVariants"], 0)
+        self.assertEqual(len(matched), 1)
+        self.assertEqual(len(unresolved), 1)
+        self.assertEqual(matched[0][2], 1, "bilingual/parallel issuer labels still count the metadata variant once")
+        with self.assertRaisesRegex(ValueError, "repeats a metadata variant"):
+            coverage.attribute_weekly_checklist_records([records[0], records[0]], set(), count, aliases)
+
+    def test_weekly_attribution_checks_the_current_receipt_and_catalogue_database(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            corpus = Path(temporary)
+            base = corpus / "federal-publications"
+            base_gen = base / "generations" / "base"
+            (base_gen / "archives").mkdir(parents=True)
+            resources = {}
+            for category in ("monographs", "periodicals", "series"):
+                payload = ("base " + category).encode()
+                archive = base_gen / "archives" / (category + ".zip")
+                archive.write_bytes(payload)
+                resources[category] = {"sha256": hashlib.sha256(payload).hexdigest(), "recordCount": 1,
+                    "format": "MODS XML", "finalUrl": "https://publications.gc.ca/" + category}
+            (base_gen / "receipt.json").write_text(json.dumps({"series": "publications", "snapshotDate": "2025-11-20",
+                "resources": resources}))
+            base.mkdir(exist_ok=True)
+            (base / "current").symlink_to(Path("generations/base"))
+            weeks = corpus / "federal-publication-checklists"
+            week_gen = weeks / "runs" / "week"
+            week_gen.mkdir(parents=True)
+            rows = [
+                {"catalogueId": "base-id", "fingerprint": "a" * 64, "title": "Base issue", "presentInBaseSnapshot": True,
+                 "publishers": [{"name": "Known Agency", "sourceTag": "264", "function": "publication"}],
+                 "publicationStatements": [{"tag": "264", "ind2": "1", "function": "publication"}]},
+                {"catalogueId": "new-id", "fingerprint": "b" * 64, "title": "Old metadata", "presentInBaseSnapshot": False},
+            ]
+            lines = "".join(json.dumps(row, sort_keys=True, ensure_ascii=False, separators=(",", ":")) + "\n" for row in rows).encode()
+            (week_gen / "records.jsonl").write_bytes(lines)
+            (week_gen / "receipt.json").write_text(json.dumps({"status": "complete", "baseSnapshotDate": "2025-11-20",
+                "aggregateRecordCount": 2, "recordsSha256": hashlib.sha256(lines).hexdigest(),
+                "range": {"latestIssue": "2026-26-47"}}))
+            weeks.mkdir(exist_ok=True)
+            (weeks / "current").symlink_to(Path("runs/week"))
+            sources = coverage.PUBLICATION_CATALOGUE.inputs(base, weeks)
+            listed = {key: {name: value for name, value in source.items() if name != "path"}
+                      for key, source in sources.items()}
+            identity = hashlib.sha256(coverage.PUBLICATION_CATALOGUE.json_text(
+                [coverage.PUBLICATION_CATALOGUE.SCHEMA, listed]).encode()).hexdigest()
+            db_path = corpus / "federal-publication-catalogue/catalogue.sqlite"
+            db_path.parent.mkdir(parents=True)
+            with sqlite3.connect(db_path) as db:
+                db.execute("CREATE TABLE records(source TEXT NOT NULL, id TEXT NOT NULL, title TEXT NOT NULL, metadata TEXT NOT NULL)")
+                db.execute("CREATE TABLE publication(identity TEXT NOT NULL, sources TEXT NOT NULL)")
+                db.executemany("INSERT INTO records VALUES (?,?,?,?)", [
+                    (category, "base-id", "Base title", "{}") for category in ("monographs", "periodicals", "series")])
+                db.executemany("INSERT INTO records VALUES (?,?,?,?)", [
+                    ("weekly-checklists", row["catalogueId"], row["title"], coverage.PUBLICATION_CATALOGUE.json_text(row)) for row in rows])
+                db.execute("INSERT INTO publication VALUES (?,?)", (identity, coverage.PUBLICATION_CATALOGUE.json_text(listed)))
+            matched = []
+            provenance = {}
+            coverage.count_weekly_checklists(corpus,
+                lambda source, names: matched.append((source, names)), provenance,
+                {"known agency": {("I", "Known Agency", "Agence connue")}})
+            self.assertEqual(matched, [("publications-weekly-checklists", ["Known Agency"])])
+            self.assertEqual(provenance["publications-weekly-checklists"]["recordVersions"], 2)
+            self.assertEqual(provenance["publications-weekly-checklists"]["overlapWithBaseSnapshot"], 1)
+            self.assertEqual(provenance["publications-weekly-checklists"]["metadataUnavailableVariants"], 1)
+            self.assertEqual(provenance["publications-weekly-checklists"]["latestIssue"], "2026-26-47")
 
     def test_directory_attribution_uses_the_published_snapshot_and_parent_department(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -26,6 +26,10 @@ _DOCS_SPEC = importlib.util.spec_from_file_location(
     "departmental_report_documents", Path(__file__).resolve().with_name("departmental-report-documents.py"))
 HTML_DOCUMENTS = importlib.util.module_from_spec(_DOCS_SPEC)
 _DOCS_SPEC.loader.exec_module(HTML_DOCUMENTS)
+_CATALOGUE_SPEC = importlib.util.spec_from_file_location(
+    "federal_publication_catalogue", Path(__file__).resolve().with_name("federal-publication-catalogue.py"))
+PUBLICATION_CATALOGUE = importlib.util.module_from_spec(_CATALOGUE_SPEC)
+_CATALOGUE_SPEC.loader.exec_module(PUBLICATION_CATALOGUE)
 
 
 def normal(value):
@@ -365,6 +369,125 @@ def count_publications(corpus, count, provenance, aliases):
             "recordsWithoutUniqueIdentifier": invalid_identifiers,
             "duplicateIdentifierRecords": duplicate_id_records, "duplicateIdentifiers": duplicate_ids,
             "missingPublisherRecords": missing}
+    count_weekly_checklists(corpus, count, provenance, aliases)
+
+
+def attribute_weekly_checklist_records(records, base_ids, count, aliases):
+    """Count one verified 001+fingerprint checklist metadata variant, using only 264 #1 publishers."""
+    seen = set()
+    summary = Counter()
+    issuer_labels = defaultdict(Counter)
+    issuer_label_matches = defaultdict(set)
+    for row in records:
+        record_id, fingerprint = row.get("catalogueId"), row.get("fingerprint")
+        if not record_id or not re.fullmatch(r"[0-9a-f]{64}", fingerprint or ""):
+            raise ValueError("Weekly checklist record lacks its stable catalogue ID/fingerprint identity")
+        identity = (record_id, fingerprint)
+        if identity in seen:
+            raise ValueError("Weekly checklist archive repeats a metadata variant")
+        seen.add(identity)
+        present = record_id in base_ids
+        if row.get("presentInBaseSnapshot") is not None and bool(row["presentInBaseSnapshot"]) != present:
+            raise ValueError("Weekly checklist base-snapshot overlap differs from the immutable MODS catalogue")
+        summary["recordVersions"] += 1
+        summary["overlapWithBaseSnapshot"] += present
+        summary["newSinceBaseSnapshot"] += not present
+        if "publishers" not in row:
+            # Receipts predating the enriched MARC schema are valid; their legacy
+            # issuer/name hints are insufficient to claim a publisher.
+            summary["metadataUnavailableVariants"] += 1
+            continue
+        statements = [item for item in row.get("publicationStatements", []) if item.get("tag") == "264" and
+                      item.get("function") == "publication" and item.get("ind2") == "1"]
+        publishers = [item for item in row["publishers"] if item.get("sourceTag") == "264" and
+                      item.get("function") == "publication"]
+        labels = list(dict.fromkeys(item.get("name", "").strip() for item in publishers if item.get("name", "").strip()))
+        summary["variantsWith264PublicationStatement"] += bool(statements)
+        if not statements:
+            summary["variantsWithout264PublicationStatement"] += 1
+            continue
+        if len(publishers) > 1:
+            summary["variantsWithMultiplePublisherFields"] += 1
+        if not labels:
+            summary["publisherFieldsWithoutName"] += 1
+            count("publications-weekly-checklists", ["[MARC 264 #1 publisher not stated]"])
+            continue
+        summary["eligible264PublisherVariants"] += 1
+        identities = set().union(*(aliases.get(normal(label), set()) for label in labels))
+        if len(identities) > 1:
+            summary["variantsWithAmbiguousPublisherIdentities"] += 1
+        for label in labels:
+            issuer_labels[label]["variants"] += 1
+            issuer_labels[label]["attributedVariants"] += len(identities) == 1
+            issuer_labels[label]["ambiguousVariants"] += len(identities) > 1
+            issuer_label_matches[label].update(aliases.get(normal(label), set()))
+        count("publications-weekly-checklists", labels)
+    return {**dict(summary), "issuerLabelEvidence": [
+        {"label": label, **dict(totals), "candidateInstitutions": [
+            {"schedule": identity[0], "legalNameEn": identity[1], "legalNameFr": identity[2]}
+            for identity in sorted(issuer_label_matches[label])]} for label, totals in sorted(issuer_labels.items())]}
+
+
+def count_weekly_checklists(corpus, count, provenance, aliases):
+    base_root = corpus / "federal-publications"
+    checklists_root = corpus / "federal-publication-checklists"
+    database_path = corpus / "federal-publication-catalogue" / "catalogue.sqlite"
+    sources = PUBLICATION_CATALOGUE.inputs(base_root, checklists_root)
+    listed = {key: {name: value for name, value in source.items() if name != "path"}
+              for key, source in sources.items()}
+    source_identity = PUBLICATION_CATALOGUE.json_text(listed)
+    with closing(sqlite3.connect(database_path.resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        publication = db.execute("SELECT identity,sources FROM publication").fetchone()
+        if not publication or publication[1] != source_identity:
+            raise ValueError("Publication query database does not match the current base and weekly checklist archives")
+        catalogue_schema = next((schema for schema in range(1, PUBLICATION_CATALOGUE.SCHEMA + 1)
+            if hashlib.sha256(PUBLICATION_CATALOGUE.json_text([schema, listed]).encode()).hexdigest() == publication[0]), None)
+        if catalogue_schema is None:
+            raise ValueError("Publication query database identity is not a recognized catalogue schema")
+        catalogue_identity = publication[0]
+        db.execute("BEGIN")
+        observed = dict(db.execute("SELECT source,COUNT(*) FROM records GROUP BY source"))
+        expected = {key: value["records"] for key, value in sources.items()}
+        if observed != expected or db.execute("PRAGMA quick_check").fetchone() != ("ok",):
+            raise ValueError("Publication query database rows differ from their immutable input receipts")
+        base_ids = {row[0] for row in db.execute(
+            "SELECT DISTINCT id FROM records WHERE source IN ('monographs','periodicals','series')")}
+        db_records = list(db.execute(
+            "SELECT id,title,metadata FROM records WHERE source='weekly-checklists' ORDER BY id,rowid"))
+    resource = sources["weekly-checklists"]
+    archived_records = {}
+    with resource["path"].open(encoding="utf-8") as source:
+        for line in source:
+            row = json.loads(line)
+            key = (row.get("catalogueId"), row.get("fingerprint"))
+            if key in archived_records:
+                raise ValueError("Weekly checklist archive repeats a catalogue ID/fingerprint variant")
+            archived_records[key] = row
+    if len(archived_records) != resource["records"] or len(db_records) != len(archived_records):
+        raise ValueError("Weekly checklist archive and query database record counts differ")
+    records = []
+    for record_id, title, metadata in db_records:
+        row = json.loads(metadata)
+        key = (row.get("catalogueId"), row.get("fingerprint"))
+        archived = archived_records.pop(key, None)
+        if archived is None or record_id != row.get("catalogueId") or title != row.get("title") or archived != row:
+            raise ValueError("Weekly checklist query row differs from its immutable source metadata")
+        records.append(row)
+    if archived_records:
+        raise ValueError("Weekly checklist query database omitted source metadata variants")
+    receipt_path = resource["path"].parent / "receipt.json"
+    receipt = json.loads(receipt_path.read_bytes())
+    if (receipt.get("status") != "complete" or receipt.get("recordsSha256") != resource["sha256"] or
+            receipt.get("aggregateRecordCount") != resource["records"]):
+        raise ValueError("Weekly checklist receipt differs from the pinned metadata archive")
+    weekly_summary = attribute_weekly_checklist_records(records, base_ids, count, aliases)
+    provenance["publications-weekly-checklists"] = {"series": "publications",
+        "recordType": "weekly checklist MARC metadata variant; issuer attributed only from explicit 264 #1 publication fields",
+        "recordGranularity": "one distinct catalogue 001 plus MARC content fingerprint per acquired issue variant",
+        "receiptPath": str(receipt_path.resolve()), "receiptSha256": hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
+        "recordsPath": str(resource["path"]), "recordsSha256": resource["sha256"],
+        "catalogueIdentity": catalogue_identity, "baseSnapshotDate": receipt["baseSnapshotDate"],
+        "catalogueSchema": catalogue_schema, "latestIssue": receipt["range"]["latestIssue"], **weekly_summary}
 
 
 def count_ircc_guidance(corpus, count, provenance):
