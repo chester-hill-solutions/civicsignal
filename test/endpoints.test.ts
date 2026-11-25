@@ -697,6 +697,40 @@ describe('Gazette preview through the Worker', () => {
 
   const currentDatabasePath = process.env.CIVICSIGNAL_GAZETTE_SQLITE;
   const currentReceiptPath = process.env.CIVICSIGNAL_GAZETTE_RECEIPT;
+  const catchupReceipt = process.env.CIVICSIGNAL_GAZETTE_CATCHUP_RECEIPT;
+  it.skipIf(!catchupReceipt)('serves a cited record from each verified annual Gazette edition', async () => {
+    if (!currentDatabasePath || !catchupReceipt) throw new Error('Supply the annual Gazette receipt and database.');
+    const receipt = JSON.parse(readFileSync(catchupReceipt, 'utf8')) as {
+      databasePath: string; counts: { archiveVerifiedPairs: number; newlyVerifiedIssues: number };
+      issues: { part: string; issueDate: string; volume: number; issueNumber: number; status: string }[];
+    };
+    expect(resolve(receipt.databasePath)).toBe(resolve(currentDatabasePath));
+    const issues = receipt.issues.filter(issue => ['verified-new', 'archive-verified'].includes(issue.status));
+    expect(issues).toHaveLength(receipt.counts.archiveVerifiedPairs + receipt.counts.newlyVerifiedIssues);
+    expect(issues.length).toBeGreaterThan(0);
+    const fixture = await setup(issues.length * 2);
+    const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
+    const sqlite = new DatabaseSync(currentDatabasePath, { readOnly: true });
+    closed.push(() => sqlite.close());
+    sqlite.exec('BEGIN');
+    fixture.env.AUTH_DB = fixture.db;
+    fixture.env.GAZETTE_DB = localD1(sqlite, { existingReadTransaction: true });
+    fixture.env.GAZETTE_PREVIEW = 'on';
+    const sample = sqlite.prepare(`SELECT id, title, citation_url FROM gazette_records
+      WHERE part=? AND language=? AND issue_date=? AND volume=? AND issue_number=? ORDER BY id LIMIT 1`);
+    for (const issue of issues) {
+      for (const language of ['en', 'fr']) {
+        const row = sample.get(issue.part, language, issue.issueDate, issue.volume, issue.issueNumber);
+        if (!row) throw new Error(`Missing Gazette Part ${issue.part} ${issue.issueDate} ${language} records.`);
+        const reply = await fixture.send('/api/gazette/' + encodeURIComponent(String(row.id)));
+        expect(reply.status, String(row.id)).toBe(200);
+        expect(GazetteLookupResponseSchema.parse(await reply.json()).item).toMatchObject({
+          id: row.id, language, part: issue.part, issueDate: issue.issueDate, title: row.title,
+          citationUrl: row.citation_url, redistribution: 'metadata-only' });
+      }
+    }
+    expect(await fixture.count()).toBe(issues.length * 2);
+  }, 30_000);
   it.skipIf(!currentDatabasePath)('reads the current bilingual records through the acquired Gazette database', async () => {
     if (!currentDatabasePath) throw new Error('Set CIVICSIGNAL_GAZETTE_SQLITE to the current local Gazette database.');
     if (!currentReceiptPath) throw new Error('Set CIVICSIGNAL_GAZETTE_RECEIPT to the receipt from sync-current.');

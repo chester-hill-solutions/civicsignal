@@ -7,12 +7,14 @@ import type { GazetteIssueKey } from '../src/corpora/gazette';
 
 const script = `
   import { discoverCurrentGazetteIssues, parseGazetteAnnualListing } from './scripts/lib/gazette-current.ts';
-  import { syncCurrent } from './scripts/gazette-local.ts';
-  import { readFileSync } from 'node:fs';
+  import { syncCurrent, syncGazetteYearCatchup, syncGazetteYearThrough } from './scripts/gazette-local.ts';
+  import { readFileSync, writeFileSync } from 'node:fs';
+  import { resolve } from 'node:path';
   const input = JSON.parse(await Bun.stdin.text());
   try {
     if (input.action === 'parse') {
-      console.log(JSON.stringify({ issues: parseGazetteAnnualListing(input.html, input.year, input.part, input.language, input.cutoff) }));
+      console.log(JSON.stringify({ issues: parseGazetteAnnualListing(input.html, input.year, input.part,
+        { language: input.language, cutoff: input.cutoff }) }));
     } else if (input.action === 'sync-fail') {
       let issueRequests = 0;
       const send = async (url) => {
@@ -37,6 +39,40 @@ const script = `
       };
       await syncCurrent(input.database, input.cutoff, send, input.receipt);
       console.log(JSON.stringify({ complete: true, receipt: JSON.parse(readFileSync(input.receipt, 'utf8')) }));
+    } else if (input.action === 'history') {
+      const send = async (url) => {
+        const isIssue = url.pathname.includes('/html/index-');
+        const source = isIssue ? input.issuePages : input.pages;
+        return new Response(source[url.pathname] ?? '', {
+          status: source[url.pathname] ? 200 : 404,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        });
+      };
+      const result = await syncGazetteYearThrough(input.database, 2026, input.cutoff, send, input.outputRoot);
+      console.log(JSON.stringify({ complete: result.complete, receiptPath: result.receiptPath,
+        counts: result.counts, issues: result.issues, import: result.import }));
+    } else if (input.action === 'catchup') {
+      const send = async (url) => {
+        if (url.pathname.includes('/html/index-')) throw new Error('Catch-up should use verified archive instead of refetching issues.');
+        return new Response(input.pages[url.pathname] ?? '', { status: input.pages[url.pathname] ? 200 : 404,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      };
+      const fetchAll = async (url) => {
+        const source = url.pathname.includes('/html/index-') ? input.issuePages : input.pages;
+        return new Response(source[url.pathname] ?? '', { status: source[url.pathname] ? 200 : 404,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      };
+      if (input.seedRolling) await syncCurrent(input.database, input.cutoff, fetchAll, input.receipt);
+      const seed = input.seedRolling ? syncGazetteYearCatchup : syncGazetteYearThrough;
+      const archived = await seed(input.database, 2026, input.cutoff, fetchAll, input.outputRoot);
+      if (input.corrupt) {
+        const receipt = JSON.parse(readFileSync(archived.receiptPath as string, 'utf8'));
+        const source = receipt.issues.find((issue) => issue.status === 'verified').languages[0].source;
+        writeFileSync(resolve(input.outputRoot, source.file), 'corrupt archive bytes');
+      }
+      const result = await syncGazetteYearCatchup(input.database, 2026, input.cutoff, send, input.outputRoot);
+      console.log(JSON.stringify({ complete: result.complete, receiptPath: result.receiptPath,
+        counts: result.counts, issues: result.issues, initialCounts: archived.counts }));
     } else {
       const send = async (url) => new Response(input.pages[url.pathname] ?? '', {
         status: input.pages[url.pathname] ? 200 : 404,
@@ -47,7 +83,7 @@ const script = `
   } catch (error) { console.log(JSON.stringify({ error: error.message })); }
 `;
 
-function run(payload: unknown): { issues?: GazetteIssueKey[]; error?: string; receipt?: Record<string, unknown> } {
+function run(payload: unknown): { [key: string]: unknown; issues?: GazetteIssueKey[]; error?: string; receipt?: Record<string, unknown> } {
   const result = spawnSync(process.env['CIVICSIGNAL_BUN_BINARY'] ?? 'bun', ['--eval', script], {
     cwd: process.cwd(), input: JSON.stringify(payload), encoding: 'utf8', timeout: 15_000,
   });
@@ -176,6 +212,91 @@ describe('Canada Gazette rolling current-issue discovery', () => {
           expect.objectContaining({ part: 'II', language: 'en', issueDate: '2026-04-22', recordCount: expect.any(Number) }),
           expect.objectContaining({ part: 'II', language: 'fr', issueDate: '2026-04-22', recordCount: expect.any(Number) }),
         ]) });
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('archives and imports a complete bilingual historical batch with a separate replay receipt', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'gazette-history-'));
+    const database = join(directory, 'history.sqlite');
+    try {
+      const { annualPages, issuePages } = fixtureSyncInputs();
+      const result = run({ action: 'history', database, cutoff: '2026-04-26', outputRoot: join(directory, 'backfills'),
+        pages: annualPages, issuePages });
+      expect(result.error).toBeUndefined();
+      expect(result.complete).toBe(true);
+      expect(result.counts).toMatchObject({ discoveredIssues: 2, verifiedIssues: 2, unavailableIssues: 0 });
+      expect(result.import).toMatchObject({ imported: 4, unchanged: 0 });
+      expect(result.receiptPath).toContain('receipts/2026-through-2026-04-26/');
+      const receipt = JSON.parse(readFileSync(result.receiptPath as string, 'utf8')) as Record<string, unknown>;
+      expect(receipt).toMatchObject({ complete: true, year: 2026, cutoff: '2026-04-26' });
+      expect((receipt.sources as unknown[])).toHaveLength(8);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('records a missing bilingual listing as unavailable and leaves it out of the imported batch', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'gazette-history-gap-'));
+    const database = join(directory, 'history.sqlite');
+    try {
+      const { annualPages, issuePages } = fixtureSyncInputs();
+      delete annualPages['/rp-pr/p1/2026/index-fra.html'];
+      const result = run({ action: 'history', database, cutoff: '2026-04-26', outputRoot: join(directory, 'backfills'),
+        pages: annualPages, issuePages });
+      expect(result.error).toBeUndefined();
+      expect(result.complete).toBe(false);
+      expect(result.counts).toMatchObject({ unavailableIssues: 1 });
+      expect(result.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ part: 'I', status: 'unavailable' }),
+        expect.objectContaining({ part: 'II', status: 'verified' }),
+      ]));
+      expect(result.import).toMatchObject({ imported: 2 });
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('uses hash-verified retained issues during routine catch-up without re-downloading them', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'gazette-catchup-'));
+    const database = join(directory, 'history.sqlite');
+    try {
+      const { annualPages, issuePages } = fixtureSyncInputs();
+      const result = run({ action: 'catchup', database, cutoff: '2026-04-26', outputRoot: join(directory, 'backfills'),
+        pages: annualPages, issuePages });
+      expect(result.error).toBeUndefined();
+      expect(result.complete).toBe(true);
+      expect(result.counts).toMatchObject({ archiveVerifiedPairs: 2, newlyVerifiedIssues: 0, unavailableIssues: 0 });
+      expect(result.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ part: 'I', status: 'archive-verified' }),
+        expect.objectContaining({ part: 'II', status: 'archive-verified' }),
+      ]));
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('flags a corrupt retained original instead of counting it as archive-verified', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'gazette-catchup-corrupt-'));
+    const database = join(directory, 'history.sqlite');
+    try {
+      const { annualPages, issuePages } = fixtureSyncInputs();
+      const result = run({ action: 'catchup', corrupt: true, database, cutoff: '2026-04-26', outputRoot: join(directory, 'backfills'),
+        pages: annualPages, issuePages });
+      expect(result.error).toBeUndefined();
+      expect(result.complete).toBe(false);
+      expect(result.counts).toMatchObject({ archiveVerifiedPairs: 1, corruptArchivePairs: 1 });
+      expect(result.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ status: 'corrupt-archive' }),
+        expect.objectContaining({ status: 'archive-verified' }),
+      ]));
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('archives rolling-only editions and reuses originals first captured by a catch-up', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'gazette-rolling-catchup-'));
+    try {
+      const { annualPages, issuePages } = fixtureSyncInputs();
+      const result = run({ action: 'catchup', seedRolling: true, database: join(directory, 'store.sqlite'),
+        receipt: join(directory, 'rolling.json'), cutoff: '2026-04-26', outputRoot: join(directory, 'backfills'),
+        pages: annualPages, issuePages });
+      expect(result.error).toBeUndefined();
+      expect(result.initialCounts).toMatchObject({ newlyVerifiedIssues: 2 });
+      expect(result.counts).toMatchObject({ archiveVerifiedPairs: 2, newlyVerifiedIssues: 0 });
+      expect(result.complete).toBe(true);
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 });

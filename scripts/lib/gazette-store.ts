@@ -36,6 +36,16 @@ function canonicalEdition(value: GazetteEdition) {
   });
 }
 
+export function gazetteEditionDigest(value: GazetteEdition): string {
+  return createHash('sha256').update(canonicalEdition(value)).digest('hex');
+}
+
+export function storedGazetteEditionDigest(sqlite: DatabaseSync, key: GazetteIssueKey): string | undefined {
+  return (sqlite.prepare(`SELECT content_sha256 AS digest FROM gazette_editions
+    WHERE part = ? AND language = ? AND issue_date = ? AND volume = ? AND issue_number = ?`)
+    .get(key.part, key.language, key.issueDate, key.volume, key.issueNumber) as { digest: string } | undefined)?.digest;
+}
+
 function toFeedRecord(item: GazetteFeedMetadata): FeedRecord {
   return {
     id: item.id,
@@ -77,7 +87,7 @@ export function validateGazetteEdition(value: unknown): GazetteEdition {
 }
 
 function importValidatedGazetteEdition(sqlite: DatabaseSync, value: GazetteEdition): GazetteImportResult {
-  const digest = createHash('sha256').update(canonicalEdition(value)).digest('hex');
+  const digest = gazetteEditionDigest(value);
   initializeSourceFeed(sqlite);
     const before = storedFeedRecords(sqlite, value);
     const after = value.records.map(toFeedRecord);
@@ -140,6 +150,15 @@ export function importGazetteEditions(sqlite: DatabaseSync, inputs: readonly unk
   const values = inputs.map(validateGazetteEdition);
   if (values.length !== 4 || new Set(values.map((value) => gazetteIssueId(value))).size !== 4) {
     throw new Error('A rolling Gazette refresh must include four distinct bilingual issue editions.');
+  }
+  return importGazetteEditionBatch(sqlite, values);
+}
+
+/** Atomically imports a bounded set of independently verified historical issue editions. */
+export function importGazetteEditionBatch(sqlite: DatabaseSync, inputs: readonly unknown[]): GazetteImportResult[] {
+  const values = inputs.map(validateGazetteEdition);
+  if (!values.length || values.length > 400 || new Set(values.map((value) => gazetteIssueId(value))).size !== values.length) {
+    throw new Error('A Gazette historical batch must contain 1 to 400 distinct issue editions.');
   }
   sqlite.exec('BEGIN IMMEDIATE');
   try {
