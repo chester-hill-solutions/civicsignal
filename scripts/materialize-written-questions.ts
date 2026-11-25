@@ -31,6 +31,30 @@ export function openSqlite(path: string, readOnly = false): DatabaseSync {
   return new Sqlite(path, options);
 }
 
+export function rollbackPreservingError(sqlite: DatabaseSync, originalError: unknown): never {
+  try { sqlite.exec('ROLLBACK'); }
+  catch { /* SQLite can already have rolled back the transaction after SQLITE_FULL. */ }
+  throw originalError;
+}
+
+function isTransactionActive(sqlite: DatabaseSync): boolean {
+  const state = sqlite as DatabaseSync & { inTransaction?: boolean };
+  const active = state.inTransaction ?? sqlite.isTransaction;
+  if (typeof active !== 'boolean') throw new Error('SQLite adapter does not expose transaction state.');
+  return active;
+}
+
+function assertTransactionActive(sqlite: DatabaseSync, after: string) {
+  if (!isTransactionActive(sqlite)) {
+    throw new Error(`SQLite ended the publication transaction after ${after}; refusing further writes.`);
+  }
+}
+
+function runTransactionStatement(sqlite: DatabaseSync, statement: string) {
+  sqlite.prepare(statement).run();
+  assertTransactionActive(sqlite, statement);
+}
+
 interface MaterializationStats {
   questions: number;
   questionChars: number;
@@ -160,7 +184,7 @@ function sourceStats(sqlite: DatabaseSync): MaterializationStats {
   return result;
 }
 
-function createStage(target: DatabaseSync) {
+export function createStage(target: DatabaseSync) {
   target.exec(`CREATE TABLE IF NOT EXISTS wq_stage_questions AS SELECT * FROM questions WHERE 0;
     CREATE TABLE IF NOT EXISTS wq_stage_documents AS SELECT * FROM documents WHERE 0;
     CREATE TABLE IF NOT EXISTS wq_stage_document_chunks (
@@ -173,7 +197,10 @@ function createStage(target: DatabaseSync) {
 }
 
 function resetStage(target: DatabaseSync) {
-  target.exec('DELETE FROM wq_stage_fts; DELETE FROM wq_stage_document_chunks; DELETE FROM wq_stage_documents; DELETE FROM wq_stage_questions; DELETE FROM wq_stage_sessions; DELETE FROM wq_stage_materialization_state;');
+  for (const statement of [
+    'DELETE FROM wq_stage_fts', 'DELETE FROM wq_stage_document_chunks', 'DELETE FROM wq_stage_documents',
+    'DELETE FROM wq_stage_questions', 'DELETE FROM wq_stage_sessions', 'DELETE FROM wq_stage_materialization_state',
+  ]) runTransactionStatement(target, statement);
 }
 
 function importCandidate(source: DatabaseSync, target: DatabaseSync, stats: MaterializationStats, sourceSha256: string) {
@@ -245,19 +272,18 @@ function sourceEquivalent(target: DatabaseSync, expected: MaterializationStats, 
   }
 }
 
-function swapCandidate(target: DatabaseSync) {
+export function swapCandidate(target: DatabaseSync) {
   target.exec('BEGIN IMMEDIATE');
+  assertTransactionActive(target, 'BEGIN IMMEDIATE');
   try {
-    target.exec(`DELETE FROM wq_fts; DELETE FROM document_chunks; DELETE FROM documents; DELETE FROM questions; DELETE FROM wq_sessions;
-      INSERT INTO wq_sessions SELECT * FROM wq_stage_sessions;
-      INSERT INTO questions SELECT * FROM wq_stage_questions;
-      INSERT INTO documents SELECT * FROM wq_stage_documents;
-      INSERT INTO document_chunks SELECT * FROM wq_stage_document_chunks;
-      INSERT INTO wq_fts SELECT * FROM wq_stage_fts;
-      DELETE FROM wq_materialization_state;
-      INSERT INTO wq_materialization_state SELECT * FROM wq_stage_materialization_state;
-      `);
-  } catch (error) { target.exec('ROLLBACK'); throw error; }
+    for (const statement of [
+      'DELETE FROM wq_fts', 'DELETE FROM document_chunks', 'DELETE FROM documents', 'DELETE FROM questions', 'DELETE FROM wq_sessions',
+      'INSERT INTO wq_sessions SELECT * FROM wq_stage_sessions', 'INSERT INTO questions SELECT * FROM wq_stage_questions',
+      'INSERT INTO documents SELECT * FROM wq_stage_documents', 'INSERT INTO document_chunks SELECT * FROM wq_stage_document_chunks',
+      'INSERT INTO wq_fts SELECT * FROM wq_stage_fts', 'DELETE FROM wq_materialization_state',
+      'INSERT INTO wq_materialization_state SELECT * FROM wq_stage_materialization_state',
+    ]) runTransactionStatement(target, statement);
+  } catch (error) { rollbackPreservingError(target, error); }
 }
 
 async function verifyActualHandlers(target: DatabaseSync) {
@@ -303,17 +329,18 @@ async function main(args: string[]) {
   try {
     createStage(target);
     target.exec('BEGIN IMMEDIATE');
-    try { resetStage(target); importCandidate(source, target, expected, digest); target.exec('COMMIT'); }
-    catch (error) { target.exec('ROLLBACK'); throw error; }
+    assertTransactionActive(target, 'BEGIN IMMEDIATE');
+    try { resetStage(target); importCandidate(source, target, expected, digest); assertTransactionActive(target, 'candidate import'); target.exec('COMMIT'); }
+    catch (error) { rollbackPreservingError(target, error); }
     swapCandidate(target);
     let handlerChecks: Awaited<ReturnType<typeof verifyActualHandlers>>;
     try {
       sourceEquivalent(target, expected, '');
       handlerChecks = await verifyActualHandlers(target);
+      assertTransactionActive(target, 'serving verification');
       target.exec('COMMIT');
     } catch (error) {
-      target.exec('ROLLBACK');
-      throw error;
+      rollbackPreservingError(target, error);
     }
     console.log(JSON.stringify({ materialized: true, target: 'isolated-local-d1', sourceSha256: digest,
       questions: expected.questions, documents: expected.documents, chunks: expected.chunks,
