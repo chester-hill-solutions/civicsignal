@@ -41,7 +41,7 @@ MAX_GENERATION_BYTES = 192 * 1024 * 1024
 RESERVE_BYTES = 128 * 1024 * 1024
 MAX_NEW_ISSUES_PER_RUN = 60
 BASE_ID_INDEX_SCHEMA = "mods-record-identifier-v2"
-BILINGUAL_RECORD_SCHEMA = "paired-marc-v3"
+BILINGUAL_RECORD_SCHEMA = "paired-marc-v4"
 RELATED_TAGS = ("775", "791", "792", "794", "795")
 NS = "{http://www.loc.gov/MARC21/slim}"
 
@@ -177,6 +177,77 @@ def _field_text(field):
     return " ".join("".join(part.itertext()).strip() for part in field.findall(NS + "subfield") if "".join(part.itertext()).strip())
 
 
+def _raw_subfields(field):
+    return [{"code": sub.attrib.get("code", ""),
+             "value": " ".join("".join(sub.itertext()).split())}
+            for sub in field.findall(NS + "subfield")]
+
+
+def _corporate_metadata(fields):
+    """Retain MARC corporate names with their explicit relator terms/codes."""
+    names, issuing_bodies, publishers = [], [], []
+    display_codes = {"a", "b", "c", "d", "f", "g", "k", "l", "n", "p", "t", "u"}
+    issuer_roles = {"issuing body", "organisme de publication"}
+    publisher_roles = {"publisher", "publishing body", "éditeur", "editeur",
+                       "éditeur commercial", "editeur commercial"}
+    for tag in ("110", "710"):
+        for field in fields.get(tag, []):
+            subfields = _raw_subfields(field)
+            roles = [item["value"] for item in subfields if item["code"] == "e"]
+            role_codes = [item["value"] for item in subfields if item["code"] == "4"]
+            label = " ".join(item["value"] for item in subfields
+                             if item["code"] in display_codes and item["value"])
+            name = {"tag": tag, "ind1": field.attrib.get("ind1", " "),
+                    "ind2": field.attrib.get("ind2", " "), "label": label,
+                    "roles": roles, "roleCodes": role_codes, "subfields": subfields}
+            names.append(name)
+            normalized_roles = {value.casefold().strip(" .;,:\t") for value in roles}
+            normalized_codes = {value.casefold().strip() for value in role_codes}
+            if normalized_roles & issuer_roles:
+                issuing_bodies.append({"label": label, "sourceTag": tag,
+                                       "roles": roles, "roleCodes": role_codes})
+            if normalized_roles & publisher_roles or "pbl" in normalized_codes:
+                publishers.append({"name": label, "sourceTag": tag,
+                                   "roles": roles, "roleCodes": role_codes})
+    return names, issuing_bodies, publishers
+
+
+def _publication_metadata(fields):
+    functions = {"0": "production", "1": "publication", "2": "distribution",
+                 "3": "manufacture", "4": "copyright-notice"}
+    statements, publishers = [], []
+    for tag in ("260", "264"):
+        for field in fields.get(tag, []):
+            indicator = field.attrib.get("ind2", " ")
+            function = "legacy-imprint" if tag == "260" else functions.get(indicator, "unspecified")
+            subfields = _raw_subfields(field)
+            places = [item["value"] for item in subfields if item["code"] == "a" and item["value"]]
+            entities = [item["value"] for item in subfields if item["code"] == "b" and item["value"]]
+            dates = [item["value"] for item in subfields if item["code"] == "c" and item["value"]]
+            statements.append({"tag": tag, "ind1": field.attrib.get("ind1", " "),
+                               "ind2": indicator, "function": function, "places": places,
+                               "entities": entities, "dates": dates, "subfields": subfields})
+            if tag == "264" and function == "publication":
+                publishers.extend({"name": value, "sourceTag": tag, "function": function}
+                                  for value in entities)
+    return statements, publishers
+
+
+def _publication_links(fields):
+    links = []
+    for field in fields.get("856", []):
+        subfields = _raw_subfields(field)
+        urls = [item["value"] for item in subfields if item["code"] == "u" and item["value"]]
+        if urls:
+            links.append({"tag": "856", "ind1": field.attrib.get("ind1", " "),
+                          "ind2": field.attrib.get("ind2", " "), "urls": urls,
+                          "formats": [item["value"] for item in subfields if item["code"] == "q"],
+                          "labels": [item["value"] for item in subfields if item["code"] == "y"],
+                          "notes": [item["value"] for item in subfields if item["code"] == "z"],
+                          "subfields": subfields})
+    return links
+
+
 def parse_marc_xml(body: bytes, language: str, record_schema: str = BILINGUAL_RECORD_SCHEMA):
     """Validate publisher MARC21 XML and return records keyed by catalogue 001."""
     if len(body) > MAX_XML_BYTES:
@@ -233,16 +304,23 @@ def parse_marc_xml(body: bytes, language: str, record_schema: str = BILINGUAL_RE
                     related.append({"tag": tag, "text": raw})
             for field in data.get("590", []):
                 checklist_notes.append(_field_text(field))
+            corporate_names, issuing_bodies, corporate_publishers = _corporate_metadata(data)
+            publication_statements, statement_publishers = _publication_metadata(data)
+            publication_links = _publication_links(data)
             # Record tails contain publisher pretty-print whitespace between MARC records,
             # not part of the MARC record itself. Exclude it from the current content
             # identity while retaining the old rule to replay older immutable receipts.
-            if record_schema == BILINGUAL_RECORD_SCHEMA:
+            if record_schema in {BILINGUAL_RECORD_SCHEMA, "paired-marc-v3"}:
                 element.tail = None
             fingerprint = hashlib.sha256(ET.tostring(element, encoding="utf-8")).hexdigest()
             row = {
                 "catalogueId": ids[0], "agencyCode": controls["003"][0], "title": title,
                 "languageCodes": sorted(language_codes), "relatedEditionFields": related,
-                "checklistNotes590": checklist_notes, "fingerprint": fingerprint,
+                "checklistNotes590": checklist_notes, "corporateNames": corporate_names,
+                "issuingBodies": issuing_bodies,
+                "publishers": corporate_publishers + statement_publishers,
+                "publicationStatements": publication_statements,
+                "publicationLinks": publication_links, "fingerprint": fingerprint,
             }
             if ids[0] in records:
                 raise ValueError(f"{language} export repeats MARC 001 {ids[0]}")
@@ -404,7 +482,7 @@ def _publish_issue(root: Path, issue: dict, resources: dict, rows: list, fetched
             issue_age = ((date.fromisoformat(source_observed[:10]) - date.fromisoformat(issue["dateEnd"])).days
                          if source_observed else None)
             receipt = {
-                "schemaVersion": 1, "recordSchema": BILINGUAL_RECORD_SCHEMA, "issue": issue, "version": version_id,
+                "schemaVersion": 2, "recordSchema": BILINGUAL_RECORD_SCHEMA, "issue": issue, "version": version_id,
                 "acquiredLocallyAt": fetched_at, "firstObservedAt": source_observed,
                 "sourceObservationAt": source_observed,
                 "publicationAgeDaysAtFirstObservation": issue_age,
@@ -416,7 +494,7 @@ def _publish_issue(root: Path, issue: dict, resources: dict, rows: list, fetched
                            **issue.get("bilingualComparison", {"uniqueCatalogueIds": len(rows),
                              "duplicateBilingualListingsRemoved": len(resources["en"]["records"]) + len(resources["fr"]["records"]) - len(rows),
                              "recordVariantsRetained": len(rows)})},
-                "coverage": "Bilingual MARC21 XML issue metadata only; no linked publication full texts fetched.",
+                "coverage": "Bilingual MARC21 XML issue metadata only; role-labelled corporate names, imprint functions, dates, and 856 links are retained. No linked publication full texts fetched.",
             }
             _write_file(staging / "receipt.json", (json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode())
             _fsync_dir(staging / "archives")
@@ -896,7 +974,7 @@ def refresh(root: Path, download_live: bool, input_dir: Path | None = None,
             all_gaps.append({"status": "cutoff-span-not-indexed", "baseSnapshotDate": BASE_DATE.isoformat(),
                              "message": "No bilingual weekly issue date range spans the dated bulk base snapshot cutoff."})
         receipt = {
-            "schemaVersion": 2, "recordSchema": BILINGUAL_RECORD_SCHEMA,
+            "schemaVersion": 3, "recordSchema": BILINGUAL_RECORD_SCHEMA,
             "series": "government-publications-weekly-acquisitions-list",
             "publisher": "Public Services and Procurement Canada / Government of Canada Publications",
             "status": "complete" if not all_gaps and latest_success else "partial",
@@ -932,6 +1010,14 @@ def refresh(root: Path, download_live: bool, input_dir: Path | None = None,
             "coverage": {"issueScope": "Every bilingual issue listed from the issue spanning the November 20, 2025 base cutoff through the current latest year index; latest issue is rechecked each run.",
                          "additiveSemantics": "Issue records and metadata versions are retained additively. Repeated catalogue IDs are deduplicated by ID plus MARC-content fingerprint; differing fingerprints remain separate versions. No deletion or overwrite is inferred.",
                          "publicationBodies": "No linked publication full texts were fetched; the MARC checklist is discovery metadata only.",
+                         "publicationMetadataRecordVariants": {"recordVariants": len(records),
+                             "withCorporateNames": sum(bool(row["corporateNames"]) for row in records),
+                             "withIssuingBodies": sum(bool(row["issuingBodies"]) for row in records),
+                             "withPublisherEvidence": sum(bool(row["publishers"]) for row in records),
+                             "withPublicationStatements": sum(bool(row["publicationStatements"]) for row in records),
+                             "withPublicationLinks856": sum(bool(row["publicationLinks"]) for row in records)},
+                         "publisherAttribution": "264 second-indicator 1 publisher subfields and explicitly publisher-role-coded 110/710 entries are retained as publisher evidence. Other 264 functions and 260 imprints remain role-labelled statements, not asserted publishers. Controlfield 003 is the cataloging agency and is never assigned as publisher.",
+                         "recordFields": "MARC 001/003 identity, 245 title, 008/041 language, related editions, and 590 notes are retained with 110/710 corporate entries and role terms/codes, all 260/264 statements and functions, and 856 URLs, formats, labels, and notes.",
                          "checklist590FieldsObserved": sum(len(row["checklistNotes590"]) for row in records),
                          "checklist590Gap": "The November 2026 latest issue had no 590 fields; older issue 590 values, when present, are retained in per-issue records."},
         }

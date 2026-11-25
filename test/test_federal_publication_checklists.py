@@ -42,6 +42,29 @@ def xml_issue(ids=("id-1", "id-2"), bad=False, title_suffix=""):
         ET.SubElement(related, f"{checklists.NS}subfield", code="w").text = "(CaOODSP)fr-1"
         note = ET.SubElement(record, f"{checklists.NS}datafield", tag="590", ind1=" ", ind2=" ")
         ET.SubElement(note, f"{checklists.NS}subfield", code="a").text = "Checklist 25-47"
+        issuer = ET.SubElement(record, f"{checklists.NS}datafield", tag="110", ind1="2", ind2=" ")
+        ET.SubElement(issuer, f"{checklists.NS}subfield", code="a").text = "Office A"
+        ET.SubElement(issuer, f"{checklists.NS}subfield", code="e").text = "issuing body"
+        publisher = ET.SubElement(record, f"{checklists.NS}datafield", tag="710", ind1="2", ind2=" ")
+        ET.SubElement(publisher, f"{checklists.NS}subfield", code="a").text = "Publisher A"
+        ET.SubElement(publisher, f"{checklists.NS}subfield", code="e").text = "publisher"
+        author = ET.SubElement(record, f"{checklists.NS}datafield", tag="710", ind1="2", ind2=" ")
+        ET.SubElement(author, f"{checklists.NS}subfield", code="a").text = "Author A"
+        ET.SubElement(author, f"{checklists.NS}subfield", code="e").text = "author"
+        old_imprint = ET.SubElement(record, f"{checklists.NS}datafield", tag="260", ind1=" ", ind2=" ")
+        ET.SubElement(old_imprint, f"{checklists.NS}subfield", code="b").text = "Ambiguous imprint"
+        ET.SubElement(old_imprint, f"{checklists.NS}subfield", code="c").text = "1999"
+        publication = ET.SubElement(record, f"{checklists.NS}datafield", tag="264", ind1=" ", ind2="1")
+        ET.SubElement(publication, f"{checklists.NS}subfield", code="b").text = "Publisher A"
+        ET.SubElement(publication, f"{checklists.NS}subfield", code="c").text = "2000"
+        distribution = ET.SubElement(record, f"{checklists.NS}datafield", tag="264", ind1=" ", ind2="2")
+        ET.SubElement(distribution, f"{checklists.NS}subfield", code="b").text = "Distributor A"
+        production = ET.SubElement(record, f"{checklists.NS}datafield", tag="264", ind1=" ", ind2="0")
+        ET.SubElement(production, f"{checklists.NS}subfield", code="b").text = "Producer A"
+        link = ET.SubElement(record, f"{checklists.NS}datafield", tag="856", ind1="4", ind2="0")
+        ET.SubElement(link, f"{checklists.NS}subfield", code="q").text = "PDF"
+        ET.SubElement(link, f"{checklists.NS}subfield", code="y").text = "Full text"
+        ET.SubElement(link, f"{checklists.NS}subfield", code="u").text = "https://publications.gc.ca/example.pdf"
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
@@ -76,6 +99,42 @@ def fixture_inputs(root, *, missing_xml=None, missing_language=None, bad_latest=
 
 
 class PublicationChecklists(unittest.TestCase):
+    def test_publisher_fields_keep_marc_roles_indicators_and_publication_links(self):
+        row = checklists.parse_marc_xml(xml_issue(("id-1",)), "en")["id-1"]
+        self.assertEqual(row["agencyCode"], "CaOODSP")
+        self.assertEqual(row["corporateNames"][0]["tag"], "110")
+        self.assertEqual(row["corporateNames"][0]["roles"], ["issuing body"])
+        self.assertEqual(row["issuingBodies"], [{"label": "Office A", "sourceTag": "110",
+                                                   "roles": ["issuing body"], "roleCodes": []}])
+        self.assertEqual(row["publishers"], [
+            {"name": "Publisher A", "sourceTag": "710", "roles": ["publisher"], "roleCodes": []},
+            {"name": "Publisher A", "sourceTag": "264", "function": "publication"},
+        ])
+        self.assertNotIn("CaOODSP", json.dumps(row["publishers"]))
+        self.assertEqual([(x["tag"], x["function"]) for x in row["publicationStatements"]],
+                         [("260", "legacy-imprint"), ("264", "publication"),
+                          ("264", "distribution"), ("264", "production")])
+        self.assertEqual(row["publicationStatements"][0]["entities"], ["Ambiguous imprint"])
+        self.assertEqual(row["publicationStatements"][1]["dates"], ["2000"])
+        self.assertEqual(row["publicationLinks"][0]["urls"], ["https://publications.gc.ca/example.pdf"])
+        self.assertEqual(row["publicationLinks"][0]["formats"], ["PDF"])
+        self.assertEqual(row["publicationLinks"][0]["labels"], ["Full text"])
+
+    def test_publishing_metadata_survives_bilingual_archive_aggregation_and_replay(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            inputs = base / "inputs"
+            fixture_inputs(inputs)
+            root = base / "corpus"
+            run = checklists.refresh(root, False, inputs, base_root=None)
+            self.assertEqual(run["recordSchema"], "paired-marc-v4")
+            self.assertEqual(run["schemaVersion"], 3)
+            rows = [json.loads(line) for line in (root / "current" / "records.jsonl").read_text().splitlines()]
+            self.assertEqual(rows[0]["corporateNames"][0]["roles"], ["issuing body"])
+            self.assertEqual(rows[0]["publicationStatements"][1]["function"], "publication")
+            self.assertEqual(rows[0]["publicationLinks"][0]["formats"], ["PDF"])
+            self.assertEqual(checklists.replay(root)["verifiedIssues"], 3)
+
     def test_full_historical_backfill_deduplicates_bilingual_and_repeated_issue_ids(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp)
@@ -232,6 +291,9 @@ class PublicationChecklists(unittest.TestCase):
         english = checklists.parse_marc_xml(compact, "en")["id-1"]
         french = checklists.parse_marc_xml(formatted, "fr")["id-1"]
         self.assertEqual(english["fingerprint"], french["fingerprint"])
+        legacy_compact = checklists.parse_marc_xml(compact, "en", "paired-marc-v3")["id-1"]
+        legacy_formatted = checklists.parse_marc_xml(formatted, "fr", "paired-marc-v3")["id-1"]
+        self.assertEqual(legacy_compact["fingerprint"], legacy_formatted["fingerprint"])
 
     def test_relative_corpus_root_publishes_a_valid_latest_pointer(self):
         with tempfile.TemporaryDirectory() as temp:

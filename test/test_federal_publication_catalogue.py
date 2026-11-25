@@ -31,7 +31,16 @@ class PublicationCatalogueTests(unittest.TestCase):
                                              "finalUrl": "https://publications.gc.ca/source.zip"}
             (base/"current/receipt.json").write_text(json.dumps(fields))
             records = weekly/"current/records.jsonl"
-            records.write_text(json.dumps({"catalogueId": "9.100", "title": "Évaluation publique", "citations": {"fr": "https://publications.gc.ca/liste"}}) + "\n")
+            weekly_record = {"catalogueId": "9.100", "agencyCode": "CaOODSP", "title": "Évaluation publique",
+                             "citations": {"fr": "https://publications.gc.ca/liste"},
+                             "corporateNames": [{"tag": "110", "label": "Office A", "roles": ["issuing body"]}],
+                             "issuingBodies": [{"label": "Office A", "sourceTag": "110", "roles": ["issuing body"]}],
+                             "publishers": [{"name": "Publisher A", "sourceTag": "264", "function": "publication"}],
+                             "publicationStatements": [{"tag": "264", "ind2": "1", "function": "publication",
+                                                         "entities": ["Publisher A"], "dates": ["2026"]}],
+                             "publicationLinks": [{"tag": "856", "urls": ["https://publications.gc.ca/example.pdf"],
+                                                   "formats": ["PDF"], "labels": ["Full text"]}]}
+            records.write_text(json.dumps(weekly_record) + "\n")
             (weekly/"current/receipt.json").write_text(json.dumps({"status": "complete", "range": {"latestIssue": "2026-26-01"},
                 "baseSnapshotDate": fields["snapshotDate"], "recordsSha256": catalogue.sha_file(records), "aggregateRecordCount": 1}))
             first = catalogue.build(db, base, weekly)
@@ -41,6 +50,10 @@ class PublicationCatalogueTests(unittest.TestCase):
             self.assertEqual(len(rows), 4)
             self.assertEqual(rows[0]["metadata"]["corporateNames"], [{"label": "Office A", "roles": ["auteur"]}])
             self.assertEqual(rows[-1]["source"], "weekly-checklists")
+            self.assertEqual(rows[-1]["metadata"]["corporateNames"][0]["roles"], ["issuing body"])
+            self.assertEqual(rows[-1]["metadata"]["publicationStatements"][0]["function"], "publication")
+            self.assertEqual(rows[-1]["metadata"]["publicationLinks"][0]["formats"], ["PDF"])
+            self.assertNotIn("CaOODSP", json.dumps(rows[-1]["metadata"]["publishers"]))
             records.write_text("broken")
             with self.assertRaisesRegex(ValueError, "differs from its receipt"):
                 catalogue.build(db, base, weekly)

@@ -16,7 +16,7 @@ base_intake = import_module("federal-publications")
 BASE = base_intake.DEFAULT_ROOT
 CHECKLISTS = Path("data/corpus/federal-publication-checklists")
 DATABASE = Path("data/corpus/federal-publication-catalogue/catalogue.sqlite")
-SCHEMA = 1
+SCHEMA = 2
 NS = {"m": "http://www.loc.gov/mods/v3"}
 
 
@@ -84,6 +84,10 @@ def weekly_rows(source):
     with source["path"].open(encoding="utf-8") as stream:
         for line in stream:
             row = json.loads(line)
+            # Preserve the complete parsed MARC row in the query database:
+            # corporate relators, imprint functions, and 856 links stay paired
+            # with their exact catalogue record instead of becoming lookalikes
+            # inferred from the cataloging agency code.
             yield "weekly-checklists", row["catalogueId"], row["title"], json_text(row)
 
 
