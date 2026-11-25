@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import type { DatabaseSync } from 'node:sqlite';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sha256File } from './lib/file-integrity';
 import { localD1 } from './lib/local-d1';
 import { runWrittenQuestionRequest } from '../src/routes/written-questions';
 
@@ -88,12 +88,6 @@ function codePointLength(text: string) {
 
 function firstCodePointSlice(text: string, count: number) {
   return text.slice(0, offsetByCodePoints(text, 0, count));
-}
-
-async function sha256File(path: string) {
-  const hash = createHash('sha256');
-  for await (const chunk of createReadStream(path)) hash.update(chunk);
-  return hash.digest('hex');
 }
 
 function wranglerDatabaseId() {

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { sha256File } from '../scripts/lib/file-integrity';
 import { openSqlite, splitWrittenQuestionText } from '../scripts/materialize-written-questions';
 
 describe('local written-question D1 materialization SQL', () => {
@@ -18,6 +20,17 @@ describe('local written-question D1 materialization SQL', () => {
         expect(readonly.prepare('SELECT value FROM sample').get()).toEqual({ value: 'ready' });
         expect(() => readonly.exec('INSERT INTO sample VALUES (\'blocked\')')).toThrow();
       } finally { readonly.close(); }
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('hashes a file across bounded chunks without relying on async stream iteration', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'written-question-hash-'));
+    const path = join(directory, 'source.bin');
+    const content = Buffer.alloc(2 * 1024 * 1024 + 37, 0x5a);
+    try {
+      writeFileSync(path, content);
+      const expected = createHash('sha256').update(readFileSync(path)).digest('hex');
+      await expect(sha256File(path)).resolves.toBe(expected);
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 
