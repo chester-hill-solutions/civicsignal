@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import datetime as dt
+import errno
 import gzip
 import hashlib
 from html.parser import HTMLParser
@@ -168,6 +169,13 @@ def _origin(url: str) -> tuple[str, str, int | None]:
     return parsed.scheme.casefold(), (parsed.hostname or "").casefold(), parsed.port
 
 
+def _transient_transport_failure(error: BaseException) -> bool:
+    reason = error.reason if isinstance(error, urllib.error.URLError) else error
+    return isinstance(reason, OSError) and getattr(reason, "errno", None) in {
+        errno.ECONNRESET, errno.ECONNABORTED, errno.ETIMEDOUT, errno.EPIPE,
+    }
+
+
 def public_archive_continue(body: bytes, requested_url: str, notice_url: str) -> str | None:
     """Return the exact publisher link only for its same-origin archive notice."""
     parts = urlsplit(notice_url)
@@ -265,8 +273,14 @@ def fetch_pdf_with_evidence(url: str, *, referer: str | None = None, continued: 
         if isinstance(error.reason, ssl.SSLCertVerificationError):
             return fetch_pdf_curl(url, error.reason, referer=referer, continued=continued,
                                   notice_evidence=_notice_evidence)
+        if _transient_transport_failure(error):
+            return fetch_pdf_curl(url, error.reason, referer=referer, continued=continued,
+                                  notice_evidence=_notice_evidence)
         raise FetchError(str(error.reason)[:1000]) from error
     except (TimeoutError, OSError) as error:
+        if _transient_transport_failure(error):
+            return fetch_pdf_curl(url, error, referer=referer, continued=continued,
+                                  notice_evidence=_notice_evidence)
         raise FetchError(str(error)[:1000]) from error
 
 

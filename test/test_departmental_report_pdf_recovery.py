@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from unittest import mock
 import sqlite3
+import urllib.error
 from urllib.parse import quote
 
 
@@ -170,6 +171,36 @@ class DepartmentalReportPdfRecoveryTests(unittest.TestCase):
         self.assertEqual(MODULE.collect_candidates({"issuerPages": [{"family": "departmental-plans", "language": "en",
             "reportLinks": [{"link_type": "direct-edition", "url": target, "label": "2024-2025 Plans",
                 "year_label": "2024-2025"}]}]})[0]["fetchUrl"], target)
+
+    def test_connection_reset_falls_back_to_trusted_curl_without_weakening_refusal_checks(self):
+        target = "https://grainscanada.gc.ca/en/about-us/reports/planning-performance-reporting/report-plans-priorities/2014-2015/pdf/report-plans-priorities-2014-2015.pdf"
+        body = b"%PDF-1.7 bounded grain fixture\n%%EOF"
+        opener = SequencedOpener([])
+        opener.open = mock.Mock(side_effect=urllib.error.URLError(ConnectionResetError(54, "Connection reset by peer")))
+
+        def curl(command, capture_output, text):
+            Path(command[command.index("--output") + 1]).write_bytes(body)
+            return MODULE.subprocess.CompletedProcess(command, 0, "200\napplication/pdf\n", "")
+
+        with mock.patch.object(MODULE.urllib.request, "build_opener", return_value=opener), \
+             mock.patch.object(MODULE.subprocess, "run", side_effect=curl) as curl_run:
+            result = MODULE.fetch_pdf_with_evidence(target)
+        self.assertEqual(result[:4], (body, target, 200, "application/pdf"))
+        self.assertIsNone(result[4])
+        curl_args = curl_run.call_args.args[0]
+        self.assertIn("=https", curl_args)
+        self.assertNotIn("--insecure", curl_args)
+        self.assertNotIn("-k", curl_args)
+
+        forbidden = urllib.error.HTTPError(target, 403, "Forbidden", {}, None)
+        refused_opener = SequencedOpener([])
+        refused_opener.open = mock.Mock(side_effect=forbidden)
+        with mock.patch.object(MODULE.urllib.request, "build_opener", return_value=refused_opener), \
+             mock.patch.object(MODULE.subprocess, "run") as refused_curl:
+            with self.assertRaisesRegex(MODULE.FetchError, "HTTP 403"):
+                MODULE.fetch_pdf_with_evidence(target)
+        refused_opener.open.assert_called_once()
+        refused_curl.assert_not_called()
 
     def test_shared_fetch_pdf_keeps_its_four_value_interface(self):
         target = "https://publications.gc.ca/collections/direct.pdf"
