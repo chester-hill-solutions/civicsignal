@@ -1,0 +1,477 @@
+{
+  "scope": "Local acquisition, archive replay and authenticated Worker verification. Each entry describes its own observation.",
+  "statutes": {
+    "receipt": "dist/statutes-local/16b991f7a6f7b010d635c94a06319080091aa0658664dec58e2a7f535dee42e0/receipt.json",
+    "sha256": "16b991f7a6f7b010d635c94a06319080091aa0658664dec58e2a7f535dee42e0",
+    "source": "https://github.com/justicecanada/laws-lois-xml.git",
+    "revision": "855cdfc65207a6906c414e09a77d7f93267c5356",
+    "distinctProvisions": {
+      "en": 138653,
+      "fr": 139013
+    }
+  },
+  "house": {
+    "receipt": "dist/hansard/reconciliation/45-1/house/receipts/2026-11-25T06-07-03-056Z-5a102ffd-f5d1-4b5c-909f-d11e5b05d464.json",
+    "sha256": "4e417f1efc84b492969870ec65769d37b12eae5499277cf07ca6f4b173f13853",
+    "cutoff": "2026-11-22",
+    "counts": {
+      "expectedSittings": 169,
+      "expectedEditions": 338,
+      "localEditions": 338,
+      "feedEditions": 338,
+      "archiveVerifiedWeeks": 35,
+      "missingWeeks": 0,
+      "conflicts": 0
+    },
+    "complete": true
+  },
+  "senate": {
+    "receipt": "dist/hansard/reconciliation/45-1/senate/receipts/2026-11-25T06-07-10-794Z-65d90c1a-29d9-46ef-9c0a-fe798afced10.json",
+    "sha256": "4e766b99e38d1e7c8023dcaba502b9fb5eac18910588cae26b5c4682f5b5f96a",
+    "cutoff": "2026-11-22",
+    "counts": {
+      "expectedSittings": 104,
+      "expectedEditions": 208,
+      "localEditions": 208,
+      "feedEditions": 208,
+      "archiveVerifiedWeeks": 34,
+      "missingWeeks": 0,
+      "conflicts": 0
+    },
+    "complete": true
+  },
+  "consultations": {
+    "receipt": "data/corpus/consultations/notice-receipts/20261125T060845.352672Z.json",
+    "sha256": "9d8dac4e7ac9ea36f1c04891eaad135faeb61a74c556ec51b86212b229ec7511",
+    "counts": {
+      "fetch-error": 2,
+      "fetched": 96,
+      "fetched-reused-url": 4,
+      "http-error": 7,
+      "missing-link": 26,
+      "published-editions": 98,
+      "unrecognized-url": 9
+    },
+    "openConsultations": 71,
+    "publishedArchivedSources": 100,
+    "publishedFetchedEditions": 98
+  },
+  "consultationWorker": {
+    "receipt": "dist/refresh-weekly/consultation-content-serving.json",
+    "sha256": "d83959512a88459e977e64da5066a58ecb72ffad84db9cf201158ac2490fe457",
+    "success": true,
+    "numPassedTests": 1,
+    "numFailedTests": 0
+  },
+  "regularGazetteWorker": {
+    "receipt": "dist/refresh-weekly/gazette-annual-serving.json",
+    "sha256": "dc4ae7bcf91d0ddb39831774c2f588c03a3487bf63d3485915c7aae055fa80c7",
+    "success": true,
+    "numPassedTests": 1,
+    "numFailedTests": 0
+  },
+  "regularGazette": {
+    "receipt": "dist/gazette/backfills/catchups/2026-through-2026-11-25/catchup-2026-through-2026-11-25-2026-11-25T06-26-31-979Z-609139d7-b141-4239-b8e1-0fc32217b13e.json",
+    "sha256": "6e8c713547241711de112d6b96b10c5d9ce7f78875428725dcdfdef0bd5f4a5b",
+    "counts": {
+      "discoveredIssues": 70,
+      "newlyVerifiedIssues": 1,
+      "archiveVerifiedPairs": 69,
+      "unavailableIssues": 0,
+      "corruptArchivePairs": 0,
+      "unsupportedRegularRows": 0,
+      "excludedExtras": 9,
+      "excludedExtraListingRows": 18,
+      "archivedSourceBytes": 450695
+    }
+  },
+  "publicationChecklists": {
+    "receipt": "data/corpus/federal-publication-checklists/runs/20261125T055615-41d445d0/receipt.json",
+    "sha256": "bcd07328cb55687488ab59cac38d9cb98a9978d6b3204daa1e7edb8f23041187",
+    "range": {
+      "baseCutoffSpanFound": true,
+      "firstIssue": "2025-25-47",
+      "firstIssueDateEnd": "2025-11-21",
+      "immutableIssueVersionCount": 108,
+      "issueVersionsAvailable": 53,
+      "issuesListedEnglish": 53,
+      "issuesListedFrench": 53,
+      "latestIssue": "2026-26-47",
+      "latestIssueDateEnd": "2026-11-20",
+      "latestPublishedPointerIssue": "2026-26-47",
+      "officialIssuesIndexed": 53
+    },
+    "counts": {
+      "baseSnapshotUniqueCatalogueIds": 321465,
+      "catalogueIdsAbsentFromBaseSnapshot": 8596,
+      "catalogueIdsPresentInBaseSnapshot": 19,
+      "distinctChecklistRecordVersions": 8615,
+      "idsWithMultipleMetadataVersions": 0,
+      "recordVersionsRecomputedForSchemaChange": 0,
+      "uniqueCatalogueIdsInChecklistIssues": 8615,
+      "versionsNewSincePreviousRun": 0
+    },
+    "status": "complete",
+    "recordsSha256": "0f3f826bee07abcb50a91551ff8fb9ee3e244552874cdc7135d576dd324e178e"
+  },
+  "publicationCatalogue": {
+    "receipt": "dist/refresh-weekly/bibliography-search-build.json",
+    "sha256": "0619712a66182fa0496a54629fedfa8ae04e442a918c26c693bd6bdaff20fad4",
+    "identity": "77794c9c05a812b8439768c4a4df759ad0497914cf88b980ea048e2a1ffb2ac4",
+    "rows": 330084,
+    "sources": {
+      "monographs": 133228,
+      "periodicals": 22803,
+      "series": 165438,
+      "weekly-checklists": 8615
+    },
+    "uniqueCatalogueIds": 330061
+  },
+  "institutionCoverage": {
+    "receipt": "dist/refresh-weekly/federal-institutions-with-documents.json",
+    "sha256": "e07f527d4bf9c03ffc7a59aedcaa0fc7745eb25d20c77e9b8841d983e99f90d7",
+    "rosterEntries": 110,
+    "provisionalNames": 109,
+    "namesWithRecords": 96,
+    "institutionsWithAttributedRecordsByFamily": {
+      "advice": 89,
+      "assurance": 1,
+      "delivery": 81,
+      "management": 11,
+      "mandates": 93,
+      "regulation": 29,
+      "research": 56,
+      "resources": 66
+    },
+    "sourceGroups": 24
+  },
+  "departmentalReportIndexes": {
+    "receipt": "data/corpus/departmental-report-editions/generations/dcc23c8928a921f4ca605342f73c6ef9.json",
+    "sha256": "43e703a785af115d2213436c5d36893557ebf485aab0478630e16d16e630362c",
+    "status": "partial",
+    "summary": {
+      "acquisitionFailures": 43,
+      "byFamilyLanguage": {
+        "departmental-plans/en": {
+          "directEditionLinks": 23,
+          "expectedPages": 86,
+          "failedPages": 11,
+          "fetchedPages": 75,
+          "gaps": 52,
+          "indexLinks": 704,
+          "labelledDiscoveryLinks": 0,
+          "skippedPages": 0,
+          "yearLabelledLinks": 727
+        },
+        "departmental-plans/fr": {
+          "directEditionLinks": 26,
+          "expectedPages": 86,
+          "failedPages": 8,
+          "fetchedPages": 78,
+          "gaps": 56,
+          "indexLinks": 760,
+          "labelledDiscoveryLinks": 0,
+          "skippedPages": 0,
+          "yearLabelledLinks": 786
+        },
+        "departmental-results/en": {
+          "directEditionLinks": 36,
+          "expectedPages": 86,
+          "failedPages": 8,
+          "fetchedPages": 78,
+          "gaps": 57,
+          "indexLinks": 792,
+          "labelledDiscoveryLinks": 0,
+          "skippedPages": 0,
+          "yearLabelledLinks": 828
+        },
+        "departmental-results/fr": {
+          "directEditionLinks": 29,
+          "expectedPages": 86,
+          "failedPages": 8,
+          "fetchedPages": 78,
+          "gaps": 59,
+          "indexLinks": 756,
+          "labelledDiscoveryLinks": 0,
+          "skippedPages": 0,
+          "yearLabelledLinks": 785
+        },
+        "regulatory-plans/en": {
+          "directEditionLinks": 0,
+          "expectedPages": 45,
+          "failedPages": 4,
+          "fetchedPages": 41,
+          "gaps": 3,
+          "indexLinks": 0,
+          "labelledDiscoveryLinks": 68,
+          "skippedPages": 0,
+          "yearLabelledLinks": 0
+        },
+        "regulatory-plans/fr": {
+          "directEditionLinks": 0,
+          "expectedPages": 46,
+          "failedPages": 4,
+          "fetchedPages": 41,
+          "gaps": 7,
+          "indexLinks": 0,
+          "labelledDiscoveryLinks": 45,
+          "skippedPages": 1,
+          "yearLabelledLinks": 0
+        }
+      },
+      "directEditionLinks": 114,
+      "gaps": 234,
+      "indexLinks": 3012,
+      "issuerLandingPagesExpected": 435,
+      "issuerLandingPagesFailed": 43,
+      "issuerLandingPagesFetched": 391,
+      "issuerLandingPagesPending": 0,
+      "issuerLandingPagesSkipped": 1,
+      "labelledDiscoveryLinks": 113,
+      "yearLabelledLinks": 3126
+    }
+  },
+  "departmentalReportPdfs": {
+    "receipt": "data/corpus/departmental-report-documents/generations/6768bf4080c33769185b60ae11606c85.json",
+    "sha256": "de872fb3faf5bbbe3959d35485fb2d3c08f5489ee7d181948523615969e3ea91",
+    "status": "partial",
+    "summary": {
+      "archivedBodyBytes": 109594930,
+      "byFamilyLanguage": {
+        "departmental-plans/en": {
+          "acquisitionFailures": 2,
+          "citations": 26,
+          "languageMismatches": 0,
+          "review": 0,
+          "verified": 24,
+          "yearMismatches": 0
+        },
+        "departmental-plans/fr": {
+          "acquisitionFailures": 0,
+          "citations": 26,
+          "languageMismatches": 1,
+          "review": 8,
+          "verified": 18,
+          "yearMismatches": 0
+        },
+        "departmental-results/en": {
+          "acquisitionFailures": 0,
+          "citations": 36,
+          "languageMismatches": 1,
+          "review": 7,
+          "verified": 29,
+          "yearMismatches": 6
+        },
+        "departmental-results/fr": {
+          "acquisitionFailures": 0,
+          "citations": 29,
+          "languageMismatches": 0,
+          "review": 3,
+          "verified": 26,
+          "yearMismatches": 3
+        }
+      },
+      "directLinkCitations": 117,
+      "failedTargets": 2,
+      "fetchedTargets": 114,
+      "readableTargets": 114,
+      "reviewCitations": 20,
+      "uniquePdfTargets": 116,
+      "verifiedCitations": 97
+    }
+  },
+  "regulatoryPlans": {
+    "receipt": "data/corpus/federal-regulatory-plans/dist/generations/20261125T062513388637Z-9633696226d9.json",
+    "sha256": "7a2abece8bc36d1075cd8455b80f36fb2390d8eb500c1de4f2d0f973a9d93eb4",
+    "status": "complete",
+    "summary": {
+      "archiveBytes": 2248549,
+      "discoveryLinks": 113,
+      "failedTargets": 0,
+      "forwardPlanCandidates": 68,
+      "namedInitiatives": 95,
+      "relatedOrUnattributedTargets": 0,
+      "verifiedPlanEditions": 68
+    }
+  },
+  "policyEditions": {
+    "receipt": "data/corpus/federal-policy-editions/reports/7e33760100b5a6436fa9cc668d4b3d53519ade8b784181a16b9d7ed0891c075f.json",
+    "sha256": "7e33760100b5a6436fa9cc668d4b3d53519ade8b784181a16b9d7ed0891c075f",
+    "summary": {
+      "catalogueEditionLinks": 511,
+      "catalogueIds": 508,
+      "latestFetch": {
+        "failed": 7,
+        "retrieved": 504
+      },
+      "linkedPolicyLanguageIds": 434,
+      "registeredLanguageIds": 1378,
+      "titleChecks": {
+        "matched": 502,
+        "review": 9
+      },
+      "uniquePdfTargets": 511
+    },
+    "offlineReplayedPdfs": 511
+  },
+  "irccFeed": {
+    "receipt": "data/corpus/federal-guidance/inventories/671d928b687a480d5879444f86e090fcccdc59f277041a3e31db6af9d185d72d.json",
+    "sha256": "671d928b687a480d5879444f86e090fcccdc59f277041a3e31db6af9d185d72d",
+    "programDeliveryInstructionRows": {
+      "en": 1210,
+      "fr": 1210
+    },
+    "programDeliveryUpdateRows": {
+      "en": 1387,
+      "fr": 1387
+    }
+  },
+  "stagingStatutes": {
+    "receipt": "docs/evidence/2026-11-25/staging-statutes-readback.json",
+    "sha256": "14adb1c005069265af42ae0653cba48696756e4ea5568728032f7bf9131233b5",
+    "scope": "staging-read-only-baseline",
+    "finishedAt": "2026-11-25T06:08:41.371Z",
+    "credentialPreflight": {
+      "configuredOperator": false,
+      "verifiedRoles": [],
+      "providerRequests": 0,
+      "error": "SNAPSHOT_CALENDAR_CREDENTIAL"
+    }
+  },
+  "departmentalReportHtml": {
+    "receipt": "data/corpus/departmental-report-documents/html-generations/cd3723bdfce93da40c06c2288d3e6228.json",
+    "sha256": "7be677e0988cee0472b458d5180628574dadae21d42e58825715141e2ec10bd6",
+    "status": "partial",
+    "sourceEditionRunId": "dcc23c8928a921f4ca605342f73c6ef9",
+    "candidateCitations": 1704,
+    "candidateTargets": 1692,
+    "remainingPending": 0,
+    "targetStatusCounts": {
+      "fetch-failed": 2,
+      "fetched": 1630,
+      "not-found": 4,
+      "out-of-policy": 12,
+      "unreadable": 44
+    },
+    "byFamilyLanguage": {
+      "departmental-plans/en": {
+        "accepted": 244,
+        "citations": 451,
+        "pending": 0,
+        "targets": 447
+      },
+      "departmental-plans/fr": {
+        "accepted": 300,
+        "citations": 416,
+        "pending": 0,
+        "targets": 412
+      },
+      "departmental-results/en": {
+        "accepted": 227,
+        "citations": 432,
+        "pending": 0,
+        "targets": 429
+      },
+      "departmental-results/fr": {
+        "accepted": 326,
+        "citations": 405,
+        "pending": 0,
+        "targets": 405
+      }
+    }
+  },
+  "irccDocumentsFirstFullCapture": {
+    "receipt": "data/corpus/ircc-guidance-documents/reports/4f16e7822ac4f8d6db8a138a47c422e0e2caae7a4fe0c340b46d3a2930ab6623.json",
+    "sha256": "4f16e7822ac4f8d6db8a138a47c422e0e2caae7a4fe0c340b46d3a2930ab6623",
+    "availableEditions": 5959,
+    "failedEditions": 7,
+    "linkedReferences": 0,
+    "listedEditions": 5966,
+    "verifiedThisRun": 5959,
+    "availableFormatCounts": {
+      "html": 5889,
+      "pdf": 70
+    },
+    "distinctFinalUrls": 5929
+  },
+  "departmentalReportHtmlFullReplay": {
+    "receipt": "dist/refresh-weekly/agency-html-replay.json",
+    "sha256": "ae34d94dbc124c2033b198d487144a967996102a65632b43679c22c8432b9a70",
+    "acceptedCitations": 1097,
+    "byFamilyLanguage": {
+      "departmental-plans/en": {
+        "candidates": 451,
+        "statuses": {
+          "accepted": 244,
+          "not-report": 190,
+          "out-of-policy": 3,
+          "unreadable": 14
+        }
+      },
+      "departmental-plans/fr": {
+        "candidates": 416,
+        "statuses": {
+          "accepted": 300,
+          "not-found": 1,
+          "not-report": 101,
+          "out-of-policy": 3,
+          "unreadable": 11
+        }
+      },
+      "departmental-results/en": {
+        "candidates": 432,
+        "statuses": {
+          "accepted": 227,
+          "fetch-failed": 2,
+          "not-found": 2,
+          "not-report": 180,
+          "out-of-policy": 3,
+          "unreadable": 18
+        }
+      },
+      "departmental-results/fr": {
+        "candidates": 405,
+        "statuses": {
+          "accepted": 326,
+          "not-found": 2,
+          "not-report": 73,
+          "out-of-policy": 3,
+          "unreadable": 1
+        }
+      }
+    },
+    "candidateCitations": 1704,
+    "candidateTargets": 1692,
+    "citationDispositionCounts": {
+      "accepted": 1097,
+      "fetch-failed": 2,
+      "not-found": 5,
+      "not-report": 544,
+      "out-of-policy": 12,
+      "unreadable": 44
+    },
+    "collection": "departmental-report-html-audit",
+    "failedOrIncompleteRuns": [
+      {
+        "detail": "Batch rolled back on duplicate shared-URL citation write; no target rows were committed.",
+        "runId": "8e30cba6e9f6643e820a2a6089917e78",
+        "status": "failed"
+      }
+    ],
+    "queueCompleteness": "drained",
+    "readableAcquisitions": 1630,
+    "replayStatus": "verified",
+    "replayedBatchRuns": 82,
+    "replayedRunIdsSha256": "932202fdbb9372885ad9d3d68499e2106bab4b2301089843729dd4e1328df5a5",
+    "sourceCurrentReportSha256": "31ea1851b520c988199576ff7aba3adc2e55a7ca76bed4e35673270d93240424",
+    "sourceEditionRunId": "dcc23c8928a921f4ca605342f73c6ef9",
+    "status": "partial",
+    "targetStatusCounts": {
+      "fetch-failed": 2,
+      "fetched": 1630,
+      "not-found": 4,
+      "out-of-policy": 12,
+      "unreadable": 44
+    }
+  }
+}
