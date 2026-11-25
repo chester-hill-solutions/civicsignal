@@ -14,13 +14,14 @@ function open(schema: string) {
 }
 afterEach(() => { while (close.length) close.pop()?.(); });
 
-function inventory(day: number, programs: string[], change = '') {
+function inventory(day: number, programs: string[], change = '', source: 'nserc' | 'esdc' = 'nserc') {
+  const origin = source === 'nserc' ? 'https://nserc.canada.ca' : 'https://www.canada.ca';
   return {
-    source: 'nserc', observedAt: `2026-11-${day}T12:00:00Z`,
-    indexes: { en: 'https://nserc.canada.ca/en/', fr: 'https://nserc.canada.ca/fr/' }, gaps: [],
+    source, observedAt: `2026-11-${day}T12:00:00Z`,
+    indexes: { en: origin + '/en/', fr: origin + '/fr/' }, gaps: [],
     records: programs.flatMap(program => ['en', 'fr'].map(language => {
-      const url = `https://nserc.canada.ca/${language}/${program}`;
-      return { id: 'nserc-' + program, language, url, title: program, availability: 'published', status: 'ongoing', statusText: null,
+      const url = `${origin}/${language}/${program}`;
+      return { id: source + '-' + program, language, url, title: program, availability: 'published', status: 'ongoing', statusText: null,
         sections: [{ field: 'eligibility', heading: language === 'fr' ? 'Admissibilité' : 'Eligibility', url,
           text: program === 'alpha' && language === 'en' ? 'Eligible institutions' + change : 'Existing terms' }] };
     })),
@@ -89,6 +90,19 @@ describe('private D1 funding publication', () => {
     const hosted = open(schema);
     await expect(publishFunding(hosted.db, 'esdc', inventory(20, ['alpha']))).rejects.toThrow('esdc');
     expect(hosted.sqlite.prepare('SELECT COUNT(*) AS n FROM funding_catalogues').get()?.n).toBe(0);
+  });
+
+  it('publishes ESDC deltas beside NSERC without changing the NSERC serving rows or history', async () => {
+    const local = open(''), hosted = open(schema);
+    const nserc = inventory(20, ['alpha', 'beta']);
+    materializeFunding(local.sqlite, nserc);
+    await publishFunding(hosted.db, 'nserc', nserc);
+    for (const esdc of [inventory(20, ['alpha', 'beta'], '', 'esdc'), inventory(21, ['alpha', 'gamma'], ' revised', 'esdc')]) {
+      materializeFunding(local.sqlite, esdc);
+      await publishFunding(hosted.db, 'esdc', esdc);
+      compare(local, hosted);
+    }
+    expect(hosted.sqlite.prepare("SELECT COUNT(*) AS n FROM funding_versions WHERE source='nserc'").get()?.n).toBe(4);
   });
 
   const archived = process.env.CIVICSIGNAL_NSERC_FUNDING_REFERENCE;

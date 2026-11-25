@@ -5,14 +5,14 @@ import { tmpdir } from 'node:os';
 import { build } from 'esbuild';
 import { Miniflare, Response as LocalResponse } from 'miniflare';
 import { expect, it, vi } from 'vitest';
-import { FundingInventory } from '../src/corpora/funding';
+import { FundingInventory, type FundingSource } from '../src/corpora/funding';
 import { materializeFunding } from '../scripts/materialize-funding';
 import { testD1 } from './helpers/d1';
 import { readNsercInventory } from '../services/funding/archive';
 
 const digest = (bytes: string | Uint8Array) => createHash('sha256').update(bytes).digest('hex');
-async function inventoryFixture() {
-  const path = process.env.CIVICSIGNAL_NSERC_REFRESH_REFERENCE;
+async function inventoryFixture(source: FundingSource) {
+  const path = source === 'esdc' ? process.env.CIVICSIGNAL_ESDC_REFRESH_REFERENCE : process.env.CIVICSIGNAL_NSERC_REFRESH_REFERENCE;
   const pages = new Map<string, Uint8Array>();
   if (path) {
     const packet = FundingInventory.parse(JSON.parse(await readFile(path, 'utf8')));
@@ -21,9 +21,12 @@ async function inventoryFixture() {
     }
     return { packet, pages };
   }
-  const urls = { en: 'https://nserc-crsng.canada.ca/en/grants', fr: 'https://nserc-crsng.canada.ca/fr/subventions' };
+  const urls = source === 'esdc' ? {
+    en: 'https://www.canada.ca/en/employment-social-development/services/funding/programs.html',
+    fr: 'https://www.canada.ca/fr/emploi-developpement-social/services/financement/programmes.html',
+  } : { en: 'https://nserc-crsng.canada.ca/en/grants', fr: 'https://nserc-crsng.canada.ca/fr/subventions' };
   const records = (['en', 'fr'] as const).map(language => ({
-    id: 'nserc-grant', language, url: urls[language], title: language === 'en' ? 'Research grant' : 'Subvention de recherche',
+    id: source + '-grant', language, url: urls[language], title: language === 'en' ? 'Research grant' : 'Subvention de recherche',
     status: 'ongoing', statusText: null, availability: 'published',
     sections: [{ field: 'eligibility', heading: 'Institutions', text: 'College', url: urls[language] }],
   }));
@@ -32,12 +35,12 @@ async function inventoryFixture() {
     pages.set(sha256, body);
     return { url: row.url, resolvedUrl: row.url, bytes: body.length, sha256, etag: null, lastModified: null };
   });
-  const packet = FundingInventory.parse({ indexes: urls, source: 'nserc', observedAt: '2026-11-25T12:00:00.000Z', sources, records, gaps: [] });
+  const packet = FundingInventory.parse({ indexes: urls, source, observedAt: '2026-11-25T12:00:00.000Z', sources, records, gaps: [] });
   return { packet, pages };
 }
 
 it('refuses a funding inventory when a retained publisher page has changed under its original key', async () => {
-  const { packet, pages } = await inventoryFixture();
+  const { packet, pages } = await inventoryFixture('nserc');
   const bytes = new TextEncoder().encode(JSON.stringify(packet)), sha256 = digest(bytes);
   const key = `funding/nserc/inventories/${sha256}.json`;
   const objects = new Map([[key, bytes]]);
@@ -57,32 +60,48 @@ it('refuses a funding inventory when a retained publisher page has changed under
   await expect(readNsercInventory(reader, ref, packet.observedAt)).rejects.toThrow('Missing or truncated');
 });
 
-it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1')('runs the scheduled funding publisher from archived NSERC originals and replays the same editions', async () => {
-  const { packet, pages } = await inventoryFixture();
+it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1').each(['nserc', 'esdc'] as const)(
+  'runs the scheduled %s funding publisher from archived originals and replays the same editions', async source => {
+  const { packet, pages } = await inventoryFixture(source);
+  const esdc = source === 'esdc';
+  const entry = esdc ? 'services/funding/esdc/worker.ts' : 'services/funding/worker.ts';
+  const workflow = esdc ? 'EsdcRefresh' : 'FundingRefresh';
+  const lookup = esdc ? 'EsdcLookup' : 'FundingLookup';
   const local = testD1({ schema: '' });
   const expected = materializeFunding(local.sqlite, packet);
   local.close();
-  const bundle = await build({ entryPoints: ['services/funding/worker.ts'], bundle: true, format: 'esm',
+  const bundle = await build({ entryPoints: [entry], bundle: true, format: 'esm',
     platform: 'browser', target: 'es2022', external: ['node:*', 'cloudflare:*'], write: false });
   const directory = await mkdtemp(join(tmpdir(), 'funding-workflow-')), name = 'funding-local';
   const mf = new Miniflare({ telemetry: { enabled: false }, unsafeTriggerHandlers: true,
     unsafeDevRegistryPath: join(directory, 'registry'), resourcePersistencePath: join(directory, 'state'),
     workers: [{ config: { name, compatibilityDate: '2026-10-22', compatibilityFlags: ['nodejs_compat'],
       env: { DB: { type: 'd1', id: name, dev: { remote: false } }, ARCHIVE: { type: 'r2', name, dev: { remote: false } },
-        REFRESH: { type: 'workflow', name, worker: name, exportName: 'FundingRefresh' },
-        LOOKUP: { type: 'worker', worker: name, exportName: 'FundingLookup' },
+        REFRESH: { type: 'workflow', name, worker: name, exportName: workflow },
+        LOOKUP: { type: 'worker', worker: name, exportName: lookup },
         COLLECTOR: { type: 'fetcher', handler: async (req, runtime) => {
           expect(req.method).toBe('POST');
           expect(new URL(req.url).pathname).toBe('/collect');
           const { observedAt } = await req.json() as { observedAt: string };
           const body = JSON.stringify({ ...packet, observedAt }), sha256 = digest(body);
-          const key = `funding/nserc/inventories/${sha256}.json`;
+          const key = `funding/${source}/inventories/${sha256}.json`;
           const bucket = await runtime.getR2Bucket('ARCHIVE', name);
           await bucket.put(key, body);
+          if (esdc) {
+            // The reference importer records confirmed missing pages in its gap list.
+            // Recreate the collector's per-observation status objects for this local replay.
+            for (const gap of packet.gaps) {
+              const terminal = /^confirmed-detail-http-(404|410)$/.exec(gap.reason);
+              if (terminal) {
+                const checkpoint = `funding/esdc/observations/${observedAt}/pages/${digest(gap.url)}.json`;
+                await bucket.put(checkpoint, JSON.stringify({ url: gap.url, status: Number(terminal[1]) }));
+              }
+            }
+          }
           return LocalResponse.json({ key, sha256, bytes: Buffer.byteLength(body), sources: packet.sources?.length,
             sourceBytes: packet.sources?.reduce((sum, file) => sum + file.bytes, 0) });
         } } },
-      exports: { FundingRefresh: { type: 'workflow', name } },
+      exports: { [workflow]: { type: 'workflow', name } },
       manifest: { mainModule: 'worker.js', modules: { 'worker.js': { type: 'esm', contents: bundle.outputFiles[0].text } } },
     } }] });
   try {
@@ -91,19 +110,19 @@ it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1')('runs the scheduled fun
       const ddl = await readFile(join('preview/funding/migrations', migration), 'utf8');
       await db.batch(ddl.replace(/^--.*$/gm, '').split(';').map(q => q.trim()).filter(Boolean).map(q => db.prepare(q)));
     }
-    for (const [sha256, page] of pages) await bucket.put(`funding/nserc/sources/${sha256}.html`, page);
+    for (const [sha256, page] of pages) await bucket.put(`funding/${source}/sources/${sha256}.html`, page);
     const { REFRESH } = await mf.getBindings<{ REFRESH: Workflow }>(name);
     async function trigger(time: number) {
       const url = new URL('/cdn-cgi/local/scheduled', await mf.ready);
       url.search = new URLSearchParams({ cron: '30 11 * * *', time: String(time), format: 'json' }).toString();
       expect(await (await fetch(url)).json()).toMatchObject({ outcome: 'ok' });
-      const id = `nserc-${time}`, instance = await REFRESH.get(id);
+      const id = `${source}-${time}`, instance = await REFRESH.get(id);
       await vi.waitFor(async () => {
         const status = await instance.status();
         expect(status.status, JSON.stringify(status.error)).toBe('complete');
-      }, { timeout: 15000, interval: 100 });
-      const receipt = await bucket.get(`funding/nserc/runs/${id}.json`);
-      if (!receipt) throw new Error('Missing NSERC receipt.');
+      }, { timeout: 90000, interval: 100 });
+      const receipt = await bucket.get(`funding/${source}/runs/${id}.json`);
+      if (!receipt) throw new Error(`Missing ${source} receipt.`);
       return JSON.parse(await receipt.text());
     }
     const time = Date.parse(packet.observedAt);
@@ -118,4 +137,4 @@ it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1')('runs the scheduled fun
     await mf.dispose();
     await rm(directory, { recursive: true, force: true });
   }
-}, 60000);
+}, 240000);

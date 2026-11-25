@@ -47,6 +47,22 @@ CIVICSIGNAL_NSERC_FUNDING_REFERENCE=data/corpus/funding/nserc.json \
 bun run test test/funding-refresh-workerd.test.ts test/funding-hosted-publish.test.ts
 ```
 
+## Cloudflare ESDC funding staging
+
+The [ESDC Workflow](../services/funding/esdc/wrangler.jsonc) runs daily at **23:15 UTC** with a [private collector](../services/funding/esdc-collector/wrangler.jsonc). The two Workers share the funding D1 and R2 resources with NSERC. The Workflow accepts only ESDC inventory, writes ESDC catalogue rows, and verifies an English and a French edition through the private lookup service.
+
+The following command starts a manual observation in the staging account.
+
+```sh
+esdc_ms=$(node -p 'Date.now()')
+cf workflows instances create civicsignal-stage-esdc \
+  --body "{\"instance_id\":\"esdc-$esdc_ms\",\"params\":{\"scheduledTime\":$esdc_ms}}"
+```
+
+Check the instance status, then read `funding/esdc/runs/<instanceId>.json` in the staging funding bucket. The receipt links the dated capture with its catalogue revision, edition and gap counts, D1 publication rows read and written, and bilingual lookup hashes. For a scheduled run, match the calendar event's millisecond timestamp to the instance ID. A retry of an interrupted acquisition uses the same observation time to recover verified pages. A new calendar occurrence rechecks the publisher.
+
+If acquisition stops before publication, inspect the failing URL in the collector log and the saved page references under `funding/esdc/observations/<observedAt>/pages/`. Restart the same Workflow instance to continue that observation. The collector's `esdc-acquisition-complete` log records how many URLs it fetched and how many it recovered from checkpoints, including confirmed missing pages. The Workflow checks archived originals and terminal HTTP evidence before committing the catalogue to D1.
+
 ## What runs daily
 
 | Collection | Command | Measured (2026-11-24) |

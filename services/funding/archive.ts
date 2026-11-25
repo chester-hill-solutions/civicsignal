@@ -19,11 +19,11 @@ export async function collectNserc(collector: Fetcher, observedAt: string) {
   return ref;
 }
 
-interface ArchiveReader {
+export interface ArchiveReader {
   get(key: string): Promise<{ size: number; arrayBuffer(): Promise<ArrayBuffer> } | null>;
 }
 
-async function verifiedBytes(bucket: ArchiveReader, key: string, size: number, digest: string) {
+export async function verifiedBytes(bucket: ArchiveReader, key: string, size: number, digest: string) {
   const object = await bucket.get(key);
   if (!object || object.size !== size) throw new Error(`Missing or truncated funding archive object: ${key}`);
   const bytes = new Uint8Array(await object.arrayBuffer());
