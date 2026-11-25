@@ -1,8 +1,11 @@
 import importlib.util
+from email.message import Message
 from pathlib import Path
 import tempfile
 import unittest
 import json
+import urllib.error
+from unittest import mock
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/departmental-report-editions.py"
@@ -12,6 +15,45 @@ SPEC.loader.exec_module(MODULE)
 
 
 class DepartmentalReportEditionsTests(unittest.TestCase):
+    def test_fetch_retries_one_transient_reset_but_does_not_retry_publisher_responses(self):
+        class Response:
+            status = 200
+            def __init__(self):
+                self.headers = Message()
+                self.headers["Content-Type"] = "text/html"
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+            def geturl(self):
+                return "https://grainscanada.gc.ca/en/about-us/reports/"
+            def read(self, size=-1):
+                return b"<html><h1>Departmental Plans 2025-2026</h1></html>"
+
+        transport_attempts = []
+        class TransientThenSuccess:
+            def open(self, _request, timeout):
+                transport_attempts.append(timeout)
+                if len(transport_attempts) == 1:
+                    raise urllib.error.URLError(ConnectionResetError(54, "Connection reset by peer"))
+                return Response()
+
+        with mock.patch.object(MODULE.urllib.request, "build_opener", return_value=TransientThenSuccess()), \
+             mock.patch.object(MODULE.time, "sleep") as sleep:
+            body, media, final, size = MODULE.fetch_page("https://grainscanada.gc.ca/en/about-us/reports/")
+        self.assertTrue(body.startswith(b"<html>"))
+        self.assertEqual((media, final, size), ("text/html", "https://grainscanada.gc.ca/en/about-us/reports/", len(body)))
+        self.assertEqual(transport_attempts, [30, 30])
+        sleep.assert_called_once_with(0.25)
+
+        forbidden = urllib.error.HTTPError("https://grainscanada.gc.ca/en/about-us/reports/", 403, "Forbidden", {}, None)
+        opener = mock.Mock()
+        opener.open.side_effect = forbidden
+        with mock.patch.object(MODULE.urllib.request, "build_opener", return_value=opener):
+            with self.assertRaisesRegex(MODULE.FetchError, "HTTP 403"):
+                MODULE.fetch_page("https://grainscanada.gc.ca/en/about-us/reports/")
+        opener.open.assert_called_once()
+
     def test_exact_publisher_404_recoveries_are_source_bound_and_reported(self):
         inventory = {
             "families": {

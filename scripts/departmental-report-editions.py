@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import urllib.error
 import urllib.request
 from urllib.parse import quote, unquote, urljoin, urlsplit
@@ -298,7 +299,7 @@ class FetchError(Exception):
         self.bytes_read = bytes_read
 
 
-def fetch_page(url: str, max_bytes: int = MAX_PAGE_BYTES) -> tuple[bytes, str, str, int]:
+def _fetch_page_once(url: str, max_bytes: int = MAX_PAGE_BYTES) -> tuple[bytes, str, str, int]:
     """Fetch one official HTTPS page with checked redirects and a hard size bound."""
     class CheckedRedirect(urllib.request.HTTPRedirectHandler):
         def __init__(self):
@@ -343,6 +344,21 @@ def fetch_page(url: str, max_bytes: int = MAX_PAGE_BYTES) -> tuple[bytes, str, s
     if media not in HTML_TYPES and media != "application/pdf":
         raise FetchError("unexpected media type: " + media, bytes_read=len(raw))
     return raw, media, final_url, len(raw)
+
+
+def fetch_page(url: str, max_bytes: int = MAX_PAGE_BYTES) -> tuple[bytes, str, str, int]:
+    """Retry one transient transport failure without retrying publisher responses."""
+    try:
+        return _fetch_page_once(url, max_bytes)
+    except FetchError as error:
+        detail = str(error).casefold()
+        transient = error.http_status is None and any(marker in detail for marker in (
+            "timed out", "timeout", "connection reset", "connection aborted",
+            "remote end closed", "temporary failure", "temporarily unavailable"))
+        if not transient:
+            raise
+    time.sleep(0.25)
+    return _fetch_page_once(url, max_bytes)
 
 
 def _fetch_with_platform_curl(url: str, max_bytes: int, original_error: Exception) -> tuple[bytes, str, str, int]:
