@@ -9,6 +9,8 @@ import { recallGazette } from './lib/gazette-recall';
 import { fetchGazetteIssue, gazetteIssueUrl, parseGazetteIssue } from './lib/gazette-source';
 import { discoverCurrentGazetteIssues, discoverGazetteYearThrough } from './lib/gazette-current';
 import { gazetteEditionDigest, importGazetteEdition, importGazetteEditionBatch, importGazetteEditions, storedGazetteEditionDigest, validateGazetteEdition } from './lib/gazette-store';
+import { fetchGazetteExtraEdition, inspectGazetteExtraPdf, parseGazetteExtraEdition, type GazetteExtraPdfEvidence } from './lib/gazette-extra-source';
+import { gazetteExtraEditionDigest, importGazetteExtraEditionBatch, storedGazetteExtraEditionDigest, type GazetteExtraEdition, type GazetteExtraIssueKey } from './lib/gazette-extra-store';
 
 const USAGE = `Usage:
   bun scripts/gazette-local.ts replay <sqlite-file> <week.json>
@@ -85,21 +87,14 @@ const HISTORICAL_CAPTURE_LIMIT = 192 * 1024 * 1024;
 const HISTORICAL_RESERVE_BYTES = 64 * 1024 * 1024;
 const HISTORICAL_FILE_LIMIT = 2 * 1024 * 1024;
 
-function excludedExtraCounts(listings: Awaited<ReturnType<typeof discoverGazetteYearThrough>>['annualListings']) {
-  const issueIds = new Set<string>();
-  let listingRows = 0;
-  for (const listing of listings) for (const row of listing.extraRows ?? []) {
-    issueIds.add(`${listing.part}:${row.date}`);
-    listingRows += 1;
-  }
-  return { excludedExtras: issueIds.size, excludedExtraListingRows: listingRows };
-}
 type SourceCaptureState = { bytes: number; sources: Map<string, Record<string, unknown>>; errors: Array<{ url: string; error: string }> };
 type ArchivedPair = { completedAt: string; sources: Partial<Record<'en' | 'fr', Record<string, unknown>>> };
+type ArchivedExtraPair = { completedAt: string; sources: Partial<Record<'en' | 'fr', Record<string, unknown>>> };
 type CatchupContext = {
   root: string;
   sqlite: DatabaseSync;
   archiveIndex: Map<string, ArchivedPair>;
+  archiveExtraIndex: Map<string, ArchivedExtraPair>;
   send: typeof fetch;
   sources: Map<string, Record<string, unknown>>;
 };
@@ -123,14 +118,15 @@ async function storeGazetteResponse(response: Response, url: string, root: strin
   if (error) return captureFailure(state, url, error);
   state.bytes += bytes.byteLength;
   const contentType = response.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() ?? null;
-  if (!response.ok || contentType !== 'text/html' || !bytes.length) {
+  const isPdf = new URL(url).pathname.endsWith('.pdf') && contentType === 'application/pdf';
+  if (!response.ok || (contentType !== 'text/html' && !isPdf) || !bytes.length) {
     if (response.ok) state.errors.push({ url, error: `Unexpected source media type or empty body (${contentType ?? 'missing content type'}).` });
     return new Response(bytes, { status: response.status, statusText: response.statusText, headers: response.headers });
   }
   const stats = statfsSync(root);
   if (stats.bavail * stats.bsize - bytes.length < HISTORICAL_RESERVE_BYTES) return captureFailure(state, url, 'Insufficient free disk space to preserve the next Gazette source index.');
   const hash = createHash('sha256').update(bytes).digest('hex');
-  const file = `objects/${hash}.html`;
+  const file = `objects/${hash}.${isPdf ? 'pdf' : 'html'}`;
   const path = resolve(root, file);
   try { writeFileSync(path, bytes, { flag: 'wx', mode: 0o600 }); }
   catch (error) {
@@ -186,10 +182,17 @@ export async function syncGazetteYearThrough(databaseFile: string, year: number,
   const discovery = await discoverGazetteYearThrough(year, cutoff, captureSend);
   const editions: GazetteEdition[] = [];
   const issueResults: Array<Record<string, unknown>> = [];
+  const extraEditions: GazetteExtraEdition[] = [];
+  const extraResults: Array<Record<string, unknown>> = [];
   for (const issue of discovery.issues) {
     const result = await fetchHistoricalIssuePair(issue, captureSend, capture.sources, absoluteRoot);
     issueResults.push(result.result);
     editions.push(...result.editions);
+  }
+  for (const extra of discovery.extraIssues) {
+    const result = await fetchHistoricalExtraPair(extra, captureSend, capture.sources);
+    extraResults.push(result.result);
+    extraEditions.push(...result.editions);
   }
   const importResults: ReturnType<typeof importGazetteEditionBatch> = [];
   if (editions.length) {
@@ -198,11 +201,22 @@ export async function syncGazetteYearThrough(databaseFile: string, year: number,
     const sqlite = openStore(absoluteDatabase);
     try { importResults.push(...importGazetteEditionBatch(sqlite, editions)); } finally { sqlite.close(); }
   }
+  let extraImportResults: ReturnType<typeof importGazetteExtraEditionBatch> = [];
+  if (extraEditions.length) {
+    const absoluteDatabase = resolve(databaseFile);
+    mkdirSync(dirname(absoluteDatabase), { recursive: true });
+    const sqlite = openStore(absoluteDatabase);
+    try { extraImportResults = importGazetteExtraEditionBatch(sqlite, extraEditions); } finally { sqlite.close(); }
+  }
   const unsupported = discovery.annualListings.flatMap((listing) => (listing.unsupportedRows ?? []).map((row) => ({
     part: listing.part, language: listing.language, date: row.date, text: row.text, reason: 'unrecognized-regular-row',
   })));
   const annualFailures = discovery.annualListings.filter((listing) => listing.error);
-  const unavailable = issueResults.filter((item) => item.status === 'unavailable').length + unsupported.length + annualFailures.length;
+  const unsupportedExtras = discovery.annualListings.flatMap((listing) => (listing.unsupportedExtraRows ?? []).map((row) => ({
+    part: listing.part, language: listing.language, date: row.date, text: row.text, reason: 'unrecognized-extra-row',
+  })));
+  const unavailable = issueResults.filter((item) => item.status === 'unavailable').length +
+    extraResults.filter((item) => item.status === 'unavailable').length + unsupported.length + unsupportedExtras.length + annualFailures.length;
   const complete = unavailable === 0 && capture.errors.length === 0 && discovery.annualListings.length === 4 &&
     discovery.annualListings.every((listing) => (listing.regularRows ?? 0) > 0) &&
     discovery.annualListings.every((listing) => listing.sha256 && listing.bytes !== undefined);
@@ -215,22 +229,26 @@ export async function syncGazetteYearThrough(databaseFile: string, year: number,
     completedAt: new Date().toISOString(),
     databasePath: resolve(databaseFile),
     archivePath: resolve(absoluteRoot, 'objects'),
-    policy: { editions: 'officially listed regular issues only', languages: 'both English and French required before import',
-      extras: 'excluded and counted separately', maxCapturedBytes: HISTORICAL_CAPTURE_LIMIT, maxBytesPerSource: HISTORICAL_FILE_LIMIT },
+    policy: { editions: 'officially listed regular and extra issues', languages: 'both English and French required before import',
+      extras: 'separate identities and local preview tables', maxCapturedBytes: HISTORICAL_CAPTURE_LIMIT, maxBytesPerSource: HISTORICAL_FILE_LIMIT },
     annualListings: discovery.annualListings,
-    excludedExtras: discovery.annualListings.map((listing) => ({ part: listing.part, language: listing.language,
-      count: listing.extraRows?.length ?? 0, rows: listing.extraRows ?? [] })),
+    extras: extraResults,
+    unsupportedExtraRows: unsupportedExtras,
     unsupportedRegularRows: unsupported,
     issues: issueResults,
     sources: [...capture.sources.values()],
     captureErrors: capture.errors,
     import: { editions: importResults, imported: importResults.filter((item) => item.status === 'imported').length,
       unchanged: importResults.filter((item) => item.status === 'unchanged').length,
-      recordCount: editions.reduce((sum, edition) => sum + edition.records.length, 0) },
+      recordCount: editions.reduce((sum, edition) => sum + edition.records.length, 0),
+      extras: extraImportResults, importedExtras: extraImportResults.filter((item) => item.status === 'imported').length,
+      unchangedExtras: extraImportResults.filter((item) => item.status === 'unchanged').length,
+      extraRecordCount: extraEditions.reduce((sum, edition) => sum + edition.records.length, 0) },
     counts: { discoveredIssues: discovery.issues.length, verifiedIssues: issueResults.filter((item) => item.status === 'verified').length,
       unavailableIssues: issueResults.filter((item) => item.status === 'unavailable').length,
-      ...excludedExtraCounts(discovery.annualListings),
-      unsupportedRegularRows: unsupported.length, archivedSourceBytes: capture.bytes },
+      discoveredExtras: discovery.extraIssues.length, verifiedExtras: extraResults.filter((item) => item.status === 'verified').length,
+      unavailableExtras: extraResults.filter((item) => item.status === 'unavailable').length,
+      unsupportedRegularRows: unsupported.length, unsupportedExtraRows: unsupportedExtras.length, archivedSourceBytes: capture.bytes },
     complete,
   };
   const receiptFile = resolve(receiptDirectory, `${runId}.json`);
@@ -252,6 +270,37 @@ async function fetchHistoricalIssuePair(issue: Awaited<ReturnType<typeof discove
   const parsed: Partial<Record<'en' | 'fr', GazetteEdition>> = {};
   const languages: Array<Record<string, unknown>> = [];
   for (const key of [en, fr]) languages.push(await fetchHistoricalLanguage(key, send, sources, parsed, archiveRoot));
+  if (!parsed.en || !parsed.fr) return { editions: [], result: { ...base, status: 'unavailable', languages } };
+  return { editions: [parsed.en, parsed.fr], result: { ...base, status: 'verified', languages } };
+}
+
+async function fetchHistoricalExtraPair(extra: Awaited<ReturnType<typeof discoverGazetteYearThrough>>['extraIssues'][number],
+  send: typeof fetch, sources: Map<string, Record<string, unknown>>): Promise<{ editions: GazetteExtraEdition[]; result: Record<string, unknown> }> {
+  const base = { part: extra.part, issueDate: extra.issueDate, volume: extra.volume, extraNumber: extra.extraNumber };
+  const { en, fr } = extra.languages;
+  if (!en || !fr || extra.identityMismatch) return { editions: [], result: { ...base, status: 'unavailable',
+    causes: [!en ? 'English annual listing has no matching extra.' : '', !fr ? 'French annual listing has no matching extra.' : '',
+      extra.identityMismatch ? 'English and French annual listings disagree on volume.' : ''].filter(Boolean) } };
+  const parsed: Partial<Record<'en' | 'fr', GazetteExtraEdition>> = {};
+  const languages: Array<Record<string, unknown>> = [];
+  for (const [language, link] of [['en', en], ['fr', fr]] as const) {
+    const key: GazetteExtraIssueKey = { part: extra.part, issueDate: extra.issueDate, volume: extra.volume,
+      extraNumber: extra.extraNumber, language };
+    try {
+      const fetched = await fetchGazetteExtraEdition(key, link.htmlUrl, send, link.pdfUrl);
+      const edition = fetched.edition;
+      const source = sources.get(link.htmlUrl);
+      if (!source) throw new Error('Extra page parsed without retained source hash and original bytes.');
+      parsed[language] = edition;
+      const pdfSource = fetched.pdfEvidence ? sources.get(fetched.pdfEvidence.url) : undefined;
+      if (fetched.pdfEvidence && !pdfSource) throw new Error('Extra page date was reconciled without retaining its official PDF bytes and hash.');
+      languages.push({ language, url: link.htmlUrl, source, htmlIssuedAt: fetched.htmlIssuedAt,
+        ...(fetched.pdfEvidence ? { pdfEvidence: fetched.pdfEvidence, pdfSource } : {}), recordCount: edition.records.length });
+    } catch (error) {
+      languages.push({ language, url: link.htmlUrl, source: sources.get(link.htmlUrl) ?? null,
+        error: error instanceof Error ? error.message : String(error) });
+    }
+  }
   if (!parsed.en || !parsed.fr) return { editions: [], result: { ...base, status: 'unavailable', languages } };
   return { editions: [parsed.en, parsed.fr], result: { ...base, status: 'verified', languages } };
 }
@@ -308,41 +357,58 @@ export async function syncGazetteYearCatchup(databaseFile: string, year: number,
   const sqlite = openStore(absoluteDatabase);
   const editions: GazetteEdition[] = [];
   const issueResults: Array<Record<string, unknown>> = [];
+  const extraEditions: GazetteExtraEdition[] = [];
+  const extraResults: Array<Record<string, unknown>> = [];
   const archiveIndex = loadVerifiedGazetteArchiveIndex(absoluteRoot, year);
+  const archiveExtraIndex = loadVerifiedGazetteExtraArchiveIndex(absoluteRoot, year);
   const corruptArchives: Array<Record<string, unknown>> = [];
   try {
-    for (const issue of discovery.issues) {
-      const result = await processCatchupIssue(issue, { root: absoluteRoot, sqlite, archiveIndex,
-        send: captureSend, sources: capture.sources });
-      issueResults.push(result.result);
-      editions.push(...result.editions);
-      if (result.corrupt) corruptArchives.push(result.corrupt);
-    }
+    const processed = await processCatchupDiscovery(discovery, { root: absoluteRoot, sqlite, archiveIndex,
+      archiveExtraIndex, send: captureSend, sources: capture.sources });
+    editions.push(...processed.editions);
+    issueResults.push(...processed.issues);
+    extraEditions.push(...processed.extraEditions);
+    extraResults.push(...processed.extras);
+    corruptArchives.push(...processed.corruptArchives);
     let importResults: ReturnType<typeof importGazetteEditionBatch> = [];
     if (editions.length) importResults = importGazetteEditionBatch(sqlite, editions);
+    let extraImportResults: ReturnType<typeof importGazetteExtraEditionBatch> = [];
+    if (extraEditions.length) extraImportResults = importGazetteExtraEditionBatch(sqlite, extraEditions);
     const unsupported = discovery.annualListings.flatMap((listing) => (listing.unsupportedRows ?? []).map((row) => ({
       part: listing.part, language: listing.language, date: row.date, text: row.text,
     })));
     const failedListings = discovery.annualListings.filter((listing) => listing.error);
     const unavailableIssues = issueResults.filter((result) => result.status === 'unavailable').length;
     const archived = issueResults.filter((result) => result.status === 'archive-verified').length;
-    const complete = failedListings.length === 0 && unsupported.length === 0 && unavailableIssues === 0 &&
+    const unsupportedExtras = discovery.annualListings.flatMap((listing) => (listing.unsupportedExtraRows ?? []).map((row) => ({
+      part: listing.part, language: listing.language, date: row.date, text: row.text,
+    })));
+    const unavailableExtras = extraResults.filter((result) => result.status === 'unavailable').length;
+    const archivedExtras = extraResults.filter((result) => result.status === 'archive-verified').length;
+    const complete = failedListings.length === 0 && unsupported.length === 0 && unsupportedExtras.length === 0 &&
+      unavailableIssues === 0 && unavailableExtras === 0 &&
       corruptArchives.length === 0 && capture.errors.length === 0 && discovery.annualListings.length === 4 &&
       discovery.annualListings.every((listing) => (listing.regularRows ?? 0) > 0 && listing.sha256);
     const receipt = { schemaVersion: 1, runId, source: 'https://gazette.gc.ca', year, cutoff,
       completedAt: new Date().toISOString(), databasePath: absoluteDatabase,
       policy: { existingEditions: 'reuse only after both originals match their recorded hashes and reparse to the imported database digests',
-        missingEditions: 'both official language indexes must parse and be archived before atomic import', extras: 'excluded' },
+        missingEditions: 'both official language pages must parse and be archived before atomic import', extras: 'separate identities and local preview tables' },
       annualListings: discovery.annualListings,
-      sources: [...capture.sources.values()], captureErrors: capture.errors, issues: issueResults,
-      corruptArchives, unsupportedRegularRows: unsupported,
+      sources: [...capture.sources.values()], captureErrors: capture.errors, issues: issueResults, extras: extraResults,
+      corruptArchives, unsupportedRegularRows: unsupported, unsupportedExtraRows: unsupportedExtras,
       import: { editions: importResults, imported: importResults.filter((item) => item.status === 'imported').length,
         unchanged: importResults.filter((item) => item.status === 'unchanged').length,
-        recordCount: editions.reduce((sum, edition) => sum + edition.records.length, 0) },
+        recordCount: editions.reduce((sum, edition) => sum + edition.records.length, 0), extras: extraImportResults,
+        importedExtras: extraImportResults.filter((item) => item.status === 'imported').length,
+        unchangedExtras: extraImportResults.filter((item) => item.status === 'unchanged').length,
+        extraRecordCount: extraEditions.reduce((sum, edition) => sum + edition.records.length, 0) },
       counts: { discoveredIssues: discovery.issues.length, newlyVerifiedIssues: issueResults.filter((item) => item.status === 'verified-new').length,
         archiveVerifiedPairs: archived,
         unavailableIssues, corruptArchivePairs: corruptArchives.length, unsupportedRegularRows: unsupported.length,
-        ...excludedExtraCounts(discovery.annualListings),
+        discoveredExtras: discovery.extraIssues.length,
+        newlyVerifiedExtras: extraResults.filter((result) => result.status === 'verified-new').length,
+        archiveVerifiedExtras: archivedExtras, unavailableExtras, corruptArchiveExtras: corruptArchives.filter((item) => item['extraNumber'] !== undefined).length,
+        unsupportedExtraRows: unsupportedExtras.length,
         archivedSourceBytes: capture.bytes }, complete };
     const receiptFile = resolve(receiptDirectory, `${runId}.json`);
     writeAtomicJson(receiptFile, receipt);
@@ -350,6 +416,26 @@ export async function syncGazetteYearCatchup(databaseFile: string, year: number,
     writeAtomicJson(latestFile, { receipt: receiptFile, runId, completedAt: receipt.completedAt, complete });
     return { ...receipt, receiptPath: receiptFile, latestReceiptPath: latestFile };
   } finally { sqlite.close(); }
+}
+
+async function processCatchupDiscovery(discovery: Awaited<ReturnType<typeof discoverGazetteYearThrough>>,
+  context: CatchupContext): Promise<{ editions: GazetteEdition[]; issues: Record<string, unknown>[];
+    extraEditions: GazetteExtraEdition[]; extras: Record<string, unknown>[]; corruptArchives: Record<string, unknown>[] }> {
+  const output = { editions: [] as GazetteEdition[], issues: [] as Record<string, unknown>[],
+    extraEditions: [] as GazetteExtraEdition[], extras: [] as Record<string, unknown>[], corruptArchives: [] as Record<string, unknown>[] };
+  for (const issue of discovery.issues) {
+    const result = await processCatchupIssue(issue, context);
+    output.issues.push(result.result);
+    output.editions.push(...result.editions);
+    if (result.corrupt) output.corruptArchives.push(result.corrupt);
+  }
+  for (const extra of discovery.extraIssues) {
+    const result = await processCatchupExtra(extra, context);
+    output.extras.push(result.result);
+    output.extraEditions.push(...result.editions);
+    if (result.corrupt) output.corruptArchives.push(result.corrupt);
+  }
+  return output;
 }
 
 async function processCatchupIssue(issue: Awaited<ReturnType<typeof discoverGazetteYearThrough>>['issues'][number],
@@ -367,13 +453,68 @@ async function processCatchupIssue(issue: Awaited<ReturnType<typeof discoverGaze
   return { editions: fetched.editions, result };
 }
 
+async function processCatchupExtra(extra: Awaited<ReturnType<typeof discoverGazetteYearThrough>>['extraIssues'][number],
+  context: CatchupContext): Promise<{ editions: GazetteExtraEdition[]; result: Record<string, unknown>; corrupt?: Record<string, unknown> }> {
+  const base = { part: extra.part, issueDate: extra.issueDate, volume: extra.volume, extraNumber: extra.extraNumber };
+  const { en, fr } = extra.languages;
+  if (!en || !fr || extra.identityMismatch) return { editions: [], result: { ...base, status: 'unavailable', reason: 'annual-listing-language-gap-or-identity-mismatch' } };
+  const keys: [GazetteExtraIssueKey, GazetteExtraIssueKey] = [
+    { part: extra.part, issueDate: extra.issueDate, volume: extra.volume, extraNumber: extra.extraNumber, language: 'en' },
+    { part: extra.part, issueDate: extra.issueDate, volume: extra.volume, extraNumber: extra.extraNumber, language: 'fr' },
+  ];
+  const stored = keys.map((key) => storedGazetteExtraEditionDigest(context.sqlite, key));
+  const archiveKey = `${extra.part}:${extra.issueDate}:v${extra.volume}:x${extra.extraNumber}`;
+  const archived = context.archiveExtraIndex.get(archiveKey);
+  if (archived && stored.every(Boolean)) {
+    const expectedUrls = { en: en.htmlUrl, fr: fr.htmlUrl };
+    const results = await Promise.all(keys.map((key, index) => verifyArchivedGazetteExtra(context.root, key,
+      archived.sources[key.language], stored[index], expectedUrls[key.language])));
+    if (results.every((result) => result.valid)) return { editions: [], result: { ...base, status: 'archive-verified', sources: results.map((result) => result.source) } };
+    const failures = results.filter((result) => !result.valid).map((result) => result.error);
+    return { editions: [], result: { ...base, status: 'corrupt-archive', failures }, corrupt: { ...base, failures } };
+  }
+  const fetched = await fetchHistoricalExtraPair(extra, context.send, context.sources);
+  return { editions: fetched.editions,
+    result: { ...base, status: fetched.result.status === 'verified' ? 'verified-new' : 'unavailable',
+      languages: fetched.result.languages ?? [], causes: fetched.result.causes } };
+}
+
+async function verifyArchivedGazetteExtra(root: string, key: GazetteExtraIssueKey,
+  archivedLanguage: Record<string, unknown> | undefined, storedDigest: string | undefined,
+  expectedUrl: string): Promise<{ valid: boolean; source?: unknown; error?: string }> {
+  const source = archivedLanguage?.source as Record<string, unknown> | undefined;
+  if (!source || typeof source.url !== 'string' || typeof source.sha256 !== 'string' || typeof source.file !== 'string') {
+    return { valid: false, error: `${key.language}: verified extra receipt lacks source identity or hash.` };
+  }
+  const bytes = readVerifiedGazetteSource(root, source, expectedUrl);
+  if (!bytes || !storedDigest) return { valid: false, error: `${key.language}: archived extra original is missing or fails SHA-256 verification.` };
+  try {
+    let pdfEvidence: GazetteExtraPdfEvidence | undefined;
+    const priorEvidence = archivedLanguage?.['pdfEvidence'] as GazetteExtraPdfEvidence | undefined;
+    const pdfSource = archivedLanguage?.['pdfSource'] as Record<string, unknown> | undefined;
+    if (priorEvidence) {
+      if (!pdfSource || typeof priorEvidence.url !== 'string') throw new Error('Receipt lacks the archived official PDF source for its date reconciliation.');
+      const pdfBytes = readVerifiedGazetteSource(root, pdfSource, priorEvidence.url);
+      if (!pdfBytes) throw new Error('Official extra PDF is missing or fails SHA-256 verification.');
+      pdfEvidence = inspectGazetteExtraPdf(pdfBytes, key, priorEvidence.url);
+      if (JSON.stringify(pdfEvidence) !== JSON.stringify(priorEvidence)) throw new Error('Official extra PDF evidence differs from its successful receipt.');
+    }
+    const edition = parseGazetteExtraEdition(new TextDecoder('utf-8').decode(bytes), key, source.url, pdfEvidence);
+    if (gazetteExtraEditionDigest(edition) !== storedDigest) return { valid: false, error: `${key.language}: archived extra parse differs from local materialization.` };
+    return { valid: true, source };
+  } catch (error) {
+    return { valid: false, error: `${key.language}: archived extra no longer parses: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
 async function verifyCatchupArchive(archived: ArchivedPair,
   base: Record<string, unknown>, context: CatchupContext,
   keys: readonly [GazetteIssueKey, GazetteIssueKey], digests: Array<string | undefined>): Promise<{
     editions: GazetteEdition[]; result: Record<string, unknown>; corrupt?: Record<string, unknown>;
   }> {
-  const results = await Promise.all(keys.map((key, index) => verifyArchivedGazetteLanguage(context.root, context.sqlite, key,
-    archived.sources[key.language], digests[index], archived.sources[key.language === 'en' ? 'fr' : 'en'])));
+  const results = await Promise.all(keys.map((key, index) => verifyArchivedGazetteLanguage({ root: context.root, key,
+    archivedLanguage: archived.sources[key.language], storedDigest: digests[index],
+    partnerLanguage: archived.sources[key.language === 'en' ? 'fr' : 'en'] })));
   if (results.every((result) => result.valid)) return { editions: [], result: { ...base, status: 'archive-verified', sources: results.map((result) => result.source) } };
   const failures = results.filter((result) => !result.valid).map((result) => result.error);
   return { editions: [], result: { ...base, status: 'corrupt-archive', failures }, corrupt: { ...base, failures } };
@@ -399,6 +540,40 @@ function loadVerifiedGazetteArchiveIndex(root: string, year: number): Map<string
   return result;
 }
 
+function loadVerifiedGazetteExtraArchiveIndex(root: string, year: number): Map<string, ArchivedExtraPair> {
+  const result = new Map<string, ArchivedExtraPair>();
+  for (const category of ['receipts', 'catchups']) {
+    for (const file of annualReceiptFiles(resolve(root, category), year)) {
+      const receipt = JSON.parse(readFileSync(file, 'utf8')) as { completedAt: string; extras?: Array<Record<string, unknown>> };
+      addVerifiedExtrasFromReceipt(receipt, result);
+    }
+  }
+  return result;
+}
+
+function addVerifiedExtrasFromReceipt(receipt: { completedAt: string; extras?: Array<Record<string, unknown>> },
+  output: Map<string, ArchivedExtraPair>): void {
+  for (const extra of receipt.extras ?? []) addVerifiedExtra(extra, receipt.completedAt, output);
+}
+
+function addVerifiedExtra(extra: Record<string, unknown>, completedAt: string, output: Map<string, ArchivedExtraPair>): void {
+  if (extra.status !== 'verified' && extra.status !== 'verified-new') return;
+  if (typeof extra.part !== 'string' || typeof extra.issueDate !== 'string' || typeof extra.volume !== 'number' || typeof extra.extraNumber !== 'number') return;
+  const key = `${extra.part}:${extra.issueDate}:v${extra.volume}:x${extra.extraNumber}`;
+  if ((output.get(key)?.completedAt ?? '') > completedAt) return;
+  const sources = extraLanguageSources(extra.languages as Array<Record<string, unknown>> | undefined);
+  if (sources.en && sources.fr) output.set(key, { completedAt, sources });
+}
+
+function extraLanguageSources(languages: Array<Record<string, unknown>> | undefined): ArchivedExtraPair['sources'] {
+  const sources: ArchivedExtraPair['sources'] = {};
+  for (const language of languages ?? []) {
+    const code = language.language;
+    if ((code === 'en' || code === 'fr') && language.source && typeof language.source === 'object') sources[code] = language;
+  }
+  return sources;
+}
+
 function addVerifiedIssue(issue: Record<string, unknown>, completedAt: string, output: Map<string, ArchivedPair>): void {
   if (issue.status !== 'verified' && issue.status !== 'verified-new') return;
   const key = `${issue.part}:${issue.issueDate}:v${issue.volume}:n${issue.issueNumber}`;
@@ -412,81 +587,87 @@ function addVerifiedIssue(issue: Record<string, unknown>, completedAt: string, o
   if (languages.en && languages.fr) output.set(key, { completedAt, sources: languages });
 }
 
-async function verifyArchivedGazetteLanguage(root: string, sqlite: DatabaseSync, key: GazetteIssueKey,
-  archivedLanguage: Record<string, unknown> | undefined, storedDigest: string | undefined,
-  partnerLanguage?: Record<string, unknown>): Promise<{ valid: boolean; source?: unknown; error?: string }> {
+type ArchivedLanguageContext = { root: string; key: GazetteIssueKey; archivedLanguage?: Record<string, unknown>;
+  storedDigest?: string; partnerLanguage?: Record<string, unknown> };
+
+async function verifyArchivedGazetteLanguage(context: ArchivedLanguageContext): Promise<{ valid: boolean; source?: unknown; error?: string }> {
+  const { root, key, archivedLanguage, storedDigest } = context;
   const source = archivedLanguage?.source as Record<string, unknown> | undefined;
-  if (!source || typeof source.url !== 'string' || typeof source.sha256 !== 'string' || typeof source.file !== 'string') {
-    return { valid: false, error: `${key.language}: verified receipt lacks source identity or hash.` };
-  }
-  const url = gazetteIssueUrl(key, true).href;
-  if (source.url !== url || !/^[a-f0-9]{64}$/u.test(source.sha256)) {
-    return { valid: false, error: `${key.language}: archived source URL or SHA-256 is invalid.` };
-  }
-  const file = resolve(root, source.file);
-  if (!file.startsWith(`${resolve(root)}${process.platform === 'win32' ? '\\' : '/'}`) || !existsSync(file)) {
-    return { valid: false, error: `${key.language}: archived original is missing or outside the object store.` };
-  }
-  const bytes = readFileSync(file);
-  const hash = createHash('sha256').update(bytes).digest('hex');
-  if (hash !== source.sha256 || (typeof source.bytes === 'number' && source.bytes !== bytes.length)) {
-    return { valid: false, error: `${key.language}: archived original bytes do not match the receipt hash or size.` };
-  }
+  const bytes = source ? readVerifiedGazetteSource(root, source, gazetteIssueUrl(key, true).href) : undefined;
+  if (!source || !bytes) return { valid: false, error: `${key.language}: archived original is missing or fails its receipt identity/hash.` };
   try {
-    let edition: GazetteEdition;
-    if (key.part === 'II' && key.language === 'en' && key.issueDate === '2026-06-03') {
-      const related = archivedLanguage?.['recoveredArticles'];
-      if (!Array.isArray(related) || related.length !== 7 || !partnerLanguage || typeof partnerLanguage['source'] !== 'object') {
-        return { valid: false, error: `${key.language}: repaired issue receipt lacks seven article archives or the French partner index.` };
-      }
-      const articleSources = new Map<string, Uint8Array>();
-      const articleRefs: Array<Record<string, unknown>> = [];
-      const originalIndex = new TextDecoder('utf-8').decode(bytes);
-      for (const item of related) {
-        if (!item || typeof item !== 'object' || typeof item['url'] !== 'string' || typeof item['observedHref'] !== 'string' ||
-            !item['source'] || typeof item['source'] !== 'object') {
-          return { valid: false, error: `${key.language}: recovered article receipt is malformed.` };
-        }
-        const registrationNumber = String(item['registrationNumber'] ?? '');
-        const number = /^SOR\/2026-(\d+)$/u.exec(registrationNumber)?.[1];
-        if (!number) return { valid: false, error: `${key.language}: recovered article receipt has no exact SOR identity.` };
-        const observedHref = new RegExp(`\\bhref\\s*=\\s*(["'])([^"']*sor-dors${number}-fra\\.html)\\1`, 'iu').exec(originalIndex)?.[2];
-        if (observedHref !== item['observedHref']) {
-          return { valid: false, error: `${key.language}: retained English index no longer contains its recorded French mislink for ${registrationNumber}.` };
-        }
-        const articleSource = item['source'] as Record<string, unknown>;
-        const articleBytes = readVerifiedGazetteSource(root, articleSource, item['url']);
-        if (!articleBytes) return { valid: false, error: `${key.language}: recovered English article is missing or fails its receipt hash (${item['url']}).` };
-        articleSources.set(item['url'], articleBytes);
-        articleRefs.push(item as Record<string, unknown>);
-      }
-      const partnerSource = partnerLanguage['source'] as Record<string, unknown>;
-      const partnerKey: GazetteIssueKey = { ...key, language: 'fr' };
-      const partnerBytes = readVerifiedGazetteSource(root, partnerSource, gazetteIssueUrl(partnerKey, true).href);
-      if (!partnerBytes) return { valid: false, error: `${key.language}: French partner index is missing or fails its receipt hash.` };
-      const mockSend: typeof fetch = Object.assign(async (input: Parameters<typeof fetch>[0]) => {
-        const requestUrl = input instanceof Request ? input.url : String(input);
-        const body = requestUrl === url ? bytes : articleSources.get(requestUrl) ??
-          (requestUrl === gazetteIssueUrl(partnerKey, true).href ? partnerBytes : undefined);
-        return new Response(body, { status: body ? 200 : 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-      }, { preconnect: () => undefined });
-      edition = validateGazetteEdition(await fetchGazetteIssue(key, mockSend, true));
-      const recordById = new Map(edition.records.map((record) => [record.id, record]));
-      if (articleRefs.some((item) => !recordById.has(String(item['recordId'])) ||
-          recordById.get(String(item['recordId']))?.citationUrl !== item['url'])) {
-        return { valid: false, error: `${key.language}: archived recovered article identities do not match the repaired index.` };
-      }
-    } else {
-      edition = validateGazetteEdition(await parseGazetteIssue(new TextDecoder('utf-8').decode(bytes), key, true));
-    }
+    const edition = isRecoveredEnglishIssue(key)
+      ? await verifyRecoveredEnglishArchive(context, bytes)
+      : validateGazetteEdition(await parseGazetteIssue(new TextDecoder('utf-8').decode(bytes), key, true));
     if (!storedDigest || gazetteEditionDigest(edition) !== storedDigest) {
       return { valid: false, error: `${key.language}: archived parse does not match the imported database digest.` };
     }
-    const recoveredArticles = key.part === 'II' && key.language === 'en' && key.issueDate === '2026-06-03'
-      ? archivedLanguage?.['recoveredArticles'] : undefined;
+    const recoveredArticles = archivedLanguage?.['recoveredArticles'];
     return { valid: true, source: recoveredArticles ? { ...source, recoveredArticles } : source };
   } catch (error) {
     return { valid: false, error: `${key.language}: archived original no longer parses: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
+function isRecoveredEnglishIssue(key: GazetteIssueKey): boolean {
+  return key.part === 'II' && key.language === 'en' && key.issueDate === '2026-06-03';
+}
+
+async function verifyRecoveredEnglishArchive(context: ArchivedLanguageContext, bytes: Uint8Array): Promise<GazetteEdition> {
+  const { root, key, archivedLanguage, partnerLanguage } = context;
+  const related = archivedLanguage?.['recoveredArticles'];
+  if (!Array.isArray(related) || related.length !== 7 || !partnerLanguage || typeof partnerLanguage['source'] !== 'object') {
+    throw new Error('Repaired issue receipt lacks seven article archives or the French partner index.');
+  }
+  const articles = verifiedRecoveredArticleSources(root, key, bytes, related);
+  const partnerKey: GazetteIssueKey = { ...key, language: 'fr' };
+  const partnerSource = partnerLanguage['source'] as Record<string, unknown>;
+  const partnerBytes = readVerifiedGazetteSource(root, partnerSource, gazetteIssueUrl(partnerKey, true).href);
+  if (!partnerBytes) throw new Error('French partner index is missing or fails its receipt hash.');
+  const currentUrl = gazetteIssueUrl(key, true).href;
+  const partnerUrl = gazetteIssueUrl(partnerKey, true).href;
+  const mockSend: typeof fetch = Object.assign(async (input: Parameters<typeof fetch>[0]) => {
+    const requestUrl = input instanceof Request ? input.url : String(input);
+    const body = requestUrl === currentUrl ? bytes : articles.bytes.get(requestUrl) ?? (requestUrl === partnerUrl ? partnerBytes : undefined);
+    return new Response(body, { status: body ? 200 : 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  }, { preconnect: () => undefined });
+  const edition = validateGazetteEdition(await fetchGazetteIssue(key, mockSend, true));
+  assertRecoveredArticleMatches(edition, articles.references);
+  return edition;
+}
+
+function verifiedRecoveredArticleSources(root: string, key: GazetteIssueKey, bytes: Uint8Array, related: unknown[]) {
+  const originalIndex = new TextDecoder('utf-8').decode(bytes);
+  const articleBytes = new Map<string, Uint8Array>();
+  const references: Array<Record<string, unknown>> = [];
+  for (const candidate of related) {
+    const item = recoveredArticleReference(candidate, key.language);
+    const number = /^SOR\/2026-(\d+)$/u.exec(String(item['registrationNumber'] ?? ''))?.[1];
+    if (!number) throw new Error(`${key.language}: recovered article receipt has no exact SOR identity.`);
+    const href = new RegExp(`\\bhref\\s*=\\s*(["'])([^"']*sor-dors${number}-fra\\.html)\\1`, 'iu').exec(originalIndex)?.[2];
+    if (href !== item['observedHref']) throw new Error(`${key.language}: retained English index changed the recorded SOR mislink.`);
+    const source = item['source'] as Record<string, unknown>;
+    const original = readVerifiedGazetteSource(root, source, String(item['url']));
+    if (!original) throw new Error(`${key.language}: recovered article is missing or fails its hash (${item['url']}).`);
+    articleBytes.set(String(item['url']), original);
+    references.push(item);
+  }
+  return { bytes: articleBytes, references };
+}
+
+function recoveredArticleReference(candidate: unknown, language: string): Record<string, unknown> {
+  if (!candidate || typeof candidate !== 'object') throw new Error(`${language}: recovered article receipt is malformed.`);
+  const item = candidate as Record<string, unknown>;
+  if (typeof item['url'] !== 'string' || typeof item['observedHref'] !== 'string' || !item['source'] || typeof item['source'] !== 'object') {
+    throw new Error(`${language}: recovered article receipt is missing URL, observed link or source archive.`);
+  }
+  return item;
+}
+
+function assertRecoveredArticleMatches(edition: GazetteEdition, refs: Array<Record<string, unknown>>): void {
+  const recordById = new Map(edition.records.map((record) => [record.id, record]));
+  if (refs.some((item) => !recordById.has(String(item['recordId'])) || recordById.get(String(item['recordId']))?.citationUrl !== item['url'])) {
+    throw new Error('Archived recovered article identities do not match the repaired index.');
   }
 }
 
@@ -533,6 +714,7 @@ function openStore(databaseFile: string) {
   };
   const sqlite = new SQLite(databaseFile, { readonly: false, create: true, strict: true });
   sqlite.exec(readFileSync(new URL('../preview/gazette/migrations/0001_gazette.sql', import.meta.url), 'utf8'));
+  sqlite.exec(readFileSync(new URL('../preview/gazette/migrations/0002_gazette_extras.sql', import.meta.url), 'utf8'));
   return sqlite;
 }
 

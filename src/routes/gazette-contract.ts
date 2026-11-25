@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { GazetteMetadataSchema } from '../corpora/gazette';
+import { GazetteExtraRecordSchema } from '../corpora/gazette-extra';
 
 export const GAZETTE_PATHS = { search: '/api/gazette' } as const;
 export const GAZETTE_OPENAPI_PATH = '/api/gazette/openapi.json';
@@ -16,6 +17,7 @@ export const GazetteSearchSchema = z.strictObject({
   topic: z.string().trim().min(1).max(300).describe('Words or phrase matched against Gazette metadata.'),
   part: z.enum(['I', 'II']).optional().describe('Gazette part; omit to search both parts.'),
   language: z.enum(['en', 'fr']).describe('Language of the published edition.'),
+  editionType: z.enum(['regular', 'extra']).optional().describe('Edition class. Omit to search regular editions.'),
   since: date.optional().describe('First publication date to include.'),
   until: date.optional().describe('Last publication date to include.'),
   limit: z.number().int().min(1).max(100).default(20).describe('Maximum number of records.'),
@@ -36,6 +38,21 @@ export const GazetteCoverageSchema = z.strictObject({
   issues: z.array(issue),
 });
 
+export const GazetteExtraRecordResponseSchema = GazetteExtraRecordSchema.extend({
+  source: z.string().min(1), redistribution: z.literal('metadata-only'), attribution: z.string().min(1),
+});
+export const GazetteExtraCoverageSchema = z.strictObject({
+  editionType: z.literal('extra'), part: z.enum(['I', 'II']), language: z.enum(['en', 'fr']), available: z.boolean(),
+  issues: z.array(z.strictObject({ issueDate: date, volume: z.number().int().positive(), extraNumber: z.number().int().positive(),
+    recordCount: z.number().int().nonnegative() })),
+});
+export const GazetteExtraSearchResponseSchema = z.strictObject({
+  items: z.array(GazetteExtraRecordResponseSchema).max(100), count: z.number().int().min(0).max(100),
+  coverage: z.array(GazetteExtraCoverageSchema).min(1).max(2),
+});
+export const GazetteExtraLookupResponseSchema = z.strictObject({
+  item: GazetteExtraRecordResponseSchema, coverage: GazetteExtraCoverageSchema,
+});
 export const GazetteSearchResponseSchema = z.strictObject({
   items: z.array(GazetteRecordSchema).max(100),
   count: z.number().int().min(0).max(100),
@@ -46,6 +63,8 @@ export const GazetteLookupResponseSchema = z.strictObject({
   item: GazetteRecordSchema,
   coverage: GazetteCoverageSchema,
 });
+export const GazetteAnySearchResponseSchema = z.union([GazetteSearchResponseSchema, GazetteExtraSearchResponseSchema]);
+export const GazetteAnyLookupResponseSchema = z.union([GazetteLookupResponseSchema, GazetteExtraLookupResponseSchema]);
 
 export const GAZETTE_ERROR_CODES = {
   400: ['INVALID_ARGUMENT'],
@@ -75,5 +94,6 @@ export const GazetteErrorSchema = z.strictObject({
 export type GazetteSearchRequest = z.output<typeof GazetteSearchSchema>;
 export type GazetteRecordResponse = z.output<typeof GazetteRecordSchema>;
 export type GazetteCoverage = z.output<typeof GazetteCoverageSchema>;
+export type GazetteExtraCoverage = z.output<typeof GazetteExtraCoverageSchema>;
 export type GazetteSearchResponse = z.output<typeof GazetteSearchResponseSchema>;
 export type GazetteLookupResponse = z.output<typeof GazetteLookupResponseSchema>;

@@ -7,7 +7,7 @@ const script = `
   const input = JSON.parse(await Bun.stdin.text());
   try {
     if (input.action === 'annual') {
-      const coverage = { regularRows: [], extraRows: [] };
+      const coverage = { regularRows: [], extraRows: [], unsupportedExtraRows: [] };
       parseGazetteAnnualListing(input.html, 2026, input.part, { language: input.language, cutoff: '2026-12-31', coverage });
       console.log(JSON.stringify(coverage));
     } else {
@@ -75,11 +75,13 @@ describe('Gazette recovery for the June 3, 2026 English index', () => {
   });
 
   it('counts English Extra and French Édition spéciale rows separately from regular issues', () => {
-    const rows = `<tr><td data-order="2026-06-08">June&nbsp;8,&nbsp;2026</td><td>Extra</td><td><abbr title="not applicable">n/a</abbr></td><td>SI/2026-29</td><td><a href="/rp-pr/p2/2026/2026-06-08-x1/html/si-tr29-eng.html">Part&nbsp;II, volume&nbsp;160, Extra number&nbsp;1</a></td><td>PDF</td></tr><tr><td data-order="2026-06-03">June&nbsp;3,&nbsp;2026</td><td>Regular edition</td><td>SOR/2026-82 to 88</td><td>n/a</td><td><a href="/rp-pr/p2/2026/2026-06-03/html/index-eng.html">Part&nbsp;II, volume&nbsp;160, number&nbsp;11</a></td><td>PDF</td></tr>`;
+    const rows = `<tr><td data-order="2026-06-08">June&nbsp;8,&nbsp;2026</td><td>Extra</td><td><abbr title="not applicable">n/a</abbr></td><td>SI/2026-29</td><td><a href="/rp-pr/p2/2026/2026-06-08-x1/html/si-tr29-eng.html">Part&nbsp;II, volume&nbsp;160, Extra number&nbsp;1</a></td><td><a href="/rp-pr/p2/2026/2026-06-08-x1/pdf/g2-160x1.pdf">Part II, volume 160, Extra number 1 (12KB)</a></td></tr><tr><td data-order="2026-06-03">June&nbsp;3,&nbsp;2026</td><td>Regular edition</td><td>SOR/2026-82 to 88</td><td>n/a</td><td><a href="/rp-pr/p2/2026/2026-06-03/html/index-eng.html">Part&nbsp;II, volume&nbsp;160, number&nbsp;11</a></td><td>PDF</td></tr>`;
     const en = `<html lang="en"><head><title>Canada Gazette, Part II: Volume 160</title></head><body><h1>Canada Gazette, Part II: Volume 160</h1><table id="a01"><tbody>${rows}</tbody></table></body></html>`;
-    const frRows = `<tr><td data-order="2026-06-08">8&nbsp;juin&nbsp;2026</td><td>Édition spéciale</td><td><abbr title="sans objet">s/o</abbr></td><td>TR/2026-29</td><td><a href="/rp-pr/p2/2026/2026-06-08-x1/html/si-tr29-fra.html">Partie&nbsp;II, volume&nbsp;160, édition spéciale numéro&nbsp;1</a></td><td>PDF</td></tr>`;
+    const frRows = `<tr><td data-order="2026-06-08">8&nbsp;juin&nbsp;2026</td><td>Édition spéciale</td><td><abbr title="sans objet">s/o</abbr></td><td>TR/2026-29</td><td><a href="/rp-pr/p2/2026/2026-06-08-x1/html/si-tr29-fra.html">Partie&nbsp;II, volume&nbsp;160, édition spéciale numéro&nbsp;1</a></td><td><a href="/rp-pr/p2/2026/2026-06-08-x1/pdf/g2-160x1.pdf">Partie II, volume 160, numéro hors série 1 (12Ko)</a></td></tr>`;
     const fr = `<html lang="fr"><head><title>La Gazette du Canada, Partie II : volume 160</title></head><body><h1>La Gazette du Canada, Partie II : volume 160</h1><table id="a01"><tbody>${frRows}</tbody></table></body></html>`;
-    expect(run({ action: 'annual', html: en, part: 'II', language: 'en' })).toMatchObject({ extraRows: [{ date: '2026-06-08' }], regularRows: [{ date: '2026-06-03' }] });
-    expect(run({ action: 'annual', html: fr, part: 'II', language: 'fr' })).toMatchObject({ extraRows: [{ date: '2026-06-08' }], regularRows: [] });
+    expect(run({ action: 'annual', html: en, part: 'II', language: 'en' })).toMatchObject({ extraRows: [{ date: '2026-06-08', extraNumber: 1, volume: 160,
+      pdfUrl: 'https://gazette.gc.ca/rp-pr/p2/2026/2026-06-08-x1/pdf/g2-160x1.pdf' }], regularRows: [{ date: '2026-06-03' }], unsupportedExtraRows: [] });
+    expect(run({ action: 'annual', html: fr, part: 'II', language: 'fr' })).toMatchObject({ extraRows: [{ date: '2026-06-08', extraNumber: 1, volume: 160,
+      pdfUrl: 'https://gazette.gc.ca/rp-pr/p2/2026/2026-06-08-x1/pdf/g2-160x1.pdf' }], regularRows: [], unsupportedExtraRows: [] });
   });
 });

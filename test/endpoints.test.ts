@@ -27,7 +27,8 @@ import { memoryTextBucket } from './helpers/text-bucket';
 import { hansardSpeechId, hansardPolicy, type HansardChamber, type HansardLanguage } from '../src/corpora/hansard';
 import { HANSARD_OPENAPI_PATH, HANSARD_PATHS, HansardErrorSchema, HansardLookupResponseSchema, HansardSearchResponseSchema } from '../src/routes/hansard-contract';
 import { hansardOpenApi } from '../src/routes/hansard-openapi';
-import { GAZETTE_OPENAPI_PATH, GazetteLookupResponseSchema, GazetteSearchResponseSchema } from '../src/routes/gazette-contract';
+import { GAZETTE_OPENAPI_PATH, GazetteExtraLookupResponseSchema, GazetteExtraSearchResponseSchema,
+  GazetteLookupResponseSchema, GazetteSearchResponseSchema } from '../src/routes/gazette-contract';
 import { WrittenQuestionLookupResponseSchema, WrittenQuestionSearchResponseSchema,
   WrittenQuestionCoverageResponseSchema, WrittenQuestionChunksResponseSchema } from '../src/routes/written-questions-contract';
 import { gazetteOpenApi } from '../src/routes/gazette-openapi';
@@ -730,6 +731,48 @@ describe('Gazette preview through the Worker', () => {
       }
     }
     expect(await fixture.count()).toBe(issues.length * 2);
+  }, 30_000);
+  it.skipIf(!catchupReceipt)('serves separately numbered bilingual extras through search and exact lookup', async () => {
+    if (!currentDatabasePath || !catchupReceipt) throw new Error('Supply the annual Gazette receipt and database.');
+    const receipt = JSON.parse(readFileSync(catchupReceipt, 'utf8')) as {
+      databasePath: string; extras: { part: 'I' | 'II'; issueDate: string; volume: number; extraNumber: number; status: string }[];
+    };
+    expect(resolve(receipt.databasePath)).toBe(resolve(currentDatabasePath));
+    const extras = receipt.extras.filter(extra => ['verified-new', 'archive-verified'].includes(extra.status));
+    expect(extras.length).toBeGreaterThan(0);
+    const fixture = await setup(extras.length * 4);
+    const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
+    const sqlite = new DatabaseSync(currentDatabasePath, { readOnly: true });
+    closed.push(() => sqlite.close());
+    sqlite.exec('BEGIN');
+    fixture.env.AUTH_DB = fixture.db;
+    fixture.env.GAZETTE_DB = localD1(sqlite, { existingReadTransaction: true });
+    fixture.env.GAZETTE_PREVIEW = 'on';
+    const sample = sqlite.prepare(`SELECT id,title,citation_url FROM gazette_extra_records
+      WHERE part=? AND language=? AND issue_date=? AND volume=? AND extra_number=? ORDER BY id LIMIT 1`);
+    for (const extra of extras) {
+      for (const language of ['en', 'fr'] as const) {
+        const row = sample.get(extra.part, language, extra.issueDate, extra.volume, extra.extraNumber) as
+          { id: string; title: string; citation_url: string } | undefined;
+        if (!row) throw new Error(`Missing Gazette Part ${extra.part} ${extra.issueDate} ${language} extra ${extra.extraNumber}.`);
+        const query = new URLSearchParams({ part: extra.part, language, editionType: 'extra', topic: row.title,
+          since: extra.issueDate, until: extra.issueDate });
+        const search = await fixture.send('/api/gazette?' + query);
+        expect(search.status).toBe(200);
+        const result = GazetteExtraSearchResponseSchema.parse(await search.json());
+        expect(result.coverage[0]?.issues).toContainEqual({ issueDate: extra.issueDate, volume: extra.volume,
+          extraNumber: extra.extraNumber, recordCount: expect.any(Number) });
+        expect(result.items).toContainEqual(expect.objectContaining({ id: row.id, editionType: 'extra',
+          extraNumber: extra.extraNumber, citationUrl: row.citation_url }));
+        const lookup = await fixture.send('/api/gazette/' + encodeURIComponent(row.id));
+        expect(lookup.status).toBe(200);
+        expect(GazetteExtraLookupResponseSchema.parse(await lookup.json()).item).toMatchObject({
+          id: row.id, editionType: 'extra', language, part: extra.part, issueDate: extra.issueDate,
+          volume: extra.volume, extraNumber: extra.extraNumber, citationUrl: row.citation_url,
+        });
+      }
+    }
+    expect(await fixture.count()).toBe(extras.length * 4);
   }, 30_000);
   it.skipIf(!currentDatabasePath)('reads the current bilingual records through the acquired Gazette database', async () => {
     if (!currentDatabasePath) throw new Error('Set CIVICSIGNAL_GAZETTE_SQLITE to the current local Gazette database.');

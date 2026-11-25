@@ -5,10 +5,14 @@ const MAX_BYTES = 2 * 1024 * 1024;
 const PUBLISHED_PATH = /^\/rp-pr\/p([12])\/(\d{4})\/(\d{4}-\d{2}-\d{2})\/html\/index-(eng|fra)\.html$/u;
 
 type ListingIssue = GazetteIssueKey;
+type ListingExtra = { part: GazetteIssueKey['part']; issueDate: string; volume: number; extraNumber: number; language: GazetteIssueKey['language']; htmlUrl: string; label: string; pdfUrl?: string };
+type DiscoveredExtra = { part: GazetteIssueKey['part']; issueDate: string; volume: number; extraNumber: number;
+  languages: Partial<Record<GazetteIssueKey['language'], { htmlUrl: string; label: string; pdfUrl?: string }>>; identityMismatch?: boolean };
 
 export interface AnnualListingCoverage {
   regularRows: Array<{ date: string; text: string }>;
-  extraRows: Array<{ date: string; text: string }>;
+  extraRows: Array<{ date: string; text: string; extraNumber?: number; volume?: number; htmlUrl?: string; pdfUrl?: string }>;
+  unsupportedExtraRows: Array<{ date: string; text: string }>;
 }
 export interface AnnualListingParseOptions {
   language: GazetteIssueKey['language'];
@@ -20,6 +24,7 @@ export interface GazettedYearDiscovery {
   year: number;
   cutoff: string;
   issues: Array<{ issueDate: string; volume: number; issueNumber: number; part: GazetteIssueKey['part']; languages: Partial<Record<GazetteIssueKey['language'], ListingIssue>>; identityMismatch?: boolean }>;
+  extraIssues: DiscoveredExtra[];
   annualListings: Array<{
     part: GazetteIssueKey['part'];
     language: GazetteIssueKey['language'];
@@ -29,7 +34,8 @@ export interface GazettedYearDiscovery {
     regularRows?: number;
     recognizedIssues?: number;
     unsupportedRows?: Array<{ date: string; text: string }>;
-    extraRows?: Array<{ date: string; text: string }>;
+    extraRows?: Array<{ date: string; text: string; extraNumber?: number; volume?: number; htmlUrl?: string; pdfUrl?: string }>;
+    unsupportedExtraRows?: Array<{ date: string; text: string }>;
     error?: string;
   }>;
 }
@@ -44,6 +50,85 @@ export function gazetteAnnualIndexUrl(year: number, part: GazetteIssueKey['part'
 }
 
 function languageCode(language: GazetteIssueKey['language']): string { return language === 'en' ? 'eng' : 'fra'; }
+
+type AnnualRow = { date: string; text: string; links: { href: string; label: string }[] };
+type AnnualParserContext = { year: number; part: GazetteIssueKey['part']; language: GazetteIssueKey['language']; cutoff: string;
+  coverage?: AnnualListingCoverage; candidates: ListingIssue[] };
+function processAnnualRow(current: AnnualRow, context: AnnualParserContext): void {
+  const { year, part, language, cutoff, coverage, candidates } = context;
+  if (!current.date || current.date.slice(0, 4) !== String(year) || current.date > cutoff) return;
+  const isRegular = language === 'en' ? /regular\s+edition/iu.test(current.text) : /édition\s+régulière/iu.test(current.text);
+  if (isRegular) {
+    coverage?.regularRows.push({ date: current.date, text: current.text.replace(/\s+/gu, ' ').trim() });
+    candidates.push(...parseRegularRowLinks(current, year, part, language));
+    return;
+  }
+  const isExtra = language === 'en' ? /\bextra(?:\s+edition)?\b/iu.test(current.text) : /édition\s+(?:extra|spéciale)/iu.test(current.text);
+  if (isExtra) parseExtraRow(current, context);
+}
+
+function parseRegularRowLinks(row: AnnualRow, year: number, part: GazetteIssueKey['part'],
+  language: GazetteIssueKey['language']): ListingIssue[] {
+  const output: ListingIssue[] = [];
+  for (const link of row.links) {
+    let url: URL;
+    try { url = new URL(link.href, gazetteAnnualIndexUrl(year, part, language)); } catch { continue; }
+    const match = PUBLISHED_PATH.exec(url.pathname);
+    if (!match || Number(match[1]) !== (part === 'I' ? 1 : 2) || Number(match[2]) !== year || match[3] !== row.date || match[4] !== languageCode(language)) continue;
+    const titlePattern = language === 'en'
+      ? new RegExp(`^Part\\s+${part},\\s*volume\\s+(\\d+),\\s*number\\s+(\\d+)(?:\\s+\\(\\d+(?:[.,]\\d+)?\\s*(?:KB|MB)\\))?$`, 'iu')
+      : new RegExp(`^Partie\\s+${part},\\s*volume\\s+(\\d+),\\s*numéro\\s+(\\d+)(?:\\s+\\(\\d+(?:[.,]\\d+)?\\s*(?:Ko|Mo)\\))?$`, 'iu');
+    const title = link.label.replace(/\s+/gu, ' ').trim().replace(/&nbsp;/giu, ' ');
+    const parsed = titlePattern.exec(title);
+    if (!parsed) throw new Error(`Unrecognized regular Gazette issue label: ${title}`);
+    output.push({ part, language, issueDate: row.date, volume: Number(parsed[1]), issueNumber: Number(parsed[2]) });
+  }
+  return output;
+}
+
+function parseExtraRow(row: AnnualRow, context: AnnualParserContext): void {
+  const { coverage } = context;
+  const summary = row.text.replace(/\s+/gu, ' ').trim();
+  const found = row.links.flatMap((link) => {
+    const extra = parseListedExtraLink(link, row.links, row, context);
+    return extra ? [extra] : [];
+  });
+  if (found.length !== 1) coverage?.unsupportedExtraRows.push({ date: row.date,
+    text: `${summary} (expected one language-matched HTML link, found ${found.length})` });
+  for (const extra of found) coverage?.extraRows.push({ date: extra.issueDate, text: summary,
+    extraNumber: extra.extraNumber, volume: extra.volume, htmlUrl: extra.htmlUrl, ...(extra.pdfUrl ? { pdfUrl: extra.pdfUrl } : {}) });
+}
+
+function parseListedExtraLink(link: { href: string; label: string }, allLinks: Array<{ href: string; label: string }>,
+  row: AnnualRow, context: AnnualParserContext): ListingExtra | undefined {
+  const { year, part, language } = context;
+  const date = row.date;
+  let url: URL;
+  try { url = new URL(link.href, gazetteAnnualIndexUrl(year, part, language)); } catch { return undefined; }
+  const path = /^\/rp-pr\/p([12])\/(\d{4})\/(\d{4}-\d{2}-\d{2})-x([1-9]\d*)\/html\/([a-z0-9][a-z0-9-]*-(eng|fra)\.html)$/iu.exec(url.pathname);
+  if (!path || Number(path[1]) !== (part === 'I' ? 1 : 2) || Number(path[2]) !== year || path[3] !== date || path[6] !== languageCode(language)) return undefined;
+  const label = link.label.replace(/&nbsp;/giu, ' ').replace(/\s+/gu, ' ').trim();
+  const numberLabel = language === 'en' ? /\bextra\s+number\s*([1-9]\d*)\b/iu.exec(label) : /édition\s+spéciale\s+numéro\s*([1-9]\d*)/iu.exec(label);
+  const volumeLabel = /\bvolume\s+(\d+)\b/iu.exec(label);
+  if (!numberLabel || !volumeLabel || Number(numberLabel[1]) !== Number(path[4])) return undefined;
+  const pdfUrl = findListedExtraPdf(allLinks, { date, year, volume: Number(volumeLabel[1]), extraNumber: Number(path[4]), part, language });
+  return { part, language, issueDate: date, volume: Number(volumeLabel[1]), extraNumber: Number(path[4]),
+    htmlUrl: url.href, label, ...(pdfUrl ? { pdfUrl } : {}) };
+}
+
+function findListedExtraPdf(links: Array<{ href: string; label: string }>, key: { date: string; year: number; volume: number;
+  extraNumber: number; part: GazetteIssueKey['part']; language: GazetteIssueKey['language'] }): string | undefined {
+  const { date, year, volume, extraNumber, part, language } = key;
+  const listingUrl = gazetteAnnualIndexUrl(year, part, language);
+  const pdfPath = `/rp-pr/p${part === 'I' ? '1' : '2'}/${year}/${date}-x${extraNumber}/pdf/g${part === 'I' ? '1' : '2'}-${volume}x${extraNumber}.pdf`;
+  for (const link of links) {
+    try {
+      const url = new URL(link.href, listingUrl);
+      if (url.origin === ORIGIN && url.pathname === pdfPath && !url.search && !url.hash) return url.href;
+    } catch { /* Ignore links that cannot be resolved against the official annual index. */ }
+  }
+  return undefined;
+}
 
 /** Parse only regular editions from the publisher's annual listing; dates come from its data-order field. */
 export function parseGazetteAnnualListing(html: string, year: number, part: GazetteIssueKey['part'], options: AnnualListingParseOptions): ListingIssue[] {
@@ -66,29 +151,7 @@ export function parseGazetteAnnualListing(html: string, year: number, part: Gaze
       row = current;
       node.onEndTag(() => {
         row = previous;
-        if (!current.date || current.date.slice(0, 4) !== String(year) || current.date > cutoff) return;
-        const isRegular = language === 'en' ? /regular\s+edition/iu.test(current.text) : /édition\s+régulière/iu.test(current.text);
-        if (!isRegular) {
-          const isExtra = language === 'en'
-            ? /\bextra(?:\s+edition)?\b/iu.test(current.text)
-            : /édition\s+(?:extra|spéciale)/iu.test(current.text);
-          if (isExtra) coverage?.extraRows.push({ date: current.date, text: current.text.replace(/\s+/gu, ' ').trim() });
-          return;
-        }
-        coverage?.regularRows.push({ date: current.date, text: current.text.replace(/\s+/gu, ' ').trim() });
-        for (const link of current.links) {
-          let url: URL;
-          try { url = new URL(link.href, gazetteAnnualIndexUrl(year, part, language)); } catch { continue; }
-          const match = PUBLISHED_PATH.exec(url.pathname);
-          if (!match || Number(match[1]) !== (part === 'I' ? 1 : 2) || Number(match[2]) !== year || match[3] !== current.date || match[4] !== languageCode(language)) continue;
-          const titlePattern = language === 'en'
-            ? new RegExp(`^Part\\s+${part},\\s*volume\\s+(\\d+),\\s*number\\s+(\\d+)(?:\\s+\\(\\d+(?:[.,]\\d+)?\\s*(?:KB|MB)\\))?$`, 'iu')
-            : new RegExp(`^Partie\\s+${part},\\s*volume\\s+(\\d+),\\s*numéro\\s+(\\d+)(?:\\s+\\(\\d+(?:[.,]\\d+)?\\s*(?:Ko|Mo)\\))?$`, 'iu');
-          const title = link.label.replace(/\s+/gu, ' ').trim().replace(/&nbsp;/giu, ' ');
-          const titleMatch = titlePattern.exec(title);
-          if (!titleMatch) throw new Error(`Unrecognized regular Gazette issue label: ${title}`);
-          candidates.push({ part, language, issueDate: current.date, volume: Number(titleMatch[1]), issueNumber: Number(titleMatch[2]) });
-        }
+        processAnnualRow(current, { year, part, language, cutoff, coverage, candidates });
       });
     },
     text(chunk) { if (row) row.text += chunk.text; },
@@ -191,33 +254,42 @@ export async function discoverGazetteYearThrough(year: number, cutoff: string, s
     throw new Error('Gazette year backfill cutoff must be a valid date in the requested year.');
   }
   const discovered = new Map<string, GazettedYearDiscovery['issues'][number]>();
+  const discoveredExtras = new Map<string, DiscoveredExtra>();
   const annualListings: GazettedYearDiscovery['annualListings'] = [];
   for (const part of ['I', 'II'] as const) {
     for (const language of ['en', 'fr'] as const) {
       const listing = await discoverAnnualListing(year, cutoff, part, language, send);
       annualListings.push(listing.summary);
       addDiscoveredIssues(discovered, listing.issues, part, language);
+      addDiscoveredExtras(discoveredExtras, listing.extras, part, language);
     }
   }
-  return { year, cutoff, issues: [...discovered.values()].sort((a, b) => a.issueDate.localeCompare(b.issueDate) || a.part.localeCompare(b.part) || a.issueNumber - b.issueNumber), annualListings };
+  return { year, cutoff, issues: [...discovered.values()].sort((a, b) => a.issueDate.localeCompare(b.issueDate) || a.part.localeCompare(b.part) || a.issueNumber - b.issueNumber),
+    extraIssues: [...discoveredExtras.values()].sort((a, b) => a.issueDate.localeCompare(b.issueDate) || a.part.localeCompare(b.part) || a.extraNumber - b.extraNumber), annualListings };
 }
 
 async function discoverAnnualListing(year: number, cutoff: string, part: GazetteIssueKey['part'],
   language: GazetteIssueKey['language'], send: typeof fetch): Promise<{
-    summary: GazettedYearDiscovery['annualListings'][number]; issues: ListingIssue[];
+    summary: GazettedYearDiscovery['annualListings'][number]; issues: ListingIssue[]; extras: ListingExtra[];
   }> {
   const url = gazetteAnnualIndexUrl(year, part, language);
   try {
     const { html, bytes } = await fetchHtmlSource(url, send);
-    const coverage: AnnualListingCoverage = { regularRows: [], extraRows: [] };
+    const coverage: AnnualListingCoverage = { regularRows: [], extraRows: [], unsupportedExtraRows: [] };
     const issues = parseGazetteAnnualListing(html, year, part, { language, cutoff, coverage });
     const unsupportedRows = findUnsupportedListingRows(issues, coverage.regularRows);
+    const extras: ListingExtra[] = coverage.extraRows.filter((row): row is typeof row & { extraNumber: number; volume: number; htmlUrl: string } =>
+      row.extraNumber !== undefined && row.volume !== undefined && row.htmlUrl !== undefined).map((row) => ({
+      part, language, issueDate: row.date, extraNumber: row.extraNumber, volume: row.volume, htmlUrl: row.htmlUrl,
+      label: row.text, ...(row.pdfUrl ? { pdfUrl: row.pdfUrl } : {}),
+    }));
     const emptyIssueList = coverage.regularRows.length === 0;
-    return { issues, summary: { part, language, url: url.href, bytes: bytes.byteLength, sha256: await sha256(bytes),
+    return { issues, extras, summary: { part, language, url: url.href, bytes: bytes.byteLength, sha256: await sha256(bytes),
       regularRows: coverage.regularRows.length, recognizedIssues: issues.length, unsupportedRows, extraRows: coverage.extraRows,
+      unsupportedExtraRows: coverage.unsupportedExtraRows,
       ...(emptyIssueList ? { error: `No regular editions are listed for Part ${part} ${language} through ${cutoff}.` } : {}) } };
   } catch (error) {
-    return { issues: [], summary: { part, language, url: url.href, error: error instanceof Error ? error.message : String(error) } };
+    return { issues: [], extras: [], summary: { part, language, url: url.href, error: error instanceof Error ? error.message : String(error) } };
   }
 }
 
@@ -244,6 +316,18 @@ function addDiscoveredIssues(discovered: Map<string, GazettedYearDiscovery['issu
       issueNumber: issue.issueNumber, part, languages: {} };
     if (item.volume !== issue.volume || item.issueNumber !== issue.issueNumber) item.identityMismatch = true;
     item.languages[language] = issue;
+    discovered.set(identity, item);
+  }
+}
+
+function addDiscoveredExtras(discovered: Map<string, DiscoveredExtra>, extras: ListingExtra[],
+  part: GazetteIssueKey['part'], language: GazetteIssueKey['language']): void {
+  for (const extra of extras) {
+    const identity = `${part}:${extra.issueDate}:x${extra.extraNumber}`;
+    const item = discovered.get(identity) ?? { issueDate: extra.issueDate, volume: extra.volume,
+      extraNumber: extra.extraNumber, part, languages: {} };
+    if (item.volume !== extra.volume) item.identityMismatch = true;
+    item.languages[language] = { htmlUrl: extra.htmlUrl, label: extra.label, ...(extra.pdfUrl ? { pdfUrl: extra.pdfUrl } : {}) };
     discovered.set(identity, item);
   }
 }

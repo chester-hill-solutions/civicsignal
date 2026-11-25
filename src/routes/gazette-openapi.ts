@@ -5,8 +5,8 @@ import { gazetteRecordId } from '../corpora/gazette';
 import { sourceFeedOperation } from './source-feed-openapi';
 import {
   GAZETTE_ERROR_CODES, GAZETTE_PATHS,
-  GazetteErrorSchema, GazetteLookupResponseSchema, GazetteRecordSchema,
-  GazetteSearchResponseSchema, GazetteSearchSchema,
+  GazetteErrorSchema, GazetteRecordSchema, GazetteSearchSchema,
+  GazetteAnyLookupResponseSchema, GazetteAnySearchResponseSchema,
 } from './gazette-contract';
 
 const example = {
@@ -32,7 +32,7 @@ export function gazetteOpenApi() {
   const errors = Object.fromEntries(Object.entries(GAZETTE_ERROR_CODES).map(([status, codes]) => [status,
     response(`Request failed with ${status}.`, GazetteErrorSchema.extend({ code: z.enum(codes) }))]));
   const queryExamples: Record<keyof typeof GazetteSearchSchema.shape, string | number> = {
-    topic: 'export control', part: 'I', language: 'en', since: '2026-04-20', until: '2026-04-26', limit: 20,
+    topic: 'export control', part: 'I', language: 'en', editionType: 'regular', since: '2026-04-20', until: '2026-04-26', limit: 20,
   };
   const parameters = Object.entries(GazetteSearchSchema.shape).map(([field, schema]) => ({
     name: field, in: 'query', required: !schema.isOptional(), schema: jsonSchema(schema, true),
@@ -54,9 +54,9 @@ export function gazetteOpenApi() {
       '/api/gazette/changes': sourceFeedOperation('gazette'),
       [GAZETTE_PATHS.search]: { get: {
         operationId: 'searchCanadaGazette', summary: 'Search Canada Gazette metadata',
-        description: 'Search record titles in a selected language and optional Gazette part and inclusive publication date range. Coverage reports every persisted issue date matching that range for each requested part. An absent edition is reported as unavailable (503), distinct from an available edition with zero matches. A valid search consumes one workspace unit.',
+        description: 'Search record titles in a selected language and optional Gazette part and inclusive publication date range. Omit editionType or set it to regular for regular editions; set it to extra to search separately numbered extra editions. Coverage reports persisted issue dates for each requested part. A valid search consumes one workspace unit.',
         parameters,
-        responses: { 200: response('Metadata records and per-part coverage.', GazetteSearchResponseSchema,
+        responses: { 200: response('Metadata records and per-part coverage.', GazetteAnySearchResponseSchema,
           { items: [example], count: 1, coverage: [coverageExample] }), ...searchErrors },
       } },
       [`${GAZETTE_PATHS.search}/{id}`]: { get: {
@@ -64,7 +64,7 @@ export function gazetteOpenApi() {
         description: 'Resolve an ID returned by search and return the current metadata and official source link. The lookup includes coverage for the record’s issue. A successful lookup consumes one workspace unit.',
         parameters: [{ name: 'id', in: 'path', required: true,
           schema: jsonSchema(GazetteRecordSchema.shape.id, true), example: example.id }],
-        responses: { 200: response('Metadata record and issue coverage.', GazetteLookupResponseSchema,
+        responses: { 200: response('Metadata record and issue coverage.', GazetteAnyLookupResponseSchema,
           { item: example, coverage: coverageExample }), ...errors },
       } },
     },

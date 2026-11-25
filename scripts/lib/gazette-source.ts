@@ -266,6 +266,14 @@ export async function fetchGazetteIssue(expected: GazetteIssueKey, send: typeof 
   const response = await send(url, {
     headers: { Accept: 'text/html' }, redirect: 'manual', signal: AbortSignal.timeout(15_000),
   });
+  const body = await readGazetteIssueHtml(response);
+  const recovered = isRecoveredIssueKey(expected) ? await repairMislinkedArticles(body, expected, url, send) : undefined;
+  const edition = await parseGazetteIssue(recovered?.html ?? body, expected, allowDynamic);
+  if (recovered) await verifyRecoveredPartner(expected, edition, send, allowDynamic);
+  return edition;
+}
+
+async function readGazetteIssueHtml(response: Response): Promise<string> {
   const contentType = response.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase();
   if (!response.ok || contentType !== 'text/html' || !response.body) {
     await response.body?.cancel();
@@ -290,38 +298,40 @@ export async function fetchGazetteIssue(expected: GazetteIssueKey, send: typeof 
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-  // The Gazette declares UTF-8 but a small number of legacy typography bytes
-  // are not valid UTF-8; replacement decoding preserves the surrounding index.
-  let html = new TextDecoder('utf-8').decode(bytes);
-  let recoveredCount = 0;
-  if (expected.part === 'II' && expected.language === 'en' && expected.issueDate === '2026-06-03' &&
-      expected.volume === 160 && expected.issueNumber === 11) {
-    const observed = new Set<string>();
-    const hrefPattern = /\bhref\s*=\s*(["'])([^"']+)\1/giu;
-    for (const match of html.matchAll(hrefPattern)) {
-      const href = match[2];
-      if (!href) continue;
-      const observedUrl = new URL(href, url);
-      if (!observedUrl.pathname.endsWith('-fra.html')) continue;
-      const token = sourceToken(observedUrl);
-      const canonical = recoveredEnglishArticle(expected, token);
-      if (!canonical || observed.has(token)) continue;
-      await validateRecoveredEnglishArticle(canonical, expected, token, send);
-      observed.add(token);
-      recoveredCount += 1;
-      html = html.replace(match[0], match[0].replace(href, canonical.pathname));
-    }
-    const missing = Object.keys(VERIFIED_ENGLISH_ARTICLES).filter((token) => !observed.has(token));
-    if (missing.length) throw new Error(`Gazette English issue index did not expose all seven recoverable SOR links: ${missing.join(', ')}.`);
+  // Replacement decoding preserves the surrounding index despite legacy typography bytes.
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+function isRecoveredIssueKey(key: GazetteIssueKey): boolean {
+  return key.part === 'II' && key.language === 'en' && key.issueDate === '2026-06-03' && key.volume === 160 && key.issueNumber === 11;
+}
+
+async function repairMislinkedArticles(html: string, expected: GazetteIssueKey, indexUrl: URL, send: typeof fetch): Promise<{ html: string }> {
+  const observed = new Set<string>();
+  let repaired = html;
+  for (const match of html.matchAll(/\bhref\s*=\s*(["'])([^"']+)\1/giu)) {
+    const href = match[2];
+    if (!href) continue;
+    const observedUrl = new URL(href, indexUrl);
+    if (!observedUrl.pathname.endsWith('-fra.html')) continue;
+    const token = sourceToken(observedUrl);
+    const canonical = recoveredEnglishArticle(expected, token);
+    if (!canonical || observed.has(token)) continue;
+    await validateRecoveredEnglishArticle(canonical, expected, token, send);
+    observed.add(token);
+    repaired = repaired.replace(match[0], match[0].replace(href, canonical.pathname));
   }
-  const edition = await parseGazetteIssue(html, expected, allowDynamic);
-  if (recoveredCount) {
-    const partner = await fetchGazetteIssue({ ...expected, language: 'fr' }, send, allowDynamic);
-    const englishIds = edition.records.map((record) => record.id).sort();
-    const frenchIds = partner.records.map((record) => record.id.replace(':fr:', ':en:')).sort();
-    if (JSON.stringify(englishIds) !== JSON.stringify(frenchIds)) {
-      throw new Error('Recovered English Gazette articles do not match the French partner issue records.');
-    }
+  const missing = Object.keys(VERIFIED_ENGLISH_ARTICLES).filter((token) => !observed.has(token));
+  if (missing.length) throw new Error(`Gazette English issue index did not expose all seven recoverable SOR links: ${missing.join(', ')}.`);
+  return { html: repaired };
+}
+
+async function verifyRecoveredPartner(expected: GazetteIssueKey, edition: GazetteEdition, send: typeof fetch,
+  allowDynamic: boolean): Promise<void> {
+  const partner = await fetchGazetteIssue({ ...expected, language: 'fr' }, send, allowDynamic);
+  const englishIds = edition.records.map((record) => record.id).sort();
+  const frenchIds = partner.records.map((record) => record.id.replace(':fr:', ':en:')).sort();
+  if (JSON.stringify(englishIds) !== JSON.stringify(frenchIds)) {
+    throw new Error('Recovered English Gazette articles do not match the French partner issue records.');
   }
-  return edition;
 }

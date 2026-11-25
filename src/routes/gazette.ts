@@ -1,13 +1,16 @@
 import { attributionFor } from '@chester-hill-solutions/corpus';
 import { AccessError } from '../access';
 import { CANADA_GAZETTE } from '../corpora/policies';
+import { gazetteExtraIssueId, gazetteExtraRecordBelongsToIssue, parseGazetteExtraRecordId, type GazetteExtraRecord } from '../corpora/gazette-extra';
 import { GAZETTE_PREVIEW_ISSUES, isGazetteCitationForIssue, isGazetteIssueSupported, isGazetteRecordIdForIssue, parseGazetteRecordId, type GazetteIssueKey, type GazetteRecord } from '../corpora/gazette';
 import { RequestInputError } from '../http';
 import type { Env } from '../types';
 import { normalizeForSearch } from '../text';
 import {
   GAZETTE_PATHS, GazetteSearchSchema, GazetteRecordSchema, GazetteSearchResponseSchema,
-  GazetteLookupResponseSchema, type GazetteCoverage, type GazetteSearchRequest,
+  GazetteLookupResponseSchema, GazetteExtraRecordResponseSchema, GazetteExtraCoverageSchema,
+  GazetteExtraSearchResponseSchema, GazetteExtraLookupResponseSchema,
+  type GazetteCoverage, type GazetteSearchRequest,
 } from './gazette-contract';
 
 interface GazetteRoute { pathId?: string }
@@ -53,7 +56,7 @@ export function parseGazetteRequest({ pathId }: GazetteRoute, url: URL): Gazette
   if (pathId === undefined) return { operation: 'search', query: parseSearch(url) };
   if (url.search) throw new RequestInputError('A Gazette exact lookup takes no query parameters.');
   const id = decodeId(pathId);
-  if (!id || id.length > 512 || !parseGazetteRecordId(id)) throw new RequestInputError('Supply a Gazette record ID returned by search.');
+  if (!id || id.length > 512 || (!parseGazetteRecordId(id) && !parseGazetteExtraRecordId(id))) throw new RequestInputError('Supply a Gazette record ID returned by search.');
   return { operation: 'lookup', id };
 }
 
@@ -79,6 +82,31 @@ function recordFromRow(row: GazetteDbRow) {
     effectiveDate: row.effective_date ?? undefined,
     source: CANADA_GAZETTE.publisher, redistribution: CANADA_GAZETTE.redistribution,
     attribution: attributionFor(CANADA_GAZETTE),
+  });
+}
+
+type GazetteExtraDbRow = Omit<GazetteExtraRecord, 'issueDate' | 'citationUrl' | 'registrationNumber' | 'registrationDate' | 'consultationDeadline' | 'effectiveDate'> & {
+  issue_date: string; citation_url: string; registration_number: string | null; registration_date: string | null;
+  consultation_deadline: string | null; effective_date: string | null;
+};
+type GazetteExtraEditionRow = { part: 'I' | 'II'; language: 'en' | 'fr'; issue_date: string; volume: number; extra_number: number; record_count: number };
+function extraRecordFromRow(row: GazetteExtraDbRow) {
+  const key = { part: row.part, language: row.language, issueDate: row.issue_date, volume: row.volume, extraNumber: row.extraNumber } as const;
+  if (!gazetteExtraRecordBelongsToIssue({ id: row.id, citationUrl: row.citation_url }, key)) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'The Gazette extra record failed source validation.', 503);
+  return GazetteExtraRecordResponseSchema.parse({ id: row.id, editionType: 'extra', part: row.part, language: row.language,
+    issueDate: row.issue_date, volume: row.volume, extraNumber: row.extraNumber, kind: row.kind, title: row.title,
+    citationUrl: row.citation_url, registrationNumber: row.registration_number ?? undefined,
+    registrationDate: row.registration_date ?? undefined, consultationDeadline: row.consultation_deadline ?? undefined,
+    effectiveDate: row.effective_date ?? undefined, source: CANADA_GAZETTE.publisher,
+    redistribution: CANADA_GAZETTE.redistribution, attribution: attributionFor(CANADA_GAZETTE) });
+}
+
+function extraCoverage(parts: readonly ('I' | 'II')[], language: 'en' | 'fr', rows: readonly GazetteExtraEditionRow[]) {
+  return parts.map((part) => {
+    const matching = rows.filter((row) => row.part === part);
+    return GazetteExtraCoverageSchema.parse({ editionType: 'extra', part, language, available: matching.length > 0,
+    issues: matching.map((row) => ({ issueDate: row.issue_date, volume: row.volume,
+      extraNumber: row.extra_number, recordCount: row.record_count })) });
   });
 }
 
@@ -111,6 +139,26 @@ async function readEditions(db: D1Database, keys: readonly GazetteIssueKey[], pa
 
 export async function runGazetteRequest(db: D1Database, request: GazetteRequest) {
   if (request.operation === 'lookup') {
+    const extraKey = parseGazetteExtraRecordId(request.id);
+    if (extraKey) {
+      const issueKey = { part: extraKey.part, language: extraKey.language, issueDate: extraKey.issueDate,
+        volume: extraKey.volume, extraNumber: extraKey.extraNumber };
+      const edition = await db.prepare(`SELECT record_count FROM gazette_extra_editions
+        WHERE part=? AND language=? AND issue_date=? AND volume=? AND extra_number=?`)
+        .bind(issueKey.part, issueKey.language, issueKey.issueDate, issueKey.volume, issueKey.extraNumber)
+        .first<{ record_count: number }>().catch(() => { throw new AccessError('RETRIEVAL_UNAVAILABLE', 'The Gazette extra store is unavailable.', 503); });
+      if (!edition) throw new AccessError('UNSUPPORTED_COVERAGE', 'This Gazette extra edition is outside persisted coverage.', 501);
+      const rows = await db.prepare(`SELECT part,language,issue_date,volume,extra_number,record_count FROM gazette_extra_editions
+        WHERE part=? AND language=? AND issue_date=? AND volume=? AND extra_number=?`)
+        .bind(issueKey.part, issueKey.language, issueKey.issueDate, issueKey.volume, issueKey.extraNumber).all<GazetteExtraEditionRow>()
+        .catch(() => { throw new AccessError('RETRIEVAL_UNAVAILABLE', 'The Gazette extra store is unavailable.', 503); });
+      const records = await db.prepare(`SELECT id,edition_type AS editionType,part,language,issue_date,volume,extra_number AS extraNumber,
+        kind,title,citation_url,registration_number,registration_date,consultation_deadline,effective_date FROM gazette_extra_records WHERE id=?`)
+        .bind(request.id).all<GazetteExtraDbRow>().catch(() => { throw new AccessError('RETRIEVAL_UNAVAILABLE', 'The Gazette extra store is unavailable.', 503); });
+      const items = records.results.map(extraRecordFromRow);
+      if (!items.length) throw new AccessError('NOT_FOUND', 'No Gazette extra record has that ID.', 404);
+      return GazetteExtraLookupResponseSchema.parse({ item: items[0], coverage: extraCoverage([issueKey.part], issueKey.language, rows.results)[0] });
+    }
     const key = parseGazetteRecordId(request.id);
     if (!key) throw new RequestInputError('Supply a Gazette record ID returned by search.');
     const edition = await db.prepare(`SELECT record_count FROM gazette_editions
@@ -126,6 +174,7 @@ export async function runGazetteRequest(db: D1Database, request: GazetteRequest)
     return GazetteLookupResponseSchema.parse({ item: items[0], coverage: coverage[0] });
   }
   const query = request.query;
+  if (query.editionType === 'extra') return runGazetteExtraSearch(db, query);
   const predicates = ['language=?'];
   const values: (string | number)[] = [query.language];
   if (query.part) { predicates.push('part=?'); values.push(query.part); }
@@ -156,4 +205,28 @@ export async function runGazetteRequest(db: D1Database, request: GazetteRequest)
       volume: row.volume, issueNumber: row.issue_number, recordCount: row.record_count })) }));
   const items = (records.results as GazetteDbRow[]).map(recordFromRow);
   return GazetteSearchResponseSchema.parse({ items, count: items.length, coverage });
+}
+
+async function runGazetteExtraSearch(db: D1Database, query: GazetteSearchRequest) {
+  const predicates = ['language=?'];
+  const values: (string | number)[] = [query.language];
+  if (query.part) { predicates.push('part=?'); values.push(query.part); }
+  if (query.since) { predicates.push('issue_date>=?'); values.push(query.since); }
+  if (query.until) { predicates.push('issue_date<=?'); values.push(query.until); }
+  const scope = predicates.join(' AND ');
+  const parts: ('I' | 'II')[] = query.part ? [query.part] : ['I', 'II'];
+  const topic = normalizeForSearch(query.topic);
+  const [editions, records] = await db.batch<GazetteExtraEditionRow | GazetteExtraDbRow>([
+    db.prepare(`SELECT part,language,issue_date,volume,extra_number,record_count FROM gazette_extra_editions
+      WHERE ${scope} ORDER BY issue_date DESC,part,volume DESC,extra_number DESC`).bind(...values),
+    db.prepare(`SELECT id,edition_type AS editionType,part,language,issue_date,volume,extra_number AS extraNumber,
+      kind,title,citation_url,registration_number,registration_date,consultation_deadline,effective_date FROM gazette_extra_records
+      WHERE ${scope} AND instr(search_text,?)>0 ORDER BY issue_date DESC,part,volume DESC,extra_number DESC,id LIMIT ?`)
+      .bind(...values, topic, query.limit),
+  ]).catch(() => { throw new AccessError('RETRIEVAL_UNAVAILABLE', 'The Gazette extra store is unavailable.', 503); });
+  const editionRows = editions.results as GazetteExtraEditionRow[];
+  if (!editionRows.length) throw new AccessError('UNSUPPORTED_COVERAGE', 'The requested Gazette extra date and part are outside persisted coverage.', 501);
+  const coverage = extraCoverage(parts, query.language, editionRows);
+  const items = (records.results as GazetteExtraDbRow[]).map(extraRecordFromRow);
+  return GazetteExtraSearchResponseSchema.parse({ items, count: items.length, coverage });
 }

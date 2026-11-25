@@ -20,6 +20,7 @@ import freshwaterStudy from '../../preview/committees/envi-freshwater.json';
 export interface DiscoveryEdition {
   scope: string;
   language: 'en' | 'fr';
+  editionType?: 'extra';
   observedAt?: string;
   latestRecordDate?: string;
   publishedAt?: string;
@@ -37,7 +38,7 @@ export interface DiscoverySource {
 }
 type Definition = Pick<DiscoverySource, 'id' | 'name' | 'question' | 'openapi'>;
 type EditionKey = Pick<DiscoveryEdition, 'scope' | 'language'>;
-type Result = EditionKey & {
+type Result = EditionKey & { editionType?: string | null } & {
   [Field in 'observedAt' | 'latestRecordDate' | 'publishedAt' | 'coverageThrough' | 'revision']?: string | null;
 };
 const languages = "WITH languages(language) AS (VALUES ('en'),('fr')) ";
@@ -77,7 +78,7 @@ async function editions(db: D1Database | undefined, sql: string, path: (r: Resul
   const result = await (args.length ? statement.bind(...args) : statement).all<Result>();
   if (!result.success) throw new Error('Cannot verify publication');
   return result.results.map(row => ({
-    scope: row.scope, language: row.language, observedAt: row.observedAt ?? undefined,
+    scope: row.scope, language: row.language, ...(row.editionType === 'extra' ? { editionType: 'extra' as const } : {}), observedAt: row.observedAt ?? undefined,
     latestRecordDate: row.latestRecordDate ?? undefined, publishedAt: row.publishedAt ?? undefined,
     coverageThrough: row.coverageThrough ?? undefined, revision: row.revision ?? undefined, request: path(row),
   }));
@@ -171,12 +172,18 @@ function hansard({ env, accessReady }: DiscoveryContext, chamber: keyof typeof H
 function gazetteIssues({ env, accessReady }: DiscoveryContext) {
   return inspect(definition('canada-gazette', 'Canada Gazette', 'What notices or instruments appeared in the indexed issues?', GAZETTE_OPENAPI_PATH),
     env.GAZETTE_PREVIEW === 'on', accessReady, () => editions(env.GAZETTE_DB,
-      `SELECT part AS scope,language,issue_date AS latestRecordDate,imported_at AS publishedAt,content_sha256 AS revision
+      `SELECT part AS scope,language,'regular' AS editionType,issue_date AS latestRecordDate,imported_at AS publishedAt,content_sha256 AS revision
        FROM gazette_editions e WHERE record_count>0 AND EXISTS (SELECT 1 FROM gazette_records r
          WHERE r.part=e.part AND r.language=e.language AND r.issue_date=e.issue_date
          AND r.volume=e.volume AND r.issue_number=e.issue_number)
-       ORDER BY issue_date DESC,part,language`,
+       UNION ALL
+       SELECT part AS scope,language,'extra' AS editionType,issue_date AS latestRecordDate,imported_at AS publishedAt,content_sha256 AS revision
+       FROM gazette_extra_editions e WHERE record_count>0 AND EXISTS (SELECT 1 FROM gazette_extra_records r
+         WHERE r.part=e.part AND r.language=e.language AND r.issue_date=e.issue_date
+         AND r.volume=e.volume AND r.extra_number=e.extra_number)
+       ORDER BY latestRecordDate DESC,scope,language`,
       row => requestPath('/api/gazette', { part: row.scope, language: row.language,
+        ...(row.editionType === 'extra' ? { editionType: 'extra' } : {}),
         since: String(row.latestRecordDate), until: String(row.latestRecordDate), topic: topic(row.language) })));
 }
 
