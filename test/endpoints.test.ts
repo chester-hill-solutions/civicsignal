@@ -2435,6 +2435,25 @@ describe('departmental publications through the Worker', () => {
       hreflang: alternate.hreflang,
       identity_method: alternate.identity_method,
     })]));
+    const gapDirectory = mkdtempSync(join(tmpdir(), 'eccc-alternate-gap-'));
+    const gapPath = join(gapDirectory, 'serving.sqlite');
+    cpSync(sourcePath, gapPath);
+    const gapFixture = new DatabaseSync(gapPath);
+    closed.push(() => { gapFixture.close(); rmSync(gapDirectory, { recursive: true, force: true }); });
+    const gapDocument = gapFixture.prepare(`SELECT id,language,url FROM dp_alternate_documents
+      WHERE status='verified' LIMIT 1`).get() as { id: string; language: string; url: string } | undefined;
+    if (!gapDocument) throw new Error('No verified alternate document available for the coverage-gap fixture');
+    gapFixture.prepare('UPDATE dp_extraction_runs SET gaps_json=? WHERE singleton=1')
+      .run(JSON.stringify([{ document_id: gapDocument.id, reason: 'fixture alternate extraction gap' }]));
+    fixture.env.DEPARTMENTAL_PUBLICATIONS_DB = localD1(gapFixture);
+    const coverageWithAlternateGap = await get(path + '/coverage?limit=100');
+    expect(coverageWithAlternateGap.gaps).toEqual(expect.arrayContaining([expect.objectContaining({
+      id: gapDocument.id,
+      kind: 'extraction',
+      language: gapDocument.language,
+      url: gapDocument.url,
+      reason: 'fixture alternate extraction gap',
+    })]));
     expect((await fixture.send(path + '?query=test&language=en&cursor=' + 'a'.repeat(64) + '.1')).status).toBe(400);
   });
 });

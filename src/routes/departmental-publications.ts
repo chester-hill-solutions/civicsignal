@@ -108,7 +108,11 @@ export function prepareDepartmentalPublications(url: URL) {
           `SELECT id,kind,language,url,reason FROM dp_gaps UNION ALL SELECT
            json_extract(j.value,'$.document_id') AS id,'extraction' AS kind,d.language,d.url,
            json_extract(j.value,'$.reason') AS reason FROM dp_extraction_runs e, json_each(e.gaps_json) j
-           JOIN dp_documents d ON d.id=json_extract(j.value,'$.document_id') ORDER BY kind,id` });
+           JOIN dp_documents d ON d.id=json_extract(j.value,'$.document_id') UNION ALL SELECT
+           json_extract(j.value,'$.document_id') AS id,'extraction' AS kind,a.language,a.url,
+           json_extract(j.value,'$.reason') AS reason FROM dp_extraction_runs e, json_each(e.gaps_json) j
+           JOIN dp_alternate_documents a ON a.id=json_extract(j.value,'$.document_id')
+             AND a.status='verified' ORDER BY kind,id` });
         const alternateDocuments = await db.prepare(`SELECT count(*) AS n FROM dp_alternate_documents WHERE status='verified'`).first<{ n: number }>();
         const alternatePassages = await db.prepare(`SELECT count(*) AS n FROM dp_passages p JOIN dp_alternate_documents a ON a.id=p.document_id WHERE a.status='verified'`).first<{ n: number }>();
         return { ...source, documents: meta.documents_seen, searchableDocuments: meta.documents_extracted,
