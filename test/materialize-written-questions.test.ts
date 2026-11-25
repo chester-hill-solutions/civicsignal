@@ -112,9 +112,9 @@ describe('local written-question D1 materialization SQL', () => {
     const directory = mkdtempSync(join(tmpdir(), 'written-question-stage-fts-'));
     const sqlite = openSqlite(join(directory, 'stage.sqlite'));
     const rows = [
-      ['45-1', '1', 'en', '', '0', 'first question text'],
-      ['45-1', '1', 'en', 'reply-1', '0', 'first reply text'],
-      ['45-1', '2', 'fr', '', '0', 'deuxième question'],
+      ['45-1', '1', 'en', '', 0, 'first question text'],
+      ['45-1', '1', 'en', 'reply-1', 0, 'first reply text'],
+      ['45-1', '2', 'fr', '', 0, 'deuxième question'],
     ] as const;
     try {
       sqlite.exec('CREATE VIRTUAL TABLE wq_stage_fts USING fts5(session UNINDEXED,number UNINDEXED,language UNINDEXED,doc_key UNINDEXED,chunk_index UNINDEXED,text)');
@@ -144,8 +144,8 @@ describe('local written-question D1 materialization SQL', () => {
       sqlite.exec("INSERT INTO wq_stage_fts VALUES ('45-1','1','en','','0','alpha old'); INSERT INTO wq_stage_fts VALUES ('45-1','2','en','','0','beta old'); INSERT INTO wq_stage_fts VALUES ('45-1','3','fr','','0','gamma old')");
       sqlite.exec('BEGIN IMMEDIATE');
       const writer = new StagedFtsWriter(sqlite);
-      writer.add(['45-1', '2', 'en', '', '0', 'beta new']);
-      writer.add(['45-1', '1', 'en', '', '0', 'alpha old']);
+      writer.add(['45-1', '2', 'en', '', 0, 'beta new']);
+      writer.add(['45-1', '1', 'en', '', 0, 'alpha old']);
       expect(writer.finish()).toEqual({ retained: 0, inserted: 0, replaced: 2, removed: 1 });
       sqlite.exec("INSERT INTO wq_stage_fts(wq_stage_fts) VALUES ('integrity-check')");
       expect(sqlite.prepare('SELECT rowid,number,text FROM wq_stage_fts ORDER BY rowid').all()).toEqual([
@@ -153,6 +153,8 @@ describe('local written-question D1 materialization SQL', () => {
       ]);
       expect(sqlite.prepare("SELECT number FROM wq_stage_fts WHERE wq_stage_fts MATCH 'beta new'").all())
         .toEqual([{ number: '2' }]);
+      expect(sqlite.prepare('SELECT typeof(chunk_index) AS type FROM wq_stage_fts WHERE rowid=1').get())
+        .toEqual({ type: 'real' });
       sqlite.exec('COMMIT');
     } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
   });
@@ -164,7 +166,7 @@ describe('local written-question D1 materialization SQL', () => {
       sqlite.exec("CREATE VIRTUAL TABLE wq_stage_fts USING fts5(session UNINDEXED,number UNINDEXED,language UNINDEXED,doc_key UNINDEXED,chunk_index UNINDEXED,text); INSERT INTO wq_stage_fts VALUES ('45-1','1','en','','0','previous text')");
       sqlite.exec('BEGIN IMMEDIATE');
       const writer = new StagedFtsWriter(sqlite);
-      writer.add(['45-1', '1', 'en', '', '0', 'candidate text']);
+      writer.add(['45-1', '1', 'en', '', 0, 'candidate text']);
       writer.finish();
       const rejected = new Error('injected staged import rejection');
       let observed: unknown;
@@ -172,6 +174,52 @@ describe('local written-question D1 materialization SQL', () => {
       expect(observed).toBe(rejected);
       expect(sqlite.prepare('SELECT rowid,number,text FROM wq_stage_fts').all())
         .toEqual([{ rowid: 1, number: '1', text: 'previous text' }]);
+    } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('repairs text-typed staged chunk indexes before serving document search results', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'written-question-stage-types-'));
+    const sqlite = openSqlite(join(directory, 'serving.sqlite'));
+    try {
+      sqlite.exec(readFileSync(new URL('../preview/written-questions/migrations/0001_written_questions.sql', import.meta.url), 'utf8'));
+      sqlite.prepare('INSERT INTO wq_sessions VALUES (?, ?)').run('45-1', '{}');
+      createStage(sqlite);
+      sqlite.prepare(`INSERT INTO wq_stage_sessions VALUES (?, ?)`).run('45-1', '{}');
+      sqlite.prepare(`INSERT INTO wq_stage_questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+        '45-1', 1010, 'en', 'https://www.ourcommons.ca/question/1010', 'question text', 'answered', null, null,
+        null, '{}', 'a'.repeat(64), null, 'complete', null, null);
+      sqlite.prepare(`INSERT INTO wq_stage_documents
+        (session,number,language,doc_key,kind,respondent,title,url,text,text_chars,chunk_count,object_sha256,availability,metadata_json)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+        '45-1', 1010, 'en', 'reply-1010', 'reply', 'Minister', 'Reply',
+        'https://www.ourcommons.ca/reply/1010', 'harbor drinking water advisories', 32, 1, null, 'searchable', '{}');
+      sqlite.prepare(`INSERT INTO wq_stage_document_chunks
+        (session,number,language,doc_key,chunk_index,text,search_text) VALUES (?,?,?,?,?,?,?)`).run(
+        '45-1', 1010, 'en', 'reply-1010', 0, 'harbor drinking water advisories', 'harbor drinking water advisories');
+      sqlite.prepare('INSERT INTO wq_stage_materialization_state VALUES (1,?,?,?,?,?,?)')
+        .run('b'.repeat(64), 1, 1, 1, 2, 'candidate');
+      sqlite.prepare(`INSERT INTO wq_stage_fts VALUES (?,?,?,?,?,?)`).run('45-1', '1010', 'en', '', 0, 'question text');
+      sqlite.prepare(`INSERT INTO wq_stage_fts VALUES (?,?,?,?,?,?)`).run('45-1', '1010', 'en', 'reply-1010', '0', 'harbor drinking water advisories');
+
+      sqlite.exec('BEGIN IMMEDIATE');
+      const writer = new StagedFtsWriter(sqlite);
+      writer.add(['45-1', '1010', 'en', '', 0, 'question text']);
+      writer.add(['45-1', '1010', 'en', 'reply-1010', 0, 'harbor drinking water advisories']);
+      expect(writer.finish()).toEqual({ retained: 1, inserted: 0, replaced: 1, removed: 0 });
+      expect(sqlite.prepare("SELECT typeof(chunk_index) AS type FROM wq_stage_fts WHERE doc_key='reply-1010'").get())
+        .toEqual({ type: 'real' });
+      sqlite.exec('COMMIT');
+
+      swapCandidate(sqlite);
+      sqlite.exec('COMMIT');
+      const result = await runWrittenQuestionRequest(localD1(sqlite), {
+        operation: 'search', query: { query: 'harbor drinking', language: 'en', session: '45-1', kind: 'reply', limit: 10 },
+      });
+      expect('items' in result).toBe(true);
+      if ('items' in result) {
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]?.chunkIndex).toBe(0);
+      }
     } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
   });
 

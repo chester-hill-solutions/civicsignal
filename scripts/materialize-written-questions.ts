@@ -209,7 +209,7 @@ function resetStage(target: DatabaseSync) {
 }
 
 type StagedFtsValues = readonly [session: string, number: string, language: string, docKey: string,
-  chunkIndex: string, text: string];
+  chunkIndex: number, text: string];
 
 export class StagedFtsWriter {
   private nextRowid = 1;
@@ -281,7 +281,7 @@ function importCandidate(source: DatabaseSync, target: DatabaseSync, stats: Mate
     questionInsert.run(...key, string(row['url']), text, string(row['status']), nullableString(row['member_id']),
       nullableString(row['member_name']), nullableString(row['asked_on']), string(row['metadata_json']), string(row['source_hash']),
       nullableString(row['content_hash']), string(row['acquisition']), nullableString(row['error']), nullableString(row['last_checked']));
-    fts.add([key[0], String(key[1]), key[2], '', '0', text]);
+    fts.add([key[0], String(key[1]), key[2], '', 0, text]);
     stats.indexedPassages += 1;
   }
   for (const row of rowIterator(source, `SELECT session,number,language,doc_key,kind,respondent,title,url,text,object_sha256,availability,metadata_json
@@ -296,7 +296,7 @@ function importCandidate(source: DatabaseSync, target: DatabaseSync, stats: Mate
       string(row['availability']), string(row['metadata_json']));
     for (const chunk of splitWrittenQuestionText(text)) {
       chunkInsert.run(...key, chunk.index, chunk.text, chunk.searchText);
-      fts.add([key[0], String(key[1]), key[2], key[3], String(chunk.index), chunk.searchText]);
+      fts.add([key[0], String(key[1]), key[2], key[3], chunk.index, chunk.searchText]);
     }
     stats.chunks += chunkCount;
     stats.indexedPassages += chunkCount;
