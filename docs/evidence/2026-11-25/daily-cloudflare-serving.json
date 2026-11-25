@@ -1,0 +1,164 @@
+{
+  "scope": "private Cloudflare staging",
+  "candidateCommit": "727e9cc474b3dbcb7dcb83424df84cd138b76e50",
+  "worker": {
+    "name": "civicsignal-stage-daily-checks",
+    "deployedVersion": "e10a626b-bec2-4b3b-9e68-2a3bf19c7665",
+    "bundleSha256": "2813c4a2d7950f08919d36cfa5176464ebdd194dd4fdb102485cb0edee89598c",
+    "bundleBytes": 2076189,
+    "independentModuleReadback": true,
+    "workersDev": false,
+    "previewUrls": false,
+    "routes": [],
+    "crons": [],
+    "d1Bindings": {
+      "AUTH_DB": "5802b38c-56b8-45bf-b807-e8203495ddba",
+      "COMMITTEE_DB": "fb9b6314-4b06-4690-a893-7277a8ea00bb",
+      "CONSULTATIONS_DB": "ef80296e-8122-43e9-a8bc-c5e60941bd08",
+      "FUNDING_DB": "0d4ddb86-5b28-44b5-b34d-7aa249ada551"
+    },
+    "privateService": "civicsignal-stage-daily-checks",
+    "usageObject": "ApiKeyUsageDO",
+    "workspace": "stage-daily-checks",
+    "plan": "free",
+    "monthlyAllowance": 1000,
+    "keyCapability": "civicsignal.retrieve"
+  },
+  "instance": "daily-1795649496055",
+  "workflowVersion": "b16fd1df-6957-4731-8b2c-cd348507cb05",
+  "triggerSource": "api",
+  "startedAt": "2026-11-25T23:31:37.984Z",
+  "finishedAt": "2026-11-25T23:31:50.259Z",
+  "steps": 6,
+  "stepRetries": 0,
+  "casesPassed": 4,
+  "meteredRetrievals": 26,
+  "usage": {
+    "access": {
+      "before": 12,
+      "after": 12,
+      "requests": 2,
+      "result": null
+    },
+    "consultations": {
+      "before": 2,
+      "after": 6,
+      "requests": 4,
+      "result": {
+        "instance": "consultations-1795644602710",
+        "observedAt": "2026-11-25T22:10:02.710Z",
+        "rows": 5210,
+        "sample": "casdo-ocena_C-0000001",
+        "revision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea"
+      }
+    },
+    "committees": {
+      "before": 6,
+      "after": 12,
+      "requests": 6,
+      "result": {
+        "session": "45-1",
+        "cutoff": "2026-11-25T08:33:25+00:00",
+        "asOf": "2026-11-25T11:15:39.000Z",
+        "editions": 30,
+        "referenceSha256": "8748ad16ba57dd3d5db5a4a7bcfee9b72c64f7092451b9391ce31ee003643607"
+      }
+    },
+    "recommendationsEnglish": {
+      "before": 12,
+      "after": 20,
+      "requests": 8,
+      "result": {
+        "language": "en",
+        "brief": "house-fina-submission-559b791939da59abd8bd6d51",
+        "grant": {
+          "source": "nserc",
+          "instance": "nserc-1795646402601",
+          "id": "nserc-applied-research-and-development-grants",
+          "editionRevision": "539a32fe22163da9b9d8c3af43c0433d8b4f95911b9f18a620f8258906f20fcb",
+          "catalogue": "2e930740d7c816bc4767e39efa014a2c1f164840e2cb8d70572ef4e3e1237894",
+          "sections": 35
+        },
+        "apprenticeship": {
+          "source": "esdc",
+          "instance": "esdc-1795648539258",
+          "id": "esdc-utip-infrastructure-expansion",
+          "editionRevision": "ad07d32a0938c2e1dd7cd39587389106e2a2c1f92c8b8b2fd957801a867e93c6",
+          "catalogue": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+          "sections": 66
+        }
+      }
+    },
+    "recommendationsFrench": {
+      "before": 20,
+      "after": 28,
+      "requests": 8,
+      "result": {
+        "language": "fr",
+        "brief": "house-fina-submission-29cd8309b3885e7f4b96e874",
+        "grant": {
+          "source": "nserc",
+          "instance": "nserc-1795646402601",
+          "id": "nserc-applied-research-and-development-grants",
+          "editionRevision": "5f2ca5254ba0ebd75bfafe98f0d34ec79a37fb648b23b4fca8bc1c852f944b7f",
+          "catalogue": "2e930740d7c816bc4767e39efa014a2c1f164840e2cb8d70572ef4e3e1237894",
+          "sections": 35
+        },
+        "apprenticeship": {
+          "source": "esdc",
+          "instance": "esdc-1795648539258",
+          "id": "esdc-utip-infrastructure-expansion",
+          "editionRevision": "3f3e0a2aff1c177b561327281365f59bc6d09d9f3859f0eb26a1e7cd54f87389",
+          "catalogue": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+          "sections": 57
+        }
+      }
+    }
+  },
+  "uniqueProductCorrelationIds": 28,
+  "sourceReceipts": {
+    "consultations": {
+      "bucket": "civicsignal-stage-consultations",
+      "key": "consultations/runs/consultations-1795644602710.json",
+      "sha256": "8f2bf6a9f3f52c13b2196af513658736bace95a87cda9efc45de832f9196e051",
+      "bytes": 1285
+    },
+    "nserc": {
+      "bucket": "civicsignal-stage-funding",
+      "key": "funding/nserc/runs/nserc-1795646402601.json",
+      "sha256": "a6eaf28cb4d3cca6046b96f5893386af89c4d8f8a5a1f8586648ac5e5dfc3020",
+      "bytes": 2200
+    },
+    "esdc": {
+      "bucket": "civicsignal-stage-funding",
+      "key": "funding/esdc/runs/esdc-1795648539258.json",
+      "sha256": "c8b2cef7fca55da366cb7abc9f1f3876e1d4b5781ab9d492fa0ca1a683a0fba5",
+      "bytes": 2377
+    },
+    "committee": {
+      "bucket": "civicsignal-stage-funding",
+      "key": "daily/references/committee/8748ad16ba57dd3d5db5a4a7bcfee9b72c64f7092451b9391ce31ee003643607.json",
+      "sha256": "8748ad16ba57dd3d5db5a4a7bcfee9b72c64f7092451b9391ce31ee003643607",
+      "bytes": 42407
+    }
+  },
+  "fullReceipt": {
+    "bucket": "civicsignal-stage-funding",
+    "key": "daily/serving/daily-1795649496055.json",
+    "sha256": "ff4331d0c8a7431af7f84a516939f82e4eb54fdd7f2ce6bd60d9fa16aec95c98",
+    "bytes": 6768
+  },
+  "priorAttempt": {
+    "instanceId": "daily-1795649295877",
+    "workerVersion": "030f5b13-fdbc-495c-abbc-be7685444a08",
+    "sourceCommit": "97230e9c0d7dd31332bb1253e0592964989fc352",
+    "status": "errored",
+    "start": "2026-11-25T23:28:20.942Z",
+    "end": "2026-11-25T23:28:22.939Z",
+    "error": {
+      "name": "Error",
+      "message": "Product request failed (503): /api/consultations [req_mwwr8dbuaydsfl8lem]"
+    },
+    "diagnosis": "Hosted D1 returned error 7500 when the literal publisher title exceeded its 50-byte LIKE-pattern limit. Consultation coverage and detail had already consumed two retrievals. The qualifying build used instr on normalized search text."
+  }
+}

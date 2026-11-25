@@ -1,6 +1,6 @@
-# Local intake refresh
+# Intake refresh
 
-This runbook covers the Mac-based reference runs used for development, replay and comparison during migration. Cloudflare is the operating target for all unattended refreshes. The [master plan](PLAN.md#pipeline-verification-priorities) defines the hosted migration order, acceptance checks and cutover. D-08 governs hosted publication and cadence per corpus.
+Use the Cloudflare sections to operate private staging from any authorized host. The local commands reproduce reference runs during migration. The [master plan](PLAN.md#pipeline-verification-priorities) tracks each source through its hosted calendar test and cutover. D-08 governs hosted publication and cadence per corpus.
 
 ## Cloudflare consultations staging
 
@@ -54,6 +54,7 @@ The [ESDC Workflow](../services/funding/esdc/wrangler.jsonc) runs daily at **23:
 The following command starts a manual observation in the staging account.
 
 ```sh
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
 esdc_ms=$(node -p 'Date.now()')
 cf workflows instances create civicsignal-stage-esdc \
   --body "{\"instance_id\":\"esdc-$esdc_ms\",\"params\":{\"scheduledTime\":$esdc_ms}}"
@@ -61,7 +62,34 @@ cf workflows instances create civicsignal-stage-esdc \
 
 Check the instance status, then read `funding/esdc/runs/<instanceId>.json` in the staging funding bucket. The receipt links the dated capture with its catalogue revision, edition and gap counts, D1 publication rows read and written, and bilingual lookup hashes. For a scheduled run, match the calendar event's millisecond timestamp to the instance ID. A retry of an interrupted acquisition uses the same observation time to recover verified pages. A new calendar occurrence rechecks the publisher.
 
+From an authorized checkout, use the timestamp of the occurrence you want to inspect in the following read-only commands.
+
+```sh
+cf workflows instances get "esdc-$esdc_ms" --workflow-name civicsignal-stage-esdc --simple true
+bunx wrangler r2 object get "civicsignal-stage-funding/funding/esdc/runs/esdc-$esdc_ms.json" \
+  --config services/funding/esdc/wrangler.jsonc --remote --pipe
+```
+
 If acquisition stops before publication, inspect the failing URL in the collector log and the saved page references under `funding/esdc/observations/<observedAt>/pages/`. Restart the same Workflow instance to continue that observation. The collector's `esdc-acquisition-complete` log records how many URLs it fetched and how many it recovered from checkpoints, including confirmed missing pages. The Workflow checks archived originals and terminal HTTP evidence before committing the catalogue to D1.
+
+## Private daily product checks
+
+The private Workflow calls the product Worker with a retrieval-only key for the staging workspace. It verifies consultation search and history, House calls and study links, and the English and French paths from the Finance Committee brief to NSERC and ESDC program terms. It also checks public discovery, unauthenticated rejection and the exact change in the workspace's usage count. Run one verification at a time to keep the usage comparison attributable to that run. [Worker configuration](../services/daily-checks/wrangler.jsonc)
+
+Select the three completed source observations and the SHA-256 of the committee reference for the sealed session. The following example targets November 25 staging data. For a later run, update all four inputs to match the published catalogues.
+
+```sh
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+daily_id="daily-$(node -p 'Date.now()')"
+params='{"consultations":"consultations-1795644602710","nserc":"nserc-1795646402601","esdc":"esdc-1795648539258","committee":"8748ad16ba57dd3d5db5a4a7bcfee9b72c64f7092451b9391ce31ee003643607"}'
+cf workflows instances create civicsignal-stage-daily-checks \
+  --body "$(jq -cn --arg id "$daily_id" --argjson params "$params" '{instance_id:$id,params:$params}')"
+cf workflows instances get "$daily_id" --workflow-name civicsignal-stage-daily-checks --simple true
+bunx wrangler r2 object get "civicsignal-stage-funding/daily/serving/$daily_id.json" \
+  --config services/daily-checks/wrangler.jsonc --remote --pipe
+```
+
+The Workflow writes the receipt after every case passes. It records each request path, status and correlation ID, the usage counter before and after each case, and the source references used for comparison. For an incomplete instance, the Workflow status identifies the failing step. [Verification code](../services/daily-checks/worker.ts)
 
 ## What runs daily
 
