@@ -81,8 +81,8 @@ class InstitutionCoverageTests(unittest.TestCase):
         digest = lambda value: hashlib.sha256(value.encode()).hexdigest()
         records = [
             {"catalogueId": "new", "fingerprint": digest("new"), "presentInBaseSnapshot": False,
-             "publishers": [{"name": "Known Agency", "sourceTag": "264", "function": "publication"},
-                            {"name": "Known Agency FR", "sourceTag": "264", "function": "publication"},
+             "publishers": [{"name": "Agence connue = Known Agency,", "sourceTag": "264", "function": "publication"},
+                            {"name": "Known Agency", "sourceTag": "264", "function": "publication"},
                             {"name": "Distributor", "sourceTag": "264", "function": "distribution"}],
              "publicationStatements": [{"tag": "264", "ind2": "1", "function": "publication"},
                                        {"tag": "264", "ind2": "2", "function": "distribution"}]},
@@ -96,7 +96,7 @@ class InstitutionCoverageTests(unittest.TestCase):
             {"catalogueId": "old", "fingerprint": digest("old"), "presentInBaseSnapshot": False},
         ]
         known = ("I", "Known Agency", "Agence connue")
-        aliases = {"known agency": {known}, "known agency fr": {known}}
+        aliases = {"known agency": {known}, "agence connue": {known}}
         matched, unresolved = [], []
         def count(source, labels, total=1):
             identities = set().union(*(aliases.get(coverage.normal(label), set()) for label in labels))
@@ -110,8 +110,8 @@ class InstitutionCoverageTests(unittest.TestCase):
         self.assertEqual(summary["variantsWithout264PublicationStatement"], 1)
         self.assertEqual(summary["metadataUnavailableVariants"], 1)
         evidence = {row["label"]: row for row in summary["issuerLabelEvidence"]}
-        self.assertEqual(evidence["Known Agency"]["attributedVariants"], 1)
-        self.assertEqual(evidence["Known Agency"]["candidateInstitutions"], [
+        self.assertEqual(evidence["Agence connue = Known Agency,"]["attributedVariants"], 1)
+        self.assertEqual(evidence["Agence connue = Known Agency,"]["candidateInstitutions"], [
             {"schedule": "I", "legalNameEn": "Known Agency", "legalNameFr": "Agence connue"}])
         self.assertEqual(evidence["Unknown Ministry"]["attributedVariants"], 0)
         self.assertEqual(len(matched), 1)
@@ -119,6 +119,8 @@ class InstitutionCoverageTests(unittest.TestCase):
         self.assertEqual(matched[0][2], 1, "bilingual/parallel issuer labels still count the metadata variant once")
         with self.assertRaisesRegex(ValueError, "repeats a metadata variant"):
             coverage.attribute_weekly_checklist_records([records[0], records[0]], set(), count, aliases)
+        self.assertEqual(coverage.weekly_publisher_match_names("French Name = English Name;"),
+                         ["French Name", "English Name"])
 
     def test_weekly_attribution_checks_the_current_receipt_and_catalogue_database(self):
         with tempfile.TemporaryDirectory() as temporary:

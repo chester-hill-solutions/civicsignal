@@ -36,6 +36,12 @@ def normal(value):
     return " ".join(unicodedata.normalize("NFC", value or "").casefold().replace("’", "'").split())
 
 
+def weekly_publisher_match_names(label):
+    """Resolve only explicit MARC bilingual separators and terminal ISBD punctuation."""
+    return [part.strip().rstrip(" ,;:/").strip() for part in re.split(r"\s+=\s+", label)
+            if part.strip().rstrip(" ,;:/").strip()]
+
+
 def resources(db, name):
     item = db.execute("SELECT resources FROM publications WHERE series=? ORDER BY observed_at DESC LIMIT 1", (name,)).fetchone()
     if not item or not (published := json.loads(item[0])):
@@ -413,15 +419,17 @@ def attribute_weekly_checklist_records(records, base_ids, count, aliases):
             count("publications-weekly-checklists", ["[MARC 264 #1 publisher not stated]"])
             continue
         summary["eligible264PublisherVariants"] += 1
-        identities = set().union(*(aliases.get(normal(label), set()) for label in labels))
+        match_names = [name for label in labels for name in weekly_publisher_match_names(label)]
+        identities = set().union(*(aliases.get(normal(name), set()) for name in match_names))
         if len(identities) > 1:
             summary["variantsWithAmbiguousPublisherIdentities"] += 1
         for label in labels:
             issuer_labels[label]["variants"] += 1
             issuer_labels[label]["attributedVariants"] += len(identities) == 1
             issuer_labels[label]["ambiguousVariants"] += len(identities) > 1
-            issuer_label_matches[label].update(aliases.get(normal(label), set()))
-        count("publications-weekly-checklists", labels)
+            for candidate in weekly_publisher_match_names(label):
+                issuer_label_matches[label].update(aliases.get(normal(candidate), set()))
+        count("publications-weekly-checklists", match_names)
     return {**dict(summary), "issuerLabelEvidence": [
         {"label": label, **dict(totals), "candidateInstitutions": [
             {"schedule": identity[0], "legalNameEn": identity[1], "legalNameFr": identity[2]}
