@@ -48,9 +48,10 @@ class DepartmentalReportDocumentsTests(unittest.TestCase):
     def test_public_continue_only_repeats_the_same_publisher_pdf_url(self):
         target = "https://publications.gc.ca/collections/example.pdf"
         body = (f'<a href="{target}">Continue to publication</a>').encode()
-        self.assertTrue(MODULE.public_archive_continue(body, target))
-        self.assertFalse(MODULE.public_archive_continue(body, "https://publications.gc.ca/collections/other.pdf"))
-        self.assertFalse(MODULE.public_archive_continue(b"Access denied", target))
+        notice = "https://publications.gc.ca/site/archivee-archived.html?url=" + MODULE.quote(target, safe="")
+        self.assertEqual(MODULE.public_archive_continue(body, target, notice), target)
+        self.assertIsNone(MODULE.public_archive_continue(body, "https://publications.gc.ca/collections/other.pdf", notice))
+        self.assertIsNone(MODULE.public_archive_continue(b"Access denied", target, notice))
 
     def test_original_source_urls_with_spaces_get_encoded_only_for_fetch(self):
         original = "https://www.canada.ca/Reports/Annual Plan 2024.pdf"
@@ -110,6 +111,60 @@ class DepartmentalReportDocumentsTests(unittest.TestCase):
         self.assertEqual(assessment["familyDisposition"], "mismatch")
         self.assertEqual(assessment["yearDisposition"], "mismatch")
         self.assertEqual(assessment["disposition"], "not-report")
+
+    def test_html_parser_recovers_after_unclosed_svg_without_including_hidden_content(self):
+        candidate = {"family": "departmental-results", "language": "en", "issuerLabel": "Office of the Information Commissioner of Canada",
+                     "issueYear": "2023-2024", "yearLabel": "2023-2024", "url": "https://www.canada.ca/report",
+                     "policyDisposition": "allowed"}
+        body = b"""<html lang='en'><body><svg><defs><style>.mark { fill:red }</style></defs><path>decorative SVG words</path>
+        <div class='page'><nav>navigation words to exclude</nav><main>
+        <h1>Departmental Results Report 2023-2024</h1>
+        <script>script words should not appear</script><style>hidden style text</style>
+        <p>Office of the Information Commissioner of Canada reports on results from 2023 to 2024, including
+        the completed activities, performance information, and progress against the commitments described in its plan.</p>
+        <svg><foreignObject><div>foreign object content remains hidden</div></foreignObject><path>more decoration</path></svg>
+        <p>Visible report text continues after the embedded artwork.</p></main></div></body></html>"""
+        parsed = MODULE.analyze_html(body, [candidate])
+        assessment = parsed["citations"][0]
+        self.assertEqual(assessment["disposition"], "accepted")
+        self.assertIn("Departmental Results Report 2023-2024", parsed["h1s"])
+        for hidden in ("decorative SVG", "navigation words", "script words", "hidden style", "foreign object content"):
+            self.assertNotIn(hidden, parsed["text"])
+        self.assertIn("Visible report text continues", parsed["text"])
+
+    def test_html_archive_reassessment_preserves_fetch_time_and_replays(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base=Path(temp); edition=base/"edition"; store=base/"store"; edition.mkdir()
+            url="https://www.canada.ca/en/example/departmental-results-2023-2024"
+            report={"collection":"departmental-report-editions-current","issuerPages":[{
+                "family":"departmental-results","language":"en","issuer_label":"Office of the Information Commissioner of Canada",
+                "issuer_key":"oic","published_url":"https://www.canada.ca/en/oic/reports",
+                "source_index_url":"https://www.canada.ca/directory","source_index_sha256":"index-hash",
+                "reportLinks":[{"link_type":"index-link","url":url,"label":"Departmental Results Report 2023-2024",
+                    "year_label":"2023-2024","landing_sha256":"landing-hash","evidence":"label"}]}]}
+            raw=json.dumps(report,sort_keys=True).encode(); (edition/"current.json").write_bytes(raw)
+            (edition/"latest-attempt.json").write_text(json.dumps({"runId":"edition-run","currentReportPath":"current.json",
+                "currentReportSha256":hashlib.sha256(raw).hexdigest()}))
+            html=b"<html lang='en'><body><svg><path>decoration</path><div><main><h1>Departmental Results Report 2023-2024</h1><p>Office of the Information Commissioner of Canada reports the results for 2023-2024, including completed commitments, service outcomes, and details of the work delivered this year.</p></main></div></body></html>"
+            fetched=[]
+            def fetch(target): fetched.append(target); return html,target,200,"text/html"
+            with mock.patch.object(MODULE,"fetch_html",side_effect=fetch):
+                initial=MODULE.html_refresh(store,edition,batch_size=1,fetcher=fetch)
+            db=sqlite3.connect(store/"documents.sqlite")
+            before=db.execute("SELECT attempted_at FROM html_targets WHERE source_report_sha256=? AND target_url=?",
+                (initial["sourceCurrentReportSha256"],url)).fetchone()[0]
+            db.close()
+            reassessed=MODULE.html_reassess([url],store)
+            replay=MODULE.html_replay(reassessed["runId"],store)
+            db=sqlite3.connect(store/"documents.sqlite")
+            after=db.execute("SELECT attempted_at,status FROM html_targets WHERE source_report_sha256=? AND target_url=?",
+                (initial["sourceCurrentReportSha256"],url)).fetchone()
+            db.close()
+            self.assertEqual(fetched,[url])
+            self.assertEqual(before,after[0])
+            self.assertEqual(after[1],"fetched")
+            self.assertEqual(reassessed["citationDispositionCounts"],{"accepted":1})
+            self.assertEqual(replay["reassessment"]["networkAccess"],False)
 
     def test_html_queue_is_bounded_resumable_and_replayable(self):
         with tempfile.TemporaryDirectory() as temp:

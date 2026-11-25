@@ -9,6 +9,7 @@ import datetime as dt
 import gzip
 import hashlib
 from html.parser import HTMLParser
+from http.cookiejar import CookieJar
 import json
 import os
 from pathlib import Path
@@ -21,7 +22,7 @@ import tempfile
 import threading
 import urllib.error
 import urllib.request
-from urllib.parse import quote, urljoin, urlsplit
+from urllib.parse import parse_qs, quote, urljoin, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys_path = str(ROOT / "scripts")
@@ -43,6 +44,33 @@ USER_AGENT = "CivicSignal local departmental report document index/1.0"
 PDF_EXTENSIONS = {".pdf"}
 MAX_HTML_BYTES = 2 * 1024 * 1024
 MAX_HTML_TARGETS_PER_BATCH = 40
+HTML_PARSER_VERSION = 2
+PUBLISHER_PDF_RECOVERIES = {
+    "https://epe.lac-bac.gc.ca/100/202/301/treasury_board/estimates_report_plans/canada_customs_revenue_agency/2002-03.pdf": {
+        "family": "departmental-plans", "language": "en", "issueYear": "2002-2003",
+        "resolvedUrl": "https://publications.gc.ca/collections/collection_2012/arc-cra/Rv1-6-2002-eng.pdf",
+        "method": "cra-index-declared-equivalent-corporate-plan",
+        "sourceStatus": "publisher-declared-equivalent",
+        "previousFailureReportId": "8bf30bd7473588de5dd0efaa8cca91ad",
+        "evidenceUrls": [
+            "https://www.canada.ca/en/revenue-agency/corporate/about-canada-revenue-agency-cra/departmental-plan.html",
+            "https://publications.gc.ca/site/eng/9.899585/publication.html",
+        ],
+        "validation": "CRA labels the 2002-2003 Estimates PDF as the same as its Summary of the Corporate Business Plan; the official English catalogue issue spans 2002-2003 to 2004-2005.",
+    },
+    "https://epe.lac-bac.gc.ca/100/202/301/treasury_board/estimates_report_plans/canada_customs_revenue_agency/2003-04.pdf": {
+        "family": "departmental-plans", "language": "en", "issueYear": "2003-2004",
+        "resolvedUrl": "https://publications.gc.ca/collections/collection_2015/arc-cra/Rv1-28-2003-eng.pdf",
+        "method": "official-catalogue-english-rpp-issue",
+        "sourceStatus": "publisher-matched-rpp",
+        "previousFailureReportId": "8bf30bd7473588de5dd0efaa8cca91ad",
+        "evidenceUrls": [
+            "https://publications.gc.ca/site/eng/9.804902/publication.html",
+            "https://www.canada.ca/en/revenue-agency/corporate/about-canada-revenue-agency-cra/departmental-plan.html",
+        ],
+        "validation": "The official English RPP catalogue lists the 2003-2004 issue and the PDF itself identifies the Canada Customs and Revenue Agency, year, and Report on Plans and Priorities.",
+    },
+}
 HTML_FAMILY_TERMS = {
     "departmental-plans": {
         "en": ("departmental plan", "plans and priorities"),
@@ -111,15 +139,62 @@ class Budget:
             self.used += actual
 
 
-def public_archive_continue(body: bytes, requested_url: str) -> bool:
-    """Recognize the publisher's visible Continue button only when it links back to this exact PDF."""
-    source = body.decode("utf-8", "replace").casefold().replace("\\u0026", "&").replace("\\/", "/")
-    target = requested_url.casefold()
-    labels = ("continue to publication", "continuer vers la publication")
-    return any(label in source for label in labels) and target in source
+class PublisherContinueParser(HTMLParser):
+    """Read the publisher's literal continuation anchor and visible label."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.anchor = None
+        self.rows = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            attrs = dict(attrs)
+            if attrs.get("href"):
+                self.anchor = {"href": attrs["href"], "text": []}
+
+    def handle_data(self, data):
+        if self.anchor is not None:
+            self.anchor["text"].append(data)
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.anchor is not None:
+            self.rows.append((self.anchor["href"], " ".join("".join(self.anchor["text"]).split()).casefold()))
+            self.anchor = None
 
 
-def fetch_pdf(url: str, *, referer: str | None = None, continued: bool = False) -> tuple[bytes, str, int, str]:
+def _origin(url: str) -> tuple[str, str, int | None]:
+    parsed = urlsplit(url)
+    return parsed.scheme.casefold(), (parsed.hostname or "").casefold(), parsed.port
+
+
+def public_archive_continue(body: bytes, requested_url: str, notice_url: str) -> str | None:
+    """Return the exact publisher link only for its same-origin archive notice."""
+    parts = urlsplit(notice_url)
+    if _origin(notice_url) != ("https", "publications.gc.ca", None) or parts.path != "/site/archivee-archived.html":
+        return None
+    try:
+        query = parse_qs(parts.query, keep_blank_values=True, strict_parsing=True)
+    except ValueError:
+        return None
+    if set(query) != {"url"} or query["url"] != [requested_url]:
+        return None
+    parser = PublisherContinueParser()
+    try:
+        parser.feed(body.decode("utf-8", "replace"))
+    except (ValueError, AssertionError):
+        return None
+    for href, label in parser.rows:
+        if label not in {"continue to publication", "continuer vers la publication"}:
+            continue
+        literal = urljoin(notice_url, href)
+        if literal == requested_url and _origin(literal) == ("https", "publications.gc.ca", None):
+            return literal
+    return None
+
+
+def fetch_pdf_with_evidence(url: str, *, referer: str | None = None, continued: bool = False,
+                            _opener=None, _redirect_handler=None, _notice_evidence: dict | None = None):
     if not committee_files.fetchable(url):
         raise FetchError("direct PDF URL is outside official HTTPS acquisition policy")
 
@@ -127,70 +202,96 @@ def fetch_pdf(url: str, *, referer: str | None = None, continued: bool = False) 
         def __init__(self):
             super().__init__()
             self.count = 0
+            self.required_origin = None
 
         def redirect_request(self, request, response, code, message, headers, new_url):
             self.count += 1
             target = urljoin(request.full_url, new_url)
-            if self.count > MAX_REDIRECTS or not committee_files.official(target):
+            if (self.count > MAX_REDIRECTS or not committee_files.official(target) or
+                    (self.required_origin is not None and _origin(target) != self.required_origin)):
                 raise FetchError("redirect outside official HTTPS hosts or exceeds redirect limit", code)
             return super().redirect_request(request, response, code, message, headers, target)
+
+    if _opener is None:
+        cookie_jar = CookieJar()
+        redirect_handler = CheckedRedirect()
+        _opener = urllib.request.build_opener(redirect_handler, urllib.request.HTTPCookieProcessor(cookie_jar))
+    else:
+        redirect_handler = _redirect_handler
 
     headers = {"User-Agent": USER_AGENT, "Accept": "application/pdf,application/octet-stream;q=0.9,*/*;q=0.1"}
     if referer:
         headers["Referer"] = referer
     request = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.build_opener(CheckedRedirect()).open(request, timeout=45) as response:
+        with _opener.open(request, timeout=45) as response:
             final_url = response.geturl()
             if not committee_files.official(final_url):
                 raise FetchError("final URL outside official HTTPS hosts")
+            media = response.headers.get_content_type().casefold()
+            limit = MAX_HTML_BYTES if media == "text/html" else MAX_DOCUMENT_BYTES
             declared = response.headers.get("Content-Length")
-            if declared and int(declared) > MAX_DOCUMENT_BYTES:
+            if declared and int(declared) > limit:
                 raise FetchError("PDF exceeds per-document byte limit")
             chunks = bytearray()
             while True:
-                block = response.read(128 * 1024)
+                block = response.read(min(128 * 1024, limit + 1 - len(chunks)))
                 if not block:
                     break
                 chunks.extend(block)
-                if len(chunks) > MAX_DOCUMENT_BYTES:
+                if len(chunks) > limit:
                     raise FetchError("PDF exceeds per-document byte limit")
             body = bytes(chunks)
-            media = response.headers.get_content_type().casefold()
             if response.status != 200:
                 raise FetchError("HTTP " + str(response.status), response.status)
-            if not continued and media == "text/html" and public_archive_continue(body, url):
-                return fetch_pdf(url, referer=final_url, continued=True)
-            return body, final_url, response.status, media
+            if not continued and media == "text/html":
+                literal = public_archive_continue(body, url, final_url)
+                if literal:
+                    if redirect_handler is not None:
+                        redirect_handler.required_origin = _origin(url)
+                    evidence = {"noticeUrl": final_url, "targetUrl": literal,
+                                "noticeSha256": hashlib.sha256(body).hexdigest(), "noticeBytes": len(body),
+                                "continueHref": literal, "noticeBody": body}
+                    return fetch_pdf_with_evidence(literal, referer=final_url, continued=True,
+                                                   _opener=_opener, _redirect_handler=redirect_handler,
+                                                   _notice_evidence=evidence)
+            return (body, final_url, response.status, media, _notice_evidence)
     except urllib.error.HTTPError as error:
         raise FetchError("HTTP " + str(error.code), error.code) from error
     except ssl.SSLCertVerificationError as error:
-        body, final, status, media = fetch_pdf_curl(url, error, referer=referer)
-        if not continued and media == "text/html" and public_archive_continue(body, url):
-            return fetch_pdf(url, referer=final, continued=True)
-        return body, final, status, media
+        return fetch_pdf_curl(url, error, referer=referer, continued=continued,
+                              notice_evidence=_notice_evidence)
     except urllib.error.URLError as error:
         if isinstance(error.reason, ssl.SSLCertVerificationError):
-            body, final, status, media = fetch_pdf_curl(url, error.reason, referer=referer)
-            if not continued and media == "text/html" and public_archive_continue(body, url):
-                return fetch_pdf(url, referer=final, continued=True)
-            return body, final, status, media
+            return fetch_pdf_curl(url, error.reason, referer=referer, continued=continued,
+                                  notice_evidence=_notice_evidence)
         raise FetchError(str(error.reason)[:1000]) from error
     except (TimeoutError, OSError) as error:
         raise FetchError(str(error)[:1000]) from error
 
 
-def fetch_pdf_curl(url: str, original_error: Exception, *, referer: str | None = None):
+def fetch_pdf(url: str, *, referer: str | None = None, continued: bool = False) -> tuple[bytes, str, int, str]:
+    """Keep the original four-value public API for other local PDF consumers."""
+    body, final_url, status, media_type, _evidence = fetch_pdf_with_evidence(
+        url, referer=referer, continued=continued)
+    return body, final_url, status, media_type
+
+
+def fetch_pdf_curl(url: str, original_error: Exception, *, referer: str | None = None,
+                   continued: bool = False, notice_evidence: dict | None = None):
     """Use curl's normal trust store only when urllib cannot validate the certificate."""
     current = url
+    continuation_origin = _origin(url) if continued else None
     with tempfile.TemporaryDirectory(prefix="departmental-report-pdf-") as temp:
         target = Path(temp) / "source.pdf"
+        cookies = Path(temp) / "cookies.txt"
         for _ in range(MAX_REDIRECTS + 1):
             if not committee_files.official(current):
                 raise FetchError("redirect outside official HTTPS hosts") from original_error
             command = ["curl", "--silent", "--show-error", "--globoff", "--proto", "=https", "--max-redirs", "0",
                        "--max-time", "60", "--connect-timeout", "15", "--max-filesize", str(MAX_DOCUMENT_BYTES),
                        "--user-agent", USER_AGENT, "--header", "Accept: application/pdf,application/octet-stream;q=0.9,*/*;q=0.1",
+                       "--cookie", str(cookies), "--cookie-jar", str(cookies),
                        *( ["--referer", referer] if referer else [] ),
                        "--output", str(target), "--write-out", "%{http_code}\n%{content_type}\n%{redirect_url}",
                        quote(current, safe=":/?#[]@!$&'()*+,;=%")]
@@ -202,16 +303,27 @@ def fetch_pdf_curl(url: str, original_error: Exception, *, referer: str | None =
                 raise FetchError("curl returned malformed response metadata") from original_error
             status, media, redirect = parts
             if status in {"301", "302", "303", "307", "308"} and redirect:
-                current = urljoin(current, redirect)
+                next_url = urljoin(current, redirect)
+                if continuation_origin is not None and _origin(next_url) != continuation_origin:
+                    raise FetchError("continuation redirect changed publication origin", int(status)) from original_error
+                current = next_url
                 continue
             if status != "200":
                 raise FetchError("HTTP " + status, int(status) if status.isdigit() else None) from original_error
             body = target.read_bytes()
-            if len(body) > MAX_DOCUMENT_BYTES:
+            media_type = media.partition(";")[0].casefold()
+            limit = MAX_HTML_BYTES if media_type == "text/html" else MAX_DOCUMENT_BYTES
+            if len(body) > limit:
                 raise FetchError("PDF exceeds per-document byte limit") from original_error
-            if media.partition(";")[0].casefold() == "text/html" and public_archive_continue(body, url) and not referer:
-                return fetch_pdf_curl(url, original_error, referer=current)
-            return body, current, 200, media.partition(";")[0].casefold()
+            if not continued and media_type == "text/html":
+                literal = public_archive_continue(body, url, current)
+                if literal:
+                    evidence = {"noticeUrl": current, "targetUrl": literal,
+                                "noticeSha256": hashlib.sha256(body).hexdigest(), "noticeBytes": len(body),
+                                "continueHref": literal, "noticeBody": body}
+                    return fetch_pdf_curl(literal, original_error, referer=current, continued=True,
+                                          notice_evidence=evidence)
+            return body, current, 200, media_type, notice_evidence
     raise FetchError("too many redirects") from original_error
 
 
@@ -293,7 +405,7 @@ def body_language_conflict(candidate: dict) -> bool:
     return (candidate["language"] == "en" and french_file and not english_file) or (candidate["language"] == "fr" and english_file and not french_file)
 
 
-def collect_candidates(report: dict) -> list[dict]:
+def collect_candidates(report: dict, *, apply_recoveries: bool = True) -> list[dict]:
     candidates = []
     for page in report.get("issuerPages", []):
         family, language = page.get("family"), page.get("language")
@@ -309,16 +421,30 @@ def collect_candidates(report: dict) -> list[dict]:
                 continue
             if not committee_files.fetchable(url):
                 continue
-            candidates.append({"family": family, "language": language,
+            issue_year = source_year(link.get("label", ""), link.get("year_label", ""))
+            fetch_url = quote(url, safe=":/?#[]@!$&'()*+,;=%")
+            recovery = PUBLISHER_PDF_RECOVERIES.get(url) if apply_recoveries else None
+            recovery_receipt = None
+            if recovery:
+                if (recovery["family"] != family or recovery["language"] != language or
+                        recovery["issueYear"] != issue_year or not committee_files.fetchable(recovery["resolvedUrl"]) or
+                        any(not committee_files.official(item) for item in recovery["evidenceUrls"])):
+                    raise ValueError("Publisher PDF recovery does not match its exact source citation")
+                fetch_url = recovery["resolvedUrl"]
+                recovery_receipt = {"originalUrl": url, **recovery}
+            candidate = {"family": family, "language": language,
                 "issuerLabel": page.get("issuer_label") or page.get("issuer_attribution") or "Unknown issuer",
                 "issuerKey": page.get("issuer_key"), "landingUrl": page.get("published_url"),
                 "landingSha256": link.get("landing_sha256"),
                 "sourceIndexUrl": page.get("source_index_url"), "sourceIndexSha256": page.get("source_index_sha256"),
                 "label": link.get("label", ""), "heading": link.get("heading"),
-                "yearLabel": link.get("year_label"), "issueYear": source_year(link.get("label", ""), link.get("year_label", "")),
-                "url": url, "fetchUrl": quote(url, safe=":/?#[]@!$&'()*+,;=%"),
+                "yearLabel": link.get("year_label"), "issueYear": issue_year,
+                "url": url, "fetchUrl": fetch_url,
                 "evidence": link.get("evidence"),
-                "linkLanguageConflict": body_language_conflict({"url": url, "language": language})})
+                "linkLanguageConflict": body_language_conflict({"url": url, "language": language})}
+            if recovery_receipt:
+                candidate["publisherRecovery"] = recovery_receipt
+            candidates.append(candidate)
     return candidates
 
 
@@ -359,7 +485,7 @@ def open_db(root: Path, read_only: bool = False):
       run_id TEXT NOT NULL, target_url TEXT NOT NULL, fetch_url TEXT NOT NULL, final_url TEXT,
       status TEXT NOT NULL, http_status INTEGER, media_type TEXT, body_sha256 TEXT, body_bytes INTEGER,
       object_path TEXT, text_sha256 TEXT, text_bytes INTEGER, text_object_path TEXT,
-      text_pages INTEGER, readable_chars INTEGER, detail TEXT,
+      text_pages INTEGER, readable_chars INTEGER, detail TEXT, publisher_notice_json TEXT,
       PRIMARY KEY(run_id,target_url), FOREIGN KEY(run_id) REFERENCES generations(run_id));
     CREATE TABLE IF NOT EXISTS citations(
       run_id TEXT NOT NULL, citation_id TEXT NOT NULL, target_url TEXT NOT NULL,
@@ -410,6 +536,9 @@ def open_db(root: Path, read_only: bool = False):
       language_disposition TEXT, issuer_disposition TEXT, detail TEXT,
       PRIMARY KEY(run_id,citation_id), FOREIGN KEY(run_id) REFERENCES html_runs(run_id));
     """)
+    document_columns = {row[1] for row in db.execute("PRAGMA table_info(documents)")}
+    if "publisher_notice_json" not in document_columns:
+        db.execute("ALTER TABLE documents ADD COLUMN publisher_notice_json TEXT")
     return db
 
 
@@ -460,15 +589,26 @@ def assess(text: str, candidate: dict) -> dict:
             "yearDisposition": year, "issuerDisposition": issuer}
 
 
-def _fetch_one(url: str, budget: Budget, fetcher=fetch_pdf) -> dict:
+def _fetch_one(url: str, budget: Budget, fetcher=fetch_pdf_with_evidence) -> dict:
     if not budget.reserve():
         return {"status": "budget-skipped", "detail": "aggregate document archive budget exhausted"}
     try:
-        body, final, status, media = fetcher(url)
+        fetched = fetcher(url)
+        if len(fetched) == 5:
+            body, final, status, media, publisher_notice = fetched
+        else:
+            body, final, status, media = fetched
+            publisher_notice = None
+        if publisher_notice:
+            notice_body = publisher_notice.get("noticeBody")
+            if (not isinstance(notice_body, bytes) or len(notice_body) != publisher_notice.get("noticeBytes") or
+                    hashlib.sha256(notice_body).hexdigest() != publisher_notice.get("noticeSha256")):
+                raise FetchError("Publisher continuation notice failed its byte/checksum validation")
         digest = hashlib.sha256(body).hexdigest()
         budget.settle(len(body))
         return {"status": "fetched", "body": body, "bodySha256": digest,
-                "bodyBytes": len(body), "finalUrl": final, "httpStatus": status, "mediaType": media}
+                "bodyBytes": len(body), "finalUrl": final, "httpStatus": status, "mediaType": media,
+                "publisherNotice": publisher_notice}
     except FetchError as error:
         budget.settle(0)
         return {"status": "failed", "detail": str(error)[:1000], "httpStatus": error.status}
@@ -503,9 +643,15 @@ def _pdf_process(root: Path, run_id: str, url: str, fetched: dict, candidates: l
                 detail = "Readable PDF, but source issue/year/language checks require review"
         except (OSError, RuntimeError, ValueError) as error:
             detail = (str(error) or type(error).__name__)[:1000]
+    publisher_notice = fetched.get("publisherNotice")
+    if publisher_notice:
+        notice_body = publisher_notice["noticeBody"]
+        notice_path = store_gzip(root, publisher_notice["noticeSha256"], notice_body, "archive-notices")
+        publisher_notice = {k: v for k, v in publisher_notice.items() if k != "noticeBody"}
+        publisher_notice["archivePath"] = notice_path
     return {"status": status, "detail": detail, "bodyPath": body_path, "textSha256": text_digest,
             "textBytes": text_bytes, "textPath": text_path, "textPages": pages,
-            "readableChars": chars, "citations": citations}
+            "readableChars": chars, "citations": citations, "publisherNotice": publisher_notice}
 
 
 def load_report_input(root: Path, report_run_id: str, raw: bytes, report: dict) -> str:
@@ -560,7 +706,7 @@ def collect_html_candidates(report: dict) -> list[dict]:
     return candidates
 
 
-class HtmlReportParser(HTMLParser):
+class LegacyHtmlReportParser(HTMLParser):
     HIDDEN = HTML_OMIT
 
     def __init__(self):
@@ -622,8 +768,74 @@ class HtmlReportParser(HTMLParser):
                 "text": " ".join(self.main_parts or self.body_parts).strip()}
 
 
-def analyze_html(body: bytes, candidates: list[dict]) -> dict:
-    parser = HtmlReportParser()
+class HtmlReportParser(LegacyHtmlReportParser):
+    """Read visible HTML while recovering after a malformed unclosed SVG block."""
+
+    SVG_BREAKOUT = {
+        "address", "article", "aside", "b", "big", "blockquote", "body", "br",
+        "center", "code", "dd", "details", "div", "dl", "dt", "em", "embed", "figcaption",
+        "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "head",
+        "hr", "i", "img", "li", "listing", "main", "menu", "meta", "nav", "nobr", "ol",
+        "p", "pre", "ruby", "s", "section", "small", "span", "strong", "strike", "sub", "summary",
+        "sup", "table", "tt", "u", "ul", "var", "font",
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.hidden_elements: list[str] = []
+        self.foreign_object_depth = 0
+
+    def _sync_hidden_depth(self):
+        self.hidden_depth = len(self.hidden_elements)
+
+    def _inside_svg(self):
+        return "svg" in self.hidden_elements
+
+    def _exit_malformed_svg(self):
+        svg_index = next((i for i, name in enumerate(self.hidden_elements) if name == "svg"), None)
+        if svg_index is None:
+            return
+        del self.hidden_elements[svg_index:]
+        self.foreign_object_depth = 0
+        self._sync_hidden_depth()
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.casefold()
+        if self._inside_svg() and not self.foreign_object_depth and tag in self.SVG_BREAKOUT:
+            self._exit_malformed_svg()
+        if tag == "foreignobject" and self._inside_svg():
+            self.foreign_object_depth += 1
+            return
+        if tag in self.HIDDEN:
+            self.hidden_elements.append(tag)
+            self._sync_hidden_depth()
+            return
+        if self.hidden_depth:
+            return
+        super().handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag):
+        tag = tag.casefold()
+        if tag == "foreignobject" and self.foreign_object_depth:
+            self.foreign_object_depth -= 1
+            if self.hidden_depth:
+                return
+        if self._inside_svg() and not self.foreign_object_depth and tag in self.SVG_BREAKOUT:
+            self._exit_malformed_svg()
+        if tag in self.HIDDEN:
+            index = next((i for i in range(len(self.hidden_elements) - 1, -1, -1)
+                          if self.hidden_elements[i] == tag), None)
+            if index is not None:
+                del self.hidden_elements[index:]
+                self._sync_hidden_depth()
+            return
+        if self.hidden_depth:
+            return
+        super().handle_endtag(tag)
+
+
+def _analyze_html(body: bytes, candidates: list[dict], parser_type) -> dict:
+    parser = parser_type()
     parser.feed(body.decode("utf-8-sig", errors="replace"))
     parser.close()
     page = parser.result()
@@ -657,6 +869,15 @@ def analyze_html(body: bytes, candidates: list[dict]) -> dict:
                         "familyDisposition": family, "yearDisposition": year,
                         "languageDisposition": lang, "issuerDisposition": issuer})
     return {**page, "citations": results}
+
+
+def analyze_html(body: bytes, candidates: list[dict]) -> dict:
+    return _analyze_html(body, candidates, HtmlReportParser)
+
+
+def analyze_html_legacy(body: bytes, candidates: list[dict]) -> dict:
+    """Reproduce pre-v2 archived HTML assessments for immutable old receipts."""
+    return _analyze_html(body, candidates, LegacyHtmlReportParser)
 
 
 class HtmlFetchError(FetchError):
@@ -885,7 +1106,7 @@ def html_refresh(root: Path = DEFAULT_ROOT, edition_root: Path = EDITION_ROOT,
                 for lang in ("en","fr"):
                     coverage[f"{fam}/{lang}"]={"citations":sum(1 for c in candidates if c["family"]==fam and c["language"]==lang),"targets":len({c["url"] for c in candidates if c["family"]==fam and c["language"]==lang}),"accepted":db.execute("SELECT COUNT(*) FROM html_citations WHERE source_report_sha256=? AND family=? AND language=? AND status='accepted'",(source_sha,fam,lang)).fetchone()[0],"pending":db.execute("SELECT COUNT(*) FROM html_citations WHERE source_report_sha256=? AND family=? AND language=? AND status='pending'",(source_sha,fam,lang)).fetchone()[0]}
             status="pending" if remaining or due_remaining else ("complete" if all(x in {"accepted"} for x in [r[0] for r in db.execute("SELECT DISTINCT status FROM html_citations WHERE source_report_sha256=?",(source_sha,))]) else "partial")
-            report={"collection":"departmental-report-html-documents","runId":run_id,"status":status,"observedAt":now,"sourceEditionRunId":source_run_id,"sourceCurrentReportSha256":source_sha,"candidateCitations":len(candidates),"candidateTargets":len(by_url),"batchLimit":batch_size,"processedTargets":len(outputs),"remainingPending":remaining,"dueRecheckTargets":due_remaining,"recheckPolicy":{"days":recheck_after_days,"failedTargetBackoffDays":"7,14,28,30 (capped)","retryableStatuses":["fetch-failed","source-refused","not-found"]},"transportPolicy":{"tls":"urllib verification; curl system trust fallback only after certificate-verification failure","tlsVerificationDisabled":False,"redirects":"manual, official HTTPS hosts only, at most five","maxResponseBytes":MAX_HTML_BYTES},"targetStatusCounts":counts,"byFamilyLanguage":coverage,"targets":[{k:v for k,v in r.items() if k!="citations"} for r in outputs],"citations":[c for r in outputs for c in r["citations"]],"scope":"HTML landing pages are accepted only when title/H1 identify family and year, the html lang matches, and the visible text names the attributed issuer. Matching URLs carry their last archived assessment into a new inventory snapshot until a due recheck. Missing links in one partial inventory are not treated as removals. This is page-level identification, not complete report-text coverage."}
+            report={"collection":"departmental-report-html-documents","htmlParserVersion":HTML_PARSER_VERSION,"runId":run_id,"status":status,"observedAt":now,"sourceEditionRunId":source_run_id,"sourceCurrentReportSha256":source_sha,"candidateCitations":len(candidates),"candidateTargets":len(by_url),"batchLimit":batch_size,"processedTargets":len(outputs),"remainingPending":remaining,"dueRecheckTargets":due_remaining,"recheckPolicy":{"days":recheck_after_days,"failedTargetBackoffDays":"7,14,28,30 (capped)","retryableStatuses":["fetch-failed","source-refused","not-found"]},"transportPolicy":{"tls":"urllib verification; curl system trust fallback only after certificate-verification failure","tlsVerificationDisabled":False,"redirects":"manual, official HTTPS hosts only, at most five","maxResponseBytes":MAX_HTML_BYTES},"targetStatusCounts":counts,"byFamilyLanguage":coverage,"targets":[{k:v for k,v in r.items() if k!="citations"} for r in outputs],"citations":[c for r in outputs for c in r["citations"]],"scope":"HTML landing pages are accepted only when title/H1 identify family and year, the html lang matches, and the visible text names the attributed issuer. Matching URLs carry their last archived assessment into a new inventory snapshot until a due recheck. Missing links in one partial inventory are not treated as removals. This is page-level identification, not complete report-text coverage."}
             rel=f"html-generations/{run_id}.json"; path=root/rel
             report_sha, report_bytes=write_json(path,report)
             db.execute("UPDATE html_runs SET completed_at=?,processed_targets=?,remaining_pending=?,report_path=?,report_sha256=?,status=? WHERE run_id=?",(utc_now(),len(outputs),remaining,rel,report_sha,status,run_id))
@@ -913,20 +1134,84 @@ def html_replay(run_id: str, root: Path = DEFAULT_ROOT) -> dict:
         source=read_gzip(root,run["input_path"],run["source_report_sha256"],len((root/run["input_path"]).read_bytes()),16*1024*1024) if run["input_path"].endswith(".gz") else (root/run["input_path"]).read_bytes()
         if hashlib.sha256(source).hexdigest()!=run["source_report_sha256"]: raise ValueError("HTML source inventory hash mismatch")
         report=json.loads(source)
+        report_raw=(root/run["report_path"]).read_bytes()
+        if hashlib.sha256(report_raw).hexdigest()!=run["report_sha256"]: raise ValueError("HTML generation report hash failed")
+        generation=json.loads(report_raw)
+        parser=analyze_html if generation.get("htmlParserVersion", 1) >= HTML_PARSER_VERSION else analyze_html_legacy
         by_url=_candidate_report(collect_html_candidates(report))
         for row in db.execute("SELECT * FROM html_run_targets WHERE run_id=? AND body_sha256 IS NOT NULL",(run_id,)):
             body=read_gzip(root,row["object_path"],row["body_sha256"],row["body_bytes"],MAX_HTML_BYTES)
             if row["media_type"] in {"text/html","application/xhtml+xml"}:
-                parsed=analyze_html(body,by_url[row["target_url"]])
+                parsed=parser(body,by_url[row["target_url"]])
                 text=parsed["text"].encode("utf-8")
                 if hashlib.sha256(text).hexdigest()!=row["text_sha256"] or parsed["title"]!=row["page_title"] or json.dumps(parsed["h1s"],ensure_ascii=False)!=row["h1_json"]:
                     raise ValueError("HTML replay differs for "+row["target_url"])
                 expected=sorted((c["disposition"],c["familyDisposition"],c["yearDisposition"],c["languageDisposition"],c["issuerDisposition"]) for c in parsed["citations"])
                 recorded=sorted((r["status"],r["family_disposition"],r["year_disposition"],r["language_disposition"],r["issuer_disposition"]) for r in db.execute("SELECT * FROM html_run_citations WHERE run_id=? AND target_url=?",(run_id,row["target_url"])))
                 if expected!=recorded: raise ValueError("HTML citation replay differs for "+row["target_url"])
-        raw=(root/run["report_path"]).read_bytes()
-        if hashlib.sha256(raw).hexdigest()!=run["report_sha256"]: raise ValueError("HTML generation report hash failed")
-        return json.loads(raw)
+        return generation
+    finally: db.close()
+
+
+def html_reassess(target_urls: list[str] | None = None, root: Path = DEFAULT_ROOT,
+                  unreadable_host: str | None = None) -> dict:
+    """Re-extract already archived HTML without network access, preserving fetch timestamps."""
+    target_urls = list(target_urls or [])
+    if bool(target_urls) == bool(unreadable_host) or len(set(target_urls)) != len(target_urls):
+        raise ValueError("provide unique target URLs or one exact host for unreadable archived HTML")
+    if unreadable_host and not re.fullmatch(r"[A-Za-z0-9.-]+", unreadable_host):
+        raise ValueError("unreadable host must be an exact hostname")
+    pointer=json.loads((root/"latest-html-attempt.json").read_text(encoding="utf-8"))
+    old_run=pointer["runId"]
+    db=open_db(root)
+    now,run_id=utc_now(),hashlib.sha256(os.urandom(32)).hexdigest()[:32]
+    try:
+        run=db.execute("SELECT * FROM html_runs WHERE run_id=?",(old_run,)).fetchone()
+        if not run: raise ValueError("latest HTML run is absent from its database")
+        if unreadable_host:
+            target_urls=[row[0] for row in db.execute("SELECT target_url FROM html_targets WHERE source_report_sha256=? AND status='unreadable' ORDER BY target_url",(run["source_report_sha256"],))
+                         if urlsplit(row[0]).hostname == unreadable_host]
+            if not target_urls: raise ValueError("no unreadable archived HTML targets match the exact host")
+        source_path=root/run["input_path"]
+        raw=source_path.read_bytes()
+        if hashlib.sha256(raw).hexdigest()!=run["source_report_sha256"]: raise ValueError("archived HTML source inventory checksum failed")
+        source=json.loads(raw); candidates=collect_html_candidates(source); by_url=_candidate_report(candidates)
+        if any(url not in by_url for url in target_urls): raise ValueError("reassessment URL is not in the pinned source inventory")
+        db.execute("INSERT INTO html_runs(run_id,started_at,source_report_run_id,source_report_path,source_report_sha256,input_path,candidate_citations,candidate_targets,batch_limit,status) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (run_id,now,run["source_report_run_id"],run["source_report_path"],run["source_report_sha256"],run["input_path"],len(candidates),len(by_url),len(target_urls),"running"))
+        outputs=[]
+        for url in target_urls:
+            row=db.execute("SELECT * FROM html_targets WHERE source_report_sha256=? AND target_url=?",(run["source_report_sha256"],url)).fetchone()
+            if not row or not row["body_sha256"] or row["media_type"] not in {"text/html","application/xhtml+xml"}:
+                raise ValueError("target has no archived HTML body: "+url)
+            body=read_gzip(root,row["object_path"],row["body_sha256"],row["body_bytes"],MAX_HTML_BYTES)
+            parsed=analyze_html(body,by_url[url]); text=parsed["text"].encode("utf-8")
+            text_hash=hashlib.sha256(text).hexdigest(); text_path=store_gzip(root,text_hash,text,"html-text")
+            status,detail=html_target_status(None,row["media_type"],parsed)
+            result={"url":url,"status":status,"body_sha256":row["body_sha256"],"body_bytes":row["body_bytes"],"object_path":row["object_path"],"text_sha256":text_hash,"text_bytes":len(text),"text_object_path":text_path,"title":parsed["title"],"h1s":parsed["h1s"],"html_language":parsed["htmlLanguage"],"readable_chars":len(parsed["text"]),"http_status":row["http_status"],"media_type":row["media_type"],"final_url":row["final_url"],"detail":detail,"citations":parsed["citations"]}
+            outputs.append(result)
+            db.execute("UPDATE html_targets SET status=?,last_run_id=?,text_sha256=?,text_bytes=?,text_object_path=?,page_title=?,h1_json=?,html_language=?,readable_chars=?,detail=? WHERE source_report_sha256=? AND target_url=?",
+                (status,run_id,text_hash,len(text),text_path,parsed["title"],json.dumps(parsed["h1s"],ensure_ascii=False),parsed["htmlLanguage"],len(parsed["text"]),detail,run["source_report_sha256"],url))
+            for cite in parsed["citations"]:
+                db.execute("UPDATE html_citations SET status=?,family_disposition=?,year_disposition=?,language_disposition=?,issuer_disposition=?,detail=? WHERE source_report_sha256=? AND citation_id=?",
+                    (cite["disposition"],cite["familyDisposition"],cite["yearDisposition"],cite["languageDisposition"],cite["issuerDisposition"],detail,run["source_report_sha256"],cite_id(cite)))
+                db.execute("INSERT INTO html_run_citations(run_id,citation_id,target_url,family,language,issuer_label,landing_url,landing_sha256,source_index_url,source_index_sha256,label,heading,year_label,evidence,status,family_disposition,year_disposition,language_disposition,issuer_disposition,detail) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (run_id,cite_id(cite),url,cite["family"],cite["language"],cite["issuerLabel"],cite["landingUrl"] or "",cite.get("landingSha256"),cite.get("sourceIndexUrl"),cite.get("sourceIndexSha256"),cite["label"],cite.get("heading"),cite.get("yearLabel") or "",cite.get("evidence"),cite["disposition"],cite["familyDisposition"],cite["yearDisposition"],cite["languageDisposition"],cite["issuerDisposition"],detail))
+            db.execute("INSERT INTO html_run_targets(run_id,target_url,status,body_sha256,body_bytes,object_path,text_sha256,text_bytes,text_object_path,page_title,h1_json,html_language,readable_chars,http_status,media_type,final_url,detail) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (run_id,url,status,row["body_sha256"],row["body_bytes"],row["object_path"],text_hash,len(text),text_path,parsed["title"],json.dumps(parsed["h1s"],ensure_ascii=False),parsed["htmlLanguage"],len(parsed["text"]),row["http_status"],row["media_type"],row["final_url"],detail))
+        status_counts=dict(db.execute("SELECT status,COUNT(*) FROM html_targets WHERE source_report_sha256=? GROUP BY status",(run["source_report_sha256"],)).fetchall())
+        citation_counts=dict(db.execute("SELECT status,COUNT(*) FROM html_citations WHERE source_report_sha256=? GROUP BY status",(run["source_report_sha256"],)).fetchall())
+        status="complete" if set(citation_counts).issubset({"accepted"}) else "partial"
+        report={"collection":"departmental-report-html-documents","htmlParserVersion":HTML_PARSER_VERSION,"runId":run_id,"status":status,"observedAt":now,"reassessedAt":now,"sourceEditionRunId":run["source_report_run_id"],"sourceCurrentReportSha256":run["source_report_sha256"],"candidateCitations":len(candidates),"candidateTargets":len(by_url),"batchLimit":len(target_urls),"processedTargets":len(outputs),"remainingPending":status_counts.get("pending",0),"targetStatusCounts":status_counts,"citationDispositionCounts":citation_counts,"targets":[{k:v for k,v in result.items() if k!="citations"} for result in outputs],"citations":[cite for result in outputs for cite in result["citations"]],"reassessment":{"kind":"archived-html-re-extraction","networkAccess":False,"targets":target_urls,"fetchTimestampsPreserved":True},"scope":"Reassessment re-extracts archived HTML bytes only; it does not represent a new publisher fetch."}
+        rel=f"html-generations/{run_id}.json"; report_sha,report_bytes=write_json(root/rel,report)
+        db.execute("UPDATE html_runs SET completed_at=?,processed_targets=?,remaining_pending=?,report_path=?,report_sha256=?,status=? WHERE run_id=?",(utc_now(),len(outputs),status_counts.get("pending",0),rel,report_sha,status,run_id))
+        db.commit()
+        latest={"runId":run_id,"status":status,"reportPath":rel,"reportSha256":report_sha,"reportBytes":report_bytes,"publishedAt":utc_now()}
+        _atomic_pointer(root/"latest-html-attempt.json",latest)
+        return report
+    except Exception:
+        db.rollback()
+        raise
     finally: db.close()
 
 
@@ -1025,9 +1310,18 @@ def _write_generation(db, root: Path, run_id: str, report_run_id: str, input_pat
                       budget: Budget) -> dict:
     docs, citations, failed, readable = [], [], 0, 0
     for row in db.execute("SELECT * FROM documents WHERE run_id=? ORDER BY target_url", (run_id,)):
-        docs.append(dict(row))
+        document = dict(row)
+        if document.get("publisher_notice_json"):
+            document["publisherNotice"] = json.loads(document.pop("publisher_notice_json"))
+        else:
+            document.pop("publisher_notice_json", None)
+        docs.append(document)
     for row in db.execute("SELECT * FROM citations WHERE run_id=? ORDER BY family,language,issuer_label,issue_year,target_url", (run_id,)):
-        citations.append(dict(row))
+        citation = dict(row)
+        candidate = next((item for item in groups.get(row["target_url"], []) if cite_id(item) == row["citation_id"]), None)
+        if candidate and candidate.get("publisherRecovery"):
+            citation["publisherRecovery"] = candidate["publisherRecovery"]
+        citations.append(citation)
     failed = sum(doc["status"] in {"failed", "budget-skipped", "unreadable", "wrong-kind"} for doc in docs)
     readable = sum(doc["status"] in {"readable", "review"} for doc in docs)
     verified = sum(cite["disposition"] == "verified" for cite in citations)
@@ -1044,7 +1338,8 @@ def _write_generation(db, root: Path, run_id: str, report_run_id: str, input_pat
                 "languageMismatches": sum(item["language_disposition"] in {"mismatch", "source-link-conflict"} for item in matches),
                 "yearMismatches": sum(item["year_disposition"] == "mismatch" for item in matches),
             }
-    return {"collection": "departmental-report-documents", "runId": run_id, "status": status,
+    return {"collection": "departmental-report-documents", "schemaVersion": 2,
+        "runId": run_id, "status": status,
         "observedAt": utc_now(), "sourceEditionRunId": report_run_id,
         "sourceCurrentReportPath": source_path, "sourceCurrentReportSha256": source_sha,
         "sourceCurrentReportObject": input_path,
@@ -1059,7 +1354,7 @@ def _write_generation(db, root: Path, run_id: str, report_run_id: str, input_pat
 
 def refresh(root: Path = DEFAULT_ROOT, edition_root: Path = EDITION_ROOT, workers: int = MAX_WORKERS,
             max_archive_bytes: int = MAX_ARCHIVE_BYTES, min_free_bytes: int = MIN_FREE_BYTES,
-            fetcher=fetch_pdf) -> dict:
+            fetcher=fetch_pdf_with_evidence) -> dict:
     if not 1 <= workers <= 4:
         raise ValueError("workers must be between 1 and 4")
     if shutil.disk_usage(root.parent if root.parent.exists() else ROOT).free < min_free_bytes + max_archive_bytes:
@@ -1091,8 +1386,9 @@ def refresh(root: Path = DEFAULT_ROOT, edition_root: Path = EDITION_ROOT, worker
                 if fetched["status"] == "fetched":
                     extracted = _pdf_process(root, run_id, url, fetched, groups[url])
                     with db:
-                        db.execute("UPDATE documents SET status=?,http_status=?,media_type=?,final_url=?,body_sha256=?,body_bytes=?,object_path=?,text_sha256=?,text_bytes=?,text_object_path=?,text_pages=?,readable_chars=?,detail=? WHERE run_id=? AND target_url=?",
-                            (extracted["status"], fetched["httpStatus"], fetched["mediaType"], fetched["finalUrl"], fetched["bodySha256"], fetched["bodyBytes"], extracted["bodyPath"], extracted["textSha256"], extracted["textBytes"], extracted["textPath"], extracted["textPages"], extracted["readableChars"], extracted["detail"], run_id, url))
+                        notice_json = json.dumps(extracted["publisherNotice"], sort_keys=True) if extracted.get("publisherNotice") else None
+                        db.execute("UPDATE documents SET status=?,http_status=?,media_type=?,final_url=?,body_sha256=?,body_bytes=?,object_path=?,text_sha256=?,text_bytes=?,text_object_path=?,text_pages=?,readable_chars=?,detail=?,publisher_notice_json=? WHERE run_id=? AND target_url=?",
+                                   (extracted["status"], fetched["httpStatus"], fetched["mediaType"], fetched["finalUrl"], fetched["bodySha256"], fetched["bodyBytes"], extracted["bodyPath"], extracted["textSha256"], extracted["textBytes"], extracted["textPath"], extracted["textPages"], extracted["readableChars"], extracted["detail"], notice_json, run_id, url))
                         for candidate, assessment in zip(groups[url], extracted["citations"]):
                             _store_citation(db, run_id, url, candidate, assessment)
                         if not extracted["citations"]:
@@ -1183,9 +1479,29 @@ def replay(run_id: str, root: Path = DEFAULT_ROOT) -> dict:
         if hashlib.sha256(raw).hexdigest() != generation["source_report_sha256"]:
             raise ValueError("Archived source edition report failed checksum verification")
         source = json.loads(raw)
-        candidates = collect_candidates(source)
+        report_path = root / generation["report_path"]
+        report_raw = report_path.read_bytes()
+        if hashlib.sha256(report_raw).hexdigest() != generation["report_sha256"]:
+            raise ValueError("Document generation report hash failed")
+        report = json.loads(report_raw)
+        schema_version = report.get("schemaVersion", 1)
+        candidates = collect_candidates(source, apply_recoveries=schema_version >= 2)
         by_url = _candidate_report(candidates)
-        for doc in db.execute("SELECT * FROM documents WHERE run_id=? ORDER BY target_url", (run_id,)):
+        document_columns = {row[1] for row in db.execute("PRAGMA table_info(documents)")}
+        notice_column = "publisher_notice_json" in document_columns
+        doc_query = ("SELECT * FROM documents WHERE run_id=? ORDER BY target_url" if notice_column else
+                     "SELECT *,NULL AS publisher_notice_json FROM documents WHERE run_id=? ORDER BY target_url")
+        for doc in db.execute(doc_query, (run_id,)):
+            if schema_version >= 2 and doc["publisher_notice_json"]:
+                notice = json.loads(doc["publisher_notice_json"])
+                notice_body = read_gzip(root, notice["archivePath"], notice["noticeSha256"],
+                                        notice["noticeBytes"], MAX_HTML_BYTES)
+                if (notice["continueHref"] != notice["targetUrl"] or
+                        not public_archive_continue(notice_body, notice["targetUrl"], notice["noticeUrl"]) or
+                        doc["fetch_url"] != notice["targetUrl"] or
+                        not any(candidate.get("fetchUrl") == notice["targetUrl"]
+                                for candidate in by_url.get(doc["target_url"], []))):
+                    raise ValueError("Publisher archive notice recovery evidence does not match its source citation")
             if doc["body_sha256"]:
                 body = read_gzip(root, doc["object_path"], doc["body_sha256"], doc["body_bytes"], MAX_DOCUMENT_BYTES)
                 if body.startswith(b"%PDF-"):
@@ -1199,11 +1515,24 @@ def replay(run_id: str, root: Path = DEFAULT_ROOT) -> dict:
                     actual = sorted((x["disposition"], x["family_disposition"], x["language_disposition"], x["year_disposition"], x["issuer_disposition"]) for x in recorded)
                     if pairs != actual:
                         raise ValueError("PDF citation assessment replay differs: " + doc["target_url"])
-        report_path = root / generation["report_path"]
-        report_raw = report_path.read_bytes()
-        if hashlib.sha256(report_raw).hexdigest() != generation["report_sha256"]:
-            raise ValueError("Document generation report hash failed")
-        return json.loads(report_raw)
+        report_docs = {doc["target_url"]: doc for doc in report.get("documents", [])}
+        if schema_version >= 2:
+            notice_query = ("SELECT target_url,publisher_notice_json FROM documents WHERE run_id=?" if notice_column else
+                            "SELECT target_url,NULL AS publisher_notice_json FROM documents WHERE run_id=?")
+            for doc in db.execute(notice_query, (run_id,)):
+                recorded_notice = json.loads(doc["publisher_notice_json"]) if doc["publisher_notice_json"] else None
+                report_notice = report_docs.get(doc["target_url"], {}).get("publisherNotice")
+                if recorded_notice != report_notice:
+                    raise ValueError("Publisher archive notice receipt differs from stored acquisition evidence: " + doc["target_url"])
+        report_citations = {(cite["target_url"], cite["citation_id"]): cite for cite in report.get("citations", [])}
+        if schema_version >= 2:
+            for candidate in candidates:
+                recovery = candidate.get("publisherRecovery")
+                if recovery:
+                    recorded = report_citations.get((candidate["url"], cite_id(candidate)))
+                    if recorded is None or recorded.get("publisherRecovery") != recovery:
+                        raise ValueError("Publisher source recovery citation differs from archived edition evidence: " + candidate["url"])
+        return report
     finally:
         db.close()
 
@@ -1229,6 +1558,11 @@ def main(argv=None):
     html_replay_parser = sub.add_parser("html-replay", help="verify archived HTML source objects and extracted text")
     html_replay_parser.add_argument("run_id")
     html_replay_parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    html_reassess_parser = sub.add_parser("html-reassess", help="re-extract selected archived HTML targets without network access")
+    html_reassess_parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    reassess_group=html_reassess_parser.add_mutually_exclusive_group(required=True)
+    reassess_group.add_argument("--target-url", action="append")
+    reassess_group.add_argument("--unreadable-host", help="reassess all unreadable archived HTML targets on this exact host")
     audit_parser = sub.add_parser("html-audit", help="replay all batches and reproduce cumulative coverage for current inventory")
     audit_parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
     audit_parser.add_argument("--edition-root", type=Path, default=EDITION_ROOT)
@@ -1255,6 +1589,8 @@ def main(argv=None):
             result = reports[-1] if reports else {"runId":None,"status":"complete","candidateCitations":0,"candidateTargets":0,"processedTargets":0,"remainingPending":0,"targetStatusCounts":{}}
         elif args.command == "html-audit":
             result = html_audit(args.root,args.edition_root,args.source_sha256)
+        elif args.command == "html-reassess":
+            result = html_reassess(args.target_url,args.root,args.unreadable_host)
         else:
             result = html_replay(args.run_id, args.root)
         if args.command in {"refresh", "html-refresh", "html-backfill"}:
