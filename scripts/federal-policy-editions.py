@@ -90,12 +90,50 @@ def normalize(text):
     return " ".join(re.findall(r"[^\W_]+", "".join(c for c in folded if not unicodedata.combining(c))))
 
 
-def matches_title(row, text):
+def has_unambiguous_language(row):
     expected = {"en": {"eng", "mul"}, "fr": {"fre", "fra", "mul"}}[row["language"]]
-    if row["multiplePolicyIds"] or not expected.intersection(row["catalogueLanguages"]):
+    return not row["multiplePolicyIds"] and bool(expected.intersection(row["catalogueLanguages"]))
+
+
+def matches_title(row, text):
+    if not has_unambiguous_language(row):
         return False
     terms = [normalize(title) for title in row["catalogueTitle"].split(" = ")]
     return any(len(term) >= 10 and term in text for term in terms)
+
+
+def edition_identity(row, pages):
+    if row["titleCheck"] == "matched":
+        return {"verified": True, "method": "catalogue-title-first-three-pages"}
+    if has_unambiguous_language(row):
+        titles = [(title, title, "printed-catalogue-title") for title in row["catalogueTitle"].split(" = ")]
+        for entry in row.get("indexEntries", []):
+            label = entry["label"]
+            # The register files titles under the subject, e.g. "Self-Insurance, Guideline on".
+            ordered = " ".join(part.strip() for part in reversed(label.split(",")))
+            titles.extend([(label, label, "printed-register-title"), (label, ordered, "printed-register-title")])
+        for original, title, method in titles:
+            term = normalize(title)
+            if len(term) < 10:
+                continue
+            for passage in pages:
+                if normalize(passage["text"]) == term:
+                    return {"verified": True, "method": method, "sourceTitle": original,
+                            "printedTitle": passage["text"], "page": passage["page"]}
+    return {"verified": False, "method": "review"}
+
+
+def verify_printed_heading(root, document, row, identity):
+    if identity["verified"] or not document or not has_unambiguous_language(row):
+        return identity
+    original = pdf.read_gzip(root, document["object"], document["bodySha256"], document["bodyBytes"], pdf.MAX_DOCUMENT_BYTES)
+    layout, _ = pdf.pdf_text(original)
+    candidates = {normalize(title) for title in row["catalogueTitle"].split(" = ")}
+    for page, text in enumerate(layout.split("\f"), 1):
+        heading = next((line.strip() for line in text.splitlines() if line.strip()), "")
+        if heading and len(normalize(heading)) >= 10 and normalize(heading) in candidates:
+            return {"verified": True, "method": "printed-catalogue-heading", "page": page, "printedTitle": heading}
+    return identity
 
 
 def capture(root, url):
@@ -115,7 +153,7 @@ def capture(root, url):
                     "pagesWithText": len({p["page"] for p in sections}), "observedAt": stamp()}
         return {"status": "retrieved", "document": document}
     except (pdf.FetchError, OSError, ValueError, RuntimeError) as error:
-        return {"status": "failed", "error": str(error)}
+        return {"status": "failed", "error": str(error), "httpStatus": getattr(error, "status", None)}
 
 
 def read_passages(root, doc, replay=False):
@@ -148,20 +186,28 @@ def refresh(root, db_path, guidance, workers):
         urls = sorted({c["url"] for c in links})
         with ThreadPoolExecutor(max_workers=workers) as pool:
             targets = dict(zip(urls, pool.map(lambda u: capture(root, u), urls), strict=True))
-        title_text = {}
+        # Retry transient upstream errors once after the remaining documents have been visited.
+        for url, result in targets.items():
+            if result.get("httpStatus") in {500, 502, 503, 504}:
+                targets[url] = {**capture(root, url), "initialError": result["error"]}
+        opening_pages = {}
         for url, result in targets.items():
             if not result.get("document") and previous.get(url, {}).get("document"):
                 result["document"] = previous[url]["document"]
             if result.get("document"):
                 sections = read_passages(root, result["document"])
-                title_text[url] = normalize(" ".join(p["text"] for p in sections if p["page"] <= 3))
+                opening_pages[url] = [p for p in sections if p["page"] <= 10]
         for row in links:
-            row["titleCheck"] = "matched" if matches_title(row, title_text.get(row["url"], "")) else "review"
+            pages = opening_pages.get(row["url"], [])
+            front = normalize(" ".join(p["text"] for p in pages if p["page"] <= 3))
+            row["titleCheck"] = "matched" if matches_title(row, front) else "review"
+            row["editionIdentity"] = verify_printed_heading(root, targets[row["url"]].get("document"), row, edition_identity(row, pages))
         summary = {"registeredLanguageIds": inputs["registeredLanguageIds"], "linkedPolicyLanguageIds":
                    len({(r["policyId"], r["language"]) for r in links}), "catalogueIds": len({r["catalogueId"] for r in links}),
                    "uniquePdfTargets": len(targets), "latestFetch": dict(Counter(t["status"] for t in targets.values())),
                    "catalogueEditionLinks": len(links), "titleChecks": dict(Counter(r["titleCheck"] for r in links))}
-        report = {"scope": "Dated government bibliography editions referencing a policy identifier listed by Treasury Board. Index status describes the policy register observation.",
+        summary["editionIdentityChecks"] = dict(Counter(row["editionIdentity"]["method"] for row in links))
+        report = {"schemaVersion": 3, "scope": "Dated government bibliography editions referencing a policy identifier listed by Treasury Board. Index status describes the policy register observation.",
                   "observedAt": stamp(), "inputs": inputs, "summary": summary, "editions": links, "targets": targets}
         raw = packed(report)
         identity = sha256(raw).hexdigest()
@@ -190,18 +236,26 @@ def main():
     if args.command == "refresh":
         result = refresh(args.root, args.db, args.guidance, args.workers)
         print(json.dumps(result))
-        return 2 if result["summary"]["latestFetch"].get("failed") or result["summary"]["titleChecks"].get("review") else 0
+        return 2 if result["summary"]["latestFetch"].get("failed") or result["summary"]["editionIdentityChecks"].get("review") else 0
     report = load_report(args.root, getattr(args, "report", None))
     if args.command == "replay":
-        text = {}
+        opening_pages = {}
         for url, row in report["targets"].items():
             if row.get("document"):
                 sections = read_passages(args.root, row["document"], replay=True)
-                text[url] = normalize(" ".join(p["text"] for p in sections if p["page"] <= 3))
+                opening_pages[url] = [p for p in sections if p["page"] <= 10]
         for row in report["editions"]:
-            if (row["titleCheck"] == "matched") != matches_title(row, text.get(row["url"], "")):
+            pages = opening_pages.get(row["url"], [])
+            front = normalize(" ".join(p["text"] for p in pages if p["page"] <= 3))
+            if (row["titleCheck"] == "matched") != matches_title(row, front):
                 raise ValueError("Archived policy title check differs from its receipt")
-        print(json.dumps({"replayedTargets": len(text), "summary": report["summary"]}))
+            if report.get("schemaVersion", 1) >= 2:
+                identity = edition_identity(row, pages)
+                if report["schemaVersion"] >= 3:
+                    identity = verify_printed_heading(args.root, report["targets"][row["url"]].get("document"), row, identity)
+                if row["editionIdentity"] != identity:
+                    raise ValueError("Archived policy identity evidence differs from its printed source")
+        print(json.dumps({"replayedTargets": len(opening_pages), "summary": report["summary"]}))
         return 0
     results = [{**edition, "archive": report["targets"][edition["url"]]} for edition in report["editions"]
                if edition["policyId"] == args.policy_id and edition["language"] == args.language]

@@ -26,6 +26,25 @@ class FederalPolicyEditionTests(unittest.TestCase):
         self.assertFalse(policies.matches_title({**row, "multiplePolicyIds": True}, body_text))
         self.assertFalse(policies.matches_title({**row, "catalogueLanguages": ["eng"]}, body_text))
 
+    def test_printed_register_title_requires_the_whole_passage_and_correct_language(self):
+        row = {"catalogueTitle": "Guideline on on Self-Insurance", "indexEntries": [{"label": "Self-Insurance, Guideline on"}],
+               "language": "en", "catalogueLanguages": ["eng"], "multiplePolicyIds": False, "titleCheck": "review"}
+        passage = {"text": "Guideline on Self-Insurance", "page": 4}
+        identity = policies.edition_identity(row, [passage])
+        self.assertEqual((identity["method"], identity["page"]), ("printed-register-title", 4))
+        self.assertFalse(policies.edition_identity(row, [{**passage, "text": "See " + passage["text"]}])["verified"])
+        self.assertFalse(policies.edition_identity({**row, "language": "fr"}, [passage])["verified"])
+
+    def test_layout_verification_accepts_only_the_complete_first_line_on_a_page(self):
+        row = {"language": "en", "catalogueLanguages": ["eng"], "multiplePolicyIds": False, "catalogueTitle": "Internal Services Guideline"}
+        doc = {"object": "test", "bodySha256": "a"*64, "bodyBytes": 10}
+        review = {"verified": False, "method": "review"}
+        with patch.object(policies.pdf, "read_gzip", return_value=b"%PDF-test"), patch.object(policies.pdf, "pdf_text") as text:
+            text.return_value = ("Introduction\nSee Internal Services Guideline\fInternal Services Guideline\n1. Introduction", 2)
+            self.assertEqual(policies.verify_printed_heading(Path("."), doc, row, review)["page"], 2)
+            text.return_value = ("See Internal Services Guideline\nInternal Services Guideline", 1)
+            self.assertEqual(policies.verify_printed_heading(Path("."), doc, row, review), review)
+
     def test_retry_keeps_a_dated_copy_and_records_the_new_failure(self):
         url = "https://publications.gc.ca/collections/guidance.pdf"
         row = {"url": url, "policyId": "1234", "language": "en", "catalogueId": "9.2",
