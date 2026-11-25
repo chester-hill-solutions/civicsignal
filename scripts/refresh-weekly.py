@@ -622,6 +622,41 @@ def _publish_report(document: dict) -> Path:
     return dated
 
 
+def source_coverage(result: dict) -> dict:
+    """Report only counts emitted by this historical attempt's acquisition commands."""
+    name = result["name"]
+    fields = {
+        "eccc": ("documents_seen", "documents_extracted", "passages"),
+        "consultation-notices": ("openConsultations", "editions", "publishedFetchedEditions", "publishedArchivedSources", "counts"),
+        "federal-guidance": ("listedEditions", "verifiedThisRun", "failedEditions", "linkedReferences", "availableEditions"),
+        "federal-policy-editions": ("registeredLanguageIds", "linkedPolicyLanguageIds", "uniquePdfTargets", "latestFetch", "titleChecks"),
+        "departmental-report-editions": ("issuerLandingPagesExpected", "issuerLandingPagesFetched", "issuerLandingPagesFailed", "issuerLandingPagesSkipped"),
+        "departmental-report-documents": ("directLinkCitations", "fetchedTargets", "failedTargets", "verifiedCitations", "reviewCitations"),
+        "departmental-report-html": ("candidateCitations", "candidateTargets", "processedTargets", "remainingPending", "targetStatusCounts"),
+        "federal-regulatory-plans": ("forwardPlanCandidates", "verifiedPlanEditions", "failedTargets", "namedInitiatives"),
+        "gazette-year": ("discoveredIssues", "newlyVerifiedIssues", "archiveVerifiedPairs", "unavailableIssues",
+                         "discoveredExtras", "newlyVerifiedExtras", "archiveVerifiedExtras", "unavailableExtras"),
+    }
+    if name not in fields:
+        return {}
+    for command in result.get("commands", []):
+        if command.get("verification"):
+            continue
+        try:
+            payload = json.loads(command.get("stdout", ""))
+        except (ValueError, TypeError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        stats = payload.get("counts") if name == "gazette-year" else payload.get("summary", payload)
+        if not isinstance(stats, dict):
+            continue
+        observed = {key: stats[key] for key in fields[name] if key in stats}
+        if observed:
+            return observed
+    return {}
+
+
 def weekly_status(reports: Path, names: tuple[str, ...]) -> dict:
     sources = {name: {"status": "unverified"} for name in names}
     full = None
@@ -632,6 +667,9 @@ def weekly_status(reports: Path, names: tuple[str, ...]) -> dict:
             if result["name"] in sources:
                 checks = [cmd for cmd in result.get("commands", []) if cmd.get("verification")]
                 entry = {**reference, "status": "passed" if result["ok"] else "failed"}
+                coverage = source_coverage(result)
+                if coverage:
+                    entry["sourceCoverage"] = coverage
                 if checks:
                     entry["workerVerification"] = "passed" if all(cmd["ok"] for cmd in checks) else "failed"
                 if result.get("error"):
@@ -639,7 +677,10 @@ def weekly_status(reports: Path, names: tuple[str, ...]) -> dict:
                 sources[result["name"]] = entry
         if report["scope"] == "full":
             observed = {row["name"] for row in report["steps"]}
-            full = {**reference, "ok": report["ok"], "missingFromCurrentConfiguration": sorted(set(names) - observed)}
+            full = {**reference, "ok": report["ok"], "configuredAtRun": len(observed),
+                    "passed": sum(bool(row["ok"]) for row in report["steps"]),
+                    "failed": [row["name"] for row in report["steps"] if not row["ok"]],
+                    "missingFromCurrentConfiguration": sorted(set(names) - observed)}
     counts = {status: sum(row["status"] == status for row in sources.values())
               for status in ("passed", "failed", "unverified")}
     return {"configured": len(names), "latestFullAttempt": full, "latestPerStep": counts, "sources": sources}

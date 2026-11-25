@@ -114,7 +114,7 @@ python3 -B scripts/departmental-report-editions.py current
 python3 -B scripts/federal-publication-checklists.py replay
 ```
 
-Use `--status` to see each configured source's most recent result and dated receipt. The separate full-attempt entry identifies any sources added since that run. A successful retry updates that source's standing while preserving the earlier full report.
+Use `--status` to see each configured source’s most recent result and dated receipt. Where the operator emits structured coverage counts, the status includes the acquired and unresolved records from that attempt. A passing ECCC serving check, for example, can still show fewer extracted documents than the publisher lists. The full-attempt entry gives the pass count, failed step names and any sources added since that run. A successful retry updates that source's standing while preserving the earlier full report.
 
 ## Failure handling
 

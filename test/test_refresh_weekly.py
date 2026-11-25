@@ -229,6 +229,14 @@ class WeeklyRefreshTests(unittest.TestCase):
             self.assertEqual((reports / "latest-full.json").read_text(), '{\n  "ok": false,\n  "scope": "full",\n  "result": "later failure"\n}\n')
             self.assertEqual(__import__("json").loads((reports / "latest-successful-full.json").read_text())["result"], "first")
 
+    def test_successful_source_with_incomplete_document_coverage_keeps_its_observed_counts(self):
+        result = {"name": "eccc", "ok": True, "commands": [
+            {"stdout": "Fetching sources"},
+            {"stdout": '{"documents_seen":246,"documents_extracted":234,"passages":64174}'},
+            {"verification": True, "stdout": "Vitest reported 2 passed and 0 failed."}]}
+        self.assertEqual(weekly.source_coverage(result),
+                         {"documents_seen": 246, "documents_extracted": 234, "passages": 64174})
+
     def test_status_keeps_retries_and_full_attempts_distinct_after_adding_a_step(self):
         with tempfile.TemporaryDirectory() as tmp:
             reports = Path(tmp)
