@@ -1,6 +1,7 @@
 """Checkpoint and verify official committee publication downloads by URL and byte hash."""
 
 import gzip
+from contextlib import closing
 import hashlib
 import os
 import re
@@ -275,6 +276,22 @@ def download_urls(catalogue):
         if item.get("studyUrl") and official(item["studyUrl"])
     )
     return sorted(urls)
+
+
+def indexed_notice_originals(root, catalogue):
+    """Reuse the exact notice bytes already acquired to discover linked publications."""
+    notices = set()
+    with closing(cache_db(root)) as db:
+        for key, page in catalogue["indexes"].items():
+            if not key.startswith("senate/") or "/notice/" not in key or not page.get("sourceSha256"):
+                continue
+            url = page["sourceUrl"]
+            row = db.execute("SELECT digest,checked,error FROM files WHERE url=?", (url,)).fetchone()
+            if not row or tuple(row) != (page["sourceSha256"], page["sourceFetchedAt"], None):
+                raise ValueError(f"Senate notice archive changed since catalogue acquisition: {url}")
+            read_object(root, row["digest"])
+            notices.add(fetch_url(url))
+    return notices
 
 
 def checkpoint(db, rows):

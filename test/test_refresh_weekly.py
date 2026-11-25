@@ -67,6 +67,14 @@ class WeeklyRefreshTests(unittest.TestCase):
             weekly.parse_args(["--only", "no-such-source"])
         self.assertEqual(raised.exception.code, 2)
 
+    def test_scheduled_committee_catalogue_starts_fresh_and_operator_can_resume(self):
+        self.assertNotIn("--resume", weekly._committee_commands()[0])
+        self.assertIn("--resume", weekly._committee_commands(resume_catalogue=True)[0])
+        args = weekly.parse_args(["--only", "committees", "--resume-committee-catalogue"])
+        self.assertTrue(args.resume_committee_catalogue)
+        with self.assertRaises(SystemExit):
+            weekly.parse_args(["--resume-committee-catalogue"])
+
     def test_shared_committee_lock_is_nonblocking_and_mutually_exclusive(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -1,6 +1,9 @@
 """Session-wide inventory identity, source relationships and refresh regressions."""
 
 import importlib.util
+import gzip
+import hashlib
+from contextlib import closing
 import sqlite3
 import sys
 import unittest
@@ -9,7 +12,7 @@ from tempfile import TemporaryDirectory
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
-from lib.committee_files import cache_db, checkpoint, fetch_url  # noqa: E402
+from lib.committee_files import cache_db, checkpoint, fetch_url, indexed_notice_originals, object_path  # noqa: E402
 from lib.committee_inventory import Inventory  # noqa: E402
 from lib.committee_store import initialize  # noqa: E402
 
@@ -21,6 +24,27 @@ spec.loader.exec_module(corpus)
 
 
 class CommitteeInventoryTests(unittest.TestCase):
+    def test_linked_notice_original_must_match_the_catalogue_and_archived_bytes(self):
+        url = "https://sencanada.ca/en/committees/noticeofmeeting/123/45-1"
+        body = b"<html>45-1</html>"
+        digest = hashlib.sha256(body).hexdigest()
+        page = dict(sourceUrl=url, sourceSha256=digest, sourceFetchedAt="2026-11-24T21:15:00Z")
+        catalogue = {"indexes": {"senate/en/PROC/notice/123": page}}
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            with closing(cache_db(root)) as db:
+                checkpoint(db, [(url, digest, "text/html", len(body), None, page["sourceFetchedAt"], url)])
+            original = object_path(root, digest)
+            original.parent.mkdir(parents=True)
+            original.write_bytes(gzip.compress(body))
+            self.assertEqual(indexed_notice_originals(root, catalogue), {url})
+            original.write_bytes(gzip.compress(b"unexpected content"))
+            with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                indexed_notice_originals(root, catalogue)
+            page["sourceFetchedAt"] = "2026-11-23T21:15:00Z"
+            with self.assertRaisesRegex(ValueError, "archive changed"):
+                indexed_notice_originals(root, catalogue)
+
     def test_brief_cites_an_order_missing_from_the_study_index(self):
         order = "https://sencanada.ca/en/Content/SEN/Committee/451/NFFN/NFFN-ME-26-e"
         directory = "https://sencanada.ca/en/committees/nffn/45-1"

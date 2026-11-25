@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 import fcntl
 import json
@@ -81,11 +81,14 @@ def _parliament_commands() -> tuple[tuple[str, ...], ...]:
     )
 
 
-def _committee_commands() -> tuple[tuple[str, ...], ...]:
+def _committee_commands(resume_catalogue: bool = False) -> tuple[tuple[str, ...] | Command, ...]:
     py = "python3"
+    catalogue = (py, "-B", "scripts/committee-catalogue.py", "--refresh-senate-notices")
+    if resume_catalogue:
+        catalogue += ("--resume",)
     return (
-        (py, "-B", "scripts/committee-catalogue.py"),
-        (py, "-B", "scripts/committee-download.py", "--refresh"),
+        catalogue,
+        (py, "-B", "scripts/committee-download.py", "--refresh", "--reuse-indexed-notice-originals"),
         (py, "-B", "scripts/committee-expand.py"),
         (py, "-B", "scripts/committee-corpus.py"),
         (py, "-B", "scripts/committee-download.py", "--verify-only"),
@@ -283,7 +286,11 @@ RUN_ORDER = (
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--only", action="append", default=[], metavar="NAME", help=f"run one named step; choices: {', '.join(step.name for step in STEPS)}")
+    parser.add_argument("--resume-committee-catalogue", action="store_true",
+                        help="Continue an interrupted committee-only catalogue acquisition from its partial checkpoint.")
     args = parser.parse_args(argv)
+    if args.resume_committee_catalogue and args.only != ["committees"]:
+        parser.error("--resume-committee-catalogue requires --only committees")
     unknown = sorted(set(args.only) - {step.name for step in STEPS})
     if unknown:
         parser.error(f"unknown step(s): {', '.join(unknown)}")
@@ -489,6 +496,8 @@ def main(argv: list[str] | None = None) -> int:
     by_name = {step.name: step for step in STEPS}
     selected_names = [name for name in RUN_ORDER if not args.only or name in args.only]
     selected = [by_name[name] for name in selected_names]
+    if args.resume_committee_catalogue:
+        selected = [replace(by_name["committees"], commands=_committee_commands(resume_catalogue=True))]
     scope = "full" if len(selected) == len(STEPS) else "partial"
     started = datetime.now(timezone.utc)
     try:

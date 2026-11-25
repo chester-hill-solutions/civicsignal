@@ -1,6 +1,7 @@
 """Inventory published House and Senate committee source indexes for session 45-1."""
 import argparse
 from collections import Counter
+from contextlib import closing
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
@@ -11,6 +12,7 @@ import sqlite3
 import time
 from urllib.parse import parse_qs, urlencode, urljoin
 
+from lib.committee_files import capture, official
 from lib.wq_catalog import cls, save_atomic, tree
 from lib.wq_store import now
 
@@ -434,20 +436,55 @@ def senate_index(c, lang, section):
     return result
 
 
-def senate_notice(notice):
+def is_senate_notice_index(key):
+    return key.startswith('senate/') and '/notice/' in key
+
+
+def is_senate_meetings_index(key):
+    return key.startswith('senate/') and key.endswith('/meetings')
+
+
+def can_reuse_index(key, indexes, refresh_senate_notices=False):
+    return (key in indexes and 'error' not in indexes[key]
+            and not (refresh_senate_notices and (is_senate_meetings_index(key) or is_senate_notice_index(key))))
+
+
+def remove_old_senate_notice_indexes(indexes):
+    stale = [key for key in indexes if is_senate_notice_index(key)]
+    for key in stale:
+        del indexes[key]
+    return len(stale)
+
+
+def refresh_senate_notice_sources(notices, cache_root, workers=5):
+    urls = sorted({notice['url'] for notice in notices})
+    approved = [url for url in urls if official(url)]
+    if approved:
+        # This shared capture path archives original bytes and validates redirects.
+        capture(cache_root, approved, workers, refresh=True)
+    return urls
+
+
+def senate_notice(notice, require_fresh=False):
     """Follow published transcript, minutes, report and study links on a notice."""
     url=notice['url']
+    if require_fresh and not official(url):
+        raise ValueError('Senate meeting notice is outside the official publication host allowlist')
     cache_root=Path(__file__).resolve().parents[1]/'data/corpus/committees'
     db_path=cache_root/'downloads.sqlite'
     body=None
     source_fetched_at=None
+    source_hash=None
     if db_path.is_file():
-        with sqlite3.connect(db_path) as db:
+        with closing(sqlite3.connect(db_path.resolve().as_uri() + "?mode=ro", uri=True)) as db:
             row=db.execute('SELECT digest,media,error,checked FROM files WHERE url=?',(url,)).fetchone()
         if row and row[0] and row[1]=='text/html' and not row[2]:
             from lib.committee_files import read_object
             body=read_object(cache_root,row[0])
+            source_hash=row[0]
             source_fetched_at=row[3]
+    if require_fresh and body is None:
+        raise RuntimeError('Refreshed Senate notice original is unavailable; refusing to parse a prior cached copy')
     html=body.decode('utf-8-sig',errors='replace') if body is not None else get(url)
     if source_fetched_at is None: source_fetched_at=now()
     if '<html' not in html.lower() or '45' not in html:
@@ -465,11 +502,13 @@ def senate_notice(notice):
                      'sourceContext':label or notice.get('title'),'committeeCode':notice.get('committeeCode'),
                      'language':notice.get('language'),'sourceIndexUrl':notice.get('sourceIndexUrl'),
                      'sourceFetchedAt':source_fetched_at,
+                     'sourceSha256':source_hash,
                      'sourceCapture':'hash-verified local original' if body is not None else 'live fetch'})
         if item.get('kind')=='study': item['studyUrl']=item['url']
         links.append(item)
     result=entries(url,links)
     result['sourceFetchedAt']=source_fetched_at
+    result['sourceSha256']=source_hash
     result['sourceCapture']='hash-verified local original' if body is not None else 'live fetch'
     result['sourceTotals']={'linkedSourceUrls':len(result['links'])}
     result['terminalPage']={'kind':'senate-notice-links','exhausted':True,'publisherLinksInspected':True}
@@ -488,6 +527,8 @@ def main():
     p.add_argument('--finalize',action='store_true',help='Publish the complete merged partial catalogue atomically.')
     p.add_argument('--verify-empty-studies',action='store_true',help='Revalidate empty House study lists using the official study-page sentinel.')
     p.add_argument('--verify-empty-studies-from-cache',action='store_true',help='Validate empty House lists from hash-checked official page originals.')
+    p.add_argument('--refresh-senate-notices',action='store_true',
+                   help='Refresh official Senate notice originals before parsing their linked publications.')
     a = p.parse_args()
     partial = a.output.with_name(a.output.stem + '.partial' + a.output.suffix)
     if a.verify_empty_studies or a.verify_empty_studies_from_cache:
@@ -500,7 +541,7 @@ def main():
         if a.verify_empty_studies_from_cache:
             cache_root=Path(__file__).resolve().parents[1]/'data/corpus/committees'
             from lib.committee_files import read_object
-            with sqlite3.connect(cache_root/'downloads.sqlite') as db:
+            with closing(sqlite3.connect((cache_root/'downloads.sqlite').resolve().as_uri() + '?mode=ro', uri=True)) as db:
                 cached={row[0]:row[1:] for row in db.execute("SELECT url,digest,media,error,checked FROM files WHERE media='text/html'")}
             for url in todo:
                 row=cached.get(url)
@@ -588,7 +629,7 @@ def main():
                              'completed':False,'sourceObservations':observations,'committees':inventory,'indexes':indexes})
     def process(task):
         key,fn,args = task
-        if key in indexes and 'error' not in indexes[key]:
+        if can_reuse_index(key, indexes, a.refresh_senate_notices):
             return key,indexes[key]
         try:
             return key,fn(*args)
@@ -622,10 +663,17 @@ def main():
                    record.get('url','').startswith(('https://www.ourcommons.ca/committees/','https://www.parl.ca/committees/')) and
                    re.search(r'/StudyActivity\?studyActivityId=\d+',record.get('url',''),re.I)}
     run([(url,house_briefs,(r,)) for url,r in studies.items()])
+    if a.refresh_senate_notices and (not a.chamber or a.chamber=='senate'):
+        remove_old_senate_notice_indexes(indexes)
     notices = {r['url']:r for k,v in indexes.items() if (not a.chamber or a.chamber=='senate') and k.startswith('senate/') and k.endswith('/meetings')
                for r in v.get('links',[]) if r.get('kind')=='notice'}
+    if a.refresh_senate_notices and (not a.chamber or a.chamber=='senate'):
+        cache_root=Path(__file__).resolve().parents[1]/'data/corpus/committees'
+        observations.setdefault('senate',{})['noticeOriginalRefreshAttemptedAt']=now()
+        checkpoint()
+        refresh_senate_notice_sources(notices.values(),cache_root,a.workers)
     run([(f'senate/{r.get("language","en")}/{r.get("committeeCode","unknown")}/notice/{re.search(r"(?:noticeofmeeting|avisdeconvocation)/(\\d+)",url,re.I).group(1) if re.search(r"(?:noticeofmeeting|avisdeconvocation)/(\\d+)",url,re.I) else url}',
-          senate_notice,(r,)) for url,r in notices.items()])
+          senate_notice,(r,a.refresh_senate_notices)) for url,r in notices.items()])
     if not a.chamber or a.finalize:
         data = json.loads(partial.read_text())
         data['completed'] = True

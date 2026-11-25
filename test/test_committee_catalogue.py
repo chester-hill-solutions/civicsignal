@@ -1,12 +1,17 @@
 import importlib.util
+from contextlib import closing
+import gzip
+import hashlib
 from pathlib import Path
 import sys
+import sqlite3
 import unittest
 import tempfile
 from unittest.mock import patch
 root = Path(__file__).resolve().parents[1]/'scripts'
 sys.path.insert(0,str(root.parent))
 sys.path.insert(0,str(root))
+from scripts.lib.committee_files import object_path as catalogue_path
 from scripts.lib.committee_proceedings import extract_proceedings
 spec = importlib.util.spec_from_file_location('committee_catalogue',root/'committee-catalogue.py')
 catalogue = importlib.util.module_from_spec(spec)
@@ -14,6 +19,88 @@ spec.loader.exec_module(catalogue)
 
 
 class Committees(unittest.TestCase):
+    def test_senate_notice_releases_the_readonly_cache_connection(self):
+        from contextlib import closing
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            cache = base / "data/corpus/committees/downloads.sqlite"
+            cache.parent.mkdir(parents=True)
+            connect = sqlite3.connect
+            with closing(connect(cache)) as db:
+                db.execute("CREATE TABLE files(url,digest,media,error,checked)")
+            opened = []
+            def tracked(*args, **kwargs):
+                opened.append(connect(*args, **kwargs))
+                return opened[-1]
+            with patch.object(catalogue, "__file__", str(base / "scripts/committee-catalogue.py")), \
+                 patch.object(catalogue.sqlite3, "connect", side_effect=tracked), \
+                 patch.object(catalogue, "get", return_value="<html>45</html>"):
+                catalogue.senate_notice({"url":"https://sencanada.ca/en/committees/noticeofmeeting/123"})
+            self.assertEqual(len(opened), 1)
+            with self.assertRaises(sqlite3.ProgrammingError):
+                opened[0].execute("SELECT 1")
+
+    def test_refresh_senate_notice_parses_the_replaced_archived_original(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            cache_root = base / "data/corpus/committees"
+            cache_root.mkdir(parents=True)
+            url = "https://sencanada.ca/en/committees/noticeofmeeting/123"
+            stale = b'<html>45<a href="/en/content/sen/committee/45-1/TEST/1ev-100-e">Old</a></html>'
+            current = b'<html>45<a href="/en/content/sen/committee/45-1/TEST/1ev-200-e">Current</a></html>'
+
+            def store(body, checked):
+                digest = hashlib.sha256(body).hexdigest()
+                path = catalogue_path(cache_root, digest)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(gzip.compress(body))
+                with closing(sqlite3.connect(cache_root / "downloads.sqlite")) as db:
+                    db.execute("CREATE TABLE IF NOT EXISTS files(url TEXT PRIMARY KEY,digest,media,error,checked)")
+                    db.execute("INSERT OR REPLACE INTO files(url,digest,media,error,checked) VALUES(?,?,?,?,?)",
+                        (url, digest, "text/html", None, checked))
+                    db.commit()
+
+            store(stale, "2026-11-24T00:00:00+00:00")
+            notice = {"url": url, "title": "Notice", "language": "en", "committeeCode": "TEST"}
+            def refresh(root, urls, workers, refresh):
+                self.assertEqual(urls, [url])
+                self.assertTrue(refresh)
+                store(current, "2026-11-25T00:00:00+00:00")
+
+            with patch.object(catalogue, "__file__", str(base / "scripts/committee-catalogue.py")), \
+                 patch.object(catalogue, "capture", side_effect=refresh):
+                self.assertEqual(catalogue.refresh_senate_notice_sources([notice], cache_root, 1), [url])
+                result = catalogue.senate_notice(notice, require_fresh=True)
+            self.assertEqual([link["url"] for link in result["links"]],
+                ["https://sencanada.ca/en/content/sen/committee/45-1/TEST/1ev-200-e"])
+            self.assertEqual(result["sourceFetchedAt"], "2026-11-25T00:00:00+00:00")
+            self.assertEqual(result["sourceSha256"], hashlib.sha256(current).hexdigest())
+            self.assertEqual(result["sourceCapture"], "hash-verified local original")
+
+    def test_refresh_mode_invalidates_successful_senate_notice_indexes_on_resume(self):
+        indexes = {
+            "senate/en/NFFN/meetings": {"links": []},
+            "senate/en/NFFN/studies": {"links": []},
+            "senate/en/NFFN/notice/123": {"links": [{"url": "old-link"}]},
+            "house/en/FINA/Meetings": {"links": []},
+        }
+        self.assertFalse(catalogue.can_reuse_index("senate/en/NFFN/meetings", indexes, True))
+        self.assertFalse(catalogue.can_reuse_index("senate/en/NFFN/notice/123", indexes, True))
+        self.assertTrue(catalogue.can_reuse_index("senate/en/NFFN/studies", indexes, True))
+        self.assertTrue(catalogue.can_reuse_index("senate/en/NFFN/notice/123", indexes, False))
+        self.assertEqual(catalogue.remove_old_senate_notice_indexes(indexes), 1)
+        self.assertNotIn("senate/en/NFFN/notice/123", indexes)
+        self.assertIn("senate/en/NFFN/meetings", indexes)
+
+    def test_notice_refresh_refuses_urls_outside_the_official_allowlist(self):
+        with patch.object(catalogue, "capture") as capture:
+            self.assertEqual(catalogue.refresh_senate_notice_sources(
+                [{"url": "https://example.org/noticeofmeeting/1"}], Path("/tmp/unused")),
+                ["https://example.org/noticeofmeeting/1"])
+            with self.assertRaisesRegex(ValueError, "official publication host allowlist"):
+                catalogue.senate_notice({"url": "https://example.org/noticeofmeeting/1"}, require_fresh=True)
+        capture.assert_not_called()
+
     def test_house_study_is_bound_to_submitted_document_and_author(self):
         study = {'url':'https://www.ourcommons.ca/committees/en/TEST/StudyActivity?studyActivityId=123'}
         shell = '<h1 class="study-title-label">Test study</h1><div id="briefs-submitted-item"></div><script>var a = "/committees/en/TEST/StudyActivity/GetBriefs?studyActivityId=123";</script>'

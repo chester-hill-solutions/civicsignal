@@ -71,7 +71,7 @@ python3 -B scripts/refresh-weekly.py --only geds
 python3 -B scripts/schedule/weekly.py remove
 ```
 
-Installation registers the job. It runs while the user is logged in. Removal unloads it and retains its databases and dated receipts. The installed command is `python3 -B scripts/refresh-weekly.py`. Read the dated report under `dist/refresh-weekly/` to see the command, exit status, disk headroom and serving checks for each source. A failed or skipped source makes the full run fail. `latest-full.json` records the last full attempt and `latest-successful-full.json` records the last complete success. A selective retry updates `latest-partial.json`.
+Installation registers the job. It runs while the user is logged in. Removal unloads it and retains its databases and dated receipts. The installed command is `python3 -B scripts/refresh-weekly.py`. Read the dated report under `dist/refresh-weekly/` to see the command, exit status, disk headroom and serving checks for each source. A failed or skipped source makes the full run fail. `latest-full.json` records the last full attempt and `latest-successful-full.json` records the last complete success. A selective retry updates `latest-partial.json`. For an interrupted committee catalogue, `python3 -B scripts/refresh-weekly.py --only committees --resume-committee-catalogue` continues its saved acquisition and then runs the remaining publication and Worker checks. Scheduled runs begin a fresh catalogue.
 
 | Collection | What the weekly operator does |
 | --- | --- |
@@ -86,13 +86,14 @@ Installation registers the job. It runs while the user is logged in. Removal unl
 | Briefing notes | Validates the official main and nil-return CSVs and schema. The source supplies briefing titles and metadata. Run `python3 -B scripts/briefing-notes.py --help` for archive replay and bilingual title search. |
 | ECCC audits and evaluations | Captures the four index pages and referenced documents, then builds a separate passage database and checks the authenticated local API. Read `GET /api/departmental-publications/openapi.json`. Enable the preview with `DEPARTMENTAL_PUBLICATIONS_PREVIEW=on` and bind the completed `data/corpus/eccc/serving.sqlite` to `DEPARTMENTAL_PUBLICATIONS_DB` in the local Worker harness. PDF text extraction uses `pdftotext`. |
 | Hansard and Canada Gazette | Captures both chambers for the most recent completed Toronto week and checks each listed edition against an authenticated exact lookup. Gazette discovers the newest regular Part I and Part II issues in both languages. A Gazette refresh covers those issue dates. Historical backfill and missed weeks remain visible as gaps. |
-| GEDS, parliamentary catalogues, Journals and votes, written questions, and the full committee corpus | Runs their existing acquisition and publication commands against the local stores, then checks the corresponding Worker routes. An unchanged GEDS ZIP can replay even when the host lacks space to construct a new snapshot. |
+| GEDS, parliamentary catalogues, Journals and votes, and written questions | Runs their acquisition and publication commands against the local stores, then checks the corresponding Worker routes. An unchanged GEDS ZIP can replay even when the host lacks space to construct a new snapshot. |
+| Committee corpus | Refreshes Senate meeting notices before extracting their publication links. The downloader checks the digest and timestamp of each parsed notice and fetches the other linked originals. The operator then builds the corpus, verifies its archived files, publishes to local D1, and tests bilingual retrieval. |
 
 The large rebuilds need room for the existing generation and its replacement. A disk refusal records the measured available and required space in the report. Resume with `--only` after making space. Federal bulk acquisitions keep the last fully published set while building its successor. Cloudflare staging credentials are used separately by the statutes publication runner.
 
 ## Failure handling
 
-- A failed step keeps the previous serving data; every intake publishes transactionally and refuses an older observation.
+- Use the dated result to identify the last completed stage. Acquisition can checkpoint new source bytes before a serving generation is ready. The notice intake can retain successful editions and still return an error for other publisher URLs. Check its acquisition receipt and the Worker result separately.
 - Re-run the same command after fixing the cause. Identical input adds no records and no change events.
 - A publisher defect that the intake cannot resolve is reported, not hidden: committee calls expose `pendingChange` and `contentConflict`, and consultations expose `stale` and `removed` counts.
 - Keep the receipts. They are the dated evidence that a quiet day was quiet, rather than a failed fetch.

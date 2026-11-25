@@ -58,7 +58,10 @@ def collect(root, collection, fetch=capture_page):
     previous_id = ""
     while total is None or len(records) < total:
         url = API + "?" + urlencode({"fq": "collection:" + collection, "sort": "id asc", "rows": 50, "start": len(records)})
-        page, sha = fetch(root, url)
+        try:
+            page, sha = fetch(root, url)
+        except OSError as error:
+            raise RuntimeError(f"Could not fetch {collection} catalogue at offset {len(records)}: {error}") from error
         total = page["count"] if total is None else total
         if total != page["count"] or total <= 0 or not page["results"]:
             raise ValueError("Federal disclosure count changed or page is unexpectedly empty")
