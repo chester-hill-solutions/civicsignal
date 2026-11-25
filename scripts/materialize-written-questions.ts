@@ -13,7 +13,23 @@ const SEARCH_OVERLAP_CHARS = 64;
 const HOUSE_BINDING = /\{\s*"binding"\s*:\s*"CIVIC_DB"\s*,\s*"database_name"\s*:\s*"[^"]+"\s*,\s*"database_id"\s*:\s*"([0-9a-f-]{36})"/u;
 const PROJECT_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
-const { DatabaseSync: Sqlite } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof DatabaseSync };
+type SqliteConstructor = new (path: string, options?: Record<string, boolean>) => DatabaseSync;
+const sqliteModule = createRequire(import.meta.url)(process.versions['bun'] ? 'bun:sqlite' : 'node:sqlite') as {
+  Database?: SqliteConstructor;
+  DatabaseSync?: SqliteConstructor;
+};
+const Sqlite: SqliteConstructor = (() => {
+  const constructor = process.versions['bun'] ? sqliteModule.Database : sqliteModule.DatabaseSync;
+  if (!constructor) throw new Error('The active JavaScript runtime does not provide its synchronous SQLite module.');
+  return constructor;
+})();
+
+export function openSqlite(path: string, readOnly = false): DatabaseSync {
+  const options: Record<string, boolean> = process.versions['bun']
+    ? { readonly: readOnly, create: !readOnly, strict: true }
+    : { readOnly };
+  return new Sqlite(path, options);
+}
 
 interface MaterializationStats {
   questions: number;
@@ -282,14 +298,14 @@ function databaseFile(stateDirectory: string) {
 async function main(args: string[]) {
   const [sourcePath, statePath = '.wrangler/written-questions-final'] = args;
   if (!sourcePath || args.length > 2) throw new Error('Usage: bun scripts/materialize-written-questions.ts <closed-local-source.sqlite> [local-state-directory]');
-  const source = new Sqlite(resolve(sourcePath), { readOnly: true });
+  const source = openSqlite(resolve(sourcePath), true);
   const expected = sourceStats(source);
   const digest = await sha256File(resolve(sourcePath));
   const stateDirectory = resolve(PROJECT_ROOT, statePath);
   mkdirSync(stateDirectory, { recursive: true });
   const databaseId = wranglerDatabaseId();
   applyLocalMigrations(databaseId, stateDirectory);
-  const target = new Sqlite(databaseFile(stateDirectory));
+  const target = openSqlite(databaseFile(stateDirectory));
   try {
     createStage(target);
     target.exec('BEGIN IMMEDIATE');
