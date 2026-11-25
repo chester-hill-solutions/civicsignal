@@ -183,8 +183,8 @@ def _local_name(tag):
     return tag.rsplit("}", 1)[-1]
 
 
-def iter_mods(stream):
-    """Yield identifier/title samples from the publisher's streaming MODS XML exports."""
+def iter_mods_records(stream):
+    """Yield one identified MODS element at a time before releasing its XML tree."""
     root_name = None
     root_namespace = None
     root_element = None
@@ -229,7 +229,7 @@ def iter_mods(stream):
         if not identifier or not title:
             raise ValueError(f"MODS record {count + 1} must have a recordIdentifier and title")
         count += 1
-        yield identifier, title, "MODS XML UTF-8"
+        yield identifier, title, element
         if root_element is not None:
             root_element.clear()
         stack.pop()
@@ -237,6 +237,11 @@ def iter_mods(stream):
         raise ValueError("ZIP XML payload is empty or lacks a MODS collection root")
     if count == 0:
         raise ValueError("MODS export contains no records")
+
+
+def iter_mods(stream):
+    for identifier, title, _ in iter_mods_records(stream):
+        yield identifier, title, "MODS XML UTF-8"
 
 
 def validate_zip(path: Path, category: str, seen_db: sqlite3.Connection):
