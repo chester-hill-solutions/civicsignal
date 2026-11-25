@@ -1365,25 +1365,25 @@
     }
   },
   "pipelineRepairValidation": {
-    "revision": "980b743",
+    "revision": "bd529b0b09e4295b8c2ae99b05f7a009967487bd",
     "validate": {
-      "file": "dist/refresh-weekly/validate-bounded-hash-final-20261125.log",
-      "sha256": "318caa9a0b59b7282ad7a036b9f32eca771b49f49e8c51a8653deb1e3ce8b2d0",
+      "file": "dist/refresh-weekly/validate-numeric-index-20261125.log",
+      "sha256": "46a4dab34b068e164edf440c998ea7670f4b728976ec9df77b40bc301f4fea23",
       "testFiles": 159,
-      "passed": 2703,
+      "passed": 2711,
       "skipped": 19
     },
     "python": {
-      "file": "dist/refresh-weekly/pipeline-python-final-20261125.log",
-      "sha256": "f08bb2cd7ffe6a3e7dd8c8dceb95c1b40d2df8c8892ac3798745834cba879ed6",
-      "intakeDiscovery": 338,
+      "file": "dist/refresh-weekly/python-compact-with-ledger-final-20261125.log",
+      "sha256": "ef19a1c6313dc539b6432aaf150e16f20919312611231d03cfa999eeafc07c1f",
+      "intakeDiscovery": 346,
       "parliamentaryVotes": 8,
       "writtenQuestions": 13,
       "protectedCopy": 31
     },
     "build": {
-      "file": "dist/refresh-weekly/build-bounded-hash-final-20261125.log",
-      "sha256": "6e57f79f51e445f76906842b81f5dd41972f268de404a0db967858a8f61224dc",
+      "file": "dist/refresh-weekly/build-numeric-index-20261125.log",
+      "sha256": "5439ddf6c9562a892186fe8df65b1e1b2bb263c77cd6cccafacf99e9d71b78a2",
       "localDryRunBundles": 6
     }
   },
@@ -1463,5 +1463,208 @@
       "committee calls through the Worker against the acquired corpus computes dated states and follows bilingual listings to their acquired studies",
       "consultations through the Worker against the acquired catalogue serves reconciled coverage, bilingual results and revisions from the acquired observation"
     ]
+  },
+  "writtenQuestionArchiveAllocation": {
+    "trial": {
+      "receipt": "dist/refresh-weekly/wq-compact-trial-20261125.json",
+      "sha256": "d1972471feea17667c12980c12916b9e371c26d3d01f8eb8e38a90bf591f992b"
+    },
+    "completePass": {
+      "receipt": "dist/refresh-weekly/wq-compact-full-20261125.json",
+      "sha256": "d771abd03c255c5c77d8abdc28d782357ad796043a7cdd5f17ba9f5cf1417535"
+    },
+    "independentReadback": {
+      "receipt": "dist/refresh-weekly/wq-compact-whole-archive-proof-20261125.json",
+      "sha256": "039c0db92e267d8d3c1ef5fb74528e87c5e457454fe43d4e1e8a00a36655c408"
+    },
+    "objectsVerified": 35258,
+    "htmlFilesCompacted": 21666,
+    "logicalArchiveBytes": 5396828499,
+    "allocatedBytesSaved": 3941097472,
+    "namesAndLogicalSizesSha256": "9dbc3798c201c6e472d1008ee228d960205c28a7f2b4bde48273e1883cc5b4dc",
+    "readbackNote": "The initial ledger used zero for the four HTML files kept at their original allocation. The independent manifest uses the verified logical size of every file."
+  },
+  "writtenQuestionFullRecovery": {
+    "receipt": "dist/refresh-weekly/2026-11-25T12-20-11.369722Z.json",
+    "sha256": "e08bd7ceb2a316e963ff13da709d5de56019483b61b3a54c9c812fbfab08581c",
+    "startedAt": "2026-11-25T12:01:50.525578Z",
+    "finishedAt": "2026-11-25T12:20:11.369589Z",
+    "runtime": "Installed weekly LaunchAgent program and environment, selected written-questions step",
+    "materialization": {
+      "materialized": true,
+      "target": "isolated-local-d1",
+      "sourceSha256": "2c27c3ada6930e38be235beaa345ecaac40b03b5548130d6c3b4db74741c743b",
+      "questions": 3456,
+      "documents": 14023,
+      "chunks": 56501,
+      "indexedPassages": 59957,
+      "sourceTextCharacters": 378494094,
+      "objectBytesCopied": 0,
+      "sourceEquivalent": true,
+      "retainedFtsIndex": true,
+      "ftsStageUpdates": {
+        "retained": 0,
+        "inserted": 0,
+        "replaced": 59957,
+        "removed": 0
+      },
+      "actualHandlerChecks": {
+        "q1Documents": 1,
+        "q1010Documents": 2,
+        "q1010AnswerState": "available",
+        "q1010SearchHits": 2
+      }
+    },
+    "verifiedObjects": {
+      "referenced": 16109,
+      "invalid": []
+    },
+    "catalogue": {
+      "officialReported": 1728,
+      "pages": 87,
+      "pageSize": 20,
+      "enumeratedEn": 1728,
+      "enumeratedFr": 1728,
+      "complete": true,
+      "detailsFetched": 3456,
+      "detailsReused": 0,
+      "detailsRefetched": 3456
+    },
+    "compaction": {
+      "allocatedAfter": 68227072,
+      "allocatedBefore": 533573632,
+      "compacted": 2532,
+      "examined": 40322,
+      "freedBytes": 465346560,
+      "logicalBytes": 527667308,
+      "outcomes": {
+        "already_compressed": 24198,
+        "compacted": 2532,
+        "no_savings": 4,
+        "not_html": 13588
+      },
+      "processedNamesAndSizesSha256": "c8f03bb72ef0bae47f348e3300cc580a6a6c95dc0858bc2371e482f078742105",
+      "root": "data/corpus/written-questions",
+      "sampleAfter": {
+        "allocatedAfter": 32768,
+        "allocatedBefore": 237568,
+        "logicalBytes": 236910,
+        "sha256": "ffe9e7379a9cefc2e18d82b03642a4e653a701c04d6505327b528a8f490a9c41",
+        "status": "compacted"
+      },
+      "status": "ok"
+    },
+    "authenticatedServing": "passed"
+  },
+  "weeklyCurrentStatus": {
+    "receipt": "dist/refresh-weekly/weekly-status-after-20261125T122011.json",
+    "sha256": "1fbadc469c8db36155ce1e267f7d600c11a24306faf6a49aea2bc13403d78e70",
+    "lastFull": {
+      "report": "2026-11-25T09-20-11.840194Z.json",
+      "finishedAt": "2026-11-25T09:20:11.839874Z",
+      "ok": false,
+      "configuredAtRun": 29,
+      "passed": 20,
+      "failed": [
+        "federal-guidance",
+        "consultation-notices",
+        "eccc",
+        "departmental-report-editions",
+        "departmental-report-documents",
+        "departmental-report-html",
+        "federal-policy-editions",
+        "federal-procurement",
+        "written-questions"
+      ],
+      "missingFromCurrentConfiguration": []
+    },
+    "latestPerStep": {
+      "passed": 23,
+      "failed": 6,
+      "unverified": 0
+    },
+    "incompleteSources": {
+      "federal-guidance": {
+        "listedEditions": 5966,
+        "verifiedThisRun": 5964,
+        "failedEditions": 2,
+        "linkedReferences": 0,
+        "availableEditions": 5964
+      },
+      "consultation-notices": {
+        "openConsultations": 71,
+        "editions": 142,
+        "publishedFetchedEditions": 98,
+        "publishedArchivedSources": 100,
+        "counts": {
+          "fetch-error": 2,
+          "fetched": 96,
+          "fetched-reused-url": 4,
+          "http-error": 7,
+          "missing-link": 26,
+          "published-editions": 98,
+          "unrecognized-url": 9
+        }
+      },
+      "departmental-report-editions": {
+        "issuerLandingPagesExpected": 435,
+        "issuerLandingPagesFetched": 396,
+        "issuerLandingPagesFailed": 38,
+        "issuerLandingPagesSkipped": 1
+      },
+      "departmental-report-documents": {
+        "directLinkCitations": 117,
+        "fetchedTargets": 116,
+        "failedTargets": 0,
+        "verifiedCitations": 105,
+        "reviewCitations": 12
+      },
+      "departmental-report-html": {
+        "candidateCitations": 1708,
+        "candidateTargets": 1696,
+        "processedTargets": 0,
+        "remainingPending": 0,
+        "targetStatusCounts": {
+          "fetch-failed": 2,
+          "fetched": 1677,
+          "not-found": 4,
+          "out-of-policy": 12,
+          "unreadable": 1
+        }
+      },
+      "federal-policy-editions": {
+        "registeredLanguageIds": 1378,
+        "linkedPolicyLanguageIds": 444,
+        "uniquePdfTargets": 537,
+        "latestFetch": {
+          "retrieved": 533,
+          "failed": 4
+        },
+        "titleChecks": {
+          "review": 10,
+          "matched": 527
+        },
+        "editionIdentityChecks": {
+          "printed-catalogue-title": 2,
+          "catalogue-title-first-three-pages": 527,
+          "printed-catalogue-heading": 1,
+          "printed-register-title": 6,
+          "review": 1
+        }
+      }
+    },
+    "authenticatedServingPassed": [
+      "consultation-notices",
+      "eccc",
+      "gazette",
+      "gazette-year",
+      "parliament",
+      "hansard-house",
+      "hansard-senate",
+      "geds",
+      "written-questions",
+      "committees"
+    ],
+    "availableBytesAfterRun": 4710400000
   }
 }
