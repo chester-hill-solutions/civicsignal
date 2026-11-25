@@ -33,6 +33,7 @@ MIGRATION = (
     / "migrations"
     / "0001_dp.sql"
 )
+ALTERNATE_MIGRATION = MIGRATION.with_name("0003_dp_alternate_documents.sql")
 
 
 def entry(language, title, href, series="eval", index_url=None):
@@ -80,6 +81,7 @@ def connect():
     db = sqlite3.connect(":memory:")
     db.row_factory = sqlite3.Row
     db.executescript(MIGRATION.read_text(encoding="utf-8"))
+    db.executescript(ALTERNATE_MIGRATION.read_text(encoding="utf-8"))
     return db
 
 
@@ -126,6 +128,97 @@ class ECCCIntake(unittest.TestCase):
                 "https://www.canada.ca/en/report.html",
             },
         )
+
+    def test_reciprocal_hreflang_is_additive_and_replay_keeps_index_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "archive"
+            source_url = "https://www.canada.ca/en/report.html"
+            target_url = "https://www.canada.ca/fr/rapport.html"
+            source_body = (
+                '<html lang="en"><head><title>English report</title>'
+                '<link rel="alternate" hreflang="fr" href="/fr/rapport.html"></head>'
+                "<body><main><h1>English report</h1></main></body></html>"
+            ).encode()
+            target_body = (
+                '<html lang="fr"><head><title>Rapport français</title>'
+                '<link rel="alternate" hreflang="en" href="/en/report.html"></head>'
+                "<body><main><h1>Rapport français</h1><p>Texte officiel français.</p></main></body></html>"
+            ).encode()
+            source_hash = archive(root, source_body)
+            target_hash = archive(root, target_body)
+            cache = {
+                source_url: {"digest": source_hash, "media": "text/html", "size": len(source_body), "final_url": source_url},
+                target_url: {"digest": target_hash, "media": "text/html", "size": len(target_body), "final_url": target_url},
+            }
+            source = entry("en", "English report", source_url)
+            refs = intake._alternate_references(root, [source], cache)
+            self.assertEqual(len(refs), 1)
+            work_id = intake.work_id("eval", source)
+            works = intake.pair_entries([source], {})["works"]
+            intake.attach_documents(root, works, cache)
+            verified = intake._verified_alternate_documents(
+                root, works, refs, cache, "2026-11-25T12:00:00Z"
+            )
+            self.assertEqual(len(verified), 1)
+            alternate = verified[0]
+            self.assertEqual(alternate["work_id"], work_id)
+            self.assertEqual(alternate["origin_url"], source_url)
+            self.assertEqual(alternate["origin_sha256"], source_hash)
+            self.assertEqual(alternate["hreflang"], "fr")
+            self.assertEqual(alternate["source_fiscal_year"], "2025 to 2026")
+            self.assertEqual(alternate["url"], target_url)
+            self.assertEqual(alternate["sha256"], target_hash)
+            self.assertEqual(alternate["heading"], "Rapport français")
+            self.assertEqual(alternate["identity_method"], "reciprocal-hreflang-html-lang-title-h1")
+
+            db = connect()
+            try:
+                observed = "2026-11-25T12:00:00Z"
+                keys = {(work_id, "fr", target_url)}
+                intake.write_inventory(db, works, observed, gaps=intake.pair_entries([source], {})["gaps"], alternate_documents=verified,
+                                       alternate_reference_keys=keys)
+                first_revision = db.execute("SELECT revision FROM dp_inventory").fetchone()[0]
+                intake.write_inventory(db, works, observed, gaps=intake.pair_entries([source], {})["gaps"], alternate_documents=verified,
+                                       alternate_reference_keys=keys)
+                self.assertEqual(db.execute("SELECT id FROM dp_works").fetchone()[0], work_id)
+                self.assertEqual(db.execute("SELECT COUNT(*) FROM dp_editions").fetchone()[0], 1)
+                self.assertEqual(db.execute("SELECT language FROM dp_editions").fetchone()[0], "en")
+                self.assertEqual(db.execute("SELECT COUNT(*) FROM dp_alternate_documents WHERE status='verified'").fetchone()[0], 1)
+                self.assertEqual(db.execute("SELECT revision FROM dp_inventory").fetchone()[0], first_revision)
+                self.assertEqual(db.execute("SELECT COUNT(*) FROM dp_gaps WHERE kind='pairing'").fetchone()[0], 1)
+            finally:
+                db.close()
+
+    def test_ambiguous_hreflang_candidates_are_not_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "archive"
+            source_url = "https://www.canada.ca/en/report.html"
+            body = (
+                '<html lang="en"><head><title>Report</title>'
+                '<link rel="alternate" hreflang="fr" href="/fr/rapport-a.html">'
+                '<link rel="alternate" hreflang="fr" href="/fr/rapport-b.html"></head>'
+                "<body><main><h1>Report</h1></main></body></html>"
+            ).encode()
+            digest = archive(root, body)
+            source = entry("en", "Report", source_url)
+            refs = intake._alternate_references(
+                root,
+                [source],
+                {source_url: {"digest": digest, "media": "text/html"}},
+            )
+            self.assertEqual(refs, [])
+
+    def test_pre_alternate_catalogue_migrates_additively(self):
+        db = connect_plain()
+        try:
+            db.execute("INSERT INTO dp_inventory VALUES(1,'cutoff','observed','revision','{}')")
+            intake._load_migration(db)
+            tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            self.assertIn("dp_alternate_documents", tables)
+            self.assertEqual(db.execute("SELECT cutoff FROM dp_inventory").fetchone()[0], "cutoff")
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM dp_editions").fetchone()[0], 0)
+        finally:
+            db.close()
 
     def test_unchanged_replay_changed_bytes_and_removal(self):
         db = connect()

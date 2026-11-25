@@ -25,6 +25,8 @@ from lib.committee_files import read_object
 
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATION = ROOT / "preview/departmental-publications/migrations/0002_dp_passages.sql"
+ALTERNATE_MIGRATION = ROOT / "preview/departmental-publications/migrations/0003_dp_alternate_documents.sql"
+ALTERNATE_PASSAGE_MIGRATION = ROOT / "preview/departmental-publications/migrations/0004_dp_alternate_passages.sql"
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
 OMIT = {"script", "style", "noscript", "svg", "nav", "footer", "header", "aside"}
 
@@ -235,7 +237,13 @@ def build_generation(catalogue, output, root):
     fd, temp_name = tempfile.mkstemp(prefix="." + output.name + ".", suffix=".tmp", dir=output.parent)
     os.close(fd)
     temp_path = Path(temp_name)
-    counts, gaps = {"documents_seen": 0, "documents_extracted": 0, "passages": 0}, []
+    counts, gaps = {
+        "documents_seen": 0,
+        "documents_extracted": 0,
+        "alternate_documents_seen": 0,
+        "alternate_documents_extracted": 0,
+        "passages": 0,
+    }, []
     try:
         src_uri = "file:" + quote(str(catalogue.resolve())) + "?mode=ro"
         src = sqlite3.connect(src_uri, uri=True)
@@ -246,7 +254,11 @@ def build_generation(catalogue, output, root):
         # Avoid a second on-disk journal and external sort while constructing it.
         dst.execute("PRAGMA journal_mode=OFF")
         dst.execute("PRAGMA temp_store=MEMORY")
+        dst.executescript(ALTERNATE_MIGRATION.read_text())
         dst.executescript(MIGRATION.read_text())
+        extraction_columns = {row[1] for row in dst.execute("PRAGMA table_info(dp_extraction_runs)")}
+        if "alternate_documents_extracted" not in extraction_columns:
+            dst.executescript(ALTERNATE_PASSAGE_MIGRATION.read_text())
         cutoff_row = dst.execute("SELECT cutoff FROM dp_inventory WHERE singleton=1").fetchone()
         if not cutoff_row:
             raise ValueError("catalogue has no inventory cutoff; refusing empty serving build")
@@ -261,10 +273,17 @@ def build_generation(catalogue, output, root):
                 prior.close()
         dst.execute("DELETE FROM dp_passages")
         rows = dst.execute("SELECT id,work_id,language,url,sha256,content_sha256,media,status FROM dp_documents ORDER BY id").fetchall()
-        for doc_id, work_id, lang, url, source_hash, content_hash, media, status in rows:
-            counts["documents_seen"] += 1
-            if status != "stored" or not source_hash:
-                if status == "stored":
+        alternate_rows = dst.execute(
+            """SELECT id,work_id,language,url,sha256,content_sha256,media,status
+               FROM dp_alternate_documents WHERE status='verified' ORDER BY id"""
+        ).fetchall()
+        alternate_ids = {row[0] for row in alternate_rows}
+        for doc_id, work_id, lang, url, source_hash, content_hash, media, status in [*rows, *alternate_rows]:
+            alternate = doc_id in alternate_ids
+            counts["alternate_documents_seen" if alternate else "documents_seen"] += 1
+            required_status = "verified" if alternate else "stored"
+            if status != required_status or not source_hash:
+                if status == required_status:
                     raise ValueError(f"Stored document {doc_id} lacks its source digest")
                 continue
             # Missing or corrupted content-addressed originals are catalogue integrity
@@ -280,18 +299,26 @@ def build_generation(catalogue, output, root):
             if not passages:
                 gaps.append({"document_id": doc_id, "url": url, "reason": "no searchable text extracted"})
                 continue
-            counts["documents_extracted"] += 1
+            counts["alternate_documents_extracted" if alternate else "documents_extracted"] += 1
             for p in passages:
                 pid = passage_id(doc_id, content_hash or source_hash, p["ordinal"])
                 fields = ("passage_id", "document_id", "work_id", "language", "ordinal", "kind", "section", "page", "table_number", "table_caption", "row_number", "column_number", "attribution", "citation_url", "text", "content_sha256", "source_sha256")
                 val = (pid, doc_id, work_id, lang, p["ordinal"], p["kind"], p.get("section"), p.get("page"), p.get("table_number"), p.get("table_caption"), p.get("row_number"), p.get("column_number"), p.get("attribution"), p["citation_url"], p["text"], content_hash or source_hash, source_hash)
                 dst.execute("INSERT INTO dp_passages(" + ",".join(fields) + ") VALUES(" + ",".join("?" for _ in fields) + ")", val)
                 counts["passages"] += 1
-        if counts["documents_seen"] == 0 or counts["documents_extracted"] == 0:
+        if counts["documents_seen"] + counts["alternate_documents_seen"] == 0 or counts["documents_extracted"] + counts["alternate_documents_extracted"] == 0:
             raise ValueError("candidate contains no extracted searchable documents")
         dst.execute("INSERT INTO dp_passages_fts(dp_passages_fts) VALUES('rebuild')")
         built_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        dst.execute("INSERT OR REPLACE INTO dp_extraction_runs VALUES(1,?,?,?,?,?,?)", (built_at, cutoff, counts["documents_seen"], counts["documents_extracted"], counts["passages"], json.dumps(gaps, ensure_ascii=False)))
+        dst.execute(
+            """INSERT OR REPLACE INTO dp_extraction_runs
+               (singleton,built_at,catalogue_cutoff,documents_seen,documents_extracted,
+                passages,gaps_json,alternate_documents_extracted)
+               VALUES(1,?,?,?,?,?,?,?)""",
+            (built_at, cutoff, counts["documents_seen"], counts["documents_extracted"],
+             counts["passages"], json.dumps(gaps, ensure_ascii=False),
+             counts["alternate_documents_extracted"]),
+        )
         dst.commit()
         dst.execute("PRAGMA journal_mode=DELETE")
         if dst.execute("PRAGMA quick_check").fetchone()[0] != "ok":

@@ -72,6 +72,66 @@ class EcccPassageTests(unittest.TestCase):
                 eccc.build(catalogue, output, root)
             self.assertEqual(hashlib.sha256(output.read_bytes()).hexdigest(), before)
 
+    def test_only_verified_alternate_documents_enter_search_with_target_citations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"
+            catalogue = Path(tmp) / "catalogue.sqlite"
+            output = Path(tmp) / "serving.sqlite"
+            body = (
+                '<html lang="fr"><body><main><h1>Rapport traduit</h1>'
+                "<p>Le contenu français du rapport reste citable.</p></main></body></html>"
+            ).encode()
+            digest = hashlib.sha256(body).hexdigest()
+            obj = root / "objects" / digest[:2] / (digest + ".gz")
+            obj.parent.mkdir(parents=True)
+            obj.write_bytes(gzip.compress(body))
+            conn = sqlite3.connect(catalogue)
+            conn.executescript((SCRIPT.parents[1] / "preview/departmental-publications/migrations/0001_dp.sql").read_text())
+            conn.executescript((SCRIPT.parents[1] / "preview/departmental-publications/migrations/0003_dp_alternate_documents.sql").read_text())
+            conn.execute("INSERT INTO dp_inventory VALUES(1,'cutoff','observed','revision','{}')")
+            columns = (
+                "id,work_id,series,source_language,source_fiscal_year,language,kind,origin_label,origin_url,origin_sha256,"
+                "hreflang,url,final_url,sha256,content_sha256,media,bytes,html_lang,title,heading,"
+                "identity_method,status,observed_at"
+            )
+            values = (
+                "alt-verified", "stable-work-id", "audit", "en", "2025 to 2026", "fr", "report", "Report",
+                "https://www.canada.ca/en/report.html", "1" * 64, "fr",
+                "https://www.canada.ca/fr/rapport.html", "https://www.canada.ca/fr/rapport.html",
+                digest, digest, "text/html", len(body), "fr", "Rapport traduit - Canada.ca",
+                "Rapport traduit", "reciprocal-hreflang-html-lang-title-h1", "verified", "observed",
+            )
+            conn.execute(f"INSERT INTO dp_alternate_documents({columns}) VALUES({','.join('?' for _ in values)})", values)
+            pending = list(values)
+            pending[0] = "alt-pending"
+            pending[10] = "https://www.canada.ca/fr/rapport-pending.html"
+            pending[11] = pending[10]
+            pending[-2] = "pending"
+            conn.execute(f"INSERT INTO dp_alternate_documents({columns}) VALUES({','.join('?' for _ in pending)})", pending)
+            conn.commit()
+            conn.close()
+
+            result = eccc.build(catalogue, output, root)
+            self.assertEqual(result["alternate_documents_seen"], 1)
+            self.assertEqual(result["alternate_documents_extracted"], 1)
+            serving = sqlite3.connect(output)
+            try:
+                rows = serving.execute(
+                    "SELECT document_id,work_id,language,citation_url,text FROM dp_passages ORDER BY ordinal"
+                ).fetchall()
+                self.assertTrue(rows)
+                self.assertEqual({row[0] for row in rows}, {"alt-verified"})
+                self.assertEqual({row[1] for row in rows}, {"stable-work-id"})
+                self.assertEqual({row[2] for row in rows}, {"fr"})
+                self.assertTrue(all(row[3] == "https://www.canada.ca/fr/rapport.html" for row in rows))
+                self.assertTrue(any("contenu français du rapport" in row[4] for row in rows))
+                extracted = serving.execute(
+                    "SELECT alternate_documents_extracted FROM dp_extraction_runs WHERE singleton=1"
+                ).fetchone()[0]
+                self.assertEqual(extracted, 1)
+            finally:
+                serving.close()
+
 
 if __name__ == "__main__":
     unittest.main()

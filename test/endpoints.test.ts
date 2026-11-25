@@ -2380,6 +2380,9 @@ describe('departmental publications through the Worker', () => {
     const coverage = await get(path + '/coverage?limit=1');
     expect(coverage.documents).toBe(source.prepare('SELECT count(*) AS n FROM dp_documents').get()?.n);
     expect(coverage.passages).toBe(source.prepare('SELECT count(*) AS n FROM dp_passages').get()?.n);
+    expect(coverage.alternateDocuments).toBe(source.prepare("SELECT count(*) AS n FROM dp_alternate_documents WHERE status='verified'").get()?.n);
+    expect(coverage.alternatePassages).toBe(source.prepare(`SELECT count(*) AS n FROM dp_passages p
+      JOIN dp_alternate_documents a ON a.id=p.document_id WHERE a.status='verified'`).get()?.n);
     if (coverage.nextCursor) expect((await get(path + '/coverage?limit=1&cursor=' + String(coverage.nextCursor))).gaps)
       .not.toEqual(coverage.gaps);
     for (const language of ['en', 'fr']) {
@@ -2399,6 +2402,38 @@ describe('departmental publications through the Worker', () => {
         expect.objectContaining({ document_id: sample.document_id, content_sha256: sample.content_sha256 }),
       ]));
     }
+    const alternate = source.prepare(`SELECT p.work_id,p.language,p.passage_id,p.source_sha256,p.citation_url,p.text,
+      a.origin_url,a.origin_sha256,a.hreflang,a.identity_method,a.url AS target_url,a.heading
+      FROM dp_passages p JOIN dp_alternate_documents a ON a.id=p.document_id
+      WHERE a.status='verified' AND p.kind='heading'
+        AND NOT EXISTS(SELECT 1 FROM dp_editions e WHERE e.work_id=p.work_id AND e.language=p.language)
+      ORDER BY p.passage_id LIMIT 1`).get() as Record<string, unknown> | undefined;
+    if (!alternate) throw new Error('No verified alternate-only ECCC passage in the acquired database');
+    const alternateQuery = new URLSearchParams({ query: String(alternate.text), language: String(alternate.language),
+      workId: String(alternate.work_id), limit: '100' });
+    const alternateHits = await get(path + '?' + alternateQuery);
+    expect(alternateHits.items).toEqual(expect.arrayContaining([expect.objectContaining({
+      passage_id: alternate.passage_id,
+      discovery_method: 'publisher-alternate',
+      indexed_edition_available: false,
+      origin_url: alternate.origin_url,
+      origin_sha256: alternate.origin_sha256,
+      hreflang: alternate.hreflang,
+      identity_method: alternate.identity_method,
+      citation_url: alternate.citation_url,
+      source_sha256: alternate.source_sha256,
+    })]));
+    const alternateEdition = await get(path + '/' + String(alternate.work_id) + '?language=' + String(alternate.language));
+    expect(alternateEdition.edition).toBeNull();
+    expect(alternateEdition.documents).toEqual([]);
+    expect(alternateEdition.alternateDocuments).toEqual(expect.arrayContaining([expect.objectContaining({
+      url: alternate.target_url,
+      heading: alternate.heading,
+      origin_url: alternate.origin_url,
+      origin_sha256: alternate.origin_sha256,
+      hreflang: alternate.hreflang,
+      identity_method: alternate.identity_method,
+    })]));
     expect((await fixture.send(path + '?query=test&language=en&cursor=' + 'a'.repeat(64) + '.1')).status).toBe(400);
   });
 });

@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import committee_files
 from lib.eccc_index import LANGUAGES, SERIES, document_id, parse_index, work_id
 
-TOOL_VERSION = "1.0.0"
+TOOL_VERSION = "1.1.0"
 DEFAULT_ROOT = Path("data/corpus/eccc")
 INDEX_URLS = {
     ("eval", "en"): "https://www.canada.ca/en/environment-climate-change/corporate/transparency/priorities-management/evaluations.html",
@@ -38,6 +38,7 @@ MIGRATION = (
     / "migrations"
     / "0001_dp.sql"
 )
+ALTERNATE_MIGRATION = MIGRATION.with_name("0003_dp_alternate_documents.sql")
 
 
 def _observed_at():
@@ -139,6 +140,191 @@ def parse_alternates(html, document_url):
     parser.feed(html)
     parser.close()
     return parser.alternates
+
+
+class _PublisherAlternatesParser(HTMLParser):
+    """Read the publisher's formal alternate-language declarations."""
+
+    def __init__(self, document_url):
+        super().__init__(convert_charrefs=True)
+        self.document_url = document_url
+        self.alternates = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag != "link" or "alternate" not in attrs.get("rel", "").lower().split():
+            return
+        href, language = attrs.get("href"), attrs.get("hreflang", "").lower().split("-")[0]
+        if href and language in {"en", "fr"}:
+            self.alternates.append({"language": language, "url": urljoin(self.document_url, href)})
+
+
+class _PageIdentityParser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.language = ""
+        self.title = ""
+        self.headings = []
+        self._title = False
+        self._h1 = False
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "html":
+            self.language = attrs.get("lang", "").lower().split("-")[0]
+        elif tag == "title":
+            self._title = True
+        elif tag == "h1":
+            self._h1 = True
+            self.headings.append("")
+
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self._title = False
+        elif tag == "h1":
+            self._h1 = False
+
+    def handle_data(self, data):
+        if self._title:
+            self.title += data
+        if self._h1 and self.headings:
+            self.headings[-1] += data
+
+
+def _page_identity(html):
+    parser = _PageIdentityParser()
+    parser.feed(html)
+    parser.close()
+    return {
+        "language": parser.language,
+        "title": " ".join(parser.title.split()),
+        "heading": next((" ".join(item.split()) for item in parser.headings if item.strip()), ""),
+    }
+
+
+def parse_publisher_alternates(html, document_url):
+    parser = _PublisherAlternatesParser(document_url)
+    parser.feed(html)
+    parser.close()
+    return parser.alternates
+
+
+def _alternate_references(root, entries, cache_rows):
+    """Return only direct formal alternate links from archived index documents."""
+    result = []
+    for entry in entries:
+        for link in entry.get("links", []):
+            url = link.get("href")
+            record = cache_rows.get(url, {})
+            if not url or not record.get("digest") or record.get("error"):
+                continue
+            if (record.get("media") or "").lower().split(";", 1)[0].strip() != "text/html":
+                continue
+            body = committee_files.read_object(Path(root), record["digest"]).decode("utf-8", "replace")
+            identity = _page_identity(body)
+            if identity["language"] != entry["language"]:
+                continue
+            formal_alternates = parse_publisher_alternates(body, url)
+            targets_by_language = {}
+            for alternate in formal_alternates:
+                targets_by_language.setdefault(alternate["language"], set()).add(alternate["url"])
+            for alternate in formal_alternates:
+                if alternate["language"] == entry["language"]:
+                    continue
+                target = alternate["url"]
+                if len(targets_by_language.get(alternate["language"], ())) != 1:
+                    continue
+                if target == url or not committee_files.fetchable(target):
+                    continue
+                target_path = target.split("?", 1)[0].lower()
+                if "scripts/language.asp" in target_path:
+                    continue
+                result.append({
+                    "series": entry["series"],
+                    "source_language": entry["language"],
+                    "target_language": alternate["language"],
+                    "source_title": entry["title"],
+                    "source_year": entry.get("fiscal_year"),
+                    "source_label": link.get("label") or "",
+                    "source_kind": link.get("kind") or "other",
+                    "source_url": url,
+                    "source_final_url": record.get("final_url") or url,
+                    "source_sha256": record["digest"],
+                    "target_url": target,
+                })
+    return result
+
+
+def _verified_alternate_documents(root, works, references, cache_rows, observed_at):
+    """Build additive alternate evidence without changing indexed editions or IDs."""
+    by_source = {}
+    for ref in references:
+        by_source.setdefault((ref["series"], ref["source_language"], ref["source_url"], ref["target_url"]), ref)
+    indexed = {
+        (work["series"], language, link["href"])
+        for work in works
+        for language, edition in work["editions"].items()
+        for link in edition.get("links", [])
+    }
+    result = []
+    for work in works:
+        for language, edition in work["editions"].items():
+            for ref in by_source.values():
+                if (ref["series"], ref["source_language"], ref["source_url"]) not in {
+                    (work["series"], language, link["href"]) for link in edition.get("links", [])
+                }:
+                    continue
+                if ref["target_language"] in work["editions"] and (work["series"], ref["target_language"], ref["target_url"]) in indexed:
+                    continue
+                source_record = cache_rows.get(ref["source_url"], {})
+                target_record = cache_rows.get(ref["target_url"], {})
+                if source_record.get("digest") != ref["source_sha256"] or not target_record.get("digest") or target_record.get("error"):
+                    continue
+                if (target_record.get("media") or "").lower().split(";", 1)[0].strip() != "text/html":
+                    continue
+                target_html = committee_files.read_object(Path(root), target_record["digest"]).decode("utf-8", "replace")
+                identity = _page_identity(target_html)
+                if identity["language"] != ref["target_language"] or not identity["title"] or not identity["heading"]:
+                    continue
+                reciprocal = parse_publisher_alternates(
+                    target_html, target_record.get("final_url") or ref["target_url"]
+                )
+                if not any(
+                    item["language"] == language
+                    and item["url"] in {ref["source_url"], ref["source_final_url"]}
+                    for item in reciprocal
+                ):
+                    continue
+                alternate_id = "eccc-alt-" + hashlib.sha256(
+                    "\0".join((work["id"], ref["target_language"], ref["target_url"])).encode("utf-8")
+                ).hexdigest()[:24]
+                result.append({
+                    "id": alternate_id,
+                    "work_id": work["id"],
+                    "series": work["series"],
+                    "source_language": language,
+                    "source_fiscal_year": ref.get("source_year") or "",
+                    "language": ref["target_language"],
+                    "kind": ref["source_kind"],
+                    "origin_label": ref["source_label"],
+                    "origin_url": ref["source_url"],
+                    "origin_sha256": ref["source_sha256"],
+                    "hreflang": ref["target_language"],
+                    "url": ref["target_url"],
+                    "final_url": target_record.get("final_url") or ref["target_url"],
+                    "sha256": target_record["digest"],
+                    "content_sha256": content_digest(root, target_record),
+                    "media": target_record.get("media"),
+                    "bytes": target_record.get("size"),
+                    "html_lang": identity["language"],
+                    "title": identity["title"],
+                    "heading": identity["heading"],
+                    "identity_method": "reciprocal-hreflang-html-lang-title-h1",
+                    "status": "verified",
+                    "observed_at": observed_at,
+                })
+    unique = {item["id"]: item for item in result}
+    return [unique[key] for key in sorted(unique)]
 
 
 def pair_entries(entries, alternates):
@@ -394,6 +580,7 @@ def _inventory_revision(db):
         "dp_works": "id,series,title_en,title_fr,lead_en,lead_fr,revision",
         "dp_editions": "work_id,language,fiscal_year,title,lead,index_url",
         "dp_documents": "id,work_id,language,kind,label,url,final_url,sha256,media,bytes,status",
+        "dp_alternate_documents": "id,work_id,series,source_language,source_fiscal_year,language,kind,origin_label,origin_url,origin_sha256,hreflang,url,final_url,sha256,content_sha256,media,bytes,html_lang,title,heading,identity_method,status",
     }.items():
         facts[table] = [
             list(row)
@@ -414,6 +601,12 @@ def _counts(db, observed_at, duplicated_index_appearances=0):
         "SELECT kind,status,COUNT(*) AS count FROM dp_documents GROUP BY kind,status"
     ):
         documents.setdefault(row["kind"], {})[row["status"]] = row["count"]
+    alternate_documents = {
+        language: count
+        for language, count in db.execute(
+            "SELECT language,COUNT(*) FROM dp_alternate_documents WHERE status='verified' GROUP BY language"
+        )
+    }
     editions = {
         language: count
         for language, count in db.execute(
@@ -426,6 +619,8 @@ def _counts(db, observed_at, duplicated_index_appearances=0):
              SELECT sha256,bytes FROM dp_indexes
              UNION ALL
              SELECT sha256,bytes FROM dp_documents
+             UNION ALL
+             SELECT sha256,bytes FROM dp_alternate_documents WHERE status='verified'
            ) WHERE sha256 IS NOT NULL GROUP BY sha256"""
     ):
         archived[row["sha256"]] = row["bytes"] or 0
@@ -434,6 +629,7 @@ def _counts(db, observed_at, duplicated_index_appearances=0):
         "works": db.execute("SELECT COUNT(*) FROM dp_works").fetchone()[0],
         "editionsByLanguage": editions,
         "documentsByKindAndStatus": documents,
+        "alternateDocumentsByLanguage": alternate_documents,
         "archivedBytes": sum(archived.values()),
         "versions": db.execute("SELECT COUNT(*) FROM dp_document_versions").fetchone()[0],
         "changes": {
@@ -466,11 +662,14 @@ def write_inventory(
     gaps=(),
     duplicated_index_appearances=0,
     selected_series=SERIES,
+    alternate_documents=(),
+    alternate_reference_keys=(),
 ):
     """Atomically write prepared index, work, edition and document facts."""
     if db.in_transaction:
         raise RuntimeError("write_inventory requires a connection outside a transaction")
     db.row_factory = sqlite3.Row
+    _load_migration(db)
     db.execute("BEGIN IMMEDIATE")
     try:
         prior = db.execute(
@@ -482,6 +681,8 @@ def write_inventory(
             )
 
         selected_series = tuple(selected_series)
+        alternate_documents = tuple(alternate_documents)
+        alternate_reference_keys = set(alternate_reference_keys)
         for item in indexes:
             if not item.get("sha256"):
                 continue
@@ -612,8 +813,43 @@ def write_inventory(
                     _insert_change(
                         db, previous["work_id"], doc_id, "removed", observed_at
                     )
+            current_alternate_ids = {row["id"] for row in alternate_documents}
+            for previous in db.execute(
+                f"SELECT id,work_id,language,url FROM dp_alternate_documents WHERE work_id IN ({placeholders})",
+                tuple(scoped_work_ids),
+            ).fetchall():
+                key = (previous["work_id"], previous["language"], previous["url"])
+                if previous["id"] not in current_alternate_ids and key not in alternate_reference_keys:
+                    db.execute(
+                        "UPDATE dp_alternate_documents SET status='removed',observed_at=? WHERE id=?",
+                        (observed_at, previous["id"]),
+                    )
         else:
             prior_documents = {}
+
+        for alternate in alternate_documents:
+            db.execute(
+                """INSERT INTO dp_alternate_documents
+                   (id,work_id,series,source_language,source_fiscal_year,language,kind,origin_label,origin_url,
+                    origin_sha256,hreflang,url,final_url,sha256,content_sha256,media,bytes,
+                    html_lang,title,heading,identity_method,status,observed_at)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(id) DO UPDATE SET work_id=excluded.work_id,series=excluded.series,
+                    source_language=excluded.source_language,source_fiscal_year=excluded.source_fiscal_year,
+                    language=excluded.language,
+                    kind=excluded.kind,origin_label=excluded.origin_label,origin_url=excluded.origin_url,
+                    origin_sha256=excluded.origin_sha256,hreflang=excluded.hreflang,url=excluded.url,
+                    final_url=excluded.final_url,sha256=excluded.sha256,
+                    content_sha256=excluded.content_sha256,media=excluded.media,bytes=excluded.bytes,
+                    html_lang=excluded.html_lang,title=excluded.title,heading=excluded.heading,
+                    identity_method=excluded.identity_method,status=excluded.status,observed_at=excluded.observed_at""",
+                tuple(alternate[key] for key in (
+                    "id", "work_id", "series", "source_language", "source_fiscal_year", "language", "kind",
+                    "origin_label", "origin_url", "origin_sha256", "hreflang", "url",
+                    "final_url", "sha256", "content_sha256", "media", "bytes", "html_lang",
+                    "title", "heading", "identity_method", "status", "observed_at",
+                )),
+            )
 
         for doc_id, (work, language, edition, link) in current_documents.items():
             previous = db.execute(
@@ -754,6 +990,7 @@ def build_receipt(
         "uniqueWorks": counts["works"],
         "editionsByLanguage": counts["editionsByLanguage"],
         "documentsByKindAndStatus": counts["documentsByKindAndStatus"],
+        "alternateDocumentsByLanguage": counts["alternateDocumentsByLanguage"],
         "archivedBytes": counts["archivedBytes"],
         "versions": counts["versions"],
         "changeCounts": counts["changes"],
@@ -782,6 +1019,7 @@ def build_receipt(
 
 def _load_migration(db):
     db.executescript(MIGRATION.read_text(encoding="utf-8"))
+    db.executescript(ALTERNATE_MIGRATION.read_text(encoding="utf-8"))
 
 
 def _write_receipt(path, receipt):
@@ -877,9 +1115,30 @@ def run_intake(root, db_path, receipt_path, series=SERIES, workers=4, from_cache
         from_cache=from_cache,
     )
     alternates = discover_alternates(root, parsed_entries, document_cache)
+    alternate_refs = _alternate_references(root, parsed_entries, document_cache)
+    alternate_cache = capture_urls(
+        root,
+        [ref["target_url"] for ref in alternate_refs],
+        workers=workers,
+        refresh=True,
+        from_cache=from_cache,
+    )
+    document_cache.update(alternate_cache)
     paired = pair_entries(parsed_entries, alternates)
     gaps.extend(paired["gaps"])
     gaps.extend(attach_documents(root, paired["works"], document_cache))
+    alternate_documents = _verified_alternate_documents(
+        root, paired["works"], alternate_refs, document_cache, observed_at
+    )
+    alternate_reference_keys = {
+        (work["id"], ref["target_language"], ref["target_url"])
+        for work in paired["works"]
+        for language, edition in work["editions"].items()
+        for ref in alternate_refs
+        if ref["series"] == work["series"]
+        and ref["source_language"] == language
+        and ref["source_url"] in {link["href"] for link in edition.get("links", [])}
+    }
 
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -895,6 +1154,8 @@ def run_intake(root, db_path, receipt_path, series=SERIES, workers=4, from_cache
             gaps=gaps,
             duplicated_index_appearances=paired["duplicated_index_appearances"],
             selected_series=series,
+            alternate_documents=alternate_documents,
+            alternate_reference_keys=alternate_reference_keys,
         )
         receipt = build_receipt(
             db,

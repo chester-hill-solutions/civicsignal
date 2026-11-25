@@ -39,9 +39,9 @@ async function readPage(db: D1Database, path: string, query: Page, generation: s
 }
 
 type Generation = { built_at: string; catalogue_cutoff: string; documents_seen: number;
-  documents_extracted: number; passages: number; revision: string };
+  documents_extracted: number; alternate_documents_extracted: number; passages: number; revision: string };
 async function generation(db: D1Database) {
-  const meta = await db.prepare(`SELECT e.built_at,e.catalogue_cutoff,e.documents_seen,e.documents_extracted,
+  const meta = await db.prepare(`SELECT e.built_at,e.catalogue_cutoff,e.documents_seen,e.documents_extracted,e.alternate_documents_extracted,
     e.passages,i.revision FROM dp_extraction_runs e JOIN dp_inventory i USING (singleton) WHERE e.singleton=1`).first<Generation>();
   if (!meta) throw new AccessError('UNSUPPORTED_COVERAGE', 'No departmental publication generation is available.', 501);
   return meta;
@@ -50,23 +50,40 @@ async function generation(db: D1Database) {
 async function search(db: D1Database, path: string, query: z.output<typeof listQuery>, meta: Generation) {
   const clauses = ['dp_passages_fts MATCH ?', 'p.language=?'];
   const args = ['"' + query.query.replaceAll('"', '""') + '"', query.language];
-  for (const [column, value] of [['w.series', query.series], ['e.fiscal_year', query.fiscalYear], ['d.kind', query.kind], ['p.work_id', query.workId]] as const) {
+  for (const [column, value] of [['w.series', query.series], ["CASE WHEN a.id IS NOT NULL THEN a.source_fiscal_year ELSE e.fiscal_year END", query.fiscalYear], ['COALESCE(d.kind,a.kind)', query.kind], ['p.work_id', query.workId]] as const) {
     if (value) { clauses.push(column + '=?'); args.push(value); }
   }
-  return readPage(db, path, query, meta.built_at, { args, sql:
-    `SELECT p.passage_id,p.kind AS passage_kind,p.document_id,p.work_id,p.language,w.series,e.title,e.fiscal_year,d.kind AS document_kind,
+  const result = await readPage(db, path, query, meta.built_at, { args, sql:
+    `SELECT p.passage_id,p.kind AS passage_kind,p.document_id,p.work_id,p.language,w.series,
+    CASE WHEN a.id IS NOT NULL THEN a.heading ELSE e.title END AS title,
+    CASE WHEN a.id IS NOT NULL THEN a.source_fiscal_year ELSE e.fiscal_year END AS fiscal_year,
+    COALESCE(d.kind,a.kind) AS document_kind,e.work_id IS NOT NULL AS indexed_edition_available,
+    CASE WHEN a.id IS NULL THEN 'index' ELSE 'publisher-alternate' END AS discovery_method,
+    a.origin_url,a.origin_sha256,a.hreflang,a.identity_method,
     p.text,p.section,p.page,p.table_number,p.table_caption,p.row_number,p.column_number,p.attribution,p.citation_url,p.source_sha256
     FROM dp_passages_fts JOIN dp_passages p ON p.rowid=dp_passages_fts.rowid
-    JOIN dp_documents d ON d.id=p.document_id JOIN dp_works w ON w.id=p.work_id
-    JOIN dp_editions e ON e.work_id=p.work_id AND e.language=p.language WHERE ${clauses.join(' AND ')}
+    LEFT JOIN dp_documents d ON d.id=p.document_id
+    LEFT JOIN dp_alternate_documents a ON a.id=p.document_id AND a.status='verified'
+    JOIN dp_works w ON w.id=p.work_id
+    LEFT JOIN dp_editions e ON e.work_id=p.work_id AND e.language=p.language
+    WHERE (d.id IS NOT NULL OR a.id IS NOT NULL) AND ${clauses.join(' AND ')}
     ORDER BY rank,p.passage_id` });
+  return { ...result, items: result.items.map(item => ({
+    ...item,
+    indexed_edition_available: Boolean(item.indexed_edition_available),
+  })) };
 }
 
 async function readEdition(db: D1Database, id: string, lang: string) {
-  const edition = await db.prepare(`SELECT e.*,w.series,w.revision FROM dp_editions e
+  return db.prepare(`SELECT e.*,w.series,w.revision FROM dp_editions e
     JOIN dp_works w ON w.id=e.work_id WHERE e.work_id=? AND e.language=?`).bind(id, lang).first();
-  if (!edition) throw new AccessError('NOT_FOUND', 'No published departmental edition matches this identifier and language.', 404);
-  return edition;
+}
+
+async function readAlternateDocuments(db: D1Database, id: string, lang: string) {
+  return db.prepare(`SELECT id,work_id,series,source_language,source_fiscal_year,language,kind,
+    origin_label,origin_url,origin_sha256,hreflang,url,final_url,sha256,content_sha256,media,bytes,
+    html_lang,title,heading,identity_method,status,observed_at FROM dp_alternate_documents
+    WHERE work_id=? AND language=? AND status='verified' ORDER BY kind,id`).bind(id, lang).all();
 }
 
 export function prepareDepartmentalPublications(url: URL) {
@@ -92,19 +109,25 @@ export function prepareDepartmentalPublications(url: URL) {
            json_extract(j.value,'$.document_id') AS id,'extraction' AS kind,d.language,d.url,
            json_extract(j.value,'$.reason') AS reason FROM dp_extraction_runs e, json_each(e.gaps_json) j
            JOIN dp_documents d ON d.id=json_extract(j.value,'$.document_id') ORDER BY kind,id` });
+        const alternateDocuments = await db.prepare(`SELECT count(*) AS n FROM dp_alternate_documents WHERE status='verified'`).first<{ n: number }>();
+        const alternatePassages = await db.prepare(`SELECT count(*) AS n FROM dp_passages p JOIN dp_alternate_documents a ON a.id=p.document_id WHERE a.status='verified'`).first<{ n: number }>();
         return { ...source, documents: meta.documents_seen, searchableDocuments: meta.documents_extracted,
-          passages: meta.passages, gaps: gaps.items, nextCursor: gaps.nextCursor };
+          alternateDocuments: alternateDocuments?.n ?? 0, alternateSearchableDocuments: meta.alternate_documents_extracted,
+          alternatePassages: alternatePassages?.n ?? 0, passages: meta.passages, gaps: gaps.items, nextCursor: gaps.nextCursor };
       }
       const id = exact?.[1];
       if (!id) throw new RequestInputError('Missing publication identifier.');
       const edition = await readEdition(db, id, request.query.language);
+      const alternateDocuments = await readAlternateDocuments(db, id, request.query.language);
+      if (!edition && !alternateDocuments.results.length) throw new AccessError('NOT_FOUND', 'No indexed edition or verified publisher alternate matches this identifier and language.', 404);
+      if (request.kind === 'versions' && !edition) throw new AccessError('NOT_FOUND', 'No indexed edition versions match this identifier and language.', 404);
       if (request.kind === 'versions') return { ...source, edition, ...await readPage(db, url.pathname, request.query, meta.built_at, { args: [id, request.query.language], sql:
         `SELECT v.document_id,d.url,v.content_sha256,v.sha256,v.observed_at,v.media,v.bytes
          FROM dp_document_versions v JOIN dp_documents d ON d.id=v.document_id
          WHERE d.work_id=? AND d.language=? ORDER BY v.observed_at DESC,v.document_id,v.content_sha256` }) };
-      const docs = await db.prepare(`SELECT id,kind,label,url,final_url,status,sha256 FROM dp_documents
-        WHERE work_id=? AND language=? ORDER BY kind,id`).bind(id, request.query.language).all();
-      return { ...source, edition, documents: docs.results };
+      const docs = edition ? await db.prepare(`SELECT id,kind,label,url,final_url,status,sha256 FROM dp_documents
+        WHERE work_id=? AND language=? ORDER BY kind,id`).bind(id, request.query.language).all() : { results: [] };
+      return { ...source, edition, documents: docs.results, alternateDocuments: alternateDocuments.results };
     };
   };
 }
@@ -116,7 +139,9 @@ const sourceInfo = { institution: z.literal('ECCC'), observedAt: text, revision:
 const editionInfo = z.object({ work_id: text, language, fiscal_year: text, title: text, lead: optionalText,
   index_url: text, first_observed_at: text, last_observed_at: text, series: text, revision: integer });
 const passageInfo = z.object({ passage_id: text, passage_kind: text, document_id: text, work_id: text,
-  language, series: text, title: text, fiscal_year: text, document_kind: text, text, section: optionalText,
+  language, series: text, title: text, fiscal_year: text, document_kind: text, indexed_edition_available: z.boolean(),
+  discovery_method: z.enum(['index', 'publisher-alternate']), origin_url: optionalText, origin_sha256: optionalText,
+  hreflang: language.nullable(), identity_method: optionalText, text, section: optionalText,
   page: integer.nullable(), table_number: integer.nullable(), table_caption: optionalText,
   row_number: integer.nullable(), column_number: integer.nullable(), attribution: optionalText,
   citation_url: text, source_sha256: text });
@@ -126,9 +151,16 @@ const documentInfo = z.object({ id: text, kind: text, label: text, url: text, fi
   status: text, sha256: optionalText });
 const gapInfo = z.object({ id: text, kind: text, language: language.nullable(), url: optionalText, reason: text });
 const searchResult = z.object({ ...sourceInfo, items: z.array(passageInfo), nextCursor: optionalText });
+const alternateDocumentInfo = z.object({ id: text, work_id: text, series: text, source_language: language,
+  source_fiscal_year: text, language, kind: text, origin_label: text, origin_url: text, origin_sha256: text,
+  hreflang: language, url: text, final_url: text, sha256: text, content_sha256: text, media: text,
+  bytes: integer, html_lang: language, title: text, heading: text,
+  identity_method: z.literal('reciprocal-hreflang-html-lang-title-h1'), status: z.literal('verified'), observed_at: text });
 const coverageResult = z.object({ ...sourceInfo, documents: integer, searchableDocuments: integer,
+  alternateDocuments: integer, alternateSearchableDocuments: integer, alternatePassages: integer,
   passages: integer, gaps: z.array(gapInfo), nextCursor: optionalText });
-const editionResult = z.object({ ...sourceInfo, edition: editionInfo, documents: z.array(documentInfo) });
+const editionResult = z.object({ ...sourceInfo, edition: editionInfo.nullable(), documents: z.array(documentInfo),
+  alternateDocuments: z.array(alternateDocumentInfo) });
 const versionsResult = z.object({ ...sourceInfo, edition: editionInfo, items: z.array(versionInfo), nextCursor: optionalText });
 
 export function departmentalOpenApi() {
