@@ -3,12 +3,13 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccessError } from '../src/access';
 import { gazetteDatabase, matchGazetteRoute, parseGazetteRequest, runGazetteRequest } from '../src/routes/gazette';
-import { GazetteLookupResponseSchema, GazetteSearchResponseSchema } from '../src/routes/gazette-contract';
+import { GazetteExtraLookupResponseSchema, GazetteExtraSearchResponseSchema, GazetteLookupResponseSchema,
+  GazetteSearchResponseSchema } from '../src/routes/gazette-contract';
 import { gazetteOpenApi } from '../src/routes/gazette-openapi';
 import { normalizeForSearch } from '../src/text';
 import { testD1 } from './helpers/d1';
 
-const migration = readFileSync('preview/gazette/migrations/0001_gazette.sql', 'utf8');
+const migration = `${readFileSync('preview/gazette/migrations/0001_gazette.sql', 'utf8')}\n${readFileSync('preview/gazette/migrations/0002_gazette_extras.sql', 'utf8')}`;
 describe('Canada Gazette HTTP contract', () => {
   let store: ReturnType<typeof testD1>;
   beforeEach(() => { store = testD1({ schema: migration }); });
@@ -43,7 +44,13 @@ describe('Canada Gazette HTTP contract', () => {
     if (!route) throw new Error('Search route should match.');
     expect(parseGazetteRequest(route, new URL('https://example.test/api/gazette?topic=cosmetics&language=fr&part=II&since=2026-04-20&until=2026-04-26&limit=5')))
       .toMatchObject({ operation: 'search', query: { topic: 'cosmetics', language: 'fr', part: 'II', limit: 5 } });
-    for (const query of ['topic=x&topic=y&language=en', 'topic=x&language=en&extra=true', 'topic=x&language=en&since=2026-05-01&until=2026-04-01']) {
+    const regularDefault = parseGazetteRequest(route, new URL('https://example.test/api/gazette?topic=x&language=en'));
+    expect(regularDefault).toMatchObject({ operation: 'search', query: { topic: 'x', language: 'en' } });
+    if (regularDefault.operation !== 'search') throw new Error('Search route should parse as search.');
+    expect(regularDefault.query).not.toHaveProperty('editionType');
+    expect(parseGazetteRequest(route, new URL('https://example.test/api/gazette?topic=x&language=en&editionType=extra')))
+      .toMatchObject({ operation: 'search', query: { editionType: 'extra' } });
+    for (const query of ['topic=x&topic=y&language=en', 'topic=x&language=en&editionType=unknown', 'topic=x&language=en&since=2026-05-01&until=2026-04-01']) {
       expect(() => parseGazetteRequest(route, new URL(`https://example.test/api/gazette?${query}`))).toThrow();
     }
     const invalidExact = matchGazetteRoute('/api/gazette/record-1');
@@ -53,6 +60,34 @@ describe('Canada Gazette HTTP contract', () => {
     if (!exactRoute) throw new Error('Exact route should match.');
     expect(parseGazetteRequest(exactRoute, new URL('https://example.test/api/gazette/gazette%3Api%3Aen%3A2026-04-25%3Av160%3An17%3Acosmetics')))
       .toMatchObject({ operation: 'lookup', id: 'gazette:pi:en:2026-04-25:v160:n17:cosmetics' });
+  });
+
+  it('searches and looks up extras with a separate extraNumber identity on the regular issue date', async () => {
+    const date = '2026-04-25';
+    edition({ part: 'I', language: 'en', date, volume: 160, issue: 17 });
+    record({ title: 'Regular Gazette record' });
+    store.sqlite.prepare(`INSERT INTO gazette_extra_editions
+      (part,language,issue_date,volume,extra_number,record_count,content_sha256,parser_version)
+      VALUES ('I','en',?,160,1,1,'extra-digest','gazette-extra-fixture')`).run(date);
+    const extraId = 'gazette:extra:pi:en:2026-04-25:v160:x1:proclamation';
+    const extraUrl = 'https://gazette.gc.ca/rp-pr/p1/2026/2026-04-25-x1/html/extra1-eng.html';
+    store.sqlite.prepare(`INSERT INTO gazette_extra_records
+      (id,edition_type,part,language,issue_date,volume,extra_number,kind,title,citation_url,search_text)
+      VALUES (?,'extra','I','en',?,160,1,'notice','Extra Gazette proclamation',?,?)`)
+      .run(extraId, date, extraUrl, normalizeForSearch('Extra Gazette proclamation'));
+
+    const regular = GazetteSearchResponseSchema.parse(await runGazetteRequest(store.db, {
+      operation: 'search', query: { topic: 'gazette', language: 'en', part: 'I', limit: 20 },
+    }));
+    expect(regular.items.map((item) => item.id)).toEqual(['gazette:pi:en:2026-04-25:v160:n17:cosmetics']);
+    const extra = GazetteExtraSearchResponseSchema.parse(await runGazetteRequest(store.db, {
+      operation: 'search', query: { topic: 'proclamation', language: 'en', part: 'I', editionType: 'extra', limit: 20 },
+    }));
+    expect(extra.items).toMatchObject([{ id: extraId, editionType: 'extra', extraNumber: 1, citationUrl: extraUrl }]);
+    expect(extra.coverage).toEqual([{ editionType: 'extra', part: 'I', language: 'en', available: true,
+      issues: [{ issueDate: date, volume: 160, extraNumber: 1, recordCount: 1 }] }]);
+    const exact = GazetteExtraLookupResponseSchema.parse(await runGazetteRequest(store.db, { operation: 'lookup', id: extraId }));
+    expect(exact.item).toMatchObject({ id: extraId, editionType: 'extra', extraNumber: 1, issueDate: date, citationUrl: extraUrl });
   });
 
   it('returns bilingual records, exact lookup, metadata-only policy, and per-edition coverage', async () => {
@@ -152,7 +187,7 @@ describe('Canada Gazette HTTP contract', () => {
     const api = gazetteOpenApi();
     expect(api.openapi).toBe('3.1.0');
     expect(api.paths['/api/gazette'].get.parameters.map((item: { name: string }) => item.name))
-      .toEqual(['topic', 'part', 'language', 'since', 'until', 'limit']);
+      .toEqual(['topic', 'part', 'language', 'editionType', 'since', 'until', 'limit']);
     expect(api.paths['/api/gazette/{id}'].get.responses[200]).toBeDefined();
     const example = api.paths['/api/gazette/changes'].get.responses[200].content['application/json'].example;
     expect(SourceFeedResponseSchema.parse(example).scope.source).toBe('gazette');
