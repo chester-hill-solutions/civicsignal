@@ -1,0 +1,32 @@
+{
+  "scope": "staging-read-only-baseline",
+  "deployment": {
+    "worker": "civicsignal-v1-stage-nov16-snapshot",
+    "deploymentId": "4cbfc139-4d85-416d-967c-f90ea4e9b343",
+    "versions": [
+      {
+        "version_id": "ce6deccb-c345-43ca-9fe5-b6c7d0b04836",
+        "percentage": 100
+      }
+    ],
+    "workflowId": "c8ba63d3-a002-4c62-8669-45c7c4c2bf40",
+    "workflowModifiedOn": "2026-11-23T02:29:06.701Z",
+    "nativeCalendar": "unknown",
+    "nativeCalendarEvidence": "unscheduled-creation",
+    "observedAt": "2026-11-25T06:08:40.108Z"
+  },
+  "anyWorkflowInstances": false,
+  "canonical": {
+    "bucket": "civicsignal-v1-stage-corpus-20261022",
+    "key": "snapshots/statutes-v2/0507465393c224c0491fc8c17c88340217acc656.manifest.json",
+    "bytes": 44627,
+    "sha256": "78c979e9a36ecd2215e4c16c9b0ab6df3ad7dfe6f5efe20addf4f471ac3e3e1e"
+  },
+  "finishedAt": "2026-11-25T06:08:41.371Z",
+  "credentialPreflight": {
+    "configuredOperator": false,
+    "verifiedRoles": [],
+    "providerRequests": 0,
+    "error": "SNAPSHOT_CALENDAR_CREDENTIAL"
+  }
+}
