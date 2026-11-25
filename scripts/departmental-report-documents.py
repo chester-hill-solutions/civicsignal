@@ -23,7 +23,7 @@ import tempfile
 import threading
 import urllib.error
 import urllib.request
-from urllib.parse import parse_qs, quote, urljoin, urlsplit
+from urllib.parse import parse_qs, quote, unquote, urljoin, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys_path = str(ROOT / "scripts")
@@ -85,7 +85,7 @@ HTML_FAMILY_TERMS = {
 
 PLAN_TERMS = {
     "en": ("departmental plan", "plans and priorities", "report on plans and priorities", "reports on plans and priorities"),
-    "fr": ("plan ministériel", "plans ministériels", "plans et priorités", "rapport sur les plans et priorités"),
+    "fr": ("plan ministériel", "plans ministériels", "plans et priorités", "rapport sur les plans et priorités", "rapport sur les plans et les priorités"),
 }
 RESULT_TERMS = {
     "en": ("departmental results report", "departmental performance report", "results report", "performance report"),
@@ -93,7 +93,7 @@ RESULT_TERMS = {
 }
 LANGUAGE_MARKERS = {
     "en": ("departmental plan", "plans and priorities", "departmental results report", "departmental performance report", "table of contents"),
-    "fr": ("plan ministériel", "plans ministériels", "rapport sur les résultats ministériels", "rapport ministériel sur le rendement", "table des matières"),
+    "fr": ("plan ministériel", "plans ministériels", "rapport sur les plans et les priorités", "rapport sur les résultats ministériels", "rapport ministériel sur le rendement", "table des matières"),
 }
 YEAR_RANGE = re.compile(r"(?<!\d)((?:19|20)\d{2})\s*(?:[-–—]|\bto\b|\bà\b)\s*((?:(?:19|20)\d{2})|\d{2})(?!\d)", re.I)
 YEAR_TOKEN = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
@@ -366,7 +366,18 @@ def pdf_text(body: bytes) -> tuple[str, int]:
     return text, pages
 
 
-def source_year(label: str, year_label: str) -> str | None:
+def source_year(label: str, year_label: str, url: str | None = None,
+                *, use_pdf_filename_for_size_label: bool = False) -> str | None:
+    if (use_pdf_filename_for_size_label and
+            re.fullmatch(r"\s*(?:PDF\s*:\s*)?\d+\s*(?:KB|KO|MB|MO)\s*", label or "", re.I) and url):
+        match = YEAR_RANGE.search(year_label or "")
+        if not match:
+            filename = unquote(Path(urlsplit(url).path).name)
+            match = YEAR_RANGE.search(filename)
+        if match:
+            first, second = match.groups()
+            return first + "-" + (second if len(second) == 4 else first[:2] + second)
+        return None
     match = YEAR_RANGE.search(label or "")
     if match:
         first, second = match.groups()
@@ -392,9 +403,14 @@ def year_disposition(text: str, expected: str | None) -> str:
     return "match" if expected in compact else "mismatch"
 
 
-def language_disposition(text: str, language: str) -> str:
+def language_disposition(text: str, language: str, *, semantics_version: int = 3) -> str:
     sample = normalized(text[:300_000])
-    scores = {lang: sum(sample.count(normalized(term)) for term in markers) for lang, markers in LANGUAGE_MARKERS.items()}
+    markers_by_language = LANGUAGE_MARKERS
+    if semantics_version < 3:
+        markers_by_language = {lang: tuple(term for term in markers if
+            normalized(term) != normalized("rapport sur les plans et les priorités"))
+            for lang, markers in LANGUAGE_MARKERS.items()}
+    scores = {lang: sum(sample.count(normalized(term)) for term in markers) for lang, markers in markers_by_language.items()}
     requested, other = scores[language], scores["fr" if language == "en" else "en"]
     if requested and other:
         return "multilingual"
@@ -405,9 +421,19 @@ def language_disposition(text: str, language: str) -> str:
     return "unresolved"
 
 
-def family_disposition(text: str, family: str, language: str) -> str:
+def family_disposition(text: str, family: str, language: str, *, semantics_version: int = 3) -> str:
     sample = normalized(text[:300_000])
     terms = PLAN_TERMS[language] if family == "departmental-plans" else RESULT_TERMS[language]
+    if family == "departmental-plans" and language == "fr" and semantics_version >= 3:
+        title_phrase = normalized("rapport sur les plans et les priorités")
+        first_page = normalized(text.split("\f", 1)[0])
+        if title_phrase in first_page:
+            return "match"
+        # Older French results reports explain what a report on plans and priorities is.
+        # That incidental paragraph is not evidence that the PDF itself is a plan.
+        terms = tuple(term for term in terms if normalized(term) != title_phrase)
+    elif family == "departmental-plans" and language == "fr":
+        terms = tuple(term for term in terms if normalized(term) != normalized("rapport sur les plans et les priorités"))
     return "match" if any(normalized(term) in sample for term in terms) else "unresolved"
 
 
@@ -419,7 +445,8 @@ def body_language_conflict(candidate: dict) -> bool:
     return (candidate["language"] == "en" and french_file and not english_file) or (candidate["language"] == "fr" and english_file and not french_file)
 
 
-def collect_candidates(report: dict, *, apply_recoveries: bool = True) -> list[dict]:
+def collect_candidates(report: dict, *, apply_recoveries: bool = True,
+                       use_pdf_filename_for_size_label: bool = False) -> list[dict]:
     candidates = []
     for page in report.get("issuerPages", []):
         family, language = page.get("family"), page.get("language")
@@ -435,7 +462,8 @@ def collect_candidates(report: dict, *, apply_recoveries: bool = True) -> list[d
                 continue
             if not committee_files.fetchable(url):
                 continue
-            issue_year = source_year(link.get("label", ""), link.get("year_label", ""))
+            issue_year = source_year(link.get("label", ""), link.get("year_label", ""), url,
+                                     use_pdf_filename_for_size_label=use_pdf_filename_for_size_label)
             fetch_url = quote(url, safe=":/?#[]@!$&'()*+,;=%")
             recovery = PUBLISHER_PDF_RECOVERIES.get(url) if apply_recoveries else None
             recovery_receipt = None
@@ -588,11 +616,11 @@ def cite_id(row: dict) -> str:
     return hashlib.sha256(identity.encode()).hexdigest()[:32]
 
 
-def assess(text: str, candidate: dict) -> dict:
-    lang = language_disposition(text, candidate["language"])
+def assess(text: str, candidate: dict, *, semantics_version: int = 3) -> dict:
+    lang = language_disposition(text, candidate["language"], semantics_version=semantics_version)
     if candidate.get("linkLanguageConflict"):
         lang = "source-link-conflict"
-    fam = family_disposition(text, candidate["family"], candidate["language"])
+    fam = family_disposition(text, candidate["family"], candidate["language"], semantics_version=semantics_version)
     year = year_disposition(text, candidate.get("issueYear"))
     issuer_norm = normalized(candidate["issuerLabel"])
     issuer_found = bool(issuer_norm and issuer_norm in normalized(text[:300_000]))
@@ -1021,6 +1049,16 @@ def html_refresh(root: Path = DEFAULT_ROOT, edition_root: Path = EDITION_ROOT,
                         if prior_target["media_type"] in {"text/html","application/xhtml+xml"} and prior_target["body_sha256"]:
                             prior_body=read_gzip(root,prior_target["object_path"],prior_target["body_sha256"],prior_target["body_bytes"],MAX_HTML_BYTES)
                             prior_parsed=analyze_html(prior_body,rows)
+                            prior_status,prior_detail=html_target_status(None,prior_target["media_type"],prior_parsed)
+                            prior_text=prior_parsed["text"].encode("utf-8")
+                            prior_text_sha=hashlib.sha256(prior_text).hexdigest()
+                            prior_text_path=store_gzip(root,prior_text_sha,prior_text,"html-text")
+                            db.execute("""UPDATE html_targets SET status=?,text_sha256=?,text_bytes=?,text_object_path=?,
+                                page_title=?,h1_json=?,html_language=?,readable_chars=?,detail=?
+                                WHERE source_report_sha256=? AND target_url=?""",
+                                (prior_status,prior_text_sha,len(prior_text),prior_text_path,prior_parsed["title"],
+                                 json.dumps(prior_parsed["h1s"],ensure_ascii=False),prior_parsed["htmlLanguage"],
+                                 len(prior_parsed["text"]),prior_detail,source_sha,url))
                             prior_html={cite_id(c):c for c in prior_parsed["citations"]}
                 for row in rows:
                     cid = cite_id(row)
@@ -1352,7 +1390,7 @@ def _write_generation(db, root: Path, run_id: str, report_run_id: str, input_pat
                 "languageMismatches": sum(item["language_disposition"] in {"mismatch", "source-link-conflict"} for item in matches),
                 "yearMismatches": sum(item["year_disposition"] == "mismatch" for item in matches),
             }
-    return {"collection": "departmental-report-documents", "schemaVersion": 2,
+    return {"collection": "departmental-report-documents", "schemaVersion": 3,
         "runId": run_id, "status": status,
         "observedAt": utc_now(), "sourceEditionRunId": report_run_id,
         "sourceCurrentReportPath": source_path, "sourceCurrentReportSha256": source_sha,
@@ -1374,7 +1412,7 @@ def refresh(root: Path = DEFAULT_ROOT, edition_root: Path = EDITION_ROOT, worker
     if shutil.disk_usage(root.parent if root.parent.exists() else ROOT).free < min_free_bytes + max_archive_bytes:
         raise RuntimeError("insufficient free space for bounded document archive refresh")
     raw, source, source_run_id = validate_input(edition_root)
-    candidates = collect_candidates(source)
+    candidates = collect_candidates(source, use_pdf_filename_for_size_label=True)
     groups = _candidate_report(candidates)
     if not candidates:
         raise ValueError("Current edition report contains no allowed direct PDF links")
@@ -1499,7 +1537,8 @@ def replay(run_id: str, root: Path = DEFAULT_ROOT) -> dict:
             raise ValueError("Document generation report hash failed")
         report = json.loads(report_raw)
         schema_version = report.get("schemaVersion", 1)
-        candidates = collect_candidates(source, apply_recoveries=schema_version >= 2)
+        candidates = collect_candidates(source, apply_recoveries=schema_version >= 2,
+                                        use_pdf_filename_for_size_label=schema_version >= 3)
         by_url = _candidate_report(candidates)
         document_columns = {row[1] for row in db.execute("PRAGMA table_info(documents)")}
         notice_column = "publisher_notice_json" in document_columns
@@ -1523,7 +1562,8 @@ def replay(run_id: str, root: Path = DEFAULT_ROOT) -> dict:
                     text_raw = text.encode("utf-8")
                     if hashlib.sha256(text_raw).hexdigest() != doc["text_sha256"] or pages != doc["text_pages"]:
                         raise ValueError("PDF text replay differs: " + doc["target_url"])
-                    expected = [assess(text, candidate) for candidate in by_url[doc["target_url"]]]
+                    expected = [assess(text, candidate, semantics_version=schema_version)
+                                for candidate in by_url[doc["target_url"]]]
                     recorded = [dict(row) for row in db.execute("SELECT disposition,family_disposition,language_disposition,year_disposition,issuer_disposition FROM citations WHERE run_id=? AND target_url=? ORDER BY citation_id", (run_id, doc["target_url"]))]
                     pairs = sorted((x["disposition"], x.get("familyDisposition"), x.get("languageDisposition"), x.get("yearDisposition"), x.get("issuerDisposition")) for x in expected)
                     actual = sorted((x["disposition"], x["family_disposition"], x["language_disposition"], x["year_disposition"], x["issuer_disposition"]) for x in recorded)

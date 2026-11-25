@@ -45,6 +45,50 @@ class DepartmentalReportDocumentsTests(unittest.TestCase):
         self.assertEqual(mismatch["languageDisposition"], "mismatch")
         self.assertEqual(mismatch["disposition"], "review")
 
+    def test_exact_french_report_on_plans_title_verifies_plan_family(self):
+        text = "Services partagés Canada\n2015-2016\nRapport sur les plans et les priorités\nTable des matières"
+        candidate = {"family": "departmental-plans", "language": "fr", "issuerLabel": "Services partagés Canada",
+                     "issueYear": "2015-2016", "url": "https://www.canada.ca/report.pdf"}
+        assessment = MODULE.assess(text, candidate)
+        self.assertEqual(assessment["familyDisposition"], "match")
+        self.assertEqual(assessment["languageDisposition"], "match")
+        self.assertEqual(assessment["yearDisposition"], "match")
+        self.assertEqual(assessment["issuerDisposition"], "named-in-text")
+        self.assertEqual(assessment["disposition"], "verified")
+        self.assertEqual(MODULE.family_disposition(text, "departmental-results", "fr"), "unresolved")
+        historical = MODULE.assess(text, candidate, semantics_version=2)
+        self.assertEqual(historical["familyDisposition"], "unresolved")
+        self.assertEqual(historical["disposition"], "review")
+        # The same phrase in explanatory prose must not turn a results report into a plan.
+        old_results = "Agence des douanes et du revenu du Canada\nRapport sur le rendement\n\f" \
+            "Le Rapport sur les plans et les priorités fournit des détails sur la planification."
+        self.assertEqual(MODULE.family_disposition(old_results, "departmental-plans", "fr"), "unresolved")
+
+    def test_pdf_size_label_uses_printed_filename_year_only_in_new_schema(self):
+        url = "https://www.canada.ca/content/dam/canada/military-grievances-external-review/migration/documents/rpp-2015-2016-fra.pdf"
+        report = {"issuerPages": [{"family": "departmental-plans", "language": "fr", "issuer_label": "Comité externe d’examen des griefs militaires",
+            "reportLinks": [{"link_type": "direct-edition", "url": url, "label": "PDF: 2000KB", "year_label": "2000"}]}]}
+        historical = MODULE.collect_candidates(report)[0]
+        current = MODULE.collect_candidates(report, use_pdf_filename_for_size_label=True)[0]
+        self.assertEqual(historical["issueYear"], "2000")
+        self.assertEqual(current["issueYear"], "2015-2016")
+        self.assertEqual(MODULE.source_year("PDF: 2000KB", "2000", url,
+            use_pdf_filename_for_size_label=True), "2015-2016")
+        # A publisher-supplied fiscal range remains authoritative over the filename.
+        self.assertEqual(MODULE.source_year("PDF: 2000KB", "2014-2015", url,
+            use_pdf_filename_for_size_label=True), "2014-2015")
+        no_year_url = "https://www.canada.ca/content/dam/canada/military-grievances-external-review/migration/documents/rpp/appendix-fra.pdf"
+        self.assertIsNone(MODULE.source_year("PDF: 2000KB", "2000", no_year_url,
+            use_pdf_filename_for_size_label=True))
+        # Legacy schemas retain their historical source-label interpretation.
+        self.assertEqual(MODULE.source_year("PDF: 2000KB", "2000", no_year_url), "2000")
+        no_year_report = {"issuerPages": [{"family": "departmental-plans", "language": "fr",
+            "reportLinks": [{"link_type": "direct-edition", "url": no_year_url,
+                "label": "PDF: 2000KB", "year_label": "2000"}]}]}
+        self.assertEqual(MODULE.collect_candidates(no_year_report)[0]["issueYear"], "2000")
+        self.assertIsNone(MODULE.collect_candidates(no_year_report,
+            use_pdf_filename_for_size_label=True)[0]["issueYear"])
+
     def test_public_continue_only_repeats_the_same_publisher_pdf_url(self):
         target = "https://publications.gc.ca/collections/example.pdf"
         body = (f'<a href="{target}">Continue to publication</a>').encode()
@@ -260,6 +304,46 @@ class DepartmentalReportDocumentsTests(unittest.TestCase):
             self.assertEqual(audit["acceptedCitations"],1)
             self.assertEqual(audit["status"],"complete")
             self.assertEqual(audit["replayStatus"],"verified")
+
+    def test_html_new_inventory_reassesses_carried_body_and_updates_readability(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base=Path(temp); edition=base/"edition"; store=base/"store"; edition.mkdir()
+            url="https://www.canada.ca/en/sample/departmental-plan-2024-2025"
+            page={"family":"departmental-plans","language":"en","issuer_label":"Sample Department",
+                  "issuer_key":"sample","published_url":"https://www.canada.ca/en/sample/reports",
+                  "source_index_url":"https://www.canada.ca/directory","source_index_sha256":"index-one",
+                  "reportLinks":[{"link_type":"index-link","url":url,"label":"Departmental Plan 2024-2025",
+                      "year_label":"2024-2025","landing_sha256":"landing-hash","evidence":"label"}]}
+            def publish(index_hash):
+                report={"collection":"departmental-report-editions-current","issuerPages":[{**page,"source_index_sha256":index_hash}]}
+                raw=json.dumps(report,sort_keys=True).encode(); (edition/"current.json").write_bytes(raw)
+                (edition/"latest-attempt.json").write_text(json.dumps({"runId":"source-"+index_hash,
+                    "currentReportPath":"current.json","currentReportSha256":hashlib.sha256(raw).hexdigest()}))
+            html=b"<html lang='en'><head><title>Departmental Plan 2024-2025</title></head><body><svg><path>artwork</path><div><main><h1>Departmental Plan 2024-2025</h1><p>Sample Department describes this departmental plan for 2024-2025, including planned activities, expected outcomes, performance measures, and financial information for the coming year.</p></main></div></body></html>"
+            publish("index-one")
+            with mock.patch.object(MODULE,"analyze_html",side_effect=MODULE.analyze_html_legacy), \
+                 mock.patch.object(MODULE,"HTML_PARSER_VERSION",1):
+                old=MODULE.html_refresh(store,edition,batch_size=1,fetcher=lambda target:(html,target,200,"text/html"))
+            db=sqlite3.connect(store/"documents.sqlite")
+            before=db.execute("SELECT status,attempted_at,readable_chars FROM html_targets WHERE source_report_sha256=? AND target_url=?",
+                (old["sourceCurrentReportSha256"],url)).fetchone()
+            db.close()
+            self.assertEqual(before[0],"unreadable")
+            self.assertLess(before[2],100)
+            publish("index-two")
+            new=MODULE.html_refresh(store,edition,batch_size=1,fetcher=lambda _target:self.fail("archived body should be reused"))
+            db=sqlite3.connect(store/"documents.sqlite")
+            after=db.execute("SELECT status,attempted_at,readable_chars,text_sha256 FROM html_targets WHERE source_report_sha256=? AND target_url=?",
+                (new["sourceCurrentReportSha256"],url)).fetchone()
+            citation=db.execute("SELECT status FROM html_citations WHERE source_report_sha256=? AND target_url=?",
+                (new["sourceCurrentReportSha256"],url)).fetchone()
+            db.close()
+            self.assertEqual(after[0],"fetched")
+            self.assertEqual(after[1],before[1],"publisher fetch time remains the original archive time")
+            self.assertGreater(after[2],100)
+            self.assertEqual(citation[0],"accepted")
+            self.assertEqual(new["targetStatusCounts"]["fetched"],1)
+            self.assertEqual(new["byFamilyLanguage"]["departmental-plans/en"]["accepted"],1)
 
 
 if __name__ == "__main__":
