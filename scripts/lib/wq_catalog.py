@@ -9,14 +9,17 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import hashlib
 import html
 from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
 import re
+import sys
 import tempfile
 import time
+import uuid
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -114,6 +117,19 @@ def save_atomic(path: Path, data):
         raise
 
 
+def save_bytes_atomic(path: Path, data: bytes):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data); f.flush(); os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        try: os.unlink(tmp)
+        except OSError: pass
+        raise
+
+
 def load_records(path):
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -125,7 +141,7 @@ def load_records(path):
 def listing_fingerprint(record):
     # Topic tags are list-rendered enrichment and occasionally differ in order or
     # translation from the detail view. Refresh them directly from the listing below.
-    keys = ("sourceId", "status", "statusLabel", "askedBy", "dateAsked", "responseDue")
+    keys = ("sourceId", "status", "statusLabel", "askedBy", "dateAsked", "responseDue", "text", "url")
     return tuple(json.dumps(record.get(k), sort_keys=True, ensure_ascii=False) for k in keys)
 
 
@@ -140,7 +156,8 @@ def response_inventory_ok(record):
 
 def reusable_detail(current, previous, force=False):
     """Reuse response metadata only when the current source metadata still matches."""
-    if force or not previous or previous.get("fetchError") or listing_fingerprint(previous) != listing_fingerprint(current):
+    if (force or not previous or previous.get("fetchError") or not previous.get("detailFetchedAt") or
+            listing_fingerprint(previous) != listing_fingerprint(current)):
         return None
     reused = dict(previous)
     if not response_inventory_ok(reused):
@@ -156,6 +173,101 @@ def reusable_detail(current, previous, force=False):
         paper = response.get("sessionalPaperNumber")
         if paper: response["sessionalPaperNumber"] = paper.strip().strip('"')
     return reused
+
+
+def listing_set_sha(records):
+    identity = sorted((record.get("language"), record.get("number"), listing_fingerprint(record)) for record in records)
+    return hashlib.sha256(json.dumps(identity, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+
+
+def _parse_time(value):
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def resumable_checkpoint(partial, current_records, complete_catalogue, current_total, page_count,
+                         partial_saved_at):
+    """Attest only successful details from a complete, compatible newer checkpoint."""
+    if partial.get("source") != EN_LIST:
+        raise ValueError("Written-question checkpoint has an unexpected source listing")
+    expected_method = {"type": "official-rendered-pages", "englishList": EN_LIST, "frenchList": FR_LIST,
+        "paginationParameter": "page", "pageSize": 20,
+        "detailRoutes": {"en": BASE + "/written-questions/45-1/q-{number}",
+                         "fr": BASE + "/questions-ecrites/45-1/q-{number}"}}
+    if partial.get("method") != expected_method:
+        raise ValueError("Written-question checkpoint uses a different scrape method or session routes")
+    acquisition = partial.get("acquisition")
+    if acquisition:
+        if acquisition.get("mode") not in ("force-recheck", "resume-partial-checkpoint") or acquisition.get("recheckDetails") is not True:
+            raise ValueError("Written-question checkpoint was not acquired in full detail-recheck mode")
+    totals = partial.get("totals", {})
+    if totals.get("complete") is not False or totals.get("officialReported") != current_total or totals.get("pages") != page_count:
+        raise ValueError("Written-question checkpoint does not attest the current complete listing range")
+    if (totals.get("enumeratedEn") != current_total or totals.get("enumeratedFr") != current_total or
+            len(partial.get("records", [])) != 2 * current_total):
+        raise ValueError("Written-question checkpoint did not enumerate both complete language listings")
+    session = next((item for item in partial.get("sessions", []) if item.get("id") == "45-1"), None)
+    if not session or session.get("questionCount") != current_total or session.get("pages") != page_count:
+        raise ValueError("Written-question checkpoint session listing identity differs")
+    pagination_check = partial.get("paginationCheck", {})
+    expected_pages = list(range(1, page_count + 1))
+    if any(pagination_check.get(key) != current_total for key in
+           ("enListingReportedTotal", "frListingReportedTotal", "enLastPageReportedTotal", "frLastPageReportedTotal")):
+        raise ValueError("Written-question checkpoint page totals are incomplete or inconsistent")
+    if any(sorted(pagination_check.get(key, [])) != expected_pages for key in ("visitedPagesEn", "visitedPagesFr")):
+        raise ValueError("Written-question checkpoint did not visit every page in both languages")
+    if any(pagination_check.get(key) for key in ("missingFromEn", "missingFromFr", "duplicateNumbersEn", "duplicateNumbersFr")):
+        raise ValueError("Written-question checkpoint has bilingual parity or duplicate-number conflicts")
+
+    current_by_key = {(record["language"], record["number"]): record for record in current_records}
+    if len(current_by_key) != len(current_records):
+        raise ValueError("Current source listing repeats a language/number identity")
+    partial_by_key = {}
+    for record in partial["records"]:
+        key = (record.get("language"), record.get("number"))
+        if key in partial_by_key:
+            raise ValueError("Written-question checkpoint repeats a language/number listing identity")
+        partial_by_key[key] = record
+    if set(current_by_key) != set(partial_by_key):
+        raise ValueError("Written-question checkpoint and current listing have different question editions")
+    source_sha = listing_set_sha(current_records)
+    if listing_set_sha(partial["records"]) != source_sha:
+        raise ValueError("Written-question checkpoint listing metadata differs from the current source listings")
+
+    complete_observed = _parse_time(complete_catalogue.get("observedAt")) if complete_catalogue else None
+    checkpoint_observed = _parse_time(partial.get("observedAt"))
+    saved_at = datetime.fromtimestamp(partial_saved_at, timezone.utc)
+    if not checkpoint_observed or complete_observed and saved_at <= complete_observed:
+        raise ValueError("Written-question checkpoint is not newer than the prior complete catalogue")
+    candidates = {}
+    times = []
+    for key, current in current_by_key.items():
+        stored = partial_by_key[key]
+        fetched_at = _parse_time(stored.get("detailFetchedAt"))
+        if (not fetched_at or fetched_at > saved_at or
+                complete_observed and fetched_at <= complete_observed or
+                stored.get("fetchError") or not stored.get("responseInventoryChecked")):
+            continue
+        reusable = reusable_detail(current, stored)
+        if reusable is None:
+            continue
+        candidates[key] = reusable
+        times.append(fetched_at)
+    return candidates, {"mode": "resume-partial-checkpoint", "checkpointRunId": (acquisition or {}).get("runId"),
+        "checkpointObservedAt": partial["observedAt"], "checkpointSavedAt": saved_at.isoformat(),
+        "checkpointSourceSha256": source_sha,
+        "checkpointDetailsSha256": hashlib.sha256(json.dumps(partial["records"], ensure_ascii=False,
+            sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+        "checkpointSuccessfulDetails": len(candidates), "checkpointStartedAtMinimum": min(times).isoformat() if times else None,
+        "checkpointCompletedAtMaximum": max(times).isoformat() if times else None,
+        "legacyProvenance": {"runId": None, "recheckMode": None, "modeRecorded": False} if not acquisition else None,
+        "compatibleSourceListings": True, "session": "45-1",
+        "recheckMode": acquisition.get("mode") if acquisition else None}
 
 
 def session_options(markup):
@@ -309,7 +421,8 @@ def fetch_listing_page(base, params):
     return get(url)
 
 
-def scrape(output=OUT, max_pages=None, workers=4, checkpoint=40, recheck_details=False):
+def scrape(output=OUT, max_pages=None, workers=4, checkpoint=40, recheck_details=False,
+           resume_partial=False, checkpoint_input=None):
     first_en, first_fr = get(EN_LIST), get(FR_LIST)
     en_sessions, fr_sessions = session_options(first_en), session_options(first_fr)
 
@@ -341,6 +454,24 @@ def scrape(output=OUT, max_pages=None, workers=4, checkpoint=40, recheck_details
     page_count = current.get("pages") or pagination(first_en)
     pages_to_fetch = min(page_count, max_pages or page_count)
     partial_output = output.with_name(output.stem + ".partial" + output.suffix)
+    resume_snapshot = None
+    resume_saved_at = None
+    resume_file_sha = None
+    resume_archive_path = None
+    if resume_partial:
+        resume_input = checkpoint_input or partial_output
+        if resume_input.exists():
+            resume_bytes = resume_input.read_bytes()
+            resume_snapshot = json.loads(resume_bytes.decode("utf-8"))
+            resume_saved_at = resume_input.stat().st_mtime
+            resume_file_sha = hashlib.sha256(resume_bytes).hexdigest()
+            resume_archive_path = output.parent / "checkpoints" / (resume_file_sha + ".json")
+            if not resume_archive_path.exists():
+                save_bytes_atomic(resume_archive_path, resume_bytes)
+            elif hashlib.sha256(resume_archive_path.read_bytes()).hexdigest() != resume_file_sha:
+                raise RuntimeError(f"Checkpoint archive hash collision or corruption: {resume_archive_path}")
+        if resume_snapshot is None:
+            raise ValueError(f"No partial written-question checkpoint exists: {resume_input}")
     complete_records, partial_records = load_records(output), load_records(partial_output)
     complete_time = output.stat().st_mtime_ns if output.exists() else -1
     partial_time = partial_output.stat().st_mtime_ns if partial_output.exists() else -1
@@ -358,12 +489,16 @@ def scrape(output=OUT, max_pages=None, workers=4, checkpoint=40, recheck_details
             else:
                 previous[key] = partial_record
     en_records, fr_records = listing_records(first_en, "en"), listing_records(first_fr, "fr")
+    run_id = uuid.uuid4().hex
     initial = {"observedAt": datetime.now(timezone.utc).isoformat(), "source": EN_LIST,
                "method": {"type": "official-rendered-pages", "englishList": EN_LIST,
                           "frenchList": FR_LIST, "paginationParameter": "page",
                           "pageSize": 20, "detailRoutes": {"en": BASE + "/written-questions/45-1/q-{number}",
                                                                "fr": BASE + "/questions-ecrites/45-1/q-{number}"}},
                "overview": {"url": BASE + "/written-questions/overview", "counts": overview_counts},
+               "acquisition": {"runId": run_id, "mode": "resume-partial-checkpoint" if resume_partial else
+                               "force-recheck" if recheck_details else "incremental",
+                               "recheckDetails": bool(recheck_details or resume_partial)},
                "sessions": sessions, "records": en_records + fr_records,
                "totals": {"officialReported": current_total, "pages": page_count, "pageSize": 20,
                           "enumeratedEn": len(en_records), "enumeratedFr": len(fr_records), "complete": False},
@@ -407,13 +542,26 @@ def scrape(output=OUT, max_pages=None, workers=4, checkpoint=40, recheck_details
         "expectedFinalPageItemsFr": (current_total - (page_count - 1) * 20) if current_total else None})
 
     refetched = 0
-    for number, r in list(en_by.items()):
-        previous_detail = reusable_detail(r, previous.get(("en", number)), recheck_details)
-        if previous_detail: en_by[number] = previous_detail
-    for number, r in list(fr_by.items()):
-        previous_detail = reusable_detail(r, previous.get(("fr", number)), recheck_details)
-        if previous_detail: fr_by[number] = previous_detail
-    detail_jobs = [r for number, r in en_by.items() if recheck_details or not r.get("responseInventoryChecked")] + [r for number, r in fr_by.items() if recheck_details or not r.get("responseInventoryChecked")]
+    checkpoint_reuse = {}
+    checkpoint_provenance = None
+    if resume_partial:
+        if resume_snapshot is None:
+            raise ValueError(f"No partial written-question checkpoint exists: {partial_output}")
+        checkpoint_reuse, checkpoint_provenance = resumable_checkpoint(
+            resume_snapshot, en_records + fr_records, json.loads(output.read_text(encoding="utf-8")) if output.exists() else None,
+            current_total, page_count, resume_saved_at)
+        checkpoint_provenance["checkpointFileSha256"] = resume_file_sha
+        checkpoint_provenance["checkpointArchive"] = str(resume_archive_path)
+        for (language, number), detail_record in checkpoint_reuse.items():
+            (en_by if language == "en" else fr_by)[number] = detail_record
+    else:
+        for number, r in list(en_by.items()):
+            previous_detail = reusable_detail(r, previous.get(("en", number)), recheck_details)
+            if previous_detail: en_by[number] = previous_detail
+        for number, r in list(fr_by.items()):
+            previous_detail = reusable_detail(r, previous.get(("fr", number)), recheck_details)
+            if previous_detail: fr_by[number] = previous_detail
+    detail_jobs = [r for number, r in en_by.items() if not r.get("responseInventoryChecked")] + [r for number, r in fr_by.items() if not r.get("responseInventoryChecked")]
     finished = sum(1 for r in list(en_by.values()) + list(fr_by.values()) if r.get("detailFetchedAt"))
     def process(r):
         try:
@@ -431,9 +579,13 @@ def scrape(output=OUT, max_pages=None, workers=4, checkpoint=40, recheck_details
     initial["totals"].update({"enumeratedEn": len(en_by), "enumeratedFr": len(fr_by), "detailsFetched": finished,
         "complete": pages_to_fetch == page_count and current_total == len(en_by) == len(fr_by)
                     and en_ids == fr_ids and not dup_en and not dup_fr
-                    and not any("fetchError" in r or not r.get("detailFetchedAt") for r in list(en_by.values()) + list(fr_by.values()))})
+                    and not any("fetchError" in r or not r.get("detailFetchedAt") or not r.get("responseInventoryChecked")
+                                for r in list(en_by.values()) + list(fr_by.values()))})
     initial["totals"]["detailsReused"] = len(en_by) + len(fr_by) - refetched
     initial["totals"]["detailsRefetched"] = refetched
+    if checkpoint_provenance:
+        initial["checkpointReuse"] = checkpoint_provenance
+        initial["totals"]["detailsReusedFromCheckpoint"] = len(checkpoint_reuse)
     initial["paginationCheck"].update({"enumeratedEn": len(en_by), "enumeratedFr": len(fr_by),
                                       "visitedPageCountEn": len(initial["paginationCheck"]["visitedPagesEn"]),
                                       "visitedPageCountFr": len(initial["paginationCheck"]["visitedPagesFr"])})
@@ -445,6 +597,7 @@ def scrape(output=OUT, max_pages=None, workers=4, checkpoint=40, recheck_details
     else:
         save_atomic(partial_output, initial)
     print(json.dumps(initial["totals"], ensure_ascii=False), flush=True)
+    return initial
 
 
 def main():
@@ -454,6 +607,17 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--checkpoint", type=int, default=40)
     ap.add_argument("--recheck-details", action="store_true", help="re-fetch every EN and FR detail shell despite unchanged listing metadata")
-    a = ap.parse_args(); scrape(a.output, a.max_pages, a.workers, a.checkpoint, a.recheck_details)
+    ap.add_argument("--resume-partial-checkpoint", action="store_true", help="reuse only source-matched successful detail records from a compatible newer partial checkpoint")
+    ap.add_argument("--checkpoint-input", type=Path, help="explicit checkpoint file to resume; archived byte-for-byte before the partial pointer advances")
+    a = ap.parse_args()
+    if a.resume_partial_checkpoint and a.recheck_details:
+        ap.error("--resume-partial-checkpoint and --recheck-details are mutually exclusive")
+    if a.checkpoint_input and not a.resume_partial_checkpoint:
+        ap.error("--checkpoint-input requires --resume-partial-checkpoint")
+    result = scrape(a.output, a.max_pages, a.workers, a.checkpoint, a.recheck_details,
+                    a.resume_partial_checkpoint, a.checkpoint_input)
+    if not result["totals"].get("complete"):
+        print("written-question refresh incomplete; prior complete catalogue preserved", file=sys.stderr, flush=True)
+        raise SystemExit(1)
 
 if __name__ == "__main__": main()

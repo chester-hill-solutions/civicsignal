@@ -1,6 +1,11 @@
+import json
+import sys
 import unittest
+from datetime import datetime, timezone
+from unittest.mock import patch
 
-from scripts.lib.wq_catalog import clean_question_text, reusable_detail, tree
+from scripts.lib.wq_catalog import (BASE, EN_LIST, FR_LIST, OUT, clean_question_text, main,
+                                    reusable_detail, resumable_checkpoint, tree)
 
 
 class TreeTextOrderTests(unittest.TestCase):
@@ -22,11 +27,12 @@ class TreeTextOrderTests(unittest.TestCase):
     def test_force_recheck_fetches_same_status_for_late_response_metadata(self):
         listing = {"sourceId": 7, "status": "answered", "statusLabel": "Answered",
                    "askedBy": {"personId": 3}, "dateAsked": "May 1, 2025", "responseDue": None, "topics": []}
-        previous = {**listing, "text": "Old question", "responses": [{"id": "old-response", "type": "viewer",
+        current = {**listing, "text": "Current question"}
+        previous = {**current, "responses": [{"id": "old-response", "type": "viewer",
                     "responseId": "old-response", "url": "https://example.test/response"}],
                     "responseInventoryChecked": True, "detailFetchedAt": "2026-11-23T00:00:00+00:00"}
-        self.assertIsNotNone(reusable_detail({**listing, "text": "Current question"}, previous))
-        self.assertIsNone(reusable_detail({**listing, "text": "Current question"}, previous, force=True))
+        self.assertIsNotNone(reusable_detail(current, previous))
+        self.assertIsNone(reusable_detail(current, previous, force=True))
 
     def test_refreshes_listing_topics_without_refetching_unchanged_detail(self):
         current = {"sourceId": 9, "status": "answered", "statusLabel": "Answered",
@@ -37,6 +43,89 @@ class TreeTextOrderTests(unittest.TestCase):
         reused = reusable_detail(current, previous)
         self.assertIsNotNone(reused)
         self.assertEqual(reused["topics"], ["Current topic"])
+
+
+class ResumeCheckpointTests(unittest.TestCase):
+    def setUp(self):
+        self.complete = {"observedAt": "2026-11-25T05:00:00+00:00"}
+        self.records = [self.record("en"), self.record("fr")]
+        self.partial = {
+            "observedAt": "2026-11-25T08:00:00+00:00",
+            "source": EN_LIST,
+            "method": {"type": "official-rendered-pages", "englishList": EN_LIST,
+                       "frenchList": FR_LIST, "paginationParameter": "page", "pageSize": 20,
+                       "detailRoutes": {"en": BASE + "/written-questions/45-1/q-{number}",
+                                        "fr": BASE + "/questions-ecrites/45-1/q-{number}"}},
+            "sessions": [{"id": "45-1", "questionCount": 1, "pages": 1}],
+            "totals": {"complete": False, "officialReported": 1, "pages": 1,
+                       "enumeratedEn": 1, "enumeratedFr": 1},
+            "paginationCheck": {"enListingReportedTotal": 1, "frListingReportedTotal": 1,
+                                "enLastPageReportedTotal": 1, "frLastPageReportedTotal": 1,
+                                "visitedPagesEn": [1], "visitedPagesFr": [1],
+                                "missingFromEn": [], "missingFromFr": [],
+                                "duplicateNumbersEn": [], "duplicateNumbersFr": []},
+            "records": self.records,
+        }
+
+    @staticmethod
+    def record(language):
+        return {"language": language, "number": 12, "sourceId": 991, "status": "answered",
+                "statusLabel": "Answered", "askedBy": {"personId": 8}, "dateAsked": "May 1, 2026",
+                "responseDue": None, "text": "Question", "responses": [],
+                "responseInventoryChecked": True, "detailFetchedAt": "2026-11-25T07:00:00+00:00"}
+
+    def attest(self, partial=None, records=None):
+        return resumable_checkpoint(partial or self.partial, records or self.records,
+                                    self.complete, 1, 1,
+                                    datetime(2026, 11, 25, 9, tzinfo=timezone.utc).timestamp())
+
+    def test_reuses_only_fresh_successful_details_from_legacy_checkpoint(self):
+        reusable, proof = self.attest()
+        self.assertEqual(set(reusable), {("en", 12), ("fr", 12)})
+        self.assertEqual(proof["checkpointSuccessfulDetails"], 2)
+        self.assertEqual(proof["legacyProvenance"], {"runId": None, "recheckMode": None, "modeRecorded": False})
+        self.assertTrue(proof["compatibleSourceListings"])
+
+    def test_rejects_checkpoint_with_recorded_nonrecheck_mode(self):
+        partial = json.loads(json.dumps(self.partial))
+        partial["acquisition"] = {"runId": "test-run", "mode": "incremental", "recheckDetails": False}
+        with self.assertRaisesRegex(ValueError, "full detail-recheck mode"):
+            self.attest(partial)
+
+    def test_rejects_changed_source_listing_metadata(self):
+        changed = [dict(record) for record in self.records]
+        changed[0] = {**changed[0], "dateAsked": "May 2, 2026"}
+        with self.assertRaisesRegex(ValueError, "metadata differs from the current source listings"):
+            self.attest(records=changed)
+
+    def test_skips_failed_or_nonfresh_details_instead_of_reusing(self):
+        partial = json.loads(json.dumps(self.partial))
+        partial["records"][0]["fetchError"] = "timeout"
+        partial["records"][1]["detailFetchedAt"] = "2026-11-25T04:59:59+00:00"
+        reusable, proof = self.attest(partial)
+        self.assertEqual(set(reusable), set())
+        self.assertEqual(proof["checkpointSuccessfulDetails"], 0)
+
+    def test_incomplete_cli_exits_nonzero(self):
+        with patch.object(sys, "argv", ["wq_catalog.py"]), \
+             patch("scripts.lib.wq_catalog.scrape", return_value={"totals": {"complete": False}}):
+            with self.assertRaises(SystemExit) as raised:
+                main()
+        self.assertEqual(raised.exception.code, 1)
+
+    def test_complete_default_cli_returns_success(self):
+        with patch.object(sys, "argv", ["wq_catalog.py"]), \
+             patch("scripts.lib.wq_catalog.scrape", return_value={"totals": {"complete": True}}) as scrape:
+            main()
+        scrape.assert_called_once_with(OUT, None, 4, 40, False, False, None)
+
+    def test_max_pages_partial_remains_nonzero_and_passes_limit(self):
+        with patch.object(sys, "argv", ["wq_catalog.py", "--max-pages", "1"]), \
+             patch("scripts.lib.wq_catalog.scrape", return_value={"totals": {"complete": False}}) as scrape:
+            with self.assertRaises(SystemExit) as raised:
+                main()
+        self.assertEqual(raised.exception.code, 1)
+        scrape.assert_called_once_with(OUT, 1, 4, 40, False, False, None)
 
 
 if __name__ == "__main__":
