@@ -1,0 +1,97 @@
+{
+  "chamber": "house",
+  "session": "45-1",
+  "weekOf": "2026-10-19",
+  "lookupSamples": [
+    {
+      "sittingDate": "2026-10-19",
+      "sittingId": "45-1-150",
+      "id": "hansard:en:45-1-150:13633997",
+      "language": "en",
+      "speaker": "Hon. Steven MacKinnon (Minister of Transport and Leader of the Government in the House of Commons, Lib.)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-150/hansard#Int-13633997",
+      "sourceSha256": "03cc874735faec24e50a741c0f8e78bef3dc2afd831cdd355a3f6b6e21862b13"
+    },
+    {
+      "sittingDate": "2026-10-19",
+      "sittingId": "45-1-150",
+      "id": "hansard:fr:45-1-150:13633997",
+      "language": "fr",
+      "speaker": "L’hon. Steven MacKinnon (ministre des Transports et leader du gouvernement à la Chambre des communes, Lib.)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-150/debats#Int-13633997",
+      "sourceSha256": "21be7765408e04ae8b4c0bc6d35005e1dc8a6444c189beb9948a430cb2b2fe24"
+    },
+    {
+      "sittingDate": "2026-10-20",
+      "sittingId": "45-1-151",
+      "id": "hansard:en:45-1-151:13635070",
+      "language": "en",
+      "speaker": "The Speaker",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-151/hansard#Int-13635070",
+      "sourceSha256": "aa8beb76a8201d9c4e99c9b790b39e093c81983cfbd8e2f6503f8151767ed212"
+    },
+    {
+      "sittingDate": "2026-10-20",
+      "sittingId": "45-1-151",
+      "id": "hansard:fr:45-1-151:13635070",
+      "language": "fr",
+      "speaker": "Le Président",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-151/debats#Int-13635070",
+      "sourceSha256": "9b6a61cabccebaf7ac817ac2c728caff3fe0330c5c9d76ec019170489f07c2cf"
+    },
+    {
+      "sittingDate": "2026-10-21",
+      "sittingId": "45-1-152",
+      "id": "hansard:en:45-1-152:13640112",
+      "language": "en",
+      "speaker": "The Speaker",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-152/hansard#Int-13640112",
+      "sourceSha256": "cdd17d93d8ce214145220f561d3fcef7f3df5862fb0f0953c87c6ad1c8f3638a"
+    },
+    {
+      "sittingDate": "2026-10-21",
+      "sittingId": "45-1-152",
+      "id": "hansard:fr:45-1-152:13640112",
+      "language": "fr",
+      "speaker": "Le Président",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-152/debats#Int-13640112",
+      "sourceSha256": "5d83cf2cc4f2a161621766fffb7d13ded82b8ecdb9805302031977373d2c1c1b"
+    },
+    {
+      "sittingDate": "2026-10-22",
+      "sittingId": "45-1-153",
+      "id": "hansard:en:45-1-153:13643770",
+      "language": "en",
+      "speaker": "Kelly McCauley (Edmonton West, CPC)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-153/hansard#Int-13643770",
+      "sourceSha256": "4ba8840479a24c3244bc3dfc751e9f3c0270bdb980df7f1a66cba3ba65449486"
+    },
+    {
+      "sittingDate": "2026-10-22",
+      "sittingId": "45-1-153",
+      "id": "hansard:fr:45-1-153:13643770",
+      "language": "fr",
+      "speaker": "Kelly McCauley (Edmonton-Ouest, PCC)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-153/debats#Int-13643770",
+      "sourceSha256": "5385215c55e6810f90bd502aa763a9ea9be7db0024b52d74a0e81d736a15bbe0"
+    },
+    {
+      "sittingDate": "2026-10-23",
+      "sittingId": "45-1-154",
+      "id": "hansard:en:45-1-154:13649359",
+      "language": "en",
+      "speaker": "Alex Ruff (Bruce—Grey—Owen Sound, CPC)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/sitting-154/hansard#Int-13649359",
+      "sourceSha256": "d7494d8cca826c10f3b446b0d2cc4c152054bdf0b0de1b195eb4f0d9d799339f"
+    },
+    {
+      "sittingDate": "2026-10-23",
+      "sittingId": "45-1-154",
+      "id": "hansard:fr:45-1-154:13649359",
+      "language": "fr",
+      "speaker": "Alex Ruff (Bruce—Grey—Owen Sound, PCC)",
+      "citationUrl": "https://www.ourcommons.ca/DocumentViewer/fr/45-1/chambre/seance-154/debats#Int-13649359",
+      "sourceSha256": "9226439ddac068f920eb3972d2955812a2bebb4d31fbc8b0422b64a85ef33a93"
+    }
+  ]
+}

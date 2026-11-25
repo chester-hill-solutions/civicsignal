@@ -12,17 +12,20 @@
  * receipt is written only when the caller supplies `--receipt`.
  */
 
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statfsSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { applyGedsMigrations, openSqliteGedsDatabase } from './lib/sqlite-geds-db';
 import { FileGedsArchive } from './lib/file-geds-archive';
 import { GEDS_DATASET_ID, GEDS_SOURCE_URL, fetchGedsSource, refreshGeds } from '../src/geds/refresh';
+import { latestGedsSnapshot } from '../src/geds/refresh-state';
+import { sha256Hex } from '../src/geds/hash';
 import { firstValue } from '../src/geds/db';
 import type { GedsRefreshSummary } from '../src/geds/types';
 
 interface Args {
   csv?: string;
   download: boolean;
+  minNewSnapshotBytes?: number;
   db: string;
   archive: string;
   asOf?: string;
@@ -181,6 +184,11 @@ function parseArgs(argv: string[]): Args {
     };
     if (arg === '--csv') args.csv = next();
     else if (arg === '--download') args.download = true;
+    else if (arg === '--min-new-snapshot-bytes') {
+      const bytes = Number(next());
+      if (!Number.isSafeInteger(bytes) || bytes <= 0) throw new Error('Expected a positive byte count');
+      args.minNewSnapshotBytes = bytes;
+    }
     else if (arg === '--db') args.db = next();
     else if (arg === '--archive') args.archive = next();
     else if (arg === '--as-of') args.asOf = next();
@@ -190,7 +198,7 @@ function parseArgs(argv: string[]): Args {
     else if (arg === '--receipt') args.receipt = next();
     else if (arg === '--help' || arg === '-h') {
       console.log(
-        'usage: bun scripts/geds-import.ts [--csv file | --download] [--db path] [--archive dir] [--as-of iso] [--source-date iso] [--report path] [--receipt path]',
+        'usage: bun scripts/geds-import.ts [--csv file | --download] [--db path] [--archive dir] [--as-of iso] [--source-date iso] [--min-new-snapshot-bytes n] [--report path] [--receipt path]',
       );
       process.exit(0);
     } else {
@@ -227,6 +235,15 @@ async function importSource(
     console.log(`downloading ${args.sourceUrl}`);
     const fetched = await fetchGedsSource(args.sourceUrl);
     if (fetched.notModified) throw new Error('source answered 304; nothing to do');
+    if (args.minNewSnapshotBytes) {
+      const space = statfsSync(dirname(resolve(args.db)));
+      if (space.bavail * space.bsize < args.minNewSnapshotBytes) {
+        const latest = await latestGedsSnapshot(db);
+        if (!latest?.csv_sha256 || latest.zip_sha256 !== sha256Hex(fetched.zipBytes)) {
+          throw new Error(`A new GEDS snapshot needs ${args.minNewSnapshotBytes} available bytes on the database volume`);
+        }
+      }
+    }
     return refreshGeds({
       db,
       archive,

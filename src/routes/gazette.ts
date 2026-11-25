@@ -113,18 +113,47 @@ export async function runGazetteRequest(db: D1Database, request: GazetteRequest)
   if (request.operation === 'lookup') {
     const key = parseGazetteRecordId(request.id);
     if (!key) throw new RequestInputError('Supply a Gazette record ID returned by search.');
-    if (!isGazetteIssueSupported(key)) throw new AccessError('UNSUPPORTED_COVERAGE', 'This Gazette issue is outside the preview coverage.', 501);
+    const edition = await db.prepare(`SELECT record_count FROM gazette_editions
+      WHERE part=? AND language=? AND issue_date=? AND volume=? AND issue_number=?`)
+      .bind(key.part, key.language, key.issueDate, key.volume, key.issueNumber).first<{ record_count: number }>()
+      .catch(() => { throw new AccessError('RETRIEVAL_UNAVAILABLE', 'The Gazette edition store is unavailable.', 503); });
+    if (!edition) {
+      if (isGazetteIssueSupported(key)) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'A configured Gazette issue edition is unavailable.', 503);
+      throw new AccessError('UNSUPPORTED_COVERAGE', 'This Gazette issue is outside the persisted coverage.', 501);
+    }
     const { items, coverage } = await readEditions(db, [key], [key.part], { sql: 'id = ?', value: request.id, limit: 1 });
     if (!items.length) throw new AccessError('NOT_FOUND', 'No Gazette record has that ID.', 404);
     return GazetteLookupResponseSchema.parse({ item: items[0], coverage: coverage[0] });
   }
   const query = request.query;
-  const expected = GAZETTE_PREVIEW_ISSUES.filter((key) => key.language === query.language
-    && (!query.part || key.part === query.part)
-    && (!query.since || key.issueDate >= query.since) && (!query.until || key.issueDate <= query.until));
-  if (!expected.length) throw new AccessError('UNSUPPORTED_COVERAGE', 'The requested Gazette date and part are outside the preview coverage.', 501);
-  const { items, coverage } = await readEditions(db, expected, query.part ? [query.part] : ['I', 'II'], {
-    sql: 'instr(search_text, ?) > 0', value: normalizeForSearch(query.topic), limit: query.limit,
-  });
+  const predicates = ['language=?'];
+  const values: (string | number)[] = [query.language];
+  if (query.part) { predicates.push('part=?'); values.push(query.part); }
+  if (query.since) { predicates.push('issue_date>=?'); values.push(query.since); }
+  if (query.until) { predicates.push('issue_date<=?'); values.push(query.until); }
+  const scope = predicates.join(' AND ');
+  const parts: GazetteIssueKey['part'][] = query.part ? [query.part] : ['I', 'II'];
+  const topic = normalizeForSearch(query.topic);
+  const [editions, records] = await db.batch<EditionRow | GazetteDbRow>([
+    db.prepare(`SELECT part, language, issue_date, volume, issue_number, record_count FROM gazette_editions
+      WHERE ${scope} ORDER BY issue_date DESC, part, volume DESC, issue_number DESC`).bind(...values),
+    db.prepare(`SELECT * FROM gazette_records WHERE ${scope} AND instr(search_text, ?) > 0
+      ORDER BY issue_date DESC, part, volume DESC, issue_number DESC, id LIMIT ?`).bind(...values, topic, query.limit),
+  ]).catch(() => { throw new AccessError('RETRIEVAL_UNAVAILABLE', 'The Gazette edition store is unavailable.', 503); });
+  const editionRows = editions.results as EditionRow[];
+  if (!editionRows.length) {
+    const configured = GAZETTE_PREVIEW_ISSUES.some((key) => key.language === query.language
+      && (!query.part || key.part === query.part)
+      && (!query.since || key.issueDate >= query.since) && (!query.until || key.issueDate <= query.until));
+    if (configured) throw new AccessError('RETRIEVAL_UNAVAILABLE', 'A configured Gazette issue edition is unavailable.', 503);
+    throw new AccessError('UNSUPPORTED_COVERAGE', 'The requested Gazette date and part are outside the persisted coverage.', 501);
+  }
+  if (!query.since && !query.until && parts.some((part) => !editionRows.some((row) => row.part === part))) {
+    throw new AccessError('RETRIEVAL_UNAVAILABLE', 'A requested Gazette part has no persisted issue edition.', 503);
+  }
+  const coverage = parts.map((part) => ({ part, language: query.language, available: true,
+    issues: editionRows.filter((row) => row.part === part).map((row) => ({ issueDate: row.issue_date,
+      volume: row.volume, issueNumber: row.issue_number, recordCount: row.record_count })) }));
+  const items = (records.results as GazetteDbRow[]).map(recordFromRow);
   return GazetteSearchResponseSchema.parse({ items, count: items.length, coverage });
 }

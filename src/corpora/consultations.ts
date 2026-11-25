@@ -109,6 +109,42 @@ export const ConsultationLookupResponseSchema = z.strictObject({
   asOf: z.iso.datetime({ offset: true }),
   item: ConsultationRecordSchema.nullable(),
   revisions: z.array(ConsultationRevisionSchema),
+  participationNotices: z.strictObject({
+    catalogueRevision: z.string().min(1),
+    editions: z.array(z.strictObject({
+      consultationId: ConsultationFactsSchema.shape.id,
+      catalogueRevision: z.string().min(1),
+      language: ConsultationLanguageSchema,
+      status: z.enum(['pending', 'fetched', 'missing-link', 'unrecognized-link-kind', 'unrecognized-host',
+        'unrecognized-url', 'http-error', 'fetch-error', 'archive-budget']),
+      checkedAt: z.iso.datetime({ offset: true }),
+      httpStatus: z.number().int().min(100).max(599).nullable(),
+      sourceHash: z.string().regex(/^[a-f0-9]{64}$/u).nullable(),
+      sourceBytes: z.number().int().nonnegative().nullable(),
+      sourceUrl: z.url({ protocol: /^https?$/ }).nullable(),
+      finalUrl: z.url({ protocol: /^https?$/ }).nullable(),
+      sources: z.array(z.strictObject({
+        order: z.number().int().nonnegative(),
+        status: z.enum(['pending', 'fetched', 'missing-link', 'unrecognized-link-kind', 'unrecognized-host',
+          'unrecognized-url', 'http-error', 'fetch-error', 'archive-budget']),
+        sourceUrl: z.url({ protocol: /^https?$/ }).nullable(),
+        finalUrl: z.url({ protocol: /^https?$/ }).nullable(),
+        sourceHash: z.string().regex(/^[a-f0-9]{64}$/u).nullable(),
+        sourceBytes: z.number().int().nonnegative().nullable(),
+      })),
+      lastAttemptStatus: z.string().min(1).max(50).nullable().optional(),
+      lastAttemptAt: z.iso.datetime({ offset: true }).nullable().optional(),
+      sections: z.array(z.strictObject({
+        kind: z.enum(['eligibility', 'deadline', 'submission-instructions']),
+        heading: z.string().min(1),
+        citationUrl: z.url({ protocol: /^https?$/ }),
+        sourceUrl: z.url({ protocol: /^https?$/ }),
+        sourceHash: z.string().regex(/^[a-f0-9]{64}$/u),
+        quote: z.string().min(1).max(4000),
+        truncated: z.boolean(),
+      })),
+    })),
+  }).optional().describe('Present only when the optional local notice store is configured. Editions are joined on the exact current catalogue revision, consultation ID, and language.'),
 });
 
 export const ConsultationCoverageSchema = z.strictObject({
@@ -155,6 +191,7 @@ export type ConsultationRevision = z.infer<typeof ConsultationRevisionSchema>;
 export type ConsultationSearchItem = z.infer<typeof ConsultationSearchItemSchema>;
 export type ConsultationSearchResponse = z.infer<typeof ConsultationSearchResponseSchema>;
 export type ConsultationLookupResponse = z.infer<typeof ConsultationLookupResponseSchema>;
+export type ConsultationNoticeEdition = NonNullable<ConsultationLookupResponse['participationNotices']>['editions'][number];
 export type ConsultationCoverage = z.infer<typeof ConsultationCoverageSchema>;
 
 export interface ConsultationDictionary {

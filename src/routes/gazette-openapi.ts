@@ -54,7 +54,7 @@ export function gazetteOpenApi() {
       '/api/gazette/changes': sourceFeedOperation('gazette'),
       [GAZETTE_PATHS.search]: { get: {
         operationId: 'searchCanadaGazette', summary: 'Search Canada Gazette metadata',
-        description: 'Search record titles in a selected language and optional Gazette part and inclusive publication date range. Coverage is returned for each requested part. An absent edition is reported as unavailable (503), distinct from an available edition with zero matches. A valid search consumes one workspace unit.',
+        description: 'Search record titles in a selected language and optional Gazette part and inclusive publication date range. Coverage reports every persisted issue date matching that range for each requested part. An absent edition is reported as unavailable (503), distinct from an available edition with zero matches. A valid search consumes one workspace unit.',
         parameters,
         responses: { 200: response('Metadata records and per-part coverage.', GazetteSearchResponseSchema,
           { items: [example], count: 1, coverage: [coverageExample] }), ...searchErrors },

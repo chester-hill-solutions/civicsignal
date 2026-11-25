@@ -1,0 +1,472 @@
+{
+  "scope": "Local operator and source evidence. UTC timestamps. Last scheduled statutes qualification is recorded in the release ledger.",
+  "daily": {
+    "installedCalendar": "06:15 America/Toronto",
+    "lastSuccessfulKickstart": {
+      "receipt": "2026-11-25T02-15-22-640Z.json",
+      "sha256": "6493d250efa10ffeb0ea1fe65f75a3ad641f3e78d0c5f24cd944bd792dc5f123",
+      "ok": true,
+      "startedAt": "2026-11-25T02:15:22.640Z",
+      "durationMs": 186556,
+      "scope": "full",
+      "steps": [
+        {
+          "name": "consultations",
+          "ok": true
+        },
+        {
+          "name": "committee-calls",
+          "ok": true
+        },
+        {
+          "name": "funding",
+          "ok": true
+        }
+      ]
+    },
+    "separateAuthenticatedWorkerChecksPassed": 4,
+    "regularOccurrenceVerified": false,
+    "laterKickstart": {
+      "receipt": "2026-11-25T02-37-14-261Z.json",
+      "sha256": "7d5eb60575efabf0234c855e53f6663211405ad66ed3c98d169373bc4c772471",
+      "ok": false,
+      "startedAt": "2026-11-25T02:37:14.261Z",
+      "durationMs": 154993,
+      "scope": "full",
+      "steps": [
+        {
+          "name": "consultations",
+          "ok": true
+        },
+        {
+          "name": "committee-calls",
+          "ok": true
+        },
+        {
+          "name": "funding",
+          "ok": false,
+          "error": "python3 -B scripts/funding-esdc.py exited with status 1"
+        }
+      ]
+    },
+    "latestVerifiedKickstart": {
+      "receipt": "2026-11-25T02-52-26-967Z.json",
+      "startedAt": "2026-11-25T02:52:26.967Z",
+      "finishedAt": "2026-11-25T02:55:28.469Z",
+      "durationMs": 181502,
+      "ok": true,
+      "workerVerification": {
+        "ok": true,
+        "passedTests": 4,
+        "durationMs": 9304
+      },
+      "unattendedRegularOccurrence": false
+    }
+  },
+  "weekly": {
+    "installedCalendar": "Saturday 09:00 America/Toronto",
+    "lastRetainedFullAttempt": {
+      "startedAt": "2026-11-25T02:15:55.317057Z",
+      "ok": false,
+      "sources": {
+        "federal-discovery": "passed",
+        "official-titles": "passed",
+        "service-inventory": "passed",
+        "ati-summaries": "passed",
+        "grant-awards": "failed",
+        "eccc": "failed",
+        "briefing-notes": "failed",
+        "parliament": "skipped",
+        "hansard-house": "failed",
+        "hansard-senate": "failed",
+        "written-questions": "skipped",
+        "geds": "passed",
+        "committees": "skipped"
+      }
+    },
+    "nextAttempt": {
+      "launchdLogFinishedAt": "2026-11-25T02:40:47Z",
+      "scope": "16-source kickstart",
+      "passed": [
+        "federal-discovery",
+        "federal-guidance",
+        "official-titles",
+        "service-inventory",
+        "ati-summaries"
+      ],
+      "failed": [
+        "consultation-notices",
+        "grant-awards",
+        "eccc",
+        "gazette",
+        "briefing-notes",
+        "geds"
+      ],
+      "skippedByStorageGuard": [
+        "parliament",
+        "hansard-house",
+        "hansard-senate",
+        "written-questions",
+        "committees"
+      ],
+      "receiptWriteError": "ENOSPC"
+    },
+    "sixSourceRetry": {
+      "receipt": "2026-11-25T02-49-21.474699Z.json",
+      "ok": true,
+      "selected": [
+        "federal-disclosures",
+        "gazette",
+        "briefing-notes",
+        "hansard-house",
+        "hansard-senate",
+        "geds"
+      ],
+      "servingVerification": "passed",
+      "newerThanLastFailedFullAttempt": true
+    }
+  },
+  "federalDiscovery": {
+    "registeredSeries": 18,
+    "endpointObservations": 28,
+    "distinctEndpoints": 27,
+    "receiptSha256": "f85cde21592da280d56481e381a7b3d6fa1e1250c2d50ab44989cc135fcefdd5"
+  },
+  "federalBulk": {
+    "ati-summaries": {
+      "observedAt": "2026-11-25T02:33:17.748458+00:00",
+      "resources": [
+        {
+          "id": "19383ca2-b01a-487d-88f7-e1ffbc7d39c2",
+          "rows": 206381,
+          "sha256": "eec1e9ac33b006c8f1960dea23857921eda1a85afdb940898cd232f2fae68a15"
+        },
+        {
+          "id": "5a1386a5-ba69-4725-8338-2f26004d7382",
+          "rows": 6401,
+          "sha256": "3fadab7b0e8a1199bbee3c51cfbba321caf406a9b98575b5b687716646fe8ae7"
+        }
+      ]
+    },
+    "official-titles": {
+      "observedAt": "2026-11-25T02:33:07.573348+00:00",
+      "resources": [
+        {
+          "id": "f0ca63e0-c15e-45b5-9656-77abe1564b1c",
+          "rows": 102,
+          "sha256": "41e34718f569dc3a5a239880e727ee9812cdc68d72b24575b3928d897a2c4a5b"
+        }
+      ]
+    },
+    "service-inventory": {
+      "observedAt": "2026-11-25T02:33:12.271566+00:00",
+      "resources": [
+        {
+          "id": "272143a7-533e-42a1-b72d-622116474a21",
+          "rows": 10432,
+          "sha256": "e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968"
+        },
+        {
+          "id": "3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a",
+          "rows": 7254,
+          "sha256": "b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095"
+        },
+        {
+          "id": "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e",
+          "rows": 5025,
+          "sha256": "d91f9c1cf8fd5b06682ac58b3d63a7b884e7e34f5d1c77c4deeedaa1a73efa73"
+        },
+        {
+          "id": "c0cf9766-b85b-48c3-b295-34f72305aaf6",
+          "rows": 3691,
+          "sha256": "b57b2f2c403577699a0a2b5f3646e44e769832325baa31b83d72b9bef60adf61"
+        }
+      ]
+    },
+    "grant-awards": {
+      "observedAt": "2026-11-25T02:56:11.575197+00:00",
+      "resources": [
+        {
+          "id": "1d15a62f-5656-49ad-8c88-f40ce689d831",
+          "rows": 1383281,
+          "sha256": "e2ec2c41acad65ef937ce3d71f0e8be9e591978608b2c8dfe7503bc40ba9a651"
+        },
+        {
+          "id": "4e4db232-f5e8-43c7-b8b2-439eb7d55475",
+          "rows": 237,
+          "sha256": "67ac8006d3b6610f9def36682c831dd7865c1a9dbe3b7ad3fa90825c57b5fa6b"
+        }
+      ]
+    }
+  },
+  "briefingTitles": {
+    "titles": 161820,
+    "nilReports": 274,
+    "institutions": 85,
+    "sourceHashes": {
+      "main": "30c0678fe39434587c81db71b0b76861857abeb1bd3a4c5d0240e03636320bb2",
+      "nil": "84087da83f053bee19afd2846e8e3b4dc534c3660174980b742fea81abbed4f0",
+      "schema": "b37ea9b2f0cb29a416e103db51de07f91db3331ce03f2129628e0d4713dd73df"
+    }
+  },
+  "guidance": {
+    "observedAt": "2026-11-25T02:32:41.395622+00:00",
+    "indexEntries": 2174,
+    "sourceRegisterSha256": "ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746"
+  },
+  "portalDisclosures": {
+    "observedAt": "2026-11-25T02:34:26.390196+00:00",
+    "total": 1339,
+    "collections": {
+      "aia": 41,
+      "transition": 143,
+      "transition_deputy": 84,
+      "parliament_committee": 522,
+      "parliament_committee_deputy": 549
+    }
+  },
+  "institutions": {
+    "rosterEntries": 110,
+    "provisionalNames": 109,
+    "namesWithRecords": 96,
+    "matchedResources": 12,
+    "namesWithRecordsApartFromTitlesRegister": 93
+  },
+  "consultationNotices": {
+    "scope": "all-open",
+    "catalogueRevision": "f2ce0ab9cb278e6f284866fcd82b54d0be85df773683396697242a28ec25b182",
+    "openConsultations": 71,
+    "editions": 142,
+    "publishedFetchedEditions": 95,
+    "counts": {
+      "fetch-error": 2,
+      "fetched": 93,
+      "fetched-reused-url": 4,
+      "http-error": 2,
+      "missing-link": 26,
+      "published-editions": 95,
+      "unrecognized-host": 6,
+      "unrecognized-link-kind": 2,
+      "unrecognized-url": 9
+    },
+    "unavailableOfficialEditions": {
+      "crtc": {
+        "languages": [
+          "en",
+          "fr"
+        ],
+        "observation": "HTTP 403 via both clients"
+      },
+      "cta": {
+        "languages": [
+          "en",
+          "fr"
+        ],
+        "observation": "connection reset, timeout or untrusted TLS chain"
+      }
+    }
+  },
+  "departmentalPublications": {
+    "catalogue_cutoff": "2026-11-25T02:27:07.689790Z",
+    "documents_seen": 246,
+    "documents_extracted": 234,
+    "passages": 64174,
+    "acquisitionGaps": 12,
+    "translationPairingGaps": 29,
+    "extractionGaps": 0
+  },
+  "gazette": {
+    "schemaVersion": 1,
+    "source": "https://gazette.gc.ca",
+    "completedAt": "2026-11-25T02:38:13.433Z",
+    "cutoff": "2026-11-24",
+    "editions": [
+      {
+        "part": "I",
+        "language": "en",
+        "issueDate": "2026-11-21",
+        "volume": 160,
+        "issueNumber": 47,
+        "status": "unchanged",
+        "written": 0,
+        "removed": 0,
+        "recordCount": 21
+      },
+      {
+        "part": "I",
+        "language": "fr",
+        "issueDate": "2026-11-21",
+        "volume": 160,
+        "issueNumber": 47,
+        "status": "unchanged",
+        "written": 0,
+        "removed": 0,
+        "recordCount": 21
+      },
+      {
+        "part": "II",
+        "language": "en",
+        "issueDate": "2026-11-18",
+        "volume": 160,
+        "issueNumber": 23,
+        "status": "unchanged",
+        "written": 0,
+        "removed": 0,
+        "recordCount": 19
+      },
+      {
+        "part": "II",
+        "language": "fr",
+        "issueDate": "2026-11-18",
+        "volume": 160,
+        "issueNumber": 23,
+        "status": "unchanged",
+        "written": 0,
+        "removed": 0,
+        "recordCount": 19
+      }
+    ]
+  },
+  "hansard": {
+    "session": "45-1",
+    "weekOfOctober19": {
+      "house": {
+        "weekOf": "2026-10-19",
+        "editionsVerified": 10,
+        "receiptSha256": "93241008b812c730abf7319d9228e4f51b20e1e16aeaf94d6cae9d4b9bd6d166"
+      },
+      "senate": {
+        "weekOf": "2026-10-19",
+        "editionsVerified": 6,
+        "receiptSha256": "920f9adf11e4287a56a95eb4ac6bcdb1729ec9eebe01435dced1f5a3c07ac27d"
+      }
+    },
+    "archivedEditions": 64,
+    "candidateEditionsAtCutoff": 546,
+    "speeches": 14574
+  },
+  "storage": {
+    "approvedScratchRemoved": 2,
+    "measuredImmediatelyAfterMiB": 223,
+    "fullCommitteeGuardBytes": 3221225472,
+    "gedsTemporaryCsvRemovedBytes": 256027392,
+    "gedsDuplicateSha256": "5e8ae25d545d64c8e1839384dc3778d8d1d15120402d1359472a33abde66f1db",
+    "additionalCleanup": {
+      "packageDirectories": 4,
+      "xcodeGeneratedSubdirectories": 6,
+      "nestedXcodeResultBundlesPreserved": 2,
+      "freeBytesImmediatelyAfter": 4262920192
+    }
+  },
+  "softwareChecks": {
+    "vitestPassed": 2675,
+    "vitestSkippedWithoutOptionalData": 17,
+    "workerd": true,
+    "additionalAcquiredChecks": "Executed separately against local sources",
+    "protectedCopyPython": 31,
+    "votesPython": 8,
+    "writtenQuestionsPython": 5,
+    "wranglerDryRunBuilds": 6,
+    "pythonDiscoveryPassed": 215,
+    "vendorFilesChecked": 117,
+    "acquiredEndpointSuite": {
+      "passed": true,
+      "testFile": "test/endpoints.test.ts",
+      "totalCases": 257,
+      "bindings": "All optional endpoint sources and both GEDS snapshots supplied."
+    }
+  },
+  "reportDirectories": {
+    "observedAt": "2026-11-25T02:54:15+00:00",
+    "inventorySha256": "5c54e1549c6f29e044fb9cd09829d69c64b12343b19e4415c0c29817acc8dc11",
+    "familyCounts": {
+      "departmental-plans": {
+        "bilingualIssuerGroups": 39,
+        "linkedIssuersByLanguage": {
+          "en": 86,
+          "fr": 86
+        },
+        "uniqueIssuerGroups": 132
+      },
+      "departmental-results": {
+        "bilingualIssuerGroups": 39,
+        "linkedIssuersByLanguage": {
+          "en": 86,
+          "fr": 86
+        },
+        "uniqueIssuerGroups": 132
+      },
+      "regulatory-plans": {
+        "bilingualCurrentCycles": 1,
+        "bilingualIssuerGroups": 1,
+        "currentCycles": 3,
+        "englishOnlyCycles": [
+          {
+            "cycle": "2025-2035",
+            "family": "regulatory-stock-review"
+          }
+        ],
+        "frenchOnlyCycles": [
+          {
+            "cycle": "2026-2036",
+            "family": "regulatory-stock-review"
+          }
+        ],
+        "issuerGroups": 1,
+        "linksByLanguage": {
+          "en": 2,
+          "fr": 2
+        }
+      }
+    }
+  },
+  "procurement": {
+    "fiscalYear": "2026-2027",
+    "generation": "2026-11-25T02:53:16.844661+00:00",
+    "resources": [
+      {
+        "kind": "award-notices",
+        "sourceUrl": "https://canadabuys.canada.ca/opendata/pub/2026-2027-awardNotice-avisAttribution.csv",
+        "sha256": "247a18cd89a69b4b572bdfca421e861d7070266d97510f3470104608d620f87b",
+        "bytes": 19451497,
+        "rows": 5319,
+        "columns": 80
+      },
+      {
+        "kind": "contract-history",
+        "sourceUrl": "https://canadabuys.canada.ca/opendata/pub/2026-2027-contractHistory-contratsOctroyes.csv",
+        "sha256": "a91b34beceef57d77dd2b2328df828224533a6304983bbcf357ff3475c200026",
+        "bytes": 6741384,
+        "rows": 2466,
+        "columns": 91
+      }
+    ]
+  },
+  "publicationsBibliography": {
+    "publisherSnapshot": "2025-11-20",
+    "resources": {
+      "monographs": {
+        "url": "https://donnees-data.tpsgc-pwgsc.gc.ca/bi1/pub-pub/monographies-monographs.zip",
+        "sha256": "26f0858eaaff0063f8487adca4232bfb184e9c60d137fa764b396f37a5337f58",
+        "recordCount": 133228,
+        "archiveBytes": 35376741
+      },
+      "periodicals": {
+        "url": "https://donnees-data.tpsgc-pwgsc.gc.ca/bi1/pub-pub/periodiques-periodicals.zip",
+        "sha256": "43cce78a11091daf185c1c99ad5b8bd564cad6a0584289acf4fdbfbf4b3d2e8b",
+        "recordCount": 22803,
+        "archiveBytes": 4362145
+      },
+      "series": {
+        "url": "https://donnees-data.tpsgc-pwgsc.gc.ca/bi1/pub-pub/series.zip",
+        "sha256": "8ac3993960546bb0b7a382446ce6ce525b180284f1c94431f430f4ded8629d08",
+        "recordCount": 165438,
+        "archiveBytes": 35208405
+      }
+    }
+  },
+  "regularStagingStatutes": {
+    "attempted": false,
+    "reason": "No dedicated staging schedule credential available to the operator and both cleanup guards."
+  }
+}

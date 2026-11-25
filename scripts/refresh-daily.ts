@@ -130,11 +130,11 @@ function releaseLock(): void {
 
 const tail = (text: string, limit = 4000) => text.length > limit ? `…${text.slice(-limit)}` : text;
 
-async function run(command: string[], timeoutMs: number) {
+async function run(command: string[], timeoutMs: number, env = process.env) {
   const started = Date.now();
   const child = Bun.spawn(command, {
     cwd: ROOT,
-    env: process.env,
+    env,
     stdout: 'pipe',
     stderr: 'pipe',
     signal: AbortSignal.timeout(timeoutMs),
@@ -185,7 +185,44 @@ async function runStep(step: Step, temporary: string) {
     summary, ...(serving ? { serving } : {}), ...(error ? { error } : {}) };
 }
 
+async function runLockedCommitteeStep(temporary: string): Promise<Awaited<ReturnType<typeof runStep>>> {
+  const started = Date.now();
+  const child = Bun.spawn(['python3', '-B', 'scripts/schedule/lock-committee.py', process.execPath, temporary], {
+    cwd: ROOT, stdout: 'pipe', stderr: 'pipe',
+  });
+  const [out, err, code] = await Promise.all([
+    new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited,
+  ]);
+  if (code === 0) return JSON.parse(out) as Awaited<ReturnType<typeof runStep>>;
+  return { name: 'committee-calls', ok: false, durationMs: Date.now() - started,
+    commands: [], summary: {}, error: err.trim() || `Committee refresh exited with status ${code}` };
+}
+
+async function verifyDailyWorker(results: Awaited<ReturnType<typeof runStep>>[]) {
+  const paths = Object.fromEntries(results.map(step => [step.name, step.serving?.database]));
+  const checks = 'serves reconciled coverage, bilingual results and revisions from the acquired observation|computes dated states and follows bilingual listings to their acquired studies|follows both recommendations to the brief and related published terms';
+  const result = await run(['bun', 'run', 'test', 'test/endpoints.test.ts', '-t', checks, '--reporter=json'], 180_000, {
+    ...process.env,
+    CIVICSIGNAL_CONSULTATIONS_SQLITE: String(paths.consultations),
+    CIVICSIGNAL_CONSULTATIONS_RECEIPT: resolve(RECEIPTS, 'consultations.json'),
+    CIVICSIGNAL_COMMITTEES_D1: String(paths['committee-calls']),
+    CIVICSIGNAL_COMMITTEE_CALLS_RECEIPT: resolve(RECEIPTS, 'committee-calls.json'),
+    CIVICSIGNAL_FUNDING_SQLITE: String(paths.funding),
+  });
+  if (!result.ok) throw new Error(result.stderr || tail(result.stdout));
+  const report = JSON.parse(result.stdout) as { success: boolean; numPassedTests: number };
+  if (!report.success || report.numPassedTests !== 4) throw new Error(`Expected four authenticated Worker checks to pass, observed ${report.numPassedTests}`);
+  return { ok: true, passedTests: report.numPassedTests, durationMs: result.durationMs };
+}
+
 async function main() {
+  if (process.argv[2] === '--locked-committee-step') {
+    const step = steps.find(candidate => candidate.name === 'committee-calls');
+    const temporary = process.argv[3];
+    if (!step || !temporary) throw new Error('Missing committee step or receipt directory');
+    console.log(JSON.stringify(await runStep(step, temporary)));
+    return;
+  }
   const { only, report } = args(process.argv.slice(2));
   const selected = only.length ? steps.filter(step => only.includes(step.name)) : steps;
   const unknown = only.filter(name => !steps.some(step => step.name === name));
@@ -201,17 +238,23 @@ async function main() {
     temporary = mkdtempSync(resolve(RECEIPTS, '.run-'));
     const results = [];
     for (const step of selected) {
-      const result = await runStep(step, temporary);
+      const result = step.name === 'committee-calls' ? await runLockedCommitteeStep(temporary) : await runStep(step, temporary);
       results.push(result);
       console.log(`${result.ok ? 'ok  ' : 'fail'} ${step.name} ${result.durationMs}ms`);
       if (result.error) console.error(result.error);
+    }
+    let workerVerification;
+    if (results.length === steps.length && results.every(step => step.ok)) {
+      try { workerVerification = await verifyDailyWorker(results); }
+      catch (failure) { workerVerification = { ok: false, error: errorMessage(failure) }; }
     }
     const finishedAt = new Date().toISOString();
     const document = {
       startedAt,
       finishedAt,
       durationMs: Date.parse(finishedAt) - Date.parse(startedAt),
-      ok: results.every(result => result.ok),
+      ok: results.every(result => result.ok) && workerVerification?.ok !== false,
+      ...(workerVerification ? { workerVerification } : {}),
       steps: results,
     };
     const reportPath = publishRefreshReport(REPORTS, document, custom);

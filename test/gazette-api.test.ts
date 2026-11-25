@@ -110,6 +110,38 @@ describe('Canada Gazette HTTP contract', () => {
       .rejects.toMatchObject({ code: 'RETRIEVAL_UNAVAILABLE', status: 503 });
   });
 
+  it('searches and looks up rolling issue editions alongside the April fixture editions', async () => {
+    edition({ part: 'I', language: 'en', date: '2026-04-25', volume: 160, issue: 17 });
+    edition({ part: 'II', language: 'en', date: '2026-04-22', volume: 160, issue: 8, count: 0 });
+    for (const language of ['en', 'fr'] as const) {
+      edition({ part: 'I', language, date: '2026-11-21', volume: 160, issue: 47 });
+      edition({ part: 'II', language, date: '2026-11-18', volume: 160, issue: 20 });
+    }
+    record({ id: 'gazette:pi:en:2026-11-21:v160:n47:weekly-notice', date: '2026-11-21', issue: 47,
+      title: 'Weekly Gazette consultation', kind: 'notice' });
+    record({ id: 'gazette:pii:en:2026-11-18:v160:n20:weekly-instrument', part: 'II', date: '2026-11-18', issue: 20,
+      title: 'Weekly Gazette instrument', kind: 'instrument', table: 'gazette_instruments' });
+
+    const result = GazetteSearchResponseSchema.parse(await runGazetteRequest(store.db, {
+      operation: 'search', query: { topic: 'weekly gazette', language: 'en', limit: 20 },
+    }));
+    expect(result.items.map((item) => item.issueDate)).toEqual(['2026-11-21', '2026-11-18']);
+    expect(result.coverage).toEqual([
+      { part: 'I', language: 'en', available: true, issues: [
+        { issueDate: '2026-11-21', volume: 160, issueNumber: 47, recordCount: 1 },
+        { issueDate: '2026-04-25', volume: 160, issueNumber: 17, recordCount: 1 },
+      ] },
+      { part: 'II', language: 'en', available: true, issues: [
+        { issueDate: '2026-11-18', volume: 160, issueNumber: 20, recordCount: 1 },
+        { issueDate: '2026-04-22', volume: 160, issueNumber: 8, recordCount: 0 },
+      ] },
+    ]);
+    const exact = GazetteLookupResponseSchema.parse(await runGazetteRequest(store.db, {
+      operation: 'lookup', id: 'gazette:pi:en:2026-11-21:v160:n47:weekly-notice',
+    }));
+    expect(exact.item).toMatchObject({ issueDate: '2026-11-21', title: 'Weekly Gazette consultation' });
+  });
+
   it('requires the opt-in preview binding', () => {
     expect(() => gazetteDatabase({})).toThrowError(AccessError);
     expect(() => gazetteDatabase({ GAZETTE_PREVIEW: 'on' })).toThrowError(AccessError);

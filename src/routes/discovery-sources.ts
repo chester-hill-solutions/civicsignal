@@ -1,6 +1,5 @@
 import { parseCorpusTextMode } from '../corpora/text-store';
 import { FundingSource } from '../corpora/funding';
-import { GAZETTE_PREVIEW_ISSUES } from '../corpora/gazette';
 import { hansardLanguagePrefix, hansardPolicy } from '../corpora/hansard';
 import { ParliamentCollection, ParliamentSession } from '../corpora/parliament-catalogue';
 import { GEDS_OPENAPI_PATH } from '../geds/openapi';
@@ -9,6 +8,7 @@ import type { Env } from '../types';
 import { BILL_OPENAPI_PATH, readBillBrief } from './bill-trace';
 import { COMMITTEE_OPENAPI_PATH, COMMITTEE_STUDY_BRIEF_PATH } from './committee-study';
 import { FUNDING_OPENAPI_PATH } from './funding';
+import { DEPARTMENTAL_OPENAPI_PATH } from './departmental-publications';
 import { CONSULTATIONS_OPENAPI_PATH } from './consultations';
 import { GAZETTE_OPENAPI_PATH } from './gazette-contract';
 import { HANSARD_OPENAPI_PATH, HANSARD_PATHS } from './hansard-contract';
@@ -97,6 +97,15 @@ function funding({ env, accessReady }: DiscoveryContext, source: typeof FundingS
         : (r.language === 'fr' ? 'recherche et développement appliquée' : 'applied research and development') }), [source]));
 }
 
+function departmentalPublications({ env, accessReady }: DiscoveryContext) {
+  return inspect(definition('departmental-publications', 'ECCC audits and evaluations',
+    'What did the Lake Winnipeg evaluation recommend?', DEPARTMENTAL_OPENAPI_PATH),
+    env.DEPARTMENTAL_PUBLICATIONS_PREVIEW === 'on', accessReady, () => editions(env.DEPARTMENTAL_PUBLICATIONS_DB,
+      `SELECT 'ECCC' AS scope,p.language,i.cutoff AS observedAt,i.revision FROM dp_passages p
+       CROSS JOIN dp_inventory i WHERE i.singleton=1 GROUP BY p.language`,
+      row => requestPath('/api/departmental-publications', { language: row.language, query: 'Winnipeg' })));
+}
+
 function consultations({ env, accessReady }: DiscoveryContext) {
   return inspect(definition('consultations', 'Government of Canada consultations',
       'Which federal consultations ask about artificial intelligence, and when do they close?', CONSULTATIONS_OPENAPI_PATH),
@@ -161,16 +170,14 @@ function hansard({ env, accessReady }: DiscoveryContext, chamber: keyof typeof H
 
 function gazetteIssues({ env, accessReady }: DiscoveryContext) {
   return inspect(definition('canada-gazette', 'Canada Gazette', 'What notices or instruments appeared in the indexed issues?', GAZETTE_OPENAPI_PATH),
-    env.GAZETTE_PREVIEW === 'on', accessReady, async () => {
-      const rows = await Promise.all(GAZETTE_PREVIEW_ISSUES.map(k => editions(env.GAZETTE_DB,
-        `SELECT part AS scope,language,issue_date AS latestRecordDate,imported_at AS publishedAt,content_sha256 AS revision
-        FROM gazette_editions WHERE part=? AND language=? AND issue_date=? AND volume=? AND issue_number=? AND record_count>0
-        AND EXISTS (SELECT 1 FROM gazette_records r WHERE r.part=gazette_editions.part AND r.language=gazette_editions.language
-        AND r.issue_date=gazette_editions.issue_date AND r.volume=gazette_editions.volume AND r.issue_number=gazette_editions.issue_number)`,
-        () => requestPath('/api/gazette', { part: k.part, language: k.language, since: k.issueDate, until: k.issueDate, topic: topic(k.language) }),
-        [k.part, k.language, k.issueDate, String(k.volume), String(k.issueNumber)])));
-      return rows.flat();
-    });
+    env.GAZETTE_PREVIEW === 'on', accessReady, () => editions(env.GAZETTE_DB,
+      `SELECT part AS scope,language,issue_date AS latestRecordDate,imported_at AS publishedAt,content_sha256 AS revision
+       FROM gazette_editions e WHERE record_count>0 AND EXISTS (SELECT 1 FROM gazette_records r
+         WHERE r.part=e.part AND r.language=e.language AND r.issue_date=e.issue_date
+         AND r.volume=e.volume AND r.issue_number=e.issue_number)
+       ORDER BY issue_date DESC,part,language`,
+      row => requestPath('/api/gazette', { part: row.scope, language: row.language,
+        since: String(row.latestRecordDate), until: String(row.latestRecordDate), topic: topic(row.language) })));
 }
 
 function billTrace({ env, accessReady }: DiscoveryContext) {
@@ -206,7 +213,7 @@ function changes({ env, accessReady }: DiscoveryContext, source: keyof typeof SO
 export function discoverSources(context: DiscoveryContext) {
   return Promise.all([
     ...FundingSource.options.map(source => funding(context, source)),
-    consultations(context), committees(context), parliament(context), writtenQuestions(context), directory(context),
+    consultations(context), departmentalPublications(context), committees(context), parliament(context), writtenQuestions(context), directory(context),
     hansard(context, 'house'), hansard(context, 'senate'), gazetteIssues(context), billTrace(context), freshwater(context),
     changes(context, 'gazette'), changes(context, 'house'), changes(context, 'senate'),
   ]);

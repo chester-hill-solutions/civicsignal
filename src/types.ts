@@ -30,6 +30,10 @@ export interface Env {
   FUNDING_PREVIEW?: string;
   /** Enables the departmental consultations preview. */
   CONSULTATIONS_PREVIEW?: string;
+  /** Optional local catalogue-matched participation notice editions for consultation lookups. */
+  CONSULTATION_NOTICES_DB?: D1Database;
+  DEPARTMENTAL_PUBLICATIONS_PREVIEW?: string;
+  DEPARTMENTAL_PUBLICATIONS_DB?: D1Database;
   GEDS_PREVIEW?: string;
   /** Opt-in bilingual bill trace and historical committee study previews. */
   BILL_PREVIEW?: string;

@@ -1,0 +1,537 @@
+#!/usr/bin/env python3
+"""Run the heavier local CivicSignal refreshes with per-source reports.
+
+Run from the repository root:
+    python3 -B scripts/refresh-weekly.py [--only NAME]
+
+The operators remain independently resumable. A failed command stops its own
+source step while later steps continue. No hosted publication is performed.
+"""
+
+from __future__ import annotations
+
+import argparse
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import time
+from typing import Iterator
+from zoneinfo import ZoneInfo
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REPORTS = ROOT / "dist/refresh-weekly"
+RUN_LOCK = REPORTS / "run.lock"
+COMMITTEE_LOCK = ROOT / "dist/refresh/committee-publication.lock"
+
+# These are observed local working-set sizes plus room for an incoming
+# generation and SQLite journals. Requiring headroom avoids beginning a
+# multi-gigabyte refresh that cannot safely finish.
+GEDS_MIN_FREE_BYTES = 32 * 1024**2
+COMMITTEE_MIN_FREE_BYTES = 3 * 1024**3
+WRITTEN_QUESTIONS_MIN_FREE_BYTES = 512 * 1024**2
+PARLIAMENT_MIN_FREE_BYTES = 1024**3
+HANSARD_MIN_FREE_BYTES = 128 * 1024**2
+ECCC_MIN_FREE_BYTES = 128 * 1024**2
+
+
+@dataclass(frozen=True)
+class Step:
+    name: str
+    commands: tuple[tuple[str, ...] | "Command", ...]
+    timeout_seconds: int
+    description: str
+    min_free_bytes: int = 0
+    baseline_paths: tuple[str, ...] = ()
+    shared_committee_lock: bool = False
+    artifacts: tuple[str, ...] = ()
+    verify_partial_notices: bool = False
+
+
+@dataclass(frozen=True)
+class Command:
+    argv: tuple[str, ...]
+    env: tuple[tuple[str, str], ...] = ()
+    verification: bool = False
+
+
+def _parliament_commands() -> tuple[tuple[str, ...], ...]:
+    p = "data/corpus/parliament-intake"
+    py = "python3"
+    return (
+        (py, "-B", "scripts/parliament-bills.py", "--session", "45-1", "--output", f"{p}/bills.json"),
+        (py, "-B", "scripts/parliament-votes.py", "--session", "45-1", "--output", f"{p}/votes.json"),
+        (py, "-B", "scripts/parliament-senate-votes.py", "--session", "45-1", "--output", f"{p}/senate-votes.json"),
+        (py, "-B", "scripts/parliament-house-journals.py", "--session", "45-1", "--output", f"{p}/house-journals.json"),
+        (py, "-B", "scripts/parliament-senate-journals.py", "--session", "45-1", "--output", f"{p}/senate-journals.json"),
+        (py, "-B", "scripts/parliament-roll-calls.py", "--votes", f"{p}/votes.json", "--output", f"{p}/house-roll-calls.json"),
+        (py, "-B", "scripts/parliament-roll-calls.py", "--votes", f"{p}/senate-votes.json", "--output", f"{p}/senate-roll-calls.json"),
+        (py, "-B", "scripts/parliament-journal-roll-calls.py", "--journals", f"{p}/senate-journals.json", "--votes", f"{p}/senate-votes.json", "--roll-calls", f"{p}/senate-roll-calls.json", "--output", f"{p}/senate-roll-calls-complete.json"),
+        ("bun", "scripts/materialize-parliament.ts", f"{p}/catalogues.sqlite", f"{p}/bills.json", f"{p}/votes.json", f"{p}/senate-votes.json", f"{p}/house-journals.json", f"{p}/senate-journals.json", f"{p}/house-roll-calls.json", f"{p}/senate-roll-calls-complete.json"),
+        Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "serves the materialized official inventories in both languages|retrieves a cited decision and an individual vote from each official chamber edition"),
+                (("CIVICSIGNAL_PARLIAMENT_SQLITE", f"{p}/catalogues.sqlite"), ("CIVICSIGNAL_CHAMBERS_SQLITE", f"{p}/catalogues.sqlite")), verification=True),
+    )
+
+
+def _committee_commands() -> tuple[tuple[str, ...], ...]:
+    py = "python3"
+    return (
+        (py, "-B", "scripts/committee-catalogue.py"),
+        (py, "-B", "scripts/committee-download.py", "--refresh"),
+        (py, "-B", "scripts/committee-expand.py"),
+        (py, "-B", "scripts/committee-corpus.py"),
+        (py, "-B", "scripts/committee-download.py", "--verify-only"),
+        (py, "-B", "scripts/materialize-committee-corpus.py", "--clone-local"),
+        Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "traverses real bilingual committee publications with a workspace key"),
+                (("CIVICSIGNAL_COMMITTEES_D1", "@d1:.wrangler/committees-45-1"),
+                 ("CIVICSIGNAL_COMMITTEES_SOURCE_SQLITE", "data/corpus/committees/committee.sqlite")), verification=True),
+    )
+
+
+def _hansard_step(chamber):
+    archive = f"dist/hansard/weekly/{chamber}/@week-of@"
+    store = "dist/hansard/session-45-1.sqlite"
+    manifest = archive + "/current/week.json"
+    replay = "replay-week" if chamber == "house" else "replay-senate-week"
+    return Step(f"hansard-{chamber}", (
+        ("bun", "scripts/capture-hansard-week.ts", chamber, "45-1", "@week-of@", archive),
+        ("bun", "scripts/hansard-local.ts", replay, store, manifest),
+        Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "retrieves a cited speech from each archived Hansard edition"),
+                (("CIVICSIGNAL_HANSARD_SQLITE", store), ("CIVICSIGNAL_HANSARD_WEEK_MANIFEST", manifest),
+                 ("CIVICSIGNAL_HANSARD_WEEK_RECEIPT", archive + "/current/receipt.json")), verification=True),
+    ), 3600, f"Capture and serve the latest completed Toronto week of {chamber} debates.",
+                HANSARD_MIN_FREE_BYTES, artifacts=(store,))
+
+
+STEPS = (
+    Step(
+        "geds",
+        (
+            ("bun", "scripts/geds-import.ts", "--download", "--min-new-snapshot-bytes", str(2 * 1024**3), "--db", "dist/geds/geds.sqlite", "--archive", "dist/geds/archive"),
+            Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "resolves one real unit from both published names and cites the imported contact"),
+                    (("CIVICSIGNAL_GEDS_SQLITE", "dist/geds/geds.sqlite"),), verification=True),
+        ),
+        60 * 60,
+        "Download, archive and import the current GEDS export.",
+        GEDS_MIN_FREE_BYTES,
+        baseline_paths=("dist/geds",),
+        artifacts=("dist/geds/receipt.json", "dist/geds/geds.sqlite"),
+    ),
+    Step(
+        "eccc",
+        (("python3", "-B", "scripts/eccc-intake.py", "--workers", "1"),
+         ("python3", "-B", "scripts/eccc-passages.py"),
+         Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "departmental publications through the Worker"),
+                 (("CIVICSIGNAL_ECCC_SQLITE", "data/corpus/eccc/serving.sqlite"),), verification=True)),
+        60 * 60,
+        "Refresh ECCC publication indexes and archived originals.",
+        ECCC_MIN_FREE_BYTES,
+        baseline_paths=("data/corpus/eccc",),
+        artifacts=("dist/eccc/inventory.json", "data/corpus/eccc/catalogue.sqlite", "data/corpus/eccc/serving.sqlite"),
+    ),
+    Step(
+        "gazette",
+        (
+            ("bun", "scripts/gazette-local.ts", "sync-current", "data/corpus/gazette-preview.sqlite"),
+            Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "reads the current bilingual records through the acquired Gazette database"),
+                    (("CIVICSIGNAL_GAZETTE_SQLITE", "data/corpus/gazette-preview.sqlite"),
+                     ("CIVICSIGNAL_GAZETTE_RECEIPT", "dist/gazette/receipt.json")), verification=True),
+        ),
+        60 * 60,
+        "Refresh current bilingual Gazette indexes and verify authenticated retrieval from the local store.",
+        64 * 1024**2,
+        baseline_paths=("data/corpus/gazette",),
+        artifacts=("data/corpus/gazette-preview.sqlite", "dist/gazette/receipt.json"),
+    ),
+    Step(
+        "parliament",
+        _parliament_commands(),
+        2 * 60 * 60,
+        "Refresh 45-1 bill, vote, Journal and roll-call inventories and materialize them locally.",
+        PARLIAMENT_MIN_FREE_BYTES,
+        baseline_paths=("data/corpus/parliament-intake",),
+        artifacts=("data/corpus/parliament-intake/catalogues.sqlite",),
+    ),
+    Step(
+        "written-questions",
+        (
+            ("python3", "-B", "scripts/lib/wq_catalog.py", "--recheck-details"),
+            ("python3", "-B", "scripts/written-questions.py", "--recheck", "--verify-objects"),
+            ("bun", "scripts/materialize-written-questions.ts", "data/corpus/written-questions/questions.sqlite", ".wrangler/written-questions-final"),
+            Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "reads the materialized House session through authenticated HTTP"),
+                    (("CIVICSIGNAL_WRITTEN_QUESTIONS_D1", "@d1:.wrangler/written-questions-final"),), verification=True),
+        ),
+        3 * 60 * 60,
+        "Refresh both 45-1 question listings and recheck existing answer editions and stored objects.",
+        WRITTEN_QUESTIONS_MIN_FREE_BYTES,
+        baseline_paths=("data/corpus/written-questions",),
+        artifacts=("data/corpus/written-questions/catalogue.json", "data/corpus/written-questions/coverage.json"),
+    ),
+    Step(
+        "committees",
+        _committee_commands(),
+        8 * 60 * 60,
+        "Rewalk the full current-session committee corpus and publish a verified local D1 generation.",
+        COMMITTEE_MIN_FREE_BYTES,
+        baseline_paths=("data/corpus/committees", ".wrangler/committees-45-1"),
+        shared_committee_lock=True,
+        artifacts=("data/corpus/committees/coverage.json", "data/corpus/committees/committee.sqlite", ".wrangler/committees-45-1"),
+    ),
+    Step(
+        "federal-discovery",
+        (("python3", "-B", "scripts/federal-source-inventory.py"),),
+        30 * 60,
+        "Refresh the registered federal source index pages and dataset resource listings.",
+        0,
+        baseline_paths=("data/corpus/federal-source-inventory",),
+        artifacts=("data/corpus/federal-source-inventory/",),
+    ),
+    Step(
+        "federal-guidance",
+        (("python3", "-B", "scripts/federal-guidance.py", "--refresh"),),
+        60 * 60,
+        "Refresh the registered bilingual TBS and IRCC guidance inventory.",
+        0,
+        baseline_paths=("data/corpus/federal-guidance",),
+        artifacts=("data/corpus/federal-guidance/dist/receipt.json",),
+    ),
+    Step(
+        "consultation-notices",
+        (("python3", "-B", "scripts/consultation-notices.py", "refresh"),
+         Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "serves archived English and French participation instructions with exact source citations"),
+                 (("CIVICSIGNAL_CONSULTATIONS_SQLITE", "data/corpus/consultations/catalogue.sqlite"),
+                  ("CIVICSIGNAL_CONSULTATION_NOTICES_SQLITE", "data/corpus/consultations/notice-index.sqlite")), verification=True)),
+        2 * 60 * 60,
+        "Archive labelled participation sections from current open consultation notices.",
+        0,
+        baseline_paths=("data/corpus/consultations/notice-index.sqlite", "data/corpus/consultations/notice-objects"),
+        artifacts=("data/corpus/consultations/notice-receipts/latest.json", "data/corpus/consultations/notice-index.sqlite"),
+        verify_partial_notices=True,
+    ),
+    Step("federal-report-directories", (("python3", "-B", "scripts/federal-report-directories.py"),), 1800,
+         "Refresh institution-linked departmental plan, results, and regulatory directories.",
+         artifacts=("data/corpus/federal-report-directories/dist/receipt.json",)),
+    Step("federal-publications", (("python3", "-B", "scripts/federal-publications.py", "refresh", "--download"),), 3600,
+         "Verify and publish the three registered government bibliography exports.",
+         artifacts=("data/corpus/federal-publications/",)),
+    Step("federal-procurement", (("python3", "-B", "scripts/federal-procurement.py", "refresh"),
+          ("python3", "-B", "scripts/federal-procurement.py", "verify")), 3600,
+         "Archive current fiscal-year CanadaBuys award notices and contract history.",
+         artifacts=("data/corpus/federal-procurement/",)),
+    Step("federal-disclosures", (("python3", "-B", "scripts/federal-disclosures.py"),), 1800,
+         "Publish the algorithmic assessment and four briefing-package catalogues.",
+         artifacts=("data/corpus/federal-disclosures/receipt.json",)),
+    Step(
+        "official-titles",
+        (("python3", "-B", "scripts/federal-bulk.py", "refresh", "official-titles"),),
+        60 * 60,
+        "Refresh official titles disclosure from its registered federal source.",
+        0,
+        baseline_paths=("data/corpus/federal-bulk",),
+    ),
+    Step(
+        "service-inventory",
+        (("python3", "-B", "scripts/federal-bulk.py", "refresh", "service-inventory"),),
+        60 * 60,
+        "Refresh the federal service inventory disclosure from its registered source.",
+        0,
+        baseline_paths=("data/corpus/federal-bulk",),
+    ),
+    Step(
+        "ati-summaries",
+        (("python3", "-B", "scripts/federal-bulk.py", "refresh", "ati-summaries"),),
+        60 * 60,
+        "Refresh summaries from Access to Information disclosures.",
+        0,
+        baseline_paths=("data/corpus/federal-bulk",),
+    ),
+    Step(
+        "grant-awards",
+        (("python3", "-B", "scripts/federal-bulk.py", "refresh", "grant-awards"),),
+        2 * 60 * 60,
+        "Refresh the federal grants and contributions awards disclosure.",
+        0,
+        baseline_paths=("data/corpus/federal-bulk",),
+    ),
+    Step(
+        "briefing-notes",
+        (("python3", "-B", "scripts/briefing-notes.py", "--download"),),
+        60 * 60,
+        "Download and archive the latest federal briefing note and nil inventory CSVs.",
+        0,
+        baseline_paths=("dist/briefing-notes", "data/corpus/briefing-notes"),
+        artifacts=("dist/briefing-notes/receipt.json",),
+    ),
+    *(_hansard_step(chamber) for chamber in ("house", "senate")),
+)
+
+RUN_ORDER = (
+    "federal-discovery", "federal-guidance", "consultation-notices", "federal-disclosures", "official-titles", "service-inventory", "ati-summaries", "grant-awards",
+    "eccc", "gazette", "briefing-notes", "federal-report-directories", "federal-publications", "federal-procurement", "parliament", "hansard-house", "hansard-senate",
+    "written-questions", "geds", "committees",
+)
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--only", action="append", default=[], metavar="NAME", help=f"run one named step; choices: {', '.join(step.name for step in STEPS)}")
+    args = parser.parse_args(argv)
+    unknown = sorted(set(args.only) - {step.name for step in STEPS})
+    if unknown:
+        parser.error(f"unknown step(s): {', '.join(unknown)}")
+    return args
+
+
+@contextmanager
+def exclusive_lock(path: Path) -> Iterator[None]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as handle:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise RuntimeError(f"another refresh holds {path.relative_to(ROOT)}") from error
+        yield
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _free_bytes() -> int:
+    return shutil.disk_usage(ROOT).free
+
+
+def _path_bytes(path: Path) -> int:
+    if not path.exists():
+        return 0
+    if path.is_file():
+        return path.stat().st_size
+    total = 0
+    for current, _directories, filenames in os.walk(path):
+        for filename in filenames:
+            candidate = Path(current) / filename
+            try:
+                if not candidate.is_symlink():
+                    total += candidate.stat().st_size
+            except FileNotFoundError:
+                continue
+    return total
+
+
+def _local_d1_path(state_directory: str) -> str:
+    database_directory = ROOT / state_directory / "v3/d1/miniflare-D1DatabaseObject"
+    files = sorted(path for path in database_directory.glob("*.sqlite")
+                   if path.name != "metadata.sqlite" and path.is_file())
+    if len(files) != 1:
+        raise RuntimeError(f"expected one local D1 database under {database_directory}; found {len(files)}")
+    return str(files[0].relative_to(ROOT))
+
+
+def _last_completed_monday() -> str:
+    today = datetime.now(ZoneInfo("America/Toronto")).date()
+    monday = today - timedelta(days=today.weekday() + 7)
+    return monday.isoformat()
+
+
+RUN_WEEK_OF = _last_completed_monday()
+
+
+def _tail(value: str, limit: int = 5000) -> str:
+    return value if len(value) <= limit else "…" + value[-limit:]
+
+
+def _run_command(command: tuple[str, ...] | Command, timeout_seconds: int) -> dict:
+    started = time.monotonic()
+    argv = command.argv if isinstance(command, Command) else command
+    requested_env = dict(command.env) if isinstance(command, Command) else {}
+    command_env: dict[str, str] = {}
+    verification = command.verification if isinstance(command, Command) else False
+    for key, value in requested_env.items():
+        if value.startswith("@d1:"):
+            value = _local_d1_path(value.removeprefix("@d1:"))
+        else:
+            value = value.replace("@week-of@", RUN_WEEK_OF)
+        command_env[key] = value
+    resolved_argv = tuple(item.replace("@week-of@", RUN_WEEK_OF) for item in argv)
+    environment = os.environ.copy()
+    environment.update(command_env)
+    try:
+        result = subprocess.run(
+            resolved_argv,
+            cwd=ROOT,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+        output = result.stdout + "\n" + result.stderr
+        passed_tests = re.search(r"Tests\s+(\d+)\s+passed", output, re.IGNORECASE)
+        ok = result.returncode == 0 and (not verification or bool(passed_tests and int(passed_tests.group(1)) > 0))
+        return {
+            "command": list(resolved_argv),
+            "verification": verification,
+            "ok": ok,
+            "exitCode": result.returncode,
+            "durationMs": round((time.monotonic() - started) * 1000),
+            "stdout": _tail(result.stdout),
+            "stderr": _tail(result.stderr),
+            **({"passedTests": int(passed_tests.group(1))} if passed_tests else {}),
+            **({"error": "verification command reported no passed tests"} if verification and result.returncode == 0 and not ok else {}),
+        }
+    except subprocess.TimeoutExpired as error:
+        return {
+            "command": list(resolved_argv),
+            "verification": verification,
+            "ok": False,
+            "exitCode": None,
+            "durationMs": round((time.monotonic() - started) * 1000),
+            "stdout": _tail(error.stdout.decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout or ""),
+            "stderr": _tail(error.stderr.decode(errors="replace") if isinstance(error.stderr, bytes) else error.stderr or ""),
+            "error": f"command timed out after {timeout_seconds}s",
+        }
+    except OSError as error:
+        return {
+            "command": list(resolved_argv),
+            "verification": verification,
+            "ok": False,
+            "exitCode": None,
+            "durationMs": round((time.monotonic() - started) * 1000),
+            "stdout": "",
+            "stderr": "",
+            "error": str(error),
+        }
+
+
+def _run_step(step: Step) -> dict:
+    started = time.monotonic()
+    available = _free_bytes()
+    result = {
+        "name": step.name,
+        "description": step.description,
+        "ok": False,
+        "durationMs": 0,
+        "disk": {
+            "availableBytes": available,
+            "requiredBytes": step.min_free_bytes,
+            "existingDataBytes": {path: _path_bytes(ROOT / path) for path in step.baseline_paths},
+        },
+        "commands": [],
+        "artifacts": list(step.artifacts),
+    }
+    if available < step.min_free_bytes:
+        result["error"] = f"insufficient disk headroom: {available} bytes free; {step.min_free_bytes} required before this source"
+        result["skipped"] = True
+        result["durationMs"] = round((time.monotonic() - started) * 1000)
+        return result
+
+    if step.name.startswith("hansard-"):
+        (ROOT / "dist/hansard").mkdir(parents=True, exist_ok=True)
+
+    try:
+        if step.shared_committee_lock:
+            with exclusive_lock(COMMITTEE_LOCK):
+                _run_commands(step, result)
+        else:
+            _run_commands(step, result)
+    except RuntimeError as error:
+        result["error"] = str(error)
+    result["ok"] = not result.get("error") and all(command["ok"] for command in result["commands"])
+    result["durationMs"] = round((time.monotonic() - started) * 1000)
+    return result
+
+
+def _run_commands(step: Step, result: dict) -> None:
+    for command in step.commands:
+        outcome = _run_command(command, step.timeout_seconds)
+        result["commands"].append(outcome)
+        if not outcome["ok"]:
+            result["error"] = outcome.get("error") or f"command exited with status {outcome['exitCode']}"
+            if step.verify_partial_notices and outcome["exitCode"] == 1 and not outcome.get("verification"):
+                # A completed notice acquisition emits a receipt even if some publishers refused a request.
+                try:
+                    receipt = json.loads(outcome["stdout"])
+                except (KeyError, ValueError):
+                    break
+                if receipt.get("scope") == "all-open" and receipt.get("publishedFetchedEditions", 0) > 0:
+                    continue
+            break
+
+
+def _publish_report(document: dict) -> Path:
+    REPORTS.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S.%fZ")
+    dated = REPORTS / f"{stamp}.json"
+    encoded = json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+    def atomic_write(path: Path) -> None:
+        temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
+        temporary.write_text(encoded, encoding="utf-8")
+        os.replace(temporary, path)
+
+    atomic_write(dated)
+    atomic_write(REPORTS / "latest.json")
+    if document["ok"] and document["scope"] == "full":
+        atomic_write(REPORTS / "latest-successful-full.json")
+    if document["scope"] == "full":
+        atomic_write(REPORTS / "latest-full.json")
+    else:
+        atomic_write(REPORTS / "latest-partial.json")
+    return dated
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    by_name = {step.name: step for step in STEPS}
+    selected_names = [name for name in RUN_ORDER if not args.only or name in args.only]
+    selected = [by_name[name] for name in selected_names]
+    scope = "full" if len(selected) == len(STEPS) else "partial"
+    started = datetime.now(timezone.utc)
+    try:
+        with exclusive_lock(RUN_LOCK):
+            results = []
+            for step in selected:
+                result = _run_step(step)
+                results.append(result)
+                print(f"{'ok  ' if result['ok'] else 'skip' if result.get('skipped') else 'fail'} {step.name} {result['durationMs']}ms", flush=True)
+                if result.get("error"):
+                    print(result["error"], file=sys.stderr)
+            finished = datetime.now(timezone.utc)
+            serving_checks = [
+                {"source": result["name"], "command": command["command"], "ok": command["ok"], "exitCode": command["exitCode"]}
+                for result in results for command in result["commands"] if command.get("verification")
+            ]
+            expected_checks = [
+                step.name for step in selected
+                if any(isinstance(command, Command) and command.verification for command in step.commands)
+            ]
+            checks_all_passed = len(serving_checks) == len(expected_checks) and all(check["ok"] for check in serving_checks)
+            checks_failed = any(not check["ok"] for check in serving_checks)
+            document = {
+                "startedAt": started.isoformat().replace("+00:00", "Z"),
+                "finishedAt": finished.isoformat().replace("+00:00", "Z"),
+                "durationMs": round((finished - started).total_seconds() * 1000),
+                "scope": scope,
+                "selected": [step.name for step in selected],
+                "ok": all(result["ok"] for result in results),
+                "steps": results,
+                "servingVerification": {
+                    "status": "failed" if checks_failed else "passed" if expected_checks and checks_all_passed else "partial" if serving_checks else "not-run",
+                    "expectedSources": expected_checks,
+                    "checks": serving_checks,
+                },
+            }
+            path = _publish_report(document)
+            print(json.dumps({"ok": document["ok"], "durationMs": document["durationMs"], "report": str(path.relative_to(ROOT))}))
+            return 0 if document["ok"] else 1
+    except RuntimeError as error:
+        print(str(error), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

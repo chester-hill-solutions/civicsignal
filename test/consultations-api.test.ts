@@ -32,6 +32,13 @@ CREATE TABLE consultations_revisions (
 const migrationSchema = existsSync(migrationPath) ? readFileSync(migrationPath, 'utf8') : fallbackSchema;
 const schema = migrationSchema.includes('removed_at') ? migrationSchema
   : `${migrationSchema}\nALTER TABLE consultations_records ADD COLUMN removed_at TEXT;\n`;
+const noticeSchema = `CREATE TABLE notices (
+  catalogue_revision TEXT NOT NULL, catalogue_observed_at TEXT NOT NULL, consultation_id TEXT NOT NULL,
+  language TEXT NOT NULL, status TEXT NOT NULL, published_url TEXT, final_url TEXT, checked_at TEXT NOT NULL,
+  http_status INTEGER, media_type TEXT, body_sha256 TEXT, body_bytes INTEGER, object_path TEXT,
+  sections_json TEXT NOT NULL, detail TEXT, sources_json TEXT,
+  last_attempt_status TEXT, last_attempt_at TEXT, PRIMARY KEY(catalogue_revision, consultation_id, language)
+);`;
 const catalogueObservedAt = '2026-11-24T12:00:00.000Z';
 const csv = parseConsultationCsv(readFileSync('test/fixtures/consultations/catalogue.csv', 'utf8'));
 const dictionary = readConsultationDictionary(JSON.parse(readFileSync('test/fixtures/consultations/schema.json', 'utf8')));
@@ -139,10 +146,91 @@ it('returns current lookup and newest-first revisions, and null for an unknown i
     const found = ConsultationLookupResponseSchema.parse(await get(f.env,
       '/api/consultations/ic_C-0058?asOf=2026-11-24'));
     expect(found.item).toMatchObject({ id: 'ic_C-0058', firstObservedAt: '2026-11-20T12:00:00.000Z', revision: 2 });
+    expect(found).not.toHaveProperty('participationNotices');
     expect(found.revisions.map(revision => revision.revision)).toEqual([2, 1]);
     expect(found.revisions[0]?.changedFields).toEqual(['editions.en.title']);
     expect(await get(f.env, '/api/consultations/no_such-record')).toMatchObject({ item: null, revisions: [] });
   } finally { f.close(); }
+});
+
+it('adds only current-revision, exact-ID and language-matched participation notice evidence to lookup', async () => {
+  const f = fixture();
+  const noticeStore = testD1({ schema: noticeSchema });
+  try {
+    const record = f.records.find((item) => item.id === 'ic_C-0058');
+    if (!record) throw new Error('Expected the consultation fixture.');
+    const insert = noticeStore.sqlite.prepare(`INSERT INTO notices
+      (catalogue_revision,catalogue_observed_at,consultation_id,language,status,published_url,final_url,checked_at,
+       http_status,media_type,body_sha256,body_bytes,object_path,sections_json,detail)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+    for (const language of ['en', 'fr'] as const) {
+      const sourceUrl = record.editions[language].profile.url;
+      if (!sourceUrl) throw new Error(`Missing ${language} catalogue profile URL.`);
+      insert.run('r1', catalogueObservedAt, record.id, language, 'fetched', sourceUrl, sourceUrl,
+        '2026-11-24T14:00:00.000Z', 200, 'text/html', language === 'en' ? 'a'.repeat(64) : 'b'.repeat(64), 1200,
+        'notice-objects/hash.html.gz', JSON.stringify([{ kind: 'submission-instructions', heading: language === 'en' ? 'How to submit' : 'Comment soumettre',
+          fragment: language === 'en' ? 'submit' : 'soumettre', level: 2, text: language === 'en' ? 'Send written comments to the department by email.' : 'Envoyez vos commentaires écrits au ministère par courriel.' }]), null);
+    }
+    // An older catalogue row and a same-revision row for another ID must not leak into the result.
+    insert.run('old-r0', catalogueObservedAt, record.id, 'en', 'fetched', record.editions.en.profile.url,
+      record.editions.en.profile.url, '2026-11-23T14:00:00.000Z', 200, 'text/html', 'c'.repeat(64), 10,
+      'old.html.gz', JSON.stringify([{ kind: 'submission-instructions', heading: 'Old', fragment: 'old', level: 2, text: 'STALE QUOTE' }]), null);
+    insert.run('r1', catalogueObservedAt, 'other-record', 'en', 'fetched', record.editions.en.profile.url,
+      record.editions.en.profile.url, '2026-11-24T14:00:00.000Z', 200, 'text/html', 'd'.repeat(64), 10,
+      'other.html.gz', JSON.stringify([{ kind: 'submission-instructions', heading: 'Other', fragment: 'other', level: 2, text: 'WRONG ID' }]), null);
+
+    const env = { ...f.env, CONSULTATION_NOTICES_DB: noticeStore.db } as Env;
+    const found = ConsultationLookupResponseSchema.parse(await get(env, '/api/consultations/ic_C-0058'));
+    expect(found.participationNotices).toMatchObject({ catalogueRevision: 'r1', editions: [
+      { consultationId: record.id, language: 'en', status: 'fetched', sourceHash: 'a'.repeat(64), sourceUrl: record.editions.en.profile.url,
+        sections: [{ heading: 'How to submit', citationUrl: `${record.editions.en.profile.url}#submit`, quote: 'Send written comments to the department by email.', truncated: false }] },
+      { consultationId: record.id, language: 'fr', status: 'fetched', sourceHash: 'b'.repeat(64), sourceUrl: record.editions.fr.profile.url,
+        sections: [{ heading: 'Comment soumettre', quote: 'Envoyez vos commentaires écrits au ministère par courriel.' }] },
+    ] });
+    expect(JSON.stringify(found)).not.toContain('STALE QUOTE');
+    expect(JSON.stringify(found)).not.toContain('WRONG ID');
+  } finally { f.close(); noticeStore.close(); }
+});
+
+it('preserves per-source attribution for a catalogue-listed multi-source notice', async () => {
+  const f = fixture();
+  const noticeStore = testD1({ schema: noticeSchema });
+  try {
+    const record = f.records.find((item) => item.id === 'ic_C-0058');
+    if (!record?.editions.en.profile.url) throw new Error('Missing English catalogue profile URL.');
+    const secondUrl = 'https://www.canada.ca/en/example/additional-participation-details.html';
+    const editedFacts = structuredClone(record);
+    editedFacts.editions.en.profile.published = `${record.editions.en.profile.url} ; ${secondUrl}`;
+    f.sqlite.prepare('UPDATE consultations_records SET facts_json=? WHERE id=?')
+      .run(JSON.stringify(editedFacts), record.id);
+    const firstHash = 'e'.repeat(64);
+    const secondHash = 'f'.repeat(64);
+    noticeStore.sqlite.prepare(`INSERT INTO notices
+      (catalogue_revision,catalogue_observed_at,consultation_id,language,status,published_url,final_url,checked_at,
+       http_status,media_type,body_sha256,body_bytes,object_path,sections_json,detail,sources_json)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run('r1', catalogueObservedAt, record.id, 'en', 'fetched',
+      record.editions.en.profile.url, record.editions.en.profile.url, '2026-11-24T14:00:00.000Z', 200,
+      'text/html', firstHash, 100, 'first.html.gz', JSON.stringify([{ kind: 'submission-instructions',
+        heading: 'Additional submission details', sourceUrl: secondUrl, bodySha256: secondHash,
+        fragment: 'instructions', text: 'Include the completed form with your application.' }]), null,
+      JSON.stringify([
+        { order: 0, status: 'fetched', sourceUrl: record.editions.en.profile.url,
+          finalUrl: record.editions.en.profile.url, sha256: firstHash, bytes: 100 },
+        { order: 1, status: 'fetched', sourceUrl: secondUrl, finalUrl: secondUrl, sha256: secondHash, bytes: 120 },
+      ]));
+    const env = { ...f.env, CONSULTATION_NOTICES_DB: noticeStore.db } as Env;
+    const found = ConsultationLookupResponseSchema.parse(await get(env, '/api/consultations/ic_C-0058'));
+    expect(found.participationNotices?.editions[0]).toMatchObject({
+      sourceHash: null,
+      sourceUrl: null,
+      sources: [
+        { order: 0, sourceUrl: record.editions.en.profile.url, sourceHash: firstHash },
+        { order: 1, sourceUrl: secondUrl, sourceHash: secondHash },
+      ],
+      sections: [{ heading: 'Additional submission details', citationUrl: `${secondUrl}#instructions`,
+        sourceUrl: secondUrl, sourceHash: secondHash, quote: 'Include the completed form with your application.' }],
+    });
+  } finally { f.close(); noticeStore.close(); }
 });
 
 it('keeps removed records retrievable, excludes them from current coverage, and restores search on reappearance', async () => {
@@ -219,6 +307,7 @@ it('publishes OpenAPI operations and consultation discovery availability', async
   expect(api.paths['/api/consultations/coverage']?.get.operationId).toBe('getConsultationCoverage');
   expect(api.paths['/api/consultations/{id}']?.get.operationId).toBe('getConsultation');
   expect(api.paths['/api/consultations/openapi.json']?.get.operationId).toBe('getConsultationsOpenApi');
+  expect(JSON.stringify(api.paths['/api/consultations/{id}']?.get.responses[200])).toContain('participationNotices');
   const f = fixture();
   try {
     const available = (await discoverSources({ env: f.env, accessReady: true }))

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GAZETTE_PREVIEW_ISSUES, gazetteRecordId, type GazetteEdition, type GazetteRecordKind } from '../src/corpora/gazette';
 import { parseGazetteReplayManifest } from '../scripts/gazette-local';
-import { importGazetteEdition } from '../scripts/lib/gazette-store';
+import { importGazetteEdition, importGazetteEditions } from '../scripts/lib/gazette-store';
 
 const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
 const schema = readFileSync(new URL('../preview/gazette/migrations/0001_gazette.sql', import.meta.url), 'utf8');
@@ -170,5 +170,34 @@ describe('local Gazette edition storage', () => {
     expect(records()).toEqual(beforeRows);
     expect(sqlite.prepare('SELECT * FROM source_feed_events ORDER BY seq').all()).toEqual(beforeEvents);
     expect(importGazetteEdition(sqlite, edition).status).toBe('unchanged');
+  });
+
+  it('rolls back all four rolling issue writes and feed changes if the final issue fails', () => {
+    const previous = syntheticEditions();
+    previous.forEach((item) => importGazetteEdition(sqlite, item));
+    const beforeRows = records();
+    const beforeEditions = sqlite.prepare('SELECT * FROM gazette_editions ORDER BY part, language, issue_date').all();
+    const beforeEvents = sqlite.prepare('SELECT * FROM source_feed_events ORDER BY seq').all();
+    const rolling = previous.map((item) => {
+      const issueDate = item.part === 'I' ? '2026-11-21' : '2026-11-18';
+      const issueNumber = item.part === 'I' ? 47 : 23;
+      const { records: _records, ...baseKey } = item;
+      const key = { ...baseKey, issueDate, issueNumber };
+      const records = item.records.map((record) => {
+        const token = record.id.split(':').at(-1) ?? '';
+        return { ...record, ...key, id: gazetteRecordId(key, token),
+          citationUrl: `https://gazette.gc.ca/rp-pr/p${item.part === 'I' ? '1' : '2'}/2026/${issueDate}/html/${token}-${item.language === 'en' ? 'eng' : 'fra'}.html${item.part === 'I' ? '#section-1' : ''}` };
+      });
+      return { ...key, records };
+    });
+    sqlite.exec(`CREATE TRIGGER reject_last_current_issue BEFORE INSERT ON gazette_instruments
+      WHEN NEW.language = 'fr' AND NEW.issue_date = '2026-11-18'
+      BEGIN SELECT RAISE(ABORT, 'last current issue failed'); END`);
+
+    expect(() => importGazetteEditions(sqlite, rolling)).toThrow('last current issue failed');
+    expect(records()).toEqual(beforeRows);
+    expect(sqlite.prepare('SELECT * FROM gazette_editions ORDER BY part, language, issue_date').all()).toEqual(beforeEditions);
+    expect(sqlite.prepare('SELECT * FROM source_feed_events ORDER BY seq').all()).toEqual(beforeEvents);
+    expect(importGazetteEdition(sqlite, previous[0]).status).toBe('unchanged');
   });
 });

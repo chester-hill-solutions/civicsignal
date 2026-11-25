@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { DatabaseSync as SqliteDatabase } from 'node:sqlite';
 import { CommitteeCallDetailResponseSchema, CommitteeCallsResponseSchema, CommitteeCorpusPageSchema, CommitteeCorpusSearchResponseSchema, CommitteeCorpusCoverageSchema } from '../src/corpora/committee-corpus';
 import { ConsultationCoverageSchema, ConsultationLookupResponseSchema, ConsultationSearchResponseSchema,
@@ -377,7 +377,7 @@ describe('Hansard preview HTTP contract', () => {
     };
     expect(receipt.weekOf).toBe(week.weekOf);
     expect(['house', 'senate']).toContain(receipt.chamber);
-    const fixture = await setup(receipt.lookupSamples.length);
+    const fixture = await setup(Math.max(2, receipt.lookupSamples.length));
     const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
     const db = new DatabaseSync(databasePath, { readOnly: true });
     closed.push(() => db.close());
@@ -403,9 +403,26 @@ describe('Hansard preview HTTP contract', () => {
         checked++;
       }
     }
-    expect(checked).toBeGreaterThan(0);
     expect(checked).toBe(receipt.lookupSamples.length);
-    expect(await fixture.count()).toBe(checked);
+    if (week.sittings.length) {
+      expect(checked).toBeGreaterThan(0);
+      expect(await fixture.count()).toBe(checked);
+    } else {
+      const last = new Date(week.weekOf + 'T00:00:00Z');
+      last.setUTCDate(last.getUTCDate() + 6);
+      expect(db.prepare(`SELECT count(*) AS n FROM source_feed_editions
+        WHERE source=? AND publication_date BETWEEN ? AND ?`).get(
+        receipt.chamber, week.weekOf, last.toISOString().slice(0, 10),
+      )?.n).toBe(0);
+      for (const language of ['en', 'fr']) {
+        const response = await fixture.send(HANSARD_PATHS[receipt.chamber] + '?' + new URLSearchParams({
+          language, since: week.weekOf, until: last.toISOString().slice(0, 10), topic: 'Parlement',
+        }));
+        expect(response.status).toBe(200);
+        expect(HansardSearchResponseSchema.parse(await response.json()).count).toBe(0);
+      }
+      expect(await fixture.count()).toBe(2);
+    }
   });
   it.skipIf(!databasePath).each(['house', 'senate'] as const)(
     'reads the November 16 week from the acquired %s Hansard', async (chamber) => {
@@ -676,6 +693,61 @@ describe('Gazette preview through the Worker', () => {
     expect(GazetteSearchResponseSchema.parse(await empty.json()).items).toEqual([]);
     expect((await fixture.send(noMatches)).status).toBe(429);
     expect(await fixture.count()).toBe(9);
+  });
+
+  const currentDatabasePath = process.env.CIVICSIGNAL_GAZETTE_SQLITE;
+  const currentReceiptPath = process.env.CIVICSIGNAL_GAZETTE_RECEIPT;
+  it.skipIf(!currentDatabasePath)('reads the current bilingual records through the acquired Gazette database', async () => {
+    if (!currentDatabasePath) throw new Error('Set CIVICSIGNAL_GAZETTE_SQLITE to the current local Gazette database.');
+    if (!currentReceiptPath) throw new Error('Set CIVICSIGNAL_GAZETTE_RECEIPT to the receipt from sync-current.');
+    const fixture = await setup(8);
+    const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
+    const sqlite = new DatabaseSync(currentDatabasePath, { readOnly: true });
+    closed.push(() => sqlite.close());
+    const receipt = JSON.parse(readFileSync(currentReceiptPath, 'utf8')) as {
+      schemaVersion: number; databasePath: string; editions: Array<{
+        part: 'I' | 'II'; language: 'en' | 'fr'; issueDate: string; volume: number;
+        issueNumber: number; recordCount: number | null;
+      }>;
+    };
+    expect(receipt.schemaVersion).toBe(1);
+    expect(resolve(receipt.databasePath)).toBe(resolve(currentDatabasePath));
+    expect(receipt.editions).toHaveLength(4);
+    expect(new Set(receipt.editions.map(({ part, language }) => `${part}:${language}`))).toEqual(
+      new Set(['I:en', 'I:fr', 'II:en', 'II:fr']));
+    for (const edition of receipt.editions) {
+      const stored = sqlite.prepare(`SELECT record_count AS recordCount FROM gazette_editions
+        WHERE part=? AND language=? AND issue_date=? AND volume=? AND issue_number=?`).get(
+        edition.part, edition.language, edition.issueDate, edition.volume, edition.issueNumber) as
+        { recordCount: number } | undefined;
+      expect(stored?.recordCount).toBe(edition.recordCount);
+    }
+    fixture.env.AUTH_DB = fixture.db;
+    fixture.env.GAZETTE_DB = localD1(sqlite);
+    fixture.env.GAZETTE_PREVIEW = 'on';
+    for (const edition of receipt.editions) {
+      const sample = sqlite.prepare(`SELECT id, title, citation_url AS citationUrl FROM gazette_records
+        WHERE part=? AND language=? AND issue_date=? AND volume=? AND issue_number=? ORDER BY id LIMIT 1`).get(
+        edition.part, edition.language, edition.issueDate, edition.volume, edition.issueNumber) as {
+          id: string; title: string; citationUrl: string;
+        } | undefined;
+      if (!sample) throw new Error(`The receipt issue has no Part ${edition.part} ${edition.language} record.`);
+      const query = new URLSearchParams({ part: edition.part, language: edition.language,
+        topic: sample.title, since: edition.issueDate, until: edition.issueDate });
+      const search = await fixture.send('/api/gazette?' + query);
+      expect(search.status).toBe(200);
+      const result = GazetteSearchResponseSchema.parse(await search.json());
+      expect(result.coverage.length).toBeLessThanOrEqual(2);
+      expect(result.coverage).toHaveLength(1);
+      expect(result.coverage[0]?.issues).toContainEqual({ issueDate: edition.issueDate, volume: edition.volume,
+        issueNumber: edition.issueNumber, recordCount: edition.recordCount });
+      const response = await fixture.send('/api/gazette/' + encodeURIComponent(sample.id));
+      expect(response.status).toBe(200);
+      expect(GazetteLookupResponseSchema.parse(await response.json()).item)
+        .toMatchObject({ id: sample.id, part: edition.part, language: edition.language,
+          issueDate: edition.issueDate, citationUrl: sample.citationUrl, redistribution: 'metadata-only' });
+    }
+    expect(await fixture.count()).toBe(receipt.editions.length * 2);
   });
 });
 
@@ -2102,6 +2174,59 @@ describe('consultations through the Worker against the acquired catalogue', () =
     expect(metered).toBe(5 + checkedChanges);
     expect(await fixture.count()).toBe(metered);
   }, 15_000);
+
+  const noticeCataloguePath = process.env.CIVICSIGNAL_CONSULTATIONS_SQLITE;
+  const noticeIndexPath = process.env.CIVICSIGNAL_CONSULTATION_NOTICES_SQLITE;
+  it.skipIf(!noticeIndexPath)(
+    'serves archived English and French participation instructions with exact source citations', async () => {
+      if (!noticeCataloguePath || !noticeIndexPath) throw new Error('Supply the acquired consultation catalogue and notice index.');
+      const fixture = await setup(2);
+      const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
+      const catalogueDb = new DatabaseSync(noticeCataloguePath, { readOnly: true });
+      const noticesDb = new DatabaseSync(noticeIndexPath, { readOnly: true });
+      closed.push(() => catalogueDb.close(), () => noticesDb.close());
+      catalogueDb.exec('BEGIN');
+      noticesDb.exec('BEGIN');
+      fixture.env.AUTH_DB = fixture.db;
+      fixture.env.CIVIC_DB = localD1(catalogueDb, { existingReadTransaction: true });
+      fixture.env.CONSULTATION_NOTICES_DB = localD1(noticesDb, { existingReadTransaction: true });
+      fixture.env.CONSULTATIONS_PREVIEW = 'on';
+
+      const observation = catalogueDb.prepare(`SELECT revision FROM consultations_catalogues WHERE source='canada'`)
+        .get() as { revision: string } | undefined;
+      if (!observation) throw new Error('The acquired consultation catalogue is missing.');
+      const candidates = noticesDb.prepare(`SELECT consultation_id FROM notices WHERE catalogue_revision=?
+        AND status='fetched' GROUP BY consultation_id HAVING COUNT(DISTINCT language)=2 ORDER BY consultation_id`)
+        .all(observation.revision) as { consultation_id: string }[];
+      const getArchived = (candidate: string) => noticesDb.prepare(`SELECT language,status,published_url,body_sha256,sections_json
+        FROM notices WHERE catalogue_revision=? AND consultation_id=? ORDER BY language`)
+        .all(observation.revision, candidate) as { language: string; status: string; published_url: string;
+          body_sha256: string; sections_json: string }[];
+      const selected = candidates.map((candidate) => ({ id: candidate.consultation_id, rows: getArchived(candidate.consultation_id) }))
+        .find(({ rows }) => rows.length === 2 && rows.every((row) => row.status === 'fetched' && row.body_sha256 &&
+          row.published_url && (JSON.parse(row.sections_json) as { text?: string }[]).some((section) => section.text)));
+      if (!selected) throw new Error('No bilingual fetched consultation with extracted participation instructions is available.');
+      const { id, rows: archived } = selected;
+      expect(archived.map((row) => row.language)).toEqual(['en', 'fr']);
+      const expected = archived.map((row) => {
+        const section = (JSON.parse(row.sections_json) as { heading: string; text: string }[])
+          .find((candidate) => Boolean(candidate.text));
+        if (!section) throw new Error(`Expected an extracted section for ${row.language}.`);
+        return { language: row.language, sourceHash: row.body_sha256, sourceUrl: row.published_url,
+          heading: section.heading, quote: section.text.slice(0, 4000) };
+      });
+      const response = await fixture.send(`/api/consultations/${id}`);
+      expect(response.status).toBe(200);
+      const detail = ConsultationLookupResponseSchema.parse(await response.json());
+      expect(detail.participationNotices).toMatchObject({ catalogueRevision: observation.revision, editions: [
+        ...expected.map((edition) => ({ consultationId: id, language: edition.language, status: 'fetched',
+          sourceHash: edition.sourceHash, sourceUrl: edition.sourceUrl,
+          sections: [{ heading: edition.heading, quote: edition.quote, sourceHash: edition.sourceHash }] })),
+      ] });
+      expect(detail.participationNotices?.editions.every((edition) =>
+        edition.sections.every((section) => section.citationUrl.startsWith(edition.sourceUrl ?? '')))).toBe(true);
+      expect(await fixture.count()).toBe(1);
+    });
 });
 
 describe('funding programme API through the Worker', () => {
@@ -2164,5 +2289,57 @@ describe('funding programme API through the Worker', () => {
     expect(await fixture.count()).toBe(4);
     expect((await fixture.send(path)).status).toBe(429);
     expect(await fixture.count()).toBe(4);
+  });
+});
+
+describe('departmental publications through the Worker', () => {
+  const path = '/api/departmental-publications';
+  const sourcePath = process.env.CIVICSIGNAL_ECCC_SQLITE;
+  it('publishes the local contract and checks authorization before preview access', async () => {
+    const fixture = await setup();
+    const contract = await fixture.send(path + '/openapi.json', {}, false);
+    expect(contract.status).toBe(200);
+    expect((await contract.json() as { paths: object }).paths).toHaveProperty(path + '/{id}/versions');
+    expect((await fixture.send(path + '/coverage', {}, false)).status).toBe(401);
+    expect((await fixture.send(path + '/coverage')).status).toBe(501);
+    expect(await fixture.count()).toBe(0);
+  });
+
+  it.skipIf(!sourcePath)('queries each published language, original and version with the acquired ECCC database', async () => {
+    const fixture = await setup(40);
+    const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
+    if (!sourcePath) throw new Error('Missing acquired departmental database');
+    const source = new DatabaseSync(sourcePath, { readOnly: true });
+    closed.push(() => source.close());
+    fixture.env.DEPARTMENTAL_PUBLICATIONS_DB = localD1(source);
+    fixture.env.DEPARTMENTAL_PUBLICATIONS_PREVIEW = 'on';
+    const get = async (url: string) => {
+      const response = await fixture.send(url);
+      expect(response.status).toBe(200);
+      return await response.json() as Record<string, unknown>;
+    };
+    const coverage = await get(path + '/coverage?limit=1');
+    expect(coverage.documents).toBe(source.prepare('SELECT count(*) AS n FROM dp_documents').get()?.n);
+    expect(coverage.passages).toBe(source.prepare('SELECT count(*) AS n FROM dp_passages').get()?.n);
+    if (coverage.nextCursor) expect((await get(path + '/coverage?limit=1&cursor=' + String(coverage.nextCursor))).gaps)
+      .not.toEqual(coverage.gaps);
+    for (const language of ['en', 'fr']) {
+      const sample = source.prepare(`SELECT p.work_id,p.document_id,p.content_sha256,p.source_sha256,p.citation_url,p.text,p.passage_id FROM dp_passages p
+        WHERE p.language=? AND p.kind='heading' AND length(p.text) BETWEEN 4 AND 100 ORDER BY p.passage_id LIMIT 1`).get(language);
+      if (!sample) throw new Error('No acquired heading in ' + language);
+      const params = new URLSearchParams({ query: String(sample.text), language, workId: String(sample.work_id), limit: '100' });
+      const hits = await get(path + '?' + params);
+      expect(hits.items).toEqual(expect.arrayContaining([expect.objectContaining({
+        passage_id: sample.passage_id, citation_url: sample.citation_url, source_sha256: sample.source_sha256,
+      })]));
+      const work = path + '/' + sample.work_id;
+      expect((await get(work + '?language=' + language)).documents).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: sample.document_id, sha256: sample.source_sha256 }),
+      ]));
+      expect((await get(work + '/versions?limit=100&language=' + language)).items).toEqual(expect.arrayContaining([
+        expect.objectContaining({ document_id: sample.document_id, content_sha256: sample.content_sha256 }),
+      ]));
+    }
+    expect((await fixture.send(path + '?query=test&language=en&cursor=' + 'a'.repeat(64) + '.1')).status).toBe(400);
   });
 });

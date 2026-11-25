@@ -1,0 +1,61 @@
+{
+  "chamber": "senate",
+  "session": "45-1",
+  "weekOf": "2026-10-19",
+  "lookupSamples": [
+    {
+      "sittingId": "45-1-93",
+      "sittingDate": "2026-10-20",
+      "id": "senate-hansard:en:45-1-93:5-1",
+      "language": "en",
+      "speaker": "Hon. Patti LaBoucane-Benson (Legislative Deputy to the Government Representative in the Senate)",
+      "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/093db_2026-10-20-e#5",
+      "sourceSha256": "e657d3720a2d2fd5400dacfcdb4ee3b31568e8495e3a4c0c30044f120a09b2ba"
+    },
+    {
+      "sittingId": "45-1-93",
+      "sittingDate": "2026-10-20",
+      "id": "senate-hansard:fr:45-1-93:5-1",
+      "language": "fr",
+      "speaker": "L’honorable Patti LaBoucane-Benson (coordonnatrice législative du représentant du gouvernement au Sénat)",
+      "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/093db_2026-10-20-f#5",
+      "sourceSha256": "41c8ba0b224f2402929095bdfc5e9396abd2d4012abca36a7efc28f7286d13f7"
+    },
+    {
+      "sittingId": "45-1-94",
+      "sittingDate": "2026-10-21",
+      "id": "senate-hansard:en:45-1-94:6-1",
+      "language": "en",
+      "speaker": "Hon. Baltej S. Dhillon",
+      "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/094db_2026-10-21-e#6",
+      "sourceSha256": "928410ab1926433c3de02296b5ceea1f31ae1c6c562e2eef925b5aa80063e777"
+    },
+    {
+      "sittingId": "45-1-94",
+      "sittingDate": "2026-10-21",
+      "id": "senate-hansard:fr:45-1-94:6-1",
+      "language": "fr",
+      "speaker": "L’honorable Baltej S. Dhillon",
+      "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/094db_2026-10-21-f#6",
+      "sourceSha256": "444351db6d72db5cbe05433e5ccdd5fcda85b84f5237dfd323b750fb00cf59a3"
+    },
+    {
+      "sittingId": "45-1-95",
+      "sittingDate": "2026-10-22",
+      "id": "senate-hansard:en:45-1-95:6-1",
+      "language": "en",
+      "speaker": "Hon. Mohamed-Iqbal Ravalia",
+      "citationUrl": "https://sencanada.ca/en/content/sen/chamber/451/debates/095db_2026-10-22-e#6",
+      "sourceSha256": "f81b2a323f47bd687b1fed494100fcfa06b5f22a6a11c5ea8b97bff552b7b9b0"
+    },
+    {
+      "sittingId": "45-1-95",
+      "sittingDate": "2026-10-22",
+      "id": "senate-hansard:fr:45-1-95:6-1",
+      "language": "fr",
+      "speaker": "L’honorable Mohamed-Iqbal Ravalia",
+      "citationUrl": "https://sencanada.ca/fr/content/sen/chamber/451/debates/095db_2026-10-22-f#6",
+      "sourceSha256": "5eaf35566f2276fed2066d31671b27e90a7a1228f835d8b672b3c46758a045dd"
+    }
+  ]
+}

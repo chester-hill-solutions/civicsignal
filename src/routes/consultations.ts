@@ -160,7 +160,7 @@ async function search(db: D1Database, input: SearchInput, asOf: string) {
   });
 }
 
-async function lookup(db: D1Database, id: string, asOf: string) {
+async function lookup(db: D1Database, id: string, asOf: string, noticeDb?: D1Database) {
   const [metaResult, recordResult, revisionsResult] = await Promise.all([
     catalogue(db).first<Record<string, unknown>>(),
     db.prepare('SELECT * FROM consultations_records WHERE id=?').bind(id).first<Record<string, unknown>>(),
@@ -173,9 +173,138 @@ async function lookup(db: D1Database, id: string, asOf: string) {
   const revisions = revisionsResult.results.map((row) => ConsultationRevisionSchema.parse({
     ...row, revision: numeric(row, 'revision'), changedFields: json(row.changedFields),
   }));
+  const noticeEvidence = item && !item.removedAt && noticeDb
+    ? await participationNotices(noticeDb, id, String(meta.revision), item) : undefined;
   return ConsultationLookupResponseSchema.parse({
     source: CONSULTATION_SOURCE, observedAt: meta.observedAt, asOf, item, revisions,
+    ...(noticeEvidence ? { participationNotices: noticeEvidence } : {}),
   });
+}
+
+function nullableString(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function httpUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const parsed = z.url({ protocol: /^https?$/ }).safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+async function participationNotices(db: D1Database, id: string, revision: string, facts: z.infer<typeof ConsultationFactsSchema>) {
+  // Exact revision, consultation ID and language prevent older notice text from being attached to this record.
+  const result = await db.prepare(`SELECT * FROM notices
+    WHERE catalogue_revision=? AND consultation_id=? AND language IN ('en','fr') ORDER BY language`)
+    .bind(revision, id).all<Record<string, unknown>>();
+  const editions = result.results.map((row) => noticeEdition(row, id, revision, facts));
+  return { catalogueRevision: revision, editions };
+}
+
+type NoticeSource = { order: number; status: string; sourceUrl: string | null; finalUrl: string | null;
+  sourceHash: string | null; sourceBytes: number | null };
+
+function sourceRowsFor(row: Record<string, unknown>, status: string): unknown[] {
+  const sourceData = row.sources_json === undefined || row.sources_json === null ? undefined : json(row.sources_json);
+  if (Array.isArray(sourceData) && sourceData.length) return sourceData;
+  if (Array.isArray(sourceData) && !row.body_sha256) return [];
+  if (sourceData !== undefined && !Array.isArray(sourceData)) return [];
+  return [{ status, sourceUrl: row.published_url, finalUrl: row.final_url,
+    sha256: row.body_sha256, bytes: row.body_bytes }];
+}
+
+function noticeSource(entry: unknown, index: number, status: string, expectedUrls: string[]): NoticeSource | null {
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return null;
+  const source = entry as Record<string, unknown>;
+  const sourceUrl = httpUrl(source['sourceUrl'] ?? source['published_url'] ?? source['url']);
+  const finalUrl = httpUrl(source['finalUrl'] ?? source['final_url']);
+  const sourceHash = nullableString(source['sourceHash'] ?? source['bodySha256'] ?? source['sha256'] ?? source['body_sha256']);
+  assertNoticeHash(sourceHash);
+  if (sourceUrl && (!expectedUrls.length || !expectedUrls.includes(sourceUrl))) {
+    throw new Error('Consultation notice URL does not match its exact catalogue edition.');
+  }
+  const bytes = source['sourceBytes'] ?? source['bodyBytes'] ?? source['bytes'];
+  return { order: typeof source['order'] === 'number' ? source['order'] : index,
+    status: String(source['status'] ?? status), sourceUrl, finalUrl, sourceHash,
+    sourceBytes: bytes === null || bytes === undefined ? null : Number(bytes) };
+}
+
+function assertNoticeHash(hash: string | null): void {
+  if (hash && !/^[a-f0-9]{64}$/u.test(hash)) throw new Error('Consultation notice source hash is invalid.');
+}
+
+function expectedProfileUrls(facts: z.infer<typeof ConsultationFactsSchema>, language: Language): string[] {
+  const profile = facts.editions[language].profile;
+  const candidates = [profile.url, profile.unwrapped, profile.published].filter((value): value is string => Boolean(value)).flatMap((value) => {
+    const decoded = decodeUrl(value);
+    return [value, decoded].flatMap((entry) => entry.split(/\s+;\s+/u));
+  });
+  return [...new Set(candidates.map(httpUrl).filter((value): value is string => value !== null))];
+}
+
+function decodeUrl(value: string): string {
+  try { return decodeURIComponent(value); } catch { return value; }
+}
+
+function isNoticeSection(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const data = value as Record<string, unknown>;
+  return ['eligibility', 'deadline', 'submission-instructions'].includes(String(data['kind'])) &&
+    typeof data['heading'] === 'string' && typeof data['text'] === 'string' && Boolean(data['text']);
+}
+
+function noticeSourceForSection(data: Record<string, unknown>, fetchedSources: NoticeSource[]) {
+  const sourceUrl = httpUrl(data['sourceUrl'] ?? data['source_url'])
+    ?? (fetchedSources.length === 1 ? fetchedSources[0]?.sourceUrl ?? null : null);
+  const sourceHash = nullableString(data['bodySha256'] ?? data['sourceHash'] ?? data['sha256'])
+    ?? fetchedSources.find((source) => source.sourceUrl === sourceUrl)?.sourceHash ?? null;
+  const source = fetchedSources.find((candidate) => candidate.sourceUrl === sourceUrl && candidate.sourceHash === sourceHash);
+  return source && sourceUrl && sourceHash ? { sourceUrl, sourceHash } : null;
+}
+
+function noticeSection(section: unknown, fetchedSources: NoticeSource[]) {
+  if (!isNoticeSection(section)) return [];
+  const data = section;
+  const sourceMatch = noticeSourceForSection(data, fetchedSources);
+  if (!sourceMatch) return [];
+  const { sourceUrl, sourceHash } = sourceMatch;
+  const citation = new URL(sourceUrl);
+  const fragment = data['fragment'];
+  if (typeof fragment === 'string' && /^[A-Za-z0-9_.:-]{1,160}$/u.test(fragment)) citation.hash = fragment;
+  const sectionText = data['text'];
+  if (typeof sectionText !== 'string') return [];
+  const text = sectionText.slice(0, 4000);
+  return [{ kind: data['kind'], heading: data['heading'], citationUrl: citation.href,
+    sourceUrl, sourceHash, quote: text, truncated: sectionText.length > text.length }];
+}
+
+function noticeEdition(row: Record<string, unknown>, id: string, revision: string,
+  facts: z.infer<typeof ConsultationFactsSchema>) {
+  const language = ConsultationLanguageSchema.parse(row.language);
+  const status = String(row.status);
+  const expectedUrls = expectedProfileUrls(facts, language);
+  const sources = sourceRowsFor(row, status).flatMap((entry, index) => {
+    const source = noticeSource(entry, index, status, expectedUrls);
+    return source ? [source] : [];
+  });
+  const fetchedSources = sources.filter((source) => source.status === 'fetched' && source.sourceUrl && source.sourceHash);
+  if (status === 'fetched' && !fetchedSources.length) throw new Error('Fetched consultation notice has no source-matched archived content.');
+  const rawSections = status === 'fetched' ? json(row.sections_json) : [];
+  if (!Array.isArray(rawSections)) throw new Error('Consultation notice sections are invalid.');
+  const sections = rawSections.flatMap((section) => noticeSection(section, fetchedSources));
+  const singleFetchedSource = fetchedSources.length === 1 ? fetchedSources[0] : null;
+  return {
+    consultationId: id, catalogueRevision: revision, language, status,
+    checkedAt: row.checked_at,
+    httpStatus: row.http_status === null || row.http_status === undefined ? null : Number(row.http_status),
+    sourceHash: singleFetchedSource?.sourceHash ?? null,
+    sourceBytes: singleFetchedSource?.sourceBytes ?? null,
+    sourceUrl: singleFetchedSource?.sourceUrl ?? null,
+    finalUrl: singleFetchedSource?.finalUrl ?? null,
+    sources,
+    ...(row.last_attempt_status === undefined ? {} : { lastAttemptStatus: row.last_attempt_status ?? null }),
+    ...(row.last_attempt_at === undefined ? {} : { lastAttemptAt: row.last_attempt_at ?? null }),
+    sections,
+  };
 }
 
 async function coverage(db: D1Database, institution: string | undefined, asOf: string) {
@@ -253,6 +382,6 @@ export function prepareConsultations(url: URL) {
     if (!/^[a-z0-9.-]+_[A-Za-z0-9.-]+$/.test(id)) throw new RequestInputError('Invalid consultation identifier.');
     const input = args(url.searchParams, ConsultationLookupQuery, 'lookup');
     const asOf = instant(input.asOf);
-    return () => readPublished(() => lookup(db, id, asOf));
+    return () => readPublished(() => lookup(db, id, asOf, env.CONSULTATION_NOTICES_DB));
   };
 }

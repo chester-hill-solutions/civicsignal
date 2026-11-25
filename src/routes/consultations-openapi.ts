@@ -40,6 +40,7 @@ export function consultationsOpenApi() {
       responses: { 200: response('Catalogue coverage and completeness counts.', ConsultationCoverageSchema), ...errors } } },
     [`${CONSULTATIONS_API_PATH}/{id}`]: { get: { operationId: 'getConsultation',
       summary: 'Look up a consultation and its revisions',
+      description: 'When the optional local notice store is configured, the response includes only participation notice editions matching the current catalogue revision, consultation ID, and language. Fetched sections include their original heading, source citation, and a verbatim bounded excerpt.',
       parameters: [idParameter, ...queryParameters(ConsultationLookupQuery.shape)],
       responses: { 200: response('Current consultation record and newest-first revision history.', ConsultationLookupResponseSchema), ...errors } } },
   };

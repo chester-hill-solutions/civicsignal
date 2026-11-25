@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { normalizeForSearch } from '../../src/text';
-import { GazetteIssueSchema, GazetteMetadataSchema, gazetteIssueId, gazetteRecordBelongsToIssue, isGazetteIssueSupported, type GazetteEdition, type GazetteIssueKey, type GazetteRecord } from '../../src/corpora/gazette';
+import { GazetteIssueSchema, GazetteMetadataSchema, gazetteIssueId, gazetteRecordBelongsToIssue, type GazetteEdition, type GazetteIssueKey, type GazetteRecord } from '../../src/corpora/gazette';
 import type { FeedRecord } from '../../src/corpora/source-feed';
 import { initializeSourceFeed, recordSourceChanges } from './source-feed-store';
 
@@ -60,7 +60,6 @@ function storedFeedRecords(sqlite: DatabaseSync, value: GazetteEdition): FeedRec
 export function validateGazetteEdition(value: unknown): GazetteEdition {
   const parsed = edition.parse(value);
   const key = parsed;
-  if (!isGazetteIssueSupported(key)) throw new Error('Gazette preview storage is limited to the four configured issue editions.');
   const ids = new Set<string>();
   for (const item of parsed.records) {
     if (gazetteIssueId(item) !== gazetteIssueId(key)) {
@@ -77,13 +76,9 @@ export function validateGazetteEdition(value: unknown): GazetteEdition {
   return parsed;
 }
 
-/** Replaces one complete issue edition atomically; repeated content performs no writes. */
-export function importGazetteEdition(sqlite: DatabaseSync, input: unknown): GazetteImportResult {
-  const value = validateGazetteEdition(input);
+function importValidatedGazetteEdition(sqlite: DatabaseSync, value: GazetteEdition): GazetteImportResult {
   const digest = createHash('sha256').update(canonicalEdition(value)).digest('hex');
-  sqlite.exec('BEGIN IMMEDIATE');
-  try {
-    initializeSourceFeed(sqlite);
+  initializeSourceFeed(sqlite);
     const before = storedFeedRecords(sqlite, value);
     const after = value.records.map(toFeedRecord);
     const scope = { source: 'gazette' as const, language: value.language, editionId: gazetteIssueId(value),
@@ -94,7 +89,6 @@ export function importGazetteEdition(sqlite: DatabaseSync, input: unknown): Gaze
       { digest: string; parserVersion: string } | undefined;
     if (existing?.digest === digest && existing.parserVersion === GAZETTE_PARSER_VERSION) {
       recordSourceChanges(sqlite, scope, before, before);
-      sqlite.exec('COMMIT');
       return { part: value.part, language: value.language, issueDate: value.issueDate,
         volume: value.volume, issueNumber: value.issueNumber, status: 'unchanged', written: 0, removed: 0 };
     }
@@ -123,9 +117,35 @@ export function importGazetteEdition(sqlite: DatabaseSync, input: unknown): Gaze
         item.registrationDate ?? null, item.consultationDeadline ?? null, item.effectiveDate ?? null, searchText);
     }
     recordSourceChanges(sqlite, scope, before, after);
-    sqlite.exec('COMMIT');
     return { part: value.part, language: value.language, issueDate: value.issueDate,
       volume: value.volume, issueNumber: value.issueNumber, status: 'imported', written: value.records.length, removed };
+}
+
+/** Replaces one complete issue edition atomically; repeated content performs no writes. */
+export function importGazetteEdition(sqlite: DatabaseSync, input: unknown): GazetteImportResult {
+  const value = validateGazetteEdition(input);
+  sqlite.exec('BEGIN IMMEDIATE');
+  try {
+    const result = importValidatedGazetteEdition(sqlite, value);
+    sqlite.exec('COMMIT');
+    return result;
+  } catch (error) {
+    sqlite.exec('ROLLBACK');
+    throw error;
+  }
+}
+
+/** Replaces the four current bilingual issues as one transaction, including feed cursors. */
+export function importGazetteEditions(sqlite: DatabaseSync, inputs: readonly unknown[]): GazetteImportResult[] {
+  const values = inputs.map(validateGazetteEdition);
+  if (values.length !== 4 || new Set(values.map((value) => gazetteIssueId(value))).size !== 4) {
+    throw new Error('A rolling Gazette refresh must include four distinct bilingual issue editions.');
+  }
+  sqlite.exec('BEGIN IMMEDIATE');
+  try {
+    const results = values.map((value) => importValidatedGazetteEdition(sqlite, value));
+    sqlite.exec('COMMIT');
+    return results;
   } catch (error) {
     sqlite.exec('ROLLBACK');
     throw error;

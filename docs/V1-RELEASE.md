@@ -1480,3 +1480,12 @@ The [decision register](PLAN.md#decisions-still-required) records the required d
 
 Keep dated observations and failures in this ledger; update priorities and next actions only in the master plan.
 Use [v1 operations](V1-OPERATIONS.md), [evaluation](V1-EVALUATION.md), and the [acquisition review](PROTECTED-PRODUCTION-ACQUISITION-REVIEW.md) for their detailed procedures.
+
+
+### November 24 evening local pipeline runs
+
+The installed daily job completed its first kickstart in 186.556 seconds. All three intake and serving checks passed. Four authenticated Worker cases passed against the acquired databases. A second kickstart reached a funding acquisition failure before the new in-process Worker verification. At 21:52 Toronto the installed job passed all three sources and all four embedded authenticated Worker cases in 181.502 seconds. The regular 06:15 Toronto occurrence remains to be verified.
+
+The weekly job is installed for Saturdays at 09:00 Toronto. November 24 kickstarts exposed insufficient free space for the heavy rebuilds. The second attempt also exhausted space while writing its final JSON. The job log retains its source outcomes. The two approved scratch directories were idle at removal. The immediate post-cleanup reading was 223 MiB free.
+
+The [local activation evidence](evidence/2026-11-25/pipeline-activation.json) records per-source results, the institutional coverage sample, ECCC passages, and acquired federal disclosures. The [House](evidence/2026-11-25/hansard-house-2026-10-19.json) and [Senate](evidence/2026-11-25/hansard-senate-2026-10-19.json) receipts carry source hashes and citation samples for all 16 additional Hansard editions.

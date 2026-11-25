@@ -1,14 +1,16 @@
 import type { GazetteEdition, GazetteIssueKey, GazetteRecord } from '../../src/corpora/gazette';
-import { gazetteRecordId, isGazetteIssueSupported } from '../../src/corpora/gazette';
+import { GazetteIssueSchema, gazetteRecordId, isGazetteIssueSupported } from '../../src/corpora/gazette';
 
 const GAZETTE = 'https://gazette.gc.ca';
 const MAX_INDEX_BYTES = 2 * 1024 * 1024;
-function assertSupportedIssue(key: GazetteIssueKey): void {
-  if (!isGazetteIssueSupported(key)) throw new Error('Gazette source is bounded to the configured April 2026 issues.');
+function assertSupportedIssue(key: GazetteIssueKey, allowDynamic = false): void {
+  GazetteIssueSchema.parse({ part: key.part, language: key.language, issueDate: key.issueDate,
+    volume: key.volume, issueNumber: key.issueNumber });
+  if (!allowDynamic && !isGazetteIssueSupported(key)) throw new Error('Gazette source is bounded to the configured April 2026 issues.');
 }
 
-export function gazetteIssueUrl(key: GazetteIssueKey): URL {
-  assertSupportedIssue(key);
+export function gazetteIssueUrl(key: GazetteIssueKey, allowDynamic = false): URL {
+  assertSupportedIssue(key, allowDynamic);
   const language = key.language === 'en' ? 'eng' : 'fra';
   return new URL(`/rp-pr/p${key.part === 'I' ? '1' : '2'}/${key.issueDate.slice(0, 4)}/${key.issueDate}/html/index-${language}.html`, GAZETTE);
 }
@@ -86,9 +88,9 @@ function partTwoMetadata(text: string) {
 }
 
 /** Parse only the published issue index; linked notice and instrument bodies are never fetched. */
-export async function parseGazetteIssue(html: string, expected: GazetteIssueKey): Promise<GazetteEdition> {
-  assertSupportedIssue(expected);
-  const expectedUrl = gazetteIssueUrl(expected);
+export async function parseGazetteIssue(html: string, expected: GazetteIssueKey, allowDynamic = false): Promise<GazetteEdition> {
+  assertSupportedIssue(expected, allowDynamic);
+  const expectedUrl = gazetteIssueUrl(expected, allowDynamic);
   let language = '';
   let title = '';
   let h1 = '';
@@ -186,8 +188,8 @@ export async function parseGazetteIssue(html: string, expected: GazetteIssueKey)
 }
 
 /** Fetch and parse a single configured official issue index, with an optional fetch mock for replay. */
-export async function fetchGazetteIssue(expected: GazetteIssueKey, send: typeof fetch = fetch): Promise<GazetteEdition> {
-  const url = gazetteIssueUrl(expected);
+export async function fetchGazetteIssue(expected: GazetteIssueKey, send: typeof fetch = fetch, allowDynamic = false): Promise<GazetteEdition> {
+  const url = gazetteIssueUrl(expected, allowDynamic);
   const response = await send(url, {
     headers: { Accept: 'text/html' }, redirect: 'manual', signal: AbortSignal.timeout(15_000),
   });
@@ -218,5 +220,5 @@ export async function fetchGazetteIssue(expected: GazetteIssueKey, send: typeof 
   // The Gazette declares UTF-8 but a small number of legacy typography bytes
   // are not valid UTF-8; replacement decoding preserves the surrounding index.
   const html = new TextDecoder('utf-8').decode(bytes);
-  return parseGazetteIssue(html, expected);
+  return parseGazetteIssue(html, expected, allowDynamic);
 }

@@ -19,7 +19,7 @@ bun run refresh:daily --only consultations --report dist/refresh/one.json
 
 Every invocation writes a dated report in `dist/refresh/`. Use `latest-full.json` for the most recent attempt covering all three intakes, including a failed attempt. Use `latest-successful-full.json` for the last successful full run. A selective retry updates `latest-partial.json`. The existing `latest.json` follows the latest invocation of either scope. For older reports, check the step names and whether serving verification was recorded.
 
-The daily run checks consultations and funding in their local catalogue databases. It publishes House calls into the dedicated committee D1 database and checks the served editions against the intake. Each step records its exit status, elapsed time, acquisition summary, and serving checks. Use the dated report to look up an edition in the same database served by the Worker.
+The daily run checks consultations and funding in their local catalogue databases. It publishes House calls into the dedicated committee D1 database and checks the served editions against the intake. Each step records its exit status, elapsed time, acquisition summary, and serving checks. After all three pass, the daily job sends four authenticated Worker checks against those stores and records their result in `workerVerification` before publishing the full report. Use the dated report to look up an edition in the same database served by the Worker.
 
 To verify the current consultation observation through authenticated Worker requests, point the endpoint test at the matching database and intake receipt. It checks both languages against the archived publisher files and verifies the usage charged for the requests.
 
@@ -60,16 +60,35 @@ On Linux, use the same command from cron:
 
 On November 24 a temporary calendar job with the installed command, standard process priority, working directory and PATH finished the full intake in 16m 49.643s. Four authenticated Worker checks passed against the refreshed stores. The 06:15 job uses those same settings. [Calendar verification](evidence/2026-11-24/daily-calendar-refresh.json)
 
-## What stays off the daily job
+## Weekly local refresh
 
-| Collection | Cadence | Why |
-| --- | --- | --- |
-| GEDS directory | Weekly, or change-triggered | The export's `Last-Modified` was 2026-10-25 when imported on November 24; a full import takes ~7 minutes and the snapshot is ~1.1 GB |
-| Full committee corpus (catalogue, download, expand, corpus) | Weekly | Walks thousands of originals; the calls intake already refreshes the time-sensitive surface |
-| Parliamentary catalogues, Journals, written questions | Weekly operator run | Follow the routine checks in [the plan](PLAN.md#routine-current-session-refresh) |
-| ECCC departmental publications | Weekly, currently manual | `python3 -B scripts/eccc-intake.py --workers 1`; 155 entries, 246 documents, ~9 minutes and 22 MB. [Intake](DEPARTMENTAL-PUBLICATIONS.md) |
+The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.
 
-Use the daily report as the reliable signal for the three fast collections, and run the weekly sets by hand until their publication intervals are measured the same way.
+```sh
+python3 -B scripts/schedule/weekly.py install
+python3 -B scripts/refresh-weekly.py --help
+python3 -B scripts/refresh-weekly.py --only geds
+python3 -B scripts/schedule/weekly.py remove
+```
+
+Installation registers the job. It runs while the user is logged in. Removal unloads it and retains its databases and dated receipts. The installed command is `python3 -B scripts/refresh-weekly.py`. Read the dated report under `dist/refresh-weekly/` to see the command, exit status, disk headroom and serving checks for each source. A failed or skipped source makes the full run fail. `latest-full.json` records the last full attempt and `latest-successful-full.json` records the last complete success. A selective retry updates `latest-partial.json`.
+
+| Collection | What the weekly operator does |
+| --- | --- |
+| Federal source register | Captures the 18 series' catalogue pages and structured resource metadata, including the original bytes and endpoint-specific failures. These are discovery receipts. |
+| Departmental report directories | Refreshes linked institutional entries from the federal departmental plans, results and regulatory plan directories. |
+| Government publications | Checks the three dated bibliography exports and retains their publisher snapshot date. |
+| CanadaBuys procurement | Archives and verifies award notices and contract history for the current fiscal year. |
+| Official institution titles, GC Service Inventory, grants and contributions awards, and access-request summaries | Streams the published CSV resources, validates their fields and records, and archives them by hash. Publishes a collection after all its resources pass. Use `python3 -B scripts/federal-bulk.py search service-inventory --query passport --limit 3` to read cited records locally. |
+| Algorithmic impact assessments and briefing packages | Archives every result page from the five published portal collections, checks collection identity and totals, and publishes a local bilingual catalogue with the original resource links. Use `python3 -B scripts/federal-disclosures.py --lookup DATASET_ID`. |
+| Treasury Board and IRCC guidance | Refreshes the bilingual active and archived policy indexes and the IRCC operational manuals index. |
+| Consultation participation | Resolves linked notices for the current catalogue revision and retains source bytes, participation instructions and explicit gaps. |
+| Briefing notes | Validates the official main and nil-return CSVs and schema. The source supplies briefing titles and metadata. Run `python3 -B scripts/briefing-notes.py --help` for archive replay and bilingual title search. |
+| ECCC audits and evaluations | Captures the four index pages and referenced documents, then builds a separate passage database and checks the authenticated local API. Read `GET /api/departmental-publications/openapi.json`. Enable the preview with `DEPARTMENTAL_PUBLICATIONS_PREVIEW=on` and bind the completed `data/corpus/eccc/serving.sqlite` to `DEPARTMENTAL_PUBLICATIONS_DB` in the local Worker harness. PDF text extraction uses `pdftotext`. |
+| Hansard and Canada Gazette | Captures both chambers for the most recent completed Toronto week and checks each listed edition against an authenticated exact lookup. Gazette discovers the newest regular Part I and Part II issues in both languages. A Gazette refresh covers those issue dates. Historical backfill and missed weeks remain visible as gaps. |
+| GEDS, parliamentary catalogues, Journals and votes, written questions, and the full committee corpus | Runs their existing acquisition and publication commands against the local stores, then checks the corresponding Worker routes. An unchanged GEDS ZIP can replay even when the host lacks space to construct a new snapshot. |
+
+The large rebuilds need room for the existing generation and its replacement. A disk refusal records the measured available and required space in the report. Resume with `--only` after making space. Federal bulk acquisitions keep the last fully published set while building its successor. Cloudflare staging credentials are used separately by the statutes publication runner.
 
 ## Failure handling
 
