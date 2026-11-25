@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import importlib.util
 import json
+import re
 from collections import Counter, defaultdict
 from contextlib import closing
 from pathlib import Path
@@ -223,6 +224,42 @@ def count_html_report_documents(corpus, count, provenance, aliases):
             "coverageLimit":"Accepted HTML page title/year/language/issuer match; does not establish complete underlying-document text coverage."}
 
 
+def count_geds_organizations(folder, count, provenance):
+    # Attribute units to the department named by GEDS. Identical unit names
+    # under different parents do not establish an institutional relationship.
+    with closing(sqlite3.connect((folder / "geds.sqlite").resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        db.row_factory = sqlite3.Row
+        db.execute("BEGIN")
+        snapshot = db.execute("""SELECT * FROM geds_snapshots WHERE status='published'
+            ORDER BY seq DESC LIMIT 1""").fetchone()
+        if snapshot is None:
+            raise ValueError("GEDS has no published directory snapshot")
+        seq = snapshot["seq"]
+        active = "valid_from_seq <= ? AND (valid_to_seq IS NULL OR valid_to_seq > ?)"
+        total, distinct_units = db.execute("SELECT COUNT(*),COUNT(DISTINCT org_id) FROM geds_organizations WHERE " + active,
+                                           (seq, seq)).fetchone()
+        if total != distinct_units or total != snapshot["organization_count"]:
+            raise ValueError("GEDS organization rows differ from the published snapshot")
+        key = Path(snapshot["archive_key"])
+        source_hash = snapshot["zip_sha256"]
+        if (not re.fullmatch(r"[0-9a-f]{64}", source_hash)
+                or key.parent != Path("geds/archive") / source_hash or key.suffix not in {".zip", ".csv"}):
+            raise ValueError("Unexpected GEDS archive key")
+        archive = folder / "archive" / key
+        with archive.open("rb") as source:
+            if hashlib.file_digest(source, "sha256").hexdigest() != snapshot["zip_sha256"]:
+                raise ValueError("GEDS directory archive differs from the published snapshot")
+        rows = db.execute("SELECT department_name_en, department_name_fr, COUNT(*) "
+                          "FROM geds_organizations WHERE " + active +
+                          " GROUP BY department_name_en, department_name_fr", (seq, seq)).fetchall()
+        for en, fr, units in rows:
+            count("geds", [en or "", fr or ""], units)
+        provenance["geds"] = {"series": "geds", "recordType": "directory organization unit under the published department",
+                              "snapshotId": snapshot["snapshot_id"], "sourceDate": snapshot["source_date"],
+                              "url": snapshot["source_url"], "sha256": snapshot["zip_sha256"], "archive": str(archive),
+                              "organizationUnits": total, "departmentNames": len(rows)}
+
+
 def count_regulatory_plans(corpus, count, provenance):
     series = "regulatory-plans"
     report, evidence = latest_report_generation(corpus / "federal-regulatory-plans", Path("dist"))
@@ -357,6 +394,7 @@ def coverage(include_acquisitions=False):
         count_report_documents(BULK.parent, count, provenance)
         count_html_report_documents(BULK.parent,count,provenance,aliases)
         count_regulatory_plans(BULK.parent, count, provenance)
+        count_geds_organizations(Path("dist/geds"), count, provenance)
     classify_sources(provenance, register)
     families = sorted({source["family"] for source in register.values()} - {"all"})
     link_counts, link_coverage = {}, {}

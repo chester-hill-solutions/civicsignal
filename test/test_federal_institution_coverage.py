@@ -2,6 +2,8 @@ from collections import defaultdict
 import hashlib
 import importlib.util
 import json
+import sqlite3
+from contextlib import closing
 from pathlib import Path
 import sys
 import tempfile
@@ -16,6 +18,32 @@ spec.loader.exec_module(coverage)
 
 
 class InstitutionCoverageTests(unittest.TestCase):
+    def test_directory_attribution_uses_the_published_snapshot_and_parent_department(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            digest = hashlib.sha256(b"archived directory").hexdigest()
+            archive_key = "geds/archive/" + digest + "/gedsOpenData.zip"
+            original = root / "archive" / archive_key
+            original.parent.mkdir(parents=True)
+            original.write_bytes(b"archived directory")
+            with closing(sqlite3.connect(root / "geds.sqlite")) as db:
+                db.executescript("""
+                    CREATE TABLE geds_snapshots(seq, snapshot_id, status, organization_count, source_date, source_url, zip_sha256, archive_key);
+                    CREATE TABLE geds_organizations(org_id, valid_from_seq, valid_to_seq, department_name_en, department_name_fr);
+                    INSERT INTO geds_organizations VALUES ('unit', 1, 2, 'Old', 'Ancien'),
+                        ('unit', 2, NULL, 'Current', 'Actuel'), ('new', 3, NULL, 'Future', 'Futur');
+                """)
+                db.executemany("INSERT INTO geds_snapshots VALUES (?, ?, ?, 1, '2026-10-25', 'https://example.test', ?, ?)",
+                               [(2, "current", "published", digest, archive_key), (3, "candidate", "building", digest, archive_key)])
+                db.commit()
+            rows, sources = [], {}
+            coverage.count_geds_organizations(root, lambda key, names, n: rows.append((key, names, n)), sources)
+            self.assertEqual(rows, [("geds", ["Current", "Actuel"], 1)])
+            self.assertEqual(sources["geds"]["snapshotId"], "current")
+            original.write_bytes(b"different")
+            with self.assertRaisesRegex(ValueError, "directory archive"):
+                coverage.count_geds_organizations(root, self.fail, {})
+
     def test_partial_report_links_keep_issuer_ambiguity_and_generation_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             corpus = Path(temporary)
