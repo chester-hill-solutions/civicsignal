@@ -2387,6 +2387,7 @@ describe('departmental publications through the Worker', () => {
       .not.toEqual(coverage.gaps);
     for (const language of ['en', 'fr']) {
       const sample = source.prepare(`SELECT p.work_id,p.document_id,p.content_sha256,p.source_sha256,p.citation_url,p.text,p.passage_id FROM dp_passages p
+        JOIN dp_documents d ON d.id=p.document_id
         WHERE p.language=? AND p.kind='heading' AND length(p.text) BETWEEN 4 AND 100 ORDER BY p.passage_id LIMIT 1`).get(language);
       if (!sample) throw new Error('No acquired heading in ' + language);
       const params = new URLSearchParams({ query: String(sample.text), language, workId: String(sample.work_id), limit: '100' });

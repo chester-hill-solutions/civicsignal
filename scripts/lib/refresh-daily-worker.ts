@@ -14,7 +14,7 @@ const vitestReport = z.object({
   })),
 });
 
-export function verifyDailyWorkerReport(stdout: string): { passedTests: number } {
+export function verifyDailyWorkerReport(stdout: string): { passedTests: number; passedAssertions: string[] } {
   let report: unknown;
   try {
     report = JSON.parse(stdout);
@@ -38,5 +38,5 @@ export function verifyDailyWorkerReport(stdout: string): { passedTests: number }
   if (!parsed.data.success || unsuccessful.length) {
     throw new Error(`Selected Worker checks did not all pass: ${unsuccessful.map(name => `${name} (${selected.get(name)})`).join('; ') || 'Vitest reported failure'}`);
   }
-  return { passedTests: DAILY_WORKER_ASSERTIONS.length };
+  return { passedTests: selected.size, passedAssertions: [...selected.keys()] };
 }

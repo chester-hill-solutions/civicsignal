@@ -212,7 +212,7 @@ async function verifyDailyWorker(results: Awaited<ReturnType<typeof runStep>>[])
   });
   if (!result.ok) throw new Error(result.stderr || tail(result.stdout));
   const report = verifyDailyWorkerReport(result.stdout);
-  return { ok: true, passedTests: report.passedTests, durationMs: result.durationMs };
+  return { ok: true, ...report, durationMs: result.durationMs };
 }
 
 async function main() {

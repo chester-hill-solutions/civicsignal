@@ -18,7 +18,8 @@ function report(statuses: string[], unrelatedSkips = 0) {
 
 describe('daily Worker verification', () => {
   it('requires each of the four selected checks while ignoring unrelated conditional skips', () => {
-    expect(verifyDailyWorkerReport(report(['passed', 'passed', 'passed', 'passed'], 257))).toEqual({ passedTests: 4 });
+    expect(verifyDailyWorkerReport(report(['passed', 'passed', 'passed', 'passed'], 257)))
+      .toEqual({ passedTests: 4, passedAssertions: selected });
   });
 
   it('rejects a skipped selected check even when the Vitest process succeeds', () => {
