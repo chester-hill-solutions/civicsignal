@@ -19,6 +19,7 @@ import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync
 import { resolve } from 'node:path';
 import { checkReportPath, publishRefreshReport } from './lib/refresh-reports';
 import { verifyCommitteeCalls, verifyConsultations, verifyFunding } from './lib/refresh-serving';
+import { verifyDailyWorkerReport } from './lib/refresh-daily-worker';
 
 const ROOT = resolve(import.meta.dir, '..');
 const REPORTS = resolve(ROOT, 'dist/refresh');
@@ -210,9 +211,8 @@ async function verifyDailyWorker(results: Awaited<ReturnType<typeof runStep>>[])
     CIVICSIGNAL_FUNDING_SQLITE: String(paths.funding),
   });
   if (!result.ok) throw new Error(result.stderr || tail(result.stdout));
-  const report = JSON.parse(result.stdout) as { success: boolean; numPassedTests: number };
-  if (!report.success || report.numPassedTests !== 4) throw new Error(`Expected four authenticated Worker checks to pass, observed ${report.numPassedTests}`);
-  return { ok: true, passedTests: report.numPassedTests, durationMs: result.durationMs };
+  const report = verifyDailyWorkerReport(result.stdout);
+  return { ok: true, passedTests: report.passedTests, durationMs: result.durationMs };
 }
 
 async function main() {
