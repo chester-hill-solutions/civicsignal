@@ -32,6 +32,23 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertIn(("python3", "-B", "scripts/committee-corpus.py"), committees.commands)
         self.assertIn(("python3", "-B", "scripts/committee-download.py", "--verify-only"), committees.commands)
 
+    def test_derived_publication_steps_follow_their_source_intakes(self):
+        for dependency, derived in [("federal-report-directories", "departmental-report-editions"),
+                                    ("departmental-report-editions", "departmental-report-documents"),
+                                    ("departmental-report-editions", "departmental-report-html"),
+                                    ("departmental-report-editions", "federal-regulatory-plans"),
+                                    ("departmental-report-documents", "federal-institution-coverage"),
+                                    ("federal-regulatory-plans", "federal-institution-coverage"),
+                                    ("federal-publications", "federal-publication-checklists"),
+                                    ("federal-publication-checklists", "federal-policy-editions"),
+                                    ("federal-guidance", "federal-policy-editions"),
+                                    ("gazette", "gazette-year"), ("federal-disclosures", "federal-institution-coverage"),
+                                    ("briefing-notes", "federal-institution-coverage"), ("eccc", "federal-institution-coverage"), ("geds", "federal-institution-coverage"),
+                                    ("federal-procurement", "federal-institution-coverage")]:
+            self.assertLess(weekly.RUN_ORDER.index(dependency), weekly.RUN_ORDER.index(derived))
+        self.assertEqual(weekly._resolve_date("@toronto-year@/@toronto-date@"),
+                         f"{weekly.RUN_DATE.year}/{weekly.RUN_DATE.isoformat()}")
+
     def test_large_steps_are_gated_by_live_free_space(self):
         geds = next(step for step in weekly.STEPS if step.name == "geds")
         with patch.object(weekly, "_free_bytes", return_value=weekly.GEDS_MIN_FREE_BYTES - 1), patch.object(weekly, "_run_command") as run:
@@ -62,11 +79,62 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertEqual(result["commands"], [partial, verified])
         self.assertIn("error", result)
 
+    def test_departmental_batch_replays_its_partial_generation_and_stops_on_an_invalid_id(self):
+        step = next(step for step in weekly.STEPS if step.name == "departmental-report-html")
+        for run_id, expected_calls in [("abc123", 2), ("../older", 1), ("", 1)]:
+            result = {"commands": []}
+            with patch.object(weekly, "_run_command", side_effect=[
+                    {"ok": False, "exitCode": 2, "stdout": json.dumps({"runId": run_id, "status": "partial"})},
+                    {"ok": True}]) as run:
+                weekly._run_commands(step, result)
+            self.assertIn("error", result)
+            self.assertEqual(run.call_count, expected_calls)
+            if expected_calls == 2:
+                self.assertEqual(run.call_args.args[0][-2:], ("html-replay", run_id))
+
+    def test_partial_policy_archive_replays_the_exact_receipt_and_keeps_the_failure(self):
+        step = next(step for step in weekly.STEPS if step.name == "federal-policy-editions")
+        digest = "6" * 64
+        result = {"commands": []}
+        with patch.object(weekly, "_run_command", side_effect=[
+                {"ok": False, "exitCode": 2, "stdout": json.dumps({"reportSha256": digest})},
+                {"ok": True}]) as run:
+            weekly._run_commands(step, result)
+        self.assertEqual(run.call_args_list[1].args[0][-2:], ("--report", digest))
+        self.assertIn("error", result)
+
     def test_only_selects_one_named_step_and_rejects_unknown(self):
         self.assertEqual(weekly.parse_args(["--only", "eccc"]).only, ["eccc"])
         with self.assertRaises(SystemExit) as raised:
             weekly.parse_args(["--only", "no-such-source"])
         self.assertEqual(raised.exception.code, 2)
+
+    def test_partial_gazette_run_verifies_the_exact_dated_acquisition(self):
+        step = next(step for step in weekly.STEPS if step.name == "gazette-year")
+        path = "dist/gazette/backfills/catchups/2026-through-2026-11-25/one-attempt.json"
+        receipt = {"receiptPath": path, "counts": {"archiveVerifiedPairs": 69}}
+        partial = {"ok": False, "exitCode": 1, "stdout": json.dumps(receipt)}
+        result = {"commands": []}
+        with patch.object(weekly, "_run_command", side_effect=[partial, {"ok": True}]) as run:
+            weekly._run_commands(step, result)
+        self.assertIn(("CIVICSIGNAL_GAZETTE_CATCHUP_RECEIPT", path), run.call_args_list[1].args[0].env)
+        self.assertIn("error", result)
+
+    def test_gazette_worker_requires_a_receipt_from_this_attempt(self):
+        step = next(step for step in weekly.STEPS if step.name == "gazette-year")
+        for stdout in ['{"counts": {}}', '[]', 'null', 'invalid']:
+            with self.subTest(stdout=stdout):
+                result = {"commands": []}
+                with patch.object(weekly, "_run_command", return_value={"ok": True, "stdout": stdout}) as run:
+                    weekly._run_commands(step, result)
+                self.assertEqual(run.call_count, 1)
+                self.assertIn("receipt", result["error"])
+
+    def test_gazette_worker_verifies_regular_and_extra_annual_records(self):
+        step = next(step for step in weekly.STEPS if step.name == "gazette-year")
+        verification = step.commands[1]
+        self.assertIn("serves a cited record from each verified annual Gazette edition|serves separately numbered bilingual extras through search and exact lookup",
+                      verification.argv)
 
     def test_scheduled_committee_catalogue_starts_fresh_and_operator_can_resume(self):
         self.assertNotIn("--resume", weekly._committee_commands()[0])
@@ -96,7 +164,7 @@ class WeeklyRefreshTests(unittest.TestCase):
             "numPassedTests": passed,
             "numFailedTests": failed,
             "numPendingTests": max(0, expected - passed),
-            "testResults": [{"assertionResults": [{"fullName": "intentionally large result"}]}],
+            "testResults": [{"assertionResults": [{"fullName": "intentionally large result", "status": "passed"} for _ in range(passed)]}],
         }
         body = json.dumps(report) if stdout is None else stdout
         completed = type("Completed", (), {"returncode": 0, "stdout": body, "stderr": "$ vitest run --reporter=json"})()
@@ -114,6 +182,16 @@ class WeeklyRefreshTests(unittest.TestCase):
     def test_verification_rejects_too_few_passes_even_when_another_case_is_skipped(self):
         result = self.assert_exact_verification_result(passed=1, expected=2, ok=False)
         self.assertIn("expected exactly 2 passed tests, observed 1", result["error"])
+
+    def test_selection_rejects_a_skipped_matching_test_and_allows_unselected_skips(self):
+        report = {"success": True, "numPassedTests": 1, "numFailedTests": 0,
+                  "testResults": [{"assertionResults": [{"fullName": "selected edition", "status": "passed"},
+                                                        {"fullName": "other edition", "status": "skipped"}]}]}
+        outcome = {"ok": True}
+        weekly._verify_vitest_result(outcome, json.dumps(report), 1, "selected")
+        self.assertTrue(outcome["ok"])
+        weekly._verify_vitest_result(outcome, json.dumps(report), 1, "edition")
+        self.assertFalse(outcome["ok"])
 
     def test_verification_rejects_too_many_passes(self):
         result = self.assert_exact_verification_result(passed=3, expected=2, ok=False)
@@ -135,8 +213,8 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertNotIn("passedTests", result)
         self.assertEqual(result["error"], "Vitest JSON report is missing valid success and test counts")
 
-    def test_eccc_and_parliament_declare_two_expected_worker_checks(self):
-        expected = {"eccc": 2, "parliament": 2}
+    def test_eccc_gazette_and_parliament_declare_two_expected_worker_checks(self):
+        expected = {"eccc": 2, "gazette-year": 2, "parliament": 2}
         for step in weekly.STEPS:
             for command in step.commands:
                 if isinstance(command, weekly.Command) and command.verification:
@@ -150,6 +228,23 @@ class WeeklyRefreshTests(unittest.TestCase):
                 weekly._publish_report({"ok": False, "scope": "full", "result": "later failure"})
             self.assertEqual((reports / "latest-full.json").read_text(), '{\n  "ok": false,\n  "scope": "full",\n  "result": "later failure"\n}\n')
             self.assertEqual(__import__("json").loads((reports / "latest-successful-full.json").read_text())["result"], "first")
+
+    def test_status_keeps_retries_and_full_attempts_distinct_after_adding_a_step(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            reports = Path(tmp)
+            def save(minute, scope, ok):
+                ended = f"2026-11-25T05:{minute}:00.000000Z"
+                name = ended.replace(":", "-") + ".json"
+                (reports / name).write_text(json.dumps({"scope": scope, "finishedAt": ended, "ok": ok,
+                                                       "steps": [{"name": "source", "ok": ok}]}))
+            save("00", "full", False)
+            save("01", "partial", True)
+            status = weekly.weekly_status(reports, ("source", "new"))
+            self.assertEqual(status["latestPerStep"], {"passed": 1, "failed": 0, "unverified": 1})
+            self.assertFalse(status["latestFullAttempt"]["ok"])
+            self.assertEqual(status["latestFullAttempt"]["missingFromCurrentConfiguration"], ["new"])
+            save("02", "partial", False)
+            self.assertEqual(weekly.weekly_status(reports, ("source",))["sources"]["source"]["status"], "failed")
 
 
 if __name__ == "__main__":

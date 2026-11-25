@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 import fcntl
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -52,7 +53,7 @@ class Step:
     baseline_paths: tuple[str, ...] = ()
     shared_committee_lock: bool = False
     artifacts: tuple[str, ...] = ()
-    verify_partial_notices: bool = False
+    verify_partial: bool = False
 
 
 @dataclass(frozen=True)
@@ -110,8 +111,9 @@ def _hansard_step(chamber):
         Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "retrieves a cited speech from each archived Hansard edition"),
                 (("CIVICSIGNAL_HANSARD_SQLITE", store), ("CIVICSIGNAL_HANSARD_WEEK_MANIFEST", manifest),
                  ("CIVICSIGNAL_HANSARD_WEEK_RECEIPT", archive + "/current/receipt.json")), verification=True),
-    ), 3600, f"Capture and serve the latest completed Toronto week of {chamber} debates.",
-                HANSARD_MIN_FREE_BYTES, artifacts=(store,))
+        ("bun", "scripts/hansard-session-reconcile.ts", chamber, "45-1", store, f"dist/hansard/weekly/{chamber}", "@week-ending@"),
+    ), 3600, f"Capture the latest completed week of {chamber} debates and repair missed current-session weeks.",
+                HANSARD_MIN_FREE_BYTES, artifacts=(store, f"dist/hansard/reconciliation/45-1/{chamber}/receipts/latest.json"))
 
 
 STEPS = (
@@ -163,6 +165,13 @@ STEPS = (
         baseline_paths=("data/corpus/parliament-intake",),
         artifacts=("data/corpus/parliament-intake/catalogues.sqlite",),
     ),
+    Step("gazette-year", (("bun", "scripts/gazette-local.ts", "sync-year-catchup",
+          "data/corpus/gazette-preview.sqlite", "@toronto-year@", "@toronto-date@"),
+          Command(("bun", "run", "test", "test/endpoints.test.ts", "-t",
+                  "serves a cited record from each verified annual Gazette edition|serves separately numbered bilingual extras through search and exact lookup"),
+                  (("CIVICSIGNAL_GAZETTE_SQLITE", "data/corpus/gazette-preview.sqlite"),), verification=True, expected_passed_tests=2)), 3600,
+         "Reconcile regular issues and separately numbered extras against this year's bilingual Part I and Part II listings.",
+         min_free_bytes=64 * 1024**2, artifacts=("dist/gazette/backfills/catchups/",), verify_partial=True),
     Step(
         "written-questions",
         (
@@ -199,12 +208,14 @@ STEPS = (
     ),
     Step(
         "federal-guidance",
-        (("python3", "-B", "scripts/federal-guidance.py", "--refresh"),),
+        (("python3", "-B", "scripts/federal-guidance.py", "--refresh"),
+         ("python3", "-B", "scripts/ircc-guidance-documents.py", "refresh"),
+         ("python3", "-B", "scripts/ircc-guidance-documents.py", "replay")),
         60 * 60,
-        "Refresh the registered bilingual TBS and IRCC guidance inventory.",
+        "Refresh the bilingual TBS and IRCC indexes, archive listed IRCC manuals and bulletin pages and reproduce their cited passages.",
         0,
         baseline_paths=("data/corpus/federal-guidance",),
-        artifacts=("data/corpus/federal-guidance/dist/receipt.json",),
+        artifacts=("data/corpus/federal-guidance/dist/receipt.json", "data/corpus/ircc-guidance-documents/latest.json"), verify_partial=True,
     ),
     Step(
         "consultation-notices",
@@ -217,14 +228,42 @@ STEPS = (
         0,
         baseline_paths=("data/corpus/consultations/notice-index.sqlite", "data/corpus/consultations/notice-objects"),
         artifacts=("data/corpus/consultations/notice-receipts/latest.json", "data/corpus/consultations/notice-index.sqlite"),
-        verify_partial_notices=True,
+        verify_partial=True,
     ),
     Step("federal-report-directories", (("python3", "-B", "scripts/federal-report-directories.py"),), 1800,
          "Refresh institution-linked departmental plan, results, and regulatory directories.",
          artifacts=("data/corpus/federal-report-directories/dist/receipt.json",)),
+    Step("departmental-report-editions", (("python3", "-B", "scripts/departmental-report-editions.py", "refresh"),
+         ("python3", "-B", "scripts/departmental-report-editions.py", "replay", "@receipt-run-id@")), 3600,
+         "Archive the issuer landing pages and identify the published departmental plan and results editions by fiscal year.",
+         artifacts=("data/corpus/departmental-report-editions/generations/",), verify_partial=True),
+    Step("departmental-report-documents", (("python3", "-B", "scripts/departmental-report-documents.py", "refresh"),
+         ("python3", "-B", "scripts/departmental-report-documents.py", "replay", "@receipt-run-id@")), 3600,
+         "Archive explicitly linked departmental reports and verify the edition against the document text.",
+         artifacts=("data/corpus/departmental-report-documents/latest-attempt.json",), verify_partial=True),
+    Step("departmental-report-html", (("python3", "-B", "scripts/departmental-report-documents.py", "html-refresh", "--batch-size", "40"),
+         ("python3", "-B", "scripts/departmental-report-documents.py", "html-replay", "@receipt-run-id@")), 3600,
+         "Capture the next bounded batch of publisher-labelled HTML report targets and verify the actual document identities.",
+         artifacts=("data/corpus/departmental-report-documents/latest-html-attempt.json",), verify_partial=True),
+    Step("federal-regulatory-plans", (("python3", "-B", "scripts/federal-regulatory-plans.py", "refresh"),
+         ("python3", "-B", "scripts/federal-regulatory-plans.py", "replay", "@receipt-run-id@")), 3600,
+         "Verify institutional forward regulatory plan pages and retain publisher-labelled initiatives.",
+         artifacts=("data/corpus/federal-regulatory-plans/dist/receipt.json",), verify_partial=True),
     Step("federal-publications", (("python3", "-B", "scripts/federal-publications.py", "refresh", "--download"),), 3600,
          "Verify and publish the three registered government bibliography exports.",
          artifacts=("data/corpus/federal-publications/",)),
+    Step("federal-publication-checklists", (("python3", "-B", "scripts/federal-publication-checklists.py", "refresh", "--download"),
+         ("python3", "-B", "scripts/federal-publication-catalogue.py", "build")), 3600,
+         "Acquire bilingual weekly publication checklists since the bibliography snapshot and reconcile their catalogue records.",
+         artifacts=("data/corpus/federal-publication-checklists/current/receipt.json", "data/corpus/federal-publication-catalogue/catalogue.sqlite")),
+    Step("federal-policy-editions", (("python3", "-B", "scripts/federal-policy-editions.py", "refresh"),
+         ("python3", "-B", "scripts/federal-policy-editions.py", "replay")), 3600,
+         "Reconcile dated federal bibliography PDFs with explicit Treasury Board policy IDs and reproduce the archived pages.",
+         artifacts=("data/corpus/federal-policy-editions/latest.json",), verify_partial=True),
+    Step("statutes-local", (("bun", "scripts/ingest-statutes.ts", "--corpus", "data/corpus/justice-laws-xml",
+          "--out", "dist/statutes-local", "--publish-current"),), 3600,
+         "Build and check a bilingual local statutes export from the official Justice Canada checkout.",
+         min_free_bytes=2 * 1024**3, artifacts=("dist/statutes-local/current/receipt.json",)),
     Step("federal-procurement", (("python3", "-B", "scripts/federal-procurement.py", "refresh"),
           ("python3", "-B", "scripts/federal-procurement.py", "verify")), 3600,
          "Archive current fiscal-year CanadaBuys award notices and contract history.",
@@ -232,6 +271,10 @@ STEPS = (
     Step("federal-disclosures", (("python3", "-B", "scripts/federal-disclosures.py"),), 1800,
          "Publish the algorithmic assessment and four briefing-package catalogues.",
          artifacts=("data/corpus/federal-disclosures/receipt.json",)),
+    Step("federal-institution-coverage", (("python3", "-B", "scripts/federal-institution-coverage.py",
+          "--include-acquisitions", "--output", "dist/refresh-weekly/federal-institutions.json"),), 1800,
+         "Match published records to the statutory institution roster using the latest acquired source files.",
+         artifacts=("dist/refresh-weekly/federal-institutions.json",)),
     Step(
         "official-titles",
         (("python3", "-B", "scripts/federal-bulk.py", "refresh", "official-titles"),),
@@ -278,17 +321,23 @@ STEPS = (
 
 RUN_ORDER = (
     "federal-discovery", "federal-guidance", "consultation-notices", "federal-disclosures", "official-titles", "service-inventory", "ati-summaries", "grant-awards",
-    "eccc", "gazette", "briefing-notes", "federal-report-directories", "federal-publications", "federal-procurement", "parliament", "hansard-house", "hansard-senate",
-    "written-questions", "geds", "committees",
+    "eccc", "gazette", "gazette-year", "briefing-notes", "federal-report-directories", "departmental-report-editions",
+    "departmental-report-documents", "departmental-report-html", "federal-regulatory-plans", "federal-publications",
+    "federal-publication-checklists", "federal-policy-editions",
+    "federal-procurement", "parliament", "hansard-house", "hansard-senate",
+    "geds", "federal-institution-coverage", "statutes-local", "written-questions", "committees",
 )
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--status", action="store_true", help="Read the latest dated result per configured step without running a refresh.")
     parser.add_argument("--only", action="append", default=[], metavar="NAME", help=f"run one named step; choices: {', '.join(step.name for step in STEPS)}")
     parser.add_argument("--resume-committee-catalogue", action="store_true",
                         help="Continue an interrupted committee-only catalogue acquisition from its partial checkpoint.")
     args = parser.parse_args(argv)
+    if args.status and (args.only or args.resume_committee_catalogue):
+        parser.error("--status cannot be combined with refresh options")
     if args.resume_committee_catalogue and args.only != ["committees"]:
         parser.error("--resume-committee-catalogue requires --only committees")
     unknown = sorted(set(args.only) - {step.name for step in STEPS})
@@ -339,40 +388,54 @@ def _local_d1_path(state_directory: str) -> str:
     return str(files[0].relative_to(ROOT))
 
 
-def _last_completed_monday() -> str:
-    today = datetime.now(ZoneInfo("America/Toronto")).date()
-    monday = today - timedelta(days=today.weekday() + 7)
-    return monday.isoformat()
+RUN_DATE = datetime.now(ZoneInfo("America/Toronto")).date()
+RUN_WEEK_OF = (RUN_DATE - timedelta(days=RUN_DATE.weekday() + 7)).isoformat()
 
 
-RUN_WEEK_OF = _last_completed_monday()
+def _resolve_date(value: str) -> str:
+    return (value.replace("@week-of@", RUN_WEEK_OF)
+            .replace("@week-ending@", (RUN_DATE - timedelta(days=RUN_DATE.weekday() + 1)).isoformat())
+            .replace("@toronto-year@", str(RUN_DATE.year))
+            .replace("@toronto-date@", RUN_DATE.isoformat()))
 
 
 def _tail(value: str, limit: int = 5000) -> str:
     return value if len(value) <= limit else "…" + value[-limit:]
 
 
-def _verify_vitest_result(outcome: dict, stdout: str, expected: int) -> None:
+def _verify_vitest_result(outcome: dict, stdout: str, expected: int, pattern: str | None = None) -> None:
     outcome["expectedPassedTests"] = expected
     try:
         report = json.loads(stdout)
     except json.JSONDecodeError:
-        outcome["error"] = "Vitest JSON report is missing or malformed"
-    else:
-        if (not isinstance(report, dict) or type(report.get("success")) is not bool
-                or type(report.get("numPassedTests")) is not int or type(report.get("numFailedTests")) is not int):
-            outcome["error"] = "Vitest JSON report is missing valid success and test counts"
-        else:
-            passed, failed = report["numPassedTests"], report["numFailedTests"]
-            outcome["passedTests"] = passed
-            outcome["stdout"] = f"Vitest reported {passed} passed and {failed} failed."
-            if not report["success"] or passed != expected or failed:
-                outcome["error"] = f"verification expected exactly {expected} passed tests, observed {passed} passed and {failed} failed"
-                failures = [test.get("message", "") for test in report.get("testResults", []) if test.get("status") == "failed"]
-                if failures:
-                    outcome["stdout"] = _tail(outcome["stdout"] + "\n" + "\n".join(failures))
-    if "error" in outcome:
-        outcome["ok"] = False
+        outcome.update(ok=False, error="Vitest JSON report is missing or malformed")
+        return
+    if (not isinstance(report, dict) or type(report.get("success")) is not bool
+            or type(report.get("numPassedTests")) is not int or type(report.get("numFailedTests")) is not int):
+        outcome.update(ok=False, error="Vitest JSON report is missing valid success and test counts")
+        return
+    suites = report.get("testResults")
+    if not isinstance(suites, list) or not all(isinstance(s, dict) and isinstance(s.get("assertionResults"), list) for s in suites):
+        outcome.update(ok=False, error="Vitest report is missing its assertion results", stdout="Invalid Vitest suite results.")
+        return
+    selected = []
+    for suite in suites:
+        for assertion in suite["assertionResults"]:
+            if not isinstance(assertion, dict) or not isinstance(assertion.get("fullName"), str):
+                outcome.update(ok=False, error="Vitest assertion is missing its full name", stdout="Invalid Vitest assertion.")
+                return
+            if pattern is None or re.search(pattern, assertion["fullName"]):
+                selected.append(assertion)
+    passed, failed = report["numPassedTests"], report["numFailedTests"]
+    outcome.update(passedTests=passed, stdout=f"Vitest reported {passed} passed and {failed} failed.")
+    if (report["success"] and passed == expected and failed == 0 and len(selected) == expected
+            and all(assertion.get("status") == "passed" for assertion in selected)):
+        return
+    outcome.update(ok=False, error=f"verification expected exactly {expected} passed tests, observed "
+                   f"{passed} passed and {failed} failed ({len(selected)} selected)")
+    failures = [suite.get("message", "") for suite in suites if suite.get("status") == "failed"]
+    if failures:
+        outcome["stdout"] = _tail(outcome["stdout"] + "\n" + "\n".join(failures))
 
 
 def _run_command(command: tuple[str, ...] | Command, timeout_seconds: int) -> dict:
@@ -386,9 +449,9 @@ def _run_command(command: tuple[str, ...] | Command, timeout_seconds: int) -> di
         if value.startswith("@d1:"):
             value = _local_d1_path(value.removeprefix("@d1:"))
         else:
-            value = value.replace("@week-of@", RUN_WEEK_OF)
+            value = _resolve_date(value)
         command_env[key] = value
-    resolved_argv = tuple(item.replace("@week-of@", RUN_WEEK_OF) for item in argv)
+    resolved_argv = tuple(_resolve_date(item) for item in argv)
     if verification and "--reporter=json" not in resolved_argv:
         resolved_argv += ("--reporter=json",)
     environment = os.environ.copy()
@@ -413,7 +476,8 @@ def _run_command(command: tuple[str, ...] | Command, timeout_seconds: int) -> di
             "stderr": _tail(result.stderr),
         }
         if verification:
-            _verify_vitest_result(outcome, result.stdout, expected_passed_tests)
+            pattern = resolved_argv[resolved_argv.index("-t") + 1] if "-t" in resolved_argv else None
+            _verify_vitest_result(outcome, result.stdout, expected_passed_tests, pattern)
         return outcome
     except subprocess.TimeoutExpired as error:
         return {
@@ -479,17 +543,60 @@ def _run_step(step: Step) -> dict:
 
 def _run_commands(step: Step, result: dict) -> None:
     for command in step.commands:
+        if isinstance(command, tuple) and command[-1] == "@receipt-run-id@":
+            try:
+                run_id = json.loads(result["commands"][-1]["stdout"])["runId"]
+                if not isinstance(run_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,79}", run_id):
+                    raise ValueError
+            except (KeyError, ValueError, IndexError, TypeError):
+                result["error"] = "Acquisition did not identify an immutable report to replay"
+                break
+            command = (*command[:-1], run_id)
+        if step.name in {"federal-guidance", "federal-policy-editions"} and isinstance(command, tuple) and command[-1] == "replay":
+            try:
+                report_hash = json.loads(result["commands"][-1]["stdout"])["reportSha256"]
+                if not isinstance(report_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", report_hash):
+                    raise ValueError
+            except (KeyError, ValueError, IndexError, TypeError):
+                result["error"] = "Acquisition did not return the digest of its dated report"
+                break
+            command += ("--report", report_hash)
+        if step.name == "gazette-year" and isinstance(command, Command) and command.verification:
+            try:
+                receipt_path = json.loads(result["commands"][-1]["stdout"])["receiptPath"]
+                if not isinstance(receipt_path, str) or not receipt_path:
+                    raise ValueError
+            except (ValueError, KeyError, IndexError, TypeError):
+                result["error"] = "Gazette acquisition did not return its dated receipt path"
+                break
+            command = replace(command, env=command.env + (("CIVICSIGNAL_GAZETTE_CATCHUP_RECEIPT", receipt_path),))
         outcome = _run_command(command, step.timeout_seconds)
         result["commands"].append(outcome)
         if not outcome["ok"]:
             result["error"] = outcome.get("error") or f"command exited with status {outcome['exitCode']}"
-            if step.verify_partial_notices and outcome["exitCode"] == 1 and not outcome.get("verification"):
-                # A completed notice acquisition emits a receipt even if some publishers refused a request.
+            if step.verify_partial and outcome["exitCode"] in (1, 2) and not outcome.get("verification"):
                 try:
                     receipt = json.loads(outcome["stdout"])
-                except (KeyError, ValueError):
+                except (KeyError, TypeError, ValueError):
                     break
-                if receipt.get("scope") == "all-open" and receipt.get("publishedFetchedEditions", 0) > 0:
+                if not isinstance(receipt, dict):
+                    break
+                if (outcome["exitCode"] == 2 and isinstance(step.commands[-1], tuple)
+                        and step.commands[-1][-1] == "@receipt-run-id@"
+                        and command == step.commands[0] and receipt.get("status") in {"pending", "partial"}):
+                    continue
+                if (step.name in {"federal-guidance", "federal-policy-editions"} and
+                        re.fullmatch(r"[0-9a-f]{64}", str(receipt.get("reportSha256", ""))) and
+                        command[-1] == "refresh" and outcome["exitCode"] == 2):
+                    continue
+                fetched = receipt.get("publishedFetchedEditions")
+                if (step.name == "consultation-notices" and receipt.get("scope") == "all-open"
+                        and type(fetched) is int and fetched > 0):
+                    continue
+                counts = receipt.get("counts", {})
+                if (step.name == "gazette-year" and receipt.get("receiptPath") and isinstance(counts, dict)
+                        and any(type(counts.get(key)) is int and counts[key] > 0
+                                for key in ("archiveVerifiedPairs", "newlyVerifiedIssues"))):
                     continue
             break
 
@@ -515,8 +622,34 @@ def _publish_report(document: dict) -> Path:
     return dated
 
 
+def weekly_status(reports: Path, names: tuple[str, ...]) -> dict:
+    sources = {name: {"status": "unverified"} for name in names}
+    full = None
+    for path in sorted(reports.glob("????-??-??T??-??-??.*Z.json")):
+        report = json.loads(path.read_bytes())
+        reference = {"report": path.name, "finishedAt": report["finishedAt"]}
+        for result in report["steps"]:
+            if result["name"] in sources:
+                checks = [cmd for cmd in result.get("commands", []) if cmd.get("verification")]
+                entry = {**reference, "status": "passed" if result["ok"] else "failed"}
+                if checks:
+                    entry["workerVerification"] = "passed" if all(cmd["ok"] for cmd in checks) else "failed"
+                if result.get("error"):
+                    entry["error"] = result["error"]
+                sources[result["name"]] = entry
+        if report["scope"] == "full":
+            observed = {row["name"] for row in report["steps"]}
+            full = {**reference, "ok": report["ok"], "missingFromCurrentConfiguration": sorted(set(names) - observed)}
+    counts = {status: sum(row["status"] == status for row in sources.values())
+              for status in ("passed", "failed", "unverified")}
+    return {"configured": len(names), "latestFullAttempt": full, "latestPerStep": counts, "sources": sources}
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
+    if args.status:
+        print(json.dumps(weekly_status(REPORTS, RUN_ORDER), indent=2))
+        return 0
     by_name = {step.name: step for step in STEPS}
     selected_names = [name for name in RUN_ORDER if not args.only or name in args.only]
     selected = [by_name[name] for name in selected_names]
