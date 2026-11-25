@@ -470,8 +470,9 @@ def collect(fetch):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', default='data/corpus/funding/esdc.json')
+    parser.add_argument('--resume', action='store_true', help='Resume the unfinished observation for this output, verifying its archived pages.')
     args = parser.parse_args()
-    acquire(args.output, 'esdc', collect)
+    acquire(args.output, 'esdc', collect, checkpoint_indexes=INDEXES, resume=args.resume)
 
 
 if __name__ == '__main__':

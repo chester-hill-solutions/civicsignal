@@ -1,0 +1,34 @@
+{
+  "scope": "Local interruption and resumption of the ESDC funding operator against archived publisher responses.",
+  "verifiedOn": "2026-11-25",
+  "input": {
+    "packetSha256": "54ae7f5c2fe8dd45335e39d1b7a2689a622b6c1dc40a8f460684f41c05006dcc",
+    "observedAt": "2026-11-25T11:18:02.738838+00:00",
+    "source": "esdc",
+    "publisherIndexes": {
+      "en": "https://www.canada.ca/en/employment-social-development/services/funding/programs.html",
+      "fr": "https://www.canada.ca/fr/emploi-developpement-social/services/financement/programmes.html"
+    },
+    "sourceReferences": 416,
+    "totalPublisherBytes": 16534680
+  },
+  "interruption": {
+    "fault": "Injected a transient failure for one Red Seal eligibility URL during an otherwise complete replay.",
+    "url": "https://canada.ca/en/employment-social-development/services/funding/red-seal-completion-bonus/qualify.html",
+    "completeInventoriesPublished": 0,
+    "archivedSourcesInCheckpoint": 415,
+    "confirmedPublisher404sInCheckpoint": 6
+  },
+  "resumption": {
+    "mode": "Explicit resume against the saved checkpoint and the archived publisher response for the remaining URL.",
+    "additionalPublisherResponseReads": 1,
+    "completedUrlsFetchedAgain": 0,
+    "checkpointObservationTimePreserved": true,
+    "sourceReferencesMatched": 416,
+    "editionsMatched": 196,
+    "coverageGapsMatched": 56,
+    "publisherIndexesMatched": true,
+    "comparison": "Compared parsed indexes and full source descriptors, edition records including sections, and gap objects to the original inventory. Collections were sorted for comparison."
+  },
+  "coverage": "The normal Python operator, file lock, HTTP error classification, archive content checks, checkpoint writes, parser and publication were exercised. The transport served verified archived bytes and confirmed 404 responses."
+}
