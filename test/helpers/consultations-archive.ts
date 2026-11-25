@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import type { DatabaseSync } from 'node:sqlite';
+import { gunzipSync } from 'node:zlib';
 import {
   consultationFromRow, parseConsultationCsv, readConsultationDictionary,
   type ConsultationFacts, type ConsultationLanguage, type ConsultationState,
@@ -85,4 +87,49 @@ export function archivedConsultationSearch(records: ConsultationFacts[], languag
     id: record.id, title: record.editions[language].title, dates: record.dates,
     state: archivedConsultationState(record, asOf), statusCode: record.statusCode,
   }));
+}
+
+interface ArchivedNoticeSource {
+  sourceUrl: string;
+  bodySha256?: string;
+  bodyBytes?: number;
+  objectPath?: string;
+  status: string;
+}
+
+interface ArchivedNoticeSection {
+  sourceUrl: string;
+  bodySha256: string;
+  heading: string;
+  kind: string;
+  text: string;
+  fragment?: string;
+}
+
+export function archivedNoticeEditions(db: DatabaseSync, revision: string, consultationId: string) {
+  const rows = db.prepare(`SELECT language, status, sources_json, sections_json FROM notices
+    WHERE catalogue_revision=? AND consultation_id=? ORDER BY language`).all(revision, consultationId);
+  return rows.map(row => {
+    const sources: ArchivedNoticeSource[] = JSON.parse(String(row.sources_json));
+    const fetched = sources.filter(source => source.status === 'fetched');
+    for (const source of fetched) {
+      if (!source.objectPath) throw new Error(`Missing archived notice for ${source.sourceUrl}`);
+      const bytes = gunzipSync(readFileSync(source.objectPath));
+      if (createHash('sha256').update(bytes).digest('hex') !== source.bodySha256 || bytes.length !== source.bodyBytes) {
+        throw new Error(`Archived consultation notice differs from its receipt for ${source.sourceUrl}`);
+      }
+    }
+    const sole = fetched.length === 1 ? fetched[0] : undefined;
+    const sections: ArchivedNoticeSection[] = JSON.parse(String(row.sections_json));
+    return { consultationId, language: row.language, status: row.status, sourceHash: sole?.bodySha256 ?? null,
+      sourceUrl: sole?.sourceUrl ?? null, sections: sections.map(section => {
+        if (!fetched.some(source => source.sourceUrl === section.sourceUrl && source.bodySha256 === section.bodySha256)) {
+          throw new Error(`Section has no archived source for ${consultationId} ${String(row.language)}`);
+        }
+        const citation = new URL(section.sourceUrl);
+        if (section.fragment && /^[A-Za-z0-9_.:-]{1,160}$/u.test(section.fragment)) citation.hash = section.fragment;
+        return { kind: section.kind, heading: section.heading, sourceHash: section.bodySha256, sourceUrl: section.sourceUrl,
+          citationUrl: citation.href, quote: section.text.slice(0, 4000) };
+      }) };
+  });
 }

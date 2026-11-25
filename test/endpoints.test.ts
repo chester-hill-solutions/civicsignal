@@ -40,7 +40,7 @@ import { SourceFeedResponseSchema } from '../src/routes/source-feed-contract';
 import { normalizeForSearch } from '../src/text';
 import { readHansardWeekFiles } from '../scripts/lib/hansard-week';
 import {
-  acquiredConsultations, archivedConsultationCoverage, archivedConsultationSearch, baselineConsultations,
+  acquiredConsultations, archivedConsultationCoverage, archivedConsultationSearch, archivedNoticeEditions, baselineConsultations,
   isBaselineConsultationObservation, type ConsultationObservation, type ConsultationReceipt,
 } from './helpers/consultations-archive';
 import {
@@ -2180,53 +2180,35 @@ describe('consultations through the Worker against the acquired catalogue', () =
   it.skipIf(!noticeIndexPath)(
     'serves archived English and French participation instructions with exact source citations', async () => {
       if (!noticeCataloguePath || !noticeIndexPath) throw new Error('Supply the acquired consultation catalogue and notice index.');
-      const fixture = await setup(2);
       const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof SqliteDatabase };
       const catalogueDb = new DatabaseSync(noticeCataloguePath, { readOnly: true });
       const noticesDb = new DatabaseSync(noticeIndexPath, { readOnly: true });
       closed.push(() => catalogueDb.close(), () => noticesDb.close());
       catalogueDb.exec('BEGIN');
       noticesDb.exec('BEGIN');
+      const observation = catalogueDb.prepare(`SELECT revision, observed_at FROM consultations_catalogues WHERE source='canada'
+        ORDER BY observed_at DESC LIMIT 1`).get() as { revision: string; observed_at: string };
+      const open = catalogueDb.prepare(`SELECT id FROM consultations_records WHERE removed_at IS NULL
+        AND observed_at=? AND state_at_observation='open' ORDER BY id`).all(observation.observed_at) as { id: string }[];
+      const fixture = await setup(open.length + 1);
       fixture.env.AUTH_DB = fixture.db;
       fixture.env.CIVIC_DB = localD1(catalogueDb, { existingReadTransaction: true });
       fixture.env.CONSULTATION_NOTICES_DB = localD1(noticesDb, { existingReadTransaction: true });
       fixture.env.CONSULTATIONS_PREVIEW = 'on';
 
-      const observation = catalogueDb.prepare(`SELECT revision FROM consultations_catalogues WHERE source='canada'`)
-        .get() as { revision: string } | undefined;
-      if (!observation) throw new Error('The acquired consultation catalogue is missing.');
-      const candidates = noticesDb.prepare(`SELECT consultation_id FROM notices WHERE catalogue_revision=?
-        AND status='fetched' GROUP BY consultation_id HAVING COUNT(DISTINCT language)=2 ORDER BY consultation_id`)
-        .all(observation.revision) as { consultation_id: string }[];
-      const getArchived = (candidate: string) => noticesDb.prepare(`SELECT language,status,published_url,body_sha256,sections_json
-        FROM notices WHERE catalogue_revision=? AND consultation_id=? ORDER BY language`)
-        .all(observation.revision, candidate) as { language: string; status: string; published_url: string;
-          body_sha256: string; sections_json: string }[];
-      const selected = candidates.map((candidate) => ({ id: candidate.consultation_id, rows: getArchived(candidate.consultation_id) }))
-        .find(({ rows }) => rows.length === 2 && rows.every((row) => row.status === 'fetched' && row.body_sha256 &&
-          row.published_url && (JSON.parse(row.sections_json) as { text?: string }[]).some((section) => section.text)));
-      if (!selected) throw new Error('No bilingual fetched consultation with extracted participation instructions is available.');
-      const { id, rows: archived } = selected;
-      expect(archived.map((row) => row.language)).toEqual(['en', 'fr']);
-      const expected = archived.map((row) => {
-        const section = (JSON.parse(row.sections_json) as { heading: string; text: string }[])
-          .find((candidate) => Boolean(candidate.text));
-        if (!section) throw new Error(`Expected an extracted section for ${row.language}.`);
-        return { language: row.language, sourceHash: row.body_sha256, sourceUrl: row.published_url,
-          heading: section.heading, quote: section.text.slice(0, 4000) };
-      });
-      const response = await fixture.send(`/api/consultations/${id}`);
-      expect(response.status).toBe(200);
-      const detail = ConsultationLookupResponseSchema.parse(await response.json());
-      expect(detail.participationNotices).toMatchObject({ catalogueRevision: observation.revision, editions: [
-        ...expected.map((edition) => ({ consultationId: id, language: edition.language, status: 'fetched',
-          sourceHash: edition.sourceHash, sourceUrl: edition.sourceUrl,
-          sections: [{ heading: edition.heading, quote: edition.quote, sourceHash: edition.sourceHash }] })),
-      ] });
-      expect(detail.participationNotices?.editions.every((edition) =>
-        edition.sections.every((section) => section.citationUrl.startsWith(edition.sourceUrl ?? '')))).toBe(true);
-      expect(await fixture.count()).toBe(1);
-    });
+      const coverage = await fixture.send(`/api/consultations/coverage?asOf=${encodeURIComponent(observation.observed_at)}`);
+      expect(coverage.status).toBe(200);
+      expect(ConsultationCoverageSchema.parse(await coverage.json()).counts.byState.open).toBe(open.length);
+      for (const { id } of open) {
+        const archived = archivedNoticeEditions(noticesDb, observation.revision, id);
+        expect(archived.map(row => row.language), id).toEqual(['en', 'fr']);
+        const response = await fixture.send(`/api/consultations/${encodeURIComponent(id)}`);
+        expect(response.status, id).toBe(200);
+        const detail = ConsultationLookupResponseSchema.parse(await response.json());
+        expect(detail.participationNotices, id).toMatchObject({ catalogueRevision: observation.revision, editions: archived });
+      }
+      expect(await fixture.count()).toBe(open.length + 1);
+    }, 30_000);
 });
 
 describe('funding programme API through the Worker', () => {

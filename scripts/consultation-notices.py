@@ -17,7 +17,7 @@ import sqlite3
 import sys
 import tempfile
 from urllib.error import HTTPError, URLError
-from urllib.parse import unquote, urlsplit, urlunsplit
+from urllib.parse import parse_qs, unquote, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,20 +34,37 @@ MAX_ARCHIVE_BYTES = 48 * 1024 * 1024
 MIN_FREE_BYTES = 96 * 1024 * 1024
 USER_AGENT = "CivicSignal local consultation notice archive/1.0"
 
+# These HTTPS engagement hosts are linked as official consultation portals
+# from Canada Energy Regulator and Transport Canada pages. Keep this list
+# exact-host scoped: it does not bless arbitrary third-party hosts or their
+# redirects.
+OFFICIAL_ENGAGEMENT_HOSTS = frozenset({
+    "www.cerdialogue.ca", "dialogueregie.ca",
+    "www.letstalktransportation.ca", "parlonstransport.ca",
+})
+SAFE_LINKS_HOST = "can01.safelinks.protection.outlook.com"
+
+# Publisher-confirmed replacements for individual catalogue URLs. A preview
+# hostname never becomes an eligible fetch destination.
+CURRENT_PUBLICATION_URLS = json.loads((ROOT / "src/corpora/consultation-notice-urls.json").read_text(encoding="utf-8"))
+
 LABELS = {
     "eligibility": (
         "eligibility", "who can participate", "who can comment", "who may participate",
         "admissibility", "who is eligible", "qui peut participer", "qui peut commenter",
         "admissibilité", "admissibilite", "personnes admissibles",
+        "who is the focus of this consultation", "qui cette consultation vise-t-elle",
     ),
     "deadline": (
         "deadline", "closing date", "consultation closes", "submit by", "comments due",
         "date limite", "échéance", "echeance", "la consultation prend fin",
     ),
     "submission-instructions": (
-        "how to participate", "how to submit", "submit comments", "send your comments",
+        "how to participate", "how to submit", "how to submit comments", "submit comments", "send your comments",
         "providing comments", "submitting comments", "comment participer", "comment soumettre",
-        "soumettre des commentaires", "transmettre vos commentaires", "présenter des commentaires",
+        "comment déposer des commentaires", "soumettre des commentaires", "transmettre vos commentaires",
+        "présenter des commentaires",
+        "share your ideas online", "partagez vos idées en ligne",
     ),
 }
 
@@ -127,9 +144,38 @@ class NoticeParser(HTMLParser):
 
 class SafeRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        if not official(newurl):
+        if not notice_official(newurl):
             raise ValueError("redirect leaves the recognized official-host set")
         return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def notice_official(url: str) -> bool:
+    """HTTPS GoC hosts and a small set of agency-linked public portals."""
+    if official(url):
+        return True
+    parsed = urlsplit(url)
+    return (parsed.scheme == "https" and parsed.hostname in OFFICIAL_ENGAGEMENT_HOSTS
+            and not parsed.username and not parsed.password)
+
+
+def unwrap_official_safe_link(profile: dict) -> str | None:
+    """Read an embedded official destination without contacting the wrapper."""
+    candidate = profile.get("published")
+    if not candidate:
+        return None
+    parsed = urlsplit(candidate)
+    if parsed.scheme != "https" or parsed.hostname != SAFE_LINKS_HOST or parsed.username or parsed.password:
+        return None
+    values = parse_qs(parsed.query, keep_blank_values=True).get("url", [])
+    if len(values) != 1:
+        return None
+    target = values[0]
+    catalogue_target = profile.get("unwrapped") or profile.get("url")
+    return target if target == catalogue_target and notice_official(target) else None
+
+
+def current_publication_url(url: str) -> str:
+    return CURRENT_PUBLICATION_URLS.get(url, url)
 
 
 def fetch(url: str) -> tuple[bytes, str, str]:
@@ -137,7 +183,7 @@ def fetch(url: str) -> tuple[bytes, str, str]:
     request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"})
     with opener.open(request, timeout=35) as response:
         final_url = response.geturl()
-        if not official(final_url):
+        if not notice_official(final_url):
             raise ValueError("final URL is outside the recognized official-host set")
         media = response.headers.get_content_type().lower()
         body = response.read(MAX_BODY + 1)
@@ -222,8 +268,14 @@ def local_link(profile: dict | None) -> tuple[str, str | None, str | None]:
     kind, url = profile.get("kind", "missing"), profile.get("url")
     if not url:
         return "missing-link", profile.get("published"), "catalogue has no resolved profile URL"
-    if kind != "official":
+    if kind == "third-party-wrapper":
+        url = unwrap_official_safe_link(profile)
+        if not url:
+            return "unrecognized-link-kind", profile.get("published") or profile.get("url"), \
+                "catalogue wrapper does not contain one recognized official HTTPS destination"
+    elif kind != "official":
         return "unrecognized-link-kind", profile.get("published") or url, f"catalogue link kind is {kind}"
+    url = current_publication_url(url)
     parsed = urlsplit(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
         return "unrecognized-url", profile.get("published") or url, "catalogue URL is not an absolute HTTP(S) URL"
@@ -234,7 +286,7 @@ def local_link(profile: dict | None) -> tuple[str, str | None, str | None]:
             return "unrecognized-url", profile.get("published") or url, "insecure HTTP link cannot be safely upgraded to HTTPS"
         if (parsed.hostname or "").endswith(GOVERNMENT_SUFFIXES):
             url = urlunsplit(("https", parsed.netloc, parsed.path, parsed.query, parsed.fragment))
-    if not official(url):
+    if not notice_official(url):
         return "unrecognized-host", profile.get("published") or url, "URL host is outside the recognized official-host set"
     return "pending", url, None
 
@@ -260,7 +312,7 @@ def split_profile_urls(url: str) -> list[str]:
     parts = [part.strip() for part in decoded.split(" ; ")]
     if len(parts) == 1:
         return [url]
-    if all(official(part) for part in parts):
+    if all(notice_official(part) for part in parts):
         return parts
     return [url]
 
@@ -326,12 +378,14 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
             facts = json.loads(record["facts_json"])
             for language in ("en", "fr"):
                 edition = facts.get("editions", {}).get(language) or {}
-                state, url, detail = local_link(edition.get("profile"))
+                profile = edition.get("profile")
+                state, url, detail = local_link(profile)
+                published_url = (profile or {}).get("published") or (profile or {}).get("url")
                 if state != "pending":
                     record_notice(target, revision, observed, record["id"], language, state, url, detail=detail)
                     counts[state] = counts.get(state, 0) + 1
                     continue
-                source_urls = split_profile_urls(url)
+                source_urls = [current_publication_url(source) for source in split_profile_urls(url)]
                 previous = target.execute("SELECT * FROM notices WHERE catalogue_revision=? AND consultation_id=? AND language=?",
                                           (revision, record["id"], language)).fetchone()
                 previous_sources = _previous_sources(previous)
@@ -339,10 +393,12 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                 source_errors = []
                 latest_attempt = utc_now()
                 for source_url in source_urls:
-                    old_source = next((s for s in previous_sources if s.get("sourceUrl") == source_url and s.get("bodySha256")), None)
+                    old_source = next((s for s in previous_sources if s.get("bodySha256") and
+                                       current_publication_url(s.get("sourceUrl")) == source_url), None)
                     if source_url in seen_urls:
                         entry = dict(seen_urls[source_url])
                         entry["lastAttemptStatus"] = "reused"
+                        entry["catalogueUrl"] = published_url
                         source_entries.append(entry)
                         counts["fetched-reused-url"] = counts.get("fetched-reused-url", 0) + 1
                         continue
@@ -353,7 +409,8 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                         source_errors.append(err)
                         counts["archive-budget"] = counts.get("archive-budget", 0) + 1
                         entry = dict(old_source) if old_source else {"sourceUrl": source_url, "status": "archive-budget"}
-                        entry.update(lastAttemptStatus="archive-budget", lastAttemptAt=attempted_at, lastAttemptDetail=err)
+                        entry.update(catalogueUrl=published_url, lastAttemptStatus="archive-budget",
+                                     lastAttemptAt=attempted_at, lastAttemptDetail=err)
                         source_entries.append(entry)
                         continue
                     try:
@@ -366,7 +423,8 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                             source_errors.append(err)
                             counts["archive-budget"] = counts.get("archive-budget", 0) + 1
                             entry = dict(old_source) if old_source else {"sourceUrl": source_url, "status": "archive-budget"}
-                            entry.update(lastAttemptStatus="archive-budget", lastAttemptAt=attempted_at, lastAttemptDetail=err)
+                            entry.update(catalogueUrl=published_url, lastAttemptStatus="archive-budget",
+                                         lastAttemptAt=attempted_at, lastAttemptDetail=err)
                             source_entries.append(entry)
                             continue
                         digest, objpath = archive_body(body)
@@ -380,6 +438,7 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                         entry = {"sourceUrl": source_url, "finalUrl": final_url, "status": "fetched",
                                  "mediaType": media, "bodySha256": digest, "bodyBytes": len(body),
                                  "objectPath": objpath, "sections": sections,
+                                 "catalogueUrl": published_url,
                                  "lastAttemptStatus": "fetched", "lastAttemptAt": attempted_at}
                         seen_urls[source_url] = entry
                         source_entries.append(entry)
@@ -391,7 +450,8 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                         err = str(e)
                         source_errors.append(err)
                         entry = dict(old_source) if old_source else {"sourceUrl": source_url, "status": "http-error", "httpStatus": e.code}
-                        entry.update(lastAttemptStatus="http-error", lastAttemptAt=attempted_at, lastAttemptDetail=err)
+                        entry.update(catalogueUrl=published_url, lastAttemptStatus="http-error",
+                                     lastAttemptAt=attempted_at, lastAttemptDetail=err)
                         source_entries.append(entry)
                     except (URLError, TimeoutError, OSError, ValueError) as e:
                         attempted_at = _log_attempt(target, revision, record["id"], language, source_url, "fetch-error", str(e)[:1000])
@@ -400,7 +460,8 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                         err = str(e)[:1000]
                         source_errors.append(err)
                         entry = dict(old_source) if old_source else {"sourceUrl": source_url, "status": "fetch-error"}
-                        entry.update(lastAttemptStatus="fetch-error", lastAttemptAt=attempted_at, lastAttemptDetail=err)
+                        entry.update(catalogueUrl=published_url, lastAttemptStatus="fetch-error",
+                                     lastAttemptAt=attempted_at, lastAttemptDetail=err)
                         source_entries.append(entry)
 
                 published_sources = [entry for entry in source_entries if entry.get("bodySha256")]
@@ -415,7 +476,7 @@ def refresh(catalogue: Path = CATALOGUE, store: Path = STORE, fetcher=fetch, tot
                 single_source = len(published_sources) == 1
                 only_source = published_sources[0] if single_source else {}
                 detail = "; ".join(source_errors)[:2000] if source_errors else None
-                record_notice(target, revision, observed, record["id"], language, row_status, url,
+                record_notice(target, revision, observed, record["id"], language, row_status, published_url,
                               final_url=only_source.get("finalUrl"), media_type=only_source.get("mediaType"),
                               body_sha256=only_source.get("bodySha256"),
                               body_bytes=sum(entry.get("bodyBytes", 0) or 0 for entry in published_sources),

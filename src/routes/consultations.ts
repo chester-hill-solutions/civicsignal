@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AccessError } from '../access';
+import noticeReplacements from '../corpora/consultation-notice-urls.json';
 import {
   CONSULTATION_SOURCE, ConsultationCoverageSchema, ConsultationFactsSchema, ConsultationLanguageSchema,
   ConsultationLookupResponseSchema, ConsultationRecordSchema, ConsultationRevisionSchema,
@@ -238,7 +239,9 @@ function expectedProfileUrls(facts: z.infer<typeof ConsultationFactsSchema>, lan
     const decoded = decodeUrl(value);
     return [value, decoded].flatMap((entry) => entry.split(/\s+;\s+/u));
   });
-  return [...new Set(candidates.map(httpUrl).filter((value): value is string => value !== null))];
+  const replacements: Record<string, string> = noticeReplacements;
+  const urls = candidates.flatMap(value => [value, replacements[value]]).map(httpUrl);
+  return [...new Set(urls.filter((value): value is string => value !== null))];
 }
 
 function decodeUrl(value: string): string {
