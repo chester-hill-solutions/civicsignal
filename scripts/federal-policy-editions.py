@@ -30,20 +30,20 @@ def stamp():
     return datetime.now(timezone.utc).isoformat()
 
 
-def catalogue_links(metadata, register):
+def catalogue_links(metadata):
     editions, documents = {}, {}
-    for link in metadata.get("links", []):
-        url = link["url"]
+    urls = [link["url"] for link in metadata.get("links", [])]
+    urls.extend(url for field in metadata.get("publicationLinks", []) for url in field["urls"])
+    for url in urls:
         parsed = urlsplit(url)
         if parsed.scheme not in ("http", "https") or parsed.username or parsed.password:
             continue
         path = re.fullmatch(r"/pol/doc-(eng|fra)\.aspx", parsed.path, re.I)
         if parsed.hostname in POLICY_HOSTS and path:
             ids = parse_qs(parsed.query).get("id", [])
-            if len(ids) == 1:
+            if len(ids) == 1 and re.fullmatch(r"[0-9]+", ids[0]):
                 key = (ids[0], "en" if path[1].lower() == "eng" else "fr")
-                if key in register:
-                    editions[key] = url
+                editions[key] = url
         if (parsed.hostname in {"publications.gc.ca", "www.publications.gc.ca"} and
                 parsed.path.startswith("/collections/") and parsed.path.casefold().endswith(".pdf")):
             # The publisher's archive gateway canonicalizes repeated path separators.
@@ -67,17 +67,31 @@ def candidates(db_path, guidance):
         identity, = db.execute("SELECT identity FROM publication").fetchone()
         rows = {}
         for src, cat_id, title, data in db.execute("""SELECT source,id,title,metadata FROM records
-                WHERE source!='weekly-checklists' AND metadata LIKE '%tbs-s%id=%' ORDER BY source,id,rowid"""):
+                WHERE metadata LIKE '%tbs-s%id=%' ORDER BY source,id,rowid"""):
             meta = json.loads(data)
-            editions, urls = catalogue_links(meta, register)
+            editions, urls = catalogue_links(meta)
+            if not editions or not urls:
+                continue
+            if src == "weekly-checklists":
+                # Only a single policy and PDF in the same MARC record form a checklist citation.
+                if len(editions) != 1 or len(urls) != 1:
+                    continue
+                dates = [date for field in meta["publicationStatements"] if field["function"] == "publication"
+                         for date in field["dates"]]
+                languages = meta["languageCodes"]
+                provenance = {"checklistRecordSha256": meta["fingerprint"], "listedInIssues": meta["seenInIssues"]}
+            else:
+                dates, languages, provenance = meta["datesIssued"], meta["languages"], {}
             for (policy_id, lang), policy_url in editions.items():
+                if (policy_id, lang) not in register:
+                    continue
                 for url, published_url in urls.items():
                     row = {"policyId": policy_id, "language": lang, "catalogueId": cat_id, "catalogueTitle": title,
                            "catalogueSource": src, "policyUrlInCatalogue": policy_url, "publishedPdfUrl": published_url,
-                           "url": url, "datesIssued": meta["datesIssued"], "catalogueLanguages": meta["languages"],
+                           "url": url, "datesIssued": dates, "catalogueLanguages": languages, **provenance,
                            "indexEntries": register[(policy_id, lang)],
                            "multiplePolicyIds": len({i for i, l in editions}) > 1}
-                    rows[(src, cat_id, title, policy_id, lang, url)] = row
+                    rows[(src, cat_id, title, policy_id, lang, url, provenance.get("checklistRecordSha256"))] = row
     finally:
         db.close()
     if not rows:

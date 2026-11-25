@@ -1,5 +1,8 @@
 from importlib import import_module
+import hashlib
+import json
 from pathlib import Path
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -10,13 +13,41 @@ policies = import_module("federal-policy-editions")
 
 
 class FederalPolicyEditionTests(unittest.TestCase):
-    def test_requires_an_explicit_registered_policy_id_and_government_catalogue_pdf(self):
+    def test_checklist_join_requires_one_registered_policy_and_one_pdf_in_the_same_record(self):
+        policy = "https://www.tbs-sct.canada.ca/pol/doc-eng.aspx?id=123"
+        pdf = "https://publications.gc.ca/collections/test.pdf"
+        record = {"languageCodes": ["eng"], "fingerprint": "f"*64, "seenInIssues": ["2026-01"],
+                  "publicationStatements": [{"function": "publication", "dates": ["2026"]},
+                                             {"function": "copyright-notice", "dates": ["2025"]}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            inventory = root / "inventory.json"
+            inventory.write_text(json.dumps({"records": [{"policy_id": "123", "language": "en", "label": "Policy"}]}))
+            (root / "dist").mkdir()
+            (root / "dist/receipt.json").write_text(json.dumps({"inventory": {"path": str(inventory),
+                "sha256": hashlib.sha256(inventory.read_bytes()).hexdigest()}}))
+            path = root / "catalogue.sqlite"
+            with sqlite3.connect(path) as db:
+                db.executescript("CREATE TABLE publication(identity); INSERT INTO publication VALUES ('fixture');"
+                                 "CREATE TABLE records(source,id,title,metadata);")
+                cases = [("valid", [policy, pdf]), ("split", [policy]), ("split", [pdf]),
+                         ("two policies", [policy, policy+"4", pdf]), ("two PDFs", [policy, pdf, pdf.replace("test", "next")]),
+                         ("unregistered", [policy+"4", pdf])]
+                for identifier, urls in cases:
+                    meta = {**record, "publicationLinks": [{"urls": [url]} for url in urls]}
+                    db.execute("INSERT INTO records VALUES ('weekly-checklists',?,'Policy',?)", (identifier, json.dumps(meta)))
+            _, candidates = policies.candidates(path, root)
+            self.assertEqual([(row["catalogueId"], row["datesIssued"], row["catalogueLanguages"],
+                               row["checklistRecordSha256"]) for row in candidates], [("valid", ["2026"], ["eng"], "f"*64)])
+
+    def test_reads_only_explicit_policy_ids_and_government_catalogue_pdfs(self):
         url = "https://publications.gc.ca/collections/collection_2021/sct-tbs/example-fra.pdf"
         policy = "http://www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=1234"
-        register = {("1234", "fr"): []}
         urls = [policy, url, "https://foreign.example/collections/other.pdf",
-                "https://www.tbs-sct.gc.ca/pol/doc-eng.aspx?id=1234", policy + "&id=999"]
-        self.assertEqual(policies.catalogue_links({"links": [{"url": u} for u in urls]}, register),
+                "https://www.tbs-sct.gc.ca/pol/doc-eng.aspx?id=word", policy + "&id=999"]
+        self.assertEqual(policies.catalogue_links({"links": [{"url": u} for u in urls]}),
+                         ({("1234", "fr"): policy}, {url: url}))
+        self.assertEqual(policies.catalogue_links({"publicationLinks": [{"urls": [u]} for u in urls]}),
                          ({("1234", "fr"): policy}, {url: url}))
 
     def test_ambiguous_policy_ids_cannot_qualify_by_title(self):
