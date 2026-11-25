@@ -679,13 +679,29 @@
     "votesPython": 8,
     "writtenQuestionsPython": 5,
     "wranglerDryRunBuilds": 6,
-    "pythonDiscoveryPassed": 215,
+    "pythonDiscoveryPassed": 227,
     "vendorFilesChecked": 117,
     "acquiredEndpointSuite": {
       "passed": true,
       "testFile": "test/endpoints.test.ts",
       "totalCases": 257,
       "bindings": "All optional endpoint sources and both GEDS snapshots supplied."
+    },
+    "weeklyWorkerReadback": {
+      "scope": "Independent verification against existing local stores during committee recovery",
+      "reporter": "Vitest JSON",
+      "exactPassedByStep": {
+        "geds": 1,
+        "eccc": 2,
+        "gazette": 1,
+        "parliament": 2,
+        "written-questions": 1,
+        "committees": 1,
+        "consultation-notices": 1,
+        "hansard-house": 1,
+        "hansard-senate": 1
+      },
+      "verifiedOnUtc": "2026-11-25"
     }
   },
   "reportDirectories": {

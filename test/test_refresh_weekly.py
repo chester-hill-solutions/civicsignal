@@ -1,6 +1,7 @@
 """Focused tests for the local weekly refresh supervisor."""
 
 import importlib.util
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -86,12 +87,60 @@ class WeeklyRefreshTests(unittest.TestCase):
                             self.fail("nested committee lock unexpectedly acquired")
 
     def test_verification_requires_a_passed_test(self):
-        completed = type("Completed", (), {"returncode": 0, "stdout": "Tests 0 skipped", "stderr": ""})()
-        command = weekly.Command(("bun", "run", "test"), verification=True)
-        with patch.object(weekly.subprocess, "run", return_value=completed):
+        self.assert_exact_verification_result(passed=1, expected=1, ok=True)
+        self.assert_exact_verification_result(passed=0, expected=1, ok=False)
+
+    def assert_exact_verification_result(self, passed, expected, ok, failed=0, stdout=None):
+        report = {
+            "success": failed == 0,
+            "numPassedTests": passed,
+            "numFailedTests": failed,
+            "numPendingTests": max(0, expected - passed),
+            "testResults": [{"assertionResults": [{"fullName": "intentionally large result"}]}],
+        }
+        body = json.dumps(report) if stdout is None else stdout
+        completed = type("Completed", (), {"returncode": 0, "stdout": body, "stderr": "$ vitest run --reporter=json"})()
+        command = weekly.Command(("bun", "run", "test"), verification=True, expected_passed_tests=expected)
+        with patch.object(weekly.subprocess, "run", return_value=completed) as run:
             result = weekly._run_command(command, 10)
-        self.assertFalse(result["ok"])
-        self.assertIn("no passed tests", result["error"])
+        self.assertIn("--reporter=json", run.call_args.args[0])
+        self.assertEqual(result["ok"], ok)
+        if "passedTests" in result:
+            self.assertEqual(result["passedTests"], passed)
+        self.assertEqual(result.get("expectedPassedTests"), expected)
+        self.assertNotIn("assertionResults", result["stdout"])
+        return result
+
+    def test_verification_rejects_too_few_passes_even_when_another_case_is_skipped(self):
+        result = self.assert_exact_verification_result(passed=1, expected=2, ok=False)
+        self.assertIn("expected exactly 2 passed tests, observed 1", result["error"])
+
+    def test_verification_rejects_too_many_passes(self):
+        result = self.assert_exact_verification_result(passed=3, expected=2, ok=False)
+        self.assertIn("expected exactly 2 passed tests, observed 3", result["error"])
+
+    def test_verification_rejects_empty_selection(self):
+        result = self.assert_exact_verification_result(passed=0, expected=1, ok=False)
+        self.assertIn("expected exactly 1 passed tests, observed 0", result["error"])
+
+    def test_verification_rejects_malformed_vitest_json(self):
+        result = self.assert_exact_verification_result(passed=0, expected=1, ok=False, stdout="{broken json")
+        self.assertNotIn("passedTests", result)
+        self.assertEqual(result["error"], "Vitest JSON report is missing or malformed")
+
+    def test_verification_rejects_structured_report_missing_required_counts(self):
+        result = self.assert_exact_verification_result(
+            passed=0, expected=1, ok=False, stdout=json.dumps({"numPassedTests": 1}),
+        )
+        self.assertNotIn("passedTests", result)
+        self.assertEqual(result["error"], "Vitest JSON report is missing valid success and test counts")
+
+    def test_eccc_and_parliament_declare_two_expected_worker_checks(self):
+        expected = {"eccc": 2, "parliament": 2}
+        for step in weekly.STEPS:
+            for command in step.commands:
+                if isinstance(command, weekly.Command) and command.verification:
+                    self.assertEqual(command.expected_passed_tests, expected.get(step.name, 1), step.name)
 
     def test_full_report_pointer_tracks_success_and_failure(self):
         with tempfile.TemporaryDirectory() as directory:

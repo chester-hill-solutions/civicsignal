@@ -18,7 +18,6 @@ import fcntl
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
@@ -61,6 +60,7 @@ class Command:
     argv: tuple[str, ...]
     env: tuple[tuple[str, str], ...] = ()
     verification: bool = False
+    expected_passed_tests: int = 1
 
 
 def _parliament_commands() -> tuple[tuple[str, ...], ...]:
@@ -77,7 +77,7 @@ def _parliament_commands() -> tuple[tuple[str, ...], ...]:
         (py, "-B", "scripts/parliament-journal-roll-calls.py", "--journals", f"{p}/senate-journals.json", "--votes", f"{p}/senate-votes.json", "--roll-calls", f"{p}/senate-roll-calls.json", "--output", f"{p}/senate-roll-calls-complete.json"),
         ("bun", "scripts/materialize-parliament.ts", f"{p}/catalogues.sqlite", f"{p}/bills.json", f"{p}/votes.json", f"{p}/senate-votes.json", f"{p}/house-journals.json", f"{p}/senate-journals.json", f"{p}/house-roll-calls.json", f"{p}/senate-roll-calls-complete.json"),
         Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "serves the materialized official inventories in both languages|retrieves a cited decision and an individual vote from each official chamber edition"),
-                (("CIVICSIGNAL_PARLIAMENT_SQLITE", f"{p}/catalogues.sqlite"), ("CIVICSIGNAL_CHAMBERS_SQLITE", f"{p}/catalogues.sqlite")), verification=True),
+                (("CIVICSIGNAL_PARLIAMENT_SQLITE", f"{p}/catalogues.sqlite"), ("CIVICSIGNAL_CHAMBERS_SQLITE", f"{p}/catalogues.sqlite")), verification=True, expected_passed_tests=2),
     )
 
 
@@ -133,7 +133,7 @@ STEPS = (
         (("python3", "-B", "scripts/eccc-intake.py", "--workers", "1"),
          ("python3", "-B", "scripts/eccc-passages.py"),
          Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "departmental publications through the Worker"),
-                 (("CIVICSIGNAL_ECCC_SQLITE", "data/corpus/eccc/serving.sqlite"),), verification=True)),
+                 (("CIVICSIGNAL_ECCC_SQLITE", "data/corpus/eccc/serving.sqlite"),), verification=True, expected_passed_tests=2)),
         60 * 60,
         "Refresh ECCC publication indexes and archived originals.",
         ECCC_MIN_FREE_BYTES,
@@ -352,12 +352,36 @@ def _tail(value: str, limit: int = 5000) -> str:
     return value if len(value) <= limit else "…" + value[-limit:]
 
 
+def _verify_vitest_result(outcome: dict, stdout: str, expected: int) -> None:
+    outcome["expectedPassedTests"] = expected
+    try:
+        report = json.loads(stdout)
+    except json.JSONDecodeError:
+        outcome["error"] = "Vitest JSON report is missing or malformed"
+    else:
+        if (not isinstance(report, dict) or type(report.get("success")) is not bool
+                or type(report.get("numPassedTests")) is not int or type(report.get("numFailedTests")) is not int):
+            outcome["error"] = "Vitest JSON report is missing valid success and test counts"
+        else:
+            passed, failed = report["numPassedTests"], report["numFailedTests"]
+            outcome["passedTests"] = passed
+            outcome["stdout"] = f"Vitest reported {passed} passed and {failed} failed."
+            if not report["success"] or passed != expected or failed:
+                outcome["error"] = f"verification expected exactly {expected} passed tests, observed {passed} passed and {failed} failed"
+                failures = [test.get("message", "") for test in report.get("testResults", []) if test.get("status") == "failed"]
+                if failures:
+                    outcome["stdout"] = _tail(outcome["stdout"] + "\n" + "\n".join(failures))
+    if "error" in outcome:
+        outcome["ok"] = False
+
+
 def _run_command(command: tuple[str, ...] | Command, timeout_seconds: int) -> dict:
     started = time.monotonic()
     argv = command.argv if isinstance(command, Command) else command
     requested_env = dict(command.env) if isinstance(command, Command) else {}
     command_env: dict[str, str] = {}
     verification = command.verification if isinstance(command, Command) else False
+    expected_passed_tests = command.expected_passed_tests if isinstance(command, Command) else 1
     for key, value in requested_env.items():
         if value.startswith("@d1:"):
             value = _local_d1_path(value.removeprefix("@d1:"))
@@ -365,6 +389,8 @@ def _run_command(command: tuple[str, ...] | Command, timeout_seconds: int) -> di
             value = value.replace("@week-of@", RUN_WEEK_OF)
         command_env[key] = value
     resolved_argv = tuple(item.replace("@week-of@", RUN_WEEK_OF) for item in argv)
+    if verification and "--reporter=json" not in resolved_argv:
+        resolved_argv += ("--reporter=json",)
     environment = os.environ.copy()
     environment.update(command_env)
     try:
@@ -377,20 +403,18 @@ def _run_command(command: tuple[str, ...] | Command, timeout_seconds: int) -> di
             timeout=timeout_seconds,
             check=False,
         )
-        output = result.stdout + "\n" + result.stderr
-        passed_tests = re.search(r"Tests\s+(\d+)\s+passed", output, re.IGNORECASE)
-        ok = result.returncode == 0 and (not verification or bool(passed_tests and int(passed_tests.group(1)) > 0))
-        return {
+        outcome = {
             "command": list(resolved_argv),
             "verification": verification,
-            "ok": ok,
+            "ok": result.returncode == 0,
             "exitCode": result.returncode,
             "durationMs": round((time.monotonic() - started) * 1000),
             "stdout": _tail(result.stdout),
             "stderr": _tail(result.stderr),
-            **({"passedTests": int(passed_tests.group(1))} if passed_tests else {}),
-            **({"error": "verification command reported no passed tests"} if verification and result.returncode == 0 and not ok else {}),
         }
+        if verification:
+            _verify_vitest_result(outcome, result.stdout, expected_passed_tests)
+        return outcome
     except subprocess.TimeoutExpired as error:
         return {
             "command": list(resolved_argv),
