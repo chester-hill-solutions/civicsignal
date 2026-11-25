@@ -6,7 +6,8 @@ import { join } from 'node:path';
 import { sha256File } from '../scripts/lib/file-integrity';
 import { localD1 } from '../scripts/lib/local-d1';
 import { runWrittenQuestionRequest } from '../src/routes/written-questions';
-import { createStage, ftsTablesEqual, openSqlite, rollbackPreservingError, splitWrittenQuestionText, swapCandidate } from '../scripts/materialize-written-questions';
+import { createStage, ftsTablesEqual, openSqlite, rollbackPreservingError, splitWrittenQuestionText,
+  StagedFtsWriter, swapCandidate } from '../scripts/materialize-written-questions';
 
 describe('local written-question D1 materialization SQL', () => {
   it('opens read-write and read-only databases through the runtime-native SQLite module', () => {
@@ -107,6 +108,73 @@ describe('local written-question D1 materialization SQL', () => {
     } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
   });
 
+  it('fills a cold stage and retains identical deterministic FTS rowids without rewriting them', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'written-question-stage-fts-'));
+    const sqlite = openSqlite(join(directory, 'stage.sqlite'));
+    const rows = [
+      ['45-1', '1', 'en', '', '0', 'first question text'],
+      ['45-1', '1', 'en', 'reply-1', '0', 'first reply text'],
+      ['45-1', '2', 'fr', '', '0', 'deuxième question'],
+    ] as const;
+    try {
+      sqlite.exec('CREATE VIRTUAL TABLE wq_stage_fts USING fts5(session UNINDEXED,number UNINDEXED,language UNINDEXED,doc_key UNINDEXED,chunk_index UNINDEXED,text)');
+      sqlite.exec('BEGIN IMMEDIATE');
+      const cold = new StagedFtsWriter(sqlite);
+      for (const row of rows) cold.add(row);
+      expect(cold.finish()).toEqual({ retained: 0, inserted: 3, replaced: 0, removed: 0 });
+      sqlite.exec('COMMIT');
+      const baseline = sqlite.prepare('SELECT rowid,session,number,language,doc_key,chunk_index,text FROM wq_stage_fts ORDER BY rowid').all();
+
+      sqlite.exec('BEGIN IMMEDIATE');
+      const repeat = new StagedFtsWriter(sqlite);
+      for (const row of rows) repeat.add(row);
+      expect(repeat.finish()).toEqual({ retained: 3, inserted: 0, replaced: 0, removed: 0 });
+      sqlite.exec("INSERT INTO wq_stage_fts(wq_stage_fts) VALUES ('integrity-check')");
+      sqlite.exec('COMMIT');
+      expect(sqlite.prepare('SELECT rowid,session,number,language,doc_key,chunk_index,text FROM wq_stage_fts ORDER BY rowid').all())
+        .toEqual(baseline);
+    } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('replaces changed or reordered staged FTS rows and removes the surplus tail', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'written-question-stage-fts-'));
+    const sqlite = openSqlite(join(directory, 'stage.sqlite'));
+    try {
+      sqlite.exec('CREATE VIRTUAL TABLE wq_stage_fts USING fts5(session UNINDEXED,number UNINDEXED,language UNINDEXED,doc_key UNINDEXED,chunk_index UNINDEXED,text)');
+      sqlite.exec("INSERT INTO wq_stage_fts VALUES ('45-1','1','en','','0','alpha old'); INSERT INTO wq_stage_fts VALUES ('45-1','2','en','','0','beta old'); INSERT INTO wq_stage_fts VALUES ('45-1','3','fr','','0','gamma old')");
+      sqlite.exec('BEGIN IMMEDIATE');
+      const writer = new StagedFtsWriter(sqlite);
+      writer.add(['45-1', '2', 'en', '', '0', 'beta new']);
+      writer.add(['45-1', '1', 'en', '', '0', 'alpha old']);
+      expect(writer.finish()).toEqual({ retained: 0, inserted: 0, replaced: 2, removed: 1 });
+      sqlite.exec("INSERT INTO wq_stage_fts(wq_stage_fts) VALUES ('integrity-check')");
+      expect(sqlite.prepare('SELECT rowid,number,text FROM wq_stage_fts ORDER BY rowid').all()).toEqual([
+        { rowid: 1, number: '2', text: 'beta new' }, { rowid: 2, number: '1', text: 'alpha old' },
+      ]);
+      expect(sqlite.prepare("SELECT number FROM wq_stage_fts WHERE wq_stage_fts MATCH 'beta new'").all())
+        .toEqual([{ number: '2' }]);
+      sqlite.exec('COMMIT');
+    } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('rolls back staged FTS row changes atomically after a rejected import', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'written-question-stage-fts-'));
+    const sqlite = openSqlite(join(directory, 'stage.sqlite'));
+    try {
+      sqlite.exec("CREATE VIRTUAL TABLE wq_stage_fts USING fts5(session UNINDEXED,number UNINDEXED,language UNINDEXED,doc_key UNINDEXED,chunk_index UNINDEXED,text); INSERT INTO wq_stage_fts VALUES ('45-1','1','en','','0','previous text')");
+      sqlite.exec('BEGIN IMMEDIATE');
+      const writer = new StagedFtsWriter(sqlite);
+      writer.add(['45-1', '1', 'en', '', '0', 'candidate text']);
+      writer.finish();
+      const rejected = new Error('injected staged import rejection');
+      let observed: unknown;
+      try { rollbackPreservingError(sqlite, rejected); } catch (error) { observed = error; }
+      expect(observed).toBe(rejected);
+      expect(sqlite.prepare('SELECT rowid,number,text FROM wq_stage_fts').all())
+        .toEqual([{ rowid: 1, number: '1', text: 'previous text' }]);
+    } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
+  });
+
   it('preserves the original SQLITE_FULL when SQLite has already rolled back', () => {
     const directory = mkdtempSync(join(tmpdir(), 'written-question-full-'));
     const databasePath = join(directory, 'serving.sqlite');
@@ -156,22 +224,6 @@ describe('local written-question D1 materialization SQL', () => {
       expect(sqlite.prepare('SELECT text FROM wq_fts').all()).toEqual([{ text: 'previous generation' }]);
       expect(sqlite.prepare('SELECT source_sha256 FROM wq_materialization_state').get())
         .toEqual({ source_sha256: 'a'.repeat(64) });
-    } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
-  });
-
-  it('preserves the original SQLITE_FULL when SQLite already rolled back its transaction', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'written-question-full-'));
-    const sqlite = openSqlite(join(directory, 'serving.sqlite'));
-    try {
-      sqlite.exec("CREATE TABLE served (value TEXT NOT NULL); INSERT INTO served VALUES ('previous'); PRAGMA max_page_count=2;");
-      sqlite.exec('BEGIN IMMEDIATE');
-      let original: unknown;
-      try { sqlite.exec('INSERT INTO served VALUES (randomblob(2000000))'); } catch (error) { original = error; }
-      expect(original).toBeDefined();
-      let observed: unknown;
-      try { rollbackPreservingError(sqlite, original); } catch (error) { observed = error; }
-      expect(observed).toBe(original);
-      expect(sqlite.prepare('SELECT value FROM served').all()).toEqual([{ value: 'previous' }]);
     } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
   });
 

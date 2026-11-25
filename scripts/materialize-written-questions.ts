@@ -62,6 +62,10 @@ interface MaterializationStats {
   documentChars: number;
   chunks: number;
   indexedPassages: number;
+  ftsRowsRetained: number;
+  ftsRowsInserted: number;
+  ftsRowsReplaced: number;
+  ftsRowsRemoved: number;
 }
 
 export function* splitWrittenQuestionText(text: string): Generator<{ index: number; text: string; searchText: string }> {
@@ -179,7 +183,8 @@ function sourceStats(sqlite: DatabaseSync): MaterializationStats {
       (SELECT COALESCE(SUM(length(text)),0) FROM questions) AS questionChars,
       (SELECT COALESCE(SUM(length(text)),0) FROM documents) AS documentChars`);
   const result = { questions: integer(counts['questions']), questionChars: integer(counts['questionChars']),
-    documents: integer(counts['documents']), documentChars: integer(counts['documentChars']), chunks: 0, indexedPassages: 0 };
+    documents: integer(counts['documents']), documentChars: integer(counts['documentChars']), chunks: 0, indexedPassages: 0,
+    ftsRowsRetained: 0, ftsRowsInserted: 0, ftsRowsReplaced: 0, ftsRowsRemoved: 0 };
   if (!result.questions) throw new Error('Source database contains no written-question records.');
   return result;
 }
@@ -198,9 +203,64 @@ export function createStage(target: DatabaseSync) {
 
 function resetStage(target: DatabaseSync) {
   for (const statement of [
-    'DELETE FROM wq_stage_fts', 'DELETE FROM wq_stage_document_chunks', 'DELETE FROM wq_stage_documents',
-    'DELETE FROM wq_stage_questions', 'DELETE FROM wq_stage_sessions', 'DELETE FROM wq_stage_materialization_state',
+    'DELETE FROM wq_stage_document_chunks', 'DELETE FROM wq_stage_documents', 'DELETE FROM wq_stage_questions',
+    'DELETE FROM wq_stage_sessions', 'DELETE FROM wq_stage_materialization_state',
   ]) runTransactionStatement(target, statement);
+}
+
+type StagedFtsValues = readonly [session: string, number: string, language: string, docKey: string,
+  chunkIndex: string, text: string];
+
+export class StagedFtsWriter {
+  private nextRowid = 1;
+  private readonly sqlite: DatabaseSync;
+  private readonly select: ReturnType<DatabaseSync['prepare']>;
+  private readonly delete: ReturnType<DatabaseSync['prepare']>;
+  private readonly insert: ReturnType<DatabaseSync['prepare']>;
+  private readonly countOutsideRange: ReturnType<DatabaseSync['prepare']>;
+  private readonly deleteOutsideRange: ReturnType<DatabaseSync['prepare']>;
+  private readonly stats = { retained: 0, inserted: 0, replaced: 0, removed: 0 };
+
+  constructor(sqlite: DatabaseSync) {
+    this.sqlite = sqlite;
+    assertTransactionActive(sqlite, 'staged FTS reconciliation');
+    this.select = sqlite.prepare(`SELECT session,number,language,doc_key,chunk_index,text FROM wq_stage_fts WHERE rowid=?`);
+    this.delete = sqlite.prepare('DELETE FROM wq_stage_fts WHERE rowid=?');
+    this.insert = sqlite.prepare(`INSERT INTO wq_stage_fts
+      (rowid,session,number,language,doc_key,chunk_index,text) VALUES (?,?,?,?,?,?,?)`);
+    this.countOutsideRange = sqlite.prepare('SELECT COUNT(*) AS count FROM wq_stage_fts WHERE rowid < 1 OR rowid >= ?');
+    this.deleteOutsideRange = sqlite.prepare('DELETE FROM wq_stage_fts WHERE rowid < 1 OR rowid >= ?');
+  }
+
+  add(values: StagedFtsValues) {
+    const rowid = this.nextRowid++;
+    const previous = this.select.get(rowid) as Record<string, unknown> | undefined;
+    const columns = ['session','number','language','doc_key','chunk_index','text'];
+    if (previous && columns.every((column, index) => previous[column] === values[index])) {
+      this.stats.retained += 1;
+      return;
+    }
+    if (previous) {
+      this.delete.run(rowid);
+      assertTransactionActive(this.sqlite, `DELETE staged FTS row ${rowid}`);
+      this.stats.replaced += 1;
+    } else {
+      this.stats.inserted += 1;
+    }
+    this.insert.run(rowid, ...values);
+    assertTransactionActive(this.sqlite, `INSERT staged FTS row ${rowid}`);
+  }
+
+  finish() {
+    const rowidLimit = this.nextRowid;
+    const surplus = Number((this.countOutsideRange.get(rowidLimit) as { count: number } | undefined)?.count ?? 0);
+    if (surplus) {
+      this.deleteOutsideRange.run(rowidLimit);
+      assertTransactionActive(this.sqlite, 'DELETE surplus staged FTS rows');
+      this.stats.removed = surplus;
+    }
+    return { ...this.stats };
+  }
 }
 
 function importCandidate(source: DatabaseSync, target: DatabaseSync, stats: MaterializationStats, sourceSha256: string) {
@@ -210,7 +270,7 @@ function importCandidate(source: DatabaseSync, target: DatabaseSync, stats: Mate
   const documentInsert = target.prepare(`INSERT INTO wq_stage_documents (session,number,language,doc_key,kind,respondent,title,url,text,
     text_chars,chunk_count,object_sha256,availability,metadata_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
   const chunkInsert = target.prepare('INSERT INTO wq_stage_document_chunks (session,number,language,doc_key,chunk_index,text,search_text) VALUES (?,?,?,?,?,?,?)');
-  const ftsInsert = target.prepare('INSERT INTO wq_stage_fts VALUES (?,?,?,?,?,?)');
+  const fts = new StagedFtsWriter(target);
   for (const row of rowIterator(source, 'SELECT session,metadata_json FROM sessions ORDER BY session')) {
     sessionInsert.run(string(row['session']), string(row['metadata_json']));
   }
@@ -221,7 +281,7 @@ function importCandidate(source: DatabaseSync, target: DatabaseSync, stats: Mate
     questionInsert.run(...key, string(row['url']), text, string(row['status']), nullableString(row['member_id']),
       nullableString(row['member_name']), nullableString(row['asked_on']), string(row['metadata_json']), string(row['source_hash']),
       nullableString(row['content_hash']), string(row['acquisition']), nullableString(row['error']), nullableString(row['last_checked']));
-    ftsInsert.run(key[0], String(key[1]), key[2], '', 0, text);
+    fts.add([key[0], String(key[1]), key[2], '', '0', text]);
     stats.indexedPassages += 1;
   }
   for (const row of rowIterator(source, `SELECT session,number,language,doc_key,kind,respondent,title,url,text,object_sha256,availability,metadata_json
@@ -236,11 +296,16 @@ function importCandidate(source: DatabaseSync, target: DatabaseSync, stats: Mate
       string(row['availability']), string(row['metadata_json']));
     for (const chunk of splitWrittenQuestionText(text)) {
       chunkInsert.run(...key, chunk.index, chunk.text, chunk.searchText);
-      ftsInsert.run(key[0], String(key[1]), key[2], key[3], chunk.index, chunk.searchText);
+      fts.add([key[0], String(key[1]), key[2], key[3], String(chunk.index), chunk.searchText]);
     }
     stats.chunks += chunkCount;
     stats.indexedPassages += chunkCount;
   }
+  const ftsStats = fts.finish();
+  stats.ftsRowsRetained = ftsStats.retained;
+  stats.ftsRowsInserted = ftsStats.inserted;
+  stats.ftsRowsReplaced = ftsStats.replaced;
+  stats.ftsRowsRemoved = ftsStats.removed;
   target.prepare(`INSERT INTO wq_stage_materialization_state
     (singleton,source_sha256,question_count,document_count,chunk_count,indexed_passage_count,completed_at) VALUES (1,?,?,?,?,?,?)`)
     .run(sourceSha256, stats.questions, stats.documents, stats.chunks, stats.indexedPassages, new Date().toISOString());
@@ -270,6 +335,11 @@ function sourceEquivalent(target: DatabaseSync, expected: MaterializationStats, 
     || actual.chunkChars !== expected.documentChars || actual.indexedPassages !== expected.indexedPassages) {
     throw new Error(`Source equivalence failed for ${prefix || 'serving'} tables; the active generation was not changed.`);
   }
+}
+
+function assertMaterializationDigest(target: DatabaseSync, table: 'wq_stage_materialization_state' | 'wq_materialization_state', expected: string) {
+  const row = target.prepare(`SELECT source_sha256 FROM ${table} WHERE singleton=1`).get() as Record<string, unknown> | undefined;
+  if (!row || row['source_sha256'] !== expected) throw new Error(`Materialization source digest mismatch in ${table}.`);
 }
 
 const FTS_COLUMNS = ['rowid', 'session', 'number', 'language', 'doc_key', 'chunk_index', 'text'] as const;
@@ -352,12 +422,20 @@ async function main(args: string[]) {
     createStage(target);
     target.exec('BEGIN IMMEDIATE');
     assertTransactionActive(target, 'BEGIN IMMEDIATE');
-    try { resetStage(target); importCandidate(source, target, expected, digest); assertTransactionActive(target, 'candidate import'); target.exec('COMMIT'); }
+    try {
+      resetStage(target);
+      importCandidate(source, target, expected, digest);
+      sourceEquivalent(target, expected, 'wq_stage_');
+      assertMaterializationDigest(target, 'wq_stage_materialization_state', digest);
+      assertTransactionActive(target, 'candidate import verification');
+      target.exec('COMMIT');
+    }
     catch (error) { rollbackPreservingError(target, error); }
     const retainedFtsIndex = swapCandidate(target);
     let handlerChecks: Awaited<ReturnType<typeof verifyActualHandlers>>;
     try {
       sourceEquivalent(target, expected, '');
+      assertMaterializationDigest(target, 'wq_materialization_state', digest);
       handlerChecks = await verifyActualHandlers(target);
       assertTransactionActive(target, 'serving verification');
       target.exec('COMMIT');
@@ -367,7 +445,10 @@ async function main(args: string[]) {
     console.log(JSON.stringify({ materialized: true, target: 'isolated-local-d1', sourceSha256: digest,
       questions: expected.questions, documents: expected.documents, chunks: expected.chunks,
       indexedPassages: expected.indexedPassages, sourceTextCharacters: expected.questionChars + expected.documentChars,
-      objectBytesCopied: 0, sourceEquivalent: true, retainedFtsIndex, actualHandlerChecks: handlerChecks }, null, 2));
+      objectBytesCopied: 0, sourceEquivalent: true, retainedFtsIndex,
+      ftsStageUpdates: { retained: expected.ftsRowsRetained, inserted: expected.ftsRowsInserted,
+        replaced: expected.ftsRowsReplaced, removed: expected.ftsRowsRemoved },
+      actualHandlerChecks: handlerChecks }, null, 2));
   } finally {
     source.close();
     target.close();
