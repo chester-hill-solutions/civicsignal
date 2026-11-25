@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { build } from 'esbuild';
 import { Miniflare, Response as LocalResponse } from 'miniflare';
 import { expect, it, vi } from 'vitest';
+import { ConsultationSearchResponseSchema, parseConsultationCsv } from '../src/corpora/consultations';
+import { prepareConsultations } from '../src/routes/consultations';
 
 // The optional local intake receipt exercises the same test with a full acquired catalogue.
 const comparison = process.env.CIVICSIGNAL_CONSULTATIONS_REFRESH_REFERENCE;
@@ -58,6 +60,20 @@ it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1')('runs a native consulta
     const first = await trigger(time);
     expect(first.published.rows).toBe(rows);
     expect(first.lookup.id).toBe(first.published.sampleId);
+    // Exercise the public search SQL through a real local D1 binding at publisher title lengths.
+    const sample = parseConsultationCsv(csv.toString('utf8')).rows.find(row =>
+      row.owner_org + '_' + row.registration_number === first.lookup.id);
+    if (!sample) throw new Error('Missing publisher row for the consultation sample.');
+    for (const language of ['en', 'fr'] as const) {
+      const title = sample[`title_${language}`].trim();
+      const url = new URL('/api/consultations', 'https://local.invalid');
+      url.searchParams.set('language', language);
+      url.searchParams.set('query', title);
+      const read = prepareConsultations(url);
+      if (!read) throw new Error('Missing consultations route.');
+      const result = ConsultationSearchResponseSchema.parse(await read({ CONSULTATIONS_DB: db, CONSULTATIONS_PREVIEW: 'on' })());
+      expect(result.items.map(item => item.id)).toContain(first.lookup.id);
+    }
     if (reference) expect(first.published.revision).toBe(reference.revision);
     expect(await trigger(time)).toEqual(first);
     const replay = await trigger(time + 86400000);

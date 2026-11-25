@@ -83,10 +83,6 @@ function requireCatalogue(row: Record<string, unknown> | undefined): Record<stri
   return row;
 }
 
-function escapeLike(value: string) {
-  return value.replace(/[\\%_]/g, '\\$&');
-}
-
 function descriptionSnippet(description: string, query: string): string {
   if (description.length <= 400) return description;
   const needle = normalizeForSearch(query);
@@ -112,10 +108,11 @@ const stateSql = `CASE
 async function search(db: D1Database, input: SearchInput, asOf: string) {
   const metaResult = await catalogue(db).first<Record<string, unknown>>();
   const meta = requireCatalogue(metaResult ?? undefined);
-  const clauses = ['removed_at IS NULL',
-    `${input.language === 'en' ? 'search_en' : 'search_fr'} LIKE '%' || ? || '%' ESCAPE '\\'`];
+  const column = input.language === 'en' ? 'search_en' : 'search_fr';
+  // The index and needle are both normalized; instr treats publisher text literally.
+  const clauses = ['removed_at IS NULL', `instr(${column}, ?) > 0`];
   const normalizedQuery = normalizeForSearch(input.query);
-  const bindings: (string | number)[] = [escapeLike(normalizedQuery)];
+  const bindings: (string | number)[] = [normalizedQuery];
   if (input.institution) { clauses.push('owner_org=?'); bindings.push(input.institution); }
   if (input.subject) {
     clauses.push(`EXISTS (SELECT 1 FROM json_each(facts_json, '$.subjects') subject

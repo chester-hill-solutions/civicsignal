@@ -8,6 +8,7 @@ import { prepareConsultations } from '../src/routes/consultations';
 import { consultationsOpenApi } from '../src/routes/consultations-openapi';
 import { discoverSources } from '../src/routes/discovery-sources';
 import type { Env } from '../src/types';
+import { normalizeForSearch } from '../src/text';
 import { testD1 } from './helpers/d1';
 
 const migrationPath = 'preview/consultations/migrations/0001_consultations.sql';
@@ -121,6 +122,28 @@ it('searches both language indexes and returns bounded, correctly classified sni
     expect(frenchDescription.items[0]).toMatchObject({
       id: 'ic_C-0058', match: { field: 'description', snippet: expect.stringContaining('Table ronde') },
     });
+  } finally { f.close(); }
+});
+
+it('matches the complete normalized literal through the 256-character search limit', async () => {
+  const f = fixture();
+  try {
+    const title = 'É'.repeat(251) + '%_\\AB';
+    const decoy = title.slice(0, -2) + 'CD';
+    for (const [id, value] of [['ic_C-0058', title], ['cnsc-ccsn_C202504', decoy]]) {
+      f.sqlite.prepare(`UPDATE consultations_records SET facts_json=json_set(facts_json,'$.editions.fr.title',?),
+        search_fr=? WHERE id=?`).run(value, normalizeForSearch(value), id);
+    }
+    const matches = async (query: string) => {
+      const params = new URLSearchParams({ language: 'fr', query });
+      const result = ConsultationSearchResponseSchema.parse(await get(f.env, '/api/consultations?' + params));
+      return result.items.map(item => item.id);
+    };
+    expect(title.length).toBe(256);
+    expect(await matches(title.toLowerCase())).toEqual(['ic_C-0058']);
+    expect(await matches(decoy)).toEqual(['cnsc-ccsn_C202504']);
+    expect(await matches('%_\\')).toEqual(['cnsc-ccsn_C202504', 'ic_C-0058']);
+    expect(await matches('é%_AB')).toEqual([]);
   } finally { f.close(); }
 });
 

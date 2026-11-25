@@ -28,7 +28,13 @@ function verificationClient(env: Env) {
   }
   async function read(path: string, params?: Record<string, string>) {
     const response = await request(path + (params ? '?' + new URLSearchParams(params) : ''), true);
-    if (!response.ok) throw new Error(`Product request failed (${response.status}): ${path} [${response.headers.get('x-correlation-id')}]`);
+    if (!response.ok) {
+      const result = z.object({ code: z.string().regex(/^[A-Z][A-Z_0-9]{0,63}$/) })
+        .safeParse(await response.json().catch(() => null));
+      const code = result.success ? result.data.code : 'UNCLASSIFIED';
+      const language = params?.language ? ' ' + params.language : '';
+      throw new Error(`Product request ${requests.length} failed (${response.status} ${code}): ${path}${language} [${response.headers.get('x-correlation-id')}]`);
+    }
     return response.json<unknown>();
   }
   return { request, read, requests };
