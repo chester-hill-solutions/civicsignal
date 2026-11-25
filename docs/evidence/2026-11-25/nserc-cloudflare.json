@@ -1,0 +1,281 @@
+{
+  "source": "NSERC College and Community Innovation catalogue",
+  "scope": "private Cloudflare staging",
+  "worker": {
+    "name": "civicsignal-stage-funding",
+    "version": "f80c461f-e235-4e9d-99f2-2ad6eb9f3399",
+    "modulesComparedWithLocalBuild": [
+      {
+        "module": "worker.js",
+        "sha256": "5e5b6f2e7fba4dbc2d5831e1d8c1f346a09ba27082425ad5943539a480901291",
+        "bytes": 957221
+      }
+    ]
+  },
+  "collector": {
+    "name": "civicsignal-stage-nserc-collector",
+    "version": "1aaacd1b-3b59-4f5c-8f94-c168dcc7918b",
+    "compatibilityFlags": [
+      "python_workers",
+      "disable_python_external_sdk"
+    ],
+    "modulesComparedWithLocalSource": [
+      {
+        "module": "entry.py",
+        "sha256": "f7b7503e9aa7324a545d63da6ef0d4e0925b34c55d35d166f75c08d5a19f4c57",
+        "bytes": 6091
+      },
+      {
+        "module": "nserc.py",
+        "sha256": "2c5648457fdd610046da1228015f7fb0f52e76c6a47f9a99cf3bc70521241ae3",
+        "bytes": 16248
+      }
+    ]
+  },
+  "workflowVersion": "09f7f4a7-4491-40ab-a6c6-1adf816caa38",
+  "resourceIsolation": {
+    "d1": "civicsignal-stage-funding",
+    "d1Id": "0d4ddb86-5b28-44b5-b34d-7aa249ada551",
+    "migrations": [
+      "0001_funding.sql",
+      "0002_funding_commit_guard.sql"
+    ],
+    "r2": "civicsignal-stage-funding",
+    "r2ManagedDomainEnabled": false,
+    "r2CustomDomains": [],
+    "workerAndCollector": {
+      "civicsignal-stage-funding": {
+        "workersDev": false,
+        "previewUrls": false,
+        "routes": []
+      },
+      "civicsignal-stage-nserc-collector": {
+        "workersDev": false,
+        "previewUrls": false,
+        "routes": []
+      }
+    },
+    "privateServices": [
+      {
+        "binding": "COLLECTOR",
+        "service": "civicsignal-stage-nserc-collector"
+      },
+      {
+        "binding": "LOOKUP",
+        "service": "civicsignal-stage-funding",
+        "entrypoint": "FundingLookup"
+      }
+    ]
+  },
+  "calendar": {
+    "timeZone": "UTC",
+    "crons": [
+      "40 22 * * *"
+    ],
+    "readbackMethod": "Wrangler init --from-dash verified the deployed calendar, routing and bindings."
+  },
+  "manual": {
+    "instance": "nserc-1795645182365",
+    "workflowStartedAt": "2026-11-25T22:19:48.468Z",
+    "workflowFinishedAt": "2026-11-25T22:19:55.189Z",
+    "status": "complete",
+    "r2ReceiptKey": "funding/nserc/runs/nserc-1795645182365.json",
+    "receiptSha256": "b619ec8e2fdb217a71dc0647a731861793e316e19353a6abae8cef43a1f089cd",
+    "receiptBytes": 2207,
+    "inventory": {
+      "key": "funding/nserc/inventories/f7cd7d93f62967d4616e99d6818363b20e5d5d9ff8ceabaf946f8f154318a5d2.json",
+      "sha256": "f7cd7d93f62967d4616e99d6818363b20e5d5d9ff8ceabaf946f8f154318a5d2",
+      "bytes": 380079,
+      "sources": 12,
+      "sourceBytes": 724532
+    },
+    "sourceObjectsVerified": 12,
+    "sourceBytesVerified": 724532,
+    "prePortExtractorMatchedPacket": true,
+    "published": {
+      "source": "nserc",
+      "observedAt": "2026-11-25T22:19:42.365Z",
+      "revision": "2e930740d7c816bc4767e39efa014a2c1f164840e2cb8d70572ef4e3e1237894",
+      "editions": 10,
+      "gaps": 0,
+      "replayed": false,
+      "events": {
+        "added": 10,
+        "changed": 0,
+        "removed": 0
+      },
+      "rowsRead": 485,
+      "rowsWritten": 1273
+    },
+    "lookups": [
+      {
+        "id": "nserc-applied-research-and-development-grants",
+        "title": "Applied Research and Development grants",
+        "url": "https://nserc-crsng.canada.ca/en/funding-opportunity/applied-research-and-development-grants",
+        "language": "en",
+        "sections": 35,
+        "contentSha256": "539a32fe22163da9b9d8c3af43c0433d8b4f95911b9f18a620f8258906f20fcb"
+      },
+      {
+        "id": "nserc-applied-research-and-development-grants",
+        "title": "Subventions de recherche et développement appliquée",
+        "url": "https://nserc-crsng.canada.ca/fr/possibilite-de-financement/subventions-de-recherche-et-developpement-appliquee",
+        "language": "fr",
+        "sections": 35,
+        "contentSha256": "5f2ca5254ba0ebd75bfafe98f0d34ec79a37fb648b23b4fca8bc1c852f944b7f"
+      }
+    ],
+    "remoteD1": {
+      "editions": 10,
+      "sections": 393,
+      "versions": 10,
+      "pending": 0,
+      "guards": 0,
+      "bytes": 2060288,
+      "servedByPrimary": true
+    },
+    "sourceDigestSetSha256": "42dfb3daa6ab80f74b6231bc249aef695fe3cf3ea4d79fa476a7c6fa429c9e0e",
+    "allColumnsMatchIndependentLocalReplay": {
+      "method": "All sorted rows, all columns; SHA-256 of compact UTF-8 JSON array with sorted object keys, including normalized text and version payloads. Native comparison replays manual then native inventory.",
+      "tables": {
+        "funding_catalogues": {
+          "rows": 1,
+          "sha256": "3a61d48f071fb10625b626a62e89f24da92b24c7ea1d081e4c064d8d7be02295",
+          "rowsRead": 1,
+          "rowsWritten": 0
+        },
+        "funding_editions": {
+          "rows": 10,
+          "sha256": "a20af296cc69b72dff0119aa31b6fd818c060f50e517192ced6852dab1f14146",
+          "rowsRead": 10,
+          "rowsWritten": 0
+        },
+        "funding_sections": {
+          "rows": 393,
+          "sha256": "0523506dd1e9dd75c60b5ff20e1f4a6a94ac1f9b1f09ca4f74065ca641eb18a5",
+          "rowsRead": 393,
+          "rowsWritten": 0
+        },
+        "funding_versions": {
+          "rows": 10,
+          "sha256": "733d9953ed23b5cbda1a2359781cc07389fb7dec4e5d01b88bb4777414af7a18",
+          "rowsRead": 10,
+          "rowsWritten": 0
+        }
+      }
+    },
+    "triggerSource": "api",
+    "steps": 4,
+    "stepRetries": 0,
+    "workerVersion": "0c2916d9-5d89-4df5-83ec-4d06bea3eb6f",
+    "workerBundleSha256": "440791a26c513f4cee00838a4a50e0fc8b564b2da0d622c66150ec539f2f813f"
+  },
+  "native": {
+    "instance": "nserc-1795646402601",
+    "workflowStartedAt": "2026-11-25T22:40:04.986Z",
+    "workflowFinishedAt": "2026-11-25T22:40:18.817Z",
+    "status": "complete",
+    "r2ReceiptKey": "funding/nserc/runs/nserc-1795646402601.json",
+    "receiptSha256": "a6eaf28cb4d3cca6046b96f5893386af89c4d8f8a5a1f8586648ac5e5dfc3020",
+    "receiptBytes": 2200,
+    "inventory": {
+      "key": "funding/nserc/inventories/37d87ebe951d7de35b83c992d4ef8b8c93ab29b54c7bc2403f8e4b08cd36d205.json",
+      "sha256": "37d87ebe951d7de35b83c992d4ef8b8c93ab29b54c7bc2403f8e4b08cd36d205",
+      "bytes": 380079,
+      "sources": 12,
+      "sourceBytes": 724532
+    },
+    "sourceObjectsVerified": 12,
+    "sourceBytesVerified": 724532,
+    "prePortExtractorMatchedPacket": true,
+    "published": {
+      "source": "nserc",
+      "observedAt": "2026-11-25T22:40:02.601Z",
+      "revision": "2e930740d7c816bc4767e39efa014a2c1f164840e2cb8d70572ef4e3e1237894",
+      "editions": 10,
+      "gaps": 0,
+      "replayed": true,
+      "events": {
+        "added": 0,
+        "changed": 0,
+        "removed": 0
+      },
+      "rowsRead": 5,
+      "rowsWritten": 3
+    },
+    "lookups": [
+      {
+        "id": "nserc-applied-research-and-development-grants",
+        "title": "Applied Research and Development grants",
+        "url": "https://nserc-crsng.canada.ca/en/funding-opportunity/applied-research-and-development-grants",
+        "language": "en",
+        "sections": 35,
+        "contentSha256": "539a32fe22163da9b9d8c3af43c0433d8b4f95911b9f18a620f8258906f20fcb"
+      },
+      {
+        "id": "nserc-applied-research-and-development-grants",
+        "title": "Subventions de recherche et développement appliquée",
+        "url": "https://nserc-crsng.canada.ca/fr/possibilite-de-financement/subventions-de-recherche-et-developpement-appliquee",
+        "language": "fr",
+        "sections": 35,
+        "contentSha256": "5f2ca5254ba0ebd75bfafe98f0d34ec79a37fb648b23b4fca8bc1c852f944b7f"
+      }
+    ],
+    "remoteD1": {
+      "editions": 10,
+      "sections": 393,
+      "versions": 10,
+      "pending": 0,
+      "guards": 0,
+      "bytes": 2060288,
+      "servedByPrimary": true
+    },
+    "sourceDigestSetSha256": "0376756e68778d7bcb748f5d4c8023317a77276f68b47e532e8b17bc113ac09c",
+    "allColumnsMatchIndependentLocalReplay": {
+      "method": "All sorted rows, all columns; SHA-256 of compact UTF-8 JSON array with sorted object keys, including normalized text and version payloads. Native comparison replays manual then native inventory.",
+      "tables": {
+        "funding_catalogues": {
+          "rows": 1,
+          "sha256": "ed2589a8673b4ac92e32d09d6e8631f6de1d2e463c797b2d125442404914fbdd",
+          "rowsRead": 1,
+          "rowsWritten": 0
+        },
+        "funding_editions": {
+          "rows": 10,
+          "sha256": "a20af296cc69b72dff0119aa31b6fd818c060f50e517192ced6852dab1f14146",
+          "rowsRead": 10,
+          "rowsWritten": 0
+        },
+        "funding_sections": {
+          "rows": 393,
+          "sha256": "0523506dd1e9dd75c60b5ff20e1f4a6a94ac1f9b1f09ca4f74065ca641eb18a5",
+          "rowsRead": 393,
+          "rowsWritten": 0
+        },
+        "funding_versions": {
+          "rows": 10,
+          "sha256": "733d9953ed23b5cbda1a2359781cc07389fb7dec4e5d01b88bb4777414af7a18",
+          "rowsRead": 10,
+          "rowsWritten": 0
+        }
+      }
+    },
+    "triggerSource": "binding",
+    "steps": 4,
+    "stepRetries": 0,
+    "workflowVersion": "2c0c0235-1cdc-4e50-8745-08b779a4d1fc",
+    "scheduledWorkerEvent": {
+      "eventTimestamp": 1795646403465,
+      "outcome": "ok",
+      "cpuTime": 0,
+      "wallTime": 498,
+      "scriptVersion": {
+        "id": "f80c461f-e235-4e9d-99f2-2ad6eb9f3399"
+      },
+      "cron": "40 22 * * *",
+      "scheduledTime": 1795646402601
+    },
+    "sourceDigestsMatchingFirstRun": 6
+  },
+  "candidateCommit": "1d73835ac6bde12aaca36b29786e3a15cc1ac5e9"
+}
