@@ -125,7 +125,7 @@ the call itself has no author.
 bun run refresh:committee-calls --receipt dist/committee-calls/receipt.json
 ```
 
-The intake fetches both editions with the shared committee download cache and archives each original by SHA-256. `--from-cache` re-parses archived pages for an offline rerun; it is off by default because an earlier corpus copy is not the current call.
+The intake fetches both editions with the shared committee download cache and archives each original by SHA-256. Use `--from-cache` to replay saved pages offline. Repeating an observation preserves pending changes and the confirmed revision. Confirmation requires a second complete set of publisher requests. The operator rejects a capture that mixes previously applied pages with newer requests. [Archived replay and regression](evidence/2026-11-25/committee-call-observation-replay.json)
 
 The receipt reports `added`, `changed`, `unchanged`, `pending`, `conflicts` and `dropped`. A study that leaves the current list is marked `listed: false` with its `lastListedAt` unchanged; that is an observation, not a publisher change, so it creates no revision. A run whose pages are unchanged reports zero added, changed and dropped.
 
@@ -221,3 +221,13 @@ For an offline, dedicated local D1 database on macOS APFS, add `--clone-local` t
 ```sh
 bun run test test/endpoints.test.ts -t 'session committee corpus through the Worker'
 ```
+
+## Cloudflare staging base
+
+The session 45-1 seed operator accepts the database and table fingerprints recorded for the November 25 base. It targets the dedicated `civicsignal-stage-committees-45-1` D1 database. Each import writes its checkpoint in the same transaction as its rows. If an import stops, rerun the same command with the same source. [Seed operator](../scripts/seed-committee-staging.py) · [Base fingerprints](evidence/2026-11-25/committee-cloudflare-base.json)
+
+```sh
+python3 -B scripts/seed-committee-staging.py
+```
+
+The operator builds the full-text index from destination passage row IDs and reads back every serving column. It checks the vocabulary and bilingual passage lookups before publishing the session cutoff. Once a newer daily overlay has been published, use the corresponding dated reference to check that generation. [Daily product checks](REFRESH.md#private-daily-product-checks)

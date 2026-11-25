@@ -1,0 +1,215 @@
+{
+  "scope": "Unbound private Cloudflare staging D1 committee serving base, session 45-1. The cutoff was first written after final all-column and FTS verification. This import contains no scheduled refresh or API binding.",
+  "verifiedAt": "2026-11-25T23:27:55.929+00:00",
+  "target": {
+    "name": "civicsignal-stage-committees-45-1",
+    "uuid": "fb9b6314-4b06-4690-a893-7277a8ea00bb",
+    "created_at": "2026-11-25T23:01:14.813Z",
+    "file_size": 1388154880,
+    "read_replication": {
+      "mode": "disabled"
+    }
+  },
+  "source": {
+    "evidence": "committee-cloudflare-base.json",
+    "sqliteBytes": 2207588352,
+    "cutoff": "2026-11-25T08:33:25+00:00"
+  },
+  "migration": [
+    {
+      "name": "0001_committee_preview.sql"
+    }
+  ],
+  "limits": {
+    "importStatementBytes": 90000,
+    "maximumShardBytesBeforeMarker": 4194304,
+    "firstShardTargetBytes": 524288,
+    "ftsRowsPerStatement": 10000,
+    "maximumFtsRowsPerTransaction": 50000
+  },
+  "recovery": {
+    "initialization": "The new target started at 8,192 bytes with zero user tables. After applying the migration, preparation reported three statements; the client now validates each result.",
+    "firstChunk": {
+      "phase": "cc_records",
+      "ordinal": 0,
+      "rows": 334,
+      "digest": "ba49e0cc11f81750895fb1426d00f33a9b30bf80757c499db0ee67ea10a1c4b8"
+    },
+    "firstChunkChecked": {
+      "rows": 334,
+      "committedShards": 1,
+      "cutoffs": 0,
+      "independentAllColumnRead": {
+        "rows": 334,
+        "columns": 11,
+        "sourceMatchesD1": true,
+        "sha256": "568bc8b17354c043c185091a0093629009fae2b292bf0787c973a52e320dfe0c"
+      }
+    },
+    "interruptedLargerTransfer": "First 16 MiB transfer failed after client upload, before a database commit. The unbound staging database still had 334 rows, one checkpoint and zero cutoff rows. The four MiB retry verified the prior checkpoint and continued.",
+    "retriesDuringCompletedRun": [
+      {
+        "retryingChunk": "cc_records",
+        "ordinal": 2,
+        "attempt": 1
+      },
+      {
+        "retryingChunk": "cc_links",
+        "ordinal": 1,
+        "attempt": 1
+      },
+      {
+        "retryingChunk": "cc_passages",
+        "ordinal": 57,
+        "attempt": 1
+      },
+      {
+        "retryingChunk": "cc_passages",
+        "ordinal": 57,
+        "attempt": 2
+      },
+      {
+        "retryingChunk": "cc_passages",
+        "ordinal": 59,
+        "attempt": 1
+      },
+      {
+        "retryingChunk": "cc_passages",
+        "ordinal": 151,
+        "attempt": 1
+      }
+    ]
+  },
+  "phases": {
+    "cc_records": {
+      "chunks": 9,
+      "rows": 34094,
+      "checkpointSetSha256": "7fcdbef651f40d5cf0d42c094c46cc5b685c6f4b3b2b8ece9eb2fad15e4576d9",
+      "timedImports": 8,
+      "timedImportSeconds": 25.314,
+      "transferredSqlBytesInTimedImports": 32091026,
+      "measuredD1RowsRead": 0,
+      "measuredD1RowsWritten": 135056,
+      "timedImportsWithD1Metrics": 8
+    },
+    "cc_links": {
+      "chunks": 3,
+      "rows": 89295,
+      "checkpointSetSha256": "8ed46a4ad16a0b614a8cbd31f7fb7eecb9686ef7e48a87ecca8124dc058de914",
+      "timedImports": 3,
+      "timedImportSeconds": 11.012,
+      "transferredSqlBytesInTimedImports": 7663497,
+      "measuredD1RowsRead": 0,
+      "measuredD1RowsWritten": 267891,
+      "timedImportsWithD1Metrics": 3
+    },
+    "cc_passages": {
+      "chunks": 183,
+      "rows": 1769377,
+      "checkpointSetSha256": "1bdafafa3a4a0ce751cfffa06ee0fa0652a9661834fcf277a4c71265e1ac3904",
+      "timedImports": 183,
+      "timedImportSeconds": 534.516,
+      "transferredSqlBytesInTimedImports": 750901103,
+      "measuredD1RowsRead": 0,
+      "measuredD1RowsWritten": 3539120,
+      "timedImportsWithD1Metrics": 183
+    },
+    "fts": {
+      "chunks": 37,
+      "rows": 1769377,
+      "checkpointSetSha256": "7a805425c2d0317d2180fc2178eaf659cd20a03bf272d48656c3c3e37f39fc88",
+      "timedImports": 37,
+      "timedImportSeconds": 114.024,
+      "transferredSqlBytesInTimedImports": 36561,
+      "measuredD1RowsRead": 1769553,
+      "measuredD1RowsWritten": 1769451,
+      "timedImportsWithD1Metrics": 37
+    }
+  },
+  "servingTables": {
+    "cc_records": {
+      "count": 34094,
+      "textCharacters": 0,
+      "sha256": "c8d5a6fdd4b5e9b5a5c2c9a8d60f9bf86fc758cb9d6f7dec5d0198fb8223a853",
+      "readPages": 7
+    },
+    "cc_links": {
+      "count": 89295,
+      "textCharacters": 0,
+      "sha256": "10d798db9f538427c2db2ef8a0084a178ebda010ac09a39245bcfb0e9aafea26",
+      "readPages": 8
+    },
+    "cc_passages": {
+      "count": 1769377,
+      "textCharacters": 569320368,
+      "sha256": "a47323a0de71aab863928f0ff3a9f86acd9013d12dec3f2eebac19400d44e327",
+      "readPages": 148
+    }
+  },
+  "index": {
+    "documentRowids": {
+      "first": 1,
+      "last": 1769377,
+      "n": 1769377
+    },
+    "allVocabularyTerms": {
+      "terms": 205898,
+      "termDocuments": 61180844,
+      "occurrences": 90498275,
+      "sha256": "c70a9c35fb08985a74f2bc2397ee452407512f070aaaadb411456431112c55a1",
+      "readPages": 104
+    },
+    "matches": [
+      {
+        "language": "en",
+        "term": "Honourable",
+        "matches": 8012,
+        "orderedPassageKeysCompared": 36,
+        "sampleSha256": "04d33a86076292d67a599dbb8711d2e242f8b25351e8c5bea54b7085b50f825a"
+      },
+      {
+        "language": "fr",
+        "term": "comité",
+        "matches": 74697,
+        "orderedPassageKeysCompared": 36,
+        "sampleSha256": "de882a90be656c901956c3a1ba0e44d1ac690d8925e709dce3bd72f8895a4ff1"
+      },
+      {
+        "language": "en",
+        "term": "college",
+        "matches": 1460,
+        "orderedPassageKeysCompared": 36,
+        "sampleSha256": "eced90120e1efbee092465265bac68d94a3c1c8a40c877e87024a92cd303be30"
+      },
+      {
+        "language": "fr",
+        "term": "collège",
+        "matches": 1090,
+        "orderedPassageKeysCompared": 36,
+        "sampleSha256": "725a7c70e7c4c31c791ce7d176c7ab53e85d578ac504cc17e965e3530a74b13e"
+      }
+    ],
+    "monolithicIntegrityCheck": {
+      "completed": false,
+      "cloudflareError": 7429,
+      "httpStatus": 429,
+      "message": "D1 DB is overloaded. Too many resources consumed within a 10 second window.",
+      "replacement": "Matched every vocabulary term, document frequency and token count through small keyset queries. Verified contiguous indexed document rowids and compared ordered bilingual search-hit passage keys (start, midpoint and end) to the independent local FTS index."
+    }
+  },
+  "cutoff": [
+    {
+      "session": "45-1",
+      "cutoff": "2026-11-25T08:33:25+00:00"
+    }
+  ],
+  "calls": [
+    {
+      "editionRows": 30,
+      "distinctCommittees": 6
+    }
+  ],
+  "verificationMethod": "Fetched every serving column from D1 in bounded rowid pages and reproduced the verified source primary-key order, counts and length-prefixed compact UTF-8 JSON SHA-256 fingerprints. Rebuilt external-content FTS against destination passage rowids. No FTS shadow tables were copied from the source.",
+  "operatorCommand": "python3 -B scripts/seed-committee-staging.py",
+  "platformLimits": "https://developers.cloudflare.com/d1/platform/limits/"
+}
