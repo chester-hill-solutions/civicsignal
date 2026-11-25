@@ -4,7 +4,9 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { sha256File } from '../scripts/lib/file-integrity';
-import { createStage, openSqlite, rollbackPreservingError, splitWrittenQuestionText, swapCandidate } from '../scripts/materialize-written-questions';
+import { localD1 } from '../scripts/lib/local-d1';
+import { runWrittenQuestionRequest } from '../src/routes/written-questions';
+import { createStage, ftsTablesEqual, openSqlite, rollbackPreservingError, splitWrittenQuestionText, swapCandidate } from '../scripts/materialize-written-questions';
 
 describe('local written-question D1 materialization SQL', () => {
   it('opens read-write and read-only databases through the runtime-native SQLite module', () => {
@@ -56,7 +58,7 @@ describe('local written-question D1 materialization SQL', () => {
       sqlite.prepare('INSERT INTO wq_stage_materialization_state VALUES (1,?,?,?,?,?,?)')
         .run('b'.repeat(64), 1, 0, 0, 1, 'candidate');
 
-      swapCandidate(sqlite);
+      expect(swapCandidate(sqlite)).toBe(false);
       expect(sqlite.prepare('SELECT number FROM questions').all()).toEqual([{ number: 2 }]);
       const rejected = new Error('injected post-swap verification failure');
       let observed: unknown;
@@ -65,6 +67,43 @@ describe('local written-question D1 materialization SQL', () => {
       expect(sqlite.prepare('SELECT number,text FROM questions').all()).toEqual([{ number: 1, text: 'previous generation' }]);
       expect(sqlite.prepare('SELECT text FROM wq_fts').all()).toEqual([{ text: 'previous generation' }]);
       expect(sqlite.prepare('SELECT source_sha256 FROM wq_materialization_state').get()).toEqual({ source_sha256: 'a'.repeat(64) });
+    } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  it('retains an exactly equal FTS index, checks its integrity and serves a real search', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'written-question-fts-reuse-'));
+    const sqlite = openSqlite(join(directory, 'serving.sqlite'));
+    try {
+      sqlite.exec(readFileSync(new URL('../preview/written-questions/migrations/0001_written_questions.sql', import.meta.url), 'utf8'));
+      sqlite.prepare('INSERT INTO wq_sessions VALUES (?, ?)').run('45-1', '{}');
+      sqlite.prepare('INSERT INTO questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(
+        '45-1', 1, 'en', 'https://www.ourcommons.ca/question/1', 'drinking water advisories', 'answered', null, null,
+        null, '{}', 'a'.repeat(64), null, 'complete', null, null);
+      sqlite.prepare('INSERT INTO wq_fts VALUES (?,?,?,?,?,?)').run('45-1', '1', 'en', '', 0, 'drinking water advisories');
+      sqlite.prepare('INSERT INTO wq_materialization_state VALUES (1,?,?,?,?,?,?)')
+        .run('a'.repeat(64), 1, 0, 0, 1, 'previous');
+      createStage(sqlite);
+      sqlite.prepare('INSERT INTO wq_stage_sessions VALUES (?, ?)').run('45-1', '{}');
+      sqlite.prepare('INSERT INTO wq_stage_questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(
+        '45-1', 1, 'en', 'https://www.ourcommons.ca/question/1', 'drinking water advisories', 'answered', null, 'Updated member',
+        null, '{}', 'b'.repeat(64), null, 'complete', null, null);
+      sqlite.prepare('INSERT INTO wq_stage_fts VALUES (?,?,?,?,?,?)').run('45-1', '1', 'en', '', 0, 'drinking water advisories');
+      sqlite.prepare('INSERT INTO wq_stage_materialization_state VALUES (1,?,?,?,?,?,?)')
+        .run('b'.repeat(64), 1, 0, 0, 1, 'candidate');
+
+      const before = sqlite.prepare('SELECT rowid,session,number,language,doc_key,chunk_index,text FROM wq_fts ORDER BY rowid').all();
+      expect(ftsTablesEqual(sqlite)).toBe(true);
+      expect(swapCandidate(sqlite)).toBe(true);
+      const after = sqlite.prepare('SELECT rowid,session,number,language,doc_key,chunk_index,text FROM wq_fts ORDER BY rowid').all();
+      expect(after).toEqual(before);
+      sqlite.exec('COMMIT');
+
+      const result = await runWrittenQuestionRequest(localD1(sqlite), {
+        operation: 'search', query: { query: 'drinking water advisories', language: 'en', session: '45-1', limit: 10 },
+      });
+      expect('items' in result && result.items.some((item) => item.number === 1 && item.kind === 'question')).toBe(true);
+      expect(sqlite.prepare('SELECT source_sha256 FROM wq_materialization_state').get())
+        .toEqual({ source_sha256: 'b'.repeat(64) });
     } finally { sqlite.close(); rmSync(directory, { recursive: true, force: true }); }
   });
 

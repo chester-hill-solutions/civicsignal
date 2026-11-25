@@ -272,17 +272,39 @@ function sourceEquivalent(target: DatabaseSync, expected: MaterializationStats, 
   }
 }
 
-export function swapCandidate(target: DatabaseSync) {
+const FTS_COLUMNS = ['rowid', 'session', 'number', 'language', 'doc_key', 'chunk_index', 'text'] as const;
+
+export function ftsTablesEqual(target: DatabaseSync): boolean {
+  const columns = FTS_COLUMNS.join(', ');
+  const live = target.prepare(`SELECT ${columns} FROM wq_fts ORDER BY rowid`).iterate() as Iterable<Record<string, unknown>>;
+  const staged = target.prepare(`SELECT ${columns} FROM wq_stage_fts ORDER BY rowid`).iterate() as Iterable<Record<string, unknown>>;
+  const liveRows = live[Symbol.iterator]();
+  const stagedRows = staged[Symbol.iterator]();
+  for (;;) {
+    const current = liveRows.next();
+    const candidate = stagedRows.next();
+    if (current.done || candidate.done) return current.done === candidate.done;
+    if (FTS_COLUMNS.some((column) => current.value[column] !== candidate.value[column])) return false;
+  }
+}
+
+export function swapCandidate(target: DatabaseSync): boolean {
   target.exec('BEGIN IMMEDIATE');
   assertTransactionActive(target, 'BEGIN IMMEDIATE');
   try {
-    for (const statement of [
-      'DELETE FROM wq_fts', 'DELETE FROM document_chunks', 'DELETE FROM documents', 'DELETE FROM questions', 'DELETE FROM wq_sessions',
+    const retainFts = ftsTablesEqual(target);
+    const statements = [
+      ...(!retainFts ? ['DELETE FROM wq_fts'] : []),
+      'DELETE FROM document_chunks', 'DELETE FROM documents', 'DELETE FROM questions', 'DELETE FROM wq_sessions',
       'INSERT INTO wq_sessions SELECT * FROM wq_stage_sessions', 'INSERT INTO questions SELECT * FROM wq_stage_questions',
       'INSERT INTO documents SELECT * FROM wq_stage_documents', 'INSERT INTO document_chunks SELECT * FROM wq_stage_document_chunks',
-      'INSERT INTO wq_fts SELECT * FROM wq_stage_fts', 'DELETE FROM wq_materialization_state',
+      ...(!retainFts ? ['INSERT INTO wq_fts SELECT * FROM wq_stage_fts'] : []),
+      'DELETE FROM wq_materialization_state',
       'INSERT INTO wq_materialization_state SELECT * FROM wq_stage_materialization_state',
-    ]) runTransactionStatement(target, statement);
+    ];
+    for (const statement of statements) runTransactionStatement(target, statement);
+    if (retainFts) runTransactionStatement(target, "INSERT INTO wq_fts(wq_fts) VALUES ('integrity-check')");
+    return retainFts;
   } catch (error) { rollbackPreservingError(target, error); }
 }
 
@@ -332,7 +354,7 @@ async function main(args: string[]) {
     assertTransactionActive(target, 'BEGIN IMMEDIATE');
     try { resetStage(target); importCandidate(source, target, expected, digest); assertTransactionActive(target, 'candidate import'); target.exec('COMMIT'); }
     catch (error) { rollbackPreservingError(target, error); }
-    swapCandidate(target);
+    const retainedFtsIndex = swapCandidate(target);
     let handlerChecks: Awaited<ReturnType<typeof verifyActualHandlers>>;
     try {
       sourceEquivalent(target, expected, '');
@@ -345,7 +367,7 @@ async function main(args: string[]) {
     console.log(JSON.stringify({ materialized: true, target: 'isolated-local-d1', sourceSha256: digest,
       questions: expected.questions, documents: expected.documents, chunks: expected.chunks,
       indexedPassages: expected.indexedPassages, sourceTextCharacters: expected.questionChars + expected.documentChars,
-      objectBytesCopied: 0, sourceEquivalent: true, actualHandlerChecks: handlerChecks }, null, 2));
+      objectBytesCopied: 0, sourceEquivalent: true, retainedFtsIndex, actualHandlerChecks: handlerChecks }, null, 2));
   } finally {
     source.close();
     target.close();
