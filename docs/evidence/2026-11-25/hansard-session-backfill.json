@@ -1,0 +1,5108 @@
+{
+  "title": "45-1 current-session Hansard backfill verification",
+  "verifiedAt": "2026-11-25T04:36:47Z",
+  "session": "45-1",
+  "candidateThrough": "2026-11-22",
+  "sourceCalendar": {
+    "path": "docs/evidence/2026-11-24/hansard-session-calendar.json",
+    "sha256": "3969cfc449518912d11c836d07729352ccd82c3cd2c259770b4bbcc5d03e552b",
+    "weeksTested": 78,
+    "house": {
+      "sittings": 169,
+      "bilingualEditionSlots": 338
+    },
+    "senate": {
+      "issues": 104,
+      "bilingualEditionSlots": 208
+    }
+  },
+  "coverage": {
+    "candidateEditions": 546,
+    "houseEditions": 338,
+    "senateEditions": 208,
+    "previouslyVerifiedEditions": 96,
+    "newlyCapturedEditions": 450,
+    "allCandidateEditionsPresent": true,
+    "speechRows": 140916,
+    "houseSpeechRows": 111332,
+    "senateSpeechRows": 29584,
+    "newlyCapturedSpeechRows": 117746
+  },
+  "database": {
+    "path": "dist/hansard/session-45-1.sqlite",
+    "editionRows": 546,
+    "sourceFeedRows": 546,
+    "duplicateEditionIdentities": 0,
+    "duplicateOriginalHashes": 0,
+    "speechRowsByCorpus": {
+      "hansard-federal": 111332,
+      "hansard-senate": 29584
+    }
+  },
+  "archiveIntegrity": {
+    "searchRoot": "dist/hansard/",
+    "rawOriginalFilesHashed": 558,
+    "databaseOriginalsMatchedBySha256": 546,
+    "databaseOriginalsMissing": 0,
+    "newlyCapturedOriginalsMatchedBySha256": 450,
+    "newlyCapturedSourceBytes": 227170800
+  },
+  "backfillProgress": {
+    "path": "dist/hansard/backfill-progress.json",
+    "sha256": "89a86935388fac03646e07cc82b952f155b81fbc17362db817ab8c51970265af",
+    "calendarInventoryPath": "dist/hansard/backfill-inventory.json",
+    "calendarInventorySha256": "b6d75c921d8a685eaebed6f5aea951e854e6c02fe4901589480b59001f9365f3",
+    "calendarInventoryRecordsMissingBeforeBackfill": 450,
+    "completedChamberWeekRecords": 57,
+    "completedRecords": 57,
+    "failedOrIncompleteRecords": 0,
+    "newEditionIdentities": 450,
+    "records": [
+      {
+        "chamber": "house",
+        "weekOf": "2025-05-26",
+        "generation": "733262be1141be00a0410e948867e2cf647ba6217ad6938bbcebd958bedd1d69",
+        "manifestPath": "dist/hansard/weekly/house/2025-05-26/current/week.json",
+        "manifestSha256": "87aebe4dfe726152e898a287f75efb4e90a0991dfa57654df3a6bfb50c88e8b9",
+        "receiptPath": "dist/hansard/weekly/house/2025-05-26/current/receipt.json",
+        "receiptSha256": "6a0349acf7682ba49cfcd77ae51a283efca254a64ab4cbb6816650b7b25a6c2d",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 3193756,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-1",
+            "date": "2025-05-26",
+            "language": "en",
+            "sha256": "1e5bc9b1ad4911e3cd21be47832490088dd70862adfa823892f72e1ec1f5d35b",
+            "sourceBytes": 79675,
+            "recordCount": 29
+          },
+          {
+            "sittingId": "45-1-1",
+            "date": "2025-05-26",
+            "language": "fr",
+            "sha256": "1f10e61832a91b41474d285651d7a1ef707fdfdfb1d8596485f680e015d0659b",
+            "sourceBytes": 88464,
+            "recordCount": 29
+          },
+          {
+            "sittingId": "45-1-2",
+            "date": "2025-05-27",
+            "language": "en",
+            "sha256": "a1f98fca965f25a5ec0f21733aec928aac52d40aa4cc3da4176e3c4b13bce562",
+            "sourceBytes": 103479,
+            "recordCount": 41
+          },
+          {
+            "sittingId": "45-1-2",
+            "date": "2025-05-27",
+            "language": "fr",
+            "sha256": "0429830459183c0e691ecc335d0dc0969f48d78520d8742092b4166aa5acccef",
+            "sourceBytes": 118441,
+            "recordCount": 41
+          },
+          {
+            "sittingId": "45-1-3",
+            "date": "2025-05-28",
+            "language": "en",
+            "sha256": "e7691817823f001034fea43c45c5700a44ebdfcb38ca7c1f20b5611bd41418d2",
+            "sourceBytes": 323177,
+            "recordCount": 191
+          },
+          {
+            "sittingId": "45-1-3",
+            "date": "2025-05-28",
+            "language": "fr",
+            "sha256": "03eb6ff283bb29d2aea8b31c10a7a7403b089ace882e6919811f7f250d8bbccd",
+            "sourceBytes": 367634,
+            "recordCount": 191
+          },
+          {
+            "sittingId": "45-1-4",
+            "date": "2025-05-29",
+            "language": "en",
+            "sha256": "510f3401edcd06b4196e6036f6dc32d61fb9ea6ea84724e38d89cb096d041797",
+            "sourceBytes": 629029,
+            "recordCount": 339
+          },
+          {
+            "sittingId": "45-1-4",
+            "date": "2025-05-29",
+            "language": "fr",
+            "sha256": "d4235027f1a8d944bc659dc9467016036196017795db161cea11babb93b4d380",
+            "sourceBytes": 719282,
+            "recordCount": 339
+          },
+          {
+            "sittingId": "45-1-5",
+            "date": "2025-05-30",
+            "language": "en",
+            "sha256": "81d61dcc59fd6b084971695006faf7d77617d13d6cf50dacb9955d6916bc98c8",
+            "sourceBytes": 356500,
+            "recordCount": 235
+          },
+          {
+            "sittingId": "45-1-5",
+            "date": "2025-05-30",
+            "language": "fr",
+            "sha256": "471c4f19089f8ef115c01d33c835aecc381d3f0952336b91723cc48135ad3495",
+            "sourceBytes": 408075,
+            "recordCount": 235
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-05-26",
+        "generation": "3ea7e6d723800eaa692ea9ea9d28f72b10e979a120363e460e85e54ca7c5d3a6",
+        "manifestPath": "dist/hansard/weekly/senate/2025-05-26/current/week.json",
+        "manifestSha256": "6656cf371605c016913178a6f8582620a12de6fb11ff2306628665dae5d21dc1",
+        "receiptPath": "dist/hansard/weekly/senate/2025-05-26/current/receipt.json",
+        "receiptSha256": "4a5c4a25af5211a3955d90b0eb0f47879665caaece0a7e56e277554b2e2aa352",
+        "expectedEditionSlots": 8,
+        "capturedEditions": 8,
+        "initialImportEditions": 8,
+        "replayUnchangedEditions": 8,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 8,
+          "checkPasses": 1,
+          "passingLookupSamples": 8
+        },
+        "sourceBytes": 1144862,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-1",
+            "date": "2025-05-26",
+            "language": "en",
+            "sha256": "d7eadf70a58cc6f31239c9c671e5d6d2921041e0664fe0ca9a971132fa85f814",
+            "sourceBytes": 118774,
+            "recordCount": 40
+          },
+          {
+            "sittingId": "45-1-1",
+            "date": "2025-05-26",
+            "language": "fr",
+            "sha256": "a5f51b461d203c5089edec82e9df851d7f95bedf87f5fdfa9e24960079ea54e1",
+            "sourceBytes": 129154,
+            "recordCount": 40
+          },
+          {
+            "sittingId": "45-1-2",
+            "date": "2025-05-27",
+            "language": "en",
+            "sha256": "4fba092b840a9efdb9d1a26025bd97933af4eae64793a27a56588aec5ed27911",
+            "sourceBytes": 83709,
+            "recordCount": 15
+          },
+          {
+            "sittingId": "45-1-2",
+            "date": "2025-05-27",
+            "language": "fr",
+            "sha256": "6e3426ae23f26789c2c35fa204b43502520a46ff2e246fdb993d0e507f89b09a",
+            "sourceBytes": 90664,
+            "recordCount": 15
+          },
+          {
+            "sittingId": "45-1-3",
+            "date": "2025-05-28",
+            "language": "en",
+            "sha256": "92eb5b82d451720beb9bfab92ee41a245c2503d82845aa10c4377022a45eb39a",
+            "sourceBytes": 173980,
+            "recordCount": 100
+          },
+          {
+            "sittingId": "45-1-3",
+            "date": "2025-05-28",
+            "language": "fr",
+            "sha256": "9ae8b26c28d6b431ec4f71d025fcebbfed7d7d9cf2ce5de80f807f0bfb0775ff",
+            "sourceBytes": 193728,
+            "recordCount": 100
+          },
+          {
+            "sittingId": "45-1-4",
+            "date": "2025-05-29",
+            "language": "en",
+            "sha256": "1f25c37250271e0ee872ea19026b006e293c601207799d2202080f50932e61a8",
+            "sourceBytes": 167050,
+            "recordCount": 98
+          },
+          {
+            "sittingId": "45-1-4",
+            "date": "2025-05-29",
+            "language": "fr",
+            "sha256": "de8dedbb95392b9db5a012aac7d4b5fc029506386c5cfe5e13ba82c379b68bc7",
+            "sourceBytes": 187803,
+            "recordCount": 98
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-06-02",
+        "generation": "c9abf2ff2a385ba9b2ec561483c1687ba4ce8a062563f23ac8f55715ffaf6ed5",
+        "manifestPath": "dist/hansard/weekly/house/2025-06-02/current/week.json",
+        "manifestSha256": "fbe5083a7e86f799562765faf9d8aba3a11bff96d2378c291dc3bca4fb2d2f9f",
+        "receiptPath": "dist/hansard/weekly/house/2025-06-02/current/receipt.json",
+        "receiptSha256": "3d7b506f2818dc430a7377d3ce48718efc09978feefb67e6305335834d347494",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 7372535,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-6",
+            "date": "2025-06-02",
+            "language": "en",
+            "sha256": "73f1d2bb094df2b2af71587c9444dbbd2dde5138feebcfcc39840d708fcca7f2",
+            "sourceBytes": 637594,
+            "recordCount": 352
+          },
+          {
+            "sittingId": "45-1-6",
+            "date": "2025-06-02",
+            "language": "fr",
+            "sha256": "5c907c93d6de39b043b670c62045844030420d55665ccf493f935180ab4eab66",
+            "sourceBytes": 727184,
+            "recordCount": 352
+          },
+          {
+            "sittingId": "45-1-7",
+            "date": "2025-06-03",
+            "language": "en",
+            "sha256": "3892e5878c1c22ef9da5dac6d09cd8e22c95592eb1d2fd91349da47e0d196409",
+            "sourceBytes": 988692,
+            "recordCount": 520
+          },
+          {
+            "sittingId": "45-1-7",
+            "date": "2025-06-03",
+            "language": "fr",
+            "sha256": "1936a3dc43a587d7ebf0ac08c3d761ae2791c76ef01b29ff15eb0404ced054db",
+            "sourceBytes": 1140795,
+            "recordCount": 520
+          },
+          {
+            "sittingId": "45-1-8",
+            "date": "2025-06-04",
+            "language": "en",
+            "sha256": "eead8f50be9674950d99048e04ba0b556e1793f385dec8eb3390845f26927475",
+            "sourceBytes": 378391,
+            "recordCount": 247
+          },
+          {
+            "sittingId": "45-1-8",
+            "date": "2025-06-04",
+            "language": "fr",
+            "sha256": "38c0b81a48729c214415ea14c49bac8425aad1b41ddefa91d099c6036dc4c8da",
+            "sourceBytes": 432939,
+            "recordCount": 247
+          },
+          {
+            "sittingId": "45-1-9",
+            "date": "2025-06-05",
+            "language": "en",
+            "sha256": "ca37fcc63e0fc014f49a7d861836db445842ef8944a7584d45dbe37bc41160c9",
+            "sourceBytes": 1081360,
+            "recordCount": 1100
+          },
+          {
+            "sittingId": "45-1-9",
+            "date": "2025-06-05",
+            "language": "fr",
+            "sha256": "52b529c0fd44dcdd53193e1ab0a18c8e6e6c5ddb78b2670eda03debaa67c86a3",
+            "sourceBytes": 1225944,
+            "recordCount": 1100
+          },
+          {
+            "sittingId": "45-1-10",
+            "date": "2025-06-06",
+            "language": "en",
+            "sha256": "d8864f5673d858a7dfcfbada01207b7aaa016ebf601a6d60815da8b1bd688680",
+            "sourceBytes": 354795,
+            "recordCount": 229
+          },
+          {
+            "sittingId": "45-1-10",
+            "date": "2025-06-06",
+            "language": "fr",
+            "sha256": "0e6861e7a3993c37267d9eebd2440c801eb4c514f0ae92fd7ec1b2031c324694",
+            "sourceBytes": 404841,
+            "recordCount": 229
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-06-02",
+        "generation": "3df9be59932a60e156217df61974b632c93467f00616625d34a7d1213cf6b7f1",
+        "manifestPath": "dist/hansard/weekly/senate/2025-06-02/current/week.json",
+        "manifestSha256": "3e62d2d880bff0f2ee5091e8e829c9ee59e9787daf6aa2d0254c523afb9befc8",
+        "receiptPath": "dist/hansard/weekly/senate/2025-06-02/current/receipt.json",
+        "receiptSha256": "52b35a9ca3de8b33c95fe0dc4f3406c6dbda2cb4afd2435617d114f00b7d0c18",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 2027811,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-5",
+            "date": "2025-06-03",
+            "language": "en",
+            "sha256": "2eb95c2368110aa8a27e66b97b0b233d5b21c07110da48a3dbf7c45efea18a04",
+            "sourceBytes": 407318,
+            "recordCount": 153
+          },
+          {
+            "sittingId": "45-1-5",
+            "date": "2025-06-03",
+            "language": "fr",
+            "sha256": "8865620e0cb16ef4d5e5b87a0a82f2c8266315e2c5aabebd0cd0dd67b6800d14",
+            "sourceBytes": 469928,
+            "recordCount": 153
+          },
+          {
+            "sittingId": "45-1-6",
+            "date": "2025-06-04",
+            "language": "en",
+            "sha256": "f60046fedce87f0c0281109f8cde7eee3beaec411a708efa39895a06ea9f0a9e",
+            "sourceBytes": 356513,
+            "recordCount": 144
+          },
+          {
+            "sittingId": "45-1-6",
+            "date": "2025-06-04",
+            "language": "fr",
+            "sha256": "00321f4c6a213eb48db48c65bf85bbd0c6ab90bc511fe5204a7096c0d4a94de2",
+            "sourceBytes": 407729,
+            "recordCount": 144
+          },
+          {
+            "sittingId": "45-1-7",
+            "date": "2025-06-05",
+            "language": "en",
+            "sha256": "ad53ccb5202f3a6c22a949f77ac43c931376d63f645a105cec2e05d7a9b54ef9",
+            "sourceBytes": 182326,
+            "recordCount": 91
+          },
+          {
+            "sittingId": "45-1-7",
+            "date": "2025-06-05",
+            "language": "fr",
+            "sha256": "e5c5d10b48725f546ae4891c01b663a3f5b66bb4d2a40725099e69adbb192416",
+            "sourceBytes": 203997,
+            "recordCount": 91
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-06-09",
+        "generation": "20eb151d7a06acff681475677426bea274829517c68c2dac2103cf0c9cb44a25",
+        "manifestPath": "dist/hansard/weekly/house/2025-06-09/current/week.json",
+        "manifestSha256": "c9e0a6f3d15b4482d7fcbc775773c3564ad83bcafd241c0b4e978f5bc7e8ae40",
+        "receiptPath": "dist/hansard/weekly/house/2025-06-09/current/receipt.json",
+        "receiptSha256": "98369b34399cf22303ee5683801a18fa1bd2072e2b815d85e8aa1ddbb09a99ac",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 9086245,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-11",
+            "date": "2025-06-09",
+            "language": "en",
+            "sha256": "9ccd6140cea1a5e99a10b07c9d8cb4f07fcc5b5c24d18be30839468006e4ce89",
+            "sourceBytes": 986731,
+            "recordCount": 1034
+          },
+          {
+            "sittingId": "45-1-11",
+            "date": "2025-06-09",
+            "language": "fr",
+            "sha256": "97fef7bd8fb0eb0581b547621d4c9d769ea98b20fc5060c1f63a92957e9c4eb8",
+            "sourceBytes": 1119526,
+            "recordCount": 1034
+          },
+          {
+            "sittingId": "45-1-12",
+            "date": "2025-06-10",
+            "language": "en",
+            "sha256": "63678d730c8167b352cf8cbd63e77e431bd67186f7677785d2f97468fff44d9d",
+            "sourceBytes": 1116446,
+            "recordCount": 1086
+          },
+          {
+            "sittingId": "45-1-12",
+            "date": "2025-06-10",
+            "language": "fr",
+            "sha256": "8cc5ed0ac14aa54e7625120f339fd6dad233b167e97fadb559538c6507c3c121",
+            "sourceBytes": 1259996,
+            "recordCount": 1086
+          },
+          {
+            "sittingId": "45-1-13",
+            "date": "2025-06-11",
+            "language": "en",
+            "sha256": "0a519ccdcb9b8d57d61b9797bb4fa737396891371a873144bd482c03c621945a",
+            "sourceBytes": 905802,
+            "recordCount": 1045
+          },
+          {
+            "sittingId": "45-1-13",
+            "date": "2025-06-11",
+            "language": "fr",
+            "sha256": "64c0d9aea68c5f0f77047efb55294f98f94daa964043b756510f7a00a833ebe5",
+            "sourceBytes": 1027369,
+            "recordCount": 1045
+          },
+          {
+            "sittingId": "45-1-14",
+            "date": "2025-06-12",
+            "language": "en",
+            "sha256": "b3c22cfa5e04fdd3c35b3df02458d0a48fab3a307cfa142a539b656cef28b231",
+            "sourceBytes": 875202,
+            "recordCount": 751
+          },
+          {
+            "sittingId": "45-1-14",
+            "date": "2025-06-12",
+            "language": "fr",
+            "sha256": "149d8041c1297207e4fa2bbf3f230697d36795617a7fe34875df89a0ff8223ac",
+            "sourceBytes": 988058,
+            "recordCount": 751
+          },
+          {
+            "sittingId": "45-1-15",
+            "date": "2025-06-13",
+            "language": "en",
+            "sha256": "a1cf4e1d2f90d30ac873bbf9bc83585d0c09a505209ee9320a3a6f7d66bc36af",
+            "sourceBytes": 372213,
+            "recordCount": 206
+          },
+          {
+            "sittingId": "45-1-15",
+            "date": "2025-06-13",
+            "language": "fr",
+            "sha256": "3363d053527f91c80f7e25586aa75f4854e416492f6704fa8c70fd0007720e79",
+            "sourceBytes": 434902,
+            "recordCount": 206
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-06-09",
+        "generation": "3de0e19604b5a6c75916a6ac8f1d996d7683667c3b61ba76da12cfa8aadc11f6",
+        "manifestPath": "dist/hansard/weekly/senate/2025-06-09/current/week.json",
+        "manifestSha256": "b646c2c56f140584c46c2173f3d897e7c6fb603c534fb83147232deea253c307",
+        "receiptPath": "dist/hansard/weekly/senate/2025-06-09/current/receipt.json",
+        "receiptSha256": "0ef504e8c667128c08645b5f2a6f8818dc78f613d6182311ba60dce8bb07bf1a",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 2184665,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-8",
+            "date": "2025-06-10",
+            "language": "en",
+            "sha256": "e4d1fdcce8ee35d5fab5f9a2aca9d425ab150ecf65c8716acbbb167085d4fcb0",
+            "sourceBytes": 420773,
+            "recordCount": 166
+          },
+          {
+            "sittingId": "45-1-8",
+            "date": "2025-06-10",
+            "language": "fr",
+            "sha256": "48882cda6b5aef437781f37c6ae52520b564fad4aab438425e2ad80fa172b841",
+            "sourceBytes": 485235,
+            "recordCount": 166
+          },
+          {
+            "sittingId": "45-1-9",
+            "date": "2025-06-11",
+            "language": "en",
+            "sha256": "df1b58a8bfba2c543066aebc7cc053f99ce37982df0a4d9ad0cc3238f1259e3a",
+            "sourceBytes": 257470,
+            "recordCount": 99
+          },
+          {
+            "sittingId": "45-1-9",
+            "date": "2025-06-11",
+            "language": "fr",
+            "sha256": "8620c023dcfde593dc6a08fed04026d00272830d22135d409dd8f491a0f51e6e",
+            "sourceBytes": 296445,
+            "recordCount": 99
+          },
+          {
+            "sittingId": "45-1-10",
+            "date": "2025-06-12",
+            "language": "en",
+            "sha256": "65f4326e7a287786180042a1f4cf8cba7076fdd0bf25702cc49be068bcaf3b9b",
+            "sourceBytes": 336909,
+            "recordCount": 123
+          },
+          {
+            "sittingId": "45-1-10",
+            "date": "2025-06-12",
+            "language": "fr",
+            "sha256": "c013c772a9e09b8a1cc6a20064b39a060e5da36158b77cfcf6a8405f54ce7a83",
+            "sourceBytes": 387833,
+            "recordCount": 123
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-06-16",
+        "generation": "b6bf562eacb61f751da1e6cb2e75315af395c99bf393ca3d16352f94cd53a809",
+        "manifestPath": "dist/hansard/weekly/house/2025-06-16/current/week.json",
+        "manifestSha256": "6cb9a1da8862118ee0dea00f749d3f92d810f9ba7f735000cc6e3bf31ab51828",
+        "receiptPath": "dist/hansard/weekly/house/2025-06-16/current/receipt.json",
+        "receiptSha256": "b7fe80b564097d1003d16d484c149a1a83b99b26b91f75ffefdd2779d446f6af",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 8400167,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-16",
+            "date": "2025-06-16",
+            "language": "en",
+            "sha256": "1637912f4c2c3c3a84a6cd58662c6dfffd574b1dae9fa2f763e6bc25cca0c91c",
+            "sourceBytes": 904763,
+            "recordCount": 502
+          },
+          {
+            "sittingId": "45-1-16",
+            "date": "2025-06-16",
+            "language": "fr",
+            "sha256": "f64f92e7a468a38c3f70359bd9561f7105587cab3771e2336efdd51ba1a02a01",
+            "sourceBytes": 1017975,
+            "recordCount": 502
+          },
+          {
+            "sittingId": "45-1-17",
+            "date": "2025-06-17",
+            "language": "en",
+            "sha256": "ba052b6015e771fa7a93573d6b8384110717fce54967965a8cc0af89380abfbf",
+            "sourceBytes": 1168414,
+            "recordCount": 580
+          },
+          {
+            "sittingId": "45-1-17",
+            "date": "2025-06-17",
+            "language": "fr",
+            "sha256": "2c9dbb8205c621555f9d0bbe5a916f3ed5b2e7b2ff1233244911bbb6149be37b",
+            "sourceBytes": 1319179,
+            "recordCount": 580
+          },
+          {
+            "sittingId": "45-1-18",
+            "date": "2025-06-18",
+            "language": "en",
+            "sha256": "64c22251cdb7ad82b6c2200e1bb0ef0b924335f41b0fe95020eb987cc3ca6664",
+            "sourceBytes": 393077,
+            "recordCount": 256
+          },
+          {
+            "sittingId": "45-1-18",
+            "date": "2025-06-18",
+            "language": "fr",
+            "sha256": "ec6e1f95337967fc77bd8fa6d1c784e8a64f9f9d013893f1cb2e3581ccbda017",
+            "sourceBytes": 453552,
+            "recordCount": 256
+          },
+          {
+            "sittingId": "45-1-19",
+            "date": "2025-06-19",
+            "language": "en",
+            "sha256": "62ebceb2b29dcb599a9b74c7288ae5e3a79dff21214e3a11c7b6623609e216c0",
+            "sourceBytes": 673168,
+            "recordCount": 361
+          },
+          {
+            "sittingId": "45-1-19",
+            "date": "2025-06-19",
+            "language": "fr",
+            "sha256": "877cffbd002060cdba9b6ce0a6200ce1a56591d0a0e1b092cf6f3a1905155220",
+            "sourceBytes": 772900,
+            "recordCount": 361
+          },
+          {
+            "sittingId": "45-1-20",
+            "date": "2025-06-20",
+            "language": "en",
+            "sha256": "01c3240d7bd12a49b1bbe34291aa153671779c52c76a83e52140fea205b0468c",
+            "sourceBytes": 811622,
+            "recordCount": 371
+          },
+          {
+            "sittingId": "45-1-20",
+            "date": "2025-06-20",
+            "language": "fr",
+            "sha256": "94844b52627c01a6a7a80fc43631e1c11fd3848e10bd4f2a1cd5e9cda88a1aa6",
+            "sourceBytes": 885517,
+            "recordCount": 371
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-06-16",
+        "generation": "29838b5c500b81217edf956ac807e059a5c25dc5fbf3f639e7ab4cd5f95f08b8",
+        "manifestPath": "dist/hansard/weekly/senate/2025-06-16/current/week.json",
+        "manifestSha256": "d0540f088481a496b46c7c97486a11c8bf045a0fb5f3a13440ac6c806a83ef50",
+        "receiptPath": "dist/hansard/weekly/senate/2025-06-16/current/receipt.json",
+        "receiptSha256": "b4c0d052ab3328101b543f44acd594ee0e3ae039edeccc613db488873796bf40",
+        "expectedEditionSlots": 8,
+        "capturedEditions": 8,
+        "initialImportEditions": 8,
+        "replayUnchangedEditions": 8,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 8,
+          "checkPasses": 1,
+          "passingLookupSamples": 8
+        },
+        "sourceBytes": 3802444,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-11",
+            "date": "2025-06-16",
+            "language": "en",
+            "sha256": "39355b0af833eff3e1ba8b996acf53afd5b26f286daaf354de41445c3f67d330",
+            "sourceBytes": 409236,
+            "recordCount": 247
+          },
+          {
+            "sittingId": "45-1-11",
+            "date": "2025-06-16",
+            "language": "fr",
+            "sha256": "77bf15aa59d20155d0d65a41f23b06836598086f206d3579012966e6834eb4b6",
+            "sourceBytes": 477411,
+            "recordCount": 247
+          },
+          {
+            "sittingId": "45-1-12",
+            "date": "2025-06-17",
+            "language": "en",
+            "sha256": "1b13f03a1b0a56b866916699a18b6935b22d057e4c5f150110dbc2011232ccbd",
+            "sourceBytes": 523574,
+            "recordCount": 362
+          },
+          {
+            "sittingId": "45-1-12",
+            "date": "2025-06-17",
+            "language": "fr",
+            "sha256": "8ded547d28731d5eaa75dc8b103e46b048b6f7775c4e2ee6d3d10be86dd2d1bd",
+            "sourceBytes": 606153,
+            "recordCount": 363
+          },
+          {
+            "sittingId": "45-1-13",
+            "date": "2025-06-18",
+            "language": "en",
+            "sha256": "efbb17e907671a8fd33376270d8e4015c573007c19ac79014c44a6014b8f2537",
+            "sourceBytes": 532622,
+            "recordCount": 281
+          },
+          {
+            "sittingId": "45-1-13",
+            "date": "2025-06-18",
+            "language": "fr",
+            "sha256": "e2c5c84bf2b2501d386887c6c95f9d0768efb4d2ed87ca22bd37599d0866d918",
+            "sourceBytes": 610666,
+            "recordCount": 281
+          },
+          {
+            "sittingId": "45-1-14",
+            "date": "2025-06-19",
+            "language": "en",
+            "sha256": "6a9e5ab52c0e4da4c94bea349a9feb0447292e3aab93af006aeeef0d05fbb09b",
+            "sourceBytes": 300281,
+            "recordCount": 123
+          },
+          {
+            "sittingId": "45-1-14",
+            "date": "2025-06-19",
+            "language": "fr",
+            "sha256": "36e564a1a139ade30218432f1959c55e1a3ce3774b1d8684788866e33cbbad25",
+            "sourceBytes": 342501,
+            "recordCount": 123
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-06-23",
+        "generation": "e312c7272310a272121d91aea037fc602bee40528ced34f759d3ad702314ca6d",
+        "manifestPath": "dist/hansard/weekly/senate/2025-06-23/current/week.json",
+        "manifestSha256": "7d88b1baff0fbeb99784442a96212dca9854fad8e9e669f2de5545898c2985da",
+        "receiptPath": "dist/hansard/weekly/senate/2025-06-23/current/receipt.json",
+        "receiptSha256": "b5a0b3c6cd091643d4b04b9db4a80aed2f6625761508089947d526f5ae16334a",
+        "expectedEditionSlots": 4,
+        "capturedEditions": 4,
+        "initialImportEditions": 4,
+        "replayUnchangedEditions": 4,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 4,
+          "checkPasses": 1,
+          "passingLookupSamples": 4
+        },
+        "sourceBytes": 2133597,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-15",
+            "date": "2025-06-25",
+            "language": "en",
+            "sha256": "3d9ea220c884f1d8c0cc67661833a3b1faff94e911203c9d9db8ef8b615ce9cb",
+            "sourceBytes": 504825,
+            "recordCount": 267
+          },
+          {
+            "sittingId": "45-1-15",
+            "date": "2025-06-25",
+            "language": "fr",
+            "sha256": "a83bafa52c1c3e88432f850b6f0a11023fa2c08a134b881526678ee02a9d7a83",
+            "sourceBytes": 587340,
+            "recordCount": 267
+          },
+          {
+            "sittingId": "45-1-16",
+            "date": "2025-06-26",
+            "language": "en",
+            "sha256": "090b7bf8ff913357c9cb151e79eaf40e0f2da06dcdc807d12ead60b06892cf24",
+            "sourceBytes": 485519,
+            "recordCount": 264
+          },
+          {
+            "sittingId": "45-1-16",
+            "date": "2025-06-26",
+            "language": "fr",
+            "sha256": "101537ef924a7b0dba47090fe8a1cf4201f0fd7db2da1a0c9807bcebffc6728f",
+            "sourceBytes": 555913,
+            "recordCount": 264
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-09-15",
+        "generation": "4e80aa1c0fa0154e8e684b46faaafa5251601aba10eee79a3115a718b2f617d1",
+        "manifestPath": "dist/hansard/weekly/house/2025-09-15/current/week.json",
+        "manifestSha256": "a10e3ed20ed693fcbea84e6511eeb0046d4b0bdb00a57cfb6c1380141b884e9a",
+        "receiptPath": "dist/hansard/weekly/house/2025-09-15/current/receipt.json",
+        "receiptSha256": "e2bc6e6fec35bfbc2dd530897a45d0b20bf8816ad9054bb1a3878da974acba68",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 6950885,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-21",
+            "date": "2025-09-15",
+            "language": "en",
+            "sha256": "673c73b79dca3a8c5e6903571842ad58aa4fae365a528b0b367c60915e2817fb",
+            "sourceBytes": 1206271,
+            "recordCount": 324
+          },
+          {
+            "sittingId": "45-1-21",
+            "date": "2025-09-15",
+            "language": "fr",
+            "sha256": "72ddecf978f8b7d6835540c024d3561d44c6ff8616636b03bf40d28127b7763a",
+            "sourceBytes": 1392414,
+            "recordCount": 324
+          },
+          {
+            "sittingId": "45-1-22",
+            "date": "2025-09-16",
+            "language": "en",
+            "sha256": "5b0a8aa479a89c41724079697646aed8b7541016196be26d3bdaa9ee9e41023b",
+            "sourceBytes": 674324,
+            "recordCount": 388
+          },
+          {
+            "sittingId": "45-1-22",
+            "date": "2025-09-16",
+            "language": "fr",
+            "sha256": "1100773fe4858b66cb593e31e0b8537179626e57a545ed6a88a328e429a547e6",
+            "sourceBytes": 788175,
+            "recordCount": 388
+          },
+          {
+            "sittingId": "45-1-23",
+            "date": "2025-09-17",
+            "language": "en",
+            "sha256": "19feb4b80687749f41571a7b1fe84791f7267288f2e682a503d982b701488ee3",
+            "sourceBytes": 480415,
+            "recordCount": 280
+          },
+          {
+            "sittingId": "45-1-23",
+            "date": "2025-09-17",
+            "language": "fr",
+            "sha256": "5684df48382cc607d5f4d72f9c2a593decff8616eab9e48c144bf3ab827b33df",
+            "sourceBytes": 551484,
+            "recordCount": 280
+          },
+          {
+            "sittingId": "45-1-24",
+            "date": "2025-09-18",
+            "language": "en",
+            "sha256": "d28bb63f2e6b8f42231b9da131ecffb9dca66e6aecc9e245bd0cebbc3759630e",
+            "sourceBytes": 646905,
+            "recordCount": 359
+          },
+          {
+            "sittingId": "45-1-24",
+            "date": "2025-09-18",
+            "language": "fr",
+            "sha256": "44256ec7f77a9f7522a57aff322674f4d16ab9764e3b41f8ef764a8be48f00db",
+            "sourceBytes": 750551,
+            "recordCount": 359
+          },
+          {
+            "sittingId": "45-1-25",
+            "date": "2025-09-19",
+            "language": "en",
+            "sha256": "7c1cad6f7e37c79fc675b0a558cd152a114c90f20ae4cdc3ad0d4c4fbdcc2b2d",
+            "sourceBytes": 214240,
+            "recordCount": 163
+          },
+          {
+            "sittingId": "45-1-25",
+            "date": "2025-09-19",
+            "language": "fr",
+            "sha256": "edb0c1d50b3dd2468a55d7f5ac85b7a355da20047d44930306a27d315375d1aa",
+            "sourceBytes": 246106,
+            "recordCount": 163
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-09-22",
+        "generation": "a991b19e8e5f2ee9f09225a37c16dcae9351e2173868823c2fcbcc2b9717b64c",
+        "manifestPath": "dist/hansard/weekly/house/2025-09-22/current/week.json",
+        "manifestSha256": "a6b63b1fb8ef99084be469f47f3a893bbc095fc822498abc0b9d62f36888735d",
+        "receiptPath": "dist/hansard/weekly/house/2025-09-22/current/receipt.json",
+        "receiptSha256": "1a55170fe22dbdfe888dc7dfc1d29b2ef6752f3377ca6074505da5f7b188b250",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5863346,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-26",
+            "date": "2025-09-22",
+            "language": "en",
+            "sha256": "9d68d4015b20e4a4355fe29ca8f2bc35f904a8996527e9a944ac62b8c4dbe1cc",
+            "sourceBytes": 640675,
+            "recordCount": 338
+          },
+          {
+            "sittingId": "45-1-26",
+            "date": "2025-09-22",
+            "language": "fr",
+            "sha256": "93fa876426d2730546a99fee201b4c941313d2ff6a5cd1eb3335b3c45b342e3a",
+            "sourceBytes": 733075,
+            "recordCount": 338
+          },
+          {
+            "sittingId": "45-1-27",
+            "date": "2025-09-23",
+            "language": "en",
+            "sha256": "922a940f48eaefda12bc3fb6161b10f83a43a50df1bd772bb5fcda001e2c4f8d",
+            "sourceBytes": 677385,
+            "recordCount": 393
+          },
+          {
+            "sittingId": "45-1-27",
+            "date": "2025-09-23",
+            "language": "fr",
+            "sha256": "eb6c4e16990a133de2723f502719b20f0ac61581a9221202d0155fbab464d4ca",
+            "sourceBytes": 750010,
+            "recordCount": 393
+          },
+          {
+            "sittingId": "45-1-28",
+            "date": "2025-09-24",
+            "language": "en",
+            "sha256": "df8543a0ede7b34e7544cc59cc84ca2212842221c3073b74c6ca5998ec7ffe51",
+            "sourceBytes": 404026,
+            "recordCount": 230
+          },
+          {
+            "sittingId": "45-1-28",
+            "date": "2025-09-24",
+            "language": "fr",
+            "sha256": "262c38e7ce283a5fa1982e24bc83d649099599217bac40330b76bd54f714cc9c",
+            "sourceBytes": 455462,
+            "recordCount": 230
+          },
+          {
+            "sittingId": "45-1-29",
+            "date": "2025-09-25",
+            "language": "en",
+            "sha256": "4fa0240782784fc497ac3f32b760d43f496de63c2e16087e1307bd6af3a1c8bb",
+            "sourceBytes": 666127,
+            "recordCount": 363
+          },
+          {
+            "sittingId": "45-1-29",
+            "date": "2025-09-25",
+            "language": "fr",
+            "sha256": "86e6e169ebdc77753bfac298bc11d7385f3fb1c6ff9d27792e2335c6d49a8a17",
+            "sourceBytes": 769898,
+            "recordCount": 363
+          },
+          {
+            "sittingId": "45-1-30",
+            "date": "2025-09-26",
+            "language": "en",
+            "sha256": "7e0454d1bcbb7eeb59b9530522da5827f15ba6acaf714b3b7694309c4a43f7f1",
+            "sourceBytes": 357376,
+            "recordCount": 229
+          },
+          {
+            "sittingId": "45-1-30",
+            "date": "2025-09-26",
+            "language": "fr",
+            "sha256": "28f6022750f7fe6bd01993c8b8e2e038850f94339cbcf4b0985521a481245505",
+            "sourceBytes": 409312,
+            "recordCount": 229
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-09-22",
+        "generation": "5223dd369132fb8d68b75e3250363c93924915c775a60d58d5e576a44f67099b",
+        "manifestPath": "dist/hansard/weekly/senate/2025-09-22/current/week.json",
+        "manifestSha256": "b09c08f2cd9aaf99306c10b5233e706435b2bfa69f37321183a2816630ce5ae2",
+        "receiptPath": "dist/hansard/weekly/senate/2025-09-22/current/receipt.json",
+        "receiptSha256": "8c94b072538765bb9ce8b5358558a2505f17339d612ed543dfb92b8bcf38359a",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1384423,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-17",
+            "date": "2025-09-23",
+            "language": "en",
+            "sha256": "f16ccd622ed55bb2855956a9892e699fc5363b6692128433267a5a3a82698abf",
+            "sourceBytes": 220234,
+            "recordCount": 103
+          },
+          {
+            "sittingId": "45-1-17",
+            "date": "2025-09-23",
+            "language": "fr",
+            "sha256": "4ce670801507e3d1ee5ffc31b48daf28cd5dd6945ee411fd473f45eaba49fda8",
+            "sourceBytes": 250782,
+            "recordCount": 103
+          },
+          {
+            "sittingId": "45-1-18",
+            "date": "2025-09-24",
+            "language": "en",
+            "sha256": "0b5e8e3c1ca07493a1f82ef474a8e28a55d9e4305036efbc10195d74d9d02703",
+            "sourceBytes": 182611,
+            "recordCount": 88
+          },
+          {
+            "sittingId": "45-1-18",
+            "date": "2025-09-24",
+            "language": "fr",
+            "sha256": "373af54e4136de73c59cda05953935aecf674e5a485830b9cb68e1542e38e541",
+            "sourceBytes": 206199,
+            "recordCount": 88
+          },
+          {
+            "sittingId": "45-1-19",
+            "date": "2025-09-25",
+            "language": "en",
+            "sha256": "a3af229696a7189dbb3bc97d0491e727547e545b394610eeabf635eb4396e041",
+            "sourceBytes": 246667,
+            "recordCount": 165
+          },
+          {
+            "sittingId": "45-1-19",
+            "date": "2025-09-25",
+            "language": "fr",
+            "sha256": "39bff709335b3abaa9b4ea062b6aba409b186a18682fcb48969da0d017fb1950",
+            "sourceBytes": 277930,
+            "recordCount": 165
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-09-29",
+        "generation": "613ca36c3897615083f1ddcba14552e2e44479caa2cd7295e6d408954eb8c7d1",
+        "manifestPath": "dist/hansard/weekly/house/2025-09-29/current/week.json",
+        "manifestSha256": "9bf34db4063ec469660f087656b13cb94acef16d51a7b12f31fecc831e9d06f3",
+        "receiptPath": "dist/hansard/weekly/house/2025-09-29/current/receipt.json",
+        "receiptSha256": "050c5f0654e3d554061338b290aa7756b5ac4dd33b38a0e63b4816264fe0cb4c",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 2793435,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-31",
+            "date": "2025-10-01",
+            "language": "en",
+            "sha256": "0fa02161616a5b4bfceecd57efa9b67d932abaf4991d98edff46ac05914bae18",
+            "sourceBytes": 422984,
+            "recordCount": 260
+          },
+          {
+            "sittingId": "45-1-31",
+            "date": "2025-10-01",
+            "language": "fr",
+            "sha256": "1e6b6262e4d175e62464c1fc738e22074153f7b43b7f3a60adffb67953e69190",
+            "sourceBytes": 477535,
+            "recordCount": 260
+          },
+          {
+            "sittingId": "45-1-32",
+            "date": "2025-10-02",
+            "language": "en",
+            "sha256": "624ade696fafd988f06f57a558658be46632625aaad04f953a2812db36a7fbbf",
+            "sourceBytes": 658486,
+            "recordCount": 400
+          },
+          {
+            "sittingId": "45-1-32",
+            "date": "2025-10-02",
+            "language": "fr",
+            "sha256": "8e862f1864648ae48e29b278c91f2121977fe158b4362725f6f59d216fbd9cf3",
+            "sourceBytes": 771152,
+            "recordCount": 400
+          },
+          {
+            "sittingId": "45-1-33",
+            "date": "2025-10-03",
+            "language": "en",
+            "sha256": "b7f3b45805207bebed281c171bf33819b1e2a81155bf059079b503604a114794",
+            "sourceBytes": 216139,
+            "recordCount": 160
+          },
+          {
+            "sittingId": "45-1-33",
+            "date": "2025-10-03",
+            "language": "fr",
+            "sha256": "5f64d023087682dbf9978699c4abcb15b7284e710879cb34226372c8543b12fd",
+            "sourceBytes": 247139,
+            "recordCount": 160
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-09-29",
+        "generation": "94ad2cd15ca366e5d5ce0778a4e8112e8ecb3888924b38a1c28b6f7be7f6378b",
+        "manifestPath": "dist/hansard/weekly/senate/2025-09-29/current/week.json",
+        "manifestSha256": "b2cf56ba7588f18acfde38cac4e81d0a7c63b3dc54452a3ffa9e1e9629a463ff",
+        "receiptPath": "dist/hansard/weekly/senate/2025-09-29/current/receipt.json",
+        "receiptSha256": "fa77e3aa7e039a87fff25c121006b6c5503c9e103b8d34b932de22149ab21a20",
+        "expectedEditionSlots": 4,
+        "capturedEditions": 4,
+        "initialImportEditions": 4,
+        "replayUnchangedEditions": 4,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 4,
+          "checkPasses": 1,
+          "passingLookupSamples": 4
+        },
+        "sourceBytes": 1148096,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-20",
+            "date": "2025-10-01",
+            "language": "en",
+            "sha256": "d84db83c97b81158e5835567a3ec001981e9dd4b547ece0f9dc819783b0b0c5e",
+            "sourceBytes": 190248,
+            "recordCount": 88
+          },
+          {
+            "sittingId": "45-1-20",
+            "date": "2025-10-01",
+            "language": "fr",
+            "sha256": "b5b7fee7a2476c33e2cd95acc050d60bcb11de69a5d1926724d2f5b3d7048236",
+            "sourceBytes": 213809,
+            "recordCount": 88
+          },
+          {
+            "sittingId": "45-1-21",
+            "date": "2025-10-02",
+            "language": "en",
+            "sha256": "91de234b0aa47ac21afcba4b70310a725d8eae884d558d7bbda3f96699c5d92f",
+            "sourceBytes": 343489,
+            "recordCount": 173
+          },
+          {
+            "sittingId": "45-1-21",
+            "date": "2025-10-02",
+            "language": "fr",
+            "sha256": "4cdd097a496acd170888ab0a65c727d20547ee9635f8d51ebe15ab0d479be281",
+            "sourceBytes": 400550,
+            "recordCount": 173
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-10-06",
+        "generation": "db4e6e8738f7b09e98095751fa50562ef464a58bb52501dbee7e9fc52bb5cff4",
+        "manifestPath": "dist/hansard/weekly/house/2025-10-06/current/week.json",
+        "manifestSha256": "df43d3b8f5c99369998464abde94af90c84304a9b8fdc4470f5f7f8fa58cc615",
+        "receiptPath": "dist/hansard/weekly/house/2025-10-06/current/receipt.json",
+        "receiptSha256": "98c9b1d977eccbbdf28fd9968c461663454200b8f2434fb8f0bbd790337b7b6d",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5400237,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-34",
+            "date": "2025-10-06",
+            "language": "en",
+            "sha256": "99554c9206bba4d4e5a1ad1d4ad66821de3260ef88ba61c56190ad2f701794af",
+            "sourceBytes": 619421,
+            "recordCount": 334
+          },
+          {
+            "sittingId": "45-1-34",
+            "date": "2025-10-06",
+            "language": "fr",
+            "sha256": "adfe7f3fae9cbff080cc6596ae6da6056134aaf99072870e07aed1f896664d0c",
+            "sourceBytes": 707142,
+            "recordCount": 334
+          },
+          {
+            "sittingId": "45-1-35",
+            "date": "2025-10-07",
+            "language": "en",
+            "sha256": "b9312c775501570c79a1d588b3af1315a0e7db837ef4a25a019d0c408c10917b",
+            "sourceBytes": 654681,
+            "recordCount": 358
+          },
+          {
+            "sittingId": "45-1-35",
+            "date": "2025-10-07",
+            "language": "fr",
+            "sha256": "3cec4ce9f0f4a2f3ffd285eb7adc986297f5e99c6af10bce4d0b75c5a187a3a8",
+            "sourceBytes": 747089,
+            "recordCount": 358
+          },
+          {
+            "sittingId": "45-1-36",
+            "date": "2025-10-08",
+            "language": "en",
+            "sha256": "3f759e58a9fcc887ee985b429200b8ecbbe4d99723b3c6eedf843aa36b264c64",
+            "sourceBytes": 378275,
+            "recordCount": 249
+          },
+          {
+            "sittingId": "45-1-36",
+            "date": "2025-10-08",
+            "language": "fr",
+            "sha256": "a39ffdf8b70f34b3510b2a604ec623f51fac68c60332affab4a5dc6cc17d1653",
+            "sourceBytes": 432361,
+            "recordCount": 249
+          },
+          {
+            "sittingId": "45-1-37",
+            "date": "2025-10-09",
+            "language": "en",
+            "sha256": "1e2af5dd0fe1d55f0f21f0a5bb4c2e1f6e3959aa2ed4e58c8f53ad1346153f0e",
+            "sourceBytes": 678015,
+            "recordCount": 411
+          },
+          {
+            "sittingId": "45-1-37",
+            "date": "2025-10-09",
+            "language": "fr",
+            "sha256": "49426264133172490060998d40e82dec5e54e9606dde3588c90925c7aa1ac9d2",
+            "sourceBytes": 772507,
+            "recordCount": 411
+          },
+          {
+            "sittingId": "45-1-38",
+            "date": "2025-10-10",
+            "language": "en",
+            "sha256": "c1138aada5bf265f150455b62602e0801df2e14a906e80143334b3cd4d5c2aee",
+            "sourceBytes": 191644,
+            "recordCount": 142
+          },
+          {
+            "sittingId": "45-1-38",
+            "date": "2025-10-10",
+            "language": "fr",
+            "sha256": "99cf7f940da3fc66edc1ba42f18ef866df7fbde2a4c7444ac14d28707ea117f4",
+            "sourceBytes": 219102,
+            "recordCount": 142
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-10-06",
+        "generation": "9e410869ce637f4f80c3c45602fea9af953d0c1c74daeabf67109658e07dbc4a",
+        "manifestPath": "dist/hansard/weekly/senate/2025-10-06/current/week.json",
+        "manifestSha256": "74ccbf57f772aabbcec534603506aa8222e6b32dffc8de2449a980463a7665fa",
+        "receiptPath": "dist/hansard/weekly/senate/2025-10-06/current/receipt.json",
+        "receiptSha256": "2503f39c632623643b4ea47c6d158bcb78eb60de8c452b39c1e8b04f9591476d",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1413112,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-22",
+            "date": "2025-10-07",
+            "language": "en",
+            "sha256": "f59be8d68b04007cafbb14de85e4750d9de24c6fbaaa53fda997bdc79221eb77",
+            "sourceBytes": 341336,
+            "recordCount": 174
+          },
+          {
+            "sittingId": "45-1-22",
+            "date": "2025-10-07",
+            "language": "fr",
+            "sha256": "dd32076697217805ede79258c2cb7732c872c27c084fc49d2b731bbcce3313ed",
+            "sourceBytes": 391471,
+            "recordCount": 174
+          },
+          {
+            "sittingId": "45-1-23",
+            "date": "2025-10-08",
+            "language": "en",
+            "sha256": "87786e095943c978b1a97306c87b93944c24d00b28e99573bd774fa3df0ca69c",
+            "sourceBytes": 165701,
+            "recordCount": 53
+          },
+          {
+            "sittingId": "45-1-23",
+            "date": "2025-10-08",
+            "language": "fr",
+            "sha256": "e3809acfa642227e3ac8ca0b81c1092cddf9f239c5508e8f7583f35f4956926a",
+            "sourceBytes": 182363,
+            "recordCount": 53
+          },
+          {
+            "sittingId": "45-1-24",
+            "date": "2025-10-09",
+            "language": "en",
+            "sha256": "c6e4eec171dbdca95a78e871c0b6c8f5ab459906e541007d40ec1f9eebcd6619",
+            "sourceBytes": 156585,
+            "recordCount": 118
+          },
+          {
+            "sittingId": "45-1-24",
+            "date": "2025-10-09",
+            "language": "fr",
+            "sha256": "b115a0d1a29a4ad5b01a9f4adaaaf9a4dcea5810444c1030d86b981f9ea674e1",
+            "sourceBytes": 175656,
+            "recordCount": 118
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-10-20",
+        "generation": "22b9d5570fcf542f8229b2824bf48f1ec6bde7105d131030a3355014b60f683c",
+        "manifestPath": "dist/hansard/weekly/house/2025-10-20/current/week.json",
+        "manifestSha256": "d5b24cbea654a02ecea8c4b7d81f2b7b6c5a2fe8f0c4034daee7025fad6c30b4",
+        "receiptPath": "dist/hansard/weekly/house/2025-10-20/current/receipt.json",
+        "receiptSha256": "c9b23a1fb5eb4388ecc64649323f06627a8434734656fd0bc88032761052f3d5",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5700023,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-39",
+            "date": "2025-10-20",
+            "language": "en",
+            "sha256": "7e192577cadd7d681a4ff177cc18521dfb72e346780db802cb9146b39c361311",
+            "sourceBytes": 606021,
+            "recordCount": 293
+          },
+          {
+            "sittingId": "45-1-39",
+            "date": "2025-10-20",
+            "language": "fr",
+            "sha256": "fca6996ae91fe5379f2c9f301eb145be795eb8e5b4bf8cc70d111fb984724d42",
+            "sourceBytes": 700497,
+            "recordCount": 293
+          },
+          {
+            "sittingId": "45-1-40",
+            "date": "2025-10-21",
+            "language": "en",
+            "sha256": "4fbc454a2012bba77090c95ce1ee4226e20f813520d879d1a00d7dc8d2b0f59c",
+            "sourceBytes": 668204,
+            "recordCount": 376
+          },
+          {
+            "sittingId": "45-1-40",
+            "date": "2025-10-21",
+            "language": "fr",
+            "sha256": "6a6bb340fbcf2284963ad14f47a4c11a1779107960ffefcdf9419476c8653ba5",
+            "sourceBytes": 773474,
+            "recordCount": 376
+          },
+          {
+            "sittingId": "45-1-41",
+            "date": "2025-10-22",
+            "language": "en",
+            "sha256": "981423c6f4d88656d39faf39d933a7deb226ffbbc341d7282c4d7f2f8f42d8ef",
+            "sourceBytes": 399165,
+            "recordCount": 243
+          },
+          {
+            "sittingId": "45-1-41",
+            "date": "2025-10-22",
+            "language": "fr",
+            "sha256": "76331171054a9ed2e15a29b0f684a62e906eab41d481631b5a2c1d06989600ef",
+            "sourceBytes": 461282,
+            "recordCount": 243
+          },
+          {
+            "sittingId": "45-1-42",
+            "date": "2025-10-23",
+            "language": "en",
+            "sha256": "56ba01b6c246d99a596dd756a0d964a0277016cfdcc01d100f22630a67b75e88",
+            "sourceBytes": 619827,
+            "recordCount": 355
+          },
+          {
+            "sittingId": "45-1-42",
+            "date": "2025-10-23",
+            "language": "fr",
+            "sha256": "27b511fa7d8f6c24b17410b64a01b174106414132123b4e67b2084426fd51767",
+            "sourceBytes": 711005,
+            "recordCount": 355
+          },
+          {
+            "sittingId": "45-1-43",
+            "date": "2025-10-24",
+            "language": "en",
+            "sha256": "bad4dc6500c7a7befa99a17731ae2385d86c4072d2599c77c6fe6a17cdbf9c3f",
+            "sourceBytes": 356700,
+            "recordCount": 188
+          },
+          {
+            "sittingId": "45-1-43",
+            "date": "2025-10-24",
+            "language": "fr",
+            "sha256": "f5a20bda1f364e0500651c8970cbe2fcfe41c571c9ea0208a1a36168a61dc3ce",
+            "sourceBytes": 403848,
+            "recordCount": 188
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-10-20",
+        "generation": "19d041f3bf61b4a781e6d927a5265825cfc9b401dadef17c3eaf4bb46696e744",
+        "manifestPath": "dist/hansard/weekly/senate/2025-10-20/current/week.json",
+        "manifestSha256": "246d10e4e216a40f7d42691bd1dce7f7f9e69f0d6ebfef1421dbc5d15ab2b6b5",
+        "receiptPath": "dist/hansard/weekly/senate/2025-10-20/current/receipt.json",
+        "receiptSha256": "915f9faaac85b875fe286563d413d9669e2c3a0f7803b0dffc9684b0da35fdf8",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1213963,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-25",
+            "date": "2025-10-21",
+            "language": "en",
+            "sha256": "a2703e667fd7c334bb583bcdcab8e2eb0d274ef1fed8ff604c032cef2ca5aa2d",
+            "sourceBytes": 255020,
+            "recordCount": 121
+          },
+          {
+            "sittingId": "45-1-25",
+            "date": "2025-10-21",
+            "language": "fr",
+            "sha256": "2beeff4b697c762d8f1dd221011e01dc57dad2dc63c7071f339847f85b6a524d",
+            "sourceBytes": 292645,
+            "recordCount": 121
+          },
+          {
+            "sittingId": "45-1-26",
+            "date": "2025-10-22",
+            "language": "en",
+            "sha256": "bbac6b727f22b1ea2f0f6ae1158edb07f855b02ba78a067442b25ff550bcabf4",
+            "sourceBytes": 111181,
+            "recordCount": 35
+          },
+          {
+            "sittingId": "45-1-26",
+            "date": "2025-10-22",
+            "language": "fr",
+            "sha256": "09225174e57fd416c3638930a8450ebc86d35076d3f450b9acd83e9e0651d01b",
+            "sourceBytes": 122456,
+            "recordCount": 35
+          },
+          {
+            "sittingId": "45-1-27",
+            "date": "2025-10-23",
+            "language": "en",
+            "sha256": "c514309fcd6da068071a0c0a320a405edf940a0075fc21af0c315fdd377f3bd9",
+            "sourceBytes": 202181,
+            "recordCount": 118
+          },
+          {
+            "sittingId": "45-1-27",
+            "date": "2025-10-23",
+            "language": "fr",
+            "sha256": "6916e6350700063da9a5bdc63d405f21f27eb813f7b4d75a21d2c10d3e88834d",
+            "sourceBytes": 230480,
+            "recordCount": 117
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-10-27",
+        "generation": "a907d97c8f1576fddaf514b241501e99faa043783a38bcd3f688742b03372b3c",
+        "manifestPath": "dist/hansard/weekly/house/2025-10-27/current/week.json",
+        "manifestSha256": "38b140dfa3b2d5d3ea387a529d98517c8120c34f3d23bc53c1f0f8be44dd94c0",
+        "receiptPath": "dist/hansard/weekly/house/2025-10-27/current/receipt.json",
+        "receiptSha256": "56d1a646ff39753592e2c922ffcd7a46fbab4d915692ff06e6f8c70a4cef52ec",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5607424,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-44",
+            "date": "2025-10-27",
+            "language": "en",
+            "sha256": "0205a40929000211bd24377050a7ab9ab07f11e246a54016aca271e28944a5fb",
+            "sourceBytes": 585237,
+            "recordCount": 289
+          },
+          {
+            "sittingId": "45-1-44",
+            "date": "2025-10-27",
+            "language": "fr",
+            "sha256": "005e6262ce523198d347f74f8a3de07336d42e8777177357793d40c3ebc04cb0",
+            "sourceBytes": 663401,
+            "recordCount": 289
+          },
+          {
+            "sittingId": "45-1-45",
+            "date": "2025-10-28",
+            "language": "en",
+            "sha256": "17bbd2a3cdbf40c64a217a2adce6e694e6a46d84b2e26d7658713dda1454f88a",
+            "sourceBytes": 695710,
+            "recordCount": 334
+          },
+          {
+            "sittingId": "45-1-45",
+            "date": "2025-10-28",
+            "language": "fr",
+            "sha256": "cee11301af58bf0e011b0c8b131d95ec4b980cffdde74980d930a7c7e56bc2df",
+            "sourceBytes": 789371,
+            "recordCount": 334
+          },
+          {
+            "sittingId": "45-1-46",
+            "date": "2025-10-29",
+            "language": "en",
+            "sha256": "673971f414732f2ccf057be1d2c55e948ef10a31247b3fced570ec2783c7224d",
+            "sourceBytes": 416475,
+            "recordCount": 213
+          },
+          {
+            "sittingId": "45-1-46",
+            "date": "2025-10-29",
+            "language": "fr",
+            "sha256": "4f24544746c5b3c018917eb413feac18bd09dfd953d046cd9e14265e1dabdef0",
+            "sourceBytes": 481055,
+            "recordCount": 213
+          },
+          {
+            "sittingId": "45-1-47",
+            "date": "2025-10-30",
+            "language": "en",
+            "sha256": "7f339cef9610870cfb5d1542093689eb0d6a98343e664ae94cbf05155f216a91",
+            "sourceBytes": 645439,
+            "recordCount": 341
+          },
+          {
+            "sittingId": "45-1-47",
+            "date": "2025-10-30",
+            "language": "fr",
+            "sha256": "8f82b807377fc661ad75fa2ffc902d1d55e0697386d1cb0e5a1bca3eea64bb72",
+            "sourceBytes": 758625,
+            "recordCount": 341
+          },
+          {
+            "sittingId": "45-1-48",
+            "date": "2025-10-31",
+            "language": "en",
+            "sha256": "102f0ac674576e67fcba9ad93f3ae08253a4a93db27cca854b3152d25ab34a8d",
+            "sourceBytes": 268247,
+            "recordCount": 168
+          },
+          {
+            "sittingId": "45-1-48",
+            "date": "2025-10-31",
+            "language": "fr",
+            "sha256": "f1a01a9d5a3ddc6a44660006bf712856155c18e4426e162aad5c9f6f0d72f676",
+            "sourceBytes": 303864,
+            "recordCount": 168
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-10-27",
+        "generation": "a41ef5747e705055a721ac38eb1a85c56e4fc6a7d541d95c3667a6739fb581b3",
+        "manifestPath": "dist/hansard/weekly/senate/2025-10-27/current/week.json",
+        "manifestSha256": "88f0ed94fe09abe38b5e199b7cd176a06ecdd1ea99aa36cfb5e764b9d8964629",
+        "receiptPath": "dist/hansard/weekly/senate/2025-10-27/current/receipt.json",
+        "receiptSha256": "fa2361f08767632fa190b3d14f1e8d3d063f384dc6f63b9e3a0790a101491cf9",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1366252,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-28",
+            "date": "2025-10-28",
+            "language": "en",
+            "sha256": "642057d3e6655cfe79708dd177b1f412f76075591451b0b388d91f590db218b2",
+            "sourceBytes": 329735,
+            "recordCount": 164
+          },
+          {
+            "sittingId": "45-1-28",
+            "date": "2025-10-28",
+            "language": "fr",
+            "sha256": "07979fbf8ad05c05aef117b0c8b780bc32c33db6de18eed9bc113f431ec164d0",
+            "sourceBytes": 378232,
+            "recordCount": 164
+          },
+          {
+            "sittingId": "45-1-29",
+            "date": "2025-10-29",
+            "language": "en",
+            "sha256": "a3fc6e1021a2d48133c798f4d804e71c5ebabf76dc837bad8492126c9ae0f1b6",
+            "sourceBytes": 108289,
+            "recordCount": 43
+          },
+          {
+            "sittingId": "45-1-29",
+            "date": "2025-10-29",
+            "language": "fr",
+            "sha256": "17de9ef4e0a55943f3013e4b162f0480a317fca2778b56f939c87f0e22607be9",
+            "sourceBytes": 119303,
+            "recordCount": 43
+          },
+          {
+            "sittingId": "45-1-30",
+            "date": "2025-10-30",
+            "language": "en",
+            "sha256": "3db11f6dc4d9f1344bfdffd30f2f2d0083f922ffdbbbcb4da29df97990c8564e",
+            "sourceBytes": 202288,
+            "recordCount": 105
+          },
+          {
+            "sittingId": "45-1-30",
+            "date": "2025-10-30",
+            "language": "fr",
+            "sha256": "fdddd07cf1c1e8f570b36a342667e1fcd252063726af770bddd1104ac3ef1933",
+            "sourceBytes": 228405,
+            "recordCount": 105
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-11-03",
+        "generation": "dfcc4cc5133f12e01b73e73445837aafc5719e1bc7b3fbaf73e1b623a36c46ce",
+        "manifestPath": "dist/hansard/weekly/house/2025-11-03/current/week.json",
+        "manifestSha256": "71150fade9db1d581f067323035bf663f1ebe18c73678ae9bab35d8b6794616a",
+        "receiptPath": "dist/hansard/weekly/house/2025-11-03/current/receipt.json",
+        "receiptSha256": "63924b3451748da578c320cdc3d379014c90f9021f2daa34e528f783f2979a95",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5596979,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-49",
+            "date": "2025-11-03",
+            "language": "en",
+            "sha256": "ab7edc59043cf7d039f2d9cd06f2e3b55fb161fae851c2eb497e3f38eabc151f",
+            "sourceBytes": 646405,
+            "recordCount": 322
+          },
+          {
+            "sittingId": "45-1-49",
+            "date": "2025-11-03",
+            "language": "fr",
+            "sha256": "f1dc724dbf8a5f24b1100b17ce6263337eda1105cc76068e4bc86ad45ba9ae7f",
+            "sourceBytes": 744444,
+            "recordCount": 322
+          },
+          {
+            "sittingId": "45-1-50",
+            "date": "2025-11-04",
+            "language": "en",
+            "sha256": "50272dd1e3d922e16c356faae35bfef821a6124b60671d06ff872378954b48ba",
+            "sourceBytes": 543273,
+            "recordCount": 306
+          },
+          {
+            "sittingId": "45-1-50",
+            "date": "2025-11-04",
+            "language": "fr",
+            "sha256": "1947ecb2feaf8f007c6b7d78ec60d6404b7fb2c758878ae5b63ff30ef90f8562",
+            "sourceBytes": 614794,
+            "recordCount": 306
+          },
+          {
+            "sittingId": "45-1-51",
+            "date": "2025-11-05",
+            "language": "en",
+            "sha256": "b012dd4703043e938b674c31ecaa42c78891b5ac1bd5afd8516edf24417a10ab",
+            "sourceBytes": 394152,
+            "recordCount": 211
+          },
+          {
+            "sittingId": "45-1-51",
+            "date": "2025-11-05",
+            "language": "fr",
+            "sha256": "6abf32b01f7ad616806a03ba870c03776b0854ca8786b2c216cb105f9c85d622",
+            "sourceBytes": 447632,
+            "recordCount": 211
+          },
+          {
+            "sittingId": "45-1-52",
+            "date": "2025-11-06",
+            "language": "en",
+            "sha256": "404d10d5c932c99559bbf68d0d7da174d66a86746da2b6af0c89e4b17ff5a37c",
+            "sourceBytes": 659163,
+            "recordCount": 353
+          },
+          {
+            "sittingId": "45-1-52",
+            "date": "2025-11-06",
+            "language": "fr",
+            "sha256": "42f3842223d3b5c93ddb6c5ad6481b05cb414858a3bb7a721aa93cc8b707e314",
+            "sourceBytes": 761946,
+            "recordCount": 353
+          },
+          {
+            "sittingId": "45-1-53",
+            "date": "2025-11-07",
+            "language": "en",
+            "sha256": "5eb6c3da593703e3a685e5575fe56c4023ccec1211120a2f771f8003c3511176",
+            "sourceBytes": 365893,
+            "recordCount": 215
+          },
+          {
+            "sittingId": "45-1-53",
+            "date": "2025-11-07",
+            "language": "fr",
+            "sha256": "62dce12c60f3713e86894a42b8629eeed5fe99e3e20915402804aa7a7a47d7c9",
+            "sourceBytes": 419277,
+            "recordCount": 215
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-11-03",
+        "generation": "bc051aa6b0f675d2b8bda98ccc5924c213f678989911db6802cb9fa2cf1c6ded",
+        "manifestPath": "dist/hansard/weekly/senate/2025-11-03/current/week.json",
+        "manifestSha256": "c5104581cc9781f771ec6b8389925ffa8fcf7ced1d6c0da46282dac5f2edcdc7",
+        "receiptPath": "dist/hansard/weekly/senate/2025-11-03/current/receipt.json",
+        "receiptSha256": "3f02c466d4d8e6f6fdaf41b4bfb1842f2172275d8241be5446e746a4e2fa2a60",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1484516,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-31",
+            "date": "2025-11-04",
+            "language": "en",
+            "sha256": "166c0940eff06c2ae52ace1bdad0163b81ca362e4f68dd4d831b747232df5162",
+            "sourceBytes": 257168,
+            "recordCount": 120
+          },
+          {
+            "sittingId": "45-1-31",
+            "date": "2025-11-04",
+            "language": "fr",
+            "sha256": "8efe52094e37994ceecad2ac935955b2d31ca7b785706e4713fd338fc135f803",
+            "sourceBytes": 293608,
+            "recordCount": 120
+          },
+          {
+            "sittingId": "45-1-32",
+            "date": "2025-11-05",
+            "language": "en",
+            "sha256": "28c81de1e037f517caa1687f95721f773af12aa01d3decb7b793d6bb181dd15a",
+            "sourceBytes": 164496,
+            "recordCount": 92
+          },
+          {
+            "sittingId": "45-1-32",
+            "date": "2025-11-05",
+            "language": "fr",
+            "sha256": "fba8a0a259867688d033730e58d3814c48d25d0d8e17a3ed556e80484f4979e4",
+            "sourceBytes": 183882,
+            "recordCount": 92
+          },
+          {
+            "sittingId": "45-1-33",
+            "date": "2025-11-06",
+            "language": "en",
+            "sha256": "26cd67517c47dfacce5b4720c67737861048ebaa607cd332cd9b913ddd1d74c0",
+            "sourceBytes": 273214,
+            "recordCount": 146
+          },
+          {
+            "sittingId": "45-1-33",
+            "date": "2025-11-06",
+            "language": "fr",
+            "sha256": "693e7491b71c6c6281f6964eec1941fa49fc49fcdf723a21ee3e2612f926bde5",
+            "sourceBytes": 312148,
+            "recordCount": 146
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-11-17",
+        "generation": "2830352b8894b25dcabaa8abf79d93ffa170ae81d13a82176ab4b6829e91f1a6",
+        "manifestPath": "dist/hansard/weekly/house/2025-11-17/current/week.json",
+        "manifestSha256": "00875235be41aef65e6cd7d38a452d8717608b948bd17c55c307f81fe17a68d9",
+        "receiptPath": "dist/hansard/weekly/house/2025-11-17/current/receipt.json",
+        "receiptSha256": "02a0cb04f2c7c1e9708e3f49f599cc9c962b565638937a405e3d39fcde75f339",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5874300,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-54",
+            "date": "2025-11-17",
+            "language": "en",
+            "sha256": "b16cdcbc86a1a22f53ff1b2973ffc5b74aba821da66f84f4c0499bd8fb333ba8",
+            "sourceBytes": 615739,
+            "recordCount": 289
+          },
+          {
+            "sittingId": "45-1-54",
+            "date": "2025-11-17",
+            "language": "fr",
+            "sha256": "a1ab9cbabe8909e9026390c1825dcd75e22002873f1494d57d5e762f4f0312a7",
+            "sourceBytes": 705922,
+            "recordCount": 289
+          },
+          {
+            "sittingId": "45-1-55",
+            "date": "2025-11-18",
+            "language": "en",
+            "sha256": "89eb70ae88d5c4d178b7494312baa22638eb1a6d151e059ac8f174843ad3b6fc",
+            "sourceBytes": 678238,
+            "recordCount": 398
+          },
+          {
+            "sittingId": "45-1-55",
+            "date": "2025-11-18",
+            "language": "fr",
+            "sha256": "e3e38b9245e041d5ce2f1df6a09690fb8183a9574b8f416247a3edb57378004d",
+            "sourceBytes": 793560,
+            "recordCount": 398
+          },
+          {
+            "sittingId": "45-1-56",
+            "date": "2025-11-19",
+            "language": "en",
+            "sha256": "c1fbf2637b53b2b71d948d638af5ebd024ad3f731a18fa9c6cbfa6f6d3867281",
+            "sourceBytes": 394180,
+            "recordCount": 235
+          },
+          {
+            "sittingId": "45-1-56",
+            "date": "2025-11-19",
+            "language": "fr",
+            "sha256": "ba3b9143bfe2127ec15838856d37b63e49a9a3c515e60248726e52c2731927b7",
+            "sourceBytes": 453317,
+            "recordCount": 235
+          },
+          {
+            "sittingId": "45-1-57",
+            "date": "2025-11-20",
+            "language": "en",
+            "sha256": "149159cb6a7bfed96f831f8cc7a5aaea7571d3efd24c3c4e2854e1ba15052c69",
+            "sourceBytes": 676436,
+            "recordCount": 359
+          },
+          {
+            "sittingId": "45-1-57",
+            "date": "2025-11-20",
+            "language": "fr",
+            "sha256": "d21f73122e5170281b964c935a3c5b6c53e159ce482d61fd3ee1d681cb10b841",
+            "sourceBytes": 781255,
+            "recordCount": 359
+          },
+          {
+            "sittingId": "45-1-58",
+            "date": "2025-11-21",
+            "language": "en",
+            "sha256": "ec95f73cfac14564f226a7d7464e4e44d8edb0118230d4f758119c255fc664fc",
+            "sourceBytes": 360865,
+            "recordCount": 207
+          },
+          {
+            "sittingId": "45-1-58",
+            "date": "2025-11-21",
+            "language": "fr",
+            "sha256": "377388a8aab52dda33b145e9c23801492292e8ff5efe4c0dc84e47d0ae0bde47",
+            "sourceBytes": 414788,
+            "recordCount": 207
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-11-17",
+        "generation": "e37949e4c46e150b4708789aa5832e36c85775e3621b82d6c7648b9cddfdee5c",
+        "manifestPath": "dist/hansard/weekly/senate/2025-11-17/current/week.json",
+        "manifestSha256": "68eb15113e0f68a7b8ad35e4c2118744c6aec6ae41b25f2d336e503e372024b4",
+        "receiptPath": "dist/hansard/weekly/senate/2025-11-17/current/receipt.json",
+        "receiptSha256": "6a0f6a2fbc0d0e34b5adeb4529edef0e57bf6aedae139c572a7beefce630ea97",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1645381,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-34",
+            "date": "2025-11-18",
+            "language": "en",
+            "sha256": "b0cd6bb599cd944bfe40224794b137e0e86742a51220ab7f04a62da937174645",
+            "sourceBytes": 287877,
+            "recordCount": 142
+          },
+          {
+            "sittingId": "45-1-34",
+            "date": "2025-11-18",
+            "language": "fr",
+            "sha256": "54ed82e8024d58087b456849a58e19ea6b84ed39ff1c635e9cedbccd9145c9ac",
+            "sourceBytes": 332119,
+            "recordCount": 142
+          },
+          {
+            "sittingId": "45-1-35",
+            "date": "2025-11-19",
+            "language": "en",
+            "sha256": "554b759e3835f603ec0c885fac0ee196d896f3e9a1a5849530f45ef179b615f5",
+            "sourceBytes": 278984,
+            "recordCount": 161
+          },
+          {
+            "sittingId": "45-1-35",
+            "date": "2025-11-19",
+            "language": "fr",
+            "sha256": "94fa0a8a7edf65f93ddf8a6fd97705fbb6286eaf2d14905c2208c29d383fd847",
+            "sourceBytes": 320275,
+            "recordCount": 161
+          },
+          {
+            "sittingId": "45-1-36",
+            "date": "2025-11-20",
+            "language": "en",
+            "sha256": "9470e3d47cac3f24774644d0cd969d21fe4d1355b2fc126d06e521199649b133",
+            "sourceBytes": 200044,
+            "recordCount": 106
+          },
+          {
+            "sittingId": "45-1-36",
+            "date": "2025-11-20",
+            "language": "fr",
+            "sha256": "ff392c70312749ef4ecc31e570e64d616c87807ca1a1f1c8258d0116f11c12fe",
+            "sourceBytes": 226082,
+            "recordCount": 106
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-11-24",
+        "generation": "06a8791b716da905d129cb106b0e3a8656f425723141337d3dd81583d8a0b900",
+        "manifestPath": "dist/hansard/weekly/house/2025-11-24/current/week.json",
+        "manifestSha256": "380587d68edf010e1d41b39e1517bbb6021aff7020d0d7a59d9bcf90effbd748",
+        "receiptPath": "dist/hansard/weekly/house/2025-11-24/current/receipt.json",
+        "receiptSha256": "13eab5e25cab12a0f08d321ccf38e7b91909c5517cadc7f412bfe325c8cd6056",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 6524653,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-59",
+            "date": "2025-11-24",
+            "language": "en",
+            "sha256": "f6f8ae12b65036c856b3c7a155d4b7fd3a6e6553696d22dcc60b2d99c57b5a94",
+            "sourceBytes": 606797,
+            "recordCount": 339
+          },
+          {
+            "sittingId": "45-1-59",
+            "date": "2025-11-24",
+            "language": "fr",
+            "sha256": "a4d04b52501e94e232941955bd102ffeec93ee46dfceebb3ebb6b97190dcbca1",
+            "sourceBytes": 700895,
+            "recordCount": 339
+          },
+          {
+            "sittingId": "45-1-60",
+            "date": "2025-11-25",
+            "language": "en",
+            "sha256": "366d8929becbe9791f93ceb67905180cfb9109f9e8ddbffd8140e8e731b3da16",
+            "sourceBytes": 998364,
+            "recordCount": 549
+          },
+          {
+            "sittingId": "45-1-60",
+            "date": "2025-11-25",
+            "language": "fr",
+            "sha256": "9aebccdc26766dc01c5c32b82f7c0002089cb58246df14a2976de6c0534ba6cc",
+            "sourceBytes": 1153554,
+            "recordCount": 549
+          },
+          {
+            "sittingId": "45-1-61",
+            "date": "2025-11-26",
+            "language": "en",
+            "sha256": "e8ab41088243237abd3756bd6e232ccb8560057b179b5890560922d56cb2c4e2",
+            "sourceBytes": 412120,
+            "recordCount": 229
+          },
+          {
+            "sittingId": "45-1-61",
+            "date": "2025-11-26",
+            "language": "fr",
+            "sha256": "fa1c8ddd8e607d60a2214620e2ecdb25b18313b04f8bf77fa1129de99f026ba9",
+            "sourceBytes": 471432,
+            "recordCount": 229
+          },
+          {
+            "sittingId": "45-1-62",
+            "date": "2025-11-27",
+            "language": "en",
+            "sha256": "4e459a12fcaa54f4f2fee2f5c23355bd62e6ab60aa1051ab687be4189ad88e5a",
+            "sourceBytes": 651528,
+            "recordCount": 344
+          },
+          {
+            "sittingId": "45-1-62",
+            "date": "2025-11-27",
+            "language": "fr",
+            "sha256": "ec5f37e30a6ec44e654fd83084ff7b0745937db603ad44e37aeec4265318c393",
+            "sourceBytes": 758008,
+            "recordCount": 344
+          },
+          {
+            "sittingId": "45-1-63",
+            "date": "2025-11-28",
+            "language": "en",
+            "sha256": "9a235984bc8706634eee6a651b8c8b56558a1942f5502cf42050d33520b939f9",
+            "sourceBytes": 360627,
+            "recordCount": 223
+          },
+          {
+            "sittingId": "45-1-63",
+            "date": "2025-11-28",
+            "language": "fr",
+            "sha256": "e92f27792a8f85756ede54688e9ac50a4ae907afb8a6fdf53780194ef17341a0",
+            "sourceBytes": 411328,
+            "recordCount": 223
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-11-24",
+        "generation": "eb772cc8de9a5ea101aec26efa6f3edc5f2d106b7e1091ef82a10727fd4af7fd",
+        "manifestPath": "dist/hansard/weekly/senate/2025-11-24/current/week.json",
+        "manifestSha256": "21f37ac649093209965abe48cce3797e401346eeb913018bb7fc631aad797cab",
+        "receiptPath": "dist/hansard/weekly/senate/2025-11-24/current/receipt.json",
+        "receiptSha256": "b3f45542a9d4ac749e2876e9f6f62bb27d3e90449b6db914603c2a37fcd14b00",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1640373,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-37",
+            "date": "2025-11-25",
+            "language": "en",
+            "sha256": "946f7b8ce177d760c938f2138e05507dc6a76f606e01e76c115c0907368cf751",
+            "sourceBytes": 317400,
+            "recordCount": 127
+          },
+          {
+            "sittingId": "45-1-37",
+            "date": "2025-11-25",
+            "language": "fr",
+            "sha256": "738f412209acc86a821d791b16f59137763b9b30bdab535769b8fb2b514633a0",
+            "sourceBytes": 365475,
+            "recordCount": 127
+          },
+          {
+            "sittingId": "45-1-38",
+            "date": "2025-11-26",
+            "language": "en",
+            "sha256": "44fdf1b4db56e4dda3ad40492b6e0e1c8239225dd95ccd02a915674e52a91882",
+            "sourceBytes": 166701,
+            "recordCount": 82
+          },
+          {
+            "sittingId": "45-1-38",
+            "date": "2025-11-26",
+            "language": "fr",
+            "sha256": "adee27b8eeb2a6669c1242793e421af9937b163914894aa269e7dd0b662bc163",
+            "sourceBytes": 185435,
+            "recordCount": 82
+          },
+          {
+            "sittingId": "45-1-39",
+            "date": "2025-11-27",
+            "language": "en",
+            "sha256": "79ee7b7e0de79666dc217def4ea3e65542db0ce962a37d214fad7a3bcbc9e876",
+            "sourceBytes": 281975,
+            "recordCount": 126
+          },
+          {
+            "sittingId": "45-1-39",
+            "date": "2025-11-27",
+            "language": "fr",
+            "sha256": "fefb3396b1ed90772c0e79ee6af382c3f4e4795bba5f04d1d5772ead3424647e",
+            "sourceBytes": 323387,
+            "recordCount": 126
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-12-01",
+        "generation": "db958e6e0dff3f5bb892b38d9c83c3b4e9b1bd64e8cc0a3bdda52184556ad593",
+        "manifestPath": "dist/hansard/weekly/house/2025-12-01/current/week.json",
+        "manifestSha256": "1af105bd88ee9d39fed6b0986fa7d1e9e2428e28343db4113ba31e6ae76a9658",
+        "receiptPath": "dist/hansard/weekly/house/2025-12-01/current/receipt.json",
+        "receiptSha256": "8e828ab71ca8e3465e036725e164d933878e24835d78a6ec4334386648410955",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 6449615,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-64",
+            "date": "2025-12-01",
+            "language": "en",
+            "sha256": "e62e1694fea54ef73cd35fb381d49cf13bdb4a90738e7d34003dde29482dab61",
+            "sourceBytes": 546600,
+            "recordCount": 284
+          },
+          {
+            "sittingId": "45-1-64",
+            "date": "2025-12-01",
+            "language": "fr",
+            "sha256": "c80eafb0d0e204ae7b6557a170c08c13f25e3d1074f8baaec54784269a4a3d11",
+            "sourceBytes": 632527,
+            "recordCount": 284
+          },
+          {
+            "sittingId": "45-1-65",
+            "date": "2025-12-02",
+            "language": "en",
+            "sha256": "8891c71d0e1c2a6299c8790bacd878e8b5bbbc000b24546b6f156db3e52e300d",
+            "sourceBytes": 682598,
+            "recordCount": 357
+          },
+          {
+            "sittingId": "45-1-65",
+            "date": "2025-12-02",
+            "language": "fr",
+            "sha256": "201d58d4b8ddc3cf5090ff7ae722c963041b3fc743878b55a1eda86e47c9450d",
+            "sourceBytes": 790761,
+            "recordCount": 357
+          },
+          {
+            "sittingId": "45-1-66",
+            "date": "2025-12-03",
+            "language": "en",
+            "sha256": "9d68aa6e13d7073b7d0fb4ac0606882c8db0d2d45b80f1cb33175d3ed89e0bd5",
+            "sourceBytes": 701270,
+            "recordCount": 404
+          },
+          {
+            "sittingId": "45-1-66",
+            "date": "2025-12-03",
+            "language": "fr",
+            "sha256": "22c1da8f289ffd60d61f20d8b3454c2e26188df853de61a74ed7ec2385e80f20",
+            "sourceBytes": 803114,
+            "recordCount": 404
+          },
+          {
+            "sittingId": "45-1-67",
+            "date": "2025-12-04",
+            "language": "en",
+            "sha256": "8e97fba1b5595552d44ac78d0be2cc42ab7a403bc4459d4c59aae7ba7083e608",
+            "sourceBytes": 707831,
+            "recordCount": 395
+          },
+          {
+            "sittingId": "45-1-67",
+            "date": "2025-12-04",
+            "language": "fr",
+            "sha256": "177dfd3cb37f7f16232d2dfc1a307629816d6a74489488c4a60fff4afdd8d3b2",
+            "sourceBytes": 802689,
+            "recordCount": 395
+          },
+          {
+            "sittingId": "45-1-68",
+            "date": "2025-12-05",
+            "language": "en",
+            "sha256": "0318060c332c9c64782b6e9313e090ba37d7a6f6f9be8fb8223dec48e857cfc4",
+            "sourceBytes": 363289,
+            "recordCount": 218
+          },
+          {
+            "sittingId": "45-1-68",
+            "date": "2025-12-05",
+            "language": "fr",
+            "sha256": "e8fdeb82ec2ae5ef4254e4daa5ecab55375b757fc56d52487dfb4940a99eb565",
+            "sourceBytes": 418936,
+            "recordCount": 218
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-12-01",
+        "generation": "c442f66ef0050225b150534a31dae52025b619aa1d48ae47cd02a08e37fb1dc3",
+        "manifestPath": "dist/hansard/weekly/senate/2025-12-01/current/week.json",
+        "manifestSha256": "dd816b833c5e4acdd9d5ae479f1fc493de2cdcf055eeabaefb8cf0379a47f926",
+        "receiptPath": "dist/hansard/weekly/senate/2025-12-01/current/receipt.json",
+        "receiptSha256": "f1fe33d36c28844201e31b96e0fc1d9454e6427a08552ddba2cf50b56a469d68",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1821361,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-40",
+            "date": "2025-12-02",
+            "language": "en",
+            "sha256": "26d489f48c311eb54171c666aed4df35bbe65dfeb82e4b9e6c89e3ab9bb6b570",
+            "sourceBytes": 406701,
+            "recordCount": 202
+          },
+          {
+            "sittingId": "45-1-40",
+            "date": "2025-12-02",
+            "language": "fr",
+            "sha256": "f9dacb06734d3d37aa36af9792e252341ff325cb63211b4a5b41326d67afd20a",
+            "sourceBytes": 468011,
+            "recordCount": 202
+          },
+          {
+            "sittingId": "45-1-41",
+            "date": "2025-12-03",
+            "language": "en",
+            "sha256": "d211ed61a0713e84473de2c875ebd9829269873e33ab4574ee985a62509f7fac",
+            "sourceBytes": 190409,
+            "recordCount": 84
+          },
+          {
+            "sittingId": "45-1-41",
+            "date": "2025-12-03",
+            "language": "fr",
+            "sha256": "f6a6b8fbaac207390e6e0d9dc79d90c0f6b33df54e8607b3c2e27d27be17de99",
+            "sourceBytes": 213916,
+            "recordCount": 84
+          },
+          {
+            "sittingId": "45-1-42",
+            "date": "2025-12-04",
+            "language": "en",
+            "sha256": "22d2ec31a552e224c755d51b1fe7ad0f7a4991dca1a56b3931f980f563e121f2",
+            "sourceBytes": 253621,
+            "recordCount": 115
+          },
+          {
+            "sittingId": "45-1-42",
+            "date": "2025-12-04",
+            "language": "fr",
+            "sha256": "5e37304c7820ab4869e93934096c17466afa5c00c20b11b8859bcded0a7f4c8c",
+            "sourceBytes": 288703,
+            "recordCount": 115
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2025-12-08",
+        "generation": "f9f9763de7297895e91e6d62a79cc08ce8bc6cf9ce7c97fdd2601ed83dd53a9a",
+        "manifestPath": "dist/hansard/weekly/house/2025-12-08/current/week.json",
+        "manifestSha256": "ee7df054d9b5b23669d945057129da51981d460ee1ea9acbf784e185dd9ed200",
+        "receiptPath": "dist/hansard/weekly/house/2025-12-08/current/receipt.json",
+        "receiptSha256": "0f213b30b7856cf7a9776244d4071c1e8628e885f48ba1a9c5a7755fc7b7c023",
+        "expectedEditionSlots": 8,
+        "capturedEditions": 8,
+        "initialImportEditions": 8,
+        "replayUnchangedEditions": 8,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 8,
+          "checkPasses": 1,
+          "passingLookupSamples": 8
+        },
+        "sourceBytes": 4629212,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-69",
+            "date": "2025-12-08",
+            "language": "en",
+            "sha256": "139fedbbfda094ba9c9ad0ab6b60c461760325d2545d8be91c969a0331916b62",
+            "sourceBytes": 622835,
+            "recordCount": 337
+          },
+          {
+            "sittingId": "45-1-69",
+            "date": "2025-12-08",
+            "language": "fr",
+            "sha256": "49c4e614afb678886923a80b8bb25ea1a3986fe45078d72f9d7543597a03a81f",
+            "sourceBytes": 707438,
+            "recordCount": 337
+          },
+          {
+            "sittingId": "45-1-70",
+            "date": "2025-12-09",
+            "language": "en",
+            "sha256": "8117d4070142430ed48c3663eb9cd77da9e0ba41f72c10715ab89b9473daae5b",
+            "sourceBytes": 729081,
+            "recordCount": 407
+          },
+          {
+            "sittingId": "45-1-70",
+            "date": "2025-12-09",
+            "language": "fr",
+            "sha256": "49ba03d21f7007171c0ef7a666e2af8a055b72b7bcfdcdadad65655b1fb2eb0b",
+            "sourceBytes": 831695,
+            "recordCount": 407
+          },
+          {
+            "sittingId": "45-1-71",
+            "date": "2025-12-10",
+            "language": "en",
+            "sha256": "fd97d24899199143b9f01cbadda0023df20d45323ccd759627a5a84390c90793",
+            "sourceBytes": 374810,
+            "recordCount": 221
+          },
+          {
+            "sittingId": "45-1-71",
+            "date": "2025-12-10",
+            "language": "fr",
+            "sha256": "9e5ea69f44772d01b5375551883d9997f927b387977450e5b956f90b43da0ab7",
+            "sourceBytes": 423427,
+            "recordCount": 221
+          },
+          {
+            "sittingId": "45-1-72",
+            "date": "2025-12-11",
+            "language": "en",
+            "sha256": "90682056441da209339bac7c5b278643b481f403942401b9af77d4184069c6a4",
+            "sourceBytes": 444364,
+            "recordCount": 249
+          },
+          {
+            "sittingId": "45-1-72",
+            "date": "2025-12-11",
+            "language": "fr",
+            "sha256": "a86e7f185cc37b7c7a261bac2eefd5f71861a6309c5503c03a60e940b9af7d90",
+            "sourceBytes": 495562,
+            "recordCount": 249
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2025-12-08",
+        "generation": "e9f06b53ef6f30615a5302ef6e8cb1a819c5c5940a83995e92470869215f1cd8",
+        "manifestPath": "dist/hansard/weekly/senate/2025-12-08/current/week.json",
+        "manifestSha256": "549e2c2c2dc707f725521c8bb5d0520d6bc67aab9cc75193d6cd1dd5028b548d",
+        "receiptPath": "dist/hansard/weekly/senate/2025-12-08/current/receipt.json",
+        "receiptSha256": "58314f4f0dcc8aa0010dac8008438df1279f724cb854e3fca08293b564da3a66",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1519133,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-43",
+            "date": "2025-12-09",
+            "language": "en",
+            "sha256": "28521cc75a256632d9a888b72fa425f78f4873e20b092c9327015ba8b492dbb7",
+            "sourceBytes": 254979,
+            "recordCount": 167
+          },
+          {
+            "sittingId": "45-1-43",
+            "date": "2025-12-09",
+            "language": "fr",
+            "sha256": "8d4210e13fae76635560f29fb398263f6f3ac35f6c83438157faffcdb055b8fe",
+            "sourceBytes": 294078,
+            "recordCount": 167
+          },
+          {
+            "sittingId": "45-1-44",
+            "date": "2025-12-10",
+            "language": "en",
+            "sha256": "0a8cfe555e6c10d1d590eb25aad914cd88df0061026e03fa9fb6db51fdf31f29",
+            "sourceBytes": 243905,
+            "recordCount": 149
+          },
+          {
+            "sittingId": "45-1-44",
+            "date": "2025-12-10",
+            "language": "fr",
+            "sha256": "0c93cf4a8f5fe54c6874ca2073f7fd986cdd8c9b5e0de12df20a54ef4915127e",
+            "sourceBytes": 281400,
+            "recordCount": 149
+          },
+          {
+            "sittingId": "45-1-45",
+            "date": "2025-12-11",
+            "language": "en",
+            "sha256": "ff9a1cd4681264ff82b3cdeda0b6b073bbc184f4f563d14c8ec4c2461fe8a05b",
+            "sourceBytes": 209745,
+            "recordCount": 58
+          },
+          {
+            "sittingId": "45-1-45",
+            "date": "2025-12-11",
+            "language": "fr",
+            "sha256": "80c3ce1d1270db12d2ae5f7cd75d386617e22e3cb3a64164c8eb600a735b335d",
+            "sourceBytes": 235026,
+            "recordCount": 58
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-01-26",
+        "generation": "b548695625819587ad5df33978b4ee8580f94c482580c686579b550620dbfc19",
+        "manifestPath": "dist/hansard/weekly/house/2026-01-26/current/week.json",
+        "manifestSha256": "8430afc39184db009623964532efa27755d63b0973e6b48053485edeeadd1902",
+        "receiptPath": "dist/hansard/weekly/house/2026-01-26/current/receipt.json",
+        "receiptSha256": "f1598ba7b6f8f87068e7b260a0d3dda849852eea281ef7805dc465ae987374d1",
+        "expectedEditionSlots": 8,
+        "capturedEditions": 8,
+        "initialImportEditions": 8,
+        "replayUnchangedEditions": 8,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 8,
+          "checkPasses": 1,
+          "passingLookupSamples": 8
+        },
+        "sourceBytes": 4344965,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-73",
+            "date": "2026-01-26",
+            "language": "en",
+            "sha256": "f55280d1a1463eacffaaf6afbd520fa06469b4d102622990b529f43565aef512",
+            "sourceBytes": 591502,
+            "recordCount": 282
+          },
+          {
+            "sittingId": "45-1-73",
+            "date": "2026-01-26",
+            "language": "fr",
+            "sha256": "fce7315440734e03ee97092bc6aca7171d5fe58e647a53c9c742490512bd45cb",
+            "sourceBytes": 681799,
+            "recordCount": 282
+          },
+          {
+            "sittingId": "45-1-74",
+            "date": "2026-01-27",
+            "language": "en",
+            "sha256": "5f20878848446d95a772a242f250f29cb37897bfa20daeee4b80f0a1b8dc58d0",
+            "sourceBytes": 647311,
+            "recordCount": 338
+          },
+          {
+            "sittingId": "45-1-74",
+            "date": "2026-01-27",
+            "language": "fr",
+            "sha256": "952a40a7c78ef6ba68f1528fb921f4a97dfc84daebaf4442bd777269001c88ef",
+            "sourceBytes": 747509,
+            "recordCount": 338
+          },
+          {
+            "sittingId": "45-1-75",
+            "date": "2026-01-28",
+            "language": "en",
+            "sha256": "1c0f7eb5c2047bbde77d225cf5ba3394cb14382a180b2068c8dc1f763c5daf2b",
+            "sourceBytes": 445704,
+            "recordCount": 231
+          },
+          {
+            "sittingId": "45-1-75",
+            "date": "2026-01-28",
+            "language": "fr",
+            "sha256": "c46efde143edec4dfdb03280bd9b62bbc17eb4a737989140a22b0e18533227c1",
+            "sourceBytes": 506695,
+            "recordCount": 231
+          },
+          {
+            "sittingId": "45-1-76",
+            "date": "2026-01-29",
+            "language": "en",
+            "sha256": "2b73e6135e2522ddf0fe6b0b2a52f213c2ba0993b883c4f7a3ba2995900b415c",
+            "sourceBytes": 335972,
+            "recordCount": 191
+          },
+          {
+            "sittingId": "45-1-76",
+            "date": "2026-01-29",
+            "language": "fr",
+            "sha256": "2bf0235f0a4a8b01f590ea4e7ab037825733ce9cff448529855df7bea396572f",
+            "sourceBytes": 388473,
+            "recordCount": 191
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-02-02",
+        "generation": "8d7c78233f493d92a085b1c14b937e788a1c13685ea203e03e698918de7ec9fc",
+        "manifestPath": "dist/hansard/weekly/house/2026-02-02/current/week.json",
+        "manifestSha256": "5cda59ec69d9ee01a0d03ec9e541f32df0e5955db2cc586caae063b507dc3525",
+        "receiptPath": "dist/hansard/weekly/house/2026-02-02/current/receipt.json",
+        "receiptSha256": "0ee9979bcf3ad8f11656d32462542dfd456c8e27b4a37481585e8560bd071705",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5801331,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-77",
+            "date": "2026-02-02",
+            "language": "en",
+            "sha256": "e4a3d0fdfb9e7fe754ffae429d0f87772f58ea9317154308a7fc206582ea6829",
+            "sourceBytes": 615061,
+            "recordCount": 318
+          },
+          {
+            "sittingId": "45-1-77",
+            "date": "2026-02-02",
+            "language": "fr",
+            "sha256": "a544e6f8df66d916c5c4017a3dd0828cb96eff0f6a64c34d82f9341b6cddbf47",
+            "sourceBytes": 707367,
+            "recordCount": 318
+          },
+          {
+            "sittingId": "45-1-78",
+            "date": "2026-02-03",
+            "language": "en",
+            "sha256": "c876ec5aa05bcba867fa053be428f5842bd28bf1c3016189545ab7ed178e7706",
+            "sourceBytes": 651407,
+            "recordCount": 364
+          },
+          {
+            "sittingId": "45-1-78",
+            "date": "2026-02-03",
+            "language": "fr",
+            "sha256": "289d597d2306871e67a02e897bc683a5722a62de87d2118d61903a93784f8aba",
+            "sourceBytes": 755754,
+            "recordCount": 364
+          },
+          {
+            "sittingId": "45-1-79",
+            "date": "2026-02-04",
+            "language": "en",
+            "sha256": "a3d56448b4938e013440cb11d51caa0d79fd7dbdac8b086f4b25410b1c5e041a",
+            "sourceBytes": 431197,
+            "recordCount": 225
+          },
+          {
+            "sittingId": "45-1-79",
+            "date": "2026-02-04",
+            "language": "fr",
+            "sha256": "32fa176bde9c601168bc8154cb84e5b056f968700d622230cf981b2dd3e95841",
+            "sourceBytes": 486513,
+            "recordCount": 225
+          },
+          {
+            "sittingId": "45-1-80",
+            "date": "2026-02-05",
+            "language": "en",
+            "sha256": "c5447d6d63ac6a8644c63cc31ee45c602ecc33680cd26ae3c505c24821d75df8",
+            "sourceBytes": 633761,
+            "recordCount": 348
+          },
+          {
+            "sittingId": "45-1-80",
+            "date": "2026-02-05",
+            "language": "fr",
+            "sha256": "89e943fcab715c3efc8c0e7d2514609ee0e945929fe9ed35e8d2b8101331aa9f",
+            "sourceBytes": 709923,
+            "recordCount": 348
+          },
+          {
+            "sittingId": "45-1-81",
+            "date": "2026-02-06",
+            "language": "en",
+            "sha256": "baa0aaf5b0bf6bb88a73505245ed705c459621f74c63a2d7c2156503761af6b6",
+            "sourceBytes": 378551,
+            "recordCount": 215
+          },
+          {
+            "sittingId": "45-1-81",
+            "date": "2026-02-06",
+            "language": "fr",
+            "sha256": "ff6bf18f6c53fdbc00a30e6fe0ab954d5a438c1b5b92adca85957b5cad3e71d3",
+            "sourceBytes": 431797,
+            "recordCount": 215
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-02-02",
+        "generation": "48d852dbad2419f58c48490f8da22a04f149ed5174578d3f1f8f796b7b881479",
+        "manifestPath": "dist/hansard/weekly/senate/2026-02-02/current/week.json",
+        "manifestSha256": "a4e8242461062725d582a0677d6ad7fb569efd5ac244ab8c4151bd4da82dfc0e",
+        "receiptPath": "dist/hansard/weekly/senate/2026-02-02/current/receipt.json",
+        "receiptSha256": "bb94c656c71216b36158c7d85536fba6fd06b1c1670255a0fa8a85ea9febae29",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 2033943,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-46",
+            "date": "2026-02-03",
+            "language": "en",
+            "sha256": "3fff503bb552b9b3fb355ef59df18b85748975a69b1905e8996452fb19a3612f",
+            "sourceBytes": 120352,
+            "recordCount": 76
+          },
+          {
+            "sittingId": "45-1-46",
+            "date": "2026-02-03",
+            "language": "fr",
+            "sha256": "7b920fe5414722b3363f0eeb3d8db03e33c878f1ca1351abe103e791fd0dbc70",
+            "sourceBytes": 132956,
+            "recordCount": 76
+          },
+          {
+            "sittingId": "45-1-47",
+            "date": "2026-02-04",
+            "language": "en",
+            "sha256": "954ad6262fb7d261d40fdaa810c51578a5fe07ceef4f46ff3e7097f7e361d00f",
+            "sourceBytes": 194432,
+            "recordCount": 115
+          },
+          {
+            "sittingId": "45-1-47",
+            "date": "2026-02-04",
+            "language": "fr",
+            "sha256": "55c39f9df9f800538b7daf8397c1d1d6abcd449dc12410b1f9e42e389ebd5fae",
+            "sourceBytes": 221725,
+            "recordCount": 115
+          },
+          {
+            "sittingId": "45-1-48",
+            "date": "2026-02-05",
+            "language": "en",
+            "sha256": "01cb4a6198f36ab13325fd72a4960d31729baad06cc9f8fa79463248065fc839",
+            "sourceBytes": 626145,
+            "recordCount": 207
+          },
+          {
+            "sittingId": "45-1-48",
+            "date": "2026-02-05",
+            "language": "fr",
+            "sha256": "7ec9e580803b4b9b57a82c7d249f4a621b1d2ad2b9a8d01b40c06621450fa0f1",
+            "sourceBytes": 738333,
+            "recordCount": 207
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-02-09",
+        "generation": "ad0d608cc053bfddd8f4ff72d8e74f1400988aa45f09c67b65ee03a988970e14",
+        "manifestPath": "dist/hansard/weekly/house/2026-02-09/current/week.json",
+        "manifestSha256": "0f4e255a0a7e0a81ae5161508e67649313edd8e5c00746ac04964e6c9bda4e0a",
+        "receiptPath": "dist/hansard/weekly/house/2026-02-09/current/receipt.json",
+        "receiptSha256": "3fe57c08ff2b7d1cf9c4176194df5801c6696dcb8d73adc8d81520a17a8a50bd",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 4709552,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-82",
+            "date": "2026-02-09",
+            "language": "en",
+            "sha256": "66cd1a76bd4211b92c1216bf4ab45abcb4d763d2126e46b4e64307518b041cd7",
+            "sourceBytes": 490928,
+            "recordCount": 276
+          },
+          {
+            "sittingId": "45-1-82",
+            "date": "2026-02-09",
+            "language": "fr",
+            "sha256": "e8dd5e7658bed3c79c72f94e4a82415cf4df86f22350592b1763bcf2834f9cfd",
+            "sourceBytes": 567449,
+            "recordCount": 276
+          },
+          {
+            "sittingId": "45-1-83",
+            "date": "2026-02-10",
+            "language": "en",
+            "sha256": "d5b382dd313d3a7a754b7b6fa341ee4567f67390b02743aeb5bb1bbd45a49ee7",
+            "sourceBytes": 622679,
+            "recordCount": 358
+          },
+          {
+            "sittingId": "45-1-83",
+            "date": "2026-02-10",
+            "language": "fr",
+            "sha256": "ecf3aa657b0db4d4aa1c57a8f99e87878f2d4c0b641e4e7a37526e31395411bd",
+            "sourceBytes": 723743,
+            "recordCount": 358
+          },
+          {
+            "sittingId": "45-1-84",
+            "date": "2026-02-11",
+            "language": "en",
+            "sha256": "3b95e8746062827d041d79bc1f6430eeb448d3af1c1d0a6a672c3d6cb6d50aa6",
+            "sourceBytes": 35780,
+            "recordCount": 10
+          },
+          {
+            "sittingId": "45-1-84",
+            "date": "2026-02-11",
+            "language": "fr",
+            "sha256": "7592ce38e8e9567cda8309561c73c14c3b9498146427518db1f7e83903248a63",
+            "sourceBytes": 39676,
+            "recordCount": 10
+          },
+          {
+            "sittingId": "45-1-85",
+            "date": "2026-02-12",
+            "language": "en",
+            "sha256": "22afd95999b7ac23e9c5eba2e98de887359b0b4c05054fdb1f22cb1936f2defa",
+            "sourceBytes": 710551,
+            "recordCount": 351
+          },
+          {
+            "sittingId": "45-1-85",
+            "date": "2026-02-12",
+            "language": "fr",
+            "sha256": "14f190771a8e504bc1503bae36c293719dbcb1734b0bb564848d498286016d8b",
+            "sourceBytes": 811176,
+            "recordCount": 351
+          },
+          {
+            "sittingId": "45-1-86",
+            "date": "2026-02-13",
+            "language": "en",
+            "sha256": "4493016d24624d4de07b6c4026f263de85ee44a9316f5afc7299af207249c84a",
+            "sourceBytes": 327460,
+            "recordCount": 202
+          },
+          {
+            "sittingId": "45-1-86",
+            "date": "2026-02-13",
+            "language": "fr",
+            "sha256": "f25e52ae7b6152949f016074ae5dc0e47de1104b52b3f7d82c51b0a4315436fc",
+            "sourceBytes": 380110,
+            "recordCount": 202
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-02-09",
+        "generation": "00c83b7a0ab5c73a1a2354ad2ded82c894477e8f8f66823659e549bfd7e52ab5",
+        "manifestPath": "dist/hansard/weekly/senate/2026-02-09/current/week.json",
+        "manifestSha256": "1f433bf21d0bab9f65ef65bbd163b53746daa1003665dc187b7029b98ee1c82a",
+        "receiptPath": "dist/hansard/weekly/senate/2026-02-09/current/receipt.json",
+        "receiptSha256": "96e411aa4293dbb76fa1fdda0a1302ee209454c8bdad0d90b21454a9c6da5478",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1838782,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-49",
+            "date": "2026-02-10",
+            "language": "en",
+            "sha256": "41edc32e4372e32d391f83e84e75c394f33994ee5068af5afb52db1159a2c04f",
+            "sourceBytes": 471617,
+            "recordCount": 238
+          },
+          {
+            "sittingId": "45-1-49",
+            "date": "2026-02-10",
+            "language": "fr",
+            "sha256": "765a62a6df7ae5d8177ccad6a128461a75687724024b83ade60903ebd588b048",
+            "sourceBytes": 545407,
+            "recordCount": 238
+          },
+          {
+            "sittingId": "45-1-50",
+            "date": "2026-02-11",
+            "language": "en",
+            "sha256": "989cac5f4eb9e76599463f54f77a7d73c547c6dde76bff2a9ed09f5dd2c4cfd2",
+            "sourceBytes": 91450,
+            "recordCount": 25
+          },
+          {
+            "sittingId": "45-1-50",
+            "date": "2026-02-11",
+            "language": "fr",
+            "sha256": "466640e1791ad0bf0e9c602bf5980beda9c4d0ca81fe58ce4ca01b047a4d2e57",
+            "sourceBytes": 98372,
+            "recordCount": 25
+          },
+          {
+            "sittingId": "45-1-51",
+            "date": "2026-02-12",
+            "language": "en",
+            "sha256": "a085e8b121095ae491d925958d31f53773d812b9c38a98a92781f6a3c7e32a01",
+            "sourceBytes": 293502,
+            "recordCount": 214
+          },
+          {
+            "sittingId": "45-1-51",
+            "date": "2026-02-12",
+            "language": "fr",
+            "sha256": "9aa981eed40f53294082d2e2d382a704c2c322f8c4e0f592331d65e33cfc6d3b",
+            "sourceBytes": 338434,
+            "recordCount": 213
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-02-23",
+        "generation": "0e574e35a241dfa6a250f332d518daace1e265d351d1a649f0fd9b6f1275c614",
+        "manifestPath": "dist/hansard/weekly/house/2026-02-23/current/week.json",
+        "manifestSha256": "7bb65c705799acfff495227aa0096b1e500bfc7b8a3eb064a11de2413714bd55",
+        "receiptPath": "dist/hansard/weekly/house/2026-02-23/current/receipt.json",
+        "receiptSha256": "f3356fde3986a846076510c660c162f117a8125883f01d532aa820a489a1978d",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 6113956,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-87",
+            "date": "2026-02-23",
+            "language": "en",
+            "sha256": "170110ece1ad7be5656620977c5047b67eb5aed4bc73c29f3e66214f851219ae",
+            "sourceBytes": 646825,
+            "recordCount": 311
+          },
+          {
+            "sittingId": "45-1-87",
+            "date": "2026-02-23",
+            "language": "fr",
+            "sha256": "033650a68e7ebaa07f80d36744fdea58520989a4a366d53799131e578bf66e5d",
+            "sourceBytes": 740551,
+            "recordCount": 311
+          },
+          {
+            "sittingId": "45-1-88",
+            "date": "2026-02-24",
+            "language": "en",
+            "sha256": "2707d1b99f003d19b6172f2028b3474bfa06eb67f459f9d2303c8e7effd33944",
+            "sourceBytes": 691809,
+            "recordCount": 378
+          },
+          {
+            "sittingId": "45-1-88",
+            "date": "2026-02-24",
+            "language": "fr",
+            "sha256": "431562f8a3e04506887c369a84352c3eead3cd9538b6de1d62dc8090c5eba557",
+            "sourceBytes": 791885,
+            "recordCount": 378
+          },
+          {
+            "sittingId": "45-1-89",
+            "date": "2026-02-25",
+            "language": "en",
+            "sha256": "dacd92d567b2d533b031801659bda5e07518f0477023e18bb1772f693b3e00e8",
+            "sourceBytes": 683951,
+            "recordCount": 292
+          },
+          {
+            "sittingId": "45-1-89",
+            "date": "2026-02-25",
+            "language": "fr",
+            "sha256": "1b9c6491e956caae66a79df0a5285a62f85b84b3e90754060a25288a226cb0df",
+            "sourceBytes": 737956,
+            "recordCount": 292
+          },
+          {
+            "sittingId": "45-1-90",
+            "date": "2026-02-26",
+            "language": "en",
+            "sha256": "fbce77302c2025304f06e8999068c85c2a969fad6903eef711df1ed6b2614bad",
+            "sourceBytes": 571026,
+            "recordCount": 307
+          },
+          {
+            "sittingId": "45-1-90",
+            "date": "2026-02-26",
+            "language": "fr",
+            "sha256": "3ec65241919ecaaea1981c7591f36fa7830e41a1f4905f3aca77784ea10a25b7",
+            "sourceBytes": 651381,
+            "recordCount": 307
+          },
+          {
+            "sittingId": "45-1-91",
+            "date": "2026-02-27",
+            "language": "en",
+            "sha256": "c74db0ef33c596a8b87673ee7580a44f148d5407399941f9807d49da28adee16",
+            "sourceBytes": 277817,
+            "recordCount": 167
+          },
+          {
+            "sittingId": "45-1-91",
+            "date": "2026-02-27",
+            "language": "fr",
+            "sha256": "eede8d6a60b48c290d07975e14761a5b5683e9193cf32e0829d9873ae2320281",
+            "sourceBytes": 320755,
+            "recordCount": 167
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-02-23",
+        "generation": "94c0c066904b7ffeeb40d5155515c9db64004206b1e61fc2b09d7dee79a7d469",
+        "manifestPath": "dist/hansard/weekly/senate/2026-02-23/current/week.json",
+        "manifestSha256": "d049683b554c9da06aa714d3340372578c9a15d5e5941c2a2c2306c985451cbe",
+        "receiptPath": "dist/hansard/weekly/senate/2026-02-23/current/receipt.json",
+        "receiptSha256": "957443db1cb17f8fa7aa58cbef8bdd7b1d8ae748831c27301be75c303d1917b3",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 2491724,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-52",
+            "date": "2026-02-24",
+            "language": "en",
+            "sha256": "30ca9605d190c1891ff18f53b0df47015c6540d2476e4eea686423834f4dec09",
+            "sourceBytes": 480632,
+            "recordCount": 214
+          },
+          {
+            "sittingId": "45-1-52",
+            "date": "2026-02-24",
+            "language": "fr",
+            "sha256": "dbc9a0abe8172a9f9db7ec32653850f51f79572ca21ab0d589951cc836df5c6c",
+            "sourceBytes": 561336,
+            "recordCount": 214
+          },
+          {
+            "sittingId": "45-1-53",
+            "date": "2026-02-25",
+            "language": "en",
+            "sha256": "c97e6d624284dd06bb60ba8d5d5fc9833cb456350329b093d16c89b6e2269bed",
+            "sourceBytes": 190796,
+            "recordCount": 106
+          },
+          {
+            "sittingId": "45-1-53",
+            "date": "2026-02-25",
+            "language": "fr",
+            "sha256": "97112eca1a46a73efa835028f6cc8972d3e74e0b8f0c50effb621193e08b9191",
+            "sourceBytes": 216464,
+            "recordCount": 106
+          },
+          {
+            "sittingId": "45-1-54",
+            "date": "2026-02-26",
+            "language": "en",
+            "sha256": "e2a872cc5fcbf0dc0e10b41f078a346cf8daa5b63d670dff70e8d98592ed09cd",
+            "sourceBytes": 487279,
+            "recordCount": 287
+          },
+          {
+            "sittingId": "45-1-54",
+            "date": "2026-02-26",
+            "language": "fr",
+            "sha256": "b9adf8047d05f0066df1a19e59a1e339cd82ef133b59d2f4f62dcd0cd24c411d",
+            "sourceBytes": 555217,
+            "recordCount": 287
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-03-09",
+        "generation": "88f8ac1836de62d57d12e4e5c2c3f84cd8f4dac7654d4728c5c6925ff30d1990",
+        "manifestPath": "dist/hansard/weekly/house/2026-03-09/current/week.json",
+        "manifestSha256": "75a63f6941bf4d4ea562909d8012862e0695247c87c623afee3bbe7857cf513e",
+        "receiptPath": "dist/hansard/weekly/house/2026-03-09/current/receipt.json",
+        "receiptSha256": "61e35bf25b0a9afc56e3531c93522f909734aa33127e87f82dee0aa6c38b838d",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 6482170,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-92",
+            "date": "2026-03-09",
+            "language": "en",
+            "sha256": "6cb68c36ae535cc83861de50f782ae3f8156ab4d7b9d8f2002fdea276af1d857",
+            "sourceBytes": 871154,
+            "recordCount": 531
+          },
+          {
+            "sittingId": "45-1-92",
+            "date": "2026-03-09",
+            "language": "fr",
+            "sha256": "3cb437a05dc141e1bb33aa88a58085d7c2ef6265a6b54d55ba9b92cdbced6cb2",
+            "sourceBytes": 994641,
+            "recordCount": 531
+          },
+          {
+            "sittingId": "45-1-93",
+            "date": "2026-03-10",
+            "language": "en",
+            "sha256": "ab5e84e3638468e2f3f926e82cc80abf5af04882f8858cd109d9f5a893d95463",
+            "sourceBytes": 750573,
+            "recordCount": 388
+          },
+          {
+            "sittingId": "45-1-93",
+            "date": "2026-03-10",
+            "language": "fr",
+            "sha256": "29fb4e38d0f5183f639d5c9be3ab58fbc12479f39d2b1ac5c6ec0750276c4940",
+            "sourceBytes": 851724,
+            "recordCount": 388
+          },
+          {
+            "sittingId": "45-1-94",
+            "date": "2026-03-11",
+            "language": "en",
+            "sha256": "181ebaa11017dfc77c12f641d1af87162f9b03051217247eb5a20769ff753d56",
+            "sourceBytes": 396321,
+            "recordCount": 230
+          },
+          {
+            "sittingId": "45-1-94",
+            "date": "2026-03-11",
+            "language": "fr",
+            "sha256": "210c0fe93a5b6dc06218c37dbd2542f8f126ec67734dfffabe2f1382f036aec0",
+            "sourceBytes": 450872,
+            "recordCount": 230
+          },
+          {
+            "sittingId": "45-1-95",
+            "date": "2026-03-12",
+            "language": "en",
+            "sha256": "bb7b8363629c3300d709d9793795e1d692d89cdf4c6fdffeac7427c0dd3525f0",
+            "sourceBytes": 667742,
+            "recordCount": 369
+          },
+          {
+            "sittingId": "45-1-95",
+            "date": "2026-03-12",
+            "language": "fr",
+            "sha256": "49539bfe0985981eea162b5aebfb89c7594e81012a50834961ec0d528e35077a",
+            "sourceBytes": 762854,
+            "recordCount": 369
+          },
+          {
+            "sittingId": "45-1-96",
+            "date": "2026-03-13",
+            "language": "en",
+            "sha256": "0c29def204b286a733544b826ce8064a2e5d355ece6eda7ffcd18f19e8fc45da",
+            "sourceBytes": 341913,
+            "recordCount": 207
+          },
+          {
+            "sittingId": "45-1-96",
+            "date": "2026-03-13",
+            "language": "fr",
+            "sha256": "26b1cee55c9f825cc96202fbe138d9fe987a969f759562ad41f9a3bf6aa67464",
+            "sourceBytes": 394376,
+            "recordCount": 207
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-03-09",
+        "generation": "e2d9a53766bcd3f8e554af858383469d669313fbec11bdfb15798f3ea3197c57",
+        "manifestPath": "dist/hansard/weekly/senate/2026-03-09/current/week.json",
+        "manifestSha256": "e3bec58d8a8c712e062a7bdf18f9d39c9a2c96b5d6481a564662a42b9d3af287",
+        "receiptPath": "dist/hansard/weekly/senate/2026-03-09/current/receipt.json",
+        "receiptSha256": "9e0c30366a406b9efc9eaf4fa13d97fca4081e824c31b86c133d4d20f1d446f2",
+        "expectedEditionSlots": 8,
+        "capturedEditions": 8,
+        "initialImportEditions": 8,
+        "replayUnchangedEditions": 8,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 8,
+          "checkPasses": 1,
+          "passingLookupSamples": 8
+        },
+        "sourceBytes": 3422528,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-55",
+            "date": "2026-03-09",
+            "language": "en",
+            "sha256": "744ee86b74ee2db06d0bbf0505250a43d294c837de79e69bde5c5307ad356e9d",
+            "sourceBytes": 243211,
+            "recordCount": 99
+          },
+          {
+            "sittingId": "45-1-55",
+            "date": "2026-03-09",
+            "language": "fr",
+            "sha256": "3f78a1ab8c40e6789f625723bb80a46d4b906ba76b2a042f7bf6d8948268601d",
+            "sourceBytes": 281187,
+            "recordCount": 99
+          },
+          {
+            "sittingId": "45-1-56",
+            "date": "2026-03-10",
+            "language": "en",
+            "sha256": "9371319ec104ef90d428d57a8afaedb9a8ba406b327cbe1e3b37273ae44285c8",
+            "sourceBytes": 468547,
+            "recordCount": 225
+          },
+          {
+            "sittingId": "45-1-56",
+            "date": "2026-03-10",
+            "language": "fr",
+            "sha256": "e32497425b9f9d340a44e52b7adeec2c1f6d58832ea30116b65de41f9b025662",
+            "sourceBytes": 543314,
+            "recordCount": 225
+          },
+          {
+            "sittingId": "45-1-57",
+            "date": "2026-03-11",
+            "language": "en",
+            "sha256": "1856b5083514c1d7dfa614d95a25a57b913a6636f81974f8c796ea34f479f579",
+            "sourceBytes": 393152,
+            "recordCount": 225
+          },
+          {
+            "sittingId": "45-1-57",
+            "date": "2026-03-11",
+            "language": "fr",
+            "sha256": "d65d0b51a941282dd64a0d51ccd33e230afd406616fda75a965357fb7236becd",
+            "sourceBytes": 447007,
+            "recordCount": 225
+          },
+          {
+            "sittingId": "45-1-58",
+            "date": "2026-03-12",
+            "language": "en",
+            "sha256": "32de03991f225433cc897fa32bde8e8587871f55fdaf98590940f59b156bf0ab",
+            "sourceBytes": 484262,
+            "recordCount": 250
+          },
+          {
+            "sittingId": "45-1-58",
+            "date": "2026-03-12",
+            "language": "fr",
+            "sha256": "aa57febf3b63823f5c7037b3036745d21ab7f3b3e7e9ac50146ce2b99ab43637",
+            "sourceBytes": 561848,
+            "recordCount": 250
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-03-23",
+        "generation": "63ecbf5b0500e66f19cd9181a6dfa48cf68a166ed83c6606e5aafd0089720dc5",
+        "manifestPath": "dist/hansard/weekly/house/2026-03-23/current/week.json",
+        "manifestSha256": "a714c29b491dc1acf30fccce60cab1cd1cda755604f2cad4f0c9508ad9bf19b8",
+        "receiptPath": "dist/hansard/weekly/house/2026-03-23/current/receipt.json",
+        "receiptSha256": "4f155162cc090bef1bf1a1d1914cf17a9fee3672fcf5f315c8731acbf0e33c63",
+        "expectedEditionSlots": 8,
+        "capturedEditions": 8,
+        "initialImportEditions": 8,
+        "replayUnchangedEditions": 8,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 8,
+          "checkPasses": 1,
+          "passingLookupSamples": 8
+        },
+        "sourceBytes": 4959359,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-97",
+            "date": "2026-03-23",
+            "language": "en",
+            "sha256": "f52ecbf4b1604d73dfae5ecd40c7a8f4846692838e5a322829e7cbeca61e6fd1",
+            "sourceBytes": 626790,
+            "recordCount": 337
+          },
+          {
+            "sittingId": "45-1-97",
+            "date": "2026-03-23",
+            "language": "fr",
+            "sha256": "8039f6417c878c5fb23bfffba9a7bdff9121821acabed5e9c3ec3f2dc8c4cfe3",
+            "sourceBytes": 714742,
+            "recordCount": 337
+          },
+          {
+            "sittingId": "45-1-98",
+            "date": "2026-03-24",
+            "language": "en",
+            "sha256": "848ead4c0e61e7e07b265869a2242e29d2a770d7ca2296ddcf43a8bda6eb9f8c",
+            "sourceBytes": 699460,
+            "recordCount": 380
+          },
+          {
+            "sittingId": "45-1-98",
+            "date": "2026-03-24",
+            "language": "fr",
+            "sha256": "3131e8bbfa196ef83297dcf60cc24aba67e2424c1b36339296cb11848f43f35f",
+            "sourceBytes": 804644,
+            "recordCount": 380
+          },
+          {
+            "sittingId": "45-1-99",
+            "date": "2026-03-25",
+            "language": "en",
+            "sha256": "249da099c0148dc772d13fa7eeb1f3bb11680853a0db01e927aacd0e559f29f0",
+            "sourceBytes": 442734,
+            "recordCount": 210
+          },
+          {
+            "sittingId": "45-1-99",
+            "date": "2026-03-25",
+            "language": "fr",
+            "sha256": "b7077ba7669779e867439a5a408ce392da306f91796a9f1c76edeaadd6279aad",
+            "sourceBytes": 482897,
+            "recordCount": 210
+          },
+          {
+            "sittingId": "45-1-100",
+            "date": "2026-03-26",
+            "language": "en",
+            "sha256": "11aec0bac9e4f9aa9a007f78d1cf9eae0db27f94608404ed7c16e3b2557a8c5b",
+            "sourceBytes": 555867,
+            "recordCount": 299
+          },
+          {
+            "sittingId": "45-1-100",
+            "date": "2026-03-26",
+            "language": "fr",
+            "sha256": "cddef5aa26953505882622d8c92c824f63172595b0367de0cc82d8295ee10053",
+            "sourceBytes": 632225,
+            "recordCount": 299
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-03-23",
+        "generation": "7000c2a3aaad8abfb34fefc208367683fa9e65672b9a37305dacd339ca835b4f",
+        "manifestPath": "dist/hansard/weekly/senate/2026-03-23/current/week.json",
+        "manifestSha256": "ce4eb9a275f29aa8119774b6361be4c478d4b44b86067e934a0df2a9ec742fd3",
+        "receiptPath": "dist/hansard/weekly/senate/2026-03-23/current/receipt.json",
+        "receiptSha256": "828052ac032affdfe41f0ca65dbda0cc683a68d4f1860c8cc0f45e0166bfd4e2",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 2686980,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-59",
+            "date": "2026-03-24",
+            "language": "en",
+            "sha256": "769b9f3e6969c3c8ff54bc1cf685f0b01891092e9134bcb7f801f49fa872cfa4",
+            "sourceBytes": 463978,
+            "recordCount": 264
+          },
+          {
+            "sittingId": "45-1-59",
+            "date": "2026-03-24",
+            "language": "fr",
+            "sha256": "24cb264c53b4bd77491556093ebaa418950fd466417913f8f5d1771fa51a43be",
+            "sourceBytes": 538698,
+            "recordCount": 264
+          },
+          {
+            "sittingId": "45-1-60",
+            "date": "2026-03-25",
+            "language": "en",
+            "sha256": "5cac15cfb7682c3dd573f31ca6e782d30f2a58887c78865dc8ba3ab5e085a3ed",
+            "sourceBytes": 190078,
+            "recordCount": 131
+          },
+          {
+            "sittingId": "45-1-60",
+            "date": "2026-03-25",
+            "language": "fr",
+            "sha256": "eaf6a554d6d153bc09fc40c6257ea3ed7fc0accbb1833230b76539e417dee947",
+            "sourceBytes": 212831,
+            "recordCount": 131
+          },
+          {
+            "sittingId": "45-1-61",
+            "date": "2026-03-26",
+            "language": "en",
+            "sha256": "0d1bc62b08bc12eba30824ae5a507516cd4113885bfccbe8fe5c17a1e8852375",
+            "sourceBytes": 591595,
+            "recordCount": 304
+          },
+          {
+            "sittingId": "45-1-61",
+            "date": "2026-03-26",
+            "language": "fr",
+            "sha256": "a270f22921c76319487ce7e2c405d4f1b18bae5ff2dc7b63a3b3253194259fa7",
+            "sourceBytes": 689800,
+            "recordCount": 304
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-04-13",
+        "generation": "f4abd25a2ae9456df914e46595382335f28160075d8062f6543e756719069e1d",
+        "manifestPath": "dist/hansard/weekly/house/2026-04-13/current/week.json",
+        "manifestSha256": "263fad60bb7a7d53d1b615467535fc72247a2de3b0238049c73a4e8b6653c7fd",
+        "receiptPath": "dist/hansard/weekly/house/2026-04-13/current/receipt.json",
+        "receiptSha256": "50ed3c51d02985ed76df8e62a2b108a158f7eb8f1bc0e5e40edd8eb3cb80055f",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5707321,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-101",
+            "date": "2026-04-13",
+            "language": "en",
+            "sha256": "d1cd2bde21feaafde710b7c4deeee96c02dc0e42d88546c6b630e175a900ad37",
+            "sourceBytes": 551829,
+            "recordCount": 282
+          },
+          {
+            "sittingId": "45-1-101",
+            "date": "2026-04-13",
+            "language": "fr",
+            "sha256": "5cf91c275c62ecd12df5070a3131f0172201877d9587ad47d75d8535df6d4bf4",
+            "sourceBytes": 636734,
+            "recordCount": 282
+          },
+          {
+            "sittingId": "45-1-102",
+            "date": "2026-04-14",
+            "language": "en",
+            "sha256": "e1e8888382b4d95ccaf0da427cce464b781299825e79f467797adf0659f1378b",
+            "sourceBytes": 683142,
+            "recordCount": 334
+          },
+          {
+            "sittingId": "45-1-102",
+            "date": "2026-04-14",
+            "language": "fr",
+            "sha256": "d0a3cab9187b75d37fea14a3415a5e4dc12219fede33bbdfdd184b3f441b53b2",
+            "sourceBytes": 796418,
+            "recordCount": 334
+          },
+          {
+            "sittingId": "45-1-103",
+            "date": "2026-04-15",
+            "language": "en",
+            "sha256": "4619a1a788e5d32e5e10d5bb3262ffd2bd56450ace65061caaae937db3c9d96e",
+            "sourceBytes": 440017,
+            "recordCount": 218
+          },
+          {
+            "sittingId": "45-1-103",
+            "date": "2026-04-15",
+            "language": "fr",
+            "sha256": "7b1ad96f39c0c52ee74fd5817a720e9129fba8fd8765ff139660ccc4dc7fa043",
+            "sourceBytes": 498419,
+            "recordCount": 218
+          },
+          {
+            "sittingId": "45-1-104",
+            "date": "2026-04-16",
+            "language": "en",
+            "sha256": "8c977b11f4e4077a5ce938964ac3a324ad4f84c9afca1d76bc13c7d01a9020f3",
+            "sourceBytes": 618494,
+            "recordCount": 311
+          },
+          {
+            "sittingId": "45-1-104",
+            "date": "2026-04-16",
+            "language": "fr",
+            "sha256": "89115533ec61866363e61ff6125d5341aafb2bac84ebae674411c91458bf89e3",
+            "sourceBytes": 718640,
+            "recordCount": 311
+          },
+          {
+            "sittingId": "45-1-105",
+            "date": "2026-04-17",
+            "language": "en",
+            "sha256": "84a3b51a1d351da0e95450d66c0a4a3426db1dcf73f1ed1f52557b260c820786",
+            "sourceBytes": 354813,
+            "recordCount": 217
+          },
+          {
+            "sittingId": "45-1-105",
+            "date": "2026-04-17",
+            "language": "fr",
+            "sha256": "a4da42ed8d68bc65909ef3e1d10ae17b6d2e490d6f310be2454f62a6d6860d1a",
+            "sourceBytes": 408815,
+            "recordCount": 217
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-04-13",
+        "generation": "e707748745a26d1f8ec9e18d1c29b6003cb1b8235485c41cab4bf38c67e2e7c3",
+        "manifestPath": "dist/hansard/weekly/senate/2026-04-13/current/week.json",
+        "manifestSha256": "088b57353e24904d6fcbe33768b64b4fb1dbfb0da2115f032a9a2b08168808f1",
+        "receiptPath": "dist/hansard/weekly/senate/2026-04-13/current/receipt.json",
+        "receiptSha256": "71b3a5e1c2383a416254852d6eebbc9bf55a4c698c03c3727b954ea9226c8f48",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1761696,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-62",
+            "date": "2026-04-14",
+            "language": "en",
+            "sha256": "3a19ee3330cba54ff3f63819a4f5be056b14fcc332b25c72aebbf8e9e2b06536",
+            "sourceBytes": 406490,
+            "recordCount": 171
+          },
+          {
+            "sittingId": "45-1-62",
+            "date": "2026-04-14",
+            "language": "fr",
+            "sha256": "9d230c9b719f0d3971b130f8a41f1733c8e3057ab551b50790797828125099e0",
+            "sourceBytes": 474610,
+            "recordCount": 171
+          },
+          {
+            "sittingId": "45-1-63",
+            "date": "2026-04-15",
+            "language": "en",
+            "sha256": "35adc10826968ae630f97d790d81b9e7dbf367cf0a6839caf681d8be4f14791a",
+            "sourceBytes": 188248,
+            "recordCount": 98
+          },
+          {
+            "sittingId": "45-1-63",
+            "date": "2026-04-15",
+            "language": "fr",
+            "sha256": "eadc0d86221b32226d58fc9554c6df69c87497167a65b8c17f04b16dbfb5b2f9",
+            "sourceBytes": 217520,
+            "recordCount": 98
+          },
+          {
+            "sittingId": "45-1-64",
+            "date": "2026-04-16",
+            "language": "en",
+            "sha256": "935909724164dd1ef67299e429412d65645de6d312e2bbb9c5bcd6b90918d872",
+            "sourceBytes": 222730,
+            "recordCount": 103
+          },
+          {
+            "sittingId": "45-1-64",
+            "date": "2026-04-16",
+            "language": "fr",
+            "sha256": "c848ea84fa7ccbb2374e68c6ce6462df258e24bf2f5d8c1bdd455a3de4b80f88",
+            "sourceBytes": 252098,
+            "recordCount": 103
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-04-20",
+        "generation": "72f6dbd7c792f9c8e4b26134a9d489872cecfe1a9bbde4427e276ff083683227",
+        "manifestPath": "dist/hansard/weekly/house/2026-04-20/current/week.json",
+        "manifestSha256": "052ea0b573a2c7faf0cf640a0ef53e564a184a35576488a3a6a0a589a2329d74",
+        "receiptPath": "dist/hansard/weekly/house/2026-04-20/current/receipt.json",
+        "receiptSha256": "a4b2183a60a7e373f062fa563cc6cf98c4e64f1e2cb510c50ff09cf65f6b1a08",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5854541,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-106",
+            "date": "2026-04-20",
+            "language": "en",
+            "sha256": "79697879dac7519e91269a846734c3b763dfbd742818befe35b6e55dac1e9e01",
+            "sourceBytes": 585332,
+            "recordCount": 315
+          },
+          {
+            "sittingId": "45-1-106",
+            "date": "2026-04-20",
+            "language": "fr",
+            "sha256": "0b517ae41b8c0fd3e5a35976389a20225d4efeeec9dc2efa4c221969e7900df6",
+            "sourceBytes": 683484,
+            "recordCount": 315
+          },
+          {
+            "sittingId": "45-1-107",
+            "date": "2026-04-21",
+            "language": "en",
+            "sha256": "283463b9403206b44a55f0355d6c3c914a3706c9a47896872ab27c5c123922df",
+            "sourceBytes": 637402,
+            "recordCount": 340
+          },
+          {
+            "sittingId": "45-1-107",
+            "date": "2026-04-21",
+            "language": "fr",
+            "sha256": "b217f97cdff402a00c3982802cc6eea52e2576887a8c19105f94c280f611ed5b",
+            "sourceBytes": 725718,
+            "recordCount": 340
+          },
+          {
+            "sittingId": "45-1-108",
+            "date": "2026-04-22",
+            "language": "en",
+            "sha256": "5439d3ea4e8dc46546a9634e452ffef6e39665d535863861694552f1fc3b29a6",
+            "sourceBytes": 467957,
+            "recordCount": 226
+          },
+          {
+            "sittingId": "45-1-108",
+            "date": "2026-04-22",
+            "language": "fr",
+            "sha256": "9b959667673bb9f4f1636f53312626ec90103999f645e5e28f6ae57f28198905",
+            "sourceBytes": 523984,
+            "recordCount": 226
+          },
+          {
+            "sittingId": "45-1-109",
+            "date": "2026-04-23",
+            "language": "en",
+            "sha256": "c55fa3d6597ad0d0351534a6a86489fad00dc6a036fa1c9c4d9a2d694d999b38",
+            "sourceBytes": 702773,
+            "recordCount": 361
+          },
+          {
+            "sittingId": "45-1-109",
+            "date": "2026-04-23",
+            "language": "fr",
+            "sha256": "f7bcd1589f2ec936a50346c3fc4f78f17b0f8608c01eb3c050acf31034cac93c",
+            "sourceBytes": 796141,
+            "recordCount": 361
+          },
+          {
+            "sittingId": "45-1-110",
+            "date": "2026-04-24",
+            "language": "en",
+            "sha256": "8367c28524dd838e8fc7138bcf83d2631bf67510eb302726b4da59ef0edf854c",
+            "sourceBytes": 341393,
+            "recordCount": 213
+          },
+          {
+            "sittingId": "45-1-110",
+            "date": "2026-04-24",
+            "language": "fr",
+            "sha256": "61c301ef407bc2ccbd4ae70d44965b3400c064f0d4d9b8d896163d6621ded68b",
+            "sourceBytes": 390357,
+            "recordCount": 213
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-04-20",
+        "generation": "f392d33c08dbd44a1d4b42d1b208ad93c69b5784f8f0130a2d9f24b724c7c7da",
+        "manifestPath": "dist/hansard/weekly/senate/2026-04-20/current/week.json",
+        "manifestSha256": "4306ec097b6feba1680e0b7be2a326bfdc18181b4ebead116b2b0217bc170088",
+        "receiptPath": "dist/hansard/weekly/senate/2026-04-20/current/receipt.json",
+        "receiptSha256": "3dccb28dad8c62355048984566f97c1cde0f6183ebf858da040fca36780c817d",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1691438,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-65",
+            "date": "2026-04-21",
+            "language": "en",
+            "sha256": "ed449329e61a10f021c979869d5f279ac14b0b86bc411b4bd82c94cca279f54e",
+            "sourceBytes": 371577,
+            "recordCount": 210
+          },
+          {
+            "sittingId": "45-1-65",
+            "date": "2026-04-21",
+            "language": "fr",
+            "sha256": "4a85b49f50bbe4bdb9d1c6c7dd59499020cdbb2d7c97ff1363a66c3c5151219a",
+            "sourceBytes": 430716,
+            "recordCount": 210
+          },
+          {
+            "sittingId": "45-1-66",
+            "date": "2026-04-22",
+            "language": "en",
+            "sha256": "d2c2b41fb6c101c735f518ed385ec68c3a99c66ad207b08280a1325b5ae8133a",
+            "sourceBytes": 155887,
+            "recordCount": 93
+          },
+          {
+            "sittingId": "45-1-66",
+            "date": "2026-04-22",
+            "language": "fr",
+            "sha256": "bb086b25208fcb77441021076f402631a7950a6befbd1507adeaa4f057118a49",
+            "sourceBytes": 175432,
+            "recordCount": 93
+          },
+          {
+            "sittingId": "45-1-67",
+            "date": "2026-04-23",
+            "language": "en",
+            "sha256": "2e24c7a354d619255de52991c2a299e93e7ae3cbeefe8e24625c90c60d8f04ce",
+            "sourceBytes": 259416,
+            "recordCount": 112
+          },
+          {
+            "sittingId": "45-1-67",
+            "date": "2026-04-23",
+            "language": "fr",
+            "sha256": "8741af6270e02766bb577ddeab99d787d854cd8680eba674406722bfd7a5a367",
+            "sourceBytes": 298410,
+            "recordCount": 112
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-04-27",
+        "generation": "922605b7d2218e74d1c9e8ae86c188b8a93a7396e76dee6317dab29362093e9e",
+        "manifestPath": "dist/hansard/weekly/house/2026-04-27/current/week.json",
+        "manifestSha256": "f5b4b87677bad2abf34d90df9058783da3ab5220a226e6ebd64c84d21b2b8ab7",
+        "receiptPath": "dist/hansard/weekly/house/2026-04-27/current/receipt.json",
+        "receiptSha256": "9cb905075566dfa25fb5b7787a8ecc20087c8cf4f64eef24979553fdd4736f55",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5871554,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-111",
+            "date": "2026-04-27",
+            "language": "en",
+            "sha256": "294c779ee897c0b0fdb68f2f93d163225ec41bcf8ec8a81304a58bc8f8a61110",
+            "sourceBytes": 713019,
+            "recordCount": 389
+          },
+          {
+            "sittingId": "45-1-111",
+            "date": "2026-04-27",
+            "language": "fr",
+            "sha256": "508e41d707d7aee8e50031fc3d131687d71a4f8319b471bbcf77d90c060d40fb",
+            "sourceBytes": 797603,
+            "recordCount": 389
+          },
+          {
+            "sittingId": "45-1-112",
+            "date": "2026-04-28",
+            "language": "en",
+            "sha256": "6ee10cafeb70e817e9a77b7ef4d4ece612b0c71872561e120fb8c494b181334c",
+            "sourceBytes": 647702,
+            "recordCount": 328
+          },
+          {
+            "sittingId": "45-1-112",
+            "date": "2026-04-28",
+            "language": "fr",
+            "sha256": "0f5f97b9f08ab0d6b8da37118f162f03c43e6e1a2ef2f819b01a3ff9700c8ab0",
+            "sourceBytes": 747698,
+            "recordCount": 328
+          },
+          {
+            "sittingId": "45-1-113",
+            "date": "2026-04-29",
+            "language": "en",
+            "sha256": "7d7b8a2e49b3f8167446b62a73f53d4236ed95451ecbc84f4aea39aca1fae37a",
+            "sourceBytes": 353154,
+            "recordCount": 196
+          },
+          {
+            "sittingId": "45-1-113",
+            "date": "2026-04-29",
+            "language": "fr",
+            "sha256": "3f9b5ff4aa36ddf41ceff39a2677da7bfad404434d72247185d5c8ec54e1569a",
+            "sourceBytes": 401243,
+            "recordCount": 196
+          },
+          {
+            "sittingId": "45-1-114",
+            "date": "2026-04-30",
+            "language": "en",
+            "sha256": "b9440d14ec059d1ca7edf7b36a253570419f824b712baa0ef01ef77df3dbb504",
+            "sourceBytes": 672142,
+            "recordCount": 348
+          },
+          {
+            "sittingId": "45-1-114",
+            "date": "2026-04-30",
+            "language": "fr",
+            "sha256": "62173b8699ab4ee12fc33d00d48483614140ebf82bc56a0357d18ec3927d7d17",
+            "sourceBytes": 766549,
+            "recordCount": 348
+          },
+          {
+            "sittingId": "45-1-115",
+            "date": "2026-05-01",
+            "language": "en",
+            "sha256": "7600473dff1cc328bad57a41bec0679c46ad6d99849b2057475a850137fe9159",
+            "sourceBytes": 359218,
+            "recordCount": 215
+          },
+          {
+            "sittingId": "45-1-115",
+            "date": "2026-05-01",
+            "language": "fr",
+            "sha256": "cbd8025a887c8b72a4ac382b373b9e476d0e9199b4cedc97ec0c17a66f0656ff",
+            "sourceBytes": 413226,
+            "recordCount": 215
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-04-27",
+        "generation": "e2cd2c9587a5e2792ce0f4243794af0588a0668bbb20834c04b04137eb3b1572",
+        "manifestPath": "dist/hansard/weekly/senate/2026-04-27/current/week.json",
+        "manifestSha256": "e6c2d97093e1ecb3b807328c0ee7f6098c48b915f98dfebd1ca3b068e531a30f",
+        "receiptPath": "dist/hansard/weekly/senate/2026-04-27/current/receipt.json",
+        "receiptSha256": "0ce259e9eb81335eac85acde47a8af18a61b06d8668dbd17762d06e44f0ba128",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1478625,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-68",
+            "date": "2026-04-28",
+            "language": "en",
+            "sha256": "53862a580e1a7a71f7847ab27079450686b2ff273b428405f5052ef80da9f999",
+            "sourceBytes": 344399,
+            "recordCount": 124
+          },
+          {
+            "sittingId": "45-1-68",
+            "date": "2026-04-28",
+            "language": "fr",
+            "sha256": "afd8242f4d37d18d5740275419616fd79a54982cf0797233da8605ed2d40d813",
+            "sourceBytes": 402455,
+            "recordCount": 124
+          },
+          {
+            "sittingId": "45-1-69",
+            "date": "2026-04-29",
+            "language": "en",
+            "sha256": "27c525a8c52ff83d73163764f09d0af8d9252bb5e02c312b12dd272e94fc5937",
+            "sourceBytes": 144932,
+            "recordCount": 94
+          },
+          {
+            "sittingId": "45-1-69",
+            "date": "2026-04-29",
+            "language": "fr",
+            "sha256": "61667923c6bc995d0175a09c41f1d8da9b96fe626741e4d7f0d85240742df5f0",
+            "sourceBytes": 161379,
+            "recordCount": 94
+          },
+          {
+            "sittingId": "45-1-70",
+            "date": "2026-04-30",
+            "language": "en",
+            "sha256": "8d4ff7cf0daca950c44aaf1dba3c14b5d4568ae817413252c351f4594e896e69",
+            "sourceBytes": 199360,
+            "recordCount": 96
+          },
+          {
+            "sittingId": "45-1-70",
+            "date": "2026-04-30",
+            "language": "fr",
+            "sha256": "f2b352499d5cac42c81dc651c11d31c42f5540e4bcaa9c5a2ad3ca933b62be35",
+            "sourceBytes": 226100,
+            "recordCount": 96
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-05-04",
+        "generation": "5e8324fb1e6a8825739d9b3447efd2c24e436cd7b54139eb23400ae9cab08292",
+        "manifestPath": "dist/hansard/weekly/house/2026-05-04/current/week.json",
+        "manifestSha256": "49670961cb9b435b1831604a7d782f897a031d0ca4196416d3dd0b4d1ff20d29",
+        "receiptPath": "dist/hansard/weekly/house/2026-05-04/current/receipt.json",
+        "receiptSha256": "c235c0ff978e2a36e05ed09ebba63aad7d06ea3a6f4db5cc8a54a102947d4bb9",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5959055,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-116",
+            "date": "2026-05-04",
+            "language": "en",
+            "sha256": "b724f84bf5289e2cc3428b6475b7021e5fdebd793183e6984b646f22bbe1d6a5",
+            "sourceBytes": 574131,
+            "recordCount": 316
+          },
+          {
+            "sittingId": "45-1-116",
+            "date": "2026-05-04",
+            "language": "fr",
+            "sha256": "fe51ae6957573115b0610423e90d89e1e1293a80f84b889e04d789b718fd0b41",
+            "sourceBytes": 646956,
+            "recordCount": 316
+          },
+          {
+            "sittingId": "45-1-117",
+            "date": "2026-05-05",
+            "language": "en",
+            "sha256": "42ad132dc167384ce4f7845ce85984be805b61e6b5a45dbebc3a49cab4cb32dd",
+            "sourceBytes": 856642,
+            "recordCount": 389
+          },
+          {
+            "sittingId": "45-1-117",
+            "date": "2026-05-05",
+            "language": "fr",
+            "sha256": "a01673b6a5e661c02c7a9dd9d9b182f6b19500b01239902db3913d2450794185",
+            "sourceBytes": 946067,
+            "recordCount": 389
+          },
+          {
+            "sittingId": "45-1-118",
+            "date": "2026-05-06",
+            "language": "en",
+            "sha256": "93bcf484a9a67809e9ce032948ce2cb87dd2ce46ffbd2d9920e305d9cfaba3a9",
+            "sourceBytes": 380847,
+            "recordCount": 217
+          },
+          {
+            "sittingId": "45-1-118",
+            "date": "2026-05-06",
+            "language": "fr",
+            "sha256": "a9181f37a86dbdb1f9e8f80a508ac4ede29429adaf72df5d9fdd2c60584b5ca4",
+            "sourceBytes": 429771,
+            "recordCount": 217
+          },
+          {
+            "sittingId": "45-1-119",
+            "date": "2026-05-07",
+            "language": "en",
+            "sha256": "49de537ebc521d587b079d4db7b455e4cc3665f36334fc582dc90bc4e7837f75",
+            "sourceBytes": 650752,
+            "recordCount": 360
+          },
+          {
+            "sittingId": "45-1-119",
+            "date": "2026-05-07",
+            "language": "fr",
+            "sha256": "f59570e26ec0dfd403fa99b5ee95bfa779f0a89d51eed11e093e255d0cd81eb7",
+            "sourceBytes": 744254,
+            "recordCount": 360
+          },
+          {
+            "sittingId": "45-1-120",
+            "date": "2026-05-08",
+            "language": "en",
+            "sha256": "bf1043bc65ef921ec9d894cd9dcf03ac9221e384aaa9caf42ac2410adf4ddc9b",
+            "sourceBytes": 340021,
+            "recordCount": 193
+          },
+          {
+            "sittingId": "45-1-120",
+            "date": "2026-05-08",
+            "language": "fr",
+            "sha256": "87bb53e0d6284db5d74c5ddca05b749df4a6102dd59428062b5844f65fa90d11",
+            "sourceBytes": 389614,
+            "recordCount": 193
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-05-04",
+        "generation": "3878c3cb976bdfd37797aa67cac3f8495a7d8ba281a3a7351720203711321d14",
+        "manifestPath": "dist/hansard/weekly/senate/2026-05-04/current/week.json",
+        "manifestSha256": "46c845a3dc26bcd8eecc25d187edd030fd8cd442f4baeece41d2eeee7b57ecb7",
+        "receiptPath": "dist/hansard/weekly/senate/2026-05-04/current/receipt.json",
+        "receiptSha256": "211f774509091786cc1135bdedf081370eaf7081519fabb43c0fb3dfbac4ffa0",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1640571,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-71",
+            "date": "2026-05-05",
+            "language": "en",
+            "sha256": "eab8f5644a062ac025ab27cb246b421094c216c9a92196c6ee63e0915095082b",
+            "sourceBytes": 279356,
+            "recordCount": 112
+          },
+          {
+            "sittingId": "45-1-71",
+            "date": "2026-05-05",
+            "language": "fr",
+            "sha256": "1f3efb455ac892561d79332b62ea4a04f2acb62be6a11306688c48d08623778e",
+            "sourceBytes": 322333,
+            "recordCount": 112
+          },
+          {
+            "sittingId": "45-1-72",
+            "date": "2026-05-06",
+            "language": "en",
+            "sha256": "c34c5c2512e479b0d705c93c2357128b7d652346e2fb5bdc693d238d56d40fc7",
+            "sourceBytes": 181900,
+            "recordCount": 87
+          },
+          {
+            "sittingId": "45-1-72",
+            "date": "2026-05-06",
+            "language": "fr",
+            "sha256": "ae1806ac85258688d9f77ad19a66b503a73b78992ed39c3214d62c689e032e8d",
+            "sourceBytes": 208735,
+            "recordCount": 87
+          },
+          {
+            "sittingId": "45-1-73",
+            "date": "2026-05-07",
+            "language": "en",
+            "sha256": "7239ab27f983f4860331f2ee1675a4bf40325bd0b195199a995d654a0f411e82",
+            "sourceBytes": 302797,
+            "recordCount": 191
+          },
+          {
+            "sittingId": "45-1-73",
+            "date": "2026-05-07",
+            "language": "fr",
+            "sha256": "b80f907c0f6ec0f0ead6c2679dd1c292e2de068c5a302e4ee9ec0580180839bc",
+            "sourceBytes": 345450,
+            "recordCount": 191
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-05-25",
+        "generation": "175ce75ae83b5b3063b2d5633ddea6c0f376dd191db8be50ea8c1ce78d06210f",
+        "manifestPath": "dist/hansard/weekly/house/2026-05-25/current/week.json",
+        "manifestSha256": "1e9f705d8e79217182ec0cb042eff9556c001ae464a70ab95f148e52f85106cd",
+        "receiptPath": "dist/hansard/weekly/house/2026-05-25/current/receipt.json",
+        "receiptSha256": "22600d070f120051ff4861eb8d3bccc3fa2fc6f0c96e1a361a69ffeeee52b978",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 7749274,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-121",
+            "date": "2026-05-25",
+            "language": "en",
+            "sha256": "ce1844ab0d55824dbcafd9e9686a50d0a56121fa18eb6bd065704194e35c0b18",
+            "sourceBytes": 707430,
+            "recordCount": 371
+          },
+          {
+            "sittingId": "45-1-121",
+            "date": "2026-05-25",
+            "language": "fr",
+            "sha256": "391dbcbedce83c59ab1ba399d23563a3be10760ec8c74b46d3ac82601d88cd15",
+            "sourceBytes": 795224,
+            "recordCount": 371
+          },
+          {
+            "sittingId": "45-1-122",
+            "date": "2026-05-26",
+            "language": "en",
+            "sha256": "1fab31f0921b48bffc6d5abe041e71b074b82764c834a66856b5072f71902589",
+            "sourceBytes": 1092592,
+            "recordCount": 785
+          },
+          {
+            "sittingId": "45-1-122",
+            "date": "2026-05-26",
+            "language": "fr",
+            "sha256": "1f5084fc35d4a8384384fc89e33a5c537f46cb4d67fd6f012eb646844110482b",
+            "sourceBytes": 1241863,
+            "recordCount": 785
+          },
+          {
+            "sittingId": "45-1-123",
+            "date": "2026-05-27",
+            "language": "en",
+            "sha256": "f7f4881d326e920e7e30e3fc7c2cdfc61a3dced39de91d208346567544bbe363",
+            "sourceBytes": 397473,
+            "recordCount": 217
+          },
+          {
+            "sittingId": "45-1-123",
+            "date": "2026-05-27",
+            "language": "fr",
+            "sha256": "ef3cb6de1da3e2db3e1a70375010368d159976c71bcc4dae3d49d25495017c60",
+            "sourceBytes": 446263,
+            "recordCount": 217
+          },
+          {
+            "sittingId": "45-1-124",
+            "date": "2026-05-28",
+            "language": "en",
+            "sha256": "a995fb9e75b66a0ead06196920b95d15962684c6224570351e4d88400521fbbe",
+            "sourceBytes": 1059302,
+            "recordCount": 909
+          },
+          {
+            "sittingId": "45-1-124",
+            "date": "2026-05-28",
+            "language": "fr",
+            "sha256": "b6d293024a3899c7e82d137cc154239f06303febff97772ca4bb5d27a868e9be",
+            "sourceBytes": 1209965,
+            "recordCount": 909
+          },
+          {
+            "sittingId": "45-1-125",
+            "date": "2026-05-29",
+            "language": "en",
+            "sha256": "4b45637f130cfb840b9d4b964172a21c57900f6395da215062cc65f87ca4d277",
+            "sourceBytes": 372733,
+            "recordCount": 204
+          },
+          {
+            "sittingId": "45-1-125",
+            "date": "2026-05-29",
+            "language": "fr",
+            "sha256": "9fe85a37a750d794c322d85dc4844160bae4a1fde1683efd2de5a0ee67e89b82",
+            "sourceBytes": 426429,
+            "recordCount": 204
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-05-25",
+        "generation": "e95af0fabc50306a7156e5ffbf3f41c74c0106d9c4de3317cab7208824da0fcf",
+        "manifestPath": "dist/hansard/weekly/senate/2026-05-25/current/week.json",
+        "manifestSha256": "0f3373a830ff099e03e227bfe888e2f52069fd134fd8f3a0a145049b0d4d255c",
+        "receiptPath": "dist/hansard/weekly/senate/2026-05-25/current/receipt.json",
+        "receiptSha256": "f7a367d56800134aa058a12bfcfb530c97b61c852542decda187512f8f7566f6",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 1602646,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-74",
+            "date": "2026-05-26",
+            "language": "en",
+            "sha256": "d55aa9e0ff496af3e844f4ab883a2427d0191d14c7e836de76b8dc83c7b2bf39",
+            "sourceBytes": 223389,
+            "recordCount": 65
+          },
+          {
+            "sittingId": "45-1-74",
+            "date": "2026-05-26",
+            "language": "fr",
+            "sha256": "45e46a24221e7755e273f46a8070883fd1fc8a08829aa5cb2ccf83eb83a21c0b",
+            "sourceBytes": 254194,
+            "recordCount": 65
+          },
+          {
+            "sittingId": "45-1-75",
+            "date": "2026-05-27",
+            "language": "en",
+            "sha256": "e835e71b3cc9636881e08d9a9a35d1079bbd796c65ae2462ebe5957ef27a1746",
+            "sourceBytes": 172148,
+            "recordCount": 110
+          },
+          {
+            "sittingId": "45-1-75",
+            "date": "2026-05-27",
+            "language": "fr",
+            "sha256": "e3a6faf9b812374895547ff69994a320f4fba3a0f3c609b5ecf01e69a08450b8",
+            "sourceBytes": 193490,
+            "recordCount": 110
+          },
+          {
+            "sittingId": "45-1-76",
+            "date": "2026-05-28",
+            "language": "en",
+            "sha256": "57b600c0b2cc5fbdba16f83e5eed0d823d70c3cbaa91e20f739fe89ab8a49a38",
+            "sourceBytes": 352336,
+            "recordCount": 145
+          },
+          {
+            "sittingId": "45-1-76",
+            "date": "2026-05-28",
+            "language": "fr",
+            "sha256": "d258a8f6077227df7fd0214d356e4db846323c9b01b0b172e2e113244d3e8475",
+            "sourceBytes": 407089,
+            "recordCount": 145
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-06-01",
+        "generation": "155d272b95dcaa3845323701e40021bf5364d34c2ac2b73ee34666f0b97da3dc",
+        "manifestPath": "dist/hansard/weekly/house/2026-06-01/current/week.json",
+        "manifestSha256": "7f3d6dcd2b68885bedb7e75e0041009525df7b37410d1eba3b8db77ffcc9fb3c",
+        "receiptPath": "dist/hansard/weekly/house/2026-06-01/current/receipt.json",
+        "receiptSha256": "80e7da57255110b227fbba57245075075a86fdc891e438ee55e9f11ec38117b8",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 5939819,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-126",
+            "date": "2026-06-01",
+            "language": "en",
+            "sha256": "7fef5dbe989c444f45ca649ea4a28cba89ae25999090392c57e77962908ec3ce",
+            "sourceBytes": 619759,
+            "recordCount": 331
+          },
+          {
+            "sittingId": "45-1-126",
+            "date": "2026-06-01",
+            "language": "fr",
+            "sha256": "075aecd863c88c993cc5e9eb5a3195e14da1517ef1b66938a5785c8c7dbdff1e",
+            "sourceBytes": 703972,
+            "recordCount": 331
+          },
+          {
+            "sittingId": "45-1-127",
+            "date": "2026-06-02",
+            "language": "en",
+            "sha256": "bca46f06222091677d08891d62c5fb3376814cf1f3a034743907c5e2a9340dce",
+            "sourceBytes": 648156,
+            "recordCount": 323
+          },
+          {
+            "sittingId": "45-1-127",
+            "date": "2026-06-02",
+            "language": "fr",
+            "sha256": "cd1c018d4859d7d83239813e5801df30bdfab4541a1ebe786befd97ea7030aec",
+            "sourceBytes": 743505,
+            "recordCount": 323
+          },
+          {
+            "sittingId": "45-1-128",
+            "date": "2026-06-03",
+            "language": "en",
+            "sha256": "453f884e46bfe5f3a6639c4aa232f37edefd671999859a4f64745e27c95c9a8b",
+            "sourceBytes": 489047,
+            "recordCount": 268
+          },
+          {
+            "sittingId": "45-1-128",
+            "date": "2026-06-03",
+            "language": "fr",
+            "sha256": "395cd878db835caa391f1b25f714db4b5ac1cb9207d8134dde37418105e7e800",
+            "sourceBytes": 544884,
+            "recordCount": 268
+          },
+          {
+            "sittingId": "45-1-129",
+            "date": "2026-06-04",
+            "language": "en",
+            "sha256": "4e64653305d05b9015b64dca814deb60e41e4aede42754d7acdf848c3e03f521",
+            "sourceBytes": 684893,
+            "recordCount": 378
+          },
+          {
+            "sittingId": "45-1-129",
+            "date": "2026-06-04",
+            "language": "fr",
+            "sha256": "b27629eb4c59c4719cff45e61e64a9f39807a2c70ca61b37c62091bd2fc998f0",
+            "sourceBytes": 782449,
+            "recordCount": 378
+          },
+          {
+            "sittingId": "45-1-130",
+            "date": "2026-06-05",
+            "language": "en",
+            "sha256": "35cb3c5b5a834c25aed979aa15f0a86a515de00f755226603f4a7b46e60edf13",
+            "sourceBytes": 337821,
+            "recordCount": 205
+          },
+          {
+            "sittingId": "45-1-130",
+            "date": "2026-06-05",
+            "language": "fr",
+            "sha256": "e8556cb23dce1dbda3d6b6c23a503860a343329c5d473a10b86ba9707dec343f",
+            "sourceBytes": 385333,
+            "recordCount": 205
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-06-01",
+        "generation": "5a06d1387418fa45c96e16c8ebab925201d683c667796caee49d0d9092b6b34d",
+        "manifestPath": "dist/hansard/weekly/senate/2026-06-01/current/week.json",
+        "manifestSha256": "8129e481d25656105c438130f00408c0cb0ca29c230f6bd1e3a7313a48a9179b",
+        "receiptPath": "dist/hansard/weekly/senate/2026-06-01/current/receipt.json",
+        "receiptSha256": "240ceb8198b83ff1fafdb04926f0a361b301407406bead0e3ae33b147ebd26a7",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 2230715,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-77",
+            "date": "2026-06-02",
+            "language": "en",
+            "sha256": "61700bdfe30cc1f8c85d2059b7ba9119090110dd360c2087f19b9a0f13aca62a",
+            "sourceBytes": 325894,
+            "recordCount": 189
+          },
+          {
+            "sittingId": "45-1-77",
+            "date": "2026-06-02",
+            "language": "fr",
+            "sha256": "0f49c5e3da44c0af3ca139e92040746ca6195935163abc696a2ec24bfde0ec7c",
+            "sourceBytes": 372313,
+            "recordCount": 189
+          },
+          {
+            "sittingId": "45-1-78",
+            "date": "2026-06-03",
+            "language": "en",
+            "sha256": "ead704ba6d6ef316fe9ec1c0345d409d58a1d3a8799cfe33a37ce9197570caa6",
+            "sourceBytes": 227175,
+            "recordCount": 135
+          },
+          {
+            "sittingId": "45-1-78",
+            "date": "2026-06-03",
+            "language": "fr",
+            "sha256": "fb87101716d70e777c58ddfd69d112b6664d244b7533ba30b486c19133a726dc",
+            "sourceBytes": 257422,
+            "recordCount": 135
+          },
+          {
+            "sittingId": "45-1-79",
+            "date": "2026-06-04",
+            "language": "en",
+            "sha256": "54cd954d4bb703ca1a4159c890ec473a414826bb93be82bf192dbde395381aa7",
+            "sourceBytes": 486693,
+            "recordCount": 268
+          },
+          {
+            "sittingId": "45-1-79",
+            "date": "2026-06-04",
+            "language": "fr",
+            "sha256": "6279720b5cc661023e4527adee7693c40e66bb712122515f1ea18b1d3d60eb29",
+            "sourceBytes": 561218,
+            "recordCount": 268
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-06-08",
+        "generation": "9b0c56954d8ef28677cb392de854597f9155f4db0aa4cc17f7049f0dfe2b87c9",
+        "manifestPath": "dist/hansard/weekly/house/2026-06-08/current/week.json",
+        "manifestSha256": "4e78629f7244ed7ce4eb3f55553da4547cd80dafa524906be80e3205f364ba46",
+        "receiptPath": "dist/hansard/weekly/house/2026-06-08/current/receipt.json",
+        "receiptSha256": "c481ee242bda4807bee04b798b922419f7d3c128f216ec983af348a7a486eb19",
+        "expectedEditionSlots": 10,
+        "capturedEditions": 10,
+        "initialImportEditions": 10,
+        "replayUnchangedEditions": 10,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 10,
+          "checkPasses": 1,
+          "passingLookupSamples": 10
+        },
+        "sourceBytes": 8132761,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-131",
+            "date": "2026-06-08",
+            "language": "en",
+            "sha256": "d7316a9cbd9362af9d4bc83b381eff292bfe17105056c4ab1eccb9e50963aedc",
+            "sourceBytes": 972674,
+            "recordCount": 478
+          },
+          {
+            "sittingId": "45-1-131",
+            "date": "2026-06-08",
+            "language": "fr",
+            "sha256": "7991fa4ff136daa91000132a23a03cfc2ff503b634258b134d739b0d6803d0e8",
+            "sourceBytes": 1088611,
+            "recordCount": 478
+          },
+          {
+            "sittingId": "45-1-132",
+            "date": "2026-06-09",
+            "language": "en",
+            "sha256": "0cc6939ded2b1287806f28139200a532b66f8bf9073a7b59665ced05265d4fd0",
+            "sourceBytes": 978842,
+            "recordCount": 497
+          },
+          {
+            "sittingId": "45-1-132",
+            "date": "2026-06-09",
+            "language": "fr",
+            "sha256": "b76fb14e68c56bca9e6ac66d93ca1b63cd7290e8f8ce0d201dac85875dfbb778",
+            "sourceBytes": 1115709,
+            "recordCount": 497
+          },
+          {
+            "sittingId": "45-1-133",
+            "date": "2026-06-10",
+            "language": "en",
+            "sha256": "028981b8b18231ef699ea1be7290b6283822b1fd6e8c4b16e9f99817a4acdaeb",
+            "sourceBytes": 587306,
+            "recordCount": 284
+          },
+          {
+            "sittingId": "45-1-133",
+            "date": "2026-06-10",
+            "language": "fr",
+            "sha256": "52f5b971c9e6e3659e3cd65a406bd2f5eb0666b415d9d3d4d9bb98a3b02820a3",
+            "sourceBytes": 645094,
+            "recordCount": 284
+          },
+          {
+            "sittingId": "45-1-134",
+            "date": "2026-06-11",
+            "language": "en",
+            "sha256": "8d4b7edbc8dd8db0b1e9c1b55facd74db58e8ec80ae2e69ebd75ac5625614d22",
+            "sourceBytes": 779900,
+            "recordCount": 294
+          },
+          {
+            "sittingId": "45-1-134",
+            "date": "2026-06-11",
+            "language": "fr",
+            "sha256": "076f1630760904272b0fe61ad0e3222b2341716d6b8519a0d796320b6f99c921",
+            "sourceBytes": 892688,
+            "recordCount": 294
+          },
+          {
+            "sittingId": "45-1-135",
+            "date": "2026-06-12",
+            "language": "en",
+            "sha256": "8006407d3c028b828befadc8e1bc19b04ecf9688ae8e3e8d099fdc463b1dfc32",
+            "sourceBytes": 500732,
+            "recordCount": 281
+          },
+          {
+            "sittingId": "45-1-135",
+            "date": "2026-06-12",
+            "language": "fr",
+            "sha256": "3303f16250549cc01f454ce87e48bcd718734cd8173bece5f04cdd204a1fc3dd",
+            "sourceBytes": 571205,
+            "recordCount": 281
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-06-08",
+        "generation": "b63da4fcd338f025ad80d5fd8e57ab120063d37d2a82648405e2d3f40c7e8421",
+        "manifestPath": "dist/hansard/weekly/senate/2026-06-08/current/week.json",
+        "manifestSha256": "cf0b30ba17f4c962f3e04afa05b097f05b6139d1423287840561f27f8fbd51e9",
+        "receiptPath": "dist/hansard/weekly/senate/2026-06-08/current/receipt.json",
+        "receiptSha256": "39d31a0c3d542fc3356011f1cd78f76513c7cc095fd63f23a712ce8a9257ce72",
+        "expectedEditionSlots": 6,
+        "capturedEditions": 6,
+        "initialImportEditions": 6,
+        "replayUnchangedEditions": 6,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 6,
+          "checkPasses": 1,
+          "passingLookupSamples": 6
+        },
+        "sourceBytes": 2093546,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-80",
+            "date": "2026-06-09",
+            "language": "en",
+            "sha256": "18abd48e21b2c591db75c1d96f0422ceee1515a2ec451714913d702ac993e522",
+            "sourceBytes": 337670,
+            "recordCount": 162
+          },
+          {
+            "sittingId": "45-1-80",
+            "date": "2026-06-09",
+            "language": "fr",
+            "sha256": "813b8f8c97c1646b1fce5c3f771a63bac7092cb95147b8f3ea444e78eb432681",
+            "sourceBytes": 389384,
+            "recordCount": 162
+          },
+          {
+            "sittingId": "45-1-81",
+            "date": "2026-06-10",
+            "language": "en",
+            "sha256": "8aa5c010195006ed66120eaea84b0181d0037933a49c36e121dcbb7acc3c1ca2",
+            "sourceBytes": 180344,
+            "recordCount": 90
+          },
+          {
+            "sittingId": "45-1-81",
+            "date": "2026-06-10",
+            "language": "fr",
+            "sha256": "b9989c53f71dff301d969aa4b42f17fa364df678d251c5f8d4f6af65e4121cce",
+            "sourceBytes": 202371,
+            "recordCount": 90
+          },
+          {
+            "sittingId": "45-1-82",
+            "date": "2026-06-11",
+            "language": "en",
+            "sha256": "83e881b97d5e9e061cb72bec003926e1b2cb2f1ab34cf6582f88d83efdf21ee6",
+            "sourceBytes": 459159,
+            "recordCount": 281
+          },
+          {
+            "sittingId": "45-1-82",
+            "date": "2026-06-11",
+            "language": "fr",
+            "sha256": "93ea1248654320f8531e2a8ceabcb6dd50c99591fef5b54682d7239360794732",
+            "sourceBytes": 524618,
+            "recordCount": 281
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-06-15",
+        "generation": "84cd5bae93385d3e944676b101a520cc71cf4a21dc2ab140131fcc11e48ef7a0",
+        "manifestPath": "dist/hansard/weekly/house/2026-06-15/current/week.json",
+        "manifestSha256": "04e8cc682da1c5cdea3d7dd92f84f4796947fbfd4ec96246be07e1a54aebb16d",
+        "receiptPath": "dist/hansard/weekly/house/2026-06-15/current/receipt.json",
+        "receiptSha256": "8f4c850d6a75c05c6888c307749def8f8359767756b9b152d88656e8949857f1",
+        "expectedEditionSlots": 8,
+        "capturedEditions": 8,
+        "initialImportEditions": 8,
+        "replayUnchangedEditions": 8,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 8,
+          "checkPasses": 1,
+          "passingLookupSamples": 8
+        },
+        "sourceBytes": 6077010,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-136",
+            "date": "2026-06-15",
+            "language": "en",
+            "sha256": "ad17902ecf34afcf5ab6e0d9e648134ba15612ad0e386dec1daf328fba8e6e94",
+            "sourceBytes": 879168,
+            "recordCount": 457
+          },
+          {
+            "sittingId": "45-1-136",
+            "date": "2026-06-15",
+            "language": "fr",
+            "sha256": "cfd477c54b62ba55f3bd5cbb4945109d341365fab02df591a1bb548fe28d12eb",
+            "sourceBytes": 981494,
+            "recordCount": 457
+          },
+          {
+            "sittingId": "45-1-137",
+            "date": "2026-06-16",
+            "language": "en",
+            "sha256": "3e807ceabb3bb1fde55ae6e97bfcead1045e31e704163df98e029af39f8d83b5",
+            "sourceBytes": 872972,
+            "recordCount": 445
+          },
+          {
+            "sittingId": "45-1-137",
+            "date": "2026-06-16",
+            "language": "fr",
+            "sha256": "eeeee13c65fa0dc0b8512e2a63e8072186b41ead82fce7143cc8cb55802454ba",
+            "sourceBytes": 981105,
+            "recordCount": 445
+          },
+          {
+            "sittingId": "45-1-138",
+            "date": "2026-06-17",
+            "language": "en",
+            "sha256": "3bcf904c31c148a4fa667f893e65dd74f9d80f776564b0c3c7e7784c9e2587fd",
+            "sourceBytes": 698316,
+            "recordCount": 325
+          },
+          {
+            "sittingId": "45-1-138",
+            "date": "2026-06-17",
+            "language": "fr",
+            "sha256": "76dd7e373c1619d7b97b198158fd4d9e504b7f339c5fcd94e62a732e569a5e96",
+            "sourceBytes": 778016,
+            "recordCount": 325
+          },
+          {
+            "sittingId": "45-1-139",
+            "date": "2026-06-18",
+            "language": "en",
+            "sha256": "c90174fd29395878617a188103fc8298eafd768011d2e7614420cb2bdea9bba6",
+            "sourceBytes": 415035,
+            "recordCount": 238
+          },
+          {
+            "sittingId": "45-1-139",
+            "date": "2026-06-18",
+            "language": "fr",
+            "sha256": "c1ef19be744a39483391f37b9e05a6b0c439c5d6f26e27fb4c8d731c75a51c15",
+            "sourceBytes": 470904,
+            "recordCount": 238
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-06-15",
+        "generation": "d4921d329ae291ebaff3c01749088676bafbb8e82f19bef10f51aea0224751c3",
+        "manifestPath": "dist/hansard/weekly/senate/2026-06-15/current/week.json",
+        "manifestSha256": "240d254629793578cb7b0a014a8b2178312c2d25053cc11101f4fc0d047f2f93",
+        "receiptPath": "dist/hansard/weekly/senate/2026-06-15/current/receipt.json",
+        "receiptSha256": "35d479bb4b72571cc266893c81669882b63222059c768b00d4f958a0f5d70160",
+        "expectedEditionSlots": 8,
+        "capturedEditions": 8,
+        "initialImportEditions": 8,
+        "replayUnchangedEditions": 8,
+        "workerCheck": {
+          "status": "passed",
+          "lookupSamples": 8,
+          "checkPasses": 1,
+          "passingLookupSamples": 8
+        },
+        "sourceBytes": 3122137,
+        "sourceEditions": [
+          {
+            "sittingId": "45-1-83",
+            "date": "2026-06-15",
+            "language": "en",
+            "sha256": "02375f3ba4b4a69391776a73f20b68629203324fb38b603c38bced2c68d4e08c",
+            "sourceBytes": 444825,
+            "recordCount": 184
+          },
+          {
+            "sittingId": "45-1-83",
+            "date": "2026-06-15",
+            "language": "fr",
+            "sha256": "9c44109312b513ce913ffb1825b9143eea1014e6237d761554dc2b94681dfe4a",
+            "sourceBytes": 505908,
+            "recordCount": 184
+          },
+          {
+            "sittingId": "45-1-84",
+            "date": "2026-06-16",
+            "language": "en",
+            "sha256": "e962351aaf3e6b951c286d59f0e8dee0c53a5bda4c824efcb677dbb671a5d186",
+            "sourceBytes": 384857,
+            "recordCount": 145
+          },
+          {
+            "sittingId": "45-1-84",
+            "date": "2026-06-16",
+            "language": "fr",
+            "sha256": "11dc5604ff4dd6320b6d92f9b5ac147ebe79158d798c94ec99112a7574768a1e",
+            "sourceBytes": 450738,
+            "recordCount": 145
+          },
+          {
+            "sittingId": "45-1-85",
+            "date": "2026-06-17",
+            "language": "en",
+            "sha256": "d0e2760cfcfccf76e636e9cc167a36409660991c869935e36d6a0736f7c2dea5",
+            "sourceBytes": 265962,
+            "recordCount": 162
+          },
+          {
+            "sittingId": "45-1-85",
+            "date": "2026-06-17",
+            "language": "fr",
+            "sha256": "d669d42f1835bb061280d584f7fe3539ad3d6c7ba943c12ce29eeffc2db9432b",
+            "sourceBytes": 302557,
+            "recordCount": 162
+          },
+          {
+            "sittingId": "45-1-86",
+            "date": "2026-06-18",
+            "language": "en",
+            "sha256": "beee81d2c5b6663d1297615a33b30cfb1c7f63e6f56ed841c9ee9cc590c8eaca",
+            "sourceBytes": 357940,
+            "recordCount": 189
+          },
+          {
+            "sittingId": "45-1-86",
+            "date": "2026-06-18",
+            "language": "fr",
+            "sha256": "6269755c5a457251b78f5031ce4bc1ef2077d3d9a806202fecec6803a51e7a5f",
+            "sourceBytes": 409350,
+            "recordCount": 188
+          }
+        ],
+        "replayPasses": 1,
+        "replayChangedEditions": 0
+      }
+    ],
+    "gitIgnoreAudit": {
+      "checkedManifestAndReceiptFiles": 114,
+      "ignoredByGit": 114,
+      "rule": ".gitignore:7 dist/"
+    }
+  },
+  "quietCalendarObservations": {
+    "meaning": "Zero-edition calendar-verified chamber weeks, distinct from acquired editions.",
+    "verifiedPacketCount": 4,
+    "packets": [
+      {
+        "chamber": "senate",
+        "weekOf": "2026-09-21",
+        "generation": "860666e2181eb80ac56480440b908145044b33ae1d06595f7979ae6cbfcc9070",
+        "manifestPath": "dist/hansard/weekly/senate/2026-09-21/current/week.json",
+        "manifestSha256": "456c20fc9c502ab9975d42ef9ec23e9d4c59ccce4ac1741bab755415cc945012",
+        "receiptPath": "dist/hansard/weekly/senate/2026-09-21/current/receipt.json",
+        "receiptSha256": "ba6479c4cac07defe9b57f4f3d6d686cd1d31960067d14d641b027667b62d04a",
+        "editionCount": 0,
+        "calendarVerified": true,
+        "basis": "Existing authenticated calendar replay evidence; not counted as an acquired edition."
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-09-28",
+        "generation": "b9dd5c81f6613c6ce96680eb4f70e0e09ffea8d9e52a0ccd10689e7579c21dbe",
+        "manifestPath": "dist/hansard/weekly/house/2026-09-28/current/week.json",
+        "manifestSha256": "0c5e63ced448acb4a821e85ab283c114bfb37c3f602403e114268a389fa5e1cc",
+        "receiptPath": "dist/hansard/weekly/house/2026-09-28/current/receipt.json",
+        "receiptSha256": "4b932ee70bd495ccd7b561558698b0187417de36079d763d5da56861bcfeb235",
+        "editionCount": 0,
+        "calendarVerified": true,
+        "basis": "Existing authenticated calendar replay evidence; not counted as an acquired edition."
+      },
+      {
+        "chamber": "house",
+        "weekOf": "2026-10-12",
+        "generation": "c681a8d59eff873c2fcc60e7f5d10813c4421cd4b3cab73c204809a0f3dfb5ad",
+        "manifestPath": "dist/hansard/weekly/house/2026-10-12/current/week.json",
+        "manifestSha256": "91a61c3cb7932e6f5d2c7a3dd6593277a83be0ab54a2dfb62d877969eb6666a9",
+        "receiptPath": "dist/hansard/weekly/house/2026-10-12/current/receipt.json",
+        "receiptSha256": "b65014536b71955744179916cdd3788c1f8f5d2105ed433946f8155a07fae2ba",
+        "editionCount": 0,
+        "calendarVerified": true,
+        "basis": "Existing authenticated calendar replay evidence; not counted as an acquired edition."
+      },
+      {
+        "chamber": "senate",
+        "weekOf": "2026-10-12",
+        "generation": "0736bde074c629ffd29e8bbfc4527e43bb671d2b084c078d004025a7a6c2887e",
+        "manifestPath": "dist/hansard/weekly/senate/2026-10-12/current/week.json",
+        "manifestSha256": "91a61c3cb7932e6f5d2c7a3dd6593277a83be0ab54a2dfb62d877969eb6666a9",
+        "receiptPath": "dist/hansard/weekly/senate/2026-10-12/current/receipt.json",
+        "receiptSha256": "1e030ab1a6c7bda6cfd84e66d3931d216e007ebc66dd722707c26c676261af66",
+        "editionCount": 0,
+        "calendarVerified": true,
+        "basis": "Existing authenticated calendar replay evidence; not counted as an acquired edition."
+      }
+    ],
+    "scopeLimit": "A Senate week without a linked debate issue is unknown unless separately confirmed; no quiet status is inferred solely from a missing link."
+  },
+  "replayAndServingInterpretation": {
+    "newlyAcquiredPackets": 57,
+    "perPacket": "Each record has one initial import and one idempotent replay; the replay left all expected editions unchanged. Each packet has one passing serving check and one archived lookup sample per edition.",
+    "aggregateInitialImportEditions": 450,
+    "aggregateReplayUnchangedEditions": 450,
+    "aggregateAuthenticatedLookupSamples": 450,
+    "allWorkerChecksPassed": true,
+    "allReplayEditionsUnchanged": true,
+    "aggregateReplayPasses": 57,
+    "aggregateReplayChangedEditions": 0,
+    "aggregateWorkerCheckPasses": 57
+  },
+  "priorCheckpointEvidence": {
+    "path": "docs/evidence/2026-11-25/pipeline-activation.json",
+    "note": "Retains the prior 96-edition receipts as historical evidence; this ledger updates session-wide coverage after the 450-edition backfill."
+  },
+  "producerProgressUpdatedAt": "2026-11-25T04:24:28.938257+00:00"
+}

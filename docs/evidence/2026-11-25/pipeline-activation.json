@@ -478,9 +478,9 @@
         "receiptSha256": "920f9adf11e4287a56a95eb4ac6bcdb1729ec9eebe01435dced1f5a3c07ac27d"
       }
     },
-    "archivedEditions": 96,
+    "archivedEditions": 546,
     "candidateEditionsAtCutoff": 546,
-    "speeches": 23170,
+    "speeches": 140916,
     "verifiedEditionCountAfterOctober19": 64,
     "additionalWeeks": [
       {
@@ -651,10 +651,27 @@
       "senate": 592
     },
     "sourceDatabaseTotals": {
-      "totalSpeeches": 23170,
-      "house": 18772,
-      "senate": 4398,
+      "totalSpeeches": 140916,
+      "house": 111332,
+      "senate": 29584,
       "candidateEditionsAtCutoff": 546
+    },
+    "fullSessionBackfill": {
+      "evidencePath": "docs/evidence/2026-11-25/hansard-session-backfill.json",
+      "evidenceSha256": "2ef2f91cca4d4af8f37f30cc0683acbb835b42639e72a727a83165eecb9f7734",
+      "verifiedAt": "2026-11-25T04:36:47Z",
+      "candidateEditions": 546,
+      "houseEditions": 338,
+      "senateEditions": 208,
+      "previouslyVerifiedEditions": 96,
+      "newlyCapturedEditions": 450,
+      "newChamberWeekPackets": 57,
+      "quietCalendarReceipts": 4,
+      "totalSpeeches": 140916,
+      "houseSpeeches": 111332,
+      "senateSpeeches": 29584,
+      "archivedOriginalsMatched": 546,
+      "duplicateEditionIdentities": 0
     }
   },
   "storage": {
