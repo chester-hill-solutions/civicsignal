@@ -473,5 +473,257 @@
       "out-of-policy": 12,
       "unreadable": 44
     }
+  },
+  "gazetteAllIssues": {
+    "receipt": "dist/gazette/backfills/catchups/2026-through-2026-11-25/catchup-2026-through-2026-11-25-2026-11-25T06-56-24-002Z-3113dcc5-ec9a-40d8-8312-6711955167e8.json",
+    "sha256": "9af8147d032adbfe920c19f3fd30e2877c3c62baff5508a6385359d0548da066",
+    "counts": {
+      "discoveredIssues": 70,
+      "newlyVerifiedIssues": 0,
+      "archiveVerifiedPairs": 70,
+      "unavailableIssues": 0,
+      "corruptArchivePairs": 0,
+      "unsupportedRegularRows": 0,
+      "discoveredExtras": 9,
+      "newlyVerifiedExtras": 9,
+      "archiveVerifiedExtras": 0,
+      "unavailableExtras": 0,
+      "corruptArchiveExtras": 0,
+      "unsupportedExtraRows": 0,
+      "archivedSourceBytes": 1239683
+    },
+    "complete": true
+  },
+  "gazetteAllIssuesReplay": {
+    "receipt": "dist/gazette/backfills/catchups/2026-through-2026-11-25/catchup-2026-through-2026-11-25-2026-11-25T06-57-17-317Z-413b8605-8fb8-4fb0-a1b4-34dcf1fcfacc.json",
+    "sha256": "5d9754e444526bf6df8893ba4a80ac2bd67b2cca332980bf6d1378a83d1590dd",
+    "counts": {
+      "discoveredIssues": 70,
+      "newlyVerifiedIssues": 0,
+      "archiveVerifiedPairs": 70,
+      "unavailableIssues": 0,
+      "corruptArchivePairs": 0,
+      "unsupportedRegularRows": 0,
+      "discoveredExtras": 9,
+      "newlyVerifiedExtras": 0,
+      "archiveVerifiedExtras": 9,
+      "unavailableExtras": 0,
+      "corruptArchiveExtras": 0,
+      "unsupportedExtraRows": 0,
+      "archivedSourceBytes": 148502
+    },
+    "complete": true
+  },
+  "gazetteAllIssuesWorker": {
+    "receipt": "dist/refresh-weekly/gazette-regular-extras-serving.json",
+    "sha256": "e58002345fa8c22586d9343db3196564827bd571f85fa25c8284fa3778817cbf",
+    "success": true,
+    "numPassedTests": 2,
+    "numFailedTests": 0
+  },
+  "institutionCoverageWithHtmlAndGeds": {
+    "receipt": "dist/refresh-weekly/federal-institutions-geds-20261125.json",
+    "sha256": "d9c7b5aff5ee058e51dc522dae3167e3a3eb12486d02a809ac5c9ff1fd8ddbf6",
+    "rosterEntries": 110,
+    "provisionalNames": 109,
+    "namesWithRecords": 96,
+    "institutionsWithAttributedRecordsByFamily": {
+      "advice": 89,
+      "assurance": 1,
+      "delivery": 81,
+      "management": 11,
+      "mandates": 96,
+      "regulation": 29,
+      "research": 56,
+      "resources": 73
+    },
+    "sourceGroups": 27,
+    "geds": {
+      "matched": 19335,
+      "unresolved": 2539
+    },
+    "htmlPlans": {
+      "matched": 493,
+      "unresolved": 0
+    },
+    "htmlResults": {
+      "matched": 512,
+      "unresolved": 0
+    }
+  },
+  "installedWeekly25": {
+    "receipt": "dist/refresh-weekly/2026-11-25T07-11-14.584894Z.json",
+    "sha256": "ab53f6c32f7848ff410fffc63ca05bf6c8e05b159a3c79a124c6f2b390629f9d",
+    "startedAt": "2026-11-25T05:29:30.133529Z",
+    "finishedAt": "2026-11-25T07:11:14.581174Z",
+    "ok": false,
+    "passed": [
+      "federal-discovery",
+      "federal-guidance",
+      "federal-disclosures",
+      "official-titles",
+      "service-inventory",
+      "ati-summaries",
+      "grant-awards",
+      "eccc",
+      "gazette",
+      "briefing-notes",
+      "federal-report-directories",
+      "federal-publications",
+      "federal-procurement",
+      "parliament",
+      "hansard-house",
+      "hansard-senate",
+      "federal-institution-coverage",
+      "statutes-local",
+      "written-questions",
+      "geds",
+      "committees"
+    ],
+    "failed": [
+      "consultation-notices",
+      "gazette-year",
+      "departmental-report-editions",
+      "federal-publication-checklists"
+    ]
+  },
+  "irccRecoveredDocuments": {
+    "receipt": "data/corpus/ircc-guidance-documents/reports/e20e18b62f94138d5c967790b6e65d889630348999e3cb4b0e8bed8b12ba376b.json",
+    "sha256": "e20e18b62f94138d5c967790b6e65d889630348999e3cb4b0e8bed8b12ba376b",
+    "summary": {
+      "availableEditions": 5964,
+      "failedEditions": 2,
+      "linkedReferences": 0,
+      "listedEditions": 5966,
+      "verifiedThisRun": 5964
+    },
+    "parent": "4f16e7822ac4f8d6db8a138a47c422e0e2caae7a4fe0c340b46d3a2930ab6623",
+    "recovered": 5,
+    "remaining": [
+      {
+        "url": "https://www.canada.ca/content/canadasite/en/immigration-refugees-citizenship/corporate/publications-manuals/operational-bulletins-manuals/updates/application-authorization-permanent-resident-a25-r307-r66.html",
+        "error": "HTTP 404"
+      },
+      {
+        "url": "https://www.canada.ca/content/canadasite/fr/immigration-refugies-citoyennete/organisation/publications-guides/bulletins-guides-operationnels/mises-a-jour/demande-autorisation-resident-permanent-l25-r307-r66.html",
+        "error": "HTTP 404"
+      }
+    ]
+  },
+  "policyEditionIdentity": {
+    "receipt": "data/corpus/federal-policy-editions/reports/db98a74c03606021c4913e26079c600d0ccfa7b504805358a50b1a7c0193e3f5.json",
+    "sha256": "db98a74c03606021c4913e26079c600d0ccfa7b504805358a50b1a7c0193e3f5",
+    "summary": {
+      "catalogueEditionLinks": 511,
+      "catalogueIds": 508,
+      "editionIdentityChecks": {
+        "catalogue-title-first-three-pages": 502,
+        "printed-catalogue-heading": 1,
+        "printed-catalogue-title": 2,
+        "printed-register-title": 5,
+        "review": 1
+      },
+      "latestFetch": {
+        "failed": 2,
+        "retrieved": 509
+      },
+      "linkedPolicyLanguageIds": 434,
+      "registeredLanguageIds": 1378,
+      "titleChecks": {
+        "matched": 502,
+        "review": 9
+      },
+      "uniquePdfTargets": 511
+    },
+    "offlineReplay": {
+      "receipt": "dist/refresh-weekly/policy-heading-replay.json",
+      "sha256": "7c099bd1ccbf5e33994bf1451f4f86746501867d10daa3b7e0c61463442dd34f",
+      "replayedTargets": 511
+    },
+    "titleReviewCatalogueId": "9.885947"
+  },
+  "allRegisteredSeries": {
+    "receipt": "dist/refresh-weekly/federal-institutions-18-series-20261125.json",
+    "sha256": "4e467f2e365e5b737d5681de994182681da570dcadf77eead74487cf9e8cd58b",
+    "sourceGroups": 32,
+    "registered": 18,
+    "withAcquisitions": 18,
+    "withAttributedRecords": 17,
+    "statutoryNames": 109,
+    "namesWithRecords": 98,
+    "attributionBySeries": {
+      "grant-awards": {
+        "matchedRecords": 1368732,
+        "unattributedRecords": 14786
+      },
+      "official-titles": {
+        "matchedRecords": 94,
+        "unattributedRecords": 8
+      },
+      "publications": {
+        "matchedRecords": 71544,
+        "unattributedRecords": 249925
+      },
+      "geds": {
+        "matchedRecords": 19335,
+        "unattributedRecords": 2539
+      },
+      "service-inventory": {
+        "matchedRecords": 26722,
+        "unattributedRecords": 683
+      },
+      "policy-suite": {
+        "matchedRecords": 0,
+        "unattributedRecords": 510
+      },
+      "ircc-guidance": {
+        "matchedRecords": 5964,
+        "unattributedRecords": 0
+      },
+      "algorithmic-assessments": {
+        "matchedRecords": 38,
+        "unattributedRecords": 3
+      },
+      "briefing-titles": {
+        "matchedRecords": 159309,
+        "unattributedRecords": 2785
+      },
+      "briefing-packages": {
+        "matchedRecords": 1216,
+        "unattributedRecords": 82
+      },
+      "ati-summaries": {
+        "matchedRecords": 198158,
+        "unattributedRecords": 14664
+      },
+      "consultations": {
+        "matchedRecords": 5151,
+        "unattributedRecords": 58
+      },
+      "regulatory-plans": {
+        "matchedRecords": 55,
+        "unattributedRecords": 13
+      },
+      "departmental-plans": {
+        "matchedRecords": 535,
+        "unattributedRecords": 0
+      },
+      "departmental-results": {
+        "matchedRecords": 567,
+        "unattributedRecords": 0
+      },
+      "procurement": {
+        "matchedRecords": 7621,
+        "unattributedRecords": 164
+      },
+      "eccc-audit": {
+        "matchedRecords": 48,
+        "unattributedRecords": 0
+      },
+      "eccc-evaluation": {
+        "matchedRecords": 89,
+        "unattributedRecords": 0
+      }
+    }
   }
 }
