@@ -8,6 +8,7 @@ checkpoint atomically so interrupted runs retain completed records.
 from __future__ import annotations
 
 import argparse
+import copy
 import concurrent.futures
 import hashlib
 import html
@@ -416,6 +417,17 @@ def detail(record):
     return record
 
 
+def process_detail(record, detail_fetch=detail):
+    """Parse a worker-owned copy so checkpoint serialization sees stable records."""
+    worker_record = copy.deepcopy(record)
+    try:
+        worker_record = detail_fetch(worker_record)
+        worker_record["detailFetchedAt"] = datetime.now(timezone.utc).isoformat()
+    except Exception as exc:
+        worker_record["fetchError"] = str(exc)
+    return worker_record
+
+
 def fetch_listing_page(base, params):
     url = base + ("?" + urlencode(params) if params else "")
     return get(url)
@@ -563,12 +575,8 @@ def scrape(output=OUT, max_pages=None, workers=4, checkpoint=40, recheck_details
             if previous_detail: fr_by[number] = previous_detail
     detail_jobs = [r for number, r in en_by.items() if not r.get("responseInventoryChecked")] + [r for number, r in fr_by.items() if not r.get("responseInventoryChecked")]
     finished = sum(1 for r in list(en_by.values()) + list(fr_by.values()) if r.get("detailFetchedAt"))
-    def process(r):
-        try:
-            r = detail(r); r["detailFetchedAt"] = datetime.now(timezone.utc).isoformat(); return r
-        except Exception as exc: r["fetchError"] = str(exc); return r
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(workers, 6))) as pool:
-        for result in pool.map(process, detail_jobs):
+        for result in pool.map(process_detail, detail_jobs):
             (en_by if result["language"] == "en" else fr_by)[result["number"]] = result
             finished += 1; refetched += 1
             if finished % checkpoint == 0:

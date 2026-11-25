@@ -1,11 +1,13 @@
+import concurrent.futures
 import json
 import sys
+import threading
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch
 
 from scripts.lib.wq_catalog import (BASE, EN_LIST, FR_LIST, OUT, clean_question_text, main,
-                                    reusable_detail, resumable_checkpoint, tree)
+                                    process_detail, reusable_detail, resumable_checkpoint, tree)
 
 
 class TreeTextOrderTests(unittest.TestCase):
@@ -126,6 +128,31 @@ class ResumeCheckpointTests(unittest.TestCase):
                 main()
         self.assertEqual(raised.exception.code, 1)
         scrape.assert_called_once_with(OUT, 1, 4, 40, False, False, None)
+
+    def test_detail_worker_mutates_copy_while_checkpoint_source_remains_serializable(self):
+        source = {"language": "en", "number": 12, "metadata": {"listing": "source"}}
+        started = threading.Event()
+        release = threading.Event()
+
+        def mutate(worker_record):
+            self.assertIsNot(worker_record, source)
+            started.set()
+            self.assertTrue(release.wait(timeout=2))
+            worker_record["detailOnly"] = True
+            worker_record["metadata"]["worker"] = "updated"
+            return worker_record
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(process_detail, source, mutate)
+            self.assertTrue(started.wait(timeout=2))
+            self.assertEqual(json.loads(json.dumps(source)),
+                             {"language": "en", "number": 12, "metadata": {"listing": "source"}})
+            release.set()
+            completed = future.result(timeout=2)
+
+        self.assertTrue(completed["detailOnly"])
+        self.assertEqual(completed["metadata"]["worker"], "updated")
+        self.assertEqual(source["metadata"], {"listing": "source"})
 
 
 if __name__ == "__main__":
