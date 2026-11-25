@@ -68,6 +68,46 @@ PUBLISHER_LISTED_HOSTS = {
     "cdc-ccl.ca", "www.cdc-ccl.ca",
 }
 
+# These are exact legacy URLs present in the checksum-verified publisher
+# directories. The replacement targets were confirmed on the issuer's own
+# current English/French pages and language switch, or on the issuer's current
+# Canada.ca Acts and Regulations page. Keep the original published URL as the
+# primary identity; this only changes the request target for these exact rows.
+PUBLISHER_PAGE_RECOVERIES = {
+    "https://www.cnsc-ccsn.gc.ca/eng/resources/publications/reports/rpp/": {
+        "family": "departmental-plans", "language": "en",
+        "resolvedUrl": "https://www.cnsc-ccsn.gc.ca/eng/corporate/plans-results/rpp/",
+        "evidenceUrls": [
+            "https://www.cnsc-ccsn.gc.ca/eng/corporate/plans-results/rpp/",
+            "https://www.cnsc-ccsn.gc.ca/fra/corporate/plans-results/rpp/",
+        ],
+        "method": "publisher-current-bilingual-plans-pages",
+        "validation": "English and French pages are titled Departmental plans / Plans ministériels and list current departmental plans.",
+    },
+    "https://www.canada.ca/en/farm-products-council/corporate/acts-and-regulations.html": {
+        "family": REGULATORY_FAMILY, "language": "en",
+        "resolvedUrl": "https://www.canada.ca/en/farm-products-council/services/acts-and-regulations.html",
+        "evidenceUrls": [
+            "https://www.canada.ca/en/farm-products-council/services/acts-and-regulations.html",
+            "https://www.canada.ca/en/farm-products-council/services/acts-and-regulations/forward-regulatory-plan-farm-products-council-of-canada.html",
+            "https://www.canada.ca/fr/conseil-produits-agricoles/services/lois-et-reglements/plan-prospectif-de-la-reglementation-conseil-des-produits-agricoles-du-canada.html",
+        ],
+        "method": "publisher-current-bilingual-acts-regulations-directory",
+        "validation": "The current Canada.ca FPCC Acts and Regulations page links to the Forward Regulatory Plan; the plan has an official French-language page.",
+    },
+    "https://www.canada.ca/fr/conseil-produits-agricoles/entreprise/lois-et-reglements.html": {
+        "family": REGULATORY_FAMILY, "language": "fr",
+        "resolvedUrl": "https://www.canada.ca/fr/conseil-produits-agricoles/services/lois-et-reglements.html",
+        "evidenceUrls": [
+            "https://www.canada.ca/fr/conseil-produits-agricoles/services/lois-et-reglements.html",
+            "https://www.canada.ca/fr/conseil-produits-agricoles/services/lois-et-reglements/plan-prospectif-de-la-reglementation-conseil-des-produits-agricoles-du-canada.html",
+            "https://www.canada.ca/en/farm-products-council/services/acts-and-regulations/forward-regulatory-plan-farm-products-council-of-canada.html",
+        ],
+        "method": "publisher-current-bilingual-acts-regulations-directory",
+        "validation": "The current Canada.ca FPCC Acts and Regulations page links to the Forward Regulatory Plan; the plan has an official English-language page.",
+    },
+}
+
 
 def utc_now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
@@ -414,7 +454,7 @@ def db_open(root: Path = DEFAULT_ROOT, read_only: bool = False) -> sqlite3.Conne
         source_index_url TEXT NOT NULL, source_index_sha256 TEXT NOT NULL,
         status TEXT NOT NULL, final_url TEXT, fetched_at TEXT, http_status INTEGER,
         media_type TEXT, body_sha256 TEXT, body_bytes INTEGER, object_path TEXT, detail TEXT,
-        page_title TEXT, fetch_url TEXT, PRIMARY KEY(run_id,family,language,published_url),
+        page_title TEXT, fetch_url TEXT, recovery_json TEXT NOT NULL DEFAULT '{}', PRIMARY KEY(run_id,family,language,published_url),
         FOREIGN KEY(run_id) REFERENCES generations(run_id));
       CREATE TABLE IF NOT EXISTS report_links(
         run_id TEXT NOT NULL, family TEXT NOT NULL, issuer_key TEXT, issuer_label TEXT NOT NULL,
@@ -451,6 +491,8 @@ def db_open(root: Path = DEFAULT_ROOT, read_only: bool = False) -> sqlite3.Conne
     issuer_columns = {row[1] for row in db.execute("PRAGMA table_info(issuer_pages)")}
     if "fetch_url" not in issuer_columns:
         db.execute("ALTER TABLE issuer_pages ADD COLUMN fetch_url TEXT")
+    if "recovery_json" not in issuer_columns:
+        db.execute("ALTER TABLE issuer_pages ADD COLUMN recovery_json TEXT NOT NULL DEFAULT '{}'")
     db.execute("""INSERT OR IGNORE INTO issuer_page_current
       SELECT p.family,p.language,p.published_url,
         (SELECT good.run_id FROM issuer_pages good JOIN generations gg ON gg.run_id=good.run_id
@@ -535,6 +577,15 @@ def source_pages(inventory: dict) -> list[dict]:
                     "issuerLabel": edition["issuerLabel"], "issuerAttribution": edition.get("issuerAttribution"),
                     "language": language, "url": url, "fetchUrl": url, "sourceIndexUrl": source_url,
                     "sourceIndexSha256": source_hash})
+                recovery = PUBLISHER_PAGE_RECOVERIES.get(url)
+                if recovery:
+                    if recovery["family"] != family or recovery["language"] != language:
+                        raise ValueError("Publisher recovery does not match its registered family/language")
+                    if not committee_files.official(recovery["resolvedUrl"]) or any(
+                            not committee_files.official(item) for item in recovery["evidenceUrls"]):
+                        raise ValueError("Publisher recovery target/evidence must remain on official HTTPS hosts")
+                    page["fetchUrl"] = recovery["resolvedUrl"]
+                    page["publisherRecovery"] = {"originalUrl": url, **recovery}
                 if page["issuerLabel"] != edition["issuerLabel"]:
                     page["alternateIssuerLabels"] = sorted(set(page.get("alternateIssuerLabels", []) + [edition["issuerLabel"]]))
     for edition in inventory.get("families", {}).get(REGULATORY_FAMILY, {}).get("institutionDirectoryLinks", []):
@@ -555,6 +606,15 @@ def source_pages(inventory: dict) -> list[dict]:
             page["preflightGap"] = "Publisher-listed issuer URL is outside official HTTPS acquisition policy"
         else:
             page["fetchUrl"] = fetch_url
+        recovery = PUBLISHER_PAGE_RECOVERIES.get(url)
+        if recovery:
+            if recovery["family"] != REGULATORY_FAMILY or recovery["language"] != language:
+                raise ValueError("Publisher recovery does not match its registered family/language")
+            if not committee_files.official(recovery["resolvedUrl"]) or any(
+                    not committee_files.official(item) for item in recovery["evidenceUrls"]):
+                raise ValueError("Publisher recovery target/evidence must remain on official HTTPS hosts")
+            page["fetchUrl"] = recovery["resolvedUrl"]
+            page["publisherRecovery"] = {"originalUrl": url, **recovery}
         pages[key] = page
     return sorted(pages.values(), key=lambda page: (page["family"], page["language"], page.get("issuerKey") or "", page["url"]))
 
@@ -606,9 +666,11 @@ def _start_generation(db, run_id: str, receipt_path: Path, source_receipt: dict,
                    (run_id, dt.datetime.now(dt.timezone.utc).isoformat(timespec="microseconds"), "running", str(receipt_path.relative_to(ROOT)), source_receipt["inventoryPath"],
                     source_receipt["inventorySha256"], len(pages)))
         for page in pages:
-            db.execute("INSERT INTO issuer_pages(run_id,family,issuer_key,issuer_label,issuer_attribution,language,published_url,source_index_url,source_index_sha256,status) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            recovery = page.get("publisherRecovery")
+            db.execute("INSERT INTO issuer_pages(run_id,family,issuer_key,issuer_label,issuer_attribution,language,published_url,source_index_url,source_index_sha256,status,recovery_json) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                        (run_id, page["family"], page.get("issuerKey"), page["issuerLabel"], page.get("issuerAttribution"),
-                        page["language"], page["url"], page["sourceIndexUrl"], page["sourceIndexSha256"], "pending"))
+                        page["language"], page["url"], page["sourceIndexUrl"], page["sourceIndexSha256"], "pending",
+                        json.dumps(recovery, ensure_ascii=False, sort_keys=True) if recovery else "{}"))
 
 
 def _record_result(db, root: Path, run_id: str, page: dict, fetched: dict, extraction: dict | None, attempted_at: str):
@@ -683,6 +745,10 @@ def _snapshot(db, root: Path, run_id: str, receipt_path: Path, source_receipt: d
     if not run:
         raise KeyError(f"unknown report edition generation: {run_id}")
     pages = [dict(row) for row in db.execute("SELECT * FROM issuer_pages WHERE run_id=? ORDER BY family,language,issuer_label,published_url", (run_id,))]
+    for page in pages:
+        recovery = json.loads(page.pop("recovery_json", "{}"))
+        if recovery:
+            page["publisherRecovery"] = recovery
     links = [dict(row) for row in db.execute("SELECT * FROM report_links WHERE run_id=? ORDER BY family,language,issuer_label,year_label,link_type,url", (run_id,))]
     discovery_links = [dict(row) for row in db.execute("SELECT * FROM discovery_links WHERE run_id=? ORDER BY family,language,issuer_label,landing_url,ordinal", (run_id,))]
     all_issues = [dict(row) for row in db.execute("SELECT * FROM gaps WHERE run_id=? ORDER BY family,language,issuer_label,landing_url,issue_type,code", (run_id,))]

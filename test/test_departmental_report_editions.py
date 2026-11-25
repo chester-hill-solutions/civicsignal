@@ -12,6 +12,58 @@ SPEC.loader.exec_module(MODULE)
 
 
 class DepartmentalReportEditionsTests(unittest.TestCase):
+    def test_exact_publisher_404_recoveries_are_source_bound_and_reported(self):
+        inventory = {
+            "families": {
+                "departmental-plans": {"issuers": [{"issuerKey": "cnsc", "issuerLabel": {"en": ["Canadian Nuclear Safety Commission"]}, "editions": [{
+                    "issuerKey": "cnsc", "issuerLabel": "Canadian Nuclear Safety Commission", "language": "en",
+                    "url": "https://www.cnsc-ccsn.gc.ca/eng/resources/publications/reports/rpp/",
+                    "sourceIndexUrl": "https://www.canada.ca/en/directory", "sourceIndexSha256": "planhash"}]}]},
+                "departmental-results": {"issuers": []},
+                "regulatory-plans": {"institutionDirectoryLinks": [
+                    {"issuerLabel": "Farm Products Council of Canada", "language": "en",
+                     "url": "https://www.canada.ca/en/farm-products-council/corporate/acts-and-regulations.html",
+                     "sourceIndexUrl": "https://www.canada.ca/en/regulatory-directory", "sourceIndexSha256": "reghash-en"},
+                    {"issuerLabel": "Conseil des produits agricoles du Canada", "language": "fr",
+                     "url": "https://www.canada.ca/fr/conseil-produits-agricoles/entreprise/lois-et-reglements.html",
+                     "sourceIndexUrl": "https://www.canada.ca/fr/regulatory-directory", "sourceIndexSha256": "reghash-fr"},
+                ]},
+            },
+            "sourceArchives": {
+                "departmental-plans-en": {"url": "https://www.canada.ca/en/directory", "sha256": "planhash"},
+                "regulatory-directories-en": {"url": "https://www.canada.ca/en/regulatory-directory", "sha256": "reghash-en"},
+                "regulatory-directories-fr": {"url": "https://www.canada.ca/fr/regulatory-directory", "sha256": "reghash-fr"},
+            },
+        }
+        pages = MODULE.source_pages(inventory)
+        recovered = {page["url"]: page for page in pages if page.get("publisherRecovery")}
+        self.assertEqual(len(recovered), 3)
+        for original, page in recovered.items():
+            self.assertEqual(page["publisherRecovery"]["originalUrl"], original)
+            self.assertEqual(page["fetchUrl"], page["publisherRecovery"]["resolvedUrl"])
+            self.assertTrue(MODULE.committee_files.official(page["fetchUrl"]))
+            self.assertTrue(page["publisherRecovery"]["evidenceUrls"])
+        cns = recovered["https://www.cnsc-ccsn.gc.ca/eng/resources/publications/reports/rpp/"]
+        self.assertEqual(cns["fetchUrl"], "https://www.cnsc-ccsn.gc.ca/eng/corporate/plans-results/rpp/")
+        fpcc = recovered["https://www.canada.ca/en/farm-products-council/corporate/acts-and-regulations.html"]
+        self.assertEqual(fpcc["fetchUrl"], "https://www.canada.ca/en/farm-products-council/services/acts-and-regulations.html")
+        self.assertNotIn("https://www.asc-csa.gc.ca/eng/publications/rp.asp", recovered)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            db = MODULE.db_open(root)
+            try:
+                source_receipt = {"inventoryPath": "inventory.json", "inventorySha256": "inventoryhash"}
+                receipt_path = MODULE.ROOT / "receipt.json"
+                MODULE._start_generation(db, "recovery-fixture", receipt_path, source_receipt, inventory, pages)
+                snapshot = MODULE._snapshot(db, root, "recovery-fixture", receipt_path, source_receipt)
+                report_pages = {page["published_url"]: page for page in snapshot["issuerPages"]}
+                self.assertEqual(report_pages[cns["url"]]["publisherRecovery"]["originalUrl"], cns["url"])
+                self.assertEqual(report_pages[cns["url"]]["publisherRecovery"]["resolvedUrl"], cns["fetchUrl"])
+                self.assertEqual(report_pages[fpcc["url"]]["publisherRecovery"]["evidenceUrls"], fpcc["publisherRecovery"]["evidenceUrls"])
+            finally:
+                db.close()
+
     def test_only_family_context_and_year_label_are_inventoried(self):
         body = b"""<html><title>Departmental publications</title>
         <h2>Departmental Plans</h2><a href='/reports/departmental-plan-2025-2026.pdf'>2025 to 2026</a>
