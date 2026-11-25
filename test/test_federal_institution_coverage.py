@@ -49,6 +49,22 @@ class InstitutionCoverageTests(unittest.TestCase):
         coverage.classify_sources(inputs, register)
         self.assertEqual([source["family"] for source in inputs.values()], ["management", "advice", "resources", "assurance"])
 
+    def test_report_attribution_counts_distinct_verified_document_editions(self):
+        from unittest.mock import patch
+        citation = {"issuer_key": "institution-1", "issuer_label": "Known", "issue_year": "2025-2026",
+                    "target_url": "https://www.canada.ca/report.pdf", "language": "en",
+                    "disposition": "verified", "family": "departmental-plans"}
+        report = {"documents": [{"target_url": citation["target_url"], "body_sha256": "a"*64,
+                                  "text_sha256": "b"*64, "readable_chars": 50}],
+                  "citations": [citation, citation, {**citation, "language": "fr"},
+                                {**citation, "issuer_key": "unverified", "disposition": "review"}]}
+        counted = []
+        provenance = {}
+        with patch.object(coverage, "latest_report_generation", return_value=(report, {"runId": "sample"})):
+            coverage.count_report_documents(Path("corpus"), lambda family, labels: counted.append((family, labels)), provenance)
+        self.assertEqual(counted, [("departmental-plans", ["Known"])] * 2)
+        self.assertEqual(provenance["departmental-plans"]["runId"], "sample")
+
     def test_contracting_labels_require_published_name_and_same_language_abbreviation(self):
         row = {"Legal title": "Department of Works", "Appellation légale": "Ministère des Travaux",
                "Applied title": "Works Canada", "Titre d'usage": "Travaux Canada",

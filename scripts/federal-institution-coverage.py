@@ -82,18 +82,24 @@ def classify_sources(provenance, register):
         source["family"] = register[series]["family"]
 
 
-def report_links_by_institution(corpus, aliases):
-    root = corpus / "departmental-report-editions"
-    pointer = json.loads((root / "latest-attempt.json").read_bytes())
-    path = root / "generations" / (pointer["runId"] + ".json")
-    if path.parent != root / "generations" or str(path.relative_to(root)) != pointer["reportPath"]:
-        raise ValueError("Unexpected report edition generation path")
+def latest_report_generation(root, report_dir=Path(".")):
+    pointer = json.loads((root / report_dir / "latest-attempt.json").read_bytes())
+    directory = root / report_dir / "generations"
+    path = directory / (pointer["runId"] + ".json")
+    if path.parent != directory or str(path.relative_to(root)) != pointer["reportPath"]:
+        raise ValueError(f"Unexpected generation path for {root.name}")
     raw = path.read_bytes()
-    if hashlib.sha256(raw).hexdigest() != pointer["reportSha256"] or len(raw) != pointer["reportBytes"]:
-        raise ValueError("Departmental report generation differs from the published receipt")
+    if hashlib.sha256(raw).hexdigest() != pointer["reportSha256"] or len(raw) != pointer.get("reportBytes", len(raw)):
+        raise ValueError(f"{root.name} generation differs from the published receipt")
     report = json.loads(raw)
     if report["runId"] != pointer["runId"] or report["status"] != pointer["status"]:
-        raise ValueError("Departmental report generation and receipt identity differ")
+        raise ValueError(f"{root.name} generation and receipt identity differ")
+    return report, {"path": str(path), "sha256": pointer["reportSha256"], "runId": report["runId"],
+                    "acquisitionStatus": report["status"], "observedAt": report["observedAt"]}
+
+
+def report_links_by_institution(corpus, aliases):
+    report, summary = latest_report_generation(corpus / "departmental-report-editions")
     counts = defaultdict(Counter)
     unresolved = Counter()
     for link in report["reportLinks"]:
@@ -102,10 +108,41 @@ def report_links_by_institution(corpus, aliases):
             counts[next(iter(identities))][link["family"]] += 1
         else:
             unresolved[link["family"]] += 1
-    summary = {"path": str(path), "sha256": pointer["reportSha256"], "runId": report["runId"],
-               "acquisitionStatus": report["status"], "observedAt": report["observedAt"],
-               "listedLinks": len(report["reportLinks"]), "unresolvedBySeries": dict(unresolved)}
+    summary.update(listedLinks=len(report["reportLinks"]), unresolvedBySeries=dict(unresolved))
     return counts, summary
+
+
+def count_report_documents(corpus, count, provenance):
+    report, evidence = latest_report_generation(corpus / "departmental-report-documents")
+    documents = {item["target_url"]: item for item in report["documents"]}
+    for family in ("departmental-plans", "departmental-results"):
+        provenance[family] = {**evidence, "series": family,
+                              "recordType": "distinct verified report edition linked by the issuer"}
+    seen = set()
+    for citation in report["citations"]:
+        if citation["disposition"] != "verified":
+            continue
+        family = citation["family"]
+        document = documents[citation["target_url"]]
+        if (family not in ("departmental-plans", "departmental-results") or not document["body_sha256"]
+                or not document["text_sha256"] or not document["readable_chars"]):
+            raise ValueError("Verified report citation has no corresponding readable document")
+        identity = (citation["issuer_key"], family, citation["issue_year"], citation["language"], document["body_sha256"])
+        if identity not in seen:
+            count(family, [citation["issuer_label"]])
+            seen.add(identity)
+
+
+def count_regulatory_plans(corpus, count, provenance):
+    series = "regulatory-plans"
+    report, evidence = latest_report_generation(corpus / "federal-regulatory-plans", Path("dist"))
+    provenance[series] = {**evidence, "series": series, "recordType": "publisher-confirmed forward regulatory plan edition"}
+    editions = set()
+    for row in report["planEditions"]:
+        if not row.get("sourceBodySha256") or row["editionId"] in editions:
+            raise ValueError("Regulatory plan edition is duplicated or missing its source digest")
+        editions.add(row["editionId"])
+        count(series, [row["issuerLabel"]])
 
 
 def count_acquisitions(corpus, count, provenance):
@@ -216,14 +253,19 @@ def coverage(include_acquisitions=False):
                 count(key, [v.strip() for v in row["owner_org_title"].split("|")])
 
     with closing(sqlite3.connect(Path("data/corpus/consultations/catalogue.sqlite").resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        db.execute("BEGIN")
+        observed, digest = db.execute("""SELECT observed_at, csv_sha256 FROM consultations_catalogues
+            WHERE source='canada' ORDER BY observed_at DESC LIMIT 1""").fetchone()
         provenance["consultations"] = {"series": "consultations", "url": "https://open.canada.ca/static/consultations_open.csv",
-                                       "sha256": db.execute("SELECT csv_sha256 FROM consultations_catalogues WHERE source='canada'").fetchone()[0]}
-        for facts, in db.execute("SELECT facts_json FROM consultations_records WHERE removed_at IS NULL"):
+                                       "sha256": digest, "observedAt": observed}
+        for facts, in db.execute("SELECT facts_json FROM consultations_records WHERE removed_at IS NULL AND observed_at=?", (observed,)):
             institution = json.loads(facts)["institution"]
             count("consultations", [institution["en"], institution["fr"]])
     if include_acquisitions:
         count_acquisitions(BULK.parent, count, provenance)
         count_eccc_index_editions(BULK.parent, count, provenance, register)
+        count_report_documents(BULK.parent, count, provenance)
+        count_regulatory_plans(BULK.parent, count, provenance)
     classify_sources(provenance, register)
     families = sorted({source["family"] for source in register.values()} - {"all"})
     link_counts, link_coverage = {}, {}
