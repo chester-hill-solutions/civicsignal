@@ -152,9 +152,13 @@ def verify_printed_heading(root, document, row, identity):
 
 def capture(root, url):
     try:
-        body, final, _, _ = pdf.fetch_pdf(url)
+        body, final, status, media = pdf.fetch_pdf(url)
         if not body.startswith(b"%PDF-"):
-            raise ValueError("Publisher returned a non-PDF response")
+            notice = media == "text/html" and pdf.public_archive_continue(body, url, final) == url
+            return {"status": "failed", "error": "Publisher returned a non-PDF response",
+                    "httpStatus": status, "finalUrl": final, "mediaType": media,
+                    "responseBytes": len(body), "responseSha256": sha256(body).hexdigest(),
+                    "publicationNotice": notice}
         sections = extract_passages(body, final)
         if not sections:
             raise ValueError("PDF has no readable passages")
@@ -200,10 +204,11 @@ def refresh(root, db_path, guidance, workers):
         urls = sorted({c["url"] for c in links})
         with ThreadPoolExecutor(max_workers=workers) as pool:
             targets = dict(zip(urls, pool.map(lambda u: capture(root, u), urls), strict=True))
-        # Retry transient upstream errors once after the remaining documents have been visited.
+        # A publisher notice can survive its first continuation during a bulk capture.
+        # Revisit that exact public link, or a transient upstream error, once at the end.
         for url, result in targets.items():
-            if result.get("httpStatus") in {500, 502, 503, 504}:
-                targets[url] = {**capture(root, url), "initialError": result["error"]}
+            if result.get("httpStatus") in {500, 502, 503, 504} or result.get("publicationNotice"):
+                targets[url] = {**capture(root, url), "initialError": result["error"], "initialAttempt": result}
         opening_pages = {}
         for url, result in targets.items():
             if not result.get("document") and previous.get(url, {}).get("document"):

@@ -7,12 +7,26 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 policies = import_module("federal-policy-editions")
 
 
 class FederalPolicyEditionTests(unittest.TestCase):
+    def test_non_pdf_capture_distinguishes_an_explicit_archive_notice_from_other_html(self):
+        url = "https://publications.gc.ca/collections/guide.pdf"
+        notice = "https://publications.gc.ca/site/archivee-archived.html?url=" + quote(url, safe="")
+        link = f'<a href="{url}">Continue to publication</a>'.encode()
+        with tempfile.TemporaryDirectory() as directory, patch.object(policies.pdf, "fetch_pdf") as fetch:
+            for body, final_url, expected in [(link, notice, True), (b"Temporarily unavailable", url, False)]:
+                fetch.return_value = body, final_url, 200, "text/html"
+                failure = policies.capture(Path(directory), url)
+                self.assertEqual(failure["status"], "failed")
+                self.assertEqual(failure["publicationNotice"], expected)
+                self.assertEqual(failure["responseSha256"], hashlib.sha256(body).hexdigest())
+                self.assertEqual(failure["finalUrl"], final_url)
+
     def test_checklist_join_requires_one_registered_policy_and_one_pdf_in_the_same_record(self):
         policy = "https://www.tbs-sct.canada.ca/pol/doc-eng.aspx?id=123"
         pdf = "https://publications.gc.ca/collections/test.pdf"
