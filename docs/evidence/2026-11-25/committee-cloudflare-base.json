@@ -1,0 +1,55 @@
+{
+  "scope": "Read-only verification of the local session base for a future private Cloudflare D1 import. Measurements cover serving rows and an FTS lookup.",
+  "checkedAt": "2026-11-25T22:53:55.094297+00:00",
+  "session": "45-1",
+  "databaseBytes": 2207588352,
+  "sourceAndLocalServingTablesMatch": true,
+  "servingTables": {
+    "cc_records": {
+      "count": 34094,
+      "textCharacters": 0,
+      "sha256": "c8d5a6fdd4b5e9b5a5c2c9a8d60f9bf86fc758cb9d6f7dec5d0198fb8223a853"
+    },
+    "cc_links": {
+      "count": 89295,
+      "textCharacters": 0,
+      "sha256": "10d798db9f538427c2db2ef8a0084a178ebda010ac09a39245bcfb0e9aafea26"
+    },
+    "cc_passages": {
+      "count": 1769377,
+      "textCharacters": 569320368,
+      "sha256": "a47323a0de71aab863928f0ff3a9f86acd9013d12dec3f2eebac19400d44e327"
+    },
+    "cutoff": "2026-11-25T08:33:25+00:00"
+  },
+  "searchProbe": {
+    "term": "Honourable",
+    "sourceAndServingMatches": 8066
+  },
+  "calls": {
+    "editionRows": 30,
+    "distinctCommittees": 6
+  },
+  "sqlSizing": {
+    "cc_records": {
+      "largestSingleRowInsertBytes": 30034,
+      "singleRowInsertsOver100000Bytes": 0,
+      "rowsWithEmbeddedNul": 0,
+      "totalSingleRowInsertBytes": 36719351
+    },
+    "cc_links": {
+      "largestSingleRowInsertBytes": 199,
+      "singleRowInsertsOver100000Bytes": 0,
+      "rowsWithEmbeddedNul": 0,
+      "totalSingleRowInsertBytes": 14443013
+    },
+    "cc_passages": {
+      "largestSingleRowInsertBytes": 60847,
+      "singleRowInsertsOver100000Bytes": 0,
+      "rowsWithEmbeddedNul": 0,
+      "totalSingleRowInsertBytes": 937540266
+    }
+  },
+  "sqlSizingMethod": "Measured single-row INSERT statements using explicit column names, SQLite quote() and UTF-8 byte lengths. The destination must generate its external-content FTS5 index against the destination passage rowids.",
+  "totalServingTableInsertBytes": 988702630
+}

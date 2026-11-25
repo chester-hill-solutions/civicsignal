@@ -1,0 +1,40 @@
+{
+  "scope": "Private committee reference for the hosted daily API acceptance checks. The reference was generated from independent database queries and the House call receipt.",
+  "session": "45-1",
+  "cutoff": "2026-11-25T08:33:25+00:00",
+  "asOf": "2026-11-25T11:15:39.000Z",
+  "inputs": {
+    "receipt": "dist/refresh/receipts/committee-calls.json",
+    "receiptSha256": "b421b93bf7ef03fac98336531f0ee836aadc68b0928a1bb526828f05dc1efef8",
+    "sealedBase": "docs/evidence/2026-11-25/committee-cloudflare-base.json",
+    "sealedBaseSha256": "2fab4cff07c9c3b35b741a6061c53b618f61446d52f7a569d226b934e9e9fbfe",
+    "sourceAndLocalServingGeneratedIdenticalReference": true
+  },
+  "reference": {
+    "bucket": "civicsignal-stage-funding",
+    "key": "daily/references/committee/8748ad16ba57dd3d5db5a4a7bcfee9b72c64f7092451b9391ce31ee003643607.json",
+    "sha256": "8748ad16ba57dd3d5db5a4a7bcfee9b72c64f7092451b9391ce31ee003643607",
+    "bytes": 42407,
+    "privateR2ReadbackMatched": true
+  },
+  "checks": {
+    "editionsByLanguage": {
+      "en": 15,
+      "fr": 15
+    },
+    "relatedCountResults": 30,
+    "matchedLocalRouteReads": 34,
+    "search": {
+      "en": {
+        "query": "apprenticeship",
+        "results": []
+      },
+      "fr": {
+        "query": "apprentissage",
+        "results": []
+      }
+    },
+    "fields": "Public call projections include dates, open state and basis, publisher links, study identities, committee names, content warning, hold and conflict flags, and instruction excerpts of up to 400 characters."
+  },
+  "reproduce": "bun scripts/prepare-daily-committee-reference.ts .wrangler/committees-45-1/v3/d1/miniflare-D1DatabaseObject/21e0ab396fd62e1eeaf532f6704b8dfa8072d2e2260a28be72ef20eef45d34b8.sqlite dist/refresh/receipts/committee-calls.json docs/evidence/2026-11-25/committee-cloudflare-base.json"
+}
