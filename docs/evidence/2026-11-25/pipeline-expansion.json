@@ -1053,5 +1053,65 @@
       "receipt": "dist/refresh-weekly/canadabuys-guide-20261125.json",
       "sha256": "1642c7589dec27998f046047e87b82479a6b8608436115cb2c60b64c395cebd4"
     }
+  },
+  "craReportRecovery": {
+    "receipt": "data/corpus/departmental-report-documents/generations/263d9240de9260829ed68e56fdc1852a.json",
+    "sha256": "7197d5ad511ba8db4b721a6977e8302642ba115057b845fc1da20dbcb6db2b5b",
+    "replay": {
+      "receipt": "dist/refresh-weekly/departmental-pdf-archive-recovery-replay.json",
+      "sha256": "4f2ba58c8d67f206f2409cda00a841120bcb50c29eebe20f79081b726975c07e"
+    },
+    "historicalReplay": {
+      "receipt": "dist/refresh-weekly/departmental-pdf-legacy-replay.json",
+      "sha256": "4688b720148d9e4a2001d149f2ae92b6352c814aded4f7b6c656c39f2b16bbb6"
+    },
+    "summary": {
+      "archivedBodyBytes": 112197621,
+      "directLinkCitations": 117,
+      "failedTargets": 1,
+      "fetchedTargets": 115,
+      "readableTargets": 115,
+      "reviewCitations": 19,
+      "uniquePdfTargets": 116,
+      "verifiedCitations": 98
+    },
+    "verifiedEditions": [
+      {
+        "issueYear": "2002-2003",
+        "original": "https://epe.lac-bac.gc.ca/100/202/301/treasury_board/estimates_report_plans/canada_customs_revenue_agency/2002-03.pdf",
+        "publication": "https://publications.gc.ca/collections/collection_2012/arc-cra/Rv1-6-2002-eng.pdf",
+        "basis": "publisher-declared-equivalent"
+      },
+      {
+        "issueYear": "2003-2004",
+        "original": "https://epe.lac-bac.gc.ca/100/202/301/treasury_board/estimates_report_plans/canada_customs_revenue_agency/2003-04.pdf",
+        "publication": "https://publications.gc.ca/collections/collection_2015/arc-cra/Rv1-28-2003-eng.pdf",
+        "basis": "publisher-matched-rpp"
+      }
+    ]
+  },
+  "archivedHtmlReportRecovery": {
+    "receipt": "data/corpus/departmental-report-documents/html-generations/416d924ac381c5d6d226f3116b5b66f9.json",
+    "sha256": "9ed24fbf8bf346af8ffc3cdbe82a82cf79385e0807a649b97ac3d5063c6ba863",
+    "audit": {
+      "receipt": "dist/refresh-weekly/oic-html-archive-audit.json",
+      "sha256": "21c8bae98b1093261e14bddc1bbdf831e422390b148caae9d6875f84494736f0"
+    },
+    "reassessedTargets": 43,
+    "citationDispositionCounts": {
+      "accepted": 1134,
+      "fetch-failed": 2,
+      "not-found": 5,
+      "not-report": 554,
+      "out-of-policy": 12,
+      "unreadable": 1
+    },
+    "targetStatusCounts": {
+      "fetch-failed": 2,
+      "fetched": 1677,
+      "not-found": 4,
+      "out-of-policy": 12,
+      "unreadable": 1
+    }
   }
 }
