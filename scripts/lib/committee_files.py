@@ -295,7 +295,7 @@ def capture(root, urls, workers=10, refresh=False):
     from concurrent.futures import ThreadPoolExecutor
     from collections import Counter
 
-    with cache_db(root) as db:
+    with closing(cache_db(root)) as db, db:
         existing = (
             {
                 row["url"]

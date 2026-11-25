@@ -1,9 +1,16 @@
 """Check the House consultation parser against the shapes it was written for."""
 
+import gzip
+import hashlib
+import importlib.util
+import io
 import json
 import sqlite3
 import sys
 import unittest
+from contextlib import redirect_stdout
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -12,10 +19,14 @@ from lib.committee_calls import (  # noqa: E402
     build_call,
     mark_unlisted,
     call_id,
+    PARTICIPATE_INDEX,
+    parse_call_editions,
+    parse_call_indexes,
     parse_deadline,
     parse_participate,
     parse_session,
     parse_study,
+    study_url,
 )
 
 PARTICIPATE = """
@@ -87,6 +98,33 @@ class ParticipateIndexTest(unittest.TestCase):
     def test_reads_the_session_from_each_edition(self):
         self.assertEqual(parse_session(STUDY, "en"), "45-1")
         self.assertEqual(parse_session(BILL, "fr"), "45-1")
+
+
+class CallObservationTest(unittest.TestCase):
+    def setUp(self):
+        self.listings = parse_call_indexes({url: PARTICIPATE for url in PARTICIPATE_INDEX.values()})
+        self.pages = {
+            study_url(study["committee"], study["study_id"], lang): STUDY if lang == "en" else BILL
+            for lang, rows in self.listings.items() for study in rows
+        }
+
+    def test_rejects_every_wrong_or_missing_session_before_returning_calls(self):
+        french = study_url("HESA", "13632808", "fr")
+        for body in [BILL.replace("45e", "44e"), BILL.replace("45e", "unknown")]:
+            with self.subTest(body=body), self.assertRaisesRegex(ValueError, "expected session 45-1"):
+                parse_call_editions("45-1", self.listings, {**self.pages, french: body})
+
+    def test_shared_motion_is_flagged_for_distinct_studies_only_in_the_same_language(self):
+        standard = parse_call_editions("45-1", self.listings, self.pages)
+        self.assertTrue(all(not edition["shares_with"] for edition in standard))
+        motion = "The same motion was published for this study."
+        pages = {url: body.split('id="custom-message-1"')[0] +
+                 'id="custom-message-1" class="custom-message"><p>' + motion + '</p></div><!-- Information -->'
+                 for url, body in self.pages.items()}
+        editions = parse_call_editions("45-1", self.listings, pages)
+        self.assertEqual([(e["language"], e["study"]["study_id"], e["shares_with"]) for e in editions],
+                         [("en", "13632808", ["13666586"]), ("en", "13666586", ["13632808"]),
+                          ("fr", "13632808", [])])
 
 
 class StudyPageTest(unittest.TestCase):
@@ -219,6 +257,90 @@ class CallRecordTest(unittest.TestCase):
         self.assertEqual(back["metadata"]["revision"], 1)
         self.assertEqual(back["metadata"]["instructions"], self.parsed["instructions"])
         self.assertIsNone(back["metadata"]["pendingDigest"])
+
+
+class CachedOperatorTest(unittest.TestCase):
+    def setUp(self):
+        from lib.committee_calls import SENATE_CHECKS
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        path = Path(__file__).resolve().parents[1] / "scripts/committee-calls.py"
+        spec = importlib.util.spec_from_file_location("local_calls", path)
+        self.operator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.operator)
+        self.pages = {url: PARTICIPATE for url in PARTICIPATE_INDEX.values()}
+        self.english = study_url("HESA", "13632808", "en")
+        self.pages.update({self.english: STUDY, study_url("HUMA", "13666586", "en"): STUDY,
+                           study_url("HESA", "13632808", "fr"): BILL})
+        self.pages.update({url: "<html>Committee</html>" for urls in SENATE_CHECKS.values() for url in urls})
+
+    def archive(self, checked, only=None):
+        from lib.committee_files import cache_db, object_path
+        db = cache_db(self.root)
+        try:
+            with db:
+                for url in only or self.pages:
+                    body = self.pages[url].encode()
+                    digest = hashlib.sha256(body).hexdigest()
+                    dest = object_path(self.root, digest)
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest.write_bytes(gzip.compress(body))
+                    db.execute("INSERT OR REPLACE INTO files VALUES(?,?,?,?,?,?,?)",
+                               (url, digest, "text/html", len(body), None, checked, url))
+        finally:
+            db.close()
+
+    def run_operator(self):
+        receipt = self.root / "receipt.json"
+        argv = ["committee-calls.py", "--from-cache", "--root", str(self.root), "--db", str(self.root / "calls.db"),
+                "--receipt", str(receipt)]
+        with (
+            patch.object(sys, "argv", argv),
+            patch("lib.committee_files.download", side_effect=AssertionError("network")),
+            redirect_stdout(io.StringIO()),
+        ):
+            self.operator.main()
+        return json.loads(receipt.read_text())
+
+    def test_one_publisher_sighting_only_counts_once_for_a_pending_change(self):
+        self.archive("2026-11-23T12:00:00.123456Z")
+        self.run_operator()
+        self.pages[self.english] = STUDY.replace("2,000", "1,000")
+        self.archive("2026-11-24T12:00:00.123456Z")
+        first = self.run_operator()
+        self.assertEqual(first["counts"]["pending"], 1)
+        replay = self.run_operator()
+        self.assertEqual((replay["observedAt"], replay["counts"], replay["calls"]),
+                         (first["observedAt"], first["counts"], first["calls"]))
+        self.archive("2026-11-25T12:00:00.123456Z", only=[self.english])
+        with self.assertRaisesRegex(ValueError, "mixes"):
+            self.run_operator()
+        self.archive("2026-11-25T12:00:00.123456Z")
+        confirmed = self.run_operator()
+        self.assertEqual((confirmed["counts"]["changed"], confirmed["counts"]["pending"]), (1, 0))
+        self.assertEqual(next(c["revision"] for c in confirmed["calls"] if c["citation"] == self.english), 2)
+
+    def test_cached_listing_cannot_drop_or_relist_and_a_fresh_listing_can(self):
+        self.archive("2026-11-23T12:00:00.123456Z")
+        initial = self.run_operator()
+        en = PARTICIPATE_INDEX["en"]
+        self.pages[en] = PARTICIPATE.replace("studyActivityId=13666586", "omitted=13666586")
+        self.archive("2026-11-23T12:00:00.123456Z", only=[en])
+        with self.assertRaisesRegex(ValueError, "cached listing differs"):
+            self.run_operator()
+        self.archive("2026-11-24T12:00:00.123456Z")
+        dropped = self.run_operator()
+        self.assertEqual(dropped["droppedCalls"], [{"id": "house-huma-call-13666586", "language": "en",
+                                                   "lastListedAt": initial["observedAt"]}])
+        self.assertEqual(self.run_operator()["droppedCalls"], [])
+        self.pages[en] = PARTICIPATE
+        self.archive("2026-11-24T12:00:00.123456Z", only=[en])
+        with self.assertRaisesRegex(ValueError, "cached listing differs"):
+            self.run_operator()
+        self.archive("2026-11-25T12:00:00.123456Z")
+        relisted = self.run_operator()
+        self.assertEqual((relisted["counts"]["calls"], relisted["counts"]["changed"]), (3, 0))
 
 
 class UnlistedCallTest(unittest.TestCase):

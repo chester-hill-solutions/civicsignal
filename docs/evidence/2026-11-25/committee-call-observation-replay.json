@@ -1,0 +1,99 @@
+{
+  "scope": "Local House calls operator and Senate probe classification, session 45-1.",
+  "observedAt": "2026-11-25T11:15:39Z",
+  "receipt": {
+    "file": "dist/refresh/receipts/committee-calls.json",
+    "sha256": "b421b93bf7ef03fac98336531f0ee836aadc68b0928a1bb526828f05dc1efef8"
+  },
+  "archive": {
+    "houseIndexEditions": 2,
+    "houseStudyEditions": 30,
+    "senateProbes": 8,
+    "publisherBytesVerified": 4910077,
+    "verification": "Each decompressed original matched its advertised SHA-256 and byte count. Both source databases were opened with mode=ro and immutable=1 against the retained checkpointed files. The operator wrote exclusively to a small disposable replica."
+  },
+  "outcome": {
+    "calls": 30,
+    "committees": 6,
+    "deadlineInstants": 14,
+    "instructionBlocks": 18,
+    "contentWarnings": 7,
+    "pending": 2,
+    "conflicts": 2,
+    "drops": 0,
+    "senateProbesWithoutCallListing": 8,
+    "conflictingEnglishStudyIds": [
+      "13583486",
+      "13631120"
+    ],
+    "comparison": "Two operator replays matched every November 25 receipt field except the generation timestamp. Records, links, revisions and change events stayed identical between replays."
+  },
+  "regression": {
+    "priorCommit": "95ee648e452792cb8d1bc9e667dfb74084441a4c",
+    "call": "house-srsr-call-13688263",
+    "language": "en",
+    "before": "A replay after the November 25 publication counted the same saved instructions twice, advancing revision 6 to 7.",
+    "after": "A repeat of that capture preserves revision 6 and the pending change. A complete later publisher observation can confirm a pending change even when its bytes match."
+  },
+  "reproduction": {
+    "unitTests": "python3 -B -Werror -m unittest discover -s test -p 'test_committee*.py'",
+    "fixture": "The exact replay uses the retained November 25 receipt, its downloads.sqlite source descriptors, committee.sqlite post-publication call and study rows, and gzip originals at objects/<first two digest characters>/<digest>.gz. Run at the repository root using the matching checkpointed files with no outstanding SQLite WAL. The checked-in CachedOperatorTest exercises the same hold, confirmation, drop and relisting cases with a self-contained fixture.",
+    "commands": [
+      "evidence=docs/evidence/2026-11-25/committee-call-observation-replay.json",
+      "replica=$(mktemp -d)",
+      "jq -r '.reproduction.preparePython[]' \"$evidence\" | PYTHONPATH=scripts python3 -B - \"$replica\"",
+      "python3 -B scripts/committee-calls.py --from-cache --root \"$replica\" --db \"$replica/calls.db\" --receipt \"$replica/first.json\"",
+      "sqlite3 \"$replica/calls.db\" .dump > \"$replica/first.sql\"",
+      "python3 -B scripts/committee-calls.py --from-cache --root \"$replica\" --db \"$replica/calls.db\" --receipt \"$replica/second.json\"",
+      "sqlite3 \"$replica/calls.db\" .dump > \"$replica/second.sql\"",
+      "cmp \"$replica/first.sql\" \"$replica/second.sql\"",
+      "for file in \"$replica/first.json\" \"$replica/second.json\"; do diff <(jq -S 'del(.generatedAt)' dist/refresh/receipts/committee-calls.json) <(jq -S 'del(.generatedAt)' \"$file\") || exit 1; done"
+    ],
+    "preparePython": [
+      "from contextlib import closing",
+      "from hashlib import sha256",
+      "from pathlib import Path",
+      "import json",
+      "import shutil",
+      "import sqlite3",
+      "import sys",
+      "",
+      "from lib.committee_files import cache_db, object_path, read_object",
+      "from lib.committee_store import initialize, write_record",
+      "",
+      "scratch = Path(sys.argv[1]).resolve()",
+      "originals = Path(\"data/corpus/committees\").resolve()",
+      "receipt = Path(\"dist/refresh/receipts/committee-calls.json\").read_bytes()",
+      "assert sha256(receipt).hexdigest() == \"b421b93bf7ef03fac98336531f0ee836aadc68b0928a1bb526828f05dc1efef8\"",
+      "expected = json.loads(receipt)",
+      "refs = {r[\"url\"]: r[\"sha256\"] for r in expected[\"sources\"]}",
+      "refs.update({r[\"citation\"]: r[\"sourceSha256\"] for r in expected[\"calls\"]})",
+      "",
+      "def readonly(filename):",
+      "    db = sqlite3.connect((originals / filename).as_uri() + \"?mode=ro&immutable=1\", uri=True)",
+      "    db.row_factory = sqlite3.Row",
+      "    return closing(db)",
+      "",
+      "with readonly(\"downloads.sqlite\") as src, closing(cache_db(scratch)) as dest, dest:",
+      "    for url, digest in refs.items():",
+      "        row = src.execute(\"SELECT * FROM files WHERE url=?\", (url,)).fetchone()",
+      "        assert row[\"digest\"] == digest and len(read_object(originals, digest)) == row[\"size\"]",
+      "        target = object_path(scratch, digest)",
+      "        target.parent.mkdir(parents=True, exist_ok=True)",
+      "        shutil.copyfile(object_path(originals, digest), target)",
+      "        dest.execute(\"INSERT INTO files VALUES (?,?,?,?,?,?,?)\", tuple(row))",
+      "",
+      "with readonly(\"committee.sqlite\") as src, closing(initialize(sqlite3.connect(scratch / \"calls.db\"))) as dest, dest:",
+      "    rows = list(src.execute(\"SELECT * FROM cc_records WHERE session='45-1' AND kind='call'\"))",
+      "    for call in expected[\"calls\"]:",
+      "        key = call[\"committeeId\"] + \"-study-\" + call[\"studyId\"]",
+      "        rows.extend(src.execute(\"SELECT * FROM cc_records WHERE session='45-1' AND id=? AND language=?\", (key, call[\"language\"])))",
+      "    for row in rows:",
+      "        write_record(dest, dict(row))",
+      "        key = (row[\"session\"], row[\"id\"], row[\"language\"])",
+      "        revision = src.execute(\"SELECT * FROM cc_revision WHERE session=? AND id=? AND language=?\", key).fetchone()",
+      "        if revision:",
+      "            dest.execute(\"INSERT INTO cc_revision VALUES (?,?,?,?)\", tuple(revision))"
+    ]
+  }
+}

@@ -19,36 +19,21 @@ from pathlib import Path
 
 from lib.committee_calls import (
     PARTICIPATE_INDEX,
+    SENATE_CHECKS,
     build_call,
     call_id,
+    call_observation_time,
+    classify_senate_probe,
     committee_id,
     mark_unlisted,
-    parse_participate,
-    parse_session,
-    parse_study,
+    parse_call_editions,
+    parse_call_indexes,
     study_url,
 )
 from lib.committee_files import cache_db, capture, read_object
 from lib.committee_store import initialize, update, write_link
 from lib.wq_catalog import save_atomic
 
-# The Senate publishes committee briefs but, at these pages, no listing of studies
-# that are currently inviting them.
-SENATE_CHECKS = {
-    "en": [
-        "https://sencanada.ca/en/committees/",
-        "https://sencanada.ca/en/committees/aefa/",
-        "https://sencanada.ca/en/committees/aefa/briefs/45-1",
-        "https://sencanada.ca/en/committees/aefa/studiesandbills/45-1",
-    ],
-    "fr": [
-        "https://sencanada.ca/fr/comites/",
-        "https://sencanada.ca/fr/comites/aefa/",
-        "https://sencanada.ca/fr/comites/aefa/memoires/45-1",
-        "https://sencanada.ca/fr/comites/aefa/etudesetprojetsdeloi/45-1",
-    ],
-}
-CALL_MARKERS = ("call for submissions", "call for briefs", "appel de mémoires")
 # A Work page repeats a study's URL on a "Participate" button. Older catalogue
 # builds used that label as the study title.
 ACTION_LABELS = {"participate", "participez"}
@@ -57,11 +42,11 @@ ACTION_LABELS = {"participate", "participez"}
 def archived(root: Path, cache: sqlite3.Connection, url: str) -> tuple[str | None, dict]:
     """The archived copy of a URL and the cache's own record of the request."""
     row = cache.execute(
-        "SELECT digest,error,media,size FROM files WHERE url=?", (url,)
+        "SELECT digest,error,media,size,checked FROM files WHERE url=?", (url,)
     ).fetchone()
     if not row:
         return None, {"url": url, "state": "not-requested"}
-    record = {"url": url, "media": row["media"], "bytes": row["size"], "error": row["error"]}
+    record = {"url": url, "media": row["media"], "bytes": row["size"], "error": row["error"], "checked": row["checked"]}
     if not row["digest"]:
         return None, {**record, "state": "unavailable"}
     body = read_object(root, row["digest"]).decode("utf-8", "replace")
@@ -86,49 +71,6 @@ def repair_study_title(database: sqlite3.Connection, session: str, language: str
     return True
 
 
-def repair_study_title(database: sqlite3.Connection, session: str, language: str,
-                       study_record: str, title: str) -> bool:
-    """Replace an action label that an earlier catalogue build stored as a study title."""
-    row = database.execute(
-        "SELECT * FROM cc_records WHERE session=? AND id=? AND language=? AND kind='study'",
-        (session, study_record, language),
-    ).fetchone()
-    if not row or (row["title"] or "").strip().casefold() not in ACTION_LABELS:
-        return False
-    update(database, {
-        "session": row["session"], "id": row["id"], "language": row["language"],
-        "kind": row["kind"], "chamber": row["chamber"], "committee_id": row["committee_id"],
-        "title": title, "url": row["url"], "status": row["status"],
-        "metadata": json.loads(row["metadata_json"]),
-    })
-    return True
-
-
-def call_row(db: sqlite3.Connection, session: str, language: str, record_id: str):
-    """The stored call with its metadata, ready for the store's update."""
-    row = db.execute(
-        "SELECT session,id,language,kind,chamber,committee_id,title,url,status,metadata_json "
-        "FROM cc_records WHERE session=? AND id=? AND language=? AND kind='call'",
-        (session, record_id, language),
-    ).fetchone()
-    if not row:
-        return None
-    return {
-        "session": row["session"], "id": row["id"], "language": row["language"],
-        "kind": row["kind"], "chamber": row["chamber"], "committee_id": row["committee_id"],
-        "title": row["title"], "url": row["url"], "status": row["status"],
-        "metadata": json.loads(row["metadata_json"]),
-    }
-
-
-def existing_record(db: sqlite3.Connection, session: str, language: str, record_id: str):
-    row = db.execute(
-        "SELECT metadata_json FROM cc_records WHERE session=? AND id=? AND language=?",
-        (session, record_id, language),
-    ).fetchone()
-    return {"metadata": json.loads(row["metadata_json"])} if row else None
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path("data/corpus/committees"))
@@ -147,59 +89,19 @@ def main():
     root = args.root.resolve()
     cache = cache_db(root)
     try:
-        capture(root, [PARTICIPATE_INDEX["en"], PARTICIPATE_INDEX["fr"]], args.workers, not args.from_cache)
-        listings = {}
-        discovered = []
-        for language in ("en", "fr"):
-            body, source = archived(root, cache, PARTICIPATE_INDEX[language])
-            if body is None:
-                raise RuntimeError(f"the {language} consultation list was not captured")
-            studies = parse_participate(body, language)
-            if not studies:
-                raise RuntimeError(f"no consultations were listed in the {language} edition")
-            listings[language] = {"studies": studies, "source": source}
-            discovered.extend(
-                study_url(study["committee"], study["study_id"], language) for study in studies
-            )
-        capture(root, sorted(set(discovered)), args.workers, not args.from_cache)
+        capture(root, list(PARTICIPATE_INDEX.values()), args.workers, not args.from_cache)
+        index_pages = {url: archived(root, cache, url) for url in PARTICIPATE_INDEX.values()}
+        listings = parse_call_indexes({url: body for url, (body, _) in index_pages.items()})
+        discovered = {
+            study_url(study["committee"], study["study_id"], language)
+            for language, studies in listings.items() for study in studies
+        }
+        capture(root, sorted(discovered), args.workers, not args.from_cache)
 
-        observed_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        # Parse and verify every page before a single record is written.
-        editions = []
-        sessions = set()
-        for language in ("en", "fr"):
-            for study in listings[language]["studies"]:
-                url = study_url(study["committee"], study["study_id"], language)
-                body, source = archived(root, cache, url)
-                if body is None:
-                    raise RuntimeError(f"{url} was not captured")
-                sessions.add(parse_session(body, language))
-                editions.append({
-                    "language": language,
-                    "study": study,
-                    "url": url,
-                    "source": source,
-                    "parsed": parse_study(body, language),
-                })
-        if sessions != {args.session}:
-            raise RuntimeError(
-                f"the listed studies belong to {sorted(sessions)}, not session {args.session}"
-            )
-        # The House sometimes serves one study's motion block on another study's page.
-        # A committee's standard submission block is legitimately shared by its
-        # studies, so only study-specific motion text counts: identical motion text
-        # under two study ids in the same run is the publisher's defect.
-        shared = {}
-        for edition in editions:
-            text = (edition["parsed"]["instructions"] or "").strip()
-            if text and "motion" in text.casefold():
-                shared.setdefault((edition["language"], text), []).append(edition["study"]["study_id"])
-        conflicts = {}
-        for (language, _text), study_ids in shared.items():
-            unique = sorted(set(study_ids))
-            if len(unique) > 1:
-                for study_id in unique:
-                    conflicts[(study_id, language)] = [other for other in unique if other != study_id]
+        study_pages = {url: archived(root, cache, url) for url in discovered}
+        editions = parse_call_editions(
+            args.session, listings, {url: body for url, (body, _) in study_pages.items()}
+        )
 
         database = initialize(sqlite3.connect(args.db))
         database.row_factory = sqlite3.Row
@@ -211,18 +113,31 @@ def main():
         stats = {"added": 0, "changed": 0, "unchanged": 0, "pending": 0}
         try:
             with database:
+                database.execute("BEGIN IMMEDIATE")
                 prior = {
-                    (row["id"], row["language"]): json.loads(row["metadata_json"])
+                    (row["id"], row["language"]): {"metadata": json.loads(row["metadata_json"]), "title": row["title"]}
                     for row in database.execute(
-                        "SELECT id,language,metadata_json FROM cc_records WHERE session=? AND kind='call'",
+                        "SELECT id,language,metadata_json,title FROM cc_records WHERE session=? AND kind='call'",
                         (args.session,),
                     )
                 }
-                present = set()
+                latest = max((r["metadata"]["observedAt"] for r in prior.values() if r["metadata"].get("observedAt")),
+                             key=datetime.fromisoformat, default=None)
+                observed_at = call_observation_time(
+                    (source for pages in (index_pages, study_pages) for _, source in pages.values()), latest
+                )
+                present = {
+                    (call_id(edition["study"]["committee"], edition["study"]["study_id"]), edition["language"])
+                    for edition in editions
+                }
+                if latest == observed_at:
+                    stored = {key for key, row in prior.items() if row["metadata"].get("listed") is not False}
+                    if stored != present or any(prior[key]["metadata"].get("observedAt") != latest for key in present):
+                        raise ValueError("cached listing differs from the stored observation")
                 for edition in editions:
                     study = edition["study"]
                     language = edition["language"]
-                    shares_with = conflicts.get((study["study_id"], language))
+                    shares_with = edition["shares_with"]
                     record = build_call(
                         session=args.session,
                         language=language,
@@ -231,12 +146,7 @@ def main():
                         listed_title=study["title"],
                         observed_at=observed_at,
                         parsed=edition["parsed"],
-                        existing=existing_record(
-                            database,
-                            args.session,
-                            language,
-                            call_id(study["committee"], study["study_id"]),
-                        ),
+                        existing=prior.get((call_id(study["committee"], study["study_id"]), language)),
                         conflict=bool(shares_with),
                     )
                     if shares_with:
@@ -244,8 +154,7 @@ def main():
                                             "sharesWith": shares_with})
                     update(database, record)
                     key = (record["id"], language)
-                    present.add(key)
-                    before = prior.get(key)
+                    before = prior[key]["metadata"] if key in prior else None
                     if before is None:
                         stats["added"] += 1
                     elif record["metadata"]["revision"] > int(before.get("revision") or 0):
@@ -286,7 +195,7 @@ def main():
                         "hasInstructions": record["metadata"]["instructions"] is not None,
                         "hasContentWarning": record["metadata"]["contentWarning"],
                         "revision": record["metadata"]["revision"],
-                        "sourceSha256": edition["source"]["sha256"],
+                        "sourceSha256": study_pages[edition["url"]][1]["sha256"],
                     })
                 # A study that left the current list is no longer soliciting briefs.
                 dropped = mark_unlisted(database, args.session, present)
@@ -298,19 +207,9 @@ def main():
             capture(root, urls, args.workers, not args.from_cache)
             for url in urls:
                 body, source = archived(root, cache, url)
-                if body is None:
-                    senate.append({**source, "chamber": "senate", "language": language,
-                                   "listing": "unreadable"})
-                    continue
-                text = body.casefold()
-                senate.append({
-                    **source,
-                    "chamber": "senate",
-                    "language": language,
-                    "listing": "call-listing-present"
-                    if any(marker in text for marker in CALL_MARKERS)
-                    else "no-call-listing-in-archived-html",
-                })
+                source.pop("checked", None)
+                senate.append({**source, "chamber": "senate", "language": language,
+                               "listing": classify_senate_probe(body)})
 
         receipt = {
             "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -321,8 +220,8 @@ def main():
                     "chamber": "house",
                     "language": language,
                     "url": PARTICIPATE_INDEX[language],
-                    "sha256": listings[language]["source"]["sha256"],
-                    "studies": len(listings[language]["studies"]),
+                    "sha256": index_pages[PARTICIPATE_INDEX[language]][1]["sha256"],
+                    "studies": len(listings[language]),
                 }
                 for language in ("en", "fr")
             ] + senate,

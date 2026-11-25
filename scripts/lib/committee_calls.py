@@ -23,6 +23,24 @@ PARTICIPATE_INDEX = {
     "en": "https://www.ourcommons.ca/Committees/en/Participate",
     "fr": "https://www.ourcommons.ca/Committees/fr/Participate",
 }
+# The Senate publishes committee briefs but, at these pages, no listing of studies
+# that are currently inviting them.
+SENATE_CHECKS = {
+    "en": [
+        "https://sencanada.ca/en/committees/",
+        "https://sencanada.ca/en/committees/aefa/",
+        "https://sencanada.ca/en/committees/aefa/briefs/45-1",
+        "https://sencanada.ca/en/committees/aefa/studiesandbills/45-1",
+    ],
+    "fr": [
+        "https://sencanada.ca/fr/comites/",
+        "https://sencanada.ca/fr/comites/aefa/",
+        "https://sencanada.ca/fr/comites/aefa/memoires/45-1",
+        "https://sencanada.ca/fr/comites/aefa/etudesetprojetsdeloi/45-1",
+    ],
+}
+CALL_MARKERS = ("call for submissions", "call for briefs", "appel de mémoires")
+
 HOUSE_TERMS = "https://apps.ourcommons.ca/en/important-notices"
 
 MONTHS = {
@@ -128,6 +146,60 @@ def parse_participate(page: str, language: str) -> list[dict]:
     return list(studies.values())
 
 
+def parse_call_indexes(pages: dict[str, str | None]) -> dict[str, list[dict]]:
+    """Require a captured, nonempty consultation list in each published edition."""
+    listings = {}
+    for language, url in PARTICIPATE_INDEX.items():
+        body = pages.get(url)
+        if body is None:
+            raise ValueError(f"the {language} consultation list was not captured")
+        studies = parse_participate(body, language)
+        if not studies:
+            raise ValueError(f"no consultations were listed in the {language} edition")
+        listings[language] = studies
+    return listings
+
+
+def parse_call_editions(session: str, listings: dict[str, list[dict]],
+                        pages: dict[str, str | None]) -> list[dict]:
+    """Read every listed study before publication and identify conflicting motion text."""
+    editions = []
+    motions = {}
+    for language in PARTICIPATE_INDEX:
+        for study in listings[language]:
+            study_id = study["study_id"]
+            url = study_url(study["committee"], study_id, language)
+            body = pages.get(url)
+            if body is None:
+                raise ValueError(f"{url} was not captured")
+            published_session = parse_session(body, language)
+            if published_session != session:
+                raise ValueError(f"expected session {session} at {url}, found {published_session!r}")
+            parsed = parse_study(body, language)
+            edition = {"language": language, "study": study, "url": url, "parsed": parsed, "shares_with": []}
+            editions.append(edition)
+            # Standard committee instructions may be shared. A motion is study-specific.
+            instructions = (parsed["instructions"] or "").strip()
+            if instructions and "motion" in instructions.casefold():
+                motions.setdefault((language, instructions), []).append(edition)
+    for matches in motions.values():
+        study_ids = {edition["study"]["study_id"] for edition in matches}
+        if len(study_ids) > 1:
+            for edition in matches:
+                edition["shares_with"] = sorted(study_ids - {edition["study"]["study_id"]})
+    return editions
+
+
+def classify_senate_probe(body: str | None) -> str:
+    """Report what the checked Senate page contains, including unavailable pages."""
+    if body is None:
+        return "unreadable"
+    folded = body.casefold()
+    if any(marker in folded for marker in CALL_MARKERS):
+        return "call-listing-present"
+    return "no-call-listing-in-archived-html"
+
+
 def parse_session(page: str, language: str) -> str | None:
     pattern = EN_SESSION if language == "en" else FR_SESSION
     match = pattern.search(visible(page))
@@ -214,6 +286,29 @@ def parse_deadline(value: str | None, language: str) -> dict | None:
     }
 
 
+def call_observation_time(sources, previous: str | None) -> str:
+    """Order complete House captures by publisher request times, including cached replays."""
+    captured = []
+    for source in sources:
+        if source.get("error") or not source.get("checked"):
+            raise ValueError(f"missing successful publisher observation for {source['url']}")
+        instant = datetime.fromisoformat(source["checked"])
+        if instant.utcoffset() is None:
+            raise ValueError(f"publisher request time lacks a zone at {source['url']}")
+        captured.append(instant)
+    latest = max(captured)
+    if previous:
+        cutoff = datetime.fromisoformat(previous)
+        # The original operator recorded the end of collection in whole seconds.
+        if "." not in previous:
+            cutoff = cutoff.replace(microsecond=999999)
+        if latest <= cutoff:
+            return previous
+        if min(captured) <= cutoff:
+            raise ValueError("House capture mixes previously applied pages with newer publisher requests")
+    return latest.astimezone(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
 def build_call(
     *,
     session: str,
@@ -242,11 +337,28 @@ def build_call(
     }
     candidate = digest(content)
     confirmed = history.get("contentDigest")
+    replay = False
+    if history.get("observedAt"):
+        prior_instant = datetime.fromisoformat(history["observedAt"])
+        incoming = datetime.fromisoformat(observed_at)
+        if incoming < prior_instant:
+            raise ValueError(f"cannot apply an older observation to {study_id}/{language}")
+        if incoming == prior_instant:
+            replay = True
+            observed_at = history["observedAt"]
+    if replay:
+        expected = history.get("pendingDigest") or confirmed
+        if (candidate != expected or history.get("listed") is False
+                or bool(history.get("contentConflict")) != conflict
+                or parsed["content_warning"] != bool(history.get("contentWarning"))
+                or parsed["content_warning_text"] != history.get("contentWarningText")
+                or (existing.get("title") is not None and existing["title"] != listed_title)):
+            raise ValueError(f"cached study differs from the stored observation: {study_id}/{language}")
     revision = int(history.get("revision") or 1)
     pending = None
     if history and candidate != confirmed:
-        if conflict:
-            pending = candidate                # another study published this same block
+        if conflict or replay:
+            pending = candidate                # shared motion or the same archived sighting
             content = {key: history.get(key) for key in content}
         elif history.get("pendingDigest") == candidate:
             revision += 1                      # second consecutive observation: commit
