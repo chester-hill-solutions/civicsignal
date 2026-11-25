@@ -7,13 +7,17 @@ import hashlib
 import importlib.util
 import json
 import re
+import zipfile
+import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from contextlib import closing
 from pathlib import Path
 import sqlite3
 import sys
 import unicodedata
+from urllib.parse import urlsplit
 from lib.parliament_intake import save_atomic
+from lib.federal_guidance import IRCC_LANDING
 
 
 ROSTER = Path("docs/evidence/2026-11-23")
@@ -260,6 +264,284 @@ def count_geds_organizations(folder, count, provenance):
                               "organizationUnits": total, "departmentNames": len(rows)}
 
 
+def _mods_records(source):
+    """Stream publisher fields from a publisher-archived MODS collection."""
+    with zipfile.ZipFile(source) as archive:
+        members = [item for item in archive.infolist() if not item.is_dir()]
+        if len(members) != 1:
+            raise ValueError("Publications archive must contain exactly one MODS XML member")
+        with archive.open(members[0]) as stream:
+            stack = []
+            collection_seen = False
+            for event, element in ET.iterparse(stream, events=("start", "end")):
+                local = element.tag.rsplit("}", 1)[-1]
+                if event == "start":
+                    stack.append(element)
+                    if len(stack) == 1:
+                        namespace = element.tag.partition("}")[0][1:] if element.tag.startswith("{") else ""
+                        if local != "modsCollection" or namespace != "http://www.loc.gov/mods/v3":
+                            raise ValueError("Publications ZIP member is not a MODS 3 collection")
+                        collection_seen = True
+                    continue
+                if local == "mods" and len(stack) == 2:
+                    ns = "{http://www.loc.gov/mods/v3}"
+                    identifiers = [(item.text or "").strip() for item in element.findall(".//" + ns + "recordIdentifier")]
+                    publishers = list(dict.fromkeys((item.text or "").strip() for item in
+                        element.findall(".//" + ns + "originInfo/" + ns + "publisher") if (item.text or "").strip()))
+                    element.clear()
+                    if stack:
+                        stack[-2].clear()
+                    yield identifiers, publishers
+                stack.pop()
+            if not collection_seen:
+                raise ValueError("Publications archive has no MODS collection")
+
+
+def _current_publications_receipt(root):
+    current = root / "current"
+    if not current.is_symlink():
+        raise ValueError("No complete acquired federal publications generation")
+    generation = current.resolve(strict=True)
+    if generation.parent != (root / "generations").resolve():
+        raise ValueError("Publications current pointer escapes its generations directory")
+    receipt_path = generation / "receipt.json"
+    receipt = json.loads(receipt_path.read_bytes())
+    if receipt.get("series") != "publications" or set(receipt.get("resources", {})) != {"monographs", "periodicals", "series"}:
+        raise ValueError("Current publications generation is incomplete")
+    return receipt, receipt_path, generation
+
+
+def count_publications(corpus, count, provenance, aliases):
+    root = corpus / "federal-publications"
+    receipt, receipt_path, generation = _current_publications_receipt(root)
+    for category in ("monographs", "periodicals", "series"):
+        resource = receipt["resources"][category]
+        source_key = "publications-" + category
+        archive = generation / "archives" / (category + ".zip")
+        if (resource.get("snapshotDate") != receipt.get("snapshotDate") or
+                not re.fullmatch(r"[0-9a-f]{64}", resource.get("sha256", "")) or
+                archive.stat().st_size != resource.get("archiveBytes")):
+            raise ValueError(f"Publications {category} archive differs from its acquired receipt")
+        with archive.open("rb") as source:
+            archive_hash = hashlib.file_digest(source, "sha256").hexdigest()
+        if archive_hash != resource["sha256"]:
+            raise ValueError(f"Publications {category} archive differs from its acquired receipt")
+        records_by_id = defaultdict(list)
+        actual_count = 0
+        for identifiers, publishers in _mods_records(archive):
+            actual_count += 1
+            if len(identifiers) == 1 and identifiers[0]:
+                records_by_id[identifiers[0]].append(publishers)
+            else:
+                records_by_id[f"\0invalid-{actual_count}"].append(publishers)
+        if actual_count != resource.get("recordCount"):
+            raise ValueError(f"Publications {category} MODS count differs from its acquired receipt")
+        duplicate_ids = sum(len(rows_for_id) > 1 for key, rows_for_id in records_by_id.items() if not key.startswith("\0"))
+        duplicate_id_records = sum(len(rows_for_id) for key, rows_for_id in records_by_id.items()
+                                   if not key.startswith("\0") and len(rows_for_id) > 1)
+        unique_records = 0
+        missing = 0
+        invalid_identifiers = 0
+        for record_id, publisher_rows in records_by_id.items():
+            if record_id.startswith("\0"):
+                invalid_identifiers += len(publisher_rows)
+                count(source_key, ["[catalogue record lacks a unique identifier]"], len(publisher_rows))
+                continue
+            if len(publisher_rows) > 1:
+                # Duplicate source identifiers are ambiguous metadata records; do not double-attribute.
+                count(source_key, ["[duplicate catalogue identifier: " + record_id + "]"], len(publisher_rows))
+                continue
+            unique_records += 1
+            labels = publisher_rows[0]
+            if not labels:
+                missing += 1
+                labels = ["[publisher not stated in MODS]"]
+            count(source_key, labels)
+        provenance[source_key] = {"series": "publications", "recordType": "MODS catalogue metadata record; attribution from its named publisher field",
+            "publisherField": "mods/originInfo/publisher", "snapshotDate": receipt["snapshotDate"],
+            "generation": generation.name, "receiptPath": str(receipt_path),
+            "resourceId": resource["id"], "url": resource["url"], "sha256": resource["sha256"],
+            "archive": str(archive), "recordCount": actual_count, "uniqueIdentifiers": unique_records,
+            "recordsWithoutUniqueIdentifier": invalid_identifiers,
+            "duplicateIdentifierRecords": duplicate_id_records, "duplicateIdentifiers": duplicate_ids,
+            "missingPublisherRecords": missing}
+
+
+def count_ircc_guidance(corpus, count, provenance):
+    root = corpus / "ircc-guidance-documents"
+    ircc = importlib.util.spec_from_file_location("ircc_guidance_documents", Path(__file__).resolve().with_name("ircc-guidance-documents.py"))
+    module = importlib.util.module_from_spec(ircc)
+    ircc.loader.exec_module(module)
+    report = module.load_report(root)
+    pointer = json.loads((root / "latest.json").read_bytes())
+    identity = pointer["reportSha256"]
+    if hashlib.sha256((root / "reports" / (identity + ".json")).read_bytes()).hexdigest() != identity:
+        raise ValueError("IRCC guidance report differs from its latest pointer")
+    inventory_ref = report.get("sourceInventory", {})
+    inventory_path = Path(inventory_ref.get("path", ""))
+    inventory_raw = inventory_path.read_bytes()
+    if hashlib.sha256(inventory_raw).hexdigest() != inventory_ref.get("sha256"):
+        raise ValueError("IRCC guidance report source inventory differs from its digest")
+    inventory = json.loads(inventory_raw)
+    official_indexes = {}
+    for language, official_url in IRCC_LANDING.items():
+        source = inventory.get("sources", {}).get("ircc-" + language)
+        if not source or source.get("url") != official_url or source.get("final_url") != official_url:
+            raise ValueError("IRCC source inventory does not preserve the official language landing page")
+        official_indexes[official_url] = source["sha256"]
+    deduped = set()
+    editions_by_language = Counter()
+    failed = 0
+    for row in report["editions"]:
+        if row.get("scope") != "ircc-document":
+            continue
+        if row.get("status") != "verified" or not row.get("document"):
+            failed += 1
+            continue
+        document = row["document"]
+        if document.get("format") not in {"html", "pdf"} or document.get("language") != row.get("language"):
+            raise ValueError("IRCC document has no verified format/language identity")
+        listings = row.get("listings", [])
+        if not listings or any(item.get("indexUrl") not in official_indexes or
+                               item.get("indexSha256") != official_indexes[item["indexUrl"]] for item in listings):
+            raise ValueError("IRCC guidance edition is not bound to the archived official language index")
+        module.check_edition(root, document)
+        key = (row["language"], row["url"], document["sha256"])
+        if key in deduped:
+            continue
+        deduped.add(key)
+        count("ircc-guidance", ["Immigration, Refugees and Citizenship Canada"])
+        editions_by_language[row["language"]] += 1
+    provenance["ircc-guidance"] = {"series": "ircc-guidance", "recordType": "verified official IRCC manual or guidance page edition",
+        "publisherLabel": "Immigration, Refugees and Citizenship Canada", "reportPath": str(root / "reports" / (identity + ".json")),
+        "reportSha256": identity, "sourceInventoryPath": str(inventory_path), "sourceInventorySha256": inventory_ref["sha256"],
+        "listedEditions": sum(row.get("scope") == "ircc-document" for row in report["editions"]),
+        "verifiedDistinctEditions": len(deduped), "verifiedDistinctEditionsByLanguage": dict(editions_by_language),
+        "failedOrUnverifiedEditions": failed}
+
+
+def count_policy_suite(corpus, count, provenance):
+    root = corpus / "federal-policy-editions"
+    pointer = json.loads((root / "latest.json").read_bytes())
+    identity = pointer["reportSha256"]
+    raw = (root / "reports" / (identity + ".json")).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != identity:
+        raise ValueError("Policy suite report differs from its latest pointer")
+    report = json.loads(raw)
+    module_spec = importlib.util.spec_from_file_location("federal_policy_editions", Path(__file__).resolve().with_name("federal-policy-editions.py"))
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    inventory_ref = report["inputs"].get("policyInventory", {})
+    inventory_path = Path(inventory_ref.get("path", ""))
+    inventory_raw = inventory_path.read_bytes()
+    if hashlib.sha256(inventory_raw).hexdigest() != inventory_ref.get("sha256"):
+        raise ValueError("Policy register inventory differs from its published digest")
+    policy_inventory = json.loads(inventory_raw)
+    registered = {(row.get("policy_id"), row.get("language"), row.get("source_index"))
+                  for row in policy_inventory.get("records", [])}
+    editions = {}
+    editions_by_language = Counter()
+    reviews = 0
+    unavailable = 0
+    for row in report["editions"]:
+        if not row.get("datesIssued") or not any(str(value).strip() for value in row["datesIssued"]):
+            reviews += 1
+            continue
+        target = report["targets"].get(row["url"], {})
+        document = target.get("document")
+        if not document or not re.fullmatch(r"[0-9a-f]{64}", document.get("bodySha256", "")):
+            unavailable += 1
+            continue
+        passages = module.read_passages(root, document, replay=True)
+        policy_ids = {entry.get("policy_id") for entry in row.get("indexEntries", [])}
+        if policy_ids != {row.get("policyId")} or row.get("language") not in {entry.get("language") for entry in row.get("indexEntries", [])}:
+            raise ValueError("Policy edition does not resolve to exactly one registered policy identity and language")
+        if not row.get("indexEntries") or any(
+                urlsplit(entry.get("source_index", "")).scheme != "https" or
+                urlsplit(entry.get("source_index", "")).hostname not in {"www.tbs-sct.canada.ca", "www.tbs-sct.gc.ca"}
+                for entry in row["indexEntries"]):
+            raise ValueError("Policy identity is not tied to the official TBS publisher index")
+        if urlsplit(document.get("finalUrl", "")).hostname not in {"publications.gc.ca", "www.publications.gc.ca"}:
+            raise ValueError("Policy edition archive redirected outside the official catalogue host")
+        if any((entry.get("policy_id"), entry.get("language"), entry.get("source_index")) not in registered
+               for entry in row["indexEntries"]):
+            raise ValueError("Policy edition citation is absent from the verified bilingual index inventory")
+        front_text = module.normalize(" ".join(item["text"] for item in passages if item.get("page", 0) <= 3))
+        if (row.get("titleCheck") == "matched") != module.matches_title(row, front_text):
+            raise ValueError("Policy direct catalogue-title check differs from the archived PDF replay")
+        front_pages = [item for item in passages if item.get("page", 0) <= 10]
+        verified_identity = module.edition_identity(row, front_pages)
+        if report.get("schemaVersion", 1) >= 3:
+            verified_identity = module.verify_printed_heading(root, document, row, verified_identity)
+        if report.get("schemaVersion", 1) >= 2 and verified_identity != row.get("editionIdentity"):
+            raise ValueError("Policy printed-edition identity differs from its archived replay")
+        method = verified_identity.get("method", "")
+        if not verified_identity.get("verified"):
+            reviews += 1
+            continue
+        evidence_type = ("direct-catalogue-title" if method == "catalogue-title-first-three-pages" else method)
+        key = (row["policyId"], row["language"], tuple(row["datesIssued"]), document["bodySha256"])
+        prior = editions.get(key)
+        rank = {"printed-register-title": 1, "printed-catalogue-title": 2, "direct-catalogue-title": 3}
+        if prior is None or rank.get(evidence_type, 0) > rank.get(prior, 0):
+            editions[key] = evidence_type
+    for policy_id, language, _, body_sha in editions:
+        # The official index steward is the Secretariat. Do not equate it to the
+        # statutory Treasury Board without a roster crosswalk.
+        count("policy-suite", ["Treasury Board of Canada Secretariat"])
+        editions_by_language[language] += 1
+    edition_evidence_types = dict(Counter(editions.values()))
+    provenance["policy-suite"] = {"series": "policy-suite", "recordType": "registered policy identity with dated, publisher-index-linked and replay-verified edition",
+        "publisherLabel": "Treasury Board of Canada Secretariat", "publisherEntityResolution": "unmatched unless the existing roster/crosswalk names the Secretariat",
+        "reportPath": str(root / "reports" / (identity + ".json")), "reportSha256": identity,
+        "policyInventoryPath": str(inventory_path), "policyInventorySha256": inventory_ref["sha256"],
+        "registeredPolicyLanguageIds": report["inputs"]["registeredLanguageIds"],
+        "catalogueEditionLinks": len(report["editions"]), "verifiedDistinctEditions": len(editions),
+        "verifiedDistinctEditionsByLanguage": dict(editions_by_language), "editionEvidenceTypes": edition_evidence_types,
+        "unmatchedTitleChecks": reviews, "unavailableOrUnreplayable": unavailable,
+        "retainedArchivesAfterFailedFetch": sum(target.get("status") != "retrieved" and bool(target.get("document"))
+                                                 for target in report["targets"].values())}
+
+
+SERIES_RECORD_TYPES = {
+    "grant-awards": "grant and contribution award row attributed by owner organization",
+    "official-titles": "Federal Identity Program registered legal and applied title record",
+    "service-inventory": "GC service inventory row attributed by owner organization",
+    "publications": "MODS catalogue metadata record; attribution from its named publisher field",
+    "geds": "directory organization unit under the published department",
+    "policy-suite": "registered policy identity with dated, publisher-index-linked and replay-verified edition",
+    "ircc-guidance": "verified official IRCC manual or guidance page edition",
+    "algorithmic-assessments": "published algorithmic impact assessment catalogue record",
+    "briefing-titles": "published briefing note record or nil-return row",
+    "briefing-packages": "published ministerial or deputy-head briefing package record",
+    "ati-summaries": "published completed access-to-information request summary",
+    "consultations": "current published consultation catalogue notice",
+    "regulatory-plans": "publisher-confirmed forward regulatory plan edition",
+    "departmental-plans": "verified departmental plan edition or accepted issuer-linked HTML page",
+    "departmental-results": "verified departmental results edition or accepted issuer-linked HTML page",
+    "procurement": "CanadaBuys award notice or contract history row attributed by contracting entity",
+    "eccc-audit": "work edition listed in the department's published audit index",
+    "eccc-evaluation": "work edition listed in the department's published evaluation index",
+}
+
+
+def registered_series_summary(register, provenance, source_totals):
+    summary = {}
+    for series, entry in register.items():
+        source_groups = []
+        for source, meta in provenance.items():
+            if meta.get("registeredSeries") != series:
+                continue
+            totals = source_totals[source]
+            source_groups.append({"sourceGroup": source,
+                "recordType": meta.get("recordType", SERIES_RECORD_TYPES.get(series, "acquired publisher records")),
+                "matchedRecords": totals["matched"], "unattributedRecords": totals["unresolved"]})
+        summary[series] = {"family": entry["family"], "sourceGroups": source_groups,
+            "matchedRecords": sum(group["matchedRecords"] for group in source_groups),
+            "unattributedRecords": sum(group["unattributedRecords"] for group in source_groups)}
+    return summary
+
+
 def count_regulatory_plans(corpus, count, provenance):
     series = "regulatory-plans"
     report, evidence = latest_report_generation(corpus / "federal-regulatory-plans", Path("dist"))
@@ -395,6 +677,9 @@ def coverage(include_acquisitions=False):
         count_html_report_documents(BULK.parent,count,provenance,aliases)
         count_regulatory_plans(BULK.parent, count, provenance)
         count_geds_organizations(Path("dist/geds"), count, provenance)
+        count_publications(BULK.parent, count, provenance, aliases)
+        count_ircc_guidance(BULK.parent, count, provenance)
+        count_policy_suite(BULK.parent, count, provenance)
     classify_sources(provenance, register)
     families = sorted({source["family"] for source in register.values()} - {"all"})
     link_counts, link_coverage = {}, {}
@@ -411,10 +696,12 @@ def coverage(include_acquisitions=False):
                              "publisherReportLinkCounts": dict(link_counts.get(identity, {}))})
     source_totals = {source: {"matched": sum(values[source] for values in counts.values()),
                               "unresolved": sum(unmatched[source].values())} for source in provenance}
+    registered_summary = registered_series_summary(register, provenance, source_totals)
     return {"scope": "Match issuer labels to statutory names and published aliases. Procurement uses the contracting entity. Counts describe records in the acquired files.",
             "rosterEntries": len(roster), "provisionalNames": len(institutions),
             "namesWithRecords": sum(bool(row["publishedRecordCounts"]) for row in institutions),
             "sources": provenance, "sourceRecordCounts": source_totals,
+            "registeredSeriesSummary": registered_summary,
             "reportLinkCoverage": link_coverage,
             "institutionsWithAttributedRecordsByFamily": {
                 family: sum(family in row["familiesWithRecords"] for row in institutions) for family in families},

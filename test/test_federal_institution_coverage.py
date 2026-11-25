@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import zipfile
 
 
 scripts = Path(__file__).resolve().parents[1] / "scripts"
@@ -18,6 +19,62 @@ spec.loader.exec_module(coverage)
 
 
 class InstitutionCoverageTests(unittest.TestCase):
+    def test_publications_count_only_uniquely_identified_explicit_publishers_and_bind_archives(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            corpus = Path(temporary)
+            root = corpus / "federal-publications"
+            generation = root / "generations" / "sample"
+            archive_dir = generation / "archives"
+            archive_dir.mkdir(parents=True)
+            collection = '''<?xml version="1.0"?><modsCollection xmlns="http://www.loc.gov/mods/v3">
+              <mods><recordInfo><recordIdentifier>1</recordIdentifier></recordInfo><originInfo><publisher>Known Agency</publisher></originInfo></mods>
+              <mods><recordInfo><recordIdentifier>2</recordIdentifier></recordInfo><originInfo><publisher>Unknown Ministry</publisher></originInfo></mods>
+              <mods><recordInfo><recordIdentifier>3</recordIdentifier></recordInfo></mods>
+              <mods><originInfo><publisher>Known Agency</publisher></originInfo></mods>
+              <mods><recordInfo><recordIdentifier>dup</recordIdentifier></recordInfo><originInfo><publisher>Known Agency</publisher></originInfo></mods>
+              <mods><recordInfo><recordIdentifier>dup</recordIdentifier></recordInfo><originInfo><publisher>Unknown Ministry</publisher></originInfo></mods>
+            </modsCollection>'''.encode()
+            resources = {}
+            for category in ("monographs", "periodicals", "series"):
+                archive = archive_dir / (category + ".zip")
+                with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
+                    output.writestr("records.xml", collection)
+                raw = archive.read_bytes()
+                resources[category] = {"snapshotDate": "2025-11-20", "sha256": hashlib.sha256(raw).hexdigest(),
+                    "archiveBytes": len(raw), "recordCount": 6, "id": category, "url": "https://publications.gc.ca/" + category}
+            (generation / "receipt.json").write_text(json.dumps({"series": "publications", "snapshotDate": "2025-11-20", "resources": resources}))
+            root.mkdir(exist_ok=True)
+            (root / "current").symlink_to(Path("generations/sample"))
+            values, provenance = defaultdict(int), {}
+            def count(source, names, total=1):
+                identities = set().union(*(aliases.get(coverage.normal(n), set()) for n in names))
+                values[(source, "matched" if len(identities) == 1 else "unattributed")] += total
+            aliases = {"known agency": {"one"}}
+            coverage.count_publications(corpus, count, provenance, aliases)
+            self.assertEqual(values[("publications-monographs", "matched")], 1)
+            self.assertEqual(values[("publications-monographs", "unattributed")], 5)
+            self.assertEqual(provenance["publications-monographs"]["recordCount"], 6)
+            self.assertEqual(provenance["publications-monographs"]["duplicateIdentifierRecords"], 2)
+            self.assertEqual(provenance["publications-monographs"]["recordsWithoutUniqueIdentifier"], 1)
+            archive = archive_dir / "monographs.zip"
+            archive.write_bytes(archive.read_bytes() + b"tamper")
+            with self.assertRaisesRegex(ValueError, "archive differs"):
+                coverage.count_publications(corpus, self.fail, {}, aliases)
+
+    def test_registered_summary_includes_zero_match_series_and_preserves_unattributed_totals(self):
+        register = {"publications": {"family": "all"}, "ircc-guidance": {"family": "delivery"},
+                    "policy-suite": {"family": "delivery"}, "zero": {"family": "unused"}}
+        provenance = {"publications-series": {"registeredSeries": "publications", "recordType": "MODS record"},
+                      "policy-suite": {"registeredSeries": "policy-suite", "recordType": "Verified policy edition"}}
+        totals = {"publications-series": {"matched": 7, "unresolved": 3},
+                  "policy-suite": {"matched": 0, "unresolved": 11}}
+        result = coverage.registered_series_summary(register, provenance, totals)
+        self.assertEqual(result["publications"]["matchedRecords"], 7)
+        self.assertEqual(result["publications"]["unattributedRecords"], 3)
+        self.assertEqual(result["ircc-guidance"], {"family": "delivery", "sourceGroups": [], "matchedRecords": 0, "unattributedRecords": 0})
+        self.assertEqual(result["policy-suite"]["sourceGroups"][0]["recordType"], "Verified policy edition")
+        self.assertEqual(result["zero"]["matchedRecords"], 0)
+
     def test_directory_attribution_uses_the_published_snapshot_and_parent_department(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
