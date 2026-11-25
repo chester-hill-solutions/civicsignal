@@ -1386,5 +1386,82 @@
       "sha256": "6e57f79f51e445f76906842b81f5dd41972f268de404a0db967858a8f61224dc",
       "localDryRunBundles": 6
     }
+  },
+  "writtenQuestionPublicationRecovery": {
+    "acquisitionAttempt": {
+      "receipt": "dist/refresh-weekly/2026-11-25T10-48-32.247313Z.json",
+      "sha256": "8862e37e0a9689726622f61456894c30568ea3918cb19d97cb322d705ca88113"
+    },
+    "bilingualDetailRecheck": {
+      "officialReported": 1728,
+      "pages": 87,
+      "pageSize": 20,
+      "enumeratedEn": 1728,
+      "enumeratedFr": 1728,
+      "complete": true,
+      "detailsFetched": 3456,
+      "detailsReused": 0,
+      "detailsRefetched": 3456
+    },
+    "objectVerification": {
+      "referenced": 16109,
+      "invalid": []
+    },
+    "coverage": {
+      "receipt": "dist/refresh-weekly/written-questions-coverage-20261125T1045.json",
+      "sha256": "2a84f6b1d31c03b5e673664b269a6ffe3e5a0792fd451538125dcbf262401b52"
+    },
+    "materialization": {
+      "receipt": "dist/refresh-weekly/written-questions-atomic-publication-20261125.json",
+      "sha256": "705707d8110c9d0462f31a71539c3fa919d3581623a241b68664b126af223949",
+      "materialized": true,
+      "target": "isolated-local-d1",
+      "sourceSha256": "d48b581f4f5224881e6cb19d38bd6a6324903aaf9c0b3a1f6f23f877d1dab00f",
+      "questions": 3456,
+      "documents": 14023,
+      "chunks": 56501,
+      "indexedPassages": 59957,
+      "sourceTextCharacters": 378494094,
+      "objectBytesCopied": 0,
+      "sourceEquivalent": true,
+      "retainedFtsIndex": true,
+      "actualHandlerChecks": {
+        "q1Documents": 1,
+        "q1010Documents": 2,
+        "q1010AnswerState": "available",
+        "q1010SearchHits": 2
+      }
+    },
+    "worker": {
+      "receipt": "dist/refresh-weekly/written-questions-atomic-worker-20261125.json",
+      "sha256": "6e4fac4ce1df595d429469276cc7c97f4ab5522c8e3d8a1116737de35b1c69cb",
+      "passedTests": [
+        "reads the materialized House session through authenticated HTTP"
+      ]
+    },
+    "scope": "The acquisition and the subsequent publication share a verified source database. The original weekly attempt failed during publication. The recovery ran the normal materializer and authenticated Worker assertion separately."
+  },
+  "regularDailyCalendar": {
+    "receipt": "docs/evidence/2026-11-25/daily-regular-refresh.json",
+    "sha256": "82cc01a59717ad0d9bb9c0d5f4a01adeacc520031323040cba21e9b0cdb891b8",
+    "localScheduledTime": "2026-11-25T06:15:00-05:00",
+    "report": {
+      "file": "2026-11-25T11-15-04-717Z.json",
+      "sha256": "a08ed6b418ab101a97cc7df1b4a8b1765e9326f760ed609a7fa127e7eddc8634",
+      "startedAt": "2026-11-25T11:15:04.717Z",
+      "finishedAt": "2026-11-25T11:18:11.024Z",
+      "durationMs": 186307
+    },
+    "servingSources": [
+      "consultations",
+      "committee-calls",
+      "funding"
+    ],
+    "authenticatedAssertions": [
+      "Polytechnics Canada funding recommendations against the acquired catalogues follows both recommendations to the brief and related published terms in 'en'",
+      "Polytechnics Canada funding recommendations against the acquired catalogues follows both recommendations to the brief and related published terms in 'fr'",
+      "committee calls through the Worker against the acquired corpus computes dated states and follows bilingual listings to their acquired studies",
+      "consultations through the Worker against the acquired catalogue serves reconciled coverage, bilingual results and revisions from the acquired observation"
+    ]
   }
 }

@@ -1,0 +1,122 @@
+{
+  "calendarTarget": "2026-11-25T06:15:00-05:00",
+  "before": {
+    "observedAt": "2026-11-25T05:27:36.733530+00:00",
+    "label": "com.civicsignal.refresh-daily",
+    "calendar": {
+      "Hour": 6,
+      "Minute": 15
+    },
+    "status": {
+      "state": "not running",
+      "runs": "4",
+      "last exit code": "0"
+    },
+    "logBytes": 862,
+    "logInode": 1368187575,
+    "lastFullStartedAt": "2026-11-25T02:52:26.967Z"
+  },
+  "after": {
+    "observedAt": "2026-11-25T11:18:20.891166+00:00",
+    "label": "com.civicsignal.refresh-daily",
+    "calendar": {
+      "Hour": 6,
+      "Minute": 15
+    },
+    "status": {
+      "state": "not running",
+      "runs": "5",
+      "last exit code": "0"
+    },
+    "logBytes": 1063,
+    "logInode": 1368187575,
+    "lastFullStartedAt": "2026-11-25T11:15:04.717Z"
+  },
+  "report": {
+    "file": "2026-11-25T11-15-04-717Z.json",
+    "sha256": "a08ed6b418ab101a97cc7df1b4a8b1765e9326f760ed609a7fa127e7eddc8634",
+    "startedAt": "2026-11-25T11:15:04.717Z",
+    "finishedAt": "2026-11-25T11:18:11.024Z",
+    "durationMs": 186307
+  },
+  "serving": {
+    "consultations": {
+      "database": "/Users/ladmin/WebProjects/civicsignal/data/corpus/consultations/catalogue.sqlite",
+      "observedAt": "2026-11-25T11:15:04.749Z",
+      "revision": "f2ce0ab9cb278e6f284866fcd82b54d0be85df773683396697242a28ec25b182",
+      "record": "aafc-aac_A-002038",
+      "event": null,
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    "committee-calls": {
+      "database": "/Users/ladmin/WebProjects/civicsignal/.wrangler/committees-45-1/v3/d1/miniflare-D1DatabaseObject/21e0ab396fd62e1eeaf532f6704b8dfa8072d2e2260a28be72ef20eef45d34b8.sqlite",
+      "observedAt": "2026-11-25T11:15:39.000Z",
+      "listedEditions": 30,
+      "droppedEditions": 0,
+      "publication": {
+        "binding": "COMMITTEE_DB",
+        "databaseId": "2e6f6b5d-bddd-4ae9-b879-92114cc37799",
+        "database": "/Users/ladmin/WebProjects/civicsignal/.wrangler/committees-45-1/v3/d1/miniflare-D1DatabaseObject/21e0ab396fd62e1eeaf532f6704b8dfa8072d2e2260a28be72ef20eef45d34b8.sqlite",
+        "session": "45-1",
+        "calls": 30,
+        "rowsWritten": 30,
+        "linksAdded": 60,
+        "linksRemoved": 0,
+        "studyTitlesRepaired": 0
+      }
+    },
+    "funding": {
+      "database": "/Users/ladmin/WebProjects/civicsignal/data/corpus/funding/catalogue.sqlite",
+      "sources": [
+        {
+          "source": "nserc",
+          "observedAt": "2026-11-25T11:15:46.651Z",
+          "revision": "2e930740d7c816bc4767e39efa014a2c1f164840e2cb8d70572ef4e3e1237894",
+          "samples": [
+            {
+              "id": "nserc-applied-research-and-development-grants",
+              "language": "en",
+              "event": null
+            },
+            {
+              "id": "nserc-applied-research-and-development-grants",
+              "language": "fr",
+              "event": null
+            }
+          ]
+        },
+        {
+          "source": "esdc",
+          "observedAt": "2026-11-25T11:18:02.738Z",
+          "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+          "samples": [
+            {
+              "id": "esdc-access-sign-language-interpretation-step-1",
+              "language": "en",
+              "event": null
+            },
+            {
+              "id": "esdc-access-sign-language-interpretation-step-1",
+              "language": "fr",
+              "event": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "workerVerification": {
+    "ok": true,
+    "passedTests": 4,
+    "passedAssertions": [
+      "Polytechnics Canada funding recommendations against the acquired catalogues follows both recommendations to the brief and related published terms in 'en'",
+      "Polytechnics Canada funding recommendations against the acquired catalogues follows both recommendations to the brief and related published terms in 'fr'",
+      "committee calls through the Worker against the acquired corpus computes dated states and follows bilingual listings to their acquired studies",
+      "consultations through the Worker against the acquired catalogue serves reconciled coverage, bilingual results and revisions from the acquired observation"
+    ],
+    "durationMs": 7995
+  }
+}
