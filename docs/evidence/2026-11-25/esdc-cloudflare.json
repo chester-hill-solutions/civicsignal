@@ -1,0 +1,498 @@
+{
+  "source": "Employment and Social Development Canada funding programmes",
+  "scope": "private Cloudflare staging",
+  "candidateCommit": "95ee648e452792cb8d1bc9e667dfb74084441a4c",
+  "worker": {
+    "name": "civicsignal-stage-esdc",
+    "version": "bc53d9eb-8c47-4e51-a8d1-729ab5053089",
+    "modulesComparedWithLocalBuild": [
+      {
+        "module": "worker.js",
+        "sha256": "975dfa2456d613da26093bb8a089a882546cd153d402acb5a5faf3d41ce5d74a",
+        "bytes": 962315
+      }
+    ]
+  },
+  "collector": {
+    "name": "civicsignal-stage-esdc-collector",
+    "version": "6c0dcf2d-7c66-4088-85ed-2b7a9e7969fb",
+    "compatibilityFlags": [
+      "python_workers",
+      "disable_python_external_sdk"
+    ],
+    "limits": {
+      "cpu_ms": 300000,
+      "subrequests": 10000
+    },
+    "modulesComparedWithLocalSource": [
+      {
+        "module": "entry.py",
+        "sha256": "9c356836e97f0788dbede4fad6921306976063800103a77f0d61acc485007a37",
+        "bytes": 4548
+      },
+      {
+        "module": "esdc.py",
+        "sha256": "79839b939dcb343c140e05e7f9c4c782f0cce3f460aedbab62778a2e0a10d868",
+        "bytes": 23107
+      },
+      {
+        "module": "html_tree.py",
+        "sha256": "8760c99452fc74173a4bdca7fc98d85a252f06d74aa4d67a7341593245f766d3",
+        "bytes": 1761
+      },
+      {
+        "module": "observation.py",
+        "sha256": "920135dfbba8f701d9b3b2ead8a22694adf2e927ed23ae5c0abaeb44a2e05f14",
+        "bytes": 7089
+      }
+    ]
+  },
+  "resourceIsolation": {
+    "d1": "civicsignal-stage-funding",
+    "d1Id": "0d4ddb86-5b28-44b5-b34d-7aa249ada551",
+    "r2": "civicsignal-stage-funding",
+    "r2ManagedDomainEnabled": false,
+    "r2CustomDomains": [],
+    "workerAndCollector": {
+      "civicsignal-stage-esdc": {
+        "workersDev": false,
+        "previewUrls": false,
+        "routes": []
+      },
+      "civicsignal-stage-esdc-collector": {
+        "workersDev": false,
+        "previewUrls": false,
+        "routes": []
+      }
+    },
+    "privateServices": [
+      {
+        "binding": "COLLECTOR",
+        "service": "civicsignal-stage-esdc-collector"
+      },
+      {
+        "binding": "LOOKUP",
+        "service": "civicsignal-stage-esdc",
+        "entrypoint": "EsdcLookup"
+      }
+    ]
+  },
+  "calendar": {
+    "timeZone": "UTC",
+    "crons": [
+      "15 23 * * *"
+    ],
+    "readbackMethod": "Wrangler init --from-dash verified the deployed calendar, routing and bindings."
+  },
+  "manual": {
+    "instance": "esdc-1795647028010",
+    "workflowVersion": "914c4a6e-60f9-4e84-89e2-dfe8ef8eeaab",
+    "triggerSource": "api",
+    "status": "complete",
+    "start": "2026-11-25T22:51:41.471Z",
+    "end": "2026-11-25T22:57:26.280Z",
+    "steps": 4,
+    "stepRetries": 0,
+    "receipt": {
+      "key": "funding/esdc/runs/esdc-1795647028010.json",
+      "sha256": "538bfc9ae10f507d0dceed527f7c96ca3906a0ddf54a5b298a1000be9eb323c1",
+      "bytes": 2387
+    },
+    "inventory": {
+      "key": "funding/esdc/inventories/b0eb6cbd591e520650a6013828c9046da48f8f642fec5e13fea0c9a7e3a3a244.json",
+      "sha256": "b0eb6cbd591e520650a6013828c9046da48f8f642fec5e13fea0c9a7e3a3a244",
+      "bytes": 7373763,
+      "sources": 416,
+      "sourceBytes": 16529454
+    },
+    "independentArchive": {
+      "uniqueObjectHashesVerified": 416,
+      "verifiedUniqueBytes": 16529454,
+      "sortedObjectDigestsSha256": "32c24f47acab14dbe43c7e77db65a1b1e26946fbad9fc8586985b00efc957f7f",
+      "prePortParserReplay": {
+        "referenceCommit": "1d73835ac6bde12aaca36b29786e3a15cc1ac5e9",
+        "indexes": 2,
+        "recordsMatched": 196,
+        "sectionsMatched": 7143,
+        "gapsMatched": 56,
+        "confirmedMissingUrls": {
+          "https://www.canada.ca/en/employment-social-development/services/funding/apprenticeship-incentive-overview.html": 404,
+          "https://www.canada.ca/en/employment-social-development/services/funding/apprenticeship-completion-overview.html": 404,
+          "https://www.canada.ca/fr/emploi-developpement-social/services/financement/achevement-apprenti-apercu.html": 404,
+          "https://www.canada.ca/fr/emploi-developpement-social/services/financement/competence-reussir.html": 404,
+          "https://www.canada.ca/fr/emploi-developpement-social/services/financement/incitative-apprenti-apercu.html": 404,
+          "https://www.canada.ca/fr/emploi-developpement-social/services/financement/partenariats-developpement-social-handicap-capacites-intersectorielles.html": 404
+        }
+      }
+    },
+    "published": {
+      "source": "esdc",
+      "observedAt": "2026-11-25T22:50:28.010Z",
+      "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+      "editions": 196,
+      "gaps": 56,
+      "replayed": false,
+      "events": {
+        "added": 196,
+        "changed": 0,
+        "removed": 0
+      },
+      "rowsRead": 8909,
+      "rowsWritten": 23197
+    },
+    "lookup": [
+      {
+        "id": "esdc-access-sign-language-interpretation-step-1",
+        "title": "Enhancing Access to Professional Sign Language Interpretation",
+        "url": "https://www.canada.ca/en/employment-social-development/services/funding/access-sign-language-interpretation-step-1.html",
+        "language": "en",
+        "sections": 54,
+        "contentSha256": "11a48097f6a2871a0c48dcab4e1f4a1e430865b039dc4108cda19976c78ad196"
+      },
+      {
+        "id": "esdc-access-sign-language-interpretation-step-1",
+        "title": "Améliorer l'accès à l'interprétation professionnelle en langue des signes",
+        "url": "https://www.canada.ca/fr/emploi-developpement-social/services/financement/acces-interpretation-langue-signes-etape-1.html",
+        "language": "fr",
+        "sections": 17,
+        "contentSha256": "54cd6bc1ce22db7453dc2bfd612add1139b2fe894086b4b637074846dfebec34"
+      }
+    ],
+    "primaryD1": {
+      "editions": 196,
+      "sections": 7143,
+      "versions": 196,
+      "pending": 0,
+      "guards": 0,
+      "sharedDatabaseBytes": 38981632,
+      "servedByPrimary": true
+    },
+    "allColumnD1Parity": {
+      "method": "All columns in sorted primary-key order, including search text, normalized section text, version payloads and observation times. Hosted page rows compared directly to independent SQLite materialization, then hashed as sorted-key compact UTF-8 JSON arrays. Manual uses the first acquired packet; native applies the manual and native packets in order.",
+      "localObservations": [
+        {
+          "source": "esdc",
+          "observedAt": "2026-11-25T22:50:28.010Z",
+          "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+          "editions": 196,
+          "gaps": 56,
+          "events": {
+            "added": 196,
+            "changed": 0,
+            "removed": 0
+          }
+        }
+      ],
+      "tables": {
+        "funding_catalogues": {
+          "rows": 1,
+          "sha256": "ffaed38bf052f6ecdafcd216ca0e0ae2e79d555b465ded0e2d1e4512c996877d",
+          "rowsRead": 2,
+          "rowsWritten": 0,
+          "readPages": 1
+        },
+        "funding_editions": {
+          "rows": 196,
+          "sha256": "36945052e5dc30b7af8d9b74535a0e284b898e7f6e4084df65d383acad9dd1aa",
+          "rowsRead": 393,
+          "rowsWritten": 0,
+          "readPages": 25
+        },
+        "funding_sections": {
+          "rows": 7143,
+          "sha256": "ecb8ee42e0f99f085546a06b2effac58248b28ecfefbdb406ad4a63af113880d",
+          "rowsRead": 14287,
+          "rowsWritten": 0,
+          "readPages": 24
+        },
+        "funding_versions": {
+          "rows": 196,
+          "sha256": "e318cccecbc6db279c9bc79928f7da7c8715b319f9cfa49657247eebec865cb2",
+          "rowsRead": 393,
+          "rowsWritten": 0,
+          "readPages": 13
+        }
+      },
+      "unchangedNsercTables": {
+        "funding_catalogues": {
+          "rows": 1,
+          "sha256": "ed2589a8673b4ac92e32d09d6e8631f6de1d2e463c797b2d125442404914fbdd"
+        },
+        "funding_editions": {
+          "rows": 10,
+          "sha256": "a20af296cc69b72dff0119aa31b6fd818c060f50e517192ced6852dab1f14146"
+        },
+        "funding_sections": {
+          "rows": 393,
+          "sha256": "0523506dd1e9dd75c60b5ff20e1f4a6a94ac1f9b1f09ca4f74065ca641eb18a5"
+        },
+        "funding_versions": {
+          "rows": 10,
+          "sha256": "733d9953ed23b5cbda1a2359781cc07389fb7dec4e5d01b88bb4777414af7a18"
+        }
+      },
+      "independentPrePortMaterialization": {
+        "referenceCommit": "1d73835ac6bde12aaca36b29786e3a15cc1ac5e9",
+        "source": "Re-extracted the archived publisher originals using the reference commit. Replaced all indexes, records and gaps with the independent extractor results, then materialized and matched every table digest against the captured D1 reads.",
+        "matchedRows": {
+          "funding_catalogues": 1,
+          "funding_editions": 196,
+          "funding_sections": 7143,
+          "funding_versions": 196
+        }
+      }
+    },
+    "recoveryExperiment": {
+      "instance": "esdc-1795647028010",
+      "observedAt": "2026-11-25T22:50:28.010Z",
+      "checkpointsBeforeTermination": 43,
+      "interruptionRequestedAt": "2026-11-25T22:51:18.914Z",
+      "originalWorkflowStart": "2026-11-25T22:50:34.133Z",
+      "termination": {
+        "status": "terminated",
+        "timestamp": "2026-11-25T22:51:19.820Z"
+      },
+      "terminatedState": "terminated",
+      "checkpointsAfterTermination": 46,
+      "receiptPresentAfterTermination": false,
+      "catalogueRowsAfterTermination": 0,
+      "checkpointKeysSha256": "afde55859da728c368fbb737ece0cdeecd12ad0af5e0a9d75048232362fdd642",
+      "restart": {
+        "status": "queued",
+        "timestamp": "2026-11-25T22:51:38.822Z"
+      },
+      "canceledCollector": {
+        "eventTimestamp": 1795647034344,
+        "outcome": "canceled",
+        "cpuTime": 1174,
+        "wallTime": 44925,
+        "scriptVersion": {
+          "id": "6c0dcf2d-7c66-4088-85ed-2b7a9e7969fb"
+        }
+      }
+    },
+    "collectorInvocation": {
+      "eventTimestamp": 1795647101650,
+      "outcome": "ok",
+      "cpuTime": 8087,
+      "wallTime": 318683,
+      "scriptVersion": {
+        "id": "6c0dcf2d-7c66-4088-85ed-2b7a9e7969fb"
+      },
+      "acquisition": {
+        "event": "esdc-acquisition-complete",
+        "observedAt": "2026-11-25T22:50:28.010Z",
+        "fetchedPages": 376,
+        "checkpointPages": 46,
+        "successfulPages": 416,
+        "terminalPages": 6,
+        "sourceBytes": 16529454,
+        "inventorySha256": "b0eb6cbd591e520650a6013828c9046da48f8f642fec5e13fea0c9a7e3a3a244"
+      }
+    }
+  },
+  "native": {
+    "instance": "esdc-1795648539258",
+    "workflowVersion": "914c4a6e-60f9-4e84-89e2-dfe8ef8eeaab",
+    "triggerSource": "binding",
+    "status": "complete",
+    "start": "2026-11-25T23:15:44.830Z",
+    "end": "2026-11-25T23:25:44.030Z",
+    "steps": 4,
+    "stepRetries": 0,
+    "receipt": {
+      "key": "funding/esdc/runs/esdc-1795648539258.json",
+      "sha256": "c8b2cef7fca55da366cb7abc9f1f3876e1d4b5781ab9d492fa0ca1a683a0fba5",
+      "bytes": 2377
+    },
+    "inventory": {
+      "key": "funding/esdc/inventories/9f73f09ff4efc21d4703fdd724736fa07292e0d43f24176fca7bf1814b4f27c4.json",
+      "sha256": "9f73f09ff4efc21d4703fdd724736fa07292e0d43f24176fca7bf1814b4f27c4",
+      "bytes": 7374492,
+      "sources": 416,
+      "sourceBytes": 16529158
+    },
+    "independentArchive": {
+      "uniqueObjectHashesVerified": 416,
+      "verifiedUniqueBytes": 16529158,
+      "sortedObjectDigestsSha256": "5a5a73d686cc5740f65b766adee9b7ccafbabf4377edad4df561fa4da363fee9",
+      "prePortParserReplay": {
+        "referenceCommit": "1d73835ac6bde12aaca36b29786e3a15cc1ac5e9",
+        "indexes": 2,
+        "recordsMatched": 196,
+        "sectionsMatched": 7143,
+        "gapsMatched": 56,
+        "confirmedMissingUrls": {
+          "https://www.canada.ca/en/employment-social-development/services/funding/apprenticeship-incentive-overview.html": 404,
+          "https://www.canada.ca/en/employment-social-development/services/funding/apprenticeship-completion-overview.html": 404,
+          "https://www.canada.ca/fr/emploi-developpement-social/services/financement/achevement-apprenti-apercu.html": 404,
+          "https://www.canada.ca/fr/emploi-developpement-social/services/financement/competence-reussir.html": 404,
+          "https://www.canada.ca/fr/emploi-developpement-social/services/financement/incitative-apprenti-apercu.html": 404,
+          "https://www.canada.ca/fr/emploi-developpement-social/services/financement/partenariats-developpement-social-handicap-capacites-intersectorielles.html": 404
+        }
+      }
+    },
+    "published": {
+      "source": "esdc",
+      "observedAt": "2026-11-25T23:15:39.258Z",
+      "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+      "editions": 196,
+      "gaps": 56,
+      "replayed": true,
+      "events": {
+        "added": 0,
+        "changed": 0,
+        "removed": 0
+      },
+      "rowsRead": 5,
+      "rowsWritten": 3
+    },
+    "lookup": [
+      {
+        "id": "esdc-access-sign-language-interpretation-step-1",
+        "title": "Enhancing Access to Professional Sign Language Interpretation",
+        "url": "https://www.canada.ca/en/employment-social-development/services/funding/access-sign-language-interpretation-step-1.html",
+        "language": "en",
+        "sections": 54,
+        "contentSha256": "11a48097f6a2871a0c48dcab4e1f4a1e430865b039dc4108cda19976c78ad196"
+      },
+      {
+        "id": "esdc-access-sign-language-interpretation-step-1",
+        "title": "Améliorer l'accès à l'interprétation professionnelle en langue des signes",
+        "url": "https://www.canada.ca/fr/emploi-developpement-social/services/financement/acces-interpretation-langue-signes-etape-1.html",
+        "language": "fr",
+        "sections": 17,
+        "contentSha256": "54cd6bc1ce22db7453dc2bfd612add1139b2fe894086b4b637074846dfebec34"
+      }
+    ],
+    "primaryD1": {
+      "editions": 196,
+      "sections": 7143,
+      "versions": 196,
+      "pending": 0,
+      "guards": 0,
+      "sharedDatabaseBytes": 38981632,
+      "servedByPrimary": true
+    },
+    "allColumnD1Parity": {
+      "method": "All columns in sorted primary-key order, including search text, normalized section text, version payloads and observation times. Hosted page rows compared directly to independent SQLite materialization, then hashed as sorted-key compact UTF-8 JSON arrays. Manual uses the first acquired packet; native applies the manual and native packets in order.",
+      "localObservations": [
+        {
+          "source": "esdc",
+          "observedAt": "2026-11-25T22:50:28.010Z",
+          "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+          "editions": 196,
+          "gaps": 56,
+          "events": {
+            "added": 196,
+            "changed": 0,
+            "removed": 0
+          }
+        },
+        {
+          "source": "esdc",
+          "observedAt": "2026-11-25T23:15:39.258Z",
+          "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+          "editions": 196,
+          "gaps": 56,
+          "events": {
+            "added": 0,
+            "changed": 0,
+            "removed": 0
+          }
+        }
+      ],
+      "tables": {
+        "funding_catalogues": {
+          "rows": 1,
+          "sha256": "306b52f0cf7c14466ef37f5b9379f3b5cdc4ad27ed8ba7c02e5ff9ea23b902d0",
+          "rowsRead": 2,
+          "rowsWritten": 0,
+          "readPages": 1
+        },
+        "funding_editions": {
+          "rows": 196,
+          "sha256": "36945052e5dc30b7af8d9b74535a0e284b898e7f6e4084df65d383acad9dd1aa",
+          "rowsRead": 393,
+          "rowsWritten": 0,
+          "readPages": 25
+        },
+        "funding_sections": {
+          "rows": 7143,
+          "sha256": "ecb8ee42e0f99f085546a06b2effac58248b28ecfefbdb406ad4a63af113880d",
+          "rowsRead": 14287,
+          "rowsWritten": 0,
+          "readPages": 24
+        },
+        "funding_versions": {
+          "rows": 196,
+          "sha256": "e318cccecbc6db279c9bc79928f7da7c8715b319f9cfa49657247eebec865cb2",
+          "rowsRead": 393,
+          "rowsWritten": 0,
+          "readPages": 13
+        }
+      },
+      "unchangedNsercTables": {
+        "funding_catalogues": {
+          "rows": 1,
+          "sha256": "ed2589a8673b4ac92e32d09d6e8631f6de1d2e463c797b2d125442404914fbdd"
+        },
+        "funding_editions": {
+          "rows": 10,
+          "sha256": "a20af296cc69b72dff0119aa31b6fd818c060f50e517192ced6852dab1f14146"
+        },
+        "funding_sections": {
+          "rows": 393,
+          "sha256": "0523506dd1e9dd75c60b5ff20e1f4a6a94ac1f9b1f09ca4f74065ca641eb18a5"
+        },
+        "funding_versions": {
+          "rows": 10,
+          "sha256": "733d9953ed23b5cbda1a2359781cc07389fb7dec4e5d01b88bb4777414af7a18"
+        }
+      },
+      "independentPrePortMaterialization": {
+        "referenceCommit": "1d73835ac6bde12aaca36b29786e3a15cc1ac5e9",
+        "source": "Re-extracted the archived publisher originals using the reference commit. Replaced all indexes, records and gaps with the independent extractor results, then materialized and matched every table digest against the captured D1 reads.",
+        "matchedRows": {
+          "funding_catalogues": 1,
+          "funding_editions": 196,
+          "funding_sections": 7143,
+          "funding_versions": 196
+        }
+      }
+    },
+    "scheduledWorkerEvent": {
+      "eventTimestamp": 1795648541365,
+      "outcome": "ok",
+      "cpuTime": 0,
+      "wallTime": 914,
+      "scriptVersion": {
+        "id": "bc53d9eb-8c47-4e51-a8d1-729ab5053089"
+      },
+      "event": {
+        "cron": "15 23 * * *",
+        "scheduledTime": 1795648539258
+      }
+    },
+    "sourceDigestsMatchingFirstRun": 0,
+    "collectorInvocation": {
+      "eventTimestamp": 1795648545068,
+      "outcome": "ok",
+      "cpuTime": 11411,
+      "wallTime": 532527,
+      "scriptVersion": {
+        "id": "6c0dcf2d-7c66-4088-85ed-2b7a9e7969fb"
+      },
+      "acquisition": {
+        "event": "esdc-acquisition-complete",
+        "observedAt": "2026-11-25T23:15:39.258Z",
+        "fetchedPages": 422,
+        "checkpointPages": 0,
+        "successfulPages": 416,
+        "terminalPages": 6,
+        "sourceBytes": 16529158,
+        "inventorySha256": "9f73f09ff4efc21d4703fdd724736fa07292e0d43f24176fca7bf1814b4f27c4"
+      }
+    }
+  }
+}
