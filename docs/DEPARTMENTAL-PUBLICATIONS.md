@@ -25,6 +25,10 @@ python3 -B scripts/eccc-intake.py \
 
 The intake is deliberately sequential (`--workers 1`). canada.ca resets HTTP/2 streams under parallel load, and the polite crawler user agent is `civicsignal.ca research crawler (info@civicsignal.ca)`. A plain HTTP/1.1 fallback keeps a body that ends with its closing HTML tag or PDF EOF marker, and only when the final URL is a Government of Canada host. Legacy `http` catalogue links are fetched over `https` while the published URL stays the citation.
 
+## November 25 passage verification
+
+The second live intake reported no content changes. The serving build again produced 64,174 passages from 234 document editions. An independent offline rebuild reproduced every passage row, including its text, citation, and content and source hashes. Verification covered all 222 distinct archived originals underlying those editions. The twelve unavailable originals and 29 unresolved language pairings remain in the acquisition report. [Passage verification](evidence/2026-11-25/eccc-passage-replay.json)
+
 ## November 24 inventory
 
 | Measure | Count |

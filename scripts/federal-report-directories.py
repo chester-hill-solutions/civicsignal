@@ -47,6 +47,8 @@ def normal(value: str) -> str:
 class PageLinks(HTMLParser):
     """Keep labelled links and their publisher heading/list context."""
 
+    schemes = {"https"}
+
     def __init__(self, base_url: str):
         super().__init__(convert_charrefs=True)
         self.base_url = base_url
@@ -81,7 +83,7 @@ class PageLinks(HTMLParser):
             label = " ".join("".join(self.anchor["parts"]).split())
             url = self.anchor["url"]
             item = {"label": label, "url": url, "heading": self.current_heading}
-            if label and urlsplit(url).scheme == "https":
+            if label and urlsplit(url).scheme in self.schemes:
                 self.links.append(item)
                 if self.in_directory and self.list_depth and normal(label) not in GENERIC_LABELS:
                     self.directory_links.append(item)
@@ -101,6 +103,46 @@ class PageLinks(HTMLParser):
             self.list_depth -= 1
         if tag == "main" and self.main_depth:
             self.main_depth -= 1
+
+
+class RegulatorDirectoryLinks(PageLinks):
+    """Only institution links inside the publisher’s alphabetical lists."""
+
+    schemes = {"http", "https"}
+
+    def handle_endtag(self, tag):
+        super().handle_endtag(tag)
+        if tag in {"h1", "h2", "h3", "h4", "h5", "section", "main"}:
+            self.in_directory = tag == "h3" and bool(self.main_depth) and bool(re.fullmatch(
+                r"(?:institutions starting with the letter|les institutions débutant par la lettre) [a-z]",
+                normal(self.current_heading or "")))
+
+
+def regulator_directories(root, tbs_pages):
+    labels = {"en": "Government-wide regulatory plans and reports",
+              "fr": "Plans et rapports prospectifs à l’échelle du gouvernement"}
+    urls = {}
+    for lang, page in tbs_pages.items():
+        parser = PageLinks(page["finalUrl"] or page["url"])
+        parser.feed(page["body"].decode("utf-8-sig"))
+        links = {item["url"] for item in parser.links
+                 if normal(item["label"]) == normal(labels[lang]) and committee_files.official(item["url"])}
+        if len(links) != 1:
+            raise ValueError(f"Cannot identify one government-wide regulatory index in the {lang} edition")
+        urls[lang], = links
+    committee_files.capture(root, list(urls.values()), workers=2, refresh=True)
+    pages = {lang: cached_page(root, url) for lang, url in urls.items()}
+    entries = []
+    for lang, page in pages.items():
+        parser = RegulatorDirectoryLinks(page["finalUrl"] or page["url"])
+        parser.feed(page["body"].decode("utf-8-sig"))
+        links = sorted({(item["label"], item["url"]) for item in parser.directory_links})
+        if not links:
+            raise ValueError(f"The {lang} regulatory directory has no labelled institutional links")
+        for label, url in links:
+            entries.append({"issuerLabel": label, "language": lang, "url": url,
+                            "sourceIndexUrl": page["url"], "sourceIndexSha256": page["sha256"]})
+    return pages, entries
 
 
 def verified_labelled_links(parser: PageLinks) -> list[dict]:
@@ -326,13 +368,21 @@ def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER) -> dict:
                                       "linkLabel": item["label"], "url": item["url"],
                                       "sourceIndexUrl": page["url"], "sourceIndexSha256": page["sha256"]})
     reg_issuers = _pair_bilingual(regulatory_records)
+    national_pages, regulator_links = regulator_directories(root, {"en": english_pages["regulatory-plans"],
+                                                                   "fr": french_pages["regulatory-plans"]})
+    for lang, page in national_pages.items():
+        source_refs[f"regulatory-directories-{lang}"] = source_ref(page)
     cycle_summary = cycle_coverage(regulatory_records)
     families["regulatory-plans"] = {"counts": {**cycle_summary,
+                                                 "governmentWideDirectoryLinksByLanguage": {
+                                                     lang: sum(item["language"] == lang for item in regulator_links)
+                                                     for lang in national_pages},
                                                  "linksByLanguage": {lang: sum(r["language"] == lang for r in regulatory_records) for lang in ("en", "fr")},
                                                  "issuerGroups": len(reg_issuers),
                                                  "bilingualIssuerGroups": sum(i["bilingualMatch"] for i in reg_issuers)},
                                     "issuers": reg_issuers,
-                                    "coverageNote": "Only the latest labelled forward-regulatory and stock-review plan links on the registered TBS index are listed; linked plan pages and documents were not fetched. English and French current-cycle labels are compared explicitly."}
+                                    "institutionDirectoryLinks": regulator_links,
+                                    "coverageNote": "Plan cycles refer to TBS. The government-wide directory lists institutional regulatory pages. Each link retains its publisher label and directory citation."}
 
     inventory = {"collection": "federal-report-directories",
                  "sourceRegisterSha256": sha256(register.read_bytes()).hexdigest(),
@@ -356,6 +406,7 @@ def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER) -> dict:
                "sourceCaptureTimes": {key: page["observedAt"] for key, page in {
                    **{f"{key}-en": page for key, page in english_pages.items()},
                    **{f"{key}-fr": page for key, page in french_pages.items()},
+                   **{f"regulatory-directories-{lang}": page for lang, page in national_pages.items()},
                }.items()},
                "familyCounts": {key: value["counts"] for key, value in families.items()}}
     atomic_write(root / "dist" / "receipt.json", (json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode())

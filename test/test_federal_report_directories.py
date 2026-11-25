@@ -40,6 +40,20 @@ class FederalReportDirectoryTests(unittest.TestCase):
         parser.feed(html.decode())
         self.assertEqual([x["label"] for x in directory.verified_labelled_links(parser)], ["Organisme fédéral"])
 
+    def test_government_wide_directory_preserves_published_urls_only_in_letter_sections(self):
+        parser = directory.RegulatorDirectoryLinks("https://www.canada.ca/en/index.html")
+        parser.feed("""<main><ul><li><a href="/preface">Introduction</a></li></ul>
+          <section><h3>Institutions starting with the letter A</h3>
+          <ul><li><a href="https://authority.example/">Authority</a>
+          <ul><li><a href="http://board.gc.ca/acts">Appeals Board</a></li></ul></li></ul>
+          <a href="#top">Top</a></section>
+          <section><h3>Les institutions débutant par la lettre B</h3><ul>
+          <li><a href="/fr/b">Bureau</a></li></ul></section></main>
+          <footer><ul><li><a href="/privacy">Privacy</a></li></ul></footer>""")
+        self.assertEqual([(item["label"], item["url"]) for item in parser.directory_links], [
+            ("Authority", "https://authority.example/"), ("Appeals Board", "http://board.gc.ca/acts"),
+            ("Bureau", "https://www.canada.ca/fr/b")])
+
     def test_current_regulatory_cycles_are_selected_per_family_and_language(self):
         html = b"""<main><a href='https://www.canada.ca/en/old'>Forward Regulatory Plan: 2025 to 2027</a>
         <a href='https://www.canada.ca/en/current'>Forward Regulatory Plan: 2026 to 2028</a>

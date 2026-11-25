@@ -1,0 +1,23 @@
+{
+  "verifiedAt": "2026-11-25T05:46:37.260947+00:00",
+  "priorWeeklyReport": "dist/refresh-weekly/2026-11-25T03-45-05.917391Z.json",
+  "priorReportSha256": "2c7468dc4ecb8e720f2404e7ca92946553a85cf2e0c680cd9e470fa576f309b6",
+  "priorPassages": 64174,
+  "currentObservation": "2026-11-25T05:32:09.643634Z",
+  "currentRevision": "88f96fabfd29642a5727fc618d54d48a0699ec39d9b534fd3ebe3146fabee3f6",
+  "currentChangeCounts": {},
+  "documentEntries": 246,
+  "documentEntriesWithPassages": 234,
+  "distinctVerifiedOriginals": 222,
+  "extractionGaps": [],
+  "sourceAcquisitionGaps": {
+    "document": 12,
+    "pairing": 29
+  },
+  "passagesWithMissingCitationOrMismatchedDocumentHash": 0,
+  "servedAndOfflineReplay": {
+    "rows": 64174,
+    "sha256SortedByPassageId": "68e09d4fd3f9d896561872201cc16070a57585fd3ac91053a0a17954722e4d3d"
+  },
+  "comparison": "SHA-256 over compact UTF-8 JSON arrays for every column of dp_passages ordered by passage_id, newline after each row. Compared the current serving generation to an offline rebuild from the current originals."
+}
