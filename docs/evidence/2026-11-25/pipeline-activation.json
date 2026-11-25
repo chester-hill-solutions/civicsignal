@@ -84,7 +84,32 @@
         "committees": "skipped"
       }
     },
-    "nextAttempt": {
+    "sixSourceRetry": {
+      "receipt": "2026-11-25T02-49-21.474699Z.json",
+      "ok": true,
+      "selected": [
+        "federal-disclosures",
+        "gazette",
+        "briefing-notes",
+        "hansard-house",
+        "hansard-senate",
+        "geds"
+      ],
+      "servingVerification": "passed",
+      "newerThanLastFailedFullAttempt": true,
+      "startedAt": "2026-11-25T02:48:31.868643Z",
+      "finishedAt": "2026-11-25T02:49:21.474501Z",
+      "sha256": "2115a5ea6c9aa2d545c1dd6b070ac4b1b68c9290d621800b477235c346e8e673",
+      "sourceOutcomes": {
+        "federal-disclosures": "passed",
+        "gazette": "passed",
+        "briefing-notes": "passed",
+        "hansard-house": "passed",
+        "hansard-senate": "passed",
+        "geds": "passed"
+      }
+    },
+    "secondFullKickstartWithoutReport": {
       "launchdLogFinishedAt": "2026-11-25T02:40:47Z",
       "scope": "16-source kickstart",
       "passed": [
@@ -111,19 +136,105 @@
       ],
       "receiptWriteError": "ENOSPC"
     },
-    "sixSourceRetry": {
-      "receipt": "2026-11-25T02-49-21.474699Z.json",
-      "ok": true,
+    "terminalFullAttempt": {
+      "startedAt": "2026-11-25T02:52:28.863885Z",
+      "finishedAt": "2026-11-25T03:45:05.917048Z",
+      "origin": "installed LaunchAgent kickstart",
+      "durationMs": 3157053,
+      "ok": false,
+      "report": "dist/refresh-weekly/2026-11-25T03-45-05.917391Z.json",
+      "reportSha256": "2c7468dc4ecb8e720f2404e7ca92946553a85cf2e0c680cd9e470fa576f309b6",
+      "passedCount": 17,
+      "failedCount": 3,
+      "sourceOutcomes": {
+        "federal-discovery": "passed",
+        "federal-guidance": "passed",
+        "consultation-notices": "failed",
+        "federal-disclosures": "failed",
+        "official-titles": "passed",
+        "service-inventory": "passed",
+        "ati-summaries": "passed",
+        "grant-awards": "passed",
+        "eccc": "passed",
+        "gazette": "passed",
+        "briefing-notes": "passed",
+        "federal-report-directories": "passed",
+        "federal-publications": "passed",
+        "federal-procurement": "passed",
+        "parliament": "passed",
+        "hansard-house": "passed",
+        "hansard-senate": "passed",
+        "written-questions": "passed",
+        "geds": "passed",
+        "committees": "failed"
+      },
+      "failures": {
+        "consultation-notices": {
+          "fetchedEditions": 95,
+          "totalEditions": 142,
+          "failedRequests": [
+            {
+              "consultationId": "cta-otc_cta-otc-2026-3",
+              "language": "en",
+              "cause": "connection reset by peer"
+            },
+            {
+              "consultationId": "cta-otc_cta-otc-2026-3",
+              "language": "fr",
+              "cause": "local TLS issuer certificate verification failed"
+            },
+            {
+              "consultationId": "crtc_C-000072",
+              "language": "en",
+              "cause": "HTTP 403 Forbidden"
+            },
+            {
+              "consultationId": "crtc_C-000072",
+              "language": "fr",
+              "cause": "HTTP 403 Forbidden"
+            }
+          ]
+        },
+        "federal-disclosures": {
+          "cause": "Open Canada response read timed out"
+        },
+        "committees": {
+          "cause": "OSError [Errno 24]: Too many open files while saving catalogue checkpoint",
+          "indexesCompleted": 1982,
+          "committees": 180,
+          "complete": false,
+          "progress": [
+            "444/444",
+            "1338/1338",
+            "200/3116"
+          ]
+        }
+      }
+    },
+    "followUpSelectiveRetry": {
+      "startedAt": "2026-11-25T03:47:50.926069Z",
+      "finishedAt": "2026-11-25T03:48:34.707085Z",
+      "report": "dist/refresh-weekly/2026-11-25T03-48-34.707300Z.json",
+      "reportSha256": "633a3155d6c0c1877fe279d7316fc01e31f2d12271e2eb64ae0df71cf26c31cc",
+      "ok": false,
       "selected": [
-        "federal-disclosures",
-        "gazette",
-        "briefing-notes",
-        "hansard-house",
-        "hansard-senate",
-        "geds"
+        "consultation-notices",
+        "federal-disclosures"
       ],
-      "servingVerification": "passed",
-      "newerThanLastFailedFullAttempt": true
+      "sourceOutcomes": {
+        "consultation-notices": "failed",
+        "federal-disclosures": "passed"
+      },
+      "consultationReceipt": "data/corpus/consultations/notice-receipts/latest.json",
+      "federalDisclosuresReceipt": "data/corpus/federal-disclosures/receipt.json"
+    },
+    "committeeOnlyResume": {
+      "startedAtApprox": "2026-11-25T03:56:00Z",
+      "statusObservedAt": "2026-11-25T03:57:36Z",
+      "scope": "committees only",
+      "softDescriptorLimit": 256,
+      "status": "reported running; no terminal result or receipt recorded",
+      "source": "operator status; weekly report directory checked at statusObservedAt"
     }
   },
   "federalDiscovery": {
@@ -223,7 +334,10 @@
       "transition_deputy": 84,
       "parliament_committee": 522,
       "parliament_committee_deputy": 549
-    }
+    },
+    "verifiedRetryObservedAt": "2026-11-25T03:48:22.702044+00:00",
+    "verifiedRetryReceipt": "data/corpus/federal-disclosures/receipt.json",
+    "earlierVerifiedRetryObservedAt": "2026-11-25T03:03:14.071027+00:00"
   },
   "institutions": {
     "rosterEntries": 110,
@@ -262,18 +376,41 @@
           "en",
           "fr"
         ],
-        "observation": "connection reset, timeout or untrusted TLS chain"
+        "observation": "EN connection reset by peer; FR local TLS issuer certificate verification failed"
       }
-    }
+    },
+    "lastAttemptAt": "2026-11-25T03:47:56+00:00",
+    "lastAttemptFailures": [
+      {
+        "consultationId": "cta-otc_cta-otc-2026-3",
+        "language": "en",
+        "cause": "connection reset by peer"
+      },
+      {
+        "consultationId": "cta-otc_cta-otc-2026-3",
+        "language": "fr",
+        "cause": "local TLS issuer certificate verification failed"
+      },
+      {
+        "consultationId": "crtc_C-000072",
+        "language": "en",
+        "cause": "HTTP 403 Forbidden"
+      },
+      {
+        "consultationId": "crtc_C-000072",
+        "language": "fr",
+        "cause": "HTTP 403 Forbidden"
+      }
+    ]
   },
   "departmentalPublications": {
-    "catalogue_cutoff": "2026-11-25T02:27:07.689790Z",
+    "catalogue_cutoff": "2026-11-25T02:56:11.775315Z",
     "documents_seen": 246,
     "documents_extracted": 234,
     "passages": 64174,
+    "extractionGaps": 0,
     "acquisitionGaps": 12,
-    "translationPairingGaps": 29,
-    "extractionGaps": 0
+    "translationPairingGaps": 29
   },
   "gazette": {
     "schemaVersion": 1,
@@ -341,9 +478,184 @@
         "receiptSha256": "920f9adf11e4287a56a95eb4ac6bcdb1729ec9eebe01435dced1f5a3c07ac27d"
       }
     },
-    "archivedEditions": 64,
+    "archivedEditions": 96,
     "candidateEditionsAtCutoff": 546,
-    "speeches": 14574
+    "speeches": 23170,
+    "verifiedEditionCountAfterOctober19": 64,
+    "additionalWeeks": [
+      {
+        "weekOf": "2026-09-21",
+        "chamber": "house",
+        "generation": "335cd04b786dd30f1107be1de8be9c73ad9dc1c29b7cb7f2e97e2ca1dc50c173",
+        "sourceEditions": 10,
+        "editionSha256": [
+          "472bded6a0edc57ae03d66d46e57afb5d165dedf4d909e3edab6d4118e8927ba",
+          "417effc62172c651d6278c5b8108345b38ec7c0e30f2f3beeec86c566133f11a",
+          "6e736aa3614bdf2ac322f8e5bb666cfbb1326ec058db3035290dc374ab59370e",
+          "99b3c81b24eb0ca7c5d2afbcc630e049c5a9d823a16f57b2a00860b79c508e3d",
+          "df4ddb5d89ad7a5da8b4eca07f4ee19f86f2f7d55830c0bdc918935e3c66c07b",
+          "22ee423a342220d45a5ab798f9e802f7734b47cd65937f14d261fd525cfbea13",
+          "299681470ffdbb5c1e440c1464a4c6e2fa62b31795302d82f58aca13399edd2a",
+          "6f031f3afa283bc4630d87e9fcd69e32b79bcb5105fd5456c5db037bfbccadc5",
+          "8308b374cf0848f5d65431fd67ff853ca63a790496b116a8fa14431e15827eea",
+          "b498a6d0d44ab5460ab43971e52b2ba917e2c7d47ce33b426b1b3098d341a024"
+        ],
+        "manifestSha256": "fbd1276904584bf775e0c1c4298ab2feb0dae06914d60fae2c735ecb3c0e4584",
+        "receiptSha256": "64f5ab6fcb4e53c2cd229da55dadd280d2b82d30cf28b57bf4e00d2aa1788213",
+        "archiveReceiptPath": "dist/hansard/weekly/house/2026-09-21/current/receipt.json",
+        "replayPasses": 2,
+        "secondReplayChangedEditions": 0,
+        "authenticatedWorkerPassed": true,
+        "speechRows": 3152,
+        "sittingDates": [
+          "2026-09-21",
+          "2026-09-22",
+          "2026-09-23",
+          "2026-09-24",
+          "2026-09-25"
+        ]
+      },
+      {
+        "weekOf": "2026-09-21",
+        "chamber": "senate",
+        "generation": "860666e2181eb80ac56480440b908145044b33ae1d06595f7979ae6cbfcc9070",
+        "sourceEditions": 0,
+        "editionSha256": [],
+        "manifestSha256": "456c20fc9c502ab9975d42ef9ec23e9d4c59ccce4ac1741bab755415cc945012",
+        "receiptSha256": "ba6479c4cac07defe9b57f4f3d6d686cd1d31960067d14d641b027667b62d04a",
+        "archiveReceiptPath": "dist/hansard/weekly/senate/2026-09-21/current/receipt.json",
+        "replayPasses": 2,
+        "secondReplayChangedEditions": 0,
+        "authenticatedWorkerPassed": true,
+        "speechRows": 0,
+        "sittingDates": [],
+        "quietCalendarVerified": true
+      },
+      {
+        "weekOf": "2026-09-28",
+        "chamber": "house",
+        "generation": "b9dd5c81f6613c6ce96680eb4f70e0e09ffea8d9e52a0ccd10689e7579c21dbe",
+        "sourceEditions": 0,
+        "editionSha256": [],
+        "manifestSha256": "0c5e63ced448acb4a821e85ab283c114bfb37c3f602403e114268a389fa5e1cc",
+        "receiptSha256": "4b932ee70bd495ccd7b561558698b0187417de36079d763d5da56861bcfeb235",
+        "archiveReceiptPath": "dist/hansard/weekly/house/2026-09-28/current/receipt.json",
+        "replayPasses": 2,
+        "secondReplayChangedEditions": 0,
+        "authenticatedWorkerPassed": true,
+        "speechRows": 0,
+        "sittingDates": [],
+        "quietCalendarVerified": true
+      },
+      {
+        "weekOf": "2026-09-28",
+        "chamber": "senate",
+        "generation": "9e1672793558b8f6a4c601bfacca45db5c5b3960c9d9307499838ef4009bbd27",
+        "sourceEditions": 6,
+        "editionSha256": [
+          "4ca504c4b79531991d72aa8cb4f1df0dc475b6a98ddf2178967ab719a78060bd",
+          "14390cc9e3c6b02439d5809191c97a9fd2b2af74b24c8eb5201e901a5896b95c",
+          "9a90da99b80b3ca0eb31fda99fe1b8132d6cba5a33dbdebaf016a09e47df61b4",
+          "40d5e51822badb9b717a80fd23d89b76ae93c48993a76d79534fcc6b319ed362",
+          "11bafce2fb9f7fc1958af9411d783a2c13b63e11b12346a0d68d3228a656a019",
+          "e1c3b1bf6fbea1c7a35f1bf07f610e70781dc4f599bfa79e1172453a42c7ff36"
+        ],
+        "manifestSha256": "194aab9acf871a24fdffad059e5c2b12502f026c14003a3b42d392bd9f3987f7",
+        "receiptSha256": "6d78a6d6d0592bd76eedbd9e914cfb7ad57db11c97241d586685b0b0c078ca0a",
+        "archiveReceiptPath": "dist/hansard/weekly/senate/2026-09-28/current/receipt.json",
+        "replayPasses": 2,
+        "secondReplayChangedEditions": 0,
+        "authenticatedWorkerPassed": true,
+        "speechRows": 592,
+        "sittingDates": [
+          "2026-09-28",
+          "2026-09-29",
+          "2026-10-01"
+        ]
+      },
+      {
+        "weekOf": "2026-10-05",
+        "chamber": "house",
+        "generation": "2703d07a693b1618c77018fb497eae46f04a57839a5658b3162639606715c3f9",
+        "sourceEditions": 10,
+        "editionSha256": [
+          "62f242668ae0ecd5a0609703cd881c42cc04302d096cfbe6931e52277c0e6df9",
+          "81b168e93a34adada7f7cd0b3265edcb45eb422fc5be0d64ebcb4050251bb682",
+          "f5ecb5ba8ccff9d9989920dcfe1577ad21b4892b54fce6a48b9acb5c87250e64",
+          "5e374a4c6ecc44f7d62dce10e58eb56a035bfa694a23d570dd05ebf7646b93ca",
+          "98416080e62b457239166880146ce1a063243fe87e178520ab26d3f402cc4da1",
+          "6cb154115c52124c80ea063c54a50040a1e477563b4e7dc6fb3cfcc92d5882eb",
+          "3b9fcab70c66c2c61713bd3bde35d0a529a0e481d95fde305a8ced20b236af84",
+          "6425e1bec12c855ba121be95f542530624899630bb4c7fa89ee8754745ef69a8",
+          "e7c98f24ecb04a610eb52cd5d16aaddb30f60ecfba9e8994894572a4eb036aae",
+          "f48ef3e65522db335be0e9006d556d46f928525648a83021a9713766068034db"
+        ],
+        "manifestSha256": "12aae73b772287f54ec5e0cc19243fb71f4875125600e4128af23525bd3ef780",
+        "authenticatedWorkerPassed": true,
+        "secondReplayChangedEditions": 0,
+        "archiveReceiptPath": "dist/hansard/weekly/house/2026-10-05/current/receipt.json",
+        "replayPasses": 2
+      },
+      {
+        "weekOf": "2026-10-05",
+        "chamber": "senate",
+        "generation": "f45dbc00fa65b1a37845294f1670cde011b384e5fbe924708c47442138ca8138",
+        "sourceEditions": 6,
+        "editionSha256": [
+          "803152f03600e7f2e17d163fca4afb2ee1f34bdece177a8c7f77f3e645304994",
+          "68c5f4d4b067b064e0146b557031800cb2f53d87d8595bc3fd88e47cd37b41d1",
+          "ec145fbef63e074f9266366b8f86e75de0566569f18414aa1bfc3ef996b326e0",
+          "9517b045e5e9c0f265f626f0d97a686d66b5649beba89774c8573c5597fdb274",
+          "fa778c0fc85a13026b8ec9b035d92ec8229f793a8a4d027e87a3ae041d62a8c9",
+          "8ea97ca4343361fd28c73a374240f32011f648ed6b5ac1e44c0ceffffbc31921"
+        ],
+        "manifestSha256": "1c7d16d2be084068654359260f5fef934d2711ab1c82f58710df1c942d2ec71e",
+        "authenticatedWorkerPassed": true,
+        "secondReplayChangedEditions": 0,
+        "archiveReceiptPath": "dist/hansard/weekly/senate/2026-10-05/current/receipt.json",
+        "replayPasses": 2
+      },
+      {
+        "weekOf": "2026-10-12",
+        "chamber": "house",
+        "generation": "c681a8d59eff873c2fcc60e7f5d10813c4421cd4b3cab73c204809a0f3dfb5ad",
+        "sourceEditions": 0,
+        "editionSha256": [],
+        "manifestSha256": "91a61c3cb7932e6f5d2c7a3dd6593277a83be0ab54a2dfb62d877969eb6666a9",
+        "authenticatedWorkerPassed": true,
+        "secondReplayChangedEditions": 0,
+        "archiveReceiptPath": "dist/hansard/weekly/house/2026-10-12/current/receipt.json",
+        "replayPasses": 2,
+        "quietCalendarVerified": true
+      },
+      {
+        "weekOf": "2026-10-12",
+        "chamber": "senate",
+        "generation": "0736bde074c629ffd29e8bbfc4527e43bb671d2b084c078d004025a7a6c2887e",
+        "sourceEditions": 0,
+        "editionSha256": [],
+        "manifestSha256": "91a61c3cb7932e6f5d2c7a3dd6593277a83be0ab54a2dfb62d877969eb6666a9",
+        "authenticatedWorkerPassed": true,
+        "secondReplayChangedEditions": 0,
+        "archiveReceiptPath": "dist/hansard/weekly/senate/2026-10-12/current/receipt.json",
+        "replayPasses": 2,
+        "quietCalendarVerified": true
+      }
+    ],
+    "october5SpeechCounts": {
+      "house": 3712,
+      "senate": 1140
+    },
+    "septemberSpeechCounts": {
+      "house": 3152,
+      "senate": 592
+    },
+    "sourceDatabaseTotals": {
+      "totalSpeeches": 23170,
+      "house": 18772,
+      "senate": 4398,
+      "candidateEditionsAtCutoff": 546
+    }
   },
   "storage": {
     "approvedScratchRemoved": 2,
