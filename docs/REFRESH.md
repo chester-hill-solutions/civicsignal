@@ -1,6 +1,28 @@
 # Local intake refresh
 
-The local collections refresh on a measured cadence. Fetches are public and local; hosted publication and scheduling remain release work under D-08.
+This runbook covers the Mac-based reference runs used for development, replay and comparison during migration. Cloudflare is the operating target for all unattended refreshes. The [master plan](PLAN.md#pipeline-verification-priorities) defines the hosted migration order, acceptance checks and cutover. D-08 governs hosted publication and cadence per corpus.
+
+## Cloudflare consultations staging
+
+The [staging Worker configuration](../services/consultations/wrangler.jsonc) identifies the private Worker, its calendar and its dedicated D1, R2 and Workflow bindings. Each calendar occurrence creates the Workflow instance `consultations-<scheduledTime>`, where the suffix is the Unix time in milliseconds. Operators can inspect that instance in Cloudflare Workflows from any authorized host. A completed instance returns the revision, row count and R2 receipt key. Inspect the failed step and its error for an incomplete instance.
+
+The [Workflow](../services/consultations/worker.ts) archives the public CSV and dictionary by SHA-256 before publication. A retry of the publication step reads those checkpointed objects. The D1 transaction publishes record changes and their history together. A private service binding then uses the same lookup function as the product API to verify a source row's English and French titles. Its dated receipt in `consultations/runs/` identifies the original bytes, catalogue revision, D1 publication rows read and written, and the verified record. Request these objects through authenticated Cloudflare access. Customer workspace authorization and billing belong to the product API.
+
+For an operator-triggered staging check, select the project account in `cf` and run the command below. It creates one manual instance with the current time. For calendar evidence, correlate the Worker's scheduled event with the Workflow instance and its R2 receipt. The deployed calendar is also readable with `wrangler init --from-dash civicsignal-stage-consultations --no-delegate-c3` from an empty temporary directory.
+
+```sh
+consultations_ms=$(node -p 'Date.now()')
+cf workflows instances create civicsignal-stage-consultations \
+  --body "{\"instance_id\":\"consultations-$consultations_ms\",\"params\":{\"scheduledTime\":$consultations_ms}}"
+```
+
+To compare Worker execution with an acquired catalogue, run the following from the repository root. The test reads the receipt and content-addressed originals under `data/corpus/consultations/sources/`. It checks the revision, repeats the same trigger, advances the calendar one day, and verifies the unchanged replay in isolated local storage.
+
+```sh
+CIVICSIGNAL_WORKERD_TESTS=1 \
+CIVICSIGNAL_CONSULTATIONS_REFRESH_REFERENCE=dist/refresh/receipts/consultations.json \
+bun run test test/consultations-refresh-workerd.test.ts
+```
 
 ## What runs daily
 

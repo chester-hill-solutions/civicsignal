@@ -1,0 +1,141 @@
+{
+  "stageWorker": "civicsignal-stage-consultations",
+  "workerVersion": "5feab8c7-0cf7-4fb4-b401-622f2cc444bc",
+  "remoteBundleComparedWithLocalDryRun": {
+    "bytes": 984449,
+    "sha256": "6ba6226e32e241704b9f0dc88c6ecc6abf7c5236670075e97beeca71ff8e73e7"
+  },
+  "workflowVersion": "6d06c268-6d5e-4e08-a586-5828c5294d13",
+  "resourceIsolation": {
+    "d1": "civicsignal-stage-consultations",
+    "d1Migration": "0001_consultations.sql",
+    "r2": "civicsignal-stage-consultations",
+    "r2ManagedDomainEnabled": false,
+    "r2CustomDomains": [],
+    "publicWorkerRoutes": [],
+    "workersDev": false,
+    "previewUrls": false,
+    "privateLookupEntrypoint": "ConsultationLookup"
+  },
+  "calendar": {
+    "timezone": "UTC",
+    "crons": [
+      "10 22 * * *"
+    ],
+    "readbackMethod": "Wrangler init --from-dash --no-delegate-c3 read the deployed staging Worker schedules and routing configuration.",
+    "initialCron": "49 21 * * *",
+    "initialObservation": {
+      "observedAt": "2026-11-25T21:52:02.836712+00:00",
+      "instancesAfter2148Utc": 0
+    }
+  },
+  "publisherOriginals": {
+    "csv": {
+      "input": "https://open.canada.ca/static/consultations_open.csv",
+      "archivedAs": "consultations/sources/8076d01eb4c36cba6b7212d90287687cf89fe626265bb8a1a91cd952c0d3d3ca.csv",
+      "bytes": 6799911,
+      "sha256": "8076d01eb4c36cba6b7212d90287687cf89fe626265bb8a1a91cd952c0d3d3ca"
+    },
+    "schema": {
+      "input": "https://open.canada.ca/data/recombinant-published-schema/consultations.json",
+      "archivedAs": "consultations/sources/712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da.json",
+      "bytes": 42120,
+      "sha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da"
+    }
+  },
+  "independentR2SourceByteHashesVerified": true,
+  "manual": {
+    "instance": "consultations-1795642828230",
+    "triggerSource": "api",
+    "status": "complete",
+    "startedAt": "2026-11-25T21:40:32.036Z",
+    "finishedAt": "2026-11-25T21:40:58.691Z",
+    "workflowSteps": 4,
+    "stepRetries": 0,
+    "r2Receipt": "consultations/runs/consultations-1795642828230.json",
+    "r2ReceiptSha256": "34d305994b3732ae6b04f25b831553fdf6f29d6fd796a7498aa460f1294eaa37",
+    "publication": {
+      "observedAt": "2026-11-25T21:40:28.230Z",
+      "revision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea",
+      "rows": 5210,
+      "replayed": false,
+      "rowsRead": 26053,
+      "rowsWritten": 46894
+    },
+    "privateLookup": {
+      "id": "casdo-ocena_C-0000001",
+      "titles": {
+        "en": "Join the discussion: Help shape Canada's accessibility standards",
+        "fr": "Joignez-vous à la discussion: Aidez à façonner les normes d'accessibilité du Canada"
+      }
+    },
+    "independentD1Readback": {
+      "observed_at": "2026-11-25T21:40:28.230Z",
+      "revision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea",
+      "record_count": 5210,
+      "revisions": 5210,
+      "pending": 0,
+      "sizeBytes": 40050688
+    },
+    "r2SourceBytes": 6842031,
+    "r2ReceiptBytes": 1294
+  },
+  "independentD1LocalParity": {
+    "rows": 5210,
+    "scope": "SHA-256 of sorted lines containing the served ID, publisher hash and both search string lengths; local canonical materializer and remote staging D1 matched.",
+    "sha256": "0d7d2ae96657fe4745a48c2e441212aa520975c08490f31f09424954fc50c01e",
+    "rowsRead": 5210,
+    "rowsWritten": 0
+  },
+  "manualCliAttempt": {
+    "instance": "consultations-1795642804268",
+    "status": "errored",
+    "stepsStarted": 0,
+    "reason": "cf --params supplied a JSON string. The subsequent manual run used a JSON object in --body."
+  },
+  "native": {
+    "instance": "consultations-1795644602710",
+    "scheduledWorkerEvent": {
+      "cron": "10 22 * * *",
+      "scheduledTime": 1795644602710,
+      "eventTimestamp": 1795644624583,
+      "outcome": "ok",
+      "workerVersion": "5feab8c7-0cf7-4fb4-b401-622f2cc444bc",
+      "cpuMs": 0,
+      "wallMs": 492
+    },
+    "workflowTriggerSource": "binding",
+    "status": "complete",
+    "startedAt": "2026-11-25T22:10:25.987Z",
+    "finishedAt": "2026-11-25T22:10:30.584Z",
+    "workflowSteps": 4,
+    "stepRetries": 0,
+    "r2Receipt": "consultations/runs/consultations-1795644602710.json",
+    "r2ReceiptSha256": "8f2bf6a9f3f52c13b2196af513658736bace95a87cda9efc45de832f9196e051",
+    "r2ReceiptBytes": 1285,
+    "publication": {
+      "observedAt": "2026-11-25T22:10:02.710Z",
+      "revision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea",
+      "rows": 5210,
+      "replayed": true,
+      "rowsRead": 5,
+      "rowsWritten": 3
+    },
+    "privateLookup": {
+      "id": "casdo-ocena_C-0000001",
+      "titles": {
+        "en": "Join the discussion: Help shape Canada's accessibility standards",
+        "fr": "Joignez-vous à la discussion: Aidez à façonner les normes d'accessibilité du Canada"
+      }
+    },
+    "sourceObjectsMatchFirstRun": true,
+    "independentD1Readback": {
+      "observed_at": "2026-11-25T22:10:02.710Z",
+      "revision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea",
+      "record_count": 5210,
+      "revisions": 5210,
+      "pending": 0,
+      "sizeBytes": 40050688
+    }
+  }
+}

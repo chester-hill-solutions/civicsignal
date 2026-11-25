@@ -161,7 +161,7 @@ async function search(db: D1Database, input: SearchInput, asOf: string) {
   });
 }
 
-async function lookup(db: D1Database, id: string, asOf: string, noticeDb?: D1Database) {
+export async function lookupConsultation(db: D1Database, id: string, asOf: string, noticeDb?: D1Database) {
   const [metaResult, recordResult, revisionsResult] = await Promise.all([
     catalogue(db).first<Record<string, unknown>>(),
     db.prepare('SELECT * FROM consultations_records WHERE id=?').bind(id).first<Record<string, unknown>>(),
@@ -385,6 +385,6 @@ export function prepareConsultations(url: URL) {
     if (!/^[a-z0-9.-]+_[A-Za-z0-9.-]+$/.test(id)) throw new RequestInputError('Invalid consultation identifier.');
     const input = args(url.searchParams, ConsultationLookupQuery, 'lookup');
     const asOf = instant(input.asOf);
-    return () => readPublished(() => lookup(db, id, asOf, env.CONSULTATION_NOTICES_DB));
+    return () => readPublished(() => lookupConsultation(db, id, asOf, env.CONSULTATION_NOTICES_DB));
   };
 }

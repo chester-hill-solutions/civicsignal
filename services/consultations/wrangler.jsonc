@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-consultations",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "limits": { "cpu_ms": 300000, "subrequests": 10000 },
+  "workflows": [{
+    "binding": "REFRESH",
+    "name": "civicsignal-stage-consultations",
+    "class_name": "ConsultationsRefresh"
+  }],
+  "services": [{
+    "binding": "LOOKUP",
+    "service": "civicsignal-stage-consultations",
+    "entrypoint": "ConsultationLookup"
+  }],
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "civicsignal-stage-consultations",
+    "database_id": "ef80296e-8122-43e9-a8bc-c5e60941bd08",
+    "migrations_dir": "migrations"
+  }],
+  "r2_buckets": [{
+    "binding": "ARCHIVE",
+    "bucket_name": "civicsignal-stage-consultations"
+  }],
+  "triggers": { "crons": ["10 22 * * *"] }
+}
