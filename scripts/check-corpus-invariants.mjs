@@ -9,12 +9,22 @@
  *
  * Each check below is one of those failures, stated as an invariant.
  */
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { closeSync, createReadStream, existsSync, openSync, readFileSync, readdirSync, readSync } from 'node:fs';
 import { join } from 'node:path';
+import { createInterface } from 'node:readline';
+import { DatabaseSync } from 'node:sqlite';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const failures = [];
 const notes = [];
+const directoryArg = process.argv.indexOf('--exports');
+const exportsDirectory = directoryArg < 0 ? join(ROOT, 'dist') : process.argv[directoryArg + 1];
+if (!exportsDirectory) throw new Error('--exports requires a directory');
+if (process.argv.includes('--require-exports')) {
+  for (const file of ['statutes.sql', 'statutes-fr.sql', 'statutes.jsonl', 'statutes-fr.jsonl']) {
+    if (!existsSync(join(exportsDirectory, file))) failures.push(`Missing required local export: ${file}`);
+  }
+}
 
 /* ── 1. the schema and the insert must agree ───────────────────────────────── */
 
@@ -24,29 +34,26 @@ const migrationFiles = existsSync(migrationsDir)
   : [];
 const migrations = migrationFiles.map((f) => readFileSync(join(migrationsDir, f), 'utf8')).join('\n');
 
-/** Every column the statute table has, from CREATE TABLE and from ALTER TABLE. */
-function schemaColumns(table) {
-  const columns = new Set();
-  const create = new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\s*\\(([\\s\\S]*?)\\n\\);`).exec(migrations);
-  if (create) {
-    for (const line of create[1].split('\n')) {
-      const match = /^\s*([a-z_]+)\s+[A-Z]/.exec(line);
-      if (match) columns.add(match[1]);
-    }
-  }
-  const alter = new RegExp(`ALTER TABLE ${table}\\s+ADD COLUMN\\s+([a-z_]+)`, 'g');
-  let match;
-  while ((match = alter.exec(migrations)) !== null) columns.add(match[1]);
-  return columns;
+/** Ask SQLite for the schema after all migrations, including dropped columns. */
+function statuteColumns() {
+  const db = new DatabaseSync(':memory:');
+  try {
+    db.exec(migrations);
+    return new Set(db.prepare('PRAGMA table_info(statute_sections)').all().map(row => row.name));
+  } finally { db.close(); }
 }
 
 function insertColumns(file) {
-  const sqlPath = join(ROOT, 'dist', file);
+  const sqlPath = join(exportsDirectory, file);
   if (!existsSync(sqlPath)) return null;
-  const first = readFileSync(sqlPath, 'utf8').split('\n')[0] ?? '';
+  const fd = openSync(sqlPath, 'r');
+  const header = Buffer.alloc(4096);
+  let count;
+  try { count = readSync(fd, header, 0, header.length, 0); } finally { closeSync(fd); }
+  const first = header.toString('utf8', 0, count);
   const open = first.indexOf('(');
   const close = first.indexOf(')');
-  if (open === -1 || close === -1) return null;
+  if (!first.startsWith('INSERT ') || open === -1 || close <= open) throw new Error(`Invalid INSERT header in ${file}`);
   return new Set(first.slice(open + 1, close).split(',').map((c) => c.trim()));
 }
 
@@ -68,7 +75,7 @@ function pipelineColumns() {
   return new Set(match[1].split(',').map((c) => c.trim()));
 }
 
-const schema = schemaColumns('statute_sections');
+const schema = statuteColumns();
 const inserted = insertColumns('statutes.sql');
 const pipeline = pipelineColumns();
 
@@ -135,13 +142,14 @@ let repealed = 0;
 const byLanguage = new Map();
 
 for (const { file, language } of CORPUS_FILES) {
-  const corpusPath = join(ROOT, 'dist', file);
+  const corpusPath = join(exportsDirectory, file);
   if (!existsSync(corpusPath)) {
     notes.push(`dist/${file} is not present — skipped its rows (run the ingest)`);
     continue;
   }
   let fileRows = 0;
-  for (const line of readFileSync(corpusPath, 'utf8').split('\n')) {
+  const lines = createInterface({ input: createReadStream(corpusPath, { encoding: 'utf8' }), crlfDelay: Infinity });
+  for await (const line of lines) {
     if (!line.trim()) continue;
     rows++;
     fileRows++;
@@ -163,6 +171,7 @@ for (const { file, language } of CORPUS_FILES) {
       break;
     }
   }
+  if (!fileRows) failures.push(`${file} contains no rows`);
   byLanguage.set(language, fileRows);
 }
 
@@ -181,7 +190,7 @@ if (rows > 0) {
 
   /* ── 3. the index manifest ───────────────────────────────────────────────── */
 
-  const manifestPath = join(ROOT, 'dist', 'statutes.emb.rows.json');
+  const manifestPath = join(exportsDirectory, 'statutes.emb.rows.json');
   if (existsSync(manifestPath)) {
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
     const unknown = manifest.filter((id) => !ids.has(id));

@@ -17,7 +17,16 @@ The two languages write their own files — `dist/statutes.sql` and
 English output is 281 MB. Writing the French over the English would look like
 success.
 
-## The numbers
+## Local weekly generation
+
+The November 25 local build of Justice Canada revision `855cdfc65207a6906c414e09a77d7f93267c5356` contains 138,653 English rows and 139,013 French rows. Loading both SQL exports into a database with the repository migrations yielded 277,666 distinct IDs. The weekly job verifies both language exports before publishing a generation. Its receipt records the revision and the SHA-256 of each of the six outputs. [Current local receipt](../dist/statutes-local/current/receipt.json)
+
+```sh
+python3 -B scripts/refresh-weekly.py --only statutes-local
+node scripts/check-corpus-invariants.mjs --exports dist/statutes-local/current --require-exports
+```
+
+## The original corpus measurement
 
 The corpus is bilingual. Canada's statutes are enacted in both official languages
 with equal legal force, and the source publishes both.
