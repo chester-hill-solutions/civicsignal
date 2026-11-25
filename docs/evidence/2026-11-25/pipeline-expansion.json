@@ -725,5 +725,46 @@
         "unattributedRecords": 0
       }
     }
+  },
+  "currentWeekHansard": {
+    "receipt": "dist/hansard/current-week-observations/2026-11-25T07-43-46-059Z/receipt.json",
+    "sha256": "95b427907a557ba79e7a4ac59fc578fbca845dd88199f85779f246a2e8896a95",
+    "through": "2026-11-24",
+    "houseSittings": 2,
+    "senateSittingsListed": 0,
+    "houseEditions": [
+      {
+        "sittingId": "45-1-170",
+        "sittingDate": "2026-11-23",
+        "edition": "en",
+        "available": true,
+        "speeches": 315,
+        "sha256": "aef459221b71dca3957e0c6cc8eb5332e96d61aa28fd728680653b9cd7847557"
+      },
+      {
+        "sittingId": "45-1-170",
+        "sittingDate": "2026-11-23",
+        "edition": "fr",
+        "available": true,
+        "speeches": 315,
+        "sha256": "99d5f22e493a2c77dfaebb406b6d381abc74df79f0734d559fc0a0cc4de87355"
+      },
+      {
+        "sittingId": "45-1-171",
+        "sittingDate": "2026-11-24",
+        "edition": "en",
+        "available": false
+      },
+      {
+        "sittingId": "45-1-171",
+        "sittingDate": "2026-11-24",
+        "edition": "fr",
+        "available": false
+      }
+    ],
+    "isolatedLookupAndReplay": {
+      "receipt": "dist/hansard/current-week-observations/2026-11-25T07-43-46-059Z/lookup-replay.json",
+      "sha256": "d9243fa548245be31e891b360a42b5af6ee64786a2591b671660032245513f58"
+    }
   }
 }

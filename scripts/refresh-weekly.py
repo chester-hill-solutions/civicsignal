@@ -626,10 +626,10 @@ def source_coverage(result: dict) -> dict:
     """Report only counts emitted by this historical attempt's acquisition commands."""
     name = result["name"]
     fields = {
-        "eccc": ("documents_seen", "documents_extracted", "passages"),
+        "eccc": ("documents_seen", "documents_extracted", "alternate_documents_seen", "alternate_documents_extracted", "passages"),
         "consultation-notices": ("openConsultations", "editions", "publishedFetchedEditions", "publishedArchivedSources", "counts"),
         "federal-guidance": ("listedEditions", "verifiedThisRun", "failedEditions", "linkedReferences", "availableEditions"),
-        "federal-policy-editions": ("registeredLanguageIds", "linkedPolicyLanguageIds", "uniquePdfTargets", "latestFetch", "titleChecks"),
+        "federal-policy-editions": ("registeredLanguageIds", "linkedPolicyLanguageIds", "uniquePdfTargets", "latestFetch", "titleChecks", "editionIdentityChecks"),
         "departmental-report-editions": ("issuerLandingPagesExpected", "issuerLandingPagesFetched", "issuerLandingPagesFailed", "issuerLandingPagesSkipped"),
         "departmental-report-documents": ("directLinkCitations", "fetchedTargets", "failedTargets", "verifiedCitations", "reviewCitations"),
         "departmental-report-html": ("candidateCitations", "candidateTargets", "processedTargets", "remainingPending", "targetStatusCounts"),
