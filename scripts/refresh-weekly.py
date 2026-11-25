@@ -177,6 +177,7 @@ STEPS = (
         (
             ("python3", "-B", "scripts/lib/wq_catalog.py", "--recheck-details"),
             ("python3", "-B", "scripts/written-questions.py", "--recheck", "--verify-objects"),
+            ("python3", "-B", "scripts/compact-written-question-objects.py", "--if-supported"),
             ("bun", "scripts/materialize-written-questions.ts", "data/corpus/written-questions/questions.sqlite", ".wrangler/written-questions-final"),
             Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "reads the materialized House session through authenticated HTTP"),
                     (("CIVICSIGNAL_WRITTEN_QUESTIONS_D1", "@d1:.wrangler/written-questions-final"),), verification=True),
