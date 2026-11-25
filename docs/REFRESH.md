@@ -24,6 +24,29 @@ CIVICSIGNAL_CONSULTATIONS_REFRESH_REFERENCE=dist/refresh/receipts/consultations.
 bun run test test/consultations-refresh-workerd.test.ts
 ```
 
+## Cloudflare NSERC funding staging
+
+The [private funding Worker](../services/funding/wrangler.jsonc) runs daily at **22:40 UTC**. Each calendar occurrence starts a Workflow with instance ID `nserc-<scheduledTime>` in Unix milliseconds. Its [private Python collector](../services/funding/collector/wrangler.jsonc) runs the same bilingual CCI catalogue parser as the local operator and preserves the official HTML pages and the dated inventory in the dedicated funding R2 bucket. Cloudflare performs the publisher fetches and all storage operations.
+
+Use the instance status and `funding/nserc/runs/<instanceId>.json` in R2 to check the outcome. The receipt identifies the inventory by SHA-256, the number and size of the sources, and the serving revision. It also records publication row counts and private English and French lookups with hashes of the served terms. A later observation can capture changed HTML while leaving the edition history unchanged. Check the publication revision and edition events to establish whether program terms changed.
+
+For a manual staging check, select the project account in `cf` and use the same numeric time in the instance ID and payload.
+
+```sh
+nserc_ms=$(node -p 'Date.now()')
+cf workflows instances create civicsignal-stage-funding \
+  --body "{\"instance_id\":\"nserc-$nserc_ms\",\"params\":{\"scheduledTime\":$nserc_ms}}"
+```
+
+The following checks exercise the scheduled publisher locally against an acquired inventory and its archived HTML.
+
+```sh
+CIVICSIGNAL_WORKERD_TESTS=1 \
+CIVICSIGNAL_NSERC_REFRESH_REFERENCE=data/corpus/funding/nserc.json \
+CIVICSIGNAL_NSERC_FUNDING_REFERENCE=data/corpus/funding/nserc.json \
+bun run test test/funding-refresh-workerd.test.ts test/funding-hosted-publish.test.ts
+```
+
 ## What runs daily
 
 | Collection | Command | Measured (2026-11-24) |
@@ -31,6 +54,16 @@ bun run test test/consultations-refresh-workerd.test.ts
 | Federal consultations | `bun run refresh:consultations` | ~5 s, 6.8 MB catalogue + schema |
 | House committee calls | `bun run refresh:committee-calls` | ~30 s, 30 study pages + 8 Senate pages |
 | Funding catalogues | NSERC + ESDC intake, then `materialize-funding.ts` | NSERC 9.6 s, ESDC 2 min 22 s, materialise 0.7 s |
+
+After an interrupted local ESDC capture, run `python3 -B scripts/funding-esdc.py --output data/corpus/funding/esdc.json --resume` before the next regular capture. This resumes that observation, verifies archived pages, and reuses confirmed missing detail pages. A fresh invocation begins a new observation and checks the publisher again. The full-size recovery test withheld one page, then recovered it while preserving the 196 editions and 56 reported gaps. [Checkpoint evidence](evidence/2026-11-25/esdc-checkpoint.json)
+
+To verify the ESDC publisher separately, run the following against a completed inventory. It publishes into isolated local D1, repeats the observation with a later timestamp, and compares every row in the four serving tables with the SQLite reference. [Recorded ESDC result](evidence/2026-11-25/esdc-d1-local.json)
+
+```sh
+CIVICSIGNAL_WORKERD_TESTS=1 \
+CIVICSIGNAL_ESDC_FUNDING_REFERENCE=data/corpus/funding/esdc.json \
+bun run test test/funding-acquired-publish-workerd.test.ts
+```
 
 `bun run refresh:daily` runs those three in sequence and writes one run report. Every step is independent: a failure stops that step, the rest continue, and the process exits non-zero so the scheduler surfaces it.
 

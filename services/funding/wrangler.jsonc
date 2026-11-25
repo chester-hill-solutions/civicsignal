@@ -1,0 +1,29 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-funding",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "limits": { "cpu_ms": 300000, "subrequests": 10000 },
+  "workflows": [{
+    "binding": "REFRESH",
+    "name": "civicsignal-stage-funding",
+    "class_name": "FundingRefresh"
+  }],
+  "services": [
+    { "binding": "LOOKUP", "service": "civicsignal-stage-funding", "entrypoint": "FundingLookup" },
+    { "binding": "COLLECTOR", "service": "civicsignal-stage-nserc-collector" }
+  ],
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "civicsignal-stage-funding",
+    "database_id": "0d4ddb86-5b28-44b5-b34d-7aa249ada551",
+    "migrations_dir": "../../preview/funding/migrations"
+  }],
+  "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-funding" }],
+  "triggers": { "crons": ["40 22 * * *"] }
+}

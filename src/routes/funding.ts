@@ -105,7 +105,7 @@ async function list(db: D1Database, input: z.output<typeof FundingListQuery>) {
     nextOffset: rows.results.length > input.limit ? input.offset + input.limit : null });
 }
 
-async function lookup(db: D1Database, source: z.infer<typeof FundingSource>, id: string, language: z.infer<typeof FundingLanguage>) {
+export async function lookupFundingEdition(db: D1Database, source: z.infer<typeof FundingSource>, id: string, language: z.infer<typeof FundingLanguage>) {
   const [inventory, row] = await db.batch<Record<string, unknown>>([
     catalogue(db, source),
     db.prepare(`SELECT id, revision, language, title, url, status, status_text AS statusText, availability, sections_json
@@ -179,7 +179,7 @@ export function prepareFunding(url: URL) {
       return () => readPublished(() => versions(db, source, id, input));
     }
     const input = args(url.searchParams, FundingLookupQuery, 'lookup');
-    return () => readPublished(() => lookup(db, source, id, input.language));
+    return () => readPublished(() => lookupFundingEdition(db, source, id, input.language));
   };
 }
 

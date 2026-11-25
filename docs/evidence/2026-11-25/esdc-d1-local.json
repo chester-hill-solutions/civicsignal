@@ -1,0 +1,51 @@
+{
+  "scope": "Local Cloudflare workerd with isolated D1 and R2. The publisher consumed the retained ESDC inventory through R2.",
+  "source": "esdc",
+  "inventory": {
+    "path": "data/corpus/funding/esdc.json",
+    "sha256": "54ae7f5c2fe8dd45335e39d1b7a2689a622b6c1dc40a8f460684f41c05006dcc",
+    "bytes": 7888290,
+    "observedAt": "2026-11-25T11:18:02.738838+00:00",
+    "publisherFilesReportedByInventory": 416,
+    "publisherBytesReportedByInventory": 16534680
+  },
+  "publication": {
+    "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2",
+    "editions": 196,
+    "sections": 7143,
+    "gaps": 56,
+    "initial": {
+      "observedAt": "2026-11-25T11:18:02.738Z",
+      "added": 196,
+      "changed": 0,
+      "removed": 0,
+      "d1RowsRead": 8909,
+      "d1RowsWritten": 23197
+    },
+    "unchangedReplay": {
+      "clock": "The test advances the inventory observation timestamp by one day and retains all records.",
+      "observedAt": "2026-11-26T11:18:02.738Z",
+      "added": 0,
+      "changed": 0,
+      "removed": 0,
+      "d1RowsRead": 5,
+      "d1RowsWritten": 3
+    }
+  },
+  "editionWriteSize": {
+    "unit": "UTF-8 bytes in the bound value",
+    "largestSingleBoundValue": 301688,
+    "largestCombinedEditionJsonSearchTextAndNormalizedSectionsJson": 599892,
+    "largestEdition": "esdc-csc-micro-grants/en"
+  },
+  "localSqliteParityAfterReplay": {
+    "method": "Every row and column matched the canonical SQLite materializer. SHA-256 covers UTF-8 JSON.stringify(row) plus LF in SQL column order, ordered by id/language and section index or observation time, respectively.",
+    "tables": {
+      "funding_catalogues": { "rows": 1, "sha256": "45bb1992cd787685f03e68fc53d2f046221c670662eaedee0b546abd039087a6" },
+      "funding_editions": { "rows": 196, "sha256": "200033e09b6dc8f7eecd540372f07b71be65d600adcf7fe6b6eecc546a222b15" },
+      "funding_sections": { "rows": 7143, "sha256": "11e774f1a54030605389c1c4384964147e9933dfcc9766130ad9d7e9e424c720" },
+      "funding_versions": { "rows": 196, "sha256": "7a576e55184dc8b42c02e5ae76c02f442d0103489892b957c52af69809b95afe" }
+    }
+  },
+  "reproduce": "CIVICSIGNAL_WORKERD_TESTS=1 CIVICSIGNAL_ESDC_FUNDING_REFERENCE=data/corpus/funding/esdc.json bun run test test/funding-acquired-publish-workerd.test.ts"
+}
