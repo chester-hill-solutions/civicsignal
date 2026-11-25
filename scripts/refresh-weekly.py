@@ -89,7 +89,7 @@ def _committee_commands(resume_catalogue: bool = False) -> tuple[tuple[str, ...]
     return (
         catalogue,
         (py, "-B", "scripts/committee-download.py", "--refresh", "--reuse-indexed-notice-originals"),
-        (py, "-B", "scripts/committee-expand.py"),
+        (py, "-B", "scripts/committee-expand.py", "--refresh-linked-originals"),
         (py, "-B", "scripts/committee-corpus.py"),
         (py, "-B", "scripts/committee-download.py", "--verify-only"),
         (py, "-B", "scripts/materialize-committee-corpus.py", "--clone-local"),

@@ -7,15 +7,27 @@ import hashlib
 from pathlib import Path
 from urllib.parse import urldefrag, urlsplit
 
-from lib.committee_files import cache_db, capture, official, read_object
+from lib.committee_files import cache_db, capture, download_urls, fetch_url, official, read_object
 from lib.committee_inventory import Inventory, classify
 from lib.committee_study_sources import StudyCitations, publication_facts
 from lib.committee_publications import publication_parts
 from lib.wq_catalog import save_atomic
 
 
-def expand(root, catalogue, workers):
-    model = Inventory(json.loads(catalogue.read_text()))
+def capture_new_linked_originals(root, urls, catalogue_urls, checked_urls, workers):
+    """Refresh each expansion-only URL once, excluding sources refreshed by catalogue download."""
+    candidates = sorted({fetch_url(url) for url in urls} - catalogue_urls - checked_urls)
+    if candidates:
+        capture(root, candidates, workers, refresh=True)
+        checked_urls.update(candidates)
+    return candidates
+
+
+def expand(root, catalogue, workers, refresh_linked_originals=False):
+    catalogue_data = json.loads(catalogue.read_text())
+    model = Inventory(catalogue_data)
+    catalogue_urls = set(download_urls(catalogue_data)) if refresh_linked_originals else set()
+    checked_linked_urls = set()
     db = cache_db(root)
     files = {r["url"]: dict(r) for r in db.execute("SELECT * FROM files")}
     db.close()
@@ -52,8 +64,11 @@ def expand(root, catalogue, workers):
                 "publications": pubs,
             }
         )
-        additional.update(item["url"] for item in pubs if item["url"] not in files)
-    if additional:
+        additional.update(item["url"] for item in pubs
+                          if refresh_linked_originals or item["url"] not in files)
+    if refresh_linked_originals:
+        capture_new_linked_originals(root, additional, catalogue_urls, checked_linked_urls, workers)
+    elif additional:
         capture(root, sorted(additional), workers)
     queue = {
         (lang, rid, urldefrag(url)[0])
@@ -90,11 +105,15 @@ def expand(root, catalogue, workers):
                 children[child] = dict(item, url=child, sourcePage=url)
                 scan[lang, parent, child] = True
         queue = set(scan) - seen
-        work = sorted(
-            {url for _, _, url in queue if not files.get(url, {}).get("digest")}
-        )
-        if work:
-            capture(root, work, workers)
+        if refresh_linked_originals:
+            work = {url for _, _, url in queue}
+            capture_new_linked_originals(root, work, catalogue_urls, checked_linked_urls, workers)
+        else:
+            work = sorted(
+                {url for _, _, url in queue if not files.get(url, {}).get("digest")}
+            )
+            if work:
+                capture(root, work, workers)
     facts = []
     tasks = []
     for (lang, rid), url in model.wanted.items():
@@ -194,5 +213,7 @@ if __name__ == "__main__":
     p.add_argument("--root", type=Path, default=Path("data/corpus/committees"))
     p.add_argument("--catalogue", type=Path)
     p.add_argument("--workers", type=int, default=4, choices=range(1, 13))
+    p.add_argument("--refresh-linked-originals", action="store_true",
+                   help="Refresh each expansion-discovered original once; skip URLs already refreshed from the catalogue.")
     args = p.parse_args()
-    expand(args.root, args.catalogue or args.root / "catalogue.json", args.workers)
+    expand(args.root, args.catalogue or args.root / "catalogue.json", args.workers, args.refresh_linked_originals)

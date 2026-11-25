@@ -229,12 +229,35 @@
       "federalDisclosuresReceipt": "data/corpus/federal-disclosures/receipt.json"
     },
     "committeeOnlyResume": {
-      "startedAtApprox": "2026-11-25T03:56:00Z",
-      "statusObservedAt": "2026-11-25T03:57:36Z",
       "scope": "committees only",
+      "startedAt": "2026-11-25T03:55:25.734024Z",
+      "finishedAt": "2026-11-25T04:41:14.410520Z",
+      "durationMs": 2748676,
+      "ok": true,
       "softDescriptorLimit": 256,
-      "status": "reported running; no terminal result or receipt recorded",
-      "source": "operator status; weekly report directory checked at statusObservedAt"
+      "report": "dist/refresh-weekly/2026-11-25T04-41-14.410783Z.json",
+      "reportSha256": "f1fdd89cb23b0ab10588a1377c3795acd5b6fdca80d42b0e08370bc4c43d18ea",
+      "directoryEditions": 180,
+      "catalogueIndexes": 4898,
+      "publisherIndexGaps": 2,
+      "primaryOriginalUrls": 29235,
+      "primaryHttp404": 3,
+      "verifiedOriginalObjects": 29556,
+      "passagesAtPublication": 1769394,
+      "workerPassedTests": 1
+    },
+    "committeeLinkedOriginals": {
+      "report": "dist/refresh-weekly/committee-linked-originals-2026-11-25T04-41-32Z.json",
+      "reportSha256": "edd6249628b76c3e1a8a511a55d3c54b5f05ababe35caeb5d209565238e0c5d3",
+      "startedAt": "2026-11-25T04:41:32.510183+00:00",
+      "finishedAt": "2026-11-25T04:45:00.949754+00:00",
+      "additionalOriginalUrlsChecked": 466,
+      "additionalOriginalErrors": 0,
+      "ok": true,
+      "workerPassedTests": 1,
+      "workerExpectedTests": 1,
+      "verifiedOriginalObjects": 29556,
+      "passages": 1769394
     }
   },
   "federalDiscovery": {
@@ -684,7 +707,12 @@
       "packageDirectories": 4,
       "xcodeGeneratedSubdirectories": 6,
       "nestedXcodeResultBundlesPreserved": 2,
-      "freeBytesImmediatelyAfter": 4262920192
+      "freeBytesImmediatelyAfter": 4262920192,
+      "safetyChecks": [
+        "The parent scratch jobs were idle and the candidate directories contained no open files.",
+        "The four complete removals contained reproducible dependency or cache files.",
+        "Xcode successfully read both retained xcresult bundles after the six build directories were removed."
+      ]
     }
   },
   "softwareChecks": {
@@ -696,7 +724,7 @@
     "votesPython": 8,
     "writtenQuestionsPython": 5,
     "wranglerDryRunBuilds": 6,
-    "pythonDiscoveryPassed": 227,
+    "pythonDiscoveryPassed": 229,
     "vendorFilesChecked": 117,
     "acquiredEndpointSuite": {
       "passed": true,
@@ -719,7 +747,8 @@
         "hansard-senate": 1
       },
       "verifiedOnUtc": "2026-11-25"
-    }
+    },
+    "fullValidationLog": "dist/refresh-weekly/validation-2026-11-25.log"
   },
   "reportDirectories": {
     "observedAt": "2026-11-25T02:54:15+00:00",
