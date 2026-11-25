@@ -1131,5 +1131,260 @@
       "detailsReusedFromCheckpoint": 3321
     },
     "scope": "Bilingual listing and detail catalogue only. Full answer acquisition and authenticated Worker publication have their own results."
+  },
+  "installedWeekly29": {
+    "receipt": "dist/refresh-weekly/2026-11-25T09-20-11.840194Z.json",
+    "sha256": "3eb4705f35c2677fed165b48d61daf4e84efdf00aa20383d4700b54cb1746760",
+    "startedAt": "2026-11-25T07:13:42.863165Z",
+    "finishedAt": "2026-11-25T09:20:11.839874Z",
+    "ok": false,
+    "passed": [
+      "federal-discovery",
+      "federal-disclosures",
+      "official-titles",
+      "service-inventory",
+      "ati-summaries",
+      "grant-awards",
+      "gazette",
+      "gazette-year",
+      "briefing-notes",
+      "federal-report-directories",
+      "federal-regulatory-plans",
+      "federal-publications",
+      "federal-publication-checklists",
+      "parliament",
+      "hansard-house",
+      "hansard-senate",
+      "geds",
+      "federal-institution-coverage",
+      "statutes-local",
+      "committees"
+    ],
+    "failed": [
+      "federal-guidance",
+      "consultation-notices",
+      "eccc",
+      "departmental-report-editions",
+      "departmental-report-documents",
+      "departmental-report-html",
+      "federal-policy-editions",
+      "federal-procurement",
+      "written-questions"
+    ],
+    "authenticatedServingPassed": [
+      "consultation-notices",
+      "gazette",
+      "gazette-year",
+      "parliament",
+      "hansard-house",
+      "hansard-senate",
+      "geds",
+      "committees"
+    ],
+    "authenticatedServingPending": [
+      "eccc",
+      "written-questions"
+    ]
+  },
+  "weeklyRecovery7": {
+    "receipt": "dist/refresh-weekly/2026-11-25T09-58-41.019433Z.json",
+    "sha256": "3aae3333d2e1ae9fbb5b5c818b6c126e07578049e0020987572e3b99b37bd16f",
+    "startedAt": "2026-11-25T09:20:34.606189Z",
+    "finishedAt": "2026-11-25T09:58:41.019197Z",
+    "scope": "partial",
+    "ok": false,
+    "passed": [
+      "eccc",
+      "federal-procurement",
+      "federal-institution-coverage"
+    ],
+    "failed": [
+      "departmental-report-documents",
+      "departmental-report-html",
+      "federal-policy-editions",
+      "written-questions"
+    ],
+    "authenticatedServingPassed": [
+      "eccc"
+    ]
+  },
+  "publisherRecovery6": {
+    "receipt": "dist/refresh-weekly/2026-11-25T10-02-35.080347Z.json",
+    "sha256": "c3a8df2627fc136c182a3f1d55c7a9c604dba95f531a80ed48c06219b66dc363",
+    "startedAt": "2026-11-25T09:58:49.036574Z",
+    "finishedAt": "2026-11-25T10:02:35.080174Z",
+    "scope": "partial",
+    "ok": false,
+    "passed": [
+      "federal-regulatory-plans"
+    ],
+    "failed": [
+      "consultation-notices",
+      "departmental-report-editions",
+      "departmental-report-documents",
+      "departmental-report-html",
+      "federal-institution-coverage"
+    ],
+    "authenticatedServingPassed": [
+      "consultation-notices"
+    ]
+  },
+  "consultationPublishedInstructions": {
+    "receipt": "dist/refresh-weekly/consultation-published-heading-check-20261125.json",
+    "sha256": "e1ae6628961c20787e92beb663bf44b9eff5c7d2b396db48cfb7ec1ab9ba788a",
+    "editionsWithAdditionalSubmissionInstructions": 20,
+    "publishedEditions": 98,
+    "openLanguageEditions": 142
+  },
+  "completeDepartmentalPdfAcquisition": {
+    "receipt": "data/corpus/departmental-report-documents/generations/07024a9234bca33b5c995eebdefa5041.json",
+    "sha256": "f4c7ca816dc89c6523dd85d11057a12e3fb0b02c57f8920d339277d71015ac9f",
+    "status": "partial",
+    "summary": {
+      "archivedBodyBytes": 112582206,
+      "byFamilyLanguage": {
+        "departmental-plans/en": {
+          "acquisitionFailures": 0,
+          "citations": 26,
+          "languageMismatches": 0,
+          "review": 0,
+          "verified": 26,
+          "yearMismatches": 0
+        },
+        "departmental-plans/fr": {
+          "acquisitionFailures": 0,
+          "citations": 26,
+          "languageMismatches": 1,
+          "review": 8,
+          "verified": 18,
+          "yearMismatches": 0
+        },
+        "departmental-results/en": {
+          "acquisitionFailures": 0,
+          "citations": 36,
+          "languageMismatches": 1,
+          "review": 7,
+          "verified": 29,
+          "yearMismatches": 6
+        },
+        "departmental-results/fr": {
+          "acquisitionFailures": 0,
+          "citations": 29,
+          "languageMismatches": 0,
+          "review": 3,
+          "verified": 26,
+          "yearMismatches": 3
+        }
+      },
+      "directLinkCitations": 117,
+      "failedTargets": 0,
+      "fetchedTargets": 116,
+      "readableTargets": 116,
+      "reviewCitations": 18,
+      "uniquePdfTargets": 116,
+      "verifiedCitations": 99
+    },
+    "recoveredGrainCommissionPdfSha256": "3eda18f716f89012bdaad0bca47dd2d52c4ca8992611ef2326242baaa4ae2598"
+  },
+  "issuerCitationRecovery": {
+    "receipt": "dist/refresh-weekly/2026-11-25T10-31-12.710273Z.json",
+    "sha256": "179f30dc3f02349260028e3b2f8f7536e1dbcf5d5bd4fc055750c1310116b10e",
+    "passed": [
+      "federal-institution-coverage"
+    ],
+    "failed": [
+      "departmental-report-documents",
+      "departmental-report-html"
+    ],
+    "pdfs": {
+      "receipt": "data/corpus/departmental-report-documents/generations/cb6751365ba035804a8deda87f2e1625.json",
+      "sha256": "f927985a49c80715175522b9c70437522d1e5edb075b51afccc9c21169925a85",
+      "summary": {
+        "archivedBodyBytes": 112582206,
+        "byFamilyLanguage": {
+          "departmental-plans/en": {
+            "acquisitionFailures": 0,
+            "citations": 26,
+            "languageMismatches": 0,
+            "review": 0,
+            "verified": 26,
+            "yearMismatches": 0
+          },
+          "departmental-plans/fr": {
+            "acquisitionFailures": 0,
+            "citations": 26,
+            "languageMismatches": 1,
+            "review": 2,
+            "verified": 24,
+            "yearMismatches": 0
+          },
+          "departmental-results/en": {
+            "acquisitionFailures": 0,
+            "citations": 36,
+            "languageMismatches": 1,
+            "review": 7,
+            "verified": 29,
+            "yearMismatches": 6
+          },
+          "departmental-results/fr": {
+            "acquisitionFailures": 0,
+            "citations": 29,
+            "languageMismatches": 0,
+            "review": 3,
+            "verified": 26,
+            "yearMismatches": 3
+          }
+        },
+        "directLinkCitations": 117,
+        "failedTargets": 0,
+        "fetchedTargets": 116,
+        "readableTargets": 116,
+        "reviewCitations": 12,
+        "uniquePdfTargets": 116,
+        "verifiedCitations": 105
+      }
+    },
+    "html": {
+      "receipt": "data/corpus/departmental-report-documents/html-generations/f73c9ffa04f59fe643c3f3ed89e5a4c1.json",
+      "sha256": "72476abad0fd1d625756035d1ec398dcea2c651ba10f827dc2c85005fd35fdf2",
+      "targets": {
+        "fetch-failed": 2,
+        "fetched": 1677,
+        "not-found": 4,
+        "out-of-policy": 12,
+        "unreadable": 1
+      },
+      "pending": 0
+    },
+    "institutionCoverage": {
+      "receipt": "dist/refresh-weekly/federal-institutions-after-report-repairs-20261125.json",
+      "sha256": "8d7c21c67398fd8863f2aea250b4b85ce3aba6165c76ef3c2b516cf936b6731a",
+      "sourceGroups": 33,
+      "statutoryNamesWithRecords": 99,
+      "distinctStatutoryNames": 109
+    }
+  },
+  "pipelineRepairValidation": {
+    "revision": "980b743",
+    "validate": {
+      "file": "dist/refresh-weekly/validate-bounded-hash-final-20261125.log",
+      "sha256": "318caa9a0b59b7282ad7a036b9f32eca771b49f49e8c51a8653deb1e3ce8b2d0",
+      "testFiles": 159,
+      "passed": 2703,
+      "skipped": 19
+    },
+    "python": {
+      "file": "dist/refresh-weekly/pipeline-python-final-20261125.log",
+      "sha256": "f08bb2cd7ffe6a3e7dd8c8dceb95c1b40d2df8c8892ac3798745834cba879ed6",
+      "intakeDiscovery": 338,
+      "parliamentaryVotes": 8,
+      "writtenQuestions": 13,
+      "protectedCopy": 31
+    },
+    "build": {
+      "file": "dist/refresh-weekly/build-bounded-hash-final-20261125.log",
+      "sha256": "6e57f79f51e445f76906842b81f5dd41972f268de404a0db967858a8f61224dc",
+      "localDryRunBundles": 6
+    }
   }
 }
