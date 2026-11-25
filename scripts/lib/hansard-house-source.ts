@@ -51,6 +51,20 @@ function houseSitting(body: string, session: string, date: string): HansardSitti
 export function parseHouseHansardCalendar(html: string, session: string, weekOf: string) {
   if (!SESSION.test(session)) throw new Error('Supply the House Parliament and session as N-N.');
   const days = new Set(hansardWeekDates(weekOf));
+  const parsed = parseHouseCalendar(html, session, days);
+  if (parsed.calendarDates.length !== days.size) throw new Error('The House calendar did not provide unique coverage of the requested week.');
+  return { weekOf, sittings: parsed.sittings.sort((a, b) => a.sittingDate.localeCompare(b.sittingDate)) };
+}
+
+export function parseHouseHansardSessionCalendar(html: string, session: string, cutoff: string) {
+  if (!SESSION.test(session) || !/^\d{4}-\d{2}-\d{2}$/u.test(cutoff)) throw new Error('Invalid House session or cutoff.');
+  const parsed = parseHouseCalendar(html, session, undefined, cutoff);
+  assertContinuousHouseCalendar(parsed.calendarDates);
+  return { cutoff, calendarDates: parsed.calendarDates.filter((date) => date <= cutoff),
+    sittings: parsed.sittings.filter((sitting) => sitting.sittingDate <= cutoff) };
+}
+
+function parseHouseCalendar(html: string, session: string, requiredDates?: Set<string>, cutoff?: string) {
   const seen = new Set<string>();
   const sittings: HansardSittingRef[] = [];
   const tables = [...html.matchAll(/<table\b[^>]*\sclass=["']publications-calendar["'][^>]*>([\s\S]*?)<\/table>/giu)];
@@ -59,23 +73,39 @@ export function parseHouseHansardCalendar(html: string, session: string, weekOf:
   for (const [, row = ''] of rows) {
     const cells = [...row.matchAll(/<td\b([^>]*)>([\s\S]*?)<\/td>/giu)];
     const dates = cells.map(([, , body = '']) => DATE_CLASS.exec(body)?.[1]);
-    for (const [index, [, attributes = '', body = '']] of cells.entries()) {
-      const tablingDate = adjournmentTablingDate(body, session, dates[index - 1], dates[index + 1]);
-      const date = dates[index] ?? tablingDate;
-      if (!date || !days.has(date)) continue;
-      if (seen.has(date)) throw new Error(`Duplicate date in the House calendar: ${date}.`);
-      seen.add(date);
-      const chamberMeeting = /\sclass=["']([^"']*)["']/iu.exec(attributes)?.[1]?.split(/\s+/u).includes('chamber-meeting');
-      if (tablingDate && (tablingDate !== date || chamberMeeting)) {
-        throw new Error(`Conflicting adjournment tabling cell in the House calendar: ${date}.`);
-      }
-      if (chamberMeeting) sittings.push(houseSitting(body, session, date));
-    }
+    for (const [index, cell] of cells.entries()) parseHouseCalendarCell({ cell, dates, index, session, requiredDates, cutoff, seen, sittings });
   }
-  if (seen.size !== days.size || new Set(sittings.map((sitting) => sitting.sittingId)).size !== sittings.length) {
-    throw new Error('The House calendar did not provide unique coverage of the requested week.');
+  if (requiredDates && seen.size !== requiredDates.size) throw new Error('The House calendar did not provide unique coverage of the requested week.');
+  if (new Set(sittings.map((sitting) => sitting.sittingId)).size !== sittings.length) throw new Error('The House calendar contains duplicate sitting identities.');
+  return { calendarDates: [...seen].sort(), sittings };
+}
+
+function parseHouseCalendarCell(input: {
+  cell: RegExpMatchArray; dates: Array<string | undefined>; index: number; session: string;
+  requiredDates?: Set<string>; cutoff?: string; seen: Set<string>; sittings: HansardSittingRef[];
+}): void {
+  const { cell, dates, index, session, requiredDates, cutoff, seen, sittings } = input;
+  const attributes = cell[1] ?? '';
+  const body = cell[2] ?? '';
+  const tablingDate = adjournmentTablingDate(body, session, dates[index - 1], dates[index + 1]);
+  const date = dates[index] ?? tablingDate;
+  if (!date || (requiredDates && !requiredDates.has(date))) return;
+  if (seen.has(date)) throw new Error(`Duplicate date in the House calendar: ${date}.`);
+  seen.add(date);
+  if (cutoff && date > cutoff) return;
+  const chamberMeeting = /\sclass=["']([^"']*)["']/iu.exec(attributes)?.[1]?.split(/\s+/u).includes('chamber-meeting');
+  if (tablingDate && (tablingDate !== date || chamberMeeting)) throw new Error(`Conflicting adjournment tabling cell in the House calendar: ${date}.`);
+  if (chamberMeeting) sittings.push(houseSitting(body, session, date));
+}
+
+function assertContinuousHouseCalendar(dates: string[]): void {
+  if (!dates.length) throw new Error('The House session calendar contains no dated calendar cells.');
+  const start = new Date(`${dates[0]}T00:00:00Z`);
+  const end = new Date(`${dates.at(-1)}T00:00:00Z`);
+  const seen = new Set(dates);
+  for (const day = new Date(start); day <= end; day.setUTCDate(day.getUTCDate() + 1)) {
+    if (!seen.has(day.toISOString().slice(0, 10))) throw new Error('The House session calendar has a gap in its visible date coverage.');
   }
-  return { weekOf, sittings: sittings.sort((a, b) => a.sittingDate.localeCompare(b.sittingDate)) };
 }
 
 export async function discoverHouseHansardWeek(session: string, weekOf: string, send: typeof fetch = fetch) {
@@ -90,6 +120,25 @@ export async function discoverHouseHansardWeek(session: string, weekOf: string, 
   if (!bytes) throw new Error('The House calendar was unavailable for the requested session.');
   const html = new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes);
   return parseHouseHansardCalendar(html, session, weekOf);
+}
+
+export async function discoverHouseHansardSession(session: string, cutoff: string, send: typeof fetch = fetch) {
+  if (!SESSION.test(session)) throw new Error('Supply the House Parliament and session as N-N.');
+  const match = SESSION.exec(session);
+  const parliament = match?.[1];
+  const sessionNumber = match?.[2];
+  if (!parliament || !sessionNumber) throw new Error('Supply the House Parliament and session as N-N.');
+  const url = houseCalendarUrl(parliament, sessionNumber);
+  const bytes = await readHansardSource(url, send, ['text/html'], 2 * 1024 * 1024);
+  if (!bytes) throw new Error('The House calendar was unavailable for the requested session.');
+  const html = new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes);
+  return { url: url.href, bytes, ...parseHouseHansardSessionCalendar(html, session, cutoff) };
+}
+
+function houseCalendarUrl(parliament: string, session: string): URL {
+  const url = new URL('/documentviewer/en/SessionPublicationCalendarsWidget', HOUSE);
+  url.search = new URLSearchParams({ organization: 'HOC', publicationTypeId: '37', parliament, session }).toString();
+  return url;
 }
 
 export function fetchHouseHansardEdition(sitting: HansardSittingRef & { edition: HansardLanguage }, send: typeof fetch = fetch) {

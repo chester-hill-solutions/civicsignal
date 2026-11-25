@@ -297,7 +297,6 @@
       "scripts/lib/hansard-house-source.ts:@typescript-eslint/no-non-null-assertion:Forbidden non-null assertion.#2",
       "scripts/lib/hansard-house-source.ts:@typescript-eslint/no-non-null-assertion:Forbidden non-null assertion.#3",
       "scripts/lib/hansard-senate-source.ts:@typescript-eslint/no-non-null-assertion:Forbidden non-null assertion.#1",
-      "scripts/lib/hansard-senate-source.ts:@typescript-eslint/no-non-null-assertion:Forbidden non-null assertion.#2",
       "scripts/lib/hansard-week.ts:@typescript-eslint/no-non-null-assertion:Forbidden non-null assertion.#1",
       "scripts/lib/protected-acquisition-facts.ts:@typescript-eslint/no-non-null-assertion:Forbidden non-null assertion.#1",
       "scripts/lib/protected-acquisition-facts.ts:@typescript-eslint/no-non-null-assertion:Forbidden non-null assertion.#2",

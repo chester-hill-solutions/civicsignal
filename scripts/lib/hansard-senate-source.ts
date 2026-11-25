@@ -8,8 +8,13 @@ const sessionId = /^[1-9][0-9]*-[1-9][0-9]*$/u;
 const debatePath = /^\/en\/content\/sen\/chamber\/([0-9]+)\/debates\/([0-9]+)db_(\d{4}-\d{2}-\d{2})-e\/?$/iu;
 
 export function parseSenateHansardCalendar(html: string, session: string, weekOf: string) {
-  if (!sessionId.test(session)) throw new Error('Supply the Senate Parliament and session as N-N.');
   const dates = new Set(hansardWeekDates(weekOf));
+  const parsed = parseSenateHansardSessionCalendar(html, session);
+  return { weekOf, sittings: parsed.sittings.filter((sitting) => dates.has(sitting.sittingDate)) };
+}
+
+export function parseSenateHansardSessionCalendar(html: string, session: string) {
+  if (!sessionId.test(session)) throw new Error('Supply the Senate Parliament and session as N-N.');
   const expectedSession = session.replace('-', '');
   const sittings = new Map<string, HansardSittingRef>();
   let title = '';
@@ -25,7 +30,6 @@ export function parseSenateHansardCalendar(html: string, session: string, weekOf
         if (!match || match[1] !== expectedSession) throw new Error('Unexpected Senate calendar publication link.');
         published++;
         const [, , issue, sittingDate] = match;
-        if (!dates.has(sittingDate!)) return;
         const sittingId = `${session}-${Number(issue)}`;
         const prior = sittings.get(sittingId);
         if (prior && prior.sittingDate !== sittingDate) throw new Error('Conflicting Senate issue dates in the calendar.');
@@ -35,7 +39,7 @@ export function parseSenateHansardCalendar(html: string, session: string, weekOf
   rewriter.transform(html);
 
   if (!published || !title.trim().endsWith(` - ${session}`)) throw new Error('The Senate session calendar was not recognized.');
-  return { weekOf, sittings: [...sittings.values()].sort((a, b) => a.sittingDate.localeCompare(b.sittingDate)) };
+  return { sittings: [...sittings.values()].sort((a, b) => a.sittingDate.localeCompare(b.sittingDate)) };
 }
 
 export async function discoverSenateHansardWeek(session: string, weekOf: string, send: typeof fetch = fetch) {
@@ -45,6 +49,15 @@ export async function discoverSenateHansardWeek(session: string, weekOf: string,
   const bytes = await readHansardSource(url, send, ['text/html'], 2 * 1024 * 1024);
   if (!bytes) throw new Error('The Senate calendar was unavailable for the requested session.');
   return parseSenateHansardCalendar(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes), session, weekOf);
+}
+
+export async function discoverSenateHansardSession(session: string, cutoff: string, send: typeof fetch = fetch) {
+  if (!sessionId.test(session) || !/^\d{4}-\d{2}-\d{2}$/u.test(cutoff)) throw new Error('Invalid Senate session or cutoff.');
+  const url = new URL(`/en/in-the-chamber/debates/${session}`, SENATE);
+  const bytes = await readHansardSource(url, send, ['text/html'], 2 * 1024 * 1024);
+  if (!bytes) throw new Error('The Senate calendar was unavailable for the requested session.');
+  const parsed = parseSenateHansardSessionCalendar(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes), session);
+  return { url: url.href, bytes, cutoff, sittings: parsed.sittings.filter((sitting) => sitting.sittingDate <= cutoff) };
 }
 
 export function fetchSenateHansardEdition(expected: SenateEditionRef, send: typeof fetch = fetch) {
