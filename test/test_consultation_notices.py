@@ -32,6 +32,27 @@ class NoticeParserTests(unittest.TestCase):
         self.assertEqual(notices.classify_heading("How to submit comments"), "submission-instructions")
         self.assertEqual(notices.classify_heading("Comment déposer des commentaires"), "submission-instructions")
 
+    def test_recognizes_publisher_participation_heading_variants_in_rich_text(self):
+        english = b"""<h2 id='involved'>How to <span>get <strong>involved</strong></span></h2>
+        <p>Review the <a href='/document'>consultation document</a> and submit your comments by email.</p>
+        <h2>Background</h2><p>This is not participation text.</p>"""
+        french = """<h3 id='participer'>Participez : <span>Comment prendre part à la consultation</span></h3>
+        <p>Faites-nous parvenir par <strong>courriel</strong> vos commentaires sur la proposition.</p>
+        <h3>Contexte</h3><p>Ce texte n’est pas une instruction.</p>""".encode()
+        for html, expected_heading, expected_text in (
+            (english, "How to get involved", "Review the consultation document and submit your comments by email."),
+            (french, "Participez : Comment prendre part à la consultation", "Faites-nous parvenir par courriel vos commentaires sur la proposition."),
+        ):
+            sections = notices.parse_sections(html)
+            self.assertEqual(sections[0]["kind"], "submission-instructions")
+            self.assertEqual(sections[0]["heading"], expected_heading)
+            self.assertEqual(sections[0]["text"], expected_text)
+            self.assertEqual(len(sections), 1)
+        self.assertEqual(notices.classify_heading("Online questionnaire and written submissions"), "submission-instructions")
+        self.assertEqual(notices.classify_heading("Questionnaire en ligne et soumissions écrites"), "submission-instructions")
+        self.assertIsNone(notices.classify_heading("Participating Indigenous communities"))
+        self.assertIsNone(notices.classify_heading("Feedback process"))
+
     def test_host_policy_rejects_unrecognized_published_link(self):
         self.assertEqual(notices.local_link({"kind": "missing", "published": None, "url": None})[0], "missing-link")
         status, _, detail = notices.local_link({"kind": "official", "published": "https://example.com/n", "url": "https://example.com/n"})

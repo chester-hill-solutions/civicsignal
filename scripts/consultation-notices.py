@@ -64,7 +64,10 @@ LABELS = {
         "how to participate", "how to submit", "how to submit comments", "submit comments", "send your comments",
         "providing comments", "submitting comments", "comment participer", "comment soumettre",
         "comment déposer des commentaires", "soumettre des commentaires", "transmettre vos commentaires",
-        "présenter des commentaires",
+        "présenter des commentaires", "how to get involved", "join in: how to participate",
+        "joignez-vous à nous : comment participer", "pour participer",
+        "participez : comment prendre part à la consultation",
+        "online questionnaire and written submissions", "questionnaire en ligne et soumissions écrites",
         "share your ideas online", "partagez vos idées en ligne",
     ),
 }
