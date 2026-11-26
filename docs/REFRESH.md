@@ -229,6 +229,20 @@ Each occurrence creates an immutable report at `weekly/federal-discovery/runs/fe
 
 The local federal bulk, publications, guidance and report-directory steps still read their local discovery database or archive. Keep the local weekly operator active while moving those consumers to the hosted register.
 
+### Official institution titles
+
+The same weekly Workflow imports the bilingual titles from the verified catalogue entry for that occurrence. It selects the single official CSV, verifies the ordered fields and records, and retains the exact CSV and parsed records by SHA-256 in private R2. The titles receipt pins the discovery receipt and packet hashes. An issue with an unrelated catalogue can leave the register partial while the verified titles entry supplies the import. An unavailable titles catalogue records a skipped import, and a refused or invalid CSV records a failed import. Both outcomes advance the titles attempt pointer and preserve the last complete set.
+
+```sh
+titles_instance=$(cf r2 objects get weekly/official-titles/latest-attempt.json --bucket-name civicsignal-stage-weekly | jq -er '.instanceId')
+cf r2 objects get weekly/official-titles/latest-complete.json --bucket-name civicsignal-stage-weekly
+python3 -B scripts/verify-official-titles-staging.py "$titles_instance"
+```
+
+The verifier rereads the archived catalogue and CSV, runs the pre-port bulk validator, and compares every field and row. Consumers can follow `weekly/official-titles/latest-complete.json` to the immutable receipt and its `records` reference. The local institution coverage report still reads its SQLite reference publication and CSV archive.
+
+The November 26 native qualification completed all seven steps on their first attempt. It verified the original checksum and every field and row against the local reference. Cloudflare confirmed the standing Saturday calendar after the temporary Thursday trigger was removed. [Titles qualification](evidence/2026-11-26/official-titles-cloudflare.json)
+
 ## Weekly local refresh
 
 The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.
