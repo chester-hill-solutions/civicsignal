@@ -239,9 +239,23 @@ cf r2 objects get weekly/official-titles/latest-complete.json --bucket-name civi
 python3 -B scripts/verify-official-titles-staging.py "$titles_instance"
 ```
 
-The verifier rereads the archived catalogue and CSV, runs the pre-port bulk validator, and compares every field and row. Consumers can follow `weekly/official-titles/latest-complete.json` to the immutable receipt and its `records` reference. The local institution coverage report still reads its SQLite reference publication and CSV archive.
+The verifier rereads the archived catalogue and CSV, runs the pre-port bulk validator, and compares every field and row. The institution coverage report follows `weekly/official-titles/latest-complete.json` to the immutable receipt and replays its archived CSV and ordered records. The local operator uses the installed `cf` account to read the private bucket and records the receipt hash alongside the source citation. The Mac weekly schedule no longer downloads the titles CSV from the publisher. [Coverage cutover](evidence/2026-11-26/coverage-titles-cutover.json)
 
 The November 26 native qualification completed all seven steps on their first attempt. It verified the original checksum and every field and row against the local reference. Cloudflare confirmed the standing Saturday calendar after the temporary Thursday trigger was removed. [Titles qualification](evidence/2026-11-26/official-titles-cloudflare.json)
+
+### GC Service Inventory
+
+The weekly Workflow selects the Service Inventory CSVs from the same occurrence’s verified catalogue entry. It acquires each file as a separate Workflow step, validates its published fields and records, and retains the original in private R2. The successful resource checkpoint pins the occurrence, resource URL, SHA-256, size, headers and record count. A retry verifies and reuses that checkpoint. Each new occurrence fetches the source again. The collector bounds each resource to 24 MiB and 60 seconds of publisher access.
+
+```sh
+service_instance=$(cf r2 objects get weekly/service-inventory/latest-attempt.json --bucket-name civicsignal-stage-weekly | jq -er '.instanceId')
+cf r2 objects get weekly/service-inventory/latest-complete.json --bucket-name civicsignal-stage-weekly
+python3 -B scripts/verify-service-inventory-staging.py "$service_instance"
+```
+
+The latest complete pointer advances after every selected CSV passes. A failed resource or unavailable catalogue appears in the latest attempt and preserves the last complete set. Follow the dated receipt’s resource references for the original CSVs. The independent verifier rehashes and replays each original against its occurrence checkpoint and the pre-port importer.
+
+The native November 26 qualification published all four CSVs with 27,495 rows in 40.8 seconds. Independent readback replayed every archived CSV and verified the dated discovery receipt, per-resource checkpoints and both pointers. The operating schedule remains Saturday at 14:00 UTC. [Service Inventory qualification](evidence/2026-11-26/service-inventory-cloudflare.json)
 
 ## Weekly local refresh
 
@@ -267,7 +281,7 @@ Installation registers the job. It runs while the user is logged in. Removal unl
 | CanadaBuys procurement | Archives and verifies award notices and contract history for the current fiscal year. |
 | Federal institution coverage | Attributes records from the acquired collections to statutory institutions using published legal names, applied titles and bilingual aliases. Read matched and unresolved record counts for each input, plus the eight-family breakdown for each statutory institution, in `dist/refresh-weekly/federal-institutions.json`. |
 | Federal statutes and regulations | Refreshes the official Justice Canada checkout, produces English and French SQL, JSONL and title files, and runs the corpus checks before switching `dist/statutes-local/current` to the verified generation. The receipt identifies the Git revision and the six file hashes. |
-| Official institution titles, GC Service Inventory, grants and contributions awards, and access-request summaries | Streams the published CSV resources, validates their fields and records, and archives them by hash. Publishes a collection after all its resources pass. Use `python3 -B scripts/federal-bulk.py search service-inventory --query passport --limit 3` to read cited records locally. |
+| GC Service Inventory, grants and contributions awards, and access-request summaries | Streams the published CSV resources, validates their fields and records, and archives them by hash. Publishes a collection after all its resources pass. Use `python3 -B scripts/federal-bulk.py search service-inventory --query passport --limit 3` to read cited records locally. |
 | Algorithmic impact assessments and briefing packages | Archives every result page from the five published portal collections, checks collection identity and totals, and publishes a local bilingual catalogue with the original resource links. Use `python3 -B scripts/federal-disclosures.py --lookup DATASET_ID`. |
 | Treasury Board and IRCC guidance | Refreshes the bilingual active and archived Treasury Board policy indexes. Captures the original IRCC manual indexes and their four bilingual instruction and update feeds. Archives listed manuals and guidance pages, preserves the publisher’s row and target language, and replays the cited text. Use `python3 -B scripts/ircc-guidance-documents.py lookup --code 'OP 8' --language fr --query 'travailleurs autonomes'` for an edition-specific lookup. |
 | Dated Treasury Board policy documents | Matches exact registered policy IDs in the official government bibliography and archives linked PDFs. A title or catalogue-language mismatch goes to review. Read `python3 -B scripts/federal-policy-editions.py lookup --policy-id 30682 --language en --query communications` for a dated source and page citation. |

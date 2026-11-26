@@ -1,0 +1,781 @@
+{
+  "scope": "GC Service Inventory CSV publication inside the private Cloudflare staging weekly register Workflow.",
+  "sourceCommit": "989851cf6fa21452ba0e6b05942fa11b308dcad3",
+  "candidateTests": {
+    "vitestPassed": 2753,
+    "vitestSkipped": 23,
+    "pythonPassed": 373
+  },
+  "archive": "civicsignal-stage-weekly",
+  "manual": {
+    "instanceId": "federal-discovery-1795713314743",
+    "trigger": "api",
+    "scheduledTime": "2026-11-26T17:15:14.743Z",
+    "startedAt": "2026-11-26T17:15:16.569Z",
+    "finishedAt": "2026-11-26T17:15:50.773Z",
+    "workflowVersion": "c5c03e9a-2f79-4bc2-8b6b-b370a3e6aae3",
+    "steps": [
+      {
+        "name": "archive the checked-in federal register-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire official federal catalogue endpoints-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "verify the full register and its archived originals-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "publish the immutable register receipt and advance its index-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "pin the hosted catalogue resource for official titles-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire official institution titles-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "verify and publish official institution titles-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "pin the hosted catalogue resources for GC Service Inventory-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire GC Service Inventory 272143a7-533e-42a1-b72d-622116474a21-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire GC Service Inventory 3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire GC Service Inventory 8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire GC Service Inventory c0cf9766-b85b-48c3-b295-34f72305aaf6-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "verify and publish GC Service Inventory-1",
+        "success": true,
+        "attempts": 1
+      }
+    ],
+    "discovery": {
+      "receiptKey": "weekly/federal-discovery/runs/federal-discovery-1795713314743.json",
+      "status": "complete",
+      "counts": {
+        "series": 18,
+        "endpoints": 28,
+        "uniqueUrls": 27,
+        "verified": 28,
+        "failed": 0,
+        "originals": 27,
+        "originalBytes": 3262652
+      },
+      "receiptRef": {
+        "key": "weekly/federal-discovery/runs/federal-discovery-1795713314743.json",
+        "bytes": 790,
+        "sha256": "2fde965ceaa9284f4f176ffe72c252a347d0b20fb1ddc53cccad4b7239327b48"
+      }
+    },
+    "officialTitles": {
+      "receiptKey": "weekly/official-titles/runs/federal-discovery-1795713314743.json",
+      "status": "complete",
+      "rows": 102,
+      "receiptRef": {
+        "key": "weekly/official-titles/runs/federal-discovery-1795713314743.json",
+        "bytes": 1600,
+        "sha256": "dcebd5e5fc84f085c7c501012515fba87b5064c2fe39d2923d47b50b82f186da"
+      }
+    },
+    "serviceInventory": {
+      "receiptKey": "weekly/service-inventory/runs/federal-discovery-1795713314743.json",
+      "status": "complete",
+      "counts": {
+        "resources": 4,
+        "verified": 4,
+        "failed": 0,
+        "rows": 27495,
+        "originalBytes": 35654506
+      },
+      "receiptRef": {
+        "key": "weekly/service-inventory/runs/federal-discovery-1795713314743.json",
+        "bytes": 6495,
+        "sha256": "d38cb1a249a501ade61cff2327b59c077d89a58202da4155c72120fd257c84ac"
+      },
+      "discoveryReceipt": {
+        "key": "weekly/federal-discovery/runs/federal-discovery-1795713314743.json",
+        "sha256": "2fde965ceaa9284f4f176ffe72c252a347d0b20fb1ddc53cccad4b7239327b48",
+        "bytes": 790
+      },
+      "packetRef": {
+        "key": "weekly/federal-discovery/inventories/c54e23da00fd1f66fa9d15d16554585f3e01c53555a83b4a7cde927789724c94.json",
+        "sha256": "c54e23da00fd1f66fa9d15d16554585f3e01c53555a83b4a7cde927789724c94",
+        "bytes": 358322
+      }
+    },
+    "verifiedResources": [
+      {
+        "datasetId": "3ac0d080-6149-499a-8b06-7ce5f00ec56c",
+        "resourceId": "272143a7-533e-42a1-b72d-622116474a21",
+        "url": "https://open.canada.ca/data/dataset/3ac0d080-6149-499a-8b06-7ce5f00ec56c/resource/272143a7-533e-42a1-b72d-622116474a21/download/service_standards_2018-2023.csv",
+        "status": "complete",
+        "sha256": "e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968",
+        "bytes": 8852383,
+        "rows": 10432,
+        "columns": 26,
+        "sourceKey": "weekly/service-inventory/sources/e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968.csv",
+        "finalUrl": "https://opencanada.blob.core.windows.net/opengovprod/resources/272143a7-533e-42a1-b72d-622116474a21/service_standards_2018-2023.csv",
+        "lastModified": "Thu, 12 Mar 2026 13:20:24 GMT",
+        "orderedHeadersSha256": "78ff52e21ed7fe8524441f4565986d6f08415861a693dfd70b484d0cdd338f68"
+      },
+      {
+        "datasetId": "3ac0d080-6149-499a-8b06-7ce5f00ec56c",
+        "resourceId": "3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a",
+        "url": "https://open.canada.ca/data/dataset/3ac0d080-6149-499a-8b06-7ce5f00ec56c/resource/3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a/download/service_inventory_2018-2023.csv",
+        "status": "complete",
+        "sha256": "b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095",
+        "bytes": 14004927,
+        "rows": 7254,
+        "columns": 46,
+        "sourceKey": "weekly/service-inventory/sources/b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095.csv",
+        "finalUrl": "https://opencanada.blob.core.windows.net/opengovprod/resources/3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a/service_inventory_2018-2023.csv",
+        "lastModified": "Thu, 12 Mar 2026 13:17:16 GMT",
+        "orderedHeadersSha256": "2908331fda8cda377057e10876da8e1c60ce4c3407bf99f8b30e8d85358781c2"
+      },
+      {
+        "datasetId": "3ac0d080-6149-499a-8b06-7ce5f00ec56c",
+        "resourceId": "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e",
+        "url": "https://open.canada.ca/data/dataset/3ac0d080-6149-499a-8b06-7ce5f00ec56c/resource/8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e/download/service-std.csv",
+        "status": "complete",
+        "sha256": "4f9d2d85854d3f05291654f07a0fa6ee6d0269787bbbda4e407de0212ea7a04e",
+        "bytes": 5346266,
+        "rows": 5826,
+        "columns": 24,
+        "sourceKey": "weekly/service-inventory/sources/4f9d2d85854d3f05291654f07a0fa6ee6d0269787bbbda4e407de0212ea7a04e.csv",
+        "finalUrl": "https://opencanada.blob.core.windows.net/opengovprod/resources/8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e/service-std.csv",
+        "lastModified": "Thu, 26 Nov 2026 06:56:56 GMT",
+        "orderedHeadersSha256": "a374f7f97865c1d985e63074fa46a367d0afb49c93d35f095c1e1e2b4f331094"
+      },
+      {
+        "datasetId": "3ac0d080-6149-499a-8b06-7ce5f00ec56c",
+        "resourceId": "c0cf9766-b85b-48c3-b295-34f72305aaf6",
+        "url": "https://open.canada.ca/data/dataset/3ac0d080-6149-499a-8b06-7ce5f00ec56c/resource/c0cf9766-b85b-48c3-b295-34f72305aaf6/download/service.csv",
+        "status": "complete",
+        "sha256": "7fcd61201397624120055fcffe9c8ead8195ea04fff95193604cc61c03ef749a",
+        "bytes": 7450930,
+        "rows": 3983,
+        "columns": 46,
+        "sourceKey": "weekly/service-inventory/sources/7fcd61201397624120055fcffe9c8ead8195ea04fff95193604cc61c03ef749a.csv",
+        "finalUrl": "https://opencanada.blob.core.windows.net/opengovprod/resources/c0cf9766-b85b-48c3-b295-34f72305aaf6/service.csv",
+        "lastModified": "Thu, 26 Nov 2026 06:56:46 GMT",
+        "orderedHeadersSha256": "0f687e7b1a71646ae7b860d6b87e73584bffb695fb63fba3cff661fda1e2b016"
+      }
+    ],
+    "pointers": {
+      "latest-attempt": {
+        "instanceId": "federal-discovery-1795713314743",
+        "scheduledTime": 1795713314743,
+        "receiptKey": "weekly/service-inventory/runs/federal-discovery-1795713314743.json",
+        "status": "complete"
+      },
+      "latest-complete": {
+        "instanceId": "federal-discovery-1795713314743",
+        "scheduledTime": 1795713314743,
+        "receiptKey": "weekly/service-inventory/runs/federal-discovery-1795713314743.json",
+        "status": "complete"
+      }
+    },
+    "localComparison": {
+      "localObservedAt": "2026-11-25T07:28:32.000404+00:00",
+      "localRows": 27405,
+      "localBytes": 35535453,
+      "sameResourceIds": true,
+      "sharedVerifiedResources": {
+        "272143a7-533e-42a1-b72d-622116474a21": {
+          "sameUrl": true,
+          "sameOriginal": true,
+          "sameFields": true,
+          "sameRows": true,
+          "baselineRows": 10432,
+          "baselineBytes": 8852383,
+          "baselineSha256": "e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968"
+        },
+        "3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a": {
+          "sameUrl": true,
+          "sameOriginal": true,
+          "sameFields": true,
+          "sameRows": true,
+          "baselineRows": 7254,
+          "baselineBytes": 14004927,
+          "baselineSha256": "b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095"
+        },
+        "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e": {
+          "sameUrl": true,
+          "sameOriginal": false,
+          "sameFields": true,
+          "sameRows": false,
+          "baselineRows": 5773,
+          "baselineBytes": 5302705,
+          "baselineSha256": "8cc11de1d3cc7c22f38e8bae51e4d76e24c7343c45a1d6260524f71d3c8da443"
+        },
+        "c0cf9766-b85b-48c3-b295-34f72305aaf6": {
+          "sameUrl": true,
+          "sameOriginal": false,
+          "sameFields": true,
+          "sameRows": false,
+          "baselineRows": 3946,
+          "baselineBytes": 7375438,
+          "baselineSha256": "da55183b14339e29166fe5534b42061bb342294720bf299db56e933f925d86fd"
+        }
+      }
+    },
+    "ownCatalogueVerified": true,
+    "prePortBulkRevision": "8886bdb49637df24ba4283ec0da3e40361a91869",
+    "telemetry": {
+      "civicsignal-stage-federal-register": [
+        {
+          "eventType": "workflow",
+          "observedAt": "2026-11-26T17:15:50.773Z",
+          "version": "2ada2ae8-e018-4577-a3aa-af1133908914",
+          "outcome": "ok",
+          "cpuMs": 65,
+          "wallMs": 34267
+        }
+      ],
+      "civicsignal-stage-federal-register-collector": [
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:15:49.303Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 499,
+          "wallMs": 1477,
+          "path": "/service-inventory",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:15:47.927Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 342,
+          "wallMs": 4766,
+          "path": "/service-inventory",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:15:42.830Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 869,
+          "wallMs": 2108,
+          "path": "/service-inventory",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:15:40.786Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 652,
+          "wallMs": 1713,
+          "path": "/service-inventory",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:15:38.349Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 16,
+          "wallMs": 509,
+          "path": "/official-titles",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:15:35.703Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 1235,
+          "wallMs": 18603,
+          "path": "/collect",
+          "status": 200
+        }
+      ]
+    }
+  },
+  "native": {
+    "instanceId": "federal-discovery-1795714524000",
+    "trigger": "binding",
+    "scheduledTime": "2026-11-26T17:35:24.000Z",
+    "startedAt": "2026-11-26T17:35:28.077Z",
+    "finishedAt": "2026-11-26T17:36:08.915Z",
+    "workflowVersion": "c5c03e9a-2f79-4bc2-8b6b-b370a3e6aae3",
+    "steps": [
+      {
+        "name": "archive the checked-in federal register-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire official federal catalogue endpoints-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "verify the full register and its archived originals-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "publish the immutable register receipt and advance its index-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "pin the hosted catalogue resource for official titles-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire official institution titles-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "verify and publish official institution titles-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "pin the hosted catalogue resources for GC Service Inventory-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire GC Service Inventory 272143a7-533e-42a1-b72d-622116474a21-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire GC Service Inventory 3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire GC Service Inventory 8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire GC Service Inventory c0cf9766-b85b-48c3-b295-34f72305aaf6-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "verify and publish GC Service Inventory-1",
+        "success": true,
+        "attempts": 1
+      }
+    ],
+    "discovery": {
+      "receiptKey": "weekly/federal-discovery/runs/federal-discovery-1795714524000.json",
+      "status": "complete",
+      "counts": {
+        "series": 18,
+        "endpoints": 28,
+        "uniqueUrls": 27,
+        "verified": 28,
+        "failed": 0,
+        "originals": 27,
+        "originalBytes": 3262648
+      },
+      "receiptRef": {
+        "key": "weekly/federal-discovery/runs/federal-discovery-1795714524000.json",
+        "bytes": 790,
+        "sha256": "1d62cd89ea584e17a3920df752faebe9696f7b65cace58daf4c29031e9b24051"
+      }
+    },
+    "officialTitles": {
+      "receiptKey": "weekly/official-titles/runs/federal-discovery-1795714524000.json",
+      "status": "complete",
+      "rows": 102,
+      "receiptRef": {
+        "key": "weekly/official-titles/runs/federal-discovery-1795714524000.json",
+        "bytes": 1600,
+        "sha256": "46baf65437c9a118307b6b6b537709c1bae9f865a94554bf8b7b36919ed1dd38"
+      }
+    },
+    "serviceInventory": {
+      "receiptKey": "weekly/service-inventory/runs/federal-discovery-1795714524000.json",
+      "status": "complete",
+      "counts": {
+        "resources": 4,
+        "verified": 4,
+        "failed": 0,
+        "rows": 27495,
+        "originalBytes": 35654506
+      },
+      "receiptRef": {
+        "key": "weekly/service-inventory/runs/federal-discovery-1795714524000.json",
+        "bytes": 6495,
+        "sha256": "bcdeca493e9276cd5a9189172ed8f2869d69de25b34e43e398313a38010b4f4c"
+      },
+      "discoveryReceipt": {
+        "key": "weekly/federal-discovery/runs/federal-discovery-1795714524000.json",
+        "sha256": "1d62cd89ea584e17a3920df752faebe9696f7b65cace58daf4c29031e9b24051",
+        "bytes": 790
+      },
+      "packetRef": {
+        "key": "weekly/federal-discovery/inventories/709aaec18bd88a1f580fe386a34408b39371ca5de4666ccd4f64603db45bb9ca.json",
+        "sha256": "709aaec18bd88a1f580fe386a34408b39371ca5de4666ccd4f64603db45bb9ca",
+        "bytes": 358204
+      }
+    },
+    "verifiedResources": [
+      {
+        "datasetId": "3ac0d080-6149-499a-8b06-7ce5f00ec56c",
+        "resourceId": "272143a7-533e-42a1-b72d-622116474a21",
+        "url": "https://open.canada.ca/data/dataset/3ac0d080-6149-499a-8b06-7ce5f00ec56c/resource/272143a7-533e-42a1-b72d-622116474a21/download/service_standards_2018-2023.csv",
+        "status": "complete",
+        "sha256": "e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968",
+        "bytes": 8852383,
+        "rows": 10432,
+        "columns": 26,
+        "sourceKey": "weekly/service-inventory/sources/e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968.csv",
+        "finalUrl": "https://opencanada.blob.core.windows.net/opengovprod/resources/272143a7-533e-42a1-b72d-622116474a21/service_standards_2018-2023.csv",
+        "lastModified": "Thu, 12 Mar 2026 13:20:24 GMT",
+        "orderedHeadersSha256": "78ff52e21ed7fe8524441f4565986d6f08415861a693dfd70b484d0cdd338f68"
+      },
+      {
+        "datasetId": "3ac0d080-6149-499a-8b06-7ce5f00ec56c",
+        "resourceId": "3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a",
+        "url": "https://open.canada.ca/data/dataset/3ac0d080-6149-499a-8b06-7ce5f00ec56c/resource/3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a/download/service_inventory_2018-2023.csv",
+        "status": "complete",
+        "sha256": "b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095",
+        "bytes": 14004927,
+        "rows": 7254,
+        "columns": 46,
+        "sourceKey": "weekly/service-inventory/sources/b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095.csv",
+        "finalUrl": "https://opencanada.blob.core.windows.net/opengovprod/resources/3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a/service_inventory_2018-2023.csv",
+        "lastModified": "Thu, 12 Mar 2026 13:17:16 GMT",
+        "orderedHeadersSha256": "2908331fda8cda377057e10876da8e1c60ce4c3407bf99f8b30e8d85358781c2"
+      },
+      {
+        "datasetId": "3ac0d080-6149-499a-8b06-7ce5f00ec56c",
+        "resourceId": "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e",
+        "url": "https://open.canada.ca/data/dataset/3ac0d080-6149-499a-8b06-7ce5f00ec56c/resource/8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e/download/service-std.csv",
+        "status": "complete",
+        "sha256": "4f9d2d85854d3f05291654f07a0fa6ee6d0269787bbbda4e407de0212ea7a04e",
+        "bytes": 5346266,
+        "rows": 5826,
+        "columns": 24,
+        "sourceKey": "weekly/service-inventory/sources/4f9d2d85854d3f05291654f07a0fa6ee6d0269787bbbda4e407de0212ea7a04e.csv",
+        "finalUrl": "https://opencanada.blob.core.windows.net/opengovprod/resources/8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e/service-std.csv",
+        "lastModified": "Thu, 26 Nov 2026 06:56:56 GMT",
+        "orderedHeadersSha256": "a374f7f97865c1d985e63074fa46a367d0afb49c93d35f095c1e1e2b4f331094"
+      },
+      {
+        "datasetId": "3ac0d080-6149-499a-8b06-7ce5f00ec56c",
+        "resourceId": "c0cf9766-b85b-48c3-b295-34f72305aaf6",
+        "url": "https://open.canada.ca/data/dataset/3ac0d080-6149-499a-8b06-7ce5f00ec56c/resource/c0cf9766-b85b-48c3-b295-34f72305aaf6/download/service.csv",
+        "status": "complete",
+        "sha256": "7fcd61201397624120055fcffe9c8ead8195ea04fff95193604cc61c03ef749a",
+        "bytes": 7450930,
+        "rows": 3983,
+        "columns": 46,
+        "sourceKey": "weekly/service-inventory/sources/7fcd61201397624120055fcffe9c8ead8195ea04fff95193604cc61c03ef749a.csv",
+        "finalUrl": "https://opencanada.blob.core.windows.net/opengovprod/resources/c0cf9766-b85b-48c3-b295-34f72305aaf6/service.csv",
+        "lastModified": "Thu, 26 Nov 2026 06:56:46 GMT",
+        "orderedHeadersSha256": "0f687e7b1a71646ae7b860d6b87e73584bffb695fb63fba3cff661fda1e2b016"
+      }
+    ],
+    "pointers": {
+      "latest-attempt": {
+        "instanceId": "federal-discovery-1795714524000",
+        "scheduledTime": 1795714524000,
+        "receiptKey": "weekly/service-inventory/runs/federal-discovery-1795714524000.json",
+        "status": "complete"
+      },
+      "latest-complete": {
+        "instanceId": "federal-discovery-1795714524000",
+        "scheduledTime": 1795714524000,
+        "receiptKey": "weekly/service-inventory/runs/federal-discovery-1795714524000.json",
+        "status": "complete"
+      }
+    },
+    "localComparison": {
+      "localObservedAt": "2026-11-25T07:28:32.000404+00:00",
+      "localRows": 27405,
+      "localBytes": 35535453,
+      "sameResourceIds": true,
+      "sharedVerifiedResources": {
+        "272143a7-533e-42a1-b72d-622116474a21": {
+          "sameUrl": true,
+          "sameOriginal": true,
+          "sameFields": true,
+          "sameRows": true,
+          "baselineRows": 10432,
+          "baselineBytes": 8852383,
+          "baselineSha256": "e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968"
+        },
+        "3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a": {
+          "sameUrl": true,
+          "sameOriginal": true,
+          "sameFields": true,
+          "sameRows": true,
+          "baselineRows": 7254,
+          "baselineBytes": 14004927,
+          "baselineSha256": "b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095"
+        },
+        "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e": {
+          "sameUrl": true,
+          "sameOriginal": false,
+          "sameFields": true,
+          "sameRows": false,
+          "baselineRows": 5773,
+          "baselineBytes": 5302705,
+          "baselineSha256": "8cc11de1d3cc7c22f38e8bae51e4d76e24c7343c45a1d6260524f71d3c8da443"
+        },
+        "c0cf9766-b85b-48c3-b295-34f72305aaf6": {
+          "sameUrl": true,
+          "sameOriginal": false,
+          "sameFields": true,
+          "sameRows": false,
+          "baselineRows": 3946,
+          "baselineBytes": 7375438,
+          "baselineSha256": "da55183b14339e29166fe5534b42061bb342294720bf299db56e933f925d86fd"
+        }
+      }
+    },
+    "ownCatalogueVerified": true,
+    "prePortBulkRevision": "8886bdb49637df24ba4283ec0da3e40361a91869",
+    "telemetry": {
+      "civicsignal-stage-federal-register": [
+        {
+          "eventType": "workflow",
+          "observedAt": "2026-11-26T17:36:08.915Z",
+          "version": "2ada2ae8-e018-4577-a3aa-af1133908914",
+          "outcome": "ok",
+          "cpuMs": 73,
+          "wallMs": 40751
+        },
+        {
+          "eventType": "scheduled",
+          "observedAt": "2026-11-26T17:35:26.536Z",
+          "version": "2ada2ae8-e018-4577-a3aa-af1133908914",
+          "outcome": "ok",
+          "cpuMs": 0,
+          "wallMs": 452,
+          "cron": "35 17 * * THU",
+          "scheduledTimeMs": 1795714524000
+        }
+      ],
+      "civicsignal-stage-federal-register-collector": [
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:36:06.670Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 1104,
+          "wallMs": 2062,
+          "path": "/service-inventory",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:36:04.890Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 576,
+          "wallMs": 1660,
+          "path": "/service-inventory",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:36:02.247Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 2240,
+          "wallMs": 3334,
+          "path": "/service-inventory",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:35:59.456Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 1116,
+          "wallMs": 2238,
+          "path": "/service-inventory",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:35:56.446Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 17,
+          "wallMs": 552,
+          "path": "/official-titles",
+          "status": 200
+        },
+        {
+          "eventType": "fetch",
+          "observedAt": "2026-11-26T17:35:52.699Z",
+          "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+          "outcome": "ok",
+          "cpuMs": 1420,
+          "wallMs": 23997,
+          "path": "/collect",
+          "status": 200
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "sameResourceMetadataAndOriginals": true,
+    "postQualificationScheduleOnlyUpdatePreservedDeployments": true
+  },
+  "qualificationCrons": [
+    "0 14 * * SAT",
+    "35 17 * * THU"
+  ],
+  "finalDeployments": {
+    "civicsignal-stage-federal-register": {
+      "name": "civicsignal-stage-federal-register",
+      "version": "2ada2ae8-e018-4577-a3aa-af1133908914",
+      "deploymentCreatedAt": "2026-11-26T17:14:10.912716Z",
+      "bindingsAndCalendar": {
+        "name": "civicsignal-stage-federal-register",
+        "workers_dev": false,
+        "preview_urls": false,
+        "services": [
+          {
+            "binding": "COLLECTOR",
+            "service": "civicsignal-stage-federal-register-collector",
+            "environment": "production"
+          }
+        ],
+        "r2_buckets": [
+          {
+            "binding": "ARCHIVE",
+            "bucket_name": "civicsignal-stage-weekly"
+          }
+        ],
+        "workflows": [
+          {
+            "binding": "REFRESH",
+            "name": "civicsignal-stage-federal-register",
+            "class_name": "FederalDiscoveryRefresh"
+          }
+        ],
+        "limits": {
+          "cpu_ms": 300000,
+          "subrequests": 10000
+        },
+        "triggers": {
+          "crons": [
+            "0 14 * * SAT"
+          ]
+        },
+        "compatibility_flags": [
+          "nodejs_compat"
+        ],
+        "compatibility_date": "2026-10-22"
+      },
+      "modules": {
+        "worker.js": {
+          "bytes": 823140,
+          "sha256": "9f63efda0944f02b99786f2be7f34d584adcfd52dc3d42cc805cd3e891962979"
+        },
+        "720f16d3f0c773b704df81fa177ed6d33612ea2a-federal-public-service-sources.csv": {
+          "bytes": 6027,
+          "sha256": "ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746"
+        }
+      }
+    },
+    "civicsignal-stage-federal-register-collector": {
+      "name": "civicsignal-stage-federal-register-collector",
+      "version": "dcd4bcbc-05ac-4189-9111-3c65cf29ca22",
+      "deploymentCreatedAt": "2026-11-26T17:12:59.472061Z",
+      "bindingsAndCalendar": {
+        "name": "civicsignal-stage-federal-register-collector",
+        "workers_dev": false,
+        "preview_urls": false,
+        "r2_buckets": [
+          {
+            "binding": "ARCHIVE",
+            "bucket_name": "civicsignal-stage-weekly"
+          }
+        ],
+        "limits": {
+          "cpu_ms": 300000,
+          "subrequests": 10000
+        },
+        "compatibility_flags": [
+          "python_workers",
+          "disable_python_external_sdk"
+        ],
+        "compatibility_date": "2026-10-22"
+      },
+      "modules": {
+        "federal_bulk_csv.py": {
+          "bytes": 1384,
+          "sha256": "57222afc81e553491994ab17d7917f7f8dbaddc35e157061285eedd68b2146c9"
+        },
+        "service_inventory.py": {
+          "bytes": 4719,
+          "sha256": "62f5b4b71a007e33d7404db12c4f355c7c9bf06799e98472359bfc780e3849bf"
+        },
+        "discovery.py": {
+          "bytes": 9766,
+          "sha256": "6a6b825bd324607ca42c2b26dfc9c2d74e4469270c6e6fdafca80d6928a3001e"
+        },
+        "bulk_resource.py": {
+          "bytes": 2835,
+          "sha256": "94b4ef06551930d313b1e2f57d50fa7e661e8f95f8ae9064cb30326a9c525c74"
+        },
+        "federal_catalogue.py": {
+          "bytes": 2770,
+          "sha256": "f5cf9023b026520f6574c53a22f0e31f3e908dbafb2c2122254038b8ba9b3f4e"
+        },
+        "entry.py": {
+          "bytes": 7811,
+          "sha256": "5299df57be5cb102aad9c7cab4076e51e23ff308f4cba829fafc3cf11c38aed4"
+        },
+        "official_titles.py": {
+          "bytes": 1774,
+          "sha256": "d461d2ec1048e12a3831284861483d808070214c41b11f9f19467aab5c44fe2f"
+        }
+      }
+    }
+  },
+  "finalConfigurationReadAt": "2026-11-26T17:37:19Z"
+}
