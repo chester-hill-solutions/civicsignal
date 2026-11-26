@@ -19,6 +19,8 @@ const titleRows = [['Department, example', 'Ministère', 'Example', 'Exemple  ']
 const titlesPrefix = 'weekly/official-titles';
 const goodId = 'f0ca63e0-c15e-45b5-9656-77abe1564b1c';
 const deniedId = 'f0ca63e0-c15e-45b5-9656-77abe1564b1d';
+const serviceIds = ['272143a7-533e-42a1-b72d-622116474a21', '3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a'];
+const servicePrefix = 'weekly/service-inventory';
 async function archive(bucket, directory, suffix, content) {
   const bytes = encode(content);
   const sha256 = await textSha256(bytes);
@@ -28,6 +30,21 @@ async function archive(bucket, directory, suffix, content) {
 }
 export class Collector extends WorkerEntrypoint {
   async fetch(request) {
+    if (new URL(request.url).pathname === '/service-inventory') {
+      const { datasetId, resourceId, url, scheduledTime } = await request.json();
+      if (new Date(scheduledTime).getUTCDate() === 27 && resourceId === serviceIds[1]) {
+        return Response.json({status:'failed',code:'http-403',httpStatus:403});
+      }
+      const fields = ['service_id','fiscal_yr','service_name_en','service_name_fr'];
+      const bytes = encode(fields.join(',') + '\\r\\n' + resourceId + ',2024,Example,Exemple\\r\\n');
+      const sha256 = await textSha256(bytes);
+      const source = {key:servicePrefix + '/sources/' + sha256 + '.csv',sha256,bytes:bytes.length};
+      await this.env.ARCHIVE.put(source.key, bytes, { sha256 });
+      const result = {status:'complete',source,rows:1,fields,finalUrl:url,lastModified:null};
+      await this.env.ARCHIVE.put(servicePrefix + '/checkpoints/' + scheduledTime + '/' + resourceId + '.json',
+        JSON.stringify({schemaVersion:1,scheduledTime,datasetId,resourceId,url,result}));
+      return Response.json(result);
+    }
     if (new URL(request.url).pathname === '/official-titles') {
       const { datasetId, resourceId, url } = await request.json();
       if (!url.includes('/' + datasetId + '/resource/' + resourceId + '/download/')) throw new Error('Unpinned titles resource');
@@ -71,6 +88,13 @@ export class Collector extends WorkerEntrypoint {
         const resourceUrl = 'https://open.canada.ca/data/dataset/' + datasetId + '/resource/' + id + '/download/titles.csv';
         inventory = {kind:'dataset-resources',title:'Fixture',resources:[{id,url:resourceUrl,format:'CSV',titles:null,languages:null,lastModified:null}]};
       }
+      if (series === 'service-inventory') {
+        const datasetId = new URL(url).searchParams.get('id');
+        inventory = {kind:'dataset-resources',title:'Fixture',resources:serviceIds.map(id => ({
+          id,url:'https://open.canada.ca/data/dataset/' + datasetId + '/resource/' + id + '/download/service.csv',
+          format:'CSV',titles:null,languages:null,lastModified:null,
+        }))};
+      }
       return {...identity,ok:true,inventory};
     });
     const json = JSON.stringify({schemaVersion:1,scheduledTime,registerSha256,endpoints,sources:[...sources.values()]});
@@ -83,7 +107,7 @@ export class Collector extends WorkerEntrypoint {
 }`;
 
 it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1')(
-  'imports scheduled titles from the pinned register and preserves both good publications across partial, failed and stale runs', async () => {
+  'imports scheduled bulk CSVs from the pinned register and preserves complete publications across partial, failed and stale runs', async () => {
     const name = 'federal-register-local';
     const bundle = await build({ stdin: { contents: entry, resolveDir: process.cwd() }, bundle:true,
       loader:{'.csv':'text'}, format:'esm', platform:'browser', external:['node:*','cloudflare:*'], write:false });
@@ -102,6 +126,7 @@ it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1')(
     });
     const base = 'weekly/federal-discovery';
     const titles = 'weekly/official-titles';
+    const service = 'weekly/service-inventory';
     try {
       const archive = await mf.getR2Bucket('ARCHIVE',name);
       const { REFRESH } = await mf.getBindings<{ REFRESH: Workflow }>(name);
@@ -124,6 +149,9 @@ it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1')(
         status:'complete',rows:1,resource:{resourceId:'f0ca63e0-c15e-45b5-9656-77abe1564b1c'},
         discovery:{key:`${base}/runs/${first.instanceId}.json`},
       });
+      expect(await (await archive.get(`${service}/runs/${first.instanceId}.json`))?.json()).toMatchObject({
+        status:'complete',counts:{resources:2,verified:2,failed:0,rows:2},discovery:{key:`${base}/runs/${first.instanceId}.json`},
+      });
       const partial = await run(26);
       expect(partial).toMatchObject({status:'partial',counts:{failed:2,verified:26}});
       expect(await (await archive.get(base + '/latest-complete.json'))?.json()).toMatchObject({instanceId:first.instanceId});
@@ -138,6 +166,11 @@ it.skipIf(process.env.CIVICSIGNAL_WORKERD_TESTS !== '1')(
       expect(await (await archive.get(`${titles}/runs/${denied.instanceId}.json`))?.json()).toMatchObject({status:'failed',code:'http-403',httpStatus:403});
       expect(await (await archive.get(titles + '/latest-complete.json'))?.json()).toMatchObject({instanceId:partial.instanceId});
       expect(await (await archive.get(titles + '/latest-attempt.json'))?.json()).toMatchObject({instanceId:denied.instanceId,status:'failed'});
+      expect(await (await archive.get(`${service}/runs/${denied.instanceId}.json`))?.json()).toMatchObject({
+        status:'failed',counts:{resources:2,verified:1,failed:1},resources:[{status:'complete'},{status:'failed',httpStatus:403}],
+      });
+      expect(await (await archive.get(service + '/latest-complete.json'))?.json()).toMatchObject({instanceId:partial.instanceId,status:'complete'});
+      expect(await (await archive.get(service + '/latest-attempt.json'))?.json()).toMatchObject({instanceId:denied.instanceId,status:'failed'});
       const unavailable = await run(28);
       expect(unavailable).toMatchObject({status:'partial',counts:{failed:1}});
       expect(await (await archive.get(`${titles}/runs/${unavailable.instanceId}.json`))?.json()).toMatchObject({status:'skipped',code:'titles-catalogue-unavailable'});

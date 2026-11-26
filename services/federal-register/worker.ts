@@ -4,6 +4,7 @@ import registerText from '../../docs/evidence/2026-11-23/federal-public-service-
 import { textSha256 } from '../../src/corpora/text-store';
 import { advancePointer, encode, immutableText, packetRef, prefix, verifyInventory, Pointer } from './inventory';
 import { acquireTitles, prepareTitles, publishTitles } from './official-titles';
+import { acquireServiceResource, prepareServiceInventory, publishServiceInventory, serviceResources, type ServiceAttempt } from './service-inventory';
 
 interface Params { scheduledTime: number }
 interface Env {
@@ -53,7 +54,17 @@ export class FederalDiscoveryRefresh extends WorkflowEntrypoint<Env, Params> {
       acquireTitles(this.env.COLLECTOR, resource));
     const officialTitles = await step.do('verify and publish official institution titles', () =>
       publishTitles(this.env.ARCHIVE, pointer, titles, result));
-    return { ...discovery, officialTitles };
+    const service = await step.do('pin the hosted catalogue resources for GC Service Inventory', () =>
+      prepareServiceInventory(this.env.ARCHIVE, pointer, ref));
+    const serviceResults: ServiceAttempt[] = [];
+    for (const csv of serviceResources(service)) {
+      const result = await step.do(`acquire GC Service Inventory ${csv.resourceId}`, { timeout: '3 minutes' }, () =>
+        acquireServiceResource(this.env.COLLECTOR, scheduledTime, csv));
+      serviceResults.push({ resource: csv, result });
+    }
+    const serviceInventory = await step.do('verify and publish GC Service Inventory', () =>
+      publishServiceInventory(this.env.ARCHIVE, pointer, service, serviceResults));
+    return { ...discovery, officialTitles, serviceInventory };
   }
 }
 

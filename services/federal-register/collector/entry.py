@@ -1,5 +1,6 @@
 """Private service binding for the registered federal catalogue discovery workflow."""
 from hashlib import sha256
+import io
 import json
 from urllib.parse import urljoin, urlsplit
 
@@ -8,7 +9,10 @@ from pyodide.ffi import to_js
 from workers import WorkerEntrypoint
 
 from discovery import PAGE_LIMIT, SourceFailure, acquire, official, request_fields
-from official_titles import CSV_LIMIT, acquire_titles, redirect_target, resource_request
+from bulk_resource import redirect_target
+from official_titles import CSV_LIMIT, acquire_titles, resource_request
+from service_inventory import (CSV_LIMIT as SERVICE_LIMIT, acquire_service_inventory,
+                               resource_request as service_request)
 
 
 def js_object(value):
@@ -34,38 +38,58 @@ class R2Store:
         if obj.size > limit:
             await obj.body.cancel()
             raise ValueError(f"Archive object exceeds the read limit: {key}")
-        return js.Uint8Array.new(await obj.arrayBuffer()).to_bytes()
+        return await stream_bytes(obj.body, obj.size, obj.size)
 
     async def archive(self, key, body, digest):
-        if not await self.create(key, body, digest):
-            stored = await self.read(key, len(body))
-            if stored is None or sha256(stored).hexdigest() != digest:
-                raise ValueError(f"Archive object conflicts with its immutable content: {key}")
+        if await self.create(key, body, digest):
+            return
+        prior = await self.bucket.get(key)
+        if not prior or prior.size != len(body):
+            if prior:
+                await prior.body.cancel()
+            raise ValueError(f"Archive object conflicts with its immutable content: {key}")
+        check = sha256()
+        await consume(prior.body, prior.size, check.update)
+        if check.hexdigest() != digest:
+            raise ValueError(f"Archive object conflicts with its immutable content: {key}")
 
 
-async def bounded_body(response, limit):
-    size = response.headers.get("content-length")
-    if not response.body:
-        raise ValueError("Response body is missing.")
-    if size and (not size.isdigit() or int(size) > limit):
-        await response.body.cancel()
-        raise ValueError("Content length exceeds the byte limit.")
-    reader = response.body.getReader()
-    body = bytearray()
+async def consume(stream, limit, write):
+    reader = stream.getReader()
+    size = 0
     try:
         while True:
             part = await reader.read()
             if part.done:
                 break
-            if len(body) + part.value.byteLength > limit:
+            size += part.value.byteLength
+            if size > limit:
                 await reader.cancel()
-                raise ValueError("Response exceeds the byte limit.")
-            body.extend(part.value.to_bytes())
+                raise ValueError("Body exceeds the byte limit.")
+            write(part.value.to_bytes())
     finally:
         reader.releaseLock()
-    if not body or (size and not response.headers.has("content-encoding") and int(size) != len(body)):
-        raise ValueError("Response body is empty or truncated.")
-    return bytes(body)
+    return size
+
+
+async def stream_bytes(stream, limit, expected):
+    # BytesIO returns its backing bytes without a second full Python buffer.
+    with io.BytesIO() as output:
+        size = await consume(stream, limit, output.write)
+        if not size or (expected is not None and size != expected):
+            raise ValueError("Response body is empty or truncated.")
+        return output.getvalue()
+
+
+async def bounded_body(response, limit):
+    length = response.headers.get("content-length")
+    if not response.body:
+        raise ValueError("Response body is missing.")
+    if length and (not length.isdigit() or int(length) > limit):
+        await response.body.cancel()
+        raise ValueError("Content length exceeds the byte limit.")
+    expected = int(length) if length and not response.headers.has("content-encoding") else None
+    return await stream_bytes(response.body, limit, expected)
 
 
 async def fetch_publisher(url, accept, expected, limit, destination, signal=None):
@@ -112,19 +136,19 @@ async def fetch_source(url, dataset):
     return body, final_url
 
 
-async def fetch_csv(url, blob_path):
+async def fetch_csv(url, blob_path, limit=CSV_LIMIT, timeout=35000):
     portal_path = urlsplit(url).path
     allowed = ("text/csv", "application/csv", "application/octet-stream", "binary/octet-stream",
                "text/plain", "application/vnd.ms-excel", "text/comma-separated-values")
     return await fetch_publisher(url, "text/csv,application/csv,application/octet-stream,*/*;q=0.1", allowed,
-                                 CSV_LIMIT, lambda next_url: redirect_target(next_url, portal_path, blob_path),
-                                 signal=js.AbortSignal.timeout(35000))
+                                 limit, lambda next_url: redirect_target(next_url, portal_path, blob_path),
+                                 signal=js.AbortSignal.timeout(timeout))
 
 
 class Default(WorkerEntrypoint):
     async def fetch(self, request):
         path = urlsplit(request.url).path
-        if request.method != "POST" or path not in ("/collect", "/official-titles"):
+        if request.method != "POST" or path not in ("/collect", "/official-titles", "/service-inventory"):
             return js.Response.new("Not found", js_object({"status": 404}))
         try:
             body = await request.text()
@@ -133,6 +157,8 @@ class Default(WorkerEntrypoint):
             params = json.loads(body)
             if path == "/collect":
                 request_fields(params)
+            elif path == "/service-inventory":
+                service_request(params)
             else:
                 resource_request(params)
         except (ValueError, TypeError):
@@ -140,6 +166,10 @@ class Default(WorkerEntrypoint):
         store = R2Store(self.env.ARCHIVE)
         if path == "/official-titles":
             result = await acquire_titles(store, fetch_csv, params)
+        elif path == "/service-inventory":
+            async def fetch_service(url, blob_path):
+                return await fetch_csv(url, blob_path, SERVICE_LIMIT, 60000)
+            result = await acquire_service_inventory(store, fetch_service, params)
         else:
             result = await acquire(store, fetch_source, params,
                                    on_complete=lambda event: js.console.log(js_object(event)))
