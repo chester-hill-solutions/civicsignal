@@ -1,0 +1,298 @@
+{
+  "scope": "Private Cloudflare one-shot check of official House committee pages. This run did not write the serving catalogue.",
+  "instance": "house-source-check-20261126",
+  "workflow": "civicsignal-stage-house-source-check",
+  "workflowStatus": "complete",
+  "workflowVersion": "453433fd-af9b-4b07-bf6c-4818cc176161",
+  "start": "2026-11-26T15:35:52.343Z",
+  "end": "2026-11-26T15:35:53.290Z",
+  "requests": {
+    "englishIndex": {
+      "url": "https://www.ourcommons.ca/Committees/en/Participate",
+      "status": 403,
+      "server": "cloudflare",
+      "type": "text/html",
+      "mitigated": null,
+      "documentTitle": "System error - Erreur de système",
+      "contentSignals": {
+        "publisher": true,
+        "accessDenied": false,
+        "referenceIdPresent": false,
+        "requiresJavaScript": false
+      }
+    },
+    "officialEnglishLink": {
+      "url": "https://www.ourcommons.ca/committees/en/Participate",
+      "status": 403,
+      "server": "cloudflare",
+      "type": "text/html",
+      "mitigated": null,
+      "documentTitle": "System error - Erreur de système",
+      "contentSignals": {
+        "publisher": true,
+        "accessDenied": false,
+        "referenceIdPresent": false,
+        "requiresJavaScript": false
+      }
+    },
+    "frenchIndex": {
+      "url": "https://www.noscommunes.ca/Committees/fr/Participate",
+      "status": 403,
+      "server": "cloudflare",
+      "type": "text/html",
+      "mitigated": null,
+      "documentTitle": "System error - Erreur de système",
+      "contentSignals": {
+        "publisher": true,
+        "accessDenied": false,
+        "referenceIdPresent": false,
+        "requiresJavaScript": false
+      }
+    },
+    "englishStudy": {
+      "url": "https://www.ourcommons.ca/committees/en/CHPC/StudyActivity?studyActivityId=13668976",
+      "status": 403,
+      "server": "cloudflare",
+      "type": "text/html",
+      "mitigated": null,
+      "documentTitle": "System error - Erreur de système",
+      "contentSignals": {
+        "publisher": true,
+        "accessDenied": false,
+        "referenceIdPresent": false,
+        "requiresJavaScript": false
+      }
+    },
+    "frenchStudy": {
+      "url": "https://www.ourcommons.ca/committees/fr/CHPC/StudyActivity?studyActivityId=13668976",
+      "status": 403,
+      "server": "cloudflare",
+      "type": "text/html",
+      "mitigated": null,
+      "documentTitle": "System error - Erreur de système",
+      "contentSignals": {
+        "publisher": true,
+        "accessDenied": false,
+        "referenceIdPresent": false,
+        "requiresJavaScript": false
+      }
+    }
+  },
+  "requestPolicy": "One HTTPS GET per fixed URL, with the same CivicSignal crawler identification as the live collector. Excerpts reduced to the page title and boolean response signals.",
+  "conclusion": "All five requests returned 403 with a bilingual House system-error page. The responses do not identify why access was denied. The same collector previously fetched every required original in a scheduled run.",
+  "lastGoodEvidence": "house-cloudflare.json",
+  "documents": {
+    "houseOpenData": "https://www.ourcommons.ca/en/open-data",
+    "publisherContact": "https://www.ourcommons.ca/committees/en/contactus",
+    "houseProcedure": "https://www.ourcommons.ca/procedure/procedure-and-practice-4/ch20-9-e.html"
+  },
+  "supportPath": "Committees and Legislative Services Directorate, cmteweb@parl.gc.ca. Request the supported route for automated bilingual retrieval of current calls and their linked study notices.",
+  "diagnosticWorkerRemoved": true,
+  "retainedComparison": {
+    "telemetry": [
+      {
+        "label": "first-manual",
+        "events": 8,
+        "wallEvents": [
+          {
+            "time": "2026-11-25T23:56:22.461Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "exception",
+            "cpuMs": 17,
+            "wallMs": 210
+          },
+          {
+            "time": "2026-11-25T23:55:22.182Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "exception",
+            "cpuMs": 15,
+            "wallMs": 206
+          },
+          {
+            "time": "2026-11-25T23:54:51.893Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "exception",
+            "cpuMs": 39,
+            "wallMs": 210
+          },
+          {
+            "time": "2026-11-25T23:54:36.627Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "exception",
+            "cpuMs": 373,
+            "wallMs": 708
+          }
+        ],
+        "classifierPaths": [],
+        "safeValues": []
+      },
+      {
+        "label": "accepted-native",
+        "events": 2,
+        "wallEvents": [
+          {
+            "time": "2026-11-26T00:16:45.216Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "ok",
+            "cpuMs": 1111,
+            "wallMs": 55784
+          }
+        ],
+        "classifierPaths": [
+          "$workers.event.response.status"
+        ],
+        "safeValues": [
+          [
+            "$workers.event.response.status",
+            "200"
+          ]
+        ]
+      },
+      {
+        "label": "second-manual",
+        "events": 8,
+        "wallEvents": [
+          {
+            "time": "2026-11-26T14:24:14.455Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "exception",
+            "cpuMs": 17,
+            "wallMs": 224
+          },
+          {
+            "time": "2026-11-26T14:23:14.139Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "exception",
+            "cpuMs": 15,
+            "wallMs": 259
+          },
+          {
+            "time": "2026-11-26T14:22:43.765Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "exception",
+            "cpuMs": 21,
+            "wallMs": 250
+          },
+          {
+            "time": "2026-11-26T14:22:28.409Z",
+            "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+            "outcome": "exception",
+            "cpuMs": 490,
+            "wallMs": 935
+          }
+        ],
+        "classifierPaths": [],
+        "safeValues": []
+      },
+      {
+        "label": "combined-manual",
+        "events": 1,
+        "wallEvents": [
+          {
+            "time": "2026-11-26T14:42:27.178Z",
+            "version": "80075173-9db1-4e72-bef8-63c133be13cb",
+            "outcome": "ok",
+            "cpuMs": 645,
+            "wallMs": 1069
+          }
+        ],
+        "classifierPaths": [
+          "$workers.event.response.status"
+        ],
+        "safeValues": [
+          [
+            "$workers.event.response.status",
+            "403"
+          ]
+        ]
+      },
+      {
+        "label": "combined-native",
+        "events": 1,
+        "wallEvents": [
+          {
+            "time": "2026-11-26T15:15:37.019Z",
+            "version": "80075173-9db1-4e72-bef8-63c133be13cb",
+            "outcome": "ok",
+            "cpuMs": 864,
+            "wallMs": 1604
+          }
+        ],
+        "classifierPaths": [
+          "$workers.event.response.status"
+        ],
+        "safeValues": [
+          [
+            "$workers.event.response.status",
+            "403"
+          ]
+        ]
+      }
+    ],
+    "r2": {
+      "counts": {
+        "200": 40
+      },
+      "indexes": [
+        {
+          "bytes": 119624,
+          "chamber": "house",
+          "checked": "2026-11-26T00:15:50.427Z",
+          "key": "committee/house-calls/sources/3e05a52129ba8bdec045b534e19eccb0fd4a5fa7e6a9ad55cb25fbfbc7c51323.html",
+          "language": "en",
+          "resolvedUrl": "https://www.ourcommons.ca/Committees/en/Participate",
+          "sha256": "3e05a52129ba8bdec045b534e19eccb0fd4a5fa7e6a9ad55cb25fbfbc7c51323",
+          "state": "archived",
+          "status": 200,
+          "url": "https://www.ourcommons.ca/Committees/en/Participate"
+        },
+        {
+          "bytes": 153700,
+          "chamber": "house",
+          "checked": "2026-11-26T00:15:50.424Z",
+          "key": "committee/house-calls/sources/aa1c6e65c40acdf2cd976d9ed7107691630ec7d04f4513c139351e9fe81afff7.html",
+          "language": "fr",
+          "resolvedUrl": "https://www.ourcommons.ca/Committees/fr/Participate",
+          "sha256": "aa1c6e65c40acdf2cd976d9ed7107691630ec7d04f4513c139351e9fe81afff7",
+          "state": "archived",
+          "status": 200,
+          "url": "https://www.ourcommons.ca/Committees/fr/Participate"
+        }
+      ],
+      "refusals": {
+        "manualHouse403": {
+          "phase": "acquisition",
+          "code": "publisher-http",
+          "status": 403,
+          "url": "https://www.ourcommons.ca/Committees/en/Participate",
+          "instanceId": "house-calls-1795704135619",
+          "scheduledTime": 1795704135619,
+          "sha256": "cfc4fc7bf7f5330ee05885350861941586b2c74858c97dd29210e8a7d0e565bb"
+        },
+        "nativeCalendar": {
+          "phase": "acquisition",
+          "code": "publisher-http",
+          "status": 403,
+          "url": "https://www.ourcommons.ca/Committees/en/Participate",
+          "instanceId": "house-calls-1795706126953",
+          "scheduledTime": 1795706126953,
+          "sha256": "824ac6c7b6069af7bec2ad253ed6bfc47c03a7ff1ef1d13f57271bec832a9e47"
+        }
+      }
+    },
+    "collectorDeployments": [
+      {
+        "at": "2026-11-25T23:53:45.157813Z",
+        "versions": [
+          "c7d47686-f404-4123-b1ac-0b0672a15509"
+        ]
+      },
+      {
+        "at": "2026-11-26T14:37:54.303454Z",
+        "versions": [
+          "80075173-9db1-4e72-bef8-63c133be13cb"
+        ]
+      }
+    ]
+  }
+}
