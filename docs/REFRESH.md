@@ -273,6 +273,7 @@ instance=$(printf '%s' "$pointer" | jq -er '.instanceId')
 cf workflows instances get "$instance" --workflow-name "$workflow"
 receipt_key=$(printf '%s' "$pointer" | jq -er '.receiptKey')
 cf r2 objects get "$receipt_key" --bucket-name "$bucket" > coverage-receipt.json
+jq '{status, inputFreshness, attempts: [.attempts[] | {source, ok, exitCodes, elapsedSeconds}]}' coverage-receipt.json
 report_key=$(jq -er '.report.key' coverage-receipt.json)
 cf r2 objects get "$report_key" --bucket-name "$bucket" > coverage.json
 printf '%s  coverage.json\n' "$(jq -er '.report.sha256' coverage-receipt.json)" | shasum -a 256 -c -
@@ -281,6 +282,8 @@ printf '%s  coverage.json\n' "$(jq -er '.report.sha256' coverage-receipt.json)" 
 Use `latest-complete.json` in the same prefix to select the last fully successful report. It first appears after a complete refresh. Each published refresh records the exit codes and duration for each source, identifies which upstream collections are current, and points to its report, consultation owner projection and workspace. A degraded refresh advances the attempt and workspace pointers and preserves the last complete report pointer. The complete pointer requires the current titles, Service Inventory and discovery occurrence, a same-day consultation publication, and successful source checks. A replay writes a dated receipt without advancing the fresh pointers. For an occurrence that stops before publication, read the error from its Workflow instance.
 
 For the initial archive, `python3 -B scripts/bootstrap-institution-coverage.py` verifies and uploads a stable workspace to private R2 and writes the manifest reference to stdout. Only the initial occurrence needs the bootstrap reference at `weekly/institution-coverage/bootstrap.json`. Later runs use the workspace manifest from their predecessor. The pinned PDF extractor replays each policy PDF against its checked archive. Cloudflare's x86 extractor can wrap paragraphs differently, so the hosted replay verifies the exact words, order and citation on each page. On November 26 the Cloudflare replay matched the independent reference byte for byte across all 33 source groups. [Replay evidence](evidence/2026-11-26/institution-coverage-cloudflare.json)
+
+The November 26 native staging trigger fired at 14:50:46 Toronto time. The Workflow verified a fresh report covering 33 source groups and 18 series, wrote its replacement workspace to R2, and recorded the publisher and runtime gaps as `degraded`. The Mac weekly job remained idle during qualification. [Native run evidence](evidence/2026-11-26/institution-coverage-cloudflare.json)
 
 ## Weekly local refresh
 

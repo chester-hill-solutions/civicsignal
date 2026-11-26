@@ -62,7 +62,7 @@
     "pageCitationFieldsStillVerified": true
   },
   "native": {
-    "status": "running",
+    "status": "degraded",
     "calendar": "50 19 * * THU",
     "scheduledTime": "2026-11-26T19:50:00.000Z",
     "instanceId": "institution-coverage-1795722646000",
@@ -71,6 +71,243 @@
     "eventType": "scheduled",
     "workerVersion": "c2a8b63e-5f00-47fb-b663-351ea09596ed",
     "workflowVersion": "1fe5dee0-63af-4798-baba-4ac6c4c57708",
-    "startedAt": "2026-11-26T19:50:49.756Z"
+    "startedAt": "2026-11-26T19:50:49.756Z",
+    "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795722646000.json",
+    "receiptSha256": "610aa819607b41dbcbdaadb1d833c3f5f8e203bccc9759e9cb766ba8d93f3aa3",
+    "report": {
+      "key": "weekly/institution-coverage/reports/703870f833d05bc64c2063b4c61b029c4ac8fc626cbc2268f8315a9a5299219f.json",
+      "sha256": "703870f833d05bc64c2063b4c61b029c4ac8fc626cbc2268f8315a9a5299219f",
+      "bytes": 2763932
+    },
+    "sources": 33,
+    "registeredSeries": 18,
+    "institutionsWithRecords": 99,
+    "provisionalInstitutions": 109,
+    "rosterEntries": 110,
+    "state": {
+      "key": "weekly/institution-coverage/manifests/1f0ae6f387c6077c39fc33444d897fd01188ac42107a7329fe0675c546d14936.json",
+      "sha256": "1f0ae6f387c6077c39fc33444d897fd01188ac42107a7329fe0675c546d14936",
+      "bytes": 23913
+    },
+    "stateChunks": 114,
+    "stateCompressedBytes": 1909807682,
+    "consultations": {
+      "observedAt": "2026-11-26T15:15:26.953Z",
+      "csvSha256": "8076d01eb4c36cba6b7212d90287687cf89fe626265bb8a1a91cd952c0d3d3ca",
+      "projection": {
+        "key": "weekly/institution-coverage/consultations/f9384ebedb1493a563e1d6081a5827bb942c226a0893c4f7f09d701065de888b.json",
+        "sha256": "f9384ebedb1493a563e1d6081a5827bb942c226a0893c4f7f09d701065de888b",
+        "bytes": 6253
+      }
+    },
+    "attempts": [
+      {
+        "source": "ati-summaries",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 6.077
+      },
+      {
+        "source": "grant-awards",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 90.358
+      },
+      {
+        "source": "briefing-notes",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 6.402
+      },
+      {
+        "source": "federal-procurement",
+        "exitCodes": [
+          0,
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 6.555
+      },
+      {
+        "source": "federal-disclosures",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 8.752
+      },
+      {
+        "source": "eccc",
+        "exitCodes": [
+          1
+        ],
+        "ok": false,
+        "elapsedSeconds": 1020.551
+      },
+      {
+        "source": "federal-report-directories",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 7.339
+      },
+      {
+        "source": "departmental-report-editions",
+        "exitCodes": [
+          2,
+          2
+        ],
+        "ok": false,
+        "elapsedSeconds": 93.078
+      },
+      {
+        "source": "departmental-report-documents",
+        "exitCodes": [
+          2,
+          0
+        ],
+        "ok": false,
+        "elapsedSeconds": 18.642
+      },
+      {
+        "source": "departmental-report-html",
+        "exitCodes": [
+          2
+        ],
+        "ok": false,
+        "elapsedSeconds": 38.748
+      },
+      {
+        "source": "federal-regulatory-plans",
+        "exitCodes": [
+          1
+        ],
+        "ok": false,
+        "elapsedSeconds": 0.568
+      },
+      {
+        "source": "federal-publications",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 0.868
+      },
+      {
+        "source": "federal-publication-checklists",
+        "exitCodes": [
+          0,
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 69.878
+      },
+      {
+        "source": "federal-guidance",
+        "exitCodes": [
+          0,
+          2,
+          0
+        ],
+        "ok": false,
+        "elapsedSeconds": 651.819
+      },
+      {
+        "source": "federal-policy-editions",
+        "exitCodes": [
+          2,
+          0
+        ],
+        "ok": false,
+        "elapsedSeconds": 108.71
+      },
+      {
+        "source": "geds",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 1.629
+      }
+    ],
+    "recordCountChanges": {
+      "19383ca2-b01a-487d-88f7-e1ffbc7d39c2": {
+        "matched": 60,
+        "unresolved": 2
+      },
+      "4e4db232-f5e8-43c7-b8b2-439eb7d55475": {
+        "matched": 2,
+        "unresolved": 0
+      },
+      "briefing-notes-main": {
+        "matched": 81,
+        "unresolved": 0
+      },
+      "canadabuys-award-notices": {
+        "matched": 53,
+        "unresolved": 2
+      },
+      "publications-weekly-checklists": {
+        "matched": 0,
+        "unresolved": 3
+      },
+      "ircc-guidance": {
+        "matched": 2,
+        "unresolved": 0
+      }
+    },
+    "matchedRecords": 1869145,
+    "unresolvedRecords": 291361,
+    "completedAt": "2026-11-26T20:32:19.938Z",
+    "elapsedSeconds": 2490.182,
+    "workflowStatus": "complete",
+    "inputFreshness": {
+      "weekly": true,
+      "consultations": true
+    },
+    "latestAttemptVerified": true,
+    "workspacePointerVerified": true,
+    "firstCompletePointerCreated": false,
+    "sourceFailures": {
+      "eccc": "Twelve originals returned HTTP 202. The Linux image lacked the ECCC SQLite migrations, which stopped the catalogue apply after acquisition.",
+      "departmental-report-editions": "The latest issuer inventory recorded fetch failures and skipped pages. The retained verified content replayed as a partial inventory.",
+      "departmental-report-documents": "All 117 citations were assessed. The publisher PDFs include language, year and identity review cases. Archive replay succeeded.",
+      "departmental-report-html": "The queue drained all 1,697 targets. Two fetch failures remained among its 1,709 citations.",
+      "federal-regulatory-plans": "The strict discovery gate rejected a carried verified issuer page after a newer fetch failure.",
+      "federal-guidance": "IRCC verified and replayed 5,966 of 5,968 editions.",
+      "federal-policy-editions": "The publisher returned two unusable PDF responses. All 537 retained PDFs replayed and one edition remained under identity review."
+    },
+    "macWeeklyLaunchAgentRuns": 0,
+    "macWeeklyReportSha256BeforeAndAfter": "addbb16055ae7fe701ebd6424325e32ccb21861a792e03f06e4ae0c4f85d032d",
+    "macPoweredOffDuringTest": false
+  },
+  "followup": {
+    "status": "armed",
+    "scheduledTime": "2026-11-26T21:00:00.000Z",
+    "calendar": "0 21 * * THU",
+    "fixes": [
+      "Package all four ECCC SQLite migrations in the Linux runtime.",
+      "Allow last verified regulatory issuer originals after a failed attempt and retain their word-for-word publisher link and checksum checks."
+    ],
+    "workerVersion": "ccf383d5-d14e-42cf-b49e-8698557ec538",
+    "containerVersion": 10,
+    "image": "registry.cloudflare.com/ad5ec479b9a421faa2ed06c3d1c2b23a/civicsignal-stage-institution-coverage@sha256:dc3331294f208f28731aee558104c9d9a981081775fd3a9c8083a4a81b4ccf49",
+    "offlineEcccLinuxCheck": {
+      "archiveGaps": {
+        "document": 12,
+        "pairing": 29
+      },
+      "catalogueWorks": 83,
+      "passages": 70310,
+      "documentVersions": 237
+    },
+    "pythonTestsPassed": 392
   }
 }

@@ -127,6 +127,23 @@ class FederalRegulatoryPlansTests(unittest.TestCase):
             b"<html><head><title>Government-wide regulatory plans and reports</title></head><body></body></html>",
             "https://www.canada.ca/en/regulatory-plans", "en")["confirmed"])
 
+    def test_failed_latest_attempt_uses_only_checksum_verified_issuer_archive(self):
+        with tempfile.TemporaryDirectory() as temp:
+            edition_root = Path(temp)
+            self.fixture_roster(edition_root)
+            report = json.loads((edition_root / "current.json").read_bytes())
+            page = report["issuerPages"][0]
+            page.update(last_attempt_status="failed", last_attempt_at="2026-11-26T20:00:00+00:00")
+            discovery, candidates = MODULE.collect_discovery_links(report, edition_root)
+            self.assertEqual(len(candidates), 1)
+            self.assertEqual(discovery[0]["sourceCarryForward"], {
+                "verifiedAt": "2026-11-25T00:00:00+00:00", "latestAttemptAt": "2026-11-26T20:00:00+00:00",
+                "latestAttemptStatus": "failed",
+            })
+            page["discoveryLinks"][0]["landing_sha256"] = "0" * 64
+            with self.assertRaisesRegex(ValueError, "not tied to a verified issuer landing page"):
+                MODULE.collect_discovery_links(report, edition_root)
+
     def test_current_snapshot_and_landing_page_hashes_are_required(self):
         with tempfile.TemporaryDirectory() as temp:
             root, edition_root = Path(temp) / "plans", Path(temp) / "editions"

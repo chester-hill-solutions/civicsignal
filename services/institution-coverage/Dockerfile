@@ -36,6 +36,7 @@ COPY docs/evidence/ ./docs/evidence/
 COPY services/funding/esdc-collector/html_tree.py ./services/funding/esdc-collector/html_tree.py
 COPY services/institution-coverage/container/ ./services/institution-coverage/container/
 COPY preview/geds/migrations/ ./preview/geds/migrations/
+COPY preview/departmental-publications/migrations/ ./preview/departmental-publications/migrations/
 
 RUN pdftotext -v && python3 -B scripts/federal-institution-coverage.py --help >/dev/null
 

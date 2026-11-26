@@ -189,7 +189,8 @@ def collect_discovery_links(report: dict, edition_root: Path) -> tuple[list[dict
             else:
                 classification = "other-regulatory-discovery"
             source_hash = page.get("body_sha256")
-            if (page.get("last_attempt_status") != "fetched" or not page.get("verified_at") or
+            attempt_status = page.get("last_attempt_status")
+            if (attempt_status not in {"fetched", "failed", "skipped"} or not page.get("verified_at") or
                     not source_hash or link.get("landing_sha256") != source_hash):
                 raise ValueError("Forward-plan discovery link is not tied to a verified issuer landing page")
             source_fetch_url = page.get("fetch_url") or page.get("final_url") or page.get("published_url")
@@ -217,6 +218,9 @@ def collect_discovery_links(report: dict, edition_root: Path) -> tuple[list[dict
                 "label": label, "heading": link.get("heading"), "url": url,
                 "landingLinkEvidence": link.get("evidence"), "landingLinkType": link.get("link_type"),
             }
+            if attempt_status != "fetched":
+                row["sourceCarryForward"] = {"verifiedAt": page["verified_at"], "latestAttemptAt": page.get("last_attempt_at"),
+                                             "latestAttemptStatus": attempt_status}
             row["discoveryId"] = digest("\n".join((str(row["issuerKey"] or ""), str(language), url, label)).encode())
             rows.append(row)
             if classification != "forward-plan-candidate":
