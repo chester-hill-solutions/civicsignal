@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import fcntl
 from hashlib import sha256
 from importlib import import_module
+from itertools import zip_longest
 import json
 from pathlib import Path
 import re
@@ -174,12 +175,24 @@ def capture(root, url):
         return {"status": "failed", "error": str(error), "httpStatus": getattr(error, "status", None)}
 
 
-def read_passages(root, doc, replay=False):
+def page_tokens(passages):
+    """Compare exact text and citation order independently of paragraph wrapping."""
+    for ordinal, passage in enumerate(passages, 1):
+        if passage['ordinal'] != ordinal or not passage['text'].split():
+            raise ValueError('Invalid archived passage order or empty text')
+        citation = tuple(passage[field] for field in ('page', 'citation_url', 'kind', 'section', 'attribution'))
+        for token in passage['text'].split():
+            yield citation, token
+
+
+def read_passages(root, doc, replay=False, *, portable_layout=False):
     raw = pdf.read_gzip(root, doc["passages"], doc["passagesSha256"], doc["passageBytes"], 64 * 1024**2)
     items = json.loads(raw)
     if replay:
         original = pdf.read_gzip(root, doc["object"], doc["bodySha256"], doc["bodyBytes"], pdf.MAX_DOCUMENT_BYTES)
-        if extract_passages(original, doc["finalUrl"]) != items:
+        reproduced = extract_passages(original, doc["finalUrl"])
+        if reproduced != items and not (portable_layout and all(
+                a == b for a, b in zip_longest(page_tokens(items), page_tokens(reproduced)))):
             raise ValueError("Policy PDF passage replay differs from the archived edition")
     return items
 
@@ -246,6 +259,7 @@ def main():
     refresh_cmd.add_argument("--workers", type=int, choices=range(1, 5), default=3)
     replay = sub.add_parser("replay")
     replay.add_argument("--report")
+    replay.add_argument("--portable-layout", action="store_true", help="Compare exact page text and citations across PDF layout runtimes")
     look = sub.add_parser("lookup")
     look.add_argument("--policy-id", required=True)
     look.add_argument("--language", choices=("en", "fr"), required=True)
@@ -261,7 +275,7 @@ def main():
         opening_pages = {}
         for url, row in report["targets"].items():
             if row.get("document"):
-                sections = read_passages(args.root, row["document"], replay=True)
+                sections = read_passages(args.root, row["document"], replay=True, portable_layout=args.portable_layout)
                 opening_pages[url] = [p for p in sections if p["page"] <= 10]
         for row in report["editions"]:
             pages = opening_pages.get(row["url"], [])

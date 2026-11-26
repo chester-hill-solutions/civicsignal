@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private Cloudflare staging migration of the 33-source weekly federal institution coverage report.",
+  "archive": "civicsignal-stage-weekly",
+  "candidate": {
+    "worker": "civicsignal-stage-institution-coverage",
+    "workerVersion": "c2a8b63e-5f00-47fb-b663-351ea09596ed",
+    "containerApplication": "a0388437-a01a-4283-9017-d48f64450c3b",
+    "containerVersion": 9,
+    "image": "registry.cloudflare.com/ad5ec479b9a421faa2ed06c3d1c2b23a/civicsignal-stage-institution-coverage@sha256:8523279362bac850b4eb0709ebb2c3d0a85e4c7a7ac25c1abe7d223196b681de",
+    "rolloutCompletedAt": "2026-11-26T19:41:02.463000064Z",
+    "imageLinuxArchitecture": "amd64",
+    "pdfExtractor": "pdftotext version 26.01.0"
+  },
+  "replay": {
+    "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795722088994.json",
+    "receiptSha256": "88875e52d34a04001d120b2b5196fd950b437cd589c10df49b9b52c52edfac5f",
+    "status": "replay",
+    "report": {
+      "key": "weekly/institution-coverage/reports/190b886791816326a09e5f563c1cb5ef49de7983c20b0589648b00a626668ed8.json",
+      "sha256": "190b886791816326a09e5f563c1cb5ef49de7983c20b0589648b00a626668ed8",
+      "bytes": 2764161
+    },
+    "sources": 33,
+    "registeredSeries": 18,
+    "institutionsWithRecords": 99,
+    "provisionalInstitutions": 109,
+    "rosterEntries": 110,
+    "state": {
+      "key": "weekly/institution-coverage/manifests/1b74b7be8d4358db5a6a15feba5aa9dc7655a7447d63872f67800426344393c4.json",
+      "sha256": "1b74b7be8d4358db5a6a15feba5aa9dc7655a7447d63872f67800426344393c4",
+      "bytes": 21728
+    },
+    "stateChunks": 103,
+    "stateCompressedBytes": 1717728132,
+    "consultations": {
+      "observedAt": "2026-11-26T15:15:26.953Z",
+      "csvSha256": "8076d01eb4c36cba6b7212d90287687cf89fe626265bb8a1a91cd952c0d3d3ca",
+      "projection": {
+        "key": "weekly/institution-coverage/consultations/f9384ebedb1493a563e1d6081a5827bb942c226a0893c4f7f09d701065de888b.json",
+        "sha256": "f9384ebedb1493a563e1d6081a5827bb942c226a0893c4f7f09d701065de888b",
+        "bytes": 6253
+      }
+    },
+    "attempts": [],
+    "instanceId": "institution-coverage-1795722088994",
+    "workflowVersion": "5b55d91b-fac1-4c26-8c9f-dba6c326e648",
+    "trigger": "api",
+    "startedAt": "2026-11-26T19:41:30.134Z",
+    "completedAt": "2026-11-26T19:45:19.943Z",
+    "readbackMatchedOfflineLinuxReferenceByteForByte": true,
+    "matchedRecords": 1868947,
+    "unresolvedRecordLabels": 291354,
+    "consultationRows": 5210
+  },
+  "archiveReplayCompatibility": {
+    "originalFrenchDirectiveSha256": "cfe8db664920582d1587df875629083cb424a76dcbd116b6d88a15a449a9b0d1",
+    "originalPassageCount": 684,
+    "linuxAmd64PassageCount": 687,
+    "samePageTextTokensInOrder": true,
+    "rawPdfAndArchivedPassageHashesStillVerified": true,
+    "pageCitationFieldsStillVerified": true
+  },
+  "native": {
+    "status": "running",
+    "calendar": "50 19 * * THU",
+    "scheduledTime": "2026-11-26T19:50:00.000Z",
+    "instanceId": "institution-coverage-1795722646000",
+    "eventTime": "2026-11-26T19:50:46.000Z",
+    "eventTimestamp": 1795722649411,
+    "eventType": "scheduled",
+    "workerVersion": "c2a8b63e-5f00-47fb-b663-351ea09596ed",
+    "workflowVersion": "1fe5dee0-63af-4798-baba-4ac6c4c57708",
+    "startedAt": "2026-11-26T19:50:49.756Z"
+  }
+}

@@ -11,6 +11,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from contextlib import closing
+from datetime import datetime
 from pathlib import Path
 import sqlite3
 import sys
@@ -18,6 +19,7 @@ import unicodedata
 from urllib.parse import urlsplit
 from lib.parliament_intake import save_atomic
 from lib.federal_guidance import IRCC_LANDING
+from lib.hosted_federal_bulk import get_object
 from lib.hosted_official_titles import read_complete_titles
 from lib.hosted_service_inventory import read_complete_service_inventory
 
@@ -54,6 +56,28 @@ def resources(db, name):
 def rows(resource):
     with gzip.open(BULK / "objects" / (resource["sha256"] + ".csv.gz"), "rt", encoding="utf-8-sig", newline="") as handle:
         yield from csv.DictReader(handle)
+
+
+def restored_object_reader(directory):
+    root = directory.resolve(strict=True)
+
+    def read(key):
+        path = (root / key).resolve(strict=True)
+        if not path.is_relative_to(root) or Path(key).is_absolute() or ".." in Path(key).parts:
+            raise ValueError("Hosted object escaped the pinned coverage input directory")
+        return path.read_bytes()
+
+    return read
+
+
+def restored_input_path(recorded, expected, portable):
+    """Older receipts contain an absolute checkout prefix. Only remap the exact archive member."""
+    path = Path(recorded)
+    if not portable:
+        return path
+    if path.parts[-len(expected.parts):] != expected.parts or not expected.resolve(strict=True).is_relative_to(Path.cwd()):
+        raise ValueError("Unexpected path for pinned coverage input: " + str(expected))
+    return expected
 
 
 def register_published_titles(row, aliases):
@@ -500,7 +524,7 @@ def count_weekly_checklists(corpus, count, provenance, aliases):
         "catalogueSchema": catalogue_schema, "latestIssue": receipt["range"]["latestIssue"], **weekly_summary}
 
 
-def count_ircc_guidance(corpus, count, provenance):
+def count_ircc_guidance(corpus, count, provenance, portable=False):
     root = corpus / "ircc-guidance-documents"
     ircc = importlib.util.spec_from_file_location("ircc_guidance_documents", Path(__file__).resolve().with_name("ircc-guidance-documents.py"))
     module = importlib.util.module_from_spec(ircc)
@@ -511,7 +535,8 @@ def count_ircc_guidance(corpus, count, provenance):
     if hashlib.sha256((root / "reports" / (identity + ".json")).read_bytes()).hexdigest() != identity:
         raise ValueError("IRCC guidance report differs from its latest pointer")
     inventory_ref = report.get("sourceInventory", {})
-    inventory_path = Path(inventory_ref.get("path", ""))
+    inventory_path = restored_input_path(inventory_ref.get("path", ""),
+        corpus/"federal-guidance"/"inventories"/(inventory_ref["sha256"] + ".json"), portable)
     inventory_raw = inventory_path.read_bytes()
     if hashlib.sha256(inventory_raw).hexdigest() != inventory_ref.get("sha256"):
         raise ValueError("IRCC guidance report source inventory differs from its digest")
@@ -553,7 +578,7 @@ def count_ircc_guidance(corpus, count, provenance):
         "failedOrUnverifiedEditions": failed}
 
 
-def count_policy_suite(corpus, count, provenance):
+def count_policy_suite(corpus, count, provenance, portable=False):
     root = corpus / "federal-policy-editions"
     pointer = json.loads((root / "latest.json").read_bytes())
     identity = pointer["reportSha256"]
@@ -565,7 +590,8 @@ def count_policy_suite(corpus, count, provenance):
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
     inventory_ref = report["inputs"].get("policyInventory", {})
-    inventory_path = Path(inventory_ref.get("path", ""))
+    inventory_path = restored_input_path(inventory_ref.get("path", ""),
+        corpus/"federal-guidance"/"inventories"/(inventory_ref["sha256"] + ".json"), portable)
     inventory_raw = inventory_path.read_bytes()
     if hashlib.sha256(inventory_raw).hexdigest() != inventory_ref.get("sha256"):
         raise ValueError("Policy register inventory differs from its published digest")
@@ -585,7 +611,10 @@ def count_policy_suite(corpus, count, provenance):
         if not document or not re.fullmatch(r"[0-9a-f]{64}", document.get("bodySha256", "")):
             unavailable += 1
             continue
-        passages = module.read_passages(root, document, replay=True)
+        try:
+            passages = module.read_passages(root, document, replay=True, portable_layout=portable)
+        except ValueError as error:
+            raise ValueError(f"Policy PDF {document['bodySha256']} at {row['url']}: {error}") from error
         policy_ids = {entry.get("policy_id") for entry in row.get("indexEntries", [])}
         if policy_ids != {row.get("policyId")} or row.get("language") not in {entry.get("language") for entry in row.get("indexEntries", [])}:
             raise ValueError("Policy edition does not resolve to exactly one registered policy identity and language")
@@ -737,7 +766,38 @@ def count_acquisitions(corpus, count, provenance):
             raise ValueError(f"Disclosure record count mismatch for {key}")
 
 
-def coverage(include_acquisitions=False):
+def count_consultations(count, provenance, hosted_projection=None):
+    if hosted_projection is None:
+        with closing(sqlite3.connect(Path("data/corpus/consultations/catalogue.sqlite").resolve().as_uri() + "?mode=ro", uri=True)) as db:
+            db.execute("BEGIN")
+            observed, digest = db.execute("""SELECT observed_at, csv_sha256 FROM consultations_catalogues
+                WHERE source='canada' ORDER BY observed_at DESC LIMIT 1""").fetchone()
+            for facts, in db.execute("SELECT facts_json FROM consultations_records WHERE removed_at IS NULL AND observed_at=?", (observed,)):
+                institution = json.loads(facts)["institution"]
+                count("consultations", [institution["en"], institution["fr"]])
+    else:
+        projection = json.loads(hosted_projection.read_bytes())
+        observed, digest = projection["observedAt"], projection["csvSha256"]
+        if (type(projection["schemaVersion"]) is not int or projection["schemaVersion"] != 1
+                or not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest)
+                or not isinstance(observed, str) or not observed.endswith("Z")
+                or datetime.fromisoformat(observed).utcoffset() is None or not isinstance(projection["owners"], list)):
+            raise ValueError("Invalid hosted consultations projection")
+        seen = set()
+        for owner in projection["owners"]:
+            en, fr, rows = owner["en"], owner["fr"], owner["rows"]
+            if (not isinstance(en, str) or not isinstance(fr, str) or type(rows) is not int
+                    or rows <= 0 or (en, fr) in seen):
+                raise ValueError("Invalid hosted consultations owner group")
+            seen.add((en, fr))
+            count("consultations", [en, fr], rows)
+    provenance["consultations"] = {"series": "consultations", "url": "https://open.canada.ca/static/consultations_open.csv",
+                                   "sha256": digest, "observedAt": observed}
+
+
+def coverage(include_acquisitions=False, *, hosted_objects=None, hosted_consultations=None):
+    portable = hosted_objects is not None
+    read = restored_object_reader(hosted_objects) if portable else get_object
     with (ROSTER / "federal-public-service-sources.csv").open(newline="") as handle:
         register = {row["series_key"]: row for row in csv.DictReader(handle)}
     with (ROSTER / "federal-public-service-roster.csv").open(newline="") as handle:
@@ -769,7 +829,7 @@ def coverage(include_acquisitions=False):
         else:
             unmatched[source][" | ".join(names)] += total
 
-    titles_id, provenance_entry, titles = read_complete_titles()
+    titles_id, provenance_entry, titles = read_complete_titles(read)
     provenance[titles_id] = provenance_entry
     for row in titles:
         register_published_titles(row, aliases)
@@ -782,7 +842,7 @@ def coverage(include_acquisitions=False):
             names = [v.strip() for v in title.split("|")] if title else [row.get("department_name_en", ""), row.get("department_name_fr", "")]
             count(key, names)
 
-    for key, source, records in read_complete_service_inventory():
+    for key, source, records in read_complete_service_inventory(read):
         count_bulk_resource(key, source, records)
 
     with closing(sqlite3.connect((BULK / "publications.sqlite").resolve().as_uri() + "?mode=ro", uri=True)) as db:
@@ -796,19 +856,13 @@ def coverage(include_acquisitions=False):
         source = receipt["sources"][kind]
         key = "briefing-notes-" + kind
         provenance[key] = {"series": "briefing-notes", "url": source["url"], "sha256": source["sha256"]}
-        with Path(source["object"]).open(encoding="utf-8-sig", newline="") as handle:
+        digest = source["sha256"]
+        path = restored_input_path(source["object"], BULK.parent/"briefing-notes"/"sources"/"objects"/digest[:2]/digest, portable)
+        with path.open(encoding="utf-8-sig", newline="") as handle:
             for row in csv.DictReader(handle):
                 count(key, [v.strip() for v in row["owner_org_title"].split("|")])
 
-    with closing(sqlite3.connect(Path("data/corpus/consultations/catalogue.sqlite").resolve().as_uri() + "?mode=ro", uri=True)) as db:
-        db.execute("BEGIN")
-        observed, digest = db.execute("""SELECT observed_at, csv_sha256 FROM consultations_catalogues
-            WHERE source='canada' ORDER BY observed_at DESC LIMIT 1""").fetchone()
-        provenance["consultations"] = {"series": "consultations", "url": "https://open.canada.ca/static/consultations_open.csv",
-                                       "sha256": digest, "observedAt": observed}
-        for facts, in db.execute("SELECT facts_json FROM consultations_records WHERE removed_at IS NULL AND observed_at=?", (observed,)):
-            institution = json.loads(facts)["institution"]
-            count("consultations", [institution["en"], institution["fr"]])
+    count_consultations(count, provenance, hosted_consultations)
     if include_acquisitions:
         count_acquisitions(BULK.parent, count, provenance)
         count_eccc_index_editions(BULK.parent, count, provenance, register)
@@ -817,8 +871,13 @@ def coverage(include_acquisitions=False):
         count_regulatory_plans(BULK.parent, count, provenance)
         count_geds_organizations(Path("dist/geds"), count, provenance)
         count_publications(BULK.parent, count, provenance, aliases)
-        count_ircc_guidance(BULK.parent, count, provenance)
-        count_policy_suite(BULK.parent, count, provenance)
+        count_ircc_guidance(BULK.parent, count, provenance, portable)
+        count_policy_suite(BULK.parent, count, provenance, portable)
+    if portable:
+        for source in provenance.values():
+            for field in ("receiptPath", "archive", "recordsPath"):
+                if field in source and Path(source[field]).is_absolute():
+                    source[field] = str(Path(source[field]).relative_to(Path.cwd()))
     classify_sources(provenance, register)
     families = sorted({source["family"] for source in register.values()} - {"all"})
     link_counts, link_coverage = {}, {}
@@ -852,8 +911,12 @@ if __name__ == "__main__":
     parser.add_argument("--include-acquisitions", action="store_true",
                         help="Also attribute current acquisition records, ECCC indexes and verified departmental report editions.")
     parser.add_argument("--output", type=Path, help="Atomically publish the complete coverage JSON here.")
+    parser.add_argument("--hosted-objects", type=Path,
+                        help="Read pinned weekly R2 keys from this restored directory. Run from the materialized input tree.")
+    parser.add_argument("--hosted-consultations", type=Path,
+                        help="Attribute owner groups from a pinned hosted consultations catalogue projection.")
     args = parser.parse_args()
-    result = coverage(args.include_acquisitions)
+    result = coverage(args.include_acquisitions, hosted_objects=args.hosted_objects, hosted_consultations=args.hosted_consultations)
     if args.output:
         save_atomic(args.output, result)
         print(json.dumps({"report": str(args.output), "sources": len(result["sources"]),

@@ -3,7 +3,7 @@ import hashlib
 import importlib.util
 import json
 import sqlite3
-from contextlib import closing
+from contextlib import chdir, closing
 from pathlib import Path
 import sys
 import tempfile
@@ -19,6 +19,52 @@ spec.loader.exec_module(coverage)
 
 
 class InstitutionCoverageTests(unittest.TestCase):
+    def test_hosted_consultations_weight_distinct_bilingual_owners_and_pin_csv_provenance(self):
+        with tempfile.TemporaryDirectory() as directory, chdir(directory):
+            path = Path("projection.json")
+            owner = {"en": "Known Agency", "fr": "Agence connue", "rows": 4}
+            projection = {"schemaVersion": 1, "observedAt": "2026-11-26T09:00:00.000Z",
+                          "csvSha256": "a" * 64, "owners": [owner]}
+            path.write_text(json.dumps(projection))
+            counts, provenance = [], {}
+            coverage.count_consultations(lambda *row: counts.append(row), provenance, path)
+            self.assertEqual(counts, [("consultations", ["Known Agency", "Agence connue"], 4)])
+            self.assertEqual(provenance["consultations"]["observedAt"], projection["observedAt"])
+            self.assertEqual(provenance["consultations"]["sha256"], projection["csvSha256"])
+            for owners in ([owner, owner], [{**owner, "rows": True}], [{**owner, "rows": 0}], [{**owner, "en": None}]):
+                with self.subTest(owners=owners):
+                    path.write_text(json.dumps({**projection, "owners": owners}))
+                    with self.assertRaisesRegex(ValueError, "owner group"):
+                        coverage.count_consultations(lambda *row: None, {}, path)
+            with self.assertRaises(FileNotFoundError):
+                coverage.count_consultations(self.fail, {}, Path("absent.json"))
+
+    def test_hosted_input_paths_relocate_immutable_refs_and_reject_a_different_archive_member(self):
+        with tempfile.TemporaryDirectory() as directory, chdir(directory):
+            expected = Path("data/corpus/federal-guidance/inventories") / ("a" * 64 + ".json")
+            expected.parent.mkdir(parents=True)
+            expected.write_text("{}")
+            recorded = Path("/previous/checkout") / expected
+            self.assertEqual(coverage.restored_input_path(recorded, expected, True), expected)
+            self.assertEqual(coverage.restored_input_path(recorded, expected, False), recorded)
+            with self.assertRaisesRegex(ValueError, "Unexpected path"):
+                coverage.restored_input_path(recorded.with_name("another.json"), expected, True)
+
+    def test_hosted_objects_read_the_restored_key_and_reject_paths_outside_its_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "objects"
+            target = root / "weekly/official-titles/latest-complete.json"
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"pinned")
+            other = Path(directory) / "outside"
+            other.write_bytes(b"outside")
+            (root / "escape").symlink_to(other)
+            read = coverage.restored_object_reader(root)
+            self.assertEqual(read("weekly/official-titles/latest-complete.json"), b"pinned")
+            for name in ("../outside", "escape", str(other)):
+                with self.subTest(name=name), self.assertRaisesRegex(ValueError, "escaped"):
+                    read(name)
+
     def test_publications_count_only_uniquely_identified_explicit_publishers_and_bind_archives(self):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as temporary:

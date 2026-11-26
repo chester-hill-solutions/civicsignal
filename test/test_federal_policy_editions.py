@@ -14,6 +14,26 @@ policies = import_module("federal-policy-editions")
 
 
 class FederalPolicyEditionTests(unittest.TestCase):
+    def test_portable_replay_accepts_wrapping_but_requires_exact_words_and_page_citations(self):
+        url = 'https://publications.gc.ca/collections/policy.pdf'
+        citation = {'page': 3, 'citation_url': url + '#page=3', 'kind': 'pdf-page-text',
+                    'section': None, 'attribution': None}
+        archived = [{**citation, 'ordinal': 1, 'text': 'La procédure publiée'}]
+        wrapped = [{**citation, 'ordinal': 1, 'text': 'La procédure'}, {**citation, 'ordinal': 2, 'text': 'publiée'}]
+        receipt = {'passages': 'passages', 'passagesSha256': 'a' * 64, 'passageBytes': 1,
+                   'object': 'pdf', 'bodySha256': 'b' * 64, 'bodyBytes': 10, 'finalUrl': url}
+
+        with patch.object(policies.pdf, 'read_gzip', side_effect=lambda _, key, *_args:
+                          policies.packed(archived) if key == 'passages' else b'%PDF-test'), \
+                patch.object(policies, 'extract_passages', return_value=wrapped) as extract:
+            with self.assertRaisesRegex(ValueError, 'passage replay differs'):
+                policies.read_passages(Path('.'), receipt, replay=True)
+            self.assertEqual(policies.read_passages(Path('.'), receipt, replay=True, portable_layout=True), archived)
+            for change in ({'text': 'modifiée'}, {'page': 4}, {'citation_url': url + '#page=4'}):
+                extract.return_value = [wrapped[0], {**wrapped[1], **change}]
+                with self.assertRaisesRegex(ValueError, 'passage replay differs'):
+                    policies.read_passages(Path('.'), receipt, replay=True, portable_layout=True)
+
     def test_non_pdf_capture_distinguishes_an_explicit_archive_notice_from_other_html(self):
         url = "https://publications.gc.ca/collections/guide.pdf"
         notice = "https://publications.gc.ca/site/archivee-archived.html?url=" + quote(url, safe="")
