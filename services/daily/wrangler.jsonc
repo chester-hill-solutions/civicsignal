@@ -26,5 +26,5 @@
     "database_name": "civicsignal-stage-committees-45-1",
     "database_id": "fb9b6314-4b06-4690-a893-7277a8ea00bb"
   }],
-  "triggers": { "crons": ["30 15 * * *"] }
+  "triggers": { "crons": ["15 15 * * *"] }
 }

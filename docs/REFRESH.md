@@ -92,6 +92,29 @@ For the latest completed D1 observation, compare all hosted call rows with a rep
 python3 -B scripts/verify-house-staging.py "$house_instance"
 ```
 
+## Combined Cloudflare daily refresh
+
+The private combined Workflow starts consultations, NSERC, ESDC and House calls daily at **15:15 UTC** (10:15 Toronto standard time or 11:15 during daylight time). Each child keeps its own dated acquisition and publication receipt. When the children finish, the combined Workflow checks the authenticated API and writes a single immutable report. [Coordinator configuration](../services/daily/wrangler.jsonc)
+
+```sh
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+cf workflows instances list --workflow-name civicsignal-stage-daily --per-page 10
+cf workflows instances get "$daily_instance" --workflow-name civicsignal-stage-daily --simple true
+cf r2 objects get "daily/runs/$daily_instance.json" --bucket-name civicsignal-stage-funding
+```
+
+Use the report's `status` as the outcome. A complete run refreshed and verified all four sources. A degraded run records a failed or timed-out intake alongside the successful intake and serving checks. A failed report indicates a verification error or an unproven House fallback. Cloudflare shows the coordinator as complete once it has retained any of these reports.
+
+For a House 403, the source outcome includes the exact publisher URL, status and immutable failure receipt. The coordinator compares D1 fingerprints of the House call rows, links, publication head and cutoff before and after the failure. It also checks the prior completion receipt in R2. When those match, it verifies the English and French product responses against that saved House observation. The report marks this verification `last-good` and retains the current successful receipts for consultations and both funding catalogues.
+
+Use an operator-triggered occurrence only when the calendar and other manual occurrences are idle. Its child IDs use the same timestamp as the coordinator, so the report identifies the exact attempts.
+
+```sh
+daily_ms=$(node -p 'Date.now()')
+cf workflows instances create civicsignal-stage-daily \
+  --body "$(jq -cn --arg id "daily-refresh-$daily_ms" --argjson ms "$daily_ms" '{instance_id:$id,params:{scheduledTime:$ms}}')"
+```
+
 ## Private daily product checks
 
 The private Workflow calls the product Worker with a retrieval-only key for the staging workspace. It verifies consultation search and history, House calls and study links, and the English and French paths from the Finance Committee brief to NSERC and ESDC program terms. It also checks public discovery, unauthenticated rejection and the exact change in the workspace's usage count. Run one verification at a time to keep the usage comparison attributable to that run. [Worker configuration](../services/daily-checks/wrangler.jsonc)

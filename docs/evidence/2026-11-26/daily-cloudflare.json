@@ -1,0 +1,640 @@
+{
+  "scope": "Private Cloudflare staging daily consultations, NSERC, ESDC and House committee calls.",
+  "candidateCommit": "e7cd1144475646148c706274b79022771385fc54",
+  "calendar": {
+    "timeZone": "UTC",
+    "cron": "15 15 * * *",
+    "approvedAccount": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "configurationReadbackMatchesDeployedCalendar": true
+  },
+  "deployments": {
+    "civicsignal-stage-daily": {
+      "version": "3d4d3950-d285-40e5-b7cd-dc84b0c6a130",
+      "crons": [
+        "15 15 * * *"
+      ],
+      "workersDev": false,
+      "previewUrls": false,
+      "routes": [],
+      "workflows": [
+        {
+          "binding": "CONSULTATIONS",
+          "name": "civicsignal-stage-consultations",
+          "class_name": "ConsultationsRefresh",
+          "script_name": "civicsignal-stage-consultations"
+        },
+        {
+          "binding": "DAILY",
+          "name": "civicsignal-stage-daily",
+          "class_name": "DailyRefresh"
+        },
+        {
+          "binding": "ESDC",
+          "name": "civicsignal-stage-esdc",
+          "class_name": "EsdcRefresh",
+          "script_name": "civicsignal-stage-esdc"
+        },
+        {
+          "binding": "HOUSE",
+          "name": "civicsignal-stage-house",
+          "class_name": "HouseRefresh",
+          "script_name": "civicsignal-stage-house"
+        },
+        {
+          "binding": "NSERC",
+          "name": "civicsignal-stage-funding",
+          "class_name": "FundingRefresh",
+          "script_name": "civicsignal-stage-funding"
+        }
+      ],
+      "services": [
+        {
+          "binding": "VERIFY",
+          "service": "civicsignal-stage-daily-checks",
+          "environment": "production",
+          "entrypoint": "CombinedServingCheck"
+        }
+      ],
+      "modules": {
+        "worker.js": {
+          "bytes": 809446,
+          "sha256": "acc9d1fed317e25e8f1e08a1a6f89b91d7bce1c8227400c0fae1a86a6162c260",
+          "matchesOfflineBuild": true
+        }
+      }
+    },
+    "civicsignal-stage-daily-checks": {
+      "version": "fb03e115-23b7-4f54-87de-17c229afb930",
+      "crons": [],
+      "workersDev": false,
+      "previewUrls": false,
+      "routes": [],
+      "workflows": [
+        {
+          "binding": "CHECKS",
+          "name": "civicsignal-stage-daily-checks",
+          "class_name": "DailyServingChecks"
+        }
+      ],
+      "services": [
+        {
+          "binding": "PRODUCT",
+          "service": "civicsignal-stage-daily-checks",
+          "environment": "production"
+        }
+      ],
+      "modules": {
+        "worker.js": {
+          "bytes": 2092607,
+          "sha256": "578ef7597ed5da9c3b8050bd581e033f39ccc14f5294933527516e8fbb5eec37",
+          "matchesOfflineBuild": true
+        }
+      }
+    },
+    "civicsignal-stage-house": {
+      "version": "166002b7-ba17-4276-b99c-e8b8b57d654e",
+      "crons": [
+        "15 0 * * *"
+      ],
+      "workersDev": false,
+      "previewUrls": false,
+      "routes": [],
+      "workflows": [
+        {
+          "binding": "REFRESH",
+          "name": "civicsignal-stage-house",
+          "class_name": "HouseRefresh"
+        }
+      ],
+      "services": [
+        {
+          "binding": "COLLECTOR",
+          "service": "civicsignal-stage-house-collector",
+          "environment": "production"
+        },
+        {
+          "binding": "HOUSE_SERVING",
+          "service": "civicsignal-stage-daily-checks",
+          "environment": "production",
+          "entrypoint": "HouseServingCheck"
+        }
+      ],
+      "modules": {
+        "worker.js": {
+          "bytes": 816275,
+          "sha256": "f637480d493c1caeb953a7b82c8d4945091989de26a3a63ffe11b150d053a993",
+          "matchesOfflineBuild": true
+        }
+      }
+    },
+    "civicsignal-stage-house-collector": {
+      "version": "80075173-9db1-4e72-bef8-63c133be13cb",
+      "crons": [],
+      "workersDev": false,
+      "previewUrls": false,
+      "routes": [],
+      "workflows": [],
+      "services": [],
+      "modules": {
+        "entry.py": {
+          "bytes": 5999,
+          "sha256": "cb5a0d06ec547eb03f1c17118c04c34c80b33e2d8a230ce2afb3b882c6f908cf",
+          "matchesOfflineBuild": true
+        },
+        "house.py": {
+          "bytes": 13329,
+          "sha256": "d2257f6eab3141b7c5a700d05ea69cb204ebe277ea75b24d1e669519ae22fdff",
+          "matchesOfflineBuild": true
+        },
+        "committee_calls.py": {
+          "bytes": 18334,
+          "sha256": "1252dcd6931b020362bcd4a8c6d0f1a9270bc6dbd179b4b5f0d21aa1aafe8ba2",
+          "matchesOfflineBuild": true
+        }
+      }
+    }
+  },
+  "manualHouse403": {
+    "report": {
+      "key": "daily/runs/daily-refresh-1795704135619.json",
+      "bucket": "civicsignal-stage-funding",
+      "sha256": "2e3cb35e2ee59b6dcab168487922e1dd74c840fc2c028c23ab4832d5b06f2264",
+      "bytes": 4699
+    },
+    "reportBody": {
+      "instanceId": "daily-refresh-1795704135619",
+      "scheduledTime": 1795704135619,
+      "scheduledAt": "2026-11-26T14:42:15.619Z",
+      "status": "degraded",
+      "sources": [
+        {
+          "source": "consultations",
+          "instanceId": "consultations-1795704135619",
+          "workflowState": "complete",
+          "status": "published",
+          "receipt": {
+            "receiptKey": "consultations/runs/consultations-1795704135619.json",
+            "receiptSha256": "5e119abea83de317072ef7764a4440395cecf3f8edbde4c9b76b82d814fe7fb5",
+            "observedAt": "2026-11-26T14:42:15.619Z",
+            "revision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea"
+          }
+        },
+        {
+          "source": "nserc",
+          "instanceId": "nserc-1795704135619",
+          "workflowState": "complete",
+          "status": "published",
+          "receipt": {
+            "receiptKey": "funding/nserc/runs/nserc-1795704135619.json",
+            "receiptSha256": "aea0c265665038dda7460098f8be36e4b22bda668ac29cb67024c8fce1626fcc",
+            "observedAt": "2026-11-26T14:42:15.619Z",
+            "revision": "2e930740d7c816bc4767e39efa014a2c1f164840e2cb8d70572ef4e3e1237894"
+          }
+        },
+        {
+          "source": "esdc",
+          "instanceId": "esdc-1795704135619",
+          "workflowState": "complete",
+          "status": "published",
+          "receipt": {
+            "receiptKey": "funding/esdc/runs/esdc-1795704135619.json",
+            "receiptSha256": "daacbbc28a9d7f84ed04223bcc0fab80995816d8579dca46b1fd43ad3c934715",
+            "observedAt": "2026-11-26T14:42:15.619Z",
+            "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2"
+          }
+        },
+        {
+          "source": "house",
+          "instanceId": "house-calls-1795704135619",
+          "workflowState": "errored",
+          "status": "failed",
+          "failure": {
+            "phase": "acquisition",
+            "code": "publisher-http",
+            "status": 403,
+            "url": "https://www.ourcommons.ca/Committees/en/Participate",
+            "instanceId": "house-calls-1795704135619",
+            "scheduledTime": 1795704135619,
+            "evidenceKey": "committee/house-calls/failures/house-calls-1795704135619.json",
+            "evidenceSha256": "cfc4fc7bf7f5330ee05885350861941586b2c74858c97dd29210e8a7d0e565bb"
+          }
+        }
+      ],
+      "housePreservation": {
+        "before": {
+          "sha256": "c55ded9572eec986131add31022d3a38f67c978bad8faa4d3c80670e5591cd7b",
+          "cutoff": "2026-11-25T08:33:25+00:00",
+          "instanceId": "house-calls-1795652141644",
+          "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+          "observedAt": "2026-11-26T00:16:34.215000Z",
+          "editions": 30,
+          "links": 60
+        },
+        "after": {
+          "sha256": "c55ded9572eec986131add31022d3a38f67c978bad8faa4d3c80670e5591cd7b",
+          "cutoff": "2026-11-25T08:33:25+00:00",
+          "instanceId": "house-calls-1795652141644",
+          "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+          "observedAt": "2026-11-26T00:16:34.215000Z",
+          "editions": 30,
+          "links": 60
+        },
+        "unchanged": true,
+        "receiptRetained": true,
+        "lastGood": {
+          "instanceId": "house-calls-1795652141644",
+          "receiptKey": "committee/house-calls/runs/house-calls-1795652141644.json",
+          "receiptSha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79",
+          "observedAt": "2026-11-26T00:16:34.215000Z",
+          "cutoff": "2026-11-25T08:33:25+00:00",
+          "packetRef": {
+            "key": "committee/house-calls/inventories/409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba.json",
+            "sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+            "bytes": 69215
+          }
+        }
+      },
+      "verification": {
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "cases": [
+          {
+            "name": "consultations",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4j67etbav81u57",
+              "req_mwxo4jt7qtv96gzv22",
+              "req_mwxo4k0kt27czpr8i9",
+              "req_mwxo4kagpp6chlqf43"
+            ],
+            "usage": {
+              "before": 34,
+              "after": 38,
+              "retrievals": 4
+            }
+          },
+          {
+            "name": "house",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4kqha7z9lpjlvx",
+              "req_mwxo4kzy7ta5068b5e",
+              "req_mwxo4l8eug85gu19ow",
+              "req_mwxo4li9xi9objpd7c",
+              "req_mwxo4lrzf8ek4x3cmi",
+              "req_mwxo4m09w1l8181v1i"
+            ],
+            "usage": {
+              "before": 38,
+              "after": 44,
+              "retrievals": 6
+            }
+          },
+          {
+            "name": "access",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4mbr4meqc2lxry",
+              "req_mwxo4mbr8h0vuy1urt"
+            ],
+            "usage": {
+              "before": 44,
+              "after": 44,
+              "retrievals": 0
+            }
+          },
+          {
+            "name": "finance-en",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4memosnz86bpai",
+              "req_mwxo4mrhlhyifdke2b"
+            ],
+            "usage": {
+              "before": 44,
+              "after": 46,
+              "retrievals": 2
+            }
+          },
+          {
+            "name": "nserc-en",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4n7cp1m9rs01kk",
+              "req_mwxo4ne4intg6f4ti0",
+              "req_mwxo4nlt2lpt0i9kiq"
+            ],
+            "usage": {
+              "before": 46,
+              "after": 49,
+              "retrievals": 3
+            }
+          },
+          {
+            "name": "esdc-en",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4o2vctxf8ij48g",
+              "req_mwxo4oeew7kcgtnztz",
+              "req_mwxo4ook6kovudy5pb"
+            ],
+            "usage": {
+              "before": 49,
+              "after": 52,
+              "retrievals": 3
+            }
+          },
+          {
+            "name": "finance-fr",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4oy5sl2fiv9tzh",
+              "req_mwxo4p8lxur1252aox"
+            ],
+            "usage": {
+              "before": 52,
+              "after": 54,
+              "retrievals": 2
+            }
+          },
+          {
+            "name": "nserc-fr",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4pnrm105e7ncpj",
+              "req_mwxo4pvf1g4l27b14u",
+              "req_mwxo4q2lm9wahqf7ga"
+            ],
+            "usage": {
+              "before": 54,
+              "after": 57,
+              "retrievals": 3
+            }
+          },
+          {
+            "name": "esdc-fr",
+            "status": "passed",
+            "correlationIds": [
+              "req_mwxo4ql18km98dkiad",
+              "req_mwxo4qtjfcn53c0ege",
+              "req_mwxo4r2pqdcfvtgo66"
+            ],
+            "usage": {
+              "before": 57,
+              "after": 60,
+              "retrievals": 3
+            }
+          }
+        ]
+      },
+      "houseVerificationBasis": "last-good"
+    },
+    "coordinator": {
+      "trigger": {
+        "source": "api"
+      },
+      "start": "2026-11-26T14:42:21.376Z",
+      "end": "2026-11-26T14:49:21.902Z",
+      "status": "complete",
+      "version": "42aff5c6-f1c4-4df3-a7d3-3ef42a73e866",
+      "steps": [
+        {
+          "name": "look for a finalized daily report-1",
+          "success": true,
+          "attempts": 1
+        },
+        {
+          "name": "pin the last House publication-1",
+          "success": true,
+          "attempts": 1
+        },
+        {
+          "name": "start all four source Workflows-1",
+          "success": true,
+          "attempts": 1
+        },
+        {
+          "name": "read the dated source receipts-1",
+          "success": true,
+          "attempts": 1
+        },
+        {
+          "name": "compare House publication after failure-1",
+          "success": true,
+          "attempts": 1
+        },
+        {
+          "name": "verify the authenticated API with available publications-1",
+          "success": true,
+          "attempts": 1
+        },
+        {
+          "name": "retain combined daily run report-1",
+          "success": true,
+          "attempts": 1
+        }
+      ]
+    },
+    "children": {
+      "consultations": {
+        "trigger": {
+          "source": "binding"
+        },
+        "start": "2026-11-26T14:42:23.947Z",
+        "end": "2026-11-26T14:42:27.074Z",
+        "status": "complete",
+        "version": "6d06c268-6d5e-4e08-a586-5828c5294d13",
+        "steps": [
+          {
+            "name": "archive publisher catalogue and dictionary-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "publish archived catalogue to D1-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "verify private bilingual consultation lookup-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "write verified refresh receipt-1",
+            "success": true,
+            "attempts": 1
+          }
+        ],
+        "receipt": {
+          "key": "consultations/runs/consultations-1795704135619.json",
+          "bucket": "civicsignal-stage-consultations",
+          "sha256": "5e119abea83de317072ef7764a4440395cecf3f8edbde4c9b76b82d814fe7fb5",
+          "bytes": 1285
+        }
+      },
+      "nserc": {
+        "trigger": {
+          "source": "binding"
+        },
+        "start": "2026-11-26T14:42:24.353Z",
+        "end": "2026-11-26T14:42:39.585Z",
+        "status": "complete",
+        "version": "2c0c0235-1cdc-4e50-8745-08b779a4d1fc",
+        "steps": [
+          {
+            "name": "archive NSERC inventory and publisher pages-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "verify originals and publish funding terms-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "read English and French terms via private serving binding-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "write verified funding receipt-1",
+            "success": true,
+            "attempts": 1
+          }
+        ],
+        "receipt": {
+          "key": "funding/nserc/runs/nserc-1795704135619.json",
+          "bucket": "civicsignal-stage-funding",
+          "sha256": "aea0c265665038dda7460098f8be36e4b22bda668ac29cb67024c8fce1626fcc",
+          "bytes": 2200
+        }
+      },
+      "esdc": {
+        "trigger": {
+          "source": "binding"
+        },
+        "start": "2026-11-26T14:42:25.510Z",
+        "end": "2026-11-26T14:49:05.839Z",
+        "status": "complete",
+        "version": "914c4a6e-60f9-4e84-89e2-dfe8ef8eeaab",
+        "steps": [
+          {
+            "name": "archive ESDC inventory and publisher pages-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "verify originals and publish funding terms-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "read English and French terms via private serving binding-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "write verified funding receipt-1",
+            "success": true,
+            "attempts": 1
+          }
+        ],
+        "receipt": {
+          "key": "funding/esdc/runs/esdc-1795704135619.json",
+          "bucket": "civicsignal-stage-funding",
+          "sha256": "daacbbc28a9d7f84ed04223bcc0fab80995816d8579dca46b1fd43ad3c934715",
+          "bytes": 2377
+        }
+      },
+      "house": {
+        "trigger": {
+          "source": "binding"
+        },
+        "start": "2026-11-26T14:42:25.253Z",
+        "end": "2026-11-26T14:42:27.779Z",
+        "status": "errored",
+        "version": "e1c4112f-aba0-4068-bf1e-534c5d0f4a14",
+        "steps": [
+          {
+            "name": "checkpoint and acquire committee originals-1",
+            "success": true,
+            "attempts": 1
+          },
+          {
+            "name": "retain required House publisher refusal-1",
+            "success": true,
+            "attempts": 1
+          }
+        ],
+        "failure": {
+          "phase": "acquisition",
+          "code": "publisher-http",
+          "status": 403,
+          "url": "https://www.ourcommons.ca/Committees/en/Participate",
+          "instanceId": "house-calls-1795704135619",
+          "scheduledTime": 1795704135619
+        },
+        "failureReceipt": {
+          "key": "committee/house-calls/failures/house-calls-1795704135619.json",
+          "bucket": "civicsignal-stage-funding",
+          "sha256": "cfc4fc7bf7f5330ee05885350861941586b2c74858c97dd29210e8a7d0e565bb",
+          "bytes": 191
+        },
+        "newHouseCompletionReceipts": 0
+      }
+    },
+    "houseD1AndReceiptBefore": {
+      "checkedAt": "2026-11-26T14:42:15.616367+00:00",
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "instanceId": "house-calls-1795652141644",
+      "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "observedAt": "2026-11-26T00:16:34.215000Z",
+      "editions": 30,
+      "links": 60,
+      "rawOrderSha256": "c55ded9572eec986131add31022d3a38f67c978bad8faa4d3c80670e5591cd7b",
+      "canonicalAllColumnSha256": "9276f5f8a7bc94ff91a4513ec8913aed9ba08bb2a7eec40505fcf9fb2b31940f",
+      "receipt": {
+        "key": "committee/house-calls/runs/house-calls-1795652141644.json",
+        "bucket": "civicsignal-stage-funding",
+        "sha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79",
+        "bytes": 1521
+      },
+      "ledgerRows": 1,
+      "guards": 0
+    },
+    "houseD1AndReceiptAfter": {
+      "checkedAt": "2026-11-26T14:49:34.117333+00:00",
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "instanceId": "house-calls-1795652141644",
+      "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "observedAt": "2026-11-26T00:16:34.215000Z",
+      "editions": 30,
+      "links": 60,
+      "rawOrderSha256": "c55ded9572eec986131add31022d3a38f67c978bad8faa4d3c80670e5591cd7b",
+      "canonicalAllColumnSha256": "9276f5f8a7bc94ff91a4513ec8913aed9ba08bb2a7eec40505fcf9fb2b31940f",
+      "receipt": {
+        "key": "committee/house-calls/runs/house-calls-1795652141644.json",
+        "bucket": "civicsignal-stage-funding",
+        "sha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79",
+        "bytes": 1521
+      },
+      "ledgerRows": 1,
+      "guards": 0
+    },
+    "authenticatedRetrievals": 26,
+    "allCorrelationIdsUnique": true
+  },
+  "testResults": {
+    "typescript": {
+      "passed": 2760,
+      "skipped": 15
+    },
+    "python": {
+      "passed": 365
+    },
+    "workerDryRunBuilds": 15,
+    "localWorkerd": "Both a fresh House publication and preserved House after a synthetic 403 finalized through the scheduler and child Workflow bindings."
+  }
+}
