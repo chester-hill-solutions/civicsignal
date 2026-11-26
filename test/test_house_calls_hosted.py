@@ -10,7 +10,7 @@ from test_committee_calls import BILL, PARTICIPATE, STUDY
 from test_funding_esdc_hosted import MemoryStore
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "services/house-collector"))
-from house import PARTICIPATE_INDEX, SENATE_CHECKS, PublisherUnavailable, acquire, publisher_url, study_url
+from house import PARTICIPATE_INDEX, SENATE_CHECKS, HousePublisherForbidden, PublisherUnavailable, acquire, publisher_url, study_url
 
 CHECKED = "2026-11-25T12:00:00.123Z"
 
@@ -77,6 +77,21 @@ class HouseCollectorTest(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(ValueError, "Corrupt archived"):
             await self.collect()
         self.assertEqual(counts, self.requests)
+
+    async def test_exact_required_page_403_stops_acquisition_without_publishing(self):
+        denied = PARTICIPATE_INDEX["en"]
+
+        async def forbidden(url, chamber):
+            if url == denied:
+                raise PublisherUnavailable("Publisher returned HTTP 403.", url, 403)
+            return await self.fetch(url, chamber)
+
+        with self.assertRaises(HousePublisherForbidden) as caught:
+            await acquire(self.store, forbidden, request(), lambda: self.checked)
+        self.assertEqual(caught.exception.url, denied)
+        self.assertFalse(any("/inventories/" in key for key in self.store.objects))
+        _, packet, _ = await self.collect()
+        self.assertEqual(len(packet["calls"]), 3)
 
     async def test_new_observation_drops_only_missing_prior_and_pins_its_base(self):
         _, first, _ = await self.collect()

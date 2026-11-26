@@ -34,13 +34,43 @@ export function verificationClient(env: ProductEnv) {
 }
 
 export function count(env: ProductEnv) {
-  return new DurableObjectUsageLedger(env.API_KEY_USAGE).peekMonthly(workspace, 1000).then(result => result.count);
+  return new DurableObjectUsageLedger(env.API_KEY_USAGE).peekMonthly(workspace, 1000).then(result => {
+    if (result.unavailable) throw new Error('Workspace usage unavailable.');
+    return result.count;
+  });
 }
 
-export async function metered<T>(env: ProductEnv, check: (read: ReturnType<typeof verificationClient>['read']) => Promise<T>) {
-  const client = verificationClient(env), before = await count(env);
-  const result = await check(client.read);
-  const after = await count(env);
-  if (!client.requests.length || after - before !== client.requests.length) throw new Error('Workspace usage differs from successful product retrievals.');
-  return { result, requests: client.requests, before, after };
+export type ProductClient = ReturnType<typeof verificationClient>;
+export type Trace = { requests: ProductClient['requests']; before: number | null; after: number | null };
+export type UsageMode = 'metered' | 'free';
+
+export class ProductCheckFailure extends Error {
+  constructor(readonly trace: Trace, readonly stage: 'meter' | 'product' | 'usage', cause: unknown) {
+    super(cause instanceof Error ? cause.message : 'Product verification failed.', { cause });
+  }
+}
+
+/** Preserve the authenticated request trace even when a later reference or meter check fails. */
+export async function observeProduct<T>(env: ProductEnv, mode: UsageMode, check: (client: ProductClient) => Promise<T>) {
+  const client = verificationClient(env);
+  let before: number | null = null, after: number | null = null;
+  let stage: ProductCheckFailure['stage'] = 'meter';
+  try {
+    before = await count(env);
+    stage = 'product';
+    const result = await check(client);
+    stage = 'meter';
+    after = await count(env);
+    stage = 'usage';
+    const expected = mode === 'free' ? 0 : client.requests.length;
+    if (!client.requests.length || after - before !== expected) throw new Error('Workspace usage differs from successful product retrievals.');
+    return { result, requests: client.requests, before, after };
+  } catch (error) {
+    if (stage === 'product') after = await count(env).catch(() => null);
+    throw new ProductCheckFailure({ requests:client.requests, before, after }, stage, error);
+  }
+}
+
+export function metered<T>(env: ProductEnv, check: (read: ProductClient['read']) => Promise<T>) {
+  return observeProduct(env, 'metered', client => check(client.read));
 }

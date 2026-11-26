@@ -7,7 +7,7 @@ import js
 from pyodide.ffi import to_js
 from workers import WorkerEntrypoint
 
-from house import PAGE_LIMIT, REQUEST_LIMIT, PublisherUnavailable, acquire, publisher_url, read_request
+from house import PAGE_LIMIT, REQUEST_LIMIT, HousePublisherForbidden, PublisherUnavailable, acquire, publisher_url, read_request
 
 
 def js_object(value):
@@ -121,6 +121,10 @@ class Default(WorkerEntrypoint):
             read_request(params)
         except (ValueError, TypeError, KeyError):
             return js.Response.new("Invalid House calls observation request", js_object({"status": 400}))
-        result = await acquire(R2Store(self.env.ARCHIVE), fetch_page, params,
-                               on_complete=lambda event: js.console.log(js_object(event)))
+        try:
+            result = await acquire(R2Store(self.env.ARCHIVE), fetch_page, params,
+                                   on_complete=lambda event: js.console.log(js_object(event)))
+        except HousePublisherForbidden as error:
+            detail = {"phase": "acquisition", "code": "publisher-http", "status": 403, "url": error.url}
+            return js.Response.json(js_object(detail), js_object({"status": 403}))
         return js.Response.json(js_object(result))

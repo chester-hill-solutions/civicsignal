@@ -16,6 +16,7 @@ import { FundingCatalogueCoverage, FundingSearchResponse, FundingLookupResponse,
 import { localD1 } from '../scripts/lib/local-d1';
 import { materializeConsultations } from '../src/corpora/consultations-materialize';
 import { checkCommittees, checkConsultations, checkRecommendations } from '../services/daily-checks/acceptance';
+import { verifyCombined, type CombinedEnv } from '../services/daily-checks/combined';
 import { ApiKeyUsageDO, DurableObjectUsageLedger } from '@chester-hill-solutions/api-billing/durable-object';
 import worker from '../src/index';
 import type { Capabilities } from '../src/routes/capabilities';
@@ -70,13 +71,13 @@ function providerText(provider:typeof generationProviders[number],text:string){
 beforeEach(() => vi.restoreAllMocks());
 afterEach(() => { for (const close of closed.splice(0)) close(); vi.restoreAllMocks(); });
 
-async function setup(limit = 5) {
+async function setup(limit = 5, workspace = 'customer_kept') {
   const fixture = testD1();
   closed.push(fixture.close);
-  fixture.sqlite.exec("INSERT INTO workspace(id) VALUES('customer_kept')");
+  fixture.sqlite.prepare('INSERT INTO workspace(id) VALUES(?)').run(workspace);
   fixture.sqlite.prepare(`INSERT INTO civic_workspace_billing(workspace_id,plan,fuse_limit,fuse_soft_warn,enabled)
-    VALUES('customer_kept','free',?,0,1)`).run(limit);
-  const key = prepareWorkspaceKey('customer_kept', 'Endpoint test');
+    VALUES(?,'free',?,0,1)`).run(workspace, limit);
+  const key = prepareWorkspaceKey(workspace, 'Endpoint test');
   fixture.sqlite.exec(key.sql);
   const counts = new Map<string, unknown>();
   let currentTransaction = Promise.resolve();
@@ -130,7 +131,7 @@ async function setup(limit = 5) {
     await Promise.all(tasks.splice(0));
     return response;
   };
-  const count = async () => (await new DurableObjectUsageLedger(env.API_KEY_USAGE!).peekMonthly('customer_kept', limit)).count;
+  const count = async () => (await new DurableObjectUsageLedger(env.API_KEY_USAGE!).peekMonthly(workspace, limit)).count;
   const rpc = (method: string, params?: unknown) => send('/mcp', { method: 'POST', headers: {
     'Content-Type': 'application/json', Accept: 'application/json, text/event-stream',
   }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
@@ -369,6 +370,64 @@ describe('daily serving acceptance against acquired sources', () => {
     for (const lang of ['en','fr'] as const) await checkRecommendations(read, bucket, params, lang);
     expect(await fixture.count()).toBe(requests);
   }, 60000);
+});
+
+it('verifies eligible combined cases through the authenticated product after a broken House reference', async () => {
+  const fixture = await setup(1000, 'stage-daily-checks');
+  const { materializeFunding } = await import('../scripts/materialize-funding');
+  const observedAt = '2026-11-26T01:00:00.000Z';
+  const indexes = { en: 'https://www.canada.ca/en/esdc', fr: 'https://www.canada.ca/fr/edsc' };
+  const id = 'esdc-utip-infrastructure-expansion';
+  const archive = { source: 'esdc', observedAt, indexes, gaps: [], records: (['en', 'fr'] as const).map(language => {
+    const title = language === 'en' ? 'Infrastructure expansion' : 'Expansion des infrastructures';
+    const url = indexes[language] + '/' + id;
+    return { id, language, title, url, status: 'open', statusText: null, availability: 'published',
+      sections: [{ field: 'overview', heading: title, text: title, url }] };
+  }) };
+  const published = materializeFunding(fixture.sqlite, archive);
+  fixture.env.FUNDING_PREVIEW = 'on';
+  fixture.env.FUNDING_DB = fixture.db;
+  const committees = testD1({ schema: readFileSync('preview/committees/migrations/0001_committee_preview.sql', 'utf8') });
+  closed.push(committees.close);
+  committees.sqlite.prepare("INSERT INTO cc_snapshot VALUES('45-1',?)").run(observedAt);
+  fixture.env.COMMITTEE_DB = committees.db;
+  fixture.env.COMMITTEE_CORPUS_PREVIEW = 'on';
+  const data = JSON.stringify(archive);
+  const sha256 = createHash('sha256').update(data).digest('hex');
+  const key = 'funding/esdc/inventories/' + sha256 + '.json';
+  const objects = new Map([[key, data], ['funding/esdc/runs/esdc-1.json', JSON.stringify({ instanceId: 'esdc-1',
+    observedAt, published: { revision: published.revision }, inventory: { key, sha256 } })]]);
+  const bucket = { async get(path: string) {
+    const body = objects.get(path);
+    return body ? { size: Buffer.byteLength(body), arrayBuffer: async () => Uint8Array.from(Buffer.from(body)).buffer } : null;
+  } };
+  const product = { async fetch(url: string, init: { headers: Record<string, string> }) {
+    const u = new URL(url);
+    return fixture.send(u.pathname + u.search, { headers: init.headers }, false);
+  } };
+  const env = { PRODUCT: product, ARCHIVE: bucket, CONSULTATION_ARCHIVE: bucket, DAILY_CHECK_KEY: fixture.key.rawKey,
+    COMMITTEE_DB: committees.db, API_KEY_USAGE: fixture.env.API_KEY_USAGE } as unknown as CombinedEnv;
+  const hash = 'a'.repeat(64);
+  const result = await verifyCombined(env, { nserc: '', esdc: 'esdc-1',
+    house: { observedAt, cutoff: observedAt, packetRef: { key: 'committee/house-calls/inventories/' + hash + '.json', sha256: hash, bytes: 10 } } });
+  expect(result).toMatchObject({ passed: 2, failed: 6, skipped: 1 });
+  const byName = Object.fromEntries(result.cases.map(c => [c.name, c]));
+  expect(byName.house).toMatchObject({ status: 'failed', correlationIds: [], usage: { before: 0, after: 0, retrievals: 0 } });
+  expect(byName.consultations).toMatchObject({ status: 'skipped', usage: { before: null, after: null, retrievals: 0 } });
+  expect(byName.access).toMatchObject({ status: 'failed', usage: { before: 0, after: 0, retrievals: 0 } });
+  expect(byName.access?.correlationIds).toHaveLength(2);
+  for (const lang of ['en', 'fr']) {
+    expect(byName['nserc-' + lang]).toMatchObject({ status: 'failed', correlationIds: [] });
+    expect(byName['esdc-' + lang]).toMatchObject({ status: 'passed', usage: { retrievals: 3 } });
+    expect(byName['esdc-' + lang]?.correlationIds).toHaveLength(3);
+  }
+  expect(await fixture.count()).toBe(result.cases.reduce((sum, c) => sum + c.usage.retrievals, 0));
+  expect(JSON.stringify(result)).not.toContain(fixture.key.rawKey);
+  fixture.transport.unavailable = true;
+  const outage = await verifyCombined(env, {});
+  expect(outage).toMatchObject({ passed: 0, failed: 3, skipped: 6 });
+  expect(outage.cases.find(c => c.name === 'access')).toMatchObject({ error: 'Unable to read workspace usage.',
+    correlationIds: [], usage: { before: null, after: null, retrievals: 0 } });
 });
 
 describe('deployment discovery', () => {

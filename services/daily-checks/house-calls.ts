@@ -1,7 +1,8 @@
 import type { z } from 'zod';
 import { CommitteeCallDetailResponseSchema, CommitteeCallsResponseSchema, CommitteeDetailResponseSchema, type CommitteeCall } from '../../src/corpora/committee-corpus';
 import { callFromRow } from '../../src/routes/committee-corpus';
-import type { HousePacket } from '../house/publish';
+import { HousePacket } from '../house/publish';
+import { inventoryReference, readVerified, type PacketRef } from '../house/archive';
 
 type CallRow = z.infer<typeof HousePacket>['calls'][number];
 type Read = (path: string, params?: Record<string, string>) => Promise<unknown>;
@@ -75,4 +76,24 @@ export async function checkHouseLanguage(read: Read, db: D1Database, rows: CallR
   const sample = [...expected.values()].find(item => item.listed && item.study) ?? [...expected.values()].find(item => item.study);
   return { language, listed, newlyDropped: rows.length - listed, retainedUnlisted: seen.size - rows.length,
     sample: sample ? await checkStudy(read, db, sample, asOf) : null };
+}
+
+export interface HouseServingInput { observedAt: string; cutoff: string; packetRef: PacketRef }
+export interface HouseServingEnv { ARCHIVE: R2Bucket; COMMITTEE_DB: D1Database }
+
+export async function checkHousePacket(read: Read, env: HouseServingEnv, input: HouseServingInput) {
+  const ref = inventoryReference(input.packetRef);
+  const bytes = await readVerified(env.ARCHIVE, ref);
+  const packet = HousePacket.parse(JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes)));
+  requireMatch(packet.observedAt === input.observedAt, 'packet observation differs from publication');
+  const asOf = new Date(input.observedAt).toISOString();
+  const seal = () => env.COMMITTEE_DB.prepare("SELECT cutoff FROM cc_snapshot WHERE session='45-1'").first<string>('cutoff');
+  requireMatch(await seal() === input.cutoff, 'published cutoff has moved');
+  const out = [];
+  for (const language of ['en', 'fr'] as const) {
+    out.push(await checkHouseLanguage(read, env.COMMITTEE_DB, packet.calls.filter(row => row.language === language), language, asOf));
+  }
+
+  requireMatch(await seal() === input.cutoff, 'cutoff changed during product reads');
+  return { observedAt: input.observedAt, cutoff: input.cutoff, packetSha256: ref.sha256, languages: out };
 }

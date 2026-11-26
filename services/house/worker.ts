@@ -1,6 +1,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers';
 import type { HouseServingCheck } from '../daily-checks/house';
 import { inventoryReference, prefix, readHouseInventory } from './archive';
+import { housePublisherFailure, retainHouseFailure } from './failure';
 import { HouseBase, publishHouse, readHouseBase } from './publish';
 
 interface Params { scheduledTime: number }
@@ -29,15 +30,25 @@ export class HouseRefresh extends WorkflowEntrypoint<Env, Params> {
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
     const { instanceId, payload: { scheduledTime } } = event;
     if (!Number.isSafeInteger(scheduledTime) || scheduledTime <= 0 || instanceId !== `house-calls-${scheduledTime}`) throw new Error('Invalid House occurrence.');
-    const packetRef = await step.do('checkpoint and acquire committee originals', {
+    const acquired = await step.do('checkpoint and acquire committee originals', {
       retries: {limit:3,delay:'15 seconds',backoff:'exponential'}, timeout:'15 minutes',
     }, async () => {
       const { session, prior } = await baseForInstance(this.env, instanceId);
       const response = await this.env.COLLECTOR.fetch('https://collector.internal/collect', {method:'POST',
         headers:{'content-type':'application/json'}, body:JSON.stringify({instanceId,scheduledTime,session,prior})});
-      if (!response.ok) throw new Error(`House collector returned HTTP ${response.status}.`);
+      if (!response.ok) {
+        const refusal = await housePublisherFailure(response);
+        if (refusal) return refusal;
+        throw new Error(`House collector returned HTTP ${response.status}.`);
+      }
       return inventoryReference(await response.json());
     });
+    if ('code' in acquired) {
+      await step.do('retain required House publisher refusal', () =>
+        retainHouseFailure(this.env.ARCHIVE,instanceId,scheduledTime,acquired));
+      throw new Error(`Required House publisher returned HTTP ${acquired.status}: ${acquired.url}`);
+    }
+    const packetRef = acquired;
     const published = await step.do('verify originals and publish dated call changes', async () => {
       const base = await baseForInstance(this.env, instanceId);
       const packet = await readHouseInventory(this.env.ARCHIVE,packetRef,instanceId,scheduledTime);

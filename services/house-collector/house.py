@@ -112,6 +112,14 @@ class PublisherUnavailable(Exception):
         self.status = status
 
 
+class HousePublisherForbidden(RuntimeError):
+    """A required, identified House publisher request returned HTTP 403."""
+
+    def __init__(self, url):
+        super().__init__(f"Required House publisher returned HTTP 403: {url}")
+        self.url = url
+
+
 async def capture(store, fetch, instance, chamber, lang, url, clock):
     publisher_url(url, chamber)
     pin = f"{PREFIX}/observations/{instance}/pages/{sha256(url.encode()).hexdigest()}.json"
@@ -131,6 +139,8 @@ async def capture(store, fetch, instance, chamber, lang, url, clock):
                     raise PublisherUnavailable("Unrecognized Senate publisher page.", resolved, 200)
         except PublisherUnavailable as error:
             if chamber == "house":
+                if error.status == 403 and error.resolved_url == url:
+                    raise HousePublisherForbidden(url) from error
                 raise RuntimeError(f"Required House page unavailable: {url}: {error}") from error
             body = None
             ref.update(state="unavailable", error=str(error), listing="unreadable")

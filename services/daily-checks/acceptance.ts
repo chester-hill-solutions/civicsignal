@@ -129,7 +129,7 @@ async function checkProgram(read: Read, bucket: Archive, { instance, source, id,
   return { source, instance, id, editionRevision: revision, catalogue: coverage.revision, sections: content.sections.length };
 }
 
-export async function checkRecommendations(read: Read, bucket: Archive, params: Inputs, language: Language) {
+export async function checkFinanceBrief(read: Read, language: Language) {
   const french = language === 'fr';
   const brief = 'house-fina-submission-' + (french ? '29cd8309b3885e7f4b96e874' : '559b791939da59abd8bd6d51');
   for (const query of french ? ['100 millions artificielle appliquée', 'attente apprentis capacité'] : ['100M/year applied AI', 'apprentice waitlists']) {
@@ -137,9 +137,20 @@ export async function checkRecommendations(read: Read, bucket: Archive, params: 
       { query, session: '45-1', committeeId: 'house-fina', studyId: brief, language, kind: 'brief', limit: '10' }));
     assert(page.items.some(row => row.citation.id === brief && row.citation.language === language && row.citation.url.includes('/BR14118467/')), 'Missing Finance Committee brief citation.');
   }
-  const grant = await checkProgram(read, bucket, { instance: params.nserc, source: 'nserc', id: 'nserc-applied-research-and-development-grants',
-    language, query: french ? 'recherche et développement appliquée' : 'Applied Research and Development' });
-  const apprenticeship = await checkProgram(read, bucket, { instance: params.esdc, source: 'esdc', id: 'esdc-utip-infrastructure-expansion',
-    language, query: french ? 'expansion des infrastructures' : 'infrastructure expansion' });
+  return brief;
+}
+
+export function checkFundingProgram(read: Read, bucket: Archive, source: FundingSource, instance: string, language: Language) {
+  const french = language === 'fr';
+  const [id, query] = source === 'nserc'
+    ? ['nserc-applied-research-and-development-grants', french ? 'recherche et développement appliquée' : 'Applied Research and Development']
+    : ['esdc-utip-infrastructure-expansion', french ? 'expansion des infrastructures' : 'infrastructure expansion'];
+  return checkProgram(read, bucket, { source, instance: Inputs.shape[source].parse(instance), id, language, query });
+}
+
+export async function checkRecommendations(read: Read, bucket: Archive, params: Inputs, language: Language) {
+  const brief = await checkFinanceBrief(read, language);
+  const grant = await checkFundingProgram(read, bucket, 'nserc', params.nserc, language);
+  const apprenticeship = await checkFundingProgram(read, bucket, 'esdc', params.esdc, language);
   return { language, brief, grant, apprenticeship };
 }
