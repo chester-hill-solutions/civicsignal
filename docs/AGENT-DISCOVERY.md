@@ -2,7 +2,9 @@
 
 Give an agent the API base URL. It can read `/.well-known/civicsignal.json` for the machine-readable contract or `/llms.txt` for the same sources and research questions in plain text. Both are anonymous GETs and consume zero workspace units. The API landing page links to both. The dedicated homepage forwards these two paths to the public API.
 
-This contract describes the `1.0.0-rc` Worker in this checkout. On November 26 the public API served version `0.1.0`, which predates `sources` and `researchQuestions`. Its discovery files responded. The landing page, collection OpenAPI URLs and documentation links advertised by its `/llms.txt` returned HTTP 404. Use the manifest from the hostname you are calling and check its `version` before relying on the fields below. [Public deployment check](evidence/2026-11-26/api-docs-verification.json)
+This contract describes the `1.0.0-rc` Worker in this checkout. On November 26 the public API served version `0.1.0`, which predates `sources` and `researchQuestions`. Its discovery files and both Markdown guides are available. The landing page, collection OpenAPI URLs, interactive reference and licence guide returned HTTP 404 in the same verification. Check the manifest version on the hostname you are calling before relying on the fields below. [Agent guide](https://api.civicsignal.chesterhillsolutions.ca/docs/agents.md) · [Authentication guide](https://api.civicsignal.chesterhillsolutions.ca/auth.md) · [Public deployment evidence](evidence/2026-11-26/api-docs-verification.json)
+
+The public `0.1.0` hostname serves those two guide paths through the scoped Markdown Worker. The release candidate also serves the guides directly. Both use the same source and link to the live discovery manifest for deployment-specific capabilities and pricing. [Guide Worker](../services/api-guides/wrangler.jsonc)
 
 ## Which sources can I query?
 

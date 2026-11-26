@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import worker from '../src/index';
 import homepage from '../services/home/worker';
+import apiGuides from '../services/api-guides/worker';
 import type { Env } from '../src/types';
 
 function request(path: string, method = 'GET', env: Env = {}) {
@@ -24,6 +25,24 @@ const previews: { path: string; config: Env; bindings?: Env }[] = [
 ];
 
 describe('public agent landing page', () => {
+  it.each([
+    ['/auth.md', 'Authorization: Bearer'],
+    ['/docs/agents.md', 'Streamable HTTP'],
+  ])('serves the advertised guide %s anonymously on both deployments', async (path, expected) => {
+    const url = new URL(path, 'https://civicsignal.test');
+    for (const response of [await request(path), apiGuides.fetch(new Request(url))]) {
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toContain('text/markdown');
+      const text = await response.text();
+      expect(text).toContain(expected);
+      expect(text).toContain(new URL('/.well-known/civicsignal.json', url).href);
+    }
+    expect(apiGuides.fetch(new Request(url, { method: 'POST' })).status).toBe(405);
+    expect(await apiGuides.fetch(new Request(url, { method: 'HEAD' })).text()).toBe('');
+    const llms = await request('/llms.txt');
+    expect(await llms.text()).toContain(url.href);
+  });
+
   it('serves the quickstart without credentials or database bindings', async () => {
     const response = await request('/');
     expect(response.status).toBe(200);

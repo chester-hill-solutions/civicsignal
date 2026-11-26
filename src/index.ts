@@ -7,6 +7,7 @@ import { emitCorpusItem, parseCitation } from '@chester-hill-solutions/corpus';
 import { policyFor } from './corpora/policies';
 import { capabilitiesResponse, deploymentCapabilities, llmsTxt } from './routes/capabilities';
 import { agentLandingResponse } from './routes/agent-landing';
+import { AGENT_GUIDE, AUTH_GUIDE, agentGuide } from './routes/agent-guides';
 import { createCivicSignalMcpHandler } from './mcp/server';
 import { corsHeaders, errorResponse, jsonResponse, newCorrelationId, readJsonBody, RequestInputError } from './http';
 import type { Env } from './types';
@@ -68,7 +69,7 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(env, origin, correlationId) });
     }
     try {
-      if (['/', '/health', '/.well-known/civicsignal.json', '/llms.txt', HANSARD_OPENAPI_PATH, GAZETTE_OPENAPI_PATH, BILL_OPENAPI_PATH, COMMITTEE_OPENAPI_PATH, FUNDING_OPENAPI_PATH, CONSULTATIONS_OPENAPI_PATH, DEPARTMENTAL_OPENAPI_PATH, PARLIAMENT_OPENAPI_PATH, GEDS_OPENAPI_PATH, WRITTEN_QUESTIONS_OPENAPI_PATH].includes(url.pathname)) {
+      if (['/', '/health', '/.well-known/civicsignal.json', '/llms.txt', AGENT_GUIDE, AUTH_GUIDE, HANSARD_OPENAPI_PATH, GAZETTE_OPENAPI_PATH, BILL_OPENAPI_PATH, COMMITTEE_OPENAPI_PATH, FUNDING_OPENAPI_PATH, CONSULTATIONS_OPENAPI_PATH, DEPARTMENTAL_OPENAPI_PATH, PARLIAMENT_OPENAPI_PATH, GEDS_OPENAPI_PATH, WRITTEN_QUESTIONS_OPENAPI_PATH].includes(url.pathname)) {
         requireMethod(request, 'GET');
         return publicGet(url, env, origin, correlationId);
       }
@@ -189,6 +190,11 @@ async function publicGet(url: URL, env: Env, origin: string | null, correlationI
     case '/': return agentLandingResponse(correlationId, await deploymentCapabilities(env, url.origin));
     case '/health': return jsonResponse({ ok: true, product: env.PRODUCT_NAME ?? 'CivicSignal' }, env, origin, correlationId);
     case '/.well-known/civicsignal.json': return capabilitiesResponse(env, url.origin, correlationId);
+    case AGENT_GUIDE:
+    case AUTH_GUIDE:
+      return new Response(agentGuide(url.pathname, url.origin), {
+        headers: { 'content-type': 'text/markdown; charset=UTF-8', ...corsHeaders(env, origin, correlationId) },
+      });
     case GEDS_OPENAPI_PATH: return jsonResponse(buildGedsOpenApi(url.origin, env.PRODUCT_NAME), env, origin, correlationId);
     case FUNDING_OPENAPI_PATH: return jsonResponse(fundingOpenApi(), env, origin, correlationId);
     case DEPARTMENTAL_OPENAPI_PATH: return jsonResponse(departmentalOpenApi(), env, origin, correlationId);

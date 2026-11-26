@@ -1,0 +1,13 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-api-guides",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "main": "worker.ts",
+  "compatibility_date": "2026-11-26",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "https://api.civicsignal.chesterhillsolutions.ca/auth.md", "zone_name": "chesterhillsolutions.ca" },
+    { "pattern": "https://api.civicsignal.chesterhillsolutions.ca/docs/agents.md", "zone_name": "chesterhillsolutions.ca" }
+  ]
+}

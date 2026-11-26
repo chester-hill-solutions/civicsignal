@@ -121,5 +121,32 @@
     "anonymousValidOpenApi31Routes": 10,
     "selectedContractTestsPassed": 25,
     "authenticatedEcccQueriesAgainstAcquiredSqlitePassed": true
+  },
+  "publicGuideRepair": {
+    "observedAt": "2026-11-26T22:58:51.931296+00:00",
+    "worker": "civicsignal-api-guides",
+    "workerVersion": "66984359-9a14-440b-88ea-f619fa76b5f4",
+    "discoveryVersion": "0.1.0",
+    "deployedPaths": [
+      {
+        "path": "/auth.md",
+        "before": 404,
+        "after": 200,
+        "contentType": "text/markdown; charset=UTF-8",
+        "sha256": "90daad71804933ed1fd5b0fec14d53b064805b11786fc3184d41226bbca330f3"
+      },
+      {
+        "path": "/docs/agents.md",
+        "before": 404,
+        "after": 200,
+        "contentType": "text/markdown; charset=UTF-8",
+        "sha256": "6b604f80d592cf7042f1093dee9c374ece756efae6b43609ab52f011dbf8d771"
+      }
+    ],
+    "anonymousBrief": {
+      "status": 401,
+      "code": "KEY_REQUIRED"
+    },
+    "targetedTestsPassed": 27
   }
 }

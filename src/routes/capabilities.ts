@@ -6,6 +6,7 @@ import { corsHeaders } from '../http';
 import type { Env } from '../types';
 import { discoveryContext, discoverSources, statuteSource, type DiscoverySource } from './discovery-sources';
 import { apprenticeshipQuestions, type ResearchQuestion } from './discovery-questions';
+import { AGENT_GUIDE, AUTH_GUIDE } from './agent-guides';
 
 export interface Capabilities {
   sources: DiscoverySource[];
@@ -138,6 +139,7 @@ function sourceInstructions(source: DiscoverySource): string {
 export function llmsTxt(caps: Capabilities): string {
   return [`# ${caps.product}`, '',
     `Start with [live capabilities](${caps.baseUrl}/.well-known/civicsignal.json). Resolve request paths on this API origin.`,
+    `[Agent guide](${caps.baseUrl}${AGENT_GUIDE}) and [authentication](${caps.baseUrl}${AUTH_GUIDE}).`,
     'Use only available editions. Dates describe the stored records. Recheck the official source for later changes.',
     'Discovery is public and free. Retrieval requires Authorization: Bearer <workspace API key> with civicsignal.retrieve.',
     caps.pricing.note, '', '## Sources', ...caps.sources.map(sourceInstructions), '', '## Research questions',
