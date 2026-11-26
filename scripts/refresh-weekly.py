@@ -277,14 +277,6 @@ STEPS = (
          "Match published records to the statutory institution roster using the latest acquired source files.",
          artifacts=("dist/refresh-weekly/federal-institutions.json",)),
     Step(
-        "service-inventory",
-        (("python3", "-B", "scripts/federal-bulk.py", "refresh", "service-inventory"),),
-        60 * 60,
-        "Refresh the federal service inventory disclosure from its registered source.",
-        0,
-        baseline_paths=("data/corpus/federal-bulk",),
-    ),
-    Step(
         "ati-summaries",
         (("python3", "-B", "scripts/federal-bulk.py", "refresh", "ati-summaries"),),
         60 * 60,
@@ -313,7 +305,7 @@ STEPS = (
 )
 
 RUN_ORDER = (
-    "federal-discovery", "federal-guidance", "consultation-notices", "federal-disclosures", "service-inventory", "ati-summaries", "grant-awards",
+    "federal-discovery", "federal-guidance", "consultation-notices", "federal-disclosures", "ati-summaries", "grant-awards",
     "eccc", "gazette", "gazette-year", "briefing-notes", "federal-report-directories", "departmental-report-editions",
     "departmental-report-documents", "departmental-report-html", "federal-regulatory-plans", "federal-publications",
     "federal-publication-checklists", "federal-policy-editions",

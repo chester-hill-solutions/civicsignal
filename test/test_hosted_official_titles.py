@@ -6,6 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from lib import hosted_official_titles as titles
+from lib.hosted_federal_bulk import DISCOVERY
 
 
 class HostedOfficialTitlesTests(unittest.TestCase):
@@ -14,7 +15,7 @@ class HostedOfficialTitlesTests(unittest.TestCase):
         self.id = 'aaaaaaaa-aaaa-4abc-babc-aaaaaaaaaaaa'
         url = f'https://open.canada.ca/data/dataset/{titles.DATASET}/resource/{self.id}/download/names.csv'
         instance = 'federal-discovery-1'
-        parent = f'{titles.DISCOVERY}/runs/{instance}.json'
+        parent = f'{DISCOVERY}/runs/{instance}.json'
         key = f'{titles.PREFIX}/runs/{instance}.json'
         pointer = dict(instanceId=instance, scheduledTime=1, receiptKey=key, status='complete')
         self.objects[titles.PREFIX + '/latest-complete.json'] = self.encode(pointer)
@@ -23,7 +24,7 @@ class HostedOfficialTitlesTests(unittest.TestCase):
         endpoint = {'series': 'official-titles', 'endpoint': 'entry_url', 'ok': True,
                     'url': 'https://open.canada.ca/data/api/action/package_show?id=' + titles.DATASET,
                     'inventory': {'kind': 'dataset-resources', 'resources': [{'format': 'CSV', 'url': url, 'id': self.id}]}}
-        packet = self.object(titles.DISCOVERY + '/inventories', 'json', self.encode(dict(schemaVersion=1, scheduledTime=1, endpoints=[endpoint])))
+        packet = self.object(DISCOVERY + '/inventories', 'json', self.encode(dict(schemaVersion=1, scheduledTime=1, endpoints=[endpoint])))
         parent_body = self.encode(dict(schemaVersion=1, **{**pointer, 'status': 'partial', 'receiptKey': parent}, packetRef=packet))
         discovery = self.ref(parent, parent_body)
         self.fields = ['Legal title', 'Appellation légale', 'Applied title', "Titre d'usage"]
@@ -60,7 +61,7 @@ class HostedOfficialTitlesTests(unittest.TestCase):
     def test_refuses_corrupt_source_even_if_normalized_object_is_readable(self):
         key = self.receipt['source']['key']
         self.objects[key] = self.objects[key].upper()
-        with self.assertRaisesRegex(ValueError, 'Invalid hosted titles object'):
+        with self.assertRaisesRegex(ValueError, 'Invalid hosted bulk object'):
             titles.read_complete_titles(self.objects.__getitem__)
 
     def test_refuses_rehashed_records_with_changed_publisher_text(self):

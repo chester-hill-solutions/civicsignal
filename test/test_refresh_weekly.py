@@ -20,9 +20,10 @@ SPEC.loader.exec_module(weekly)
 class WeeklyRefreshTests(unittest.TestCase):
     def test_catalog_has_expected_weekly_collections(self):
         self.assertEqual({step.name for step in weekly.STEPS}, set(weekly.RUN_ORDER))
-        self.assertNotIn("official-titles", weekly.RUN_ORDER)
+        retired = {"official-titles", "service-inventory"}
+        self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
-        self.assertFalse(any("official-titles" in command for command in commands))
+        self.assertTrue(all(retired.isdisjoint(command) for command in commands))
         self.assertEqual(weekly.RUN_ORDER[0], "federal-discovery")
         self.assertEqual(weekly.RUN_ORDER[1], "federal-guidance")
         guidance = next(step for step in weekly.STEPS if step.name == "federal-guidance")

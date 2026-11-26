@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 from lib.parliament_intake import save_atomic
 from lib.federal_guidance import IRCC_LANDING
 from lib.hosted_official_titles import read_complete_titles
+from lib.hosted_service_inventory import read_complete_service_inventory
 
 
 ROSTER = Path("docs/evidence/2026-11-23")
@@ -774,15 +775,21 @@ def coverage(include_acquisitions=False):
         register_published_titles(row, aliases)
         count(titles_id, [row["Legal title"], row["Appellation légale"]])
 
+    def count_bulk_resource(key, source, records):
+        provenance[key] = source
+        for row in records:
+            title = row.get("owner_org_title")
+            names = [v.strip() for v in title.split("|")] if title else [row.get("department_name_en", ""), row.get("department_name_fr", "")]
+            count(key, names)
+
+    for key, source, records in read_complete_service_inventory():
+        count_bulk_resource(key, source, records)
+
     with closing(sqlite3.connect((BULK / "publications.sqlite").resolve().as_uri() + "?mode=ro", uri=True)) as db:
-        for series in ("service-inventory", "ati-summaries", "grant-awards"):
+        for series in ("ati-summaries", "grant-awards"):
             for resource in resources(db, series):
-                key = resource["id"]
-                provenance[key] = {"series": series, "url": resource["url"], "sha256": resource["sha256"]}
-                for r in rows(resource):
-                    title = r.get("owner_org_title")
-                    names = [v.strip() for v in title.split("|")] if title else [r.get("department_name_en", ""), r.get("department_name_fr", "")]
-                    count(key, names)
+                source = {"series": series, "url": resource["url"], "sha256": resource["sha256"]}
+                count_bulk_resource(resource["id"], source, rows(resource))
 
     receipt = json.loads(Path("dist/briefing-notes/receipt.json").read_text())
     for kind in ("main", "nil"):

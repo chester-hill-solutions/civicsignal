@@ -1,0 +1,190 @@
+{
+  "verifiedAt": "2026-11-26T17:45:31.448597+00:00",
+  "instanceId": "federal-discovery-1795714524000",
+  "receiptSha256": "bcdeca493e9276cd5a9189172ed8f2869d69de25b34e43e398313a38010b4f4c",
+  "discoverySha256": "1d62cd89ea584e17a3920df752faebe9696f7b65cace58daf4c29031e9b24051",
+  "packetSha256": "709aaec18bd88a1f580fe386a34408b39371ca5de4666ccd4f64603db45bb9ca",
+  "coverageBefore": {
+    "matched": 26722,
+    "unresolved": 683,
+    "sources": 33,
+    "rosterEntries": 110,
+    "names": 109,
+    "namesWithRecords": 99,
+    "matchedAcrossAll": 1868856,
+    "unresolvedAcrossAll": 291354
+  },
+  "coverageAfter": {
+    "matched": 26812,
+    "unresolved": 683,
+    "sources": 33,
+    "rosterEntries": 110,
+    "names": 109,
+    "namesWithRecords": 99,
+    "matchedAcrossAll": 1868946,
+    "unresolvedAcrossAll": 291354
+  },
+  "resources": [
+    {
+      "resourceId": "272143a7-533e-42a1-b72d-622116474a21",
+      "columns": 26,
+      "orderedHeadersSha256": "78ff52e21ed7fe8524441f4565986d6f08415861a693dfd70b484d0cdd338f68",
+      "bytes": 8852383,
+      "sha256": "e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968",
+      "localArchiveSha256": "e52e1563354c477e973f590ba59e08205a6b61e81c0d72416a2d966a70a7a968",
+      "localRows": 10432,
+      "hostedRows": 10432,
+      "rowDelta": 0,
+      "localAttribution": {
+        "matched": 10176,
+        "unresolved": 256
+      },
+      "hostedAttribution": {
+        "matched": 10176,
+        "unresolved": 256
+      },
+      "checkpointKey": "weekly/service-inventory/checkpoints/1795714524000/272143a7-533e-42a1-b72d-622116474a21.json",
+      "checkpointSha256": "5dcb11ede182a01a076805621e8f9451860de9c31c9c741f845148cc7925752e"
+    },
+    {
+      "resourceId": "3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a",
+      "columns": 46,
+      "orderedHeadersSha256": "2908331fda8cda377057e10876da8e1c60ce4c3407bf99f8b30e8d85358781c2",
+      "bytes": 14004927,
+      "sha256": "b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095",
+      "localArchiveSha256": "b1d00a9a16d34b8cb2f4e0bee11bacff4198fe7e84de6ad5c8208fa5a3338095",
+      "localRows": 7254,
+      "hostedRows": 7254,
+      "rowDelta": 0,
+      "localAttribution": {
+        "matched": 7042,
+        "unresolved": 212
+      },
+      "hostedAttribution": {
+        "matched": 7042,
+        "unresolved": 212
+      },
+      "checkpointKey": "weekly/service-inventory/checkpoints/1795714524000/3acf79c0-a5f5-4d9a-a30d-fb5ceba4b60a.json",
+      "checkpointSha256": "811319fbb06850f73d84d5c8d3d59d8ba8230d3d93439e9fc9f9ac8ab52775f8"
+    },
+    {
+      "resourceId": "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e",
+      "columns": 24,
+      "orderedHeadersSha256": "a374f7f97865c1d985e63074fa46a367d0afb49c93d35f095c1e1e2b4f331094",
+      "bytes": 5346266,
+      "sha256": "4f9d2d85854d3f05291654f07a0fa6ee6d0269787bbbda4e407de0212ea7a04e",
+      "localArchiveSha256": "8cc11de1d3cc7c22f38e8bae51e4d76e24c7343c45a1d6260524f71d3c8da443",
+      "localRows": 5773,
+      "hostedRows": 5826,
+      "rowDelta": 53,
+      "localAttribution": {
+        "matched": 5664,
+        "unresolved": 109
+      },
+      "hostedAttribution": {
+        "matched": 5717,
+        "unresolved": 109
+      },
+      "checkpointKey": "weekly/service-inventory/checkpoints/1795714524000/8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e.json",
+      "checkpointSha256": "6e2987787a5b0eb03a01b5d650b7db2f2752eb0c77b45191f5dd8ce1d273e8ae"
+    },
+    {
+      "resourceId": "c0cf9766-b85b-48c3-b295-34f72305aaf6",
+      "columns": 46,
+      "orderedHeadersSha256": "0f687e7b1a71646ae7b860d6b87e73584bffb695fb63fba3cff661fda1e2b016",
+      "bytes": 7450930,
+      "sha256": "7fcd61201397624120055fcffe9c8ead8195ea04fff95193604cc61c03ef749a",
+      "localArchiveSha256": "da55183b14339e29166fe5534b42061bb342294720bf299db56e933f925d86fd",
+      "localRows": 3946,
+      "hostedRows": 3983,
+      "rowDelta": 37,
+      "localAttribution": {
+        "matched": 3840,
+        "unresolved": 106
+      },
+      "hostedAttribution": {
+        "matched": 3877,
+        "unresolved": 106
+      },
+      "checkpointKey": "weekly/service-inventory/checkpoints/1795714524000/c0cf9766-b85b-48c3-b295-34f72305aaf6.json",
+      "checkpointSha256": "663ce5b5859f20c77422b67482e953c2b8189248667946c8bcf9adc3794860b7"
+    }
+  ],
+  "matchedInstitutionChanges": [
+    {
+      "schedule": "I",
+      "legalNameEn": "Department of the Environment",
+      "serviceCountChanges": {
+        "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e": 1,
+        "c0cf9766-b85b-48c3-b295-34f72305aaf6": 1
+      }
+    },
+    {
+      "schedule": "IV",
+      "legalNameEn": "Office of the Director of Public Prosecutions",
+      "serviceCountChanges": {
+        "c0cf9766-b85b-48c3-b295-34f72305aaf6": 3
+      }
+    },
+    {
+      "schedule": "IV",
+      "legalNameEn": "Pacific Economic Development Agency of Canada",
+      "serviceCountChanges": {
+        "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e": 5,
+        "c0cf9766-b85b-48c3-b295-34f72305aaf6": 3
+      }
+    },
+    {
+      "schedule": "IV",
+      "legalNameEn": "Statistics Canada",
+      "serviceCountChanges": {
+        "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e": 37,
+        "c0cf9766-b85b-48c3-b295-34f72305aaf6": 23
+      }
+    },
+    {
+      "schedule": "V",
+      "legalNameEn": "Canadian Nuclear Safety Commission",
+      "serviceCountChanges": {
+        "8736cd7e-9bf9-4a45-9eee-a6cb3c43c07e": 10,
+        "c0cf9766-b85b-48c3-b295-34f72305aaf6": 7
+      }
+    }
+  ],
+  "unaffectedReportSha256": "94d5bb0c4150437f6c036e4f6245d6d67924c595b466b1a278ab8d718f192478",
+  "completeReportFiles": {
+    "localServiceInputSha256": "410c56829b7952f17e0899f95e072fa84bc3cb0bfd38c4423f3463f1d5c8b09e",
+    "hostedServiceInputSha256": "addbb16055ae7fe701ebd6424325e32ccb21861a792e03f06e4ae0c4f85d032d"
+  },
+  "unchangedFields": "Full reports identical after excluding the four service entries from source provenance, source totals, unresolved labels and within-institution counts, plus their registered series summary. This comparison retains families, roster, institutional identities, and all other sources.",
+  "weekly": {
+    "localSteps": 27,
+    "noLocalServiceOrTitlesCsvPublishes": true,
+    "launchAgent": "com.civicsignal.refresh-weekly",
+    "loadedProgramMatchesCheckout": true,
+    "installedCalendar": {
+      "Hour": 9,
+      "Minute": 0,
+      "Weekday": 6
+    },
+    "executableFoundInInstalledPath": true,
+    "installedOperatorRun": {
+      "ok": true,
+      "durationMs": 206251,
+      "report": "dist/refresh-weekly/2026-11-26T17-47-39.772135Z.json",
+      "reportSha256": "caddaa62d4c318322217157ccec8d3c64f4957898a8c626fd335f813b11a76cd",
+      "publishedCoverage": "dist/refresh-weekly/federal-institutions.json",
+      "publishedCoverageSha256": "addbb16055ae7fe701ebd6424325e32ccb21861a792e03f06e4ae0c4f85d032d"
+    }
+  },
+  "tests": 42,
+  "localValidation": {
+    "vitestPassed": 2753,
+    "vitestSkipped": 23,
+    "pythonUnittestPassed": 377,
+    "protectedOwnerPassed": 31,
+    "parliamentVotesPassed": 8,
+    "writtenQuestionsCataloguePassed": 13,
+    "workerDryRunsPassed": 17
+  }
+}
