@@ -72,6 +72,26 @@ bunx wrangler r2 object get "civicsignal-stage-funding/funding/esdc/runs/esdc-$e
 
 If acquisition stops before publication, inspect the failing URL in the collector log and the saved page references under `funding/esdc/observations/<observedAt>/pages/`. Restart the same Workflow instance to continue that observation. The collector's `esdc-acquisition-complete` log records how many URLs it fetched and how many it recovered from checkpoints, including confirmed missing pages. The Workflow checks archived originals and terminal HTTP evidence before committing the catalogue to D1.
 
+## Cloudflare House committee calls staging
+
+The private House Workflow refreshes session 45-1 daily at **00:15 UTC**. This is 19:15 the preceding day in Toronto during standard time and 20:15 during daylight time. It captures the two official participation indexes, their linked study pages and eight Senate coverage probes. The Workflow retains each original and its request timestamp in R2. The publication transaction applies the dated call and study-link changes to the sealed committee database. The last full corpus cutoff still identifies the base corpus. The authenticated product check confirms the served English and French calls, linked studies and related counts. [Workflow configuration](../services/house/wrangler.jsonc) · [Collector configuration](../services/house-collector/wrangler.jsonc)
+
+Each occurrence uses an instance ID of the form `house-calls-<scheduledTime>`, with the UTC event timestamp in Unix milliseconds. To inspect an occurrence and read its completion receipt, select the staging account and use its instance ID.
+
+```sh
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+cf workflows instances get "$house_instance" --workflow-name civicsignal-stage-house --simple true
+cf r2 objects get "committee/house-calls/runs/$house_instance.json" --bucket-name civicsignal-stage-funding
+```
+
+If acquisition stops before publication, restart the same incomplete instance to reuse verified originals and request timestamps. Use the dated receipt when investigating a completed occurrence. A new calendar occurrence makes fresh publisher requests. The Cloudflare Workflow status names the failed step. The completion receipt records the R2 inventory digest, committed call counts, both language checks, and product usage. If a Senate probe is unreadable, its checkpoint records that outcome. A missing House page fails acquisition.
+
+For the latest completed D1 observation, compare all hosted call rows with a replay through the local intake operator using the hosted originals and the prepublication snapshot. The command writes its replay database to a temporary directory.
+
+```sh
+python3 -B scripts/verify-house-staging.py "$house_instance"
+```
+
 ## Private daily product checks
 
 The private Workflow calls the product Worker with a retrieval-only key for the staging workspace. It verifies consultation search and history, House calls and study links, and the English and French paths from the Finance Committee brief to NSERC and ESDC program terms. It also checks public discovery, unauthenticated rejection and the exact change in the workspace's usage count. Run one verification at a time to keep the usage comparison attributable to that run. [Worker configuration](../services/daily-checks/wrangler.jsonc)

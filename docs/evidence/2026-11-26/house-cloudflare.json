@@ -1,0 +1,782 @@
+{
+  "scope": "Private Cloudflare staging, House of Commons calls for briefs, session 45-1, and eight Senate source probes.",
+  "calendar": {
+    "timeZone": "UTC",
+    "cron": "15 0 * * *",
+    "scheduledWorkerVersion": "c805c9fe-11da-42eb-acbc-266fe5171aec",
+    "nativeInstance": "house-calls-1795652141644"
+  },
+  "deployedWorkers": [
+    {
+      "name": "civicsignal-stage-house",
+      "workersDev": false,
+      "previewUrls": false,
+      "routes": [],
+      "crons": [
+        "15 0 * * *"
+      ],
+      "modules": {
+        "worker.js": {
+          "bytes": 814111,
+          "sha256": "a4b27fd98690509b93f878584c348c0d7c0b80564b22146a9c1b853d341e87a2"
+        }
+      },
+      "version": "c805c9fe-11da-42eb-acbc-266fe5171aec",
+      "D1": {
+        "DB": "fb9b6314-4b06-4690-a893-7277a8ea00bb"
+      },
+      "R2": {
+        "ARCHIVE": "civicsignal-stage-funding"
+      },
+      "services": [
+        {
+          "binding": "COLLECTOR",
+          "service": "civicsignal-stage-house-collector"
+        },
+        {
+          "binding": "HOUSE_SERVING",
+          "service": "civicsignal-stage-daily-checks",
+          "entrypoint": "HouseServingCheck"
+        }
+      ],
+      "limits": {
+        "cpu_ms": 300000,
+        "subrequests": 10000
+      },
+      "compatibilityDate": "2026-10-22",
+      "workflows": [
+        {
+          "binding": "REFRESH",
+          "name": "civicsignal-stage-house",
+          "class_name": "HouseRefresh"
+        }
+      ]
+    },
+    {
+      "name": "civicsignal-stage-daily-checks",
+      "workersDev": false,
+      "previewUrls": false,
+      "routes": [],
+      "crons": [],
+      "modules": {
+        "worker.js": {
+          "bytes": 2088355,
+          "sha256": "3cd8df2a61c922ef12e39ccce04025c6c5b6349778e2ce41b9c9433532ee27aa"
+        }
+      },
+      "version": "f4e3bc5d-47b6-4fc3-bf94-5a2d9cdd73c8",
+      "D1": {
+        "AUTH_DB": "5802b38c-56b8-45bf-b807-e8203495ddba",
+        "COMMITTEE_DB": "fb9b6314-4b06-4690-a893-7277a8ea00bb",
+        "CONSULTATIONS_DB": "ef80296e-8122-43e9-a8bc-c5e60941bd08",
+        "FUNDING_DB": "0d4ddb86-5b28-44b5-b34d-7aa249ada551"
+      },
+      "R2": {
+        "ARCHIVE": "civicsignal-stage-funding",
+        "CONSULTATION_ARCHIVE": "civicsignal-stage-consultations"
+      },
+      "services": [
+        {
+          "binding": "PRODUCT",
+          "service": "civicsignal-stage-daily-checks"
+        }
+      ],
+      "limits": {
+        "cpu_ms": 300000,
+        "subrequests": 10000
+      },
+      "compatibilityDate": "2026-10-22",
+      "workflows": [
+        {
+          "binding": "CHECKS",
+          "name": "civicsignal-stage-daily-checks",
+          "class_name": "DailyServingChecks"
+        }
+      ]
+    },
+    {
+      "name": "civicsignal-stage-house-collector",
+      "workersDev": false,
+      "previewUrls": false,
+      "routes": [],
+      "crons": [],
+      "modules": {
+        "entry.py": {
+          "bytes": 5716,
+          "sha256": "11c185c5c1505c4ab10f1f4623be6bfab54aa5539d8d140f9fafce632326d179"
+        },
+        "house.py": {
+          "bytes": 12938,
+          "sha256": "cfd600e2e1648ca2125de31af4ad17fd69b3630436e9a02e1b79e59fc72e6900"
+        },
+        "committee_calls.py": {
+          "bytes": 18334,
+          "sha256": "1252dcd6931b020362bcd4a8c6d0f1a9270bc6dbd179b4b5f0d21aa1aafe8ba2"
+        }
+      },
+      "version": "c7d47686-f404-4123-b1ac-0b0672a15509",
+      "D1": {},
+      "R2": {
+        "ARCHIVE": "civicsignal-stage-funding"
+      },
+      "services": [],
+      "limits": {
+        "cpu_ms": 300000,
+        "subrequests": 10000
+      },
+      "compatibilityDate": "2026-10-22"
+    }
+  ],
+  "moduleReadback": "Locally built Worker modules and Python source compared byte-for-byte with independent Wrangler init --from-dash downloads.",
+  "committeeOverlay": {
+    "database": "fb9b6314-4b06-4690-a893-7277a8ea00bb",
+    "migrationTable": "cc_house_migrations",
+    "migration": "0001_call_observations.sql",
+    "initialRuns": 0,
+    "initialGuards": 0,
+    "baseCutoff": "2026-11-25T08:33:25+00:00"
+  },
+  "manualBeforeNative": {
+    "instance": "house-calls-1795650869560",
+    "triggerSource": "api",
+    "workflowVersion": "0948decf-59d2-4d93-af6d-e5d4958810ca",
+    "scheduledTime": 1795650869560,
+    "scheduledTimeUtc": "2026-11-25T23:54:29.560Z",
+    "queuedAt": "2026-11-25T23:54:31.743Z",
+    "startedAt": "2026-11-25T23:54:35.067Z",
+    "finishedAt": "2026-11-25T23:56:22.485Z",
+    "status": "errored",
+    "steps": [
+      {
+        "name": "checkpoint and acquire committee originals-1",
+        "startedAt": "2026-11-25T23:54:35.377Z",
+        "finishedAt": "2026-11-25T23:56:22.461Z",
+        "attempts": [
+          {
+            "startedAt": "2026-11-25T23:54:35.377Z",
+            "finishedAt": "2026-11-25T23:54:36.627Z",
+            "success": false,
+            "error": {
+              "name": "Error",
+              "message": "RuntimeError: Required House page unavailable: https://www.ourcommons.ca/Committees/en/Participate: Publisher returned HTTP 403."
+            }
+          },
+          {
+            "startedAt": "2026-11-25T23:54:51.627Z",
+            "finishedAt": "2026-11-25T23:54:51.893Z",
+            "success": false,
+            "error": {
+              "name": "Error",
+              "message": "RuntimeError: Required House page unavailable: https://www.ourcommons.ca/Committees/en/Participate: Publisher returned HTTP 403."
+            }
+          },
+          {
+            "startedAt": "2026-11-25T23:55:21.893Z",
+            "finishedAt": "2026-11-25T23:55:22.182Z",
+            "success": false,
+            "error": {
+              "name": "Error",
+              "message": "RuntimeError: Required House page unavailable: https://www.ourcommons.ca/Committees/en/Participate: Publisher returned HTTP 403."
+            }
+          },
+          {
+            "startedAt": "2026-11-25T23:56:22.182Z",
+            "finishedAt": "2026-11-25T23:56:22.461Z",
+            "success": false,
+            "error": {
+              "name": "Error",
+              "message": "RuntimeError: Required House page unavailable: https://www.ourcommons.ca/Committees/en/Participate: Publisher returned HTTP 403."
+            }
+          }
+        ]
+      }
+    ],
+    "pageCheckpoints": 0,
+    "completionReceipts": 0,
+    "ledgerRows": 0,
+    "recoveryExperiment": "Acquisition failed before three page checkpoints were available. The controlled termination and restart therefore did not run."
+  },
+  "native": {
+    "instance": "house-calls-1795652141644",
+    "triggerSource": "binding",
+    "workflowVersion": "0948decf-59d2-4d93-af6d-e5d4958810ca",
+    "scheduledTime": 1795652141644,
+    "scheduledTimeUtc": "2026-11-26T00:15:41.644Z",
+    "queuedAt": "2026-11-26T00:15:44.020Z",
+    "startedAt": "2026-11-26T00:15:47.394Z",
+    "finishedAt": "2026-11-26T00:17:14.608Z",
+    "status": "complete",
+    "steps": [
+      {
+        "name": "checkpoint and acquire committee originals-1",
+        "startedAt": "2026-11-26T00:15:47.648Z",
+        "finishedAt": "2026-11-26T00:16:45.216Z",
+        "attempts": [
+          {
+            "startedAt": "2026-11-26T00:15:47.648Z",
+            "finishedAt": "2026-11-26T00:16:45.216Z",
+            "success": true
+          }
+        ]
+      },
+      {
+        "name": "verify originals and publish dated call changes-1",
+        "startedAt": "2026-11-26T00:16:45.224Z",
+        "finishedAt": "2026-11-26T00:17:02.456Z",
+        "attempts": [
+          {
+            "startedAt": "2026-11-26T00:16:45.224Z",
+            "finishedAt": "2026-11-26T00:17:02.456Z",
+            "success": true
+          }
+        ]
+      },
+      {
+        "name": "check English and French calls through the authenticated product-1",
+        "startedAt": "2026-11-26T00:17:02.464Z",
+        "finishedAt": "2026-11-26T00:17:13.448Z",
+        "attempts": [
+          {
+            "startedAt": "2026-11-26T00:17:02.464Z",
+            "finishedAt": "2026-11-26T00:17:13.448Z",
+            "success": true
+          }
+        ]
+      },
+      {
+        "name": "retain verified House refresh receipt-1",
+        "startedAt": "2026-11-26T00:17:13.454Z",
+        "finishedAt": "2026-11-26T00:17:14.599Z",
+        "attempts": [
+          {
+            "startedAt": "2026-11-26T00:17:13.454Z",
+            "finishedAt": "2026-11-26T00:17:14.599Z",
+            "success": true
+          }
+        ]
+      }
+    ],
+    "pageCheckpoints": 40,
+    "completionReceipts": 1,
+    "receipt": {
+      "key": "committee/house-calls/runs/house-calls-1795652141644.json",
+      "sha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79",
+      "bytes": 1521
+    },
+    "packet": {
+      "key": "committee/house-calls/inventories/409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba.json",
+      "sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "bytes": 69215
+    },
+    "observedAt": "2026-11-26T00:16:34.215000Z",
+    "priorSha256": "741d9c3b526fd80921a9576578ca083baa42ecd9313a346c844e4b674902f03c",
+    "checkpointsAndOriginals": {
+      "allObservationCheckpointsComparedWithPacket": true,
+      "allArchivedBodiesMatchedSizeAndSha256": true,
+      "urls": 40,
+      "archived": 40,
+      "distinctBodyHashes": 40,
+      "bytes": 4944772,
+      "houseUrls": 32,
+      "senateUrls": 8,
+      "firstChecked": "2026-11-26T00:15:50.424Z",
+      "lastChecked": "2026-11-26T00:16:42.332Z",
+      "sortedDescriptorsSha256": "1ab0cad3f1bb3949e95d92728f2e56096d44c5d76aeab21c01845f9ddd50cb9a",
+      "senateClassifications": [
+        {
+          "url": "https://sencanada.ca/en/committees/",
+          "listing": "no-call-listing-in-archived-html"
+        },
+        {
+          "url": "https://sencanada.ca/en/committees/aefa/",
+          "listing": "no-call-listing-in-archived-html"
+        },
+        {
+          "url": "https://sencanada.ca/en/committees/aefa/briefs/45-1",
+          "listing": "no-call-listing-in-archived-html"
+        },
+        {
+          "url": "https://sencanada.ca/en/committees/aefa/studiesandbills/45-1",
+          "listing": "no-call-listing-in-archived-html"
+        },
+        {
+          "url": "https://sencanada.ca/fr/comites/",
+          "listing": "no-call-listing-in-archived-html"
+        },
+        {
+          "url": "https://sencanada.ca/fr/comites/aefa/",
+          "listing": "no-call-listing-in-archived-html"
+        },
+        {
+          "url": "https://sencanada.ca/fr/comites/aefa/etudesetprojetsdeloi/45-1",
+          "listing": "no-call-listing-in-archived-html"
+        },
+        {
+          "url": "https://sencanada.ca/fr/comites/aefa/memoires/45-1",
+          "listing": "no-call-listing-in-archived-html"
+        }
+      ]
+    },
+    "published": {
+      "session": "45-1",
+      "instanceId": "house-calls-1795652141644",
+      "scheduledTime": 1795652141644,
+      "observedAt": "2026-11-26T00:16:34.215000Z",
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "counts": {
+        "calls": 30,
+        "added": 0,
+        "changed": 1,
+        "unchanged": 29,
+        "dropped": 0,
+        "pending": 1,
+        "conflicts": 0
+      },
+      "studiesNotYetInCorpus": [],
+      "studyTitlesRepaired": []
+    },
+    "served": {
+      "observedAt": "2026-11-26T00:16:34.215000Z",
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "languages": [
+        {
+          "language": "en",
+          "listed": 15,
+          "newlyDropped": 0,
+          "retainedUnlisted": 0,
+          "sample": {
+            "callId": "house-chpc-call-13668976",
+            "studyId": "house-chpc-study-13668976",
+            "related": {
+              "submissions": 17,
+              "evidence": 0,
+              "meetings": 4
+            }
+          }
+        },
+        {
+          "language": "fr",
+          "listed": 15,
+          "newlyDropped": 0,
+          "retainedUnlisted": 0,
+          "sample": {
+            "callId": "house-chpc-call-13668976",
+            "studyId": "house-chpc-study-13668976",
+            "related": {
+              "submissions": 17,
+              "evidence": 0,
+              "meetings": 4
+            }
+          }
+        }
+      ],
+      "usage": {
+        "before": 28,
+        "after": 34,
+        "retrievals": 6
+      },
+      "correlationIds": [
+        "req_mwwsyzbeosigro19hn",
+        "req_mwwsz0jos0ekgkxwv1",
+        "req_mwwsz1omv78cxytny5",
+        "req_mwwsz30kur80zvxa7c",
+        "req_mwwsz45merh6q2msdi",
+        "req_mwwsz5alm8sz3v0qf5"
+      ]
+    },
+    "independentD1": {
+      "ledgerRows": 1,
+      "resultMatchedReceipt": true
+    },
+    "collectorCompletion": {
+      "instanceId": "house-calls-1795652141644",
+      "observedAt": "2026-11-26T00:16:34.215000Z",
+      "inventorySha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "fetchedPages": 40,
+      "checkpointPages": 0,
+      "sourceBytes": 4944772
+    },
+    "executionTelemetry": [
+      {
+        "script": "civicsignal-stage-house",
+        "time": 1795652234608,
+        "scriptVersion": {
+          "id": "c805c9fe-11da-42eb-acbc-266fe5171aec"
+        },
+        "eventType": "workflow",
+        "outcome": "ok",
+        "cpuTimeMs": 72,
+        "wallTimeMs": 87140
+      },
+      {
+        "script": "civicsignal-stage-house",
+        "time": 1795652144057,
+        "scriptVersion": {
+          "id": "c805c9fe-11da-42eb-acbc-266fe5171aec"
+        },
+        "eventType": "scheduled",
+        "outcome": "ok",
+        "cpuTimeMs": 0,
+        "wallTimeMs": 737,
+        "event": {
+          "cron": "15 0 * * *",
+          "scheduledTime": 1795652141.644
+        }
+      },
+      {
+        "script": "civicsignal-stage-house-collector",
+        "time": 1795652205216,
+        "scriptVersion": {
+          "id": "c7d47686-f404-4123-b1ac-0b0672a15509"
+        },
+        "eventType": "fetch",
+        "outcome": "ok",
+        "cpuTimeMs": 1111,
+        "wallTimeMs": 55784
+      }
+    ],
+    "retainedTelemetrySource": "Cloudflare Workers Observability; scheduledTime in the telemetry event is Unix seconds, while the Workflow parameter is Unix milliseconds."
+  },
+  "candidateCommit": "f89377644087bbb29fb5a862ce78871f2b379706",
+  "independentReplay": {
+    "method": "Fetched every R2 original, verified SHA-256 and length, and replayed the local House calls operator with the saved prepublication snapshot in disposable SQLite. Compared all hosted calls, recorded timestamps and Senate probe outcomes.",
+    "command": "python3 -B scripts/verify-house-staging.py house-calls-1795652141644",
+    "result": {
+      "instance": "house-calls-1795652141644",
+      "trigger": {
+        "source": "binding"
+      },
+      "start": "2026-11-26T00:15:47.394Z",
+      "end": "2026-11-26T00:17:14.608Z",
+      "observedAt": "2026-11-26T00:16:34.215000Z",
+      "priorObservedAt": "2026-11-25T11:15:39Z",
+      "sessionCutoff": "2026-11-25T08:33:25+00:00",
+      "originals": 40,
+      "bytes": 4944772,
+      "senate": {
+        "https://sencanada.ca/en/committees/": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/en/committees/aefa/": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/en/committees/aefa/briefs/45-1": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/en/committees/aefa/studiesandbills/45-1": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/fr/comites/": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/fr/comites/aefa/": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/fr/comites/aefa/etudesetprojetsdeloi/45-1": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/fr/comites/aefa/memoires/45-1": "no-call-listing-in-archived-html"
+      },
+      "allHostedCallRowsMatched": 30,
+      "replayCounts": {
+        "calls": 30,
+        "added": 0,
+        "changed": 1,
+        "unchanged": 29,
+        "dropped": 0,
+        "pending": 1,
+        "conflicts": 0,
+        "committees": 6,
+        "deadlines": 14,
+        "deadlineInstants": 14,
+        "instructionBlocks": 18,
+        "contentWarnings": 5
+      },
+      "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "receiptSha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79",
+      "serving": {
+        "observedAt": "2026-11-26T00:16:34.215000Z",
+        "cutoff": "2026-11-25T08:33:25+00:00",
+        "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+        "languages": [
+          {
+            "language": "en",
+            "listed": 15,
+            "newlyDropped": 0,
+            "retainedUnlisted": 0,
+            "sample": {
+              "callId": "house-chpc-call-13668976",
+              "studyId": "house-chpc-study-13668976",
+              "related": {
+                "submissions": 17,
+                "evidence": 0,
+                "meetings": 4
+              }
+            }
+          },
+          {
+            "language": "fr",
+            "listed": 15,
+            "newlyDropped": 0,
+            "retainedUnlisted": 0,
+            "sample": {
+              "callId": "house-chpc-call-13668976",
+              "studyId": "house-chpc-study-13668976",
+              "related": {
+                "submissions": 17,
+                "evidence": 0,
+                "meetings": 4
+              }
+            }
+          }
+        ],
+        "usage": {
+          "before": 28,
+          "after": 34,
+          "retrievals": 6
+        },
+        "correlationIds": [
+          "req_mwwsyzbeosigro19hn",
+          "req_mwwsz0jos0ekgkxwv1",
+          "req_mwwsz1omv78cxytny5",
+          "req_mwwsz30kur80zvxa7c",
+          "req_mwwsz45merh6q2msdi",
+          "req_mwwsz5alm8sz3v0qf5"
+        ]
+      }
+    },
+    "servingTableReadback": {
+      "readOnlyAt": "2026-11-26T14:20:40.873184+00:00",
+      "runs": [
+        {
+          "instance_id": "house-calls-1795652141644",
+          "session": "45-1",
+          "scheduled_time": 1795652141644,
+          "observed_at": "2026-11-26T00:16:34.215000Z",
+          "packet_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+          "content_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+          "result": {
+            "session": "45-1",
+            "instanceId": "house-calls-1795652141644",
+            "scheduledTime": 1795652141644,
+            "observedAt": "2026-11-26T00:16:34.215000Z",
+            "cutoff": "2026-11-25T08:33:25+00:00",
+            "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+            "counts": {
+              "calls": 30,
+              "added": 0,
+              "changed": 1,
+              "unchanged": 29,
+              "dropped": 0,
+              "pending": 1,
+              "conflicts": 0
+            },
+            "studiesNotYetInCorpus": [],
+            "studyTitlesRepaired": []
+          }
+        }
+      ],
+      "guardsAndCutoff": [
+        {
+          "guards": 0,
+          "cutoff": "2026-11-25T08:33:25+00:00"
+        }
+      ],
+      "priorRows": 30,
+      "hostedRows": 30,
+      "changedMetadataFields": {
+        "lastListedAt": 30,
+        "observedAt": 30,
+        "contentWarning": 2,
+        "contentWarningText": 2,
+        "contentConflict": 2,
+        "pendingDigest": 2,
+        "contentDigest": 1,
+        "instructions": 1,
+        "revision": 1
+      },
+      "editionsWithChangesBeyondTimes": [
+        {
+          "id": "house-fewo-call-13634118",
+          "language": "en",
+          "fields": [
+            "contentWarning",
+            "contentWarningText"
+          ],
+          "details": {
+            "contentWarning": {
+              "before": true,
+              "after": false
+            }
+          }
+        },
+        {
+          "id": "house-huma-call-13666586",
+          "language": "en",
+          "fields": [
+            "contentWarning",
+            "contentWarningText"
+          ],
+          "details": {
+            "contentWarning": {
+              "before": true,
+              "after": false
+            }
+          }
+        },
+        {
+          "id": "house-srsr-call-13583486",
+          "language": "en",
+          "fields": [
+            "contentConflict",
+            "pendingDigest"
+          ],
+          "details": {
+            "contentConflict": {
+              "before": true,
+              "after": false
+            },
+            "pendingDigest": {
+              "before": "cc9d48aeaf106b9cfd0e9f5a9de956bd14000d25f495dd60a7217ac640278369",
+              "after": "13a0ada366bc10d3c4620e6a318e8886011611ce2ae886f7d6c5033bcb698655"
+            }
+          }
+        },
+        {
+          "id": "house-srsr-call-13631120",
+          "language": "en",
+          "fields": [
+            "contentConflict"
+          ],
+          "details": {
+            "contentConflict": {
+              "before": true,
+              "after": false
+            }
+          }
+        },
+        {
+          "id": "house-srsr-call-13688263",
+          "language": "en",
+          "fields": [
+            "contentDigest",
+            "instructions",
+            "pendingDigest",
+            "revision"
+          ],
+          "details": {
+            "contentDigest": {
+              "before": "b6d1466ffec8517cfcf22e3ab5d78ab1ef572a854494d8ec473d4309b0f84a8b",
+              "after": "4deaf93e485bb4339aec2e531f83b8ecbd356b77c4499646ac306bfdde77fed6"
+            },
+            "pendingDigest": {
+              "before": "4deaf93e485bb4339aec2e531f83b8ecbd356b77c4499646ac306bfdde77fed6",
+              "after": null
+            },
+            "revision": {
+              "before": 6,
+              "after": 7
+            }
+          }
+        }
+      ],
+      "topLevelCallFieldsChanged": [],
+      "relatedLinksComparedToSeed": 60
+    }
+  },
+  "localCheckpointReplay": {
+    "scope": "Separate archived-input replay. The collector loaded the previous local captures through its test store.",
+    "events": [
+      {
+        "event": "house-calls-acquisition-complete",
+        "instanceId": "house-calls-1795650299123",
+        "observedAt": "2026-11-25T23:45:00.123000Z",
+        "fetchedPages": 40,
+        "checkpointPages": 0,
+        "sourceBytes": 4910077,
+        "houseEditions": 30,
+        "senateUnreadable": 0,
+        "inventorySha256": "b5ff98e43913cd5705eca648195c6abc8773d0c726caba59d2b7eea217b82fcf"
+      },
+      {
+        "event": "house-calls-acquisition-complete",
+        "instanceId": "house-calls-1795650299123",
+        "observedAt": "2026-11-25T23:45:00.123000Z",
+        "fetchedPages": 0,
+        "checkpointPages": 40,
+        "sourceBytes": 4910077,
+        "houseEditions": 30,
+        "senateUnreadable": 0,
+        "inventorySha256": "b5ff98e43913cd5705eca648195c6abc8773d0c726caba59d2b7eea217b82fcf"
+      }
+    ]
+  },
+  "aboiteauTurns": [
+    {
+      "assignment": "acquisition",
+      "turn": "turn_4c641a76-f014-4b0f-922a-309942bc5dbf",
+      "reportedSettlement": "needs_operator after time limit",
+      "readback": "expired"
+    },
+    {
+      "assignment": "publication",
+      "turn": "turn_1ede8212-e0de-4c5e-b6ed-384e098d13fe",
+      "reportedSettlement": "needs_operator after time limit",
+      "readback": "expired"
+    },
+    {
+      "assignment": "replay",
+      "turn": "turn_4e6271b9-a04b-43d1-aee4-57eb9215866f",
+      "reportedSettlement": "needs_operator after time limit",
+      "readback": "expired"
+    }
+  ],
+  "manualRecoveryAfterNative": {
+    "instance": "house-calls-1795702932982",
+    "workflowVersion": "0948decf-59d2-4d93-af6d-e5d4958810ca",
+    "triggerSource": "api",
+    "status": "errored",
+    "queuedAt": "2026-11-26T14:22:23.320Z",
+    "startedAt": "2026-11-26T14:22:26.762Z",
+    "finishedAt": "2026-11-26T14:24:14.486Z",
+    "attempts": [
+      {
+        "start": "2026-11-26T14:22:27.027Z",
+        "end": "2026-11-26T14:22:28.409Z",
+        "error": "RuntimeError: Required House page unavailable: https://www.ourcommons.ca/Committees/en/Participate: Publisher returned HTTP 403."
+      },
+      {
+        "start": "2026-11-26T14:22:43.409Z",
+        "end": "2026-11-26T14:22:43.765Z",
+        "error": "RuntimeError: Required House page unavailable: https://www.ourcommons.ca/Committees/en/Participate: Publisher returned HTTP 403."
+      },
+      {
+        "start": "2026-11-26T14:23:13.765Z",
+        "end": "2026-11-26T14:23:14.139Z",
+        "error": "RuntimeError: Required House page unavailable: https://www.ourcommons.ca/Committees/en/Participate: Publisher returned HTTP 403."
+      },
+      {
+        "start": "2026-11-26T14:24:14.139Z",
+        "end": "2026-11-26T14:24:14.455Z",
+        "error": "RuntimeError: Required House page unavailable: https://www.ourcommons.ca/Committees/en/Participate: Publisher returned HTTP 403."
+      }
+    ],
+    "before": {
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "runs": 1,
+      "guards": 0
+    },
+    "after": {
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "runs": 1,
+      "guards": 0,
+      "retained_instance": "house-calls-1795652141644",
+      "retained_packet_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba"
+    },
+    "pageCheckpoints": 0,
+    "completionReceipts": 0,
+    "interruptionAndRestartCompleted": false,
+    "reason": "The House index returned HTTP 403 on all four attempts. The partial-page threshold for a controlled restart was never reached."
+  },
+  "repositoryVerification": {
+    "houseTypeScriptChecksPassed": 8,
+    "pythonDiscoveryPassed": 364,
+    "workerDryRunsPassed": 14,
+    "fullTypeScriptSuite": {
+      "passed": 2752,
+      "skipped": 15,
+      "failed": 3,
+      "isolatedRerunPassed": 3,
+      "failedSuiteScope": "Protected-state tests exceeded timing budgets during parallel execution. All three passed serially."
+    },
+    "runtimeAndInvariants": "Usage ledger, R2 immutability, billing and corpus checks passed."
+  }
+}
