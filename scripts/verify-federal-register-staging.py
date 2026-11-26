@@ -2,6 +2,7 @@
 
 Pass federal-discovery-<epoch-ms> to read private staging with cf, or pass
 --local-baseline PATH to replay an existing local register receipt against its SQLite inventory.
+For a staging run, --compare-baseline PATH also reports changes since that local observation.
 The reference operator is loaded from the Git revision before the Cloudflare port.
 """
 import argparse
@@ -78,7 +79,7 @@ def normalized_summary(entries):
             'catalogueEntries': dict(counts), 'orderedMetadataSha256': digest.hexdigest()}
 
 
-def local_baseline(receipt_path, parser, register):
+def local_baseline(receipt_path, parser, register, observations=None):
     root = receipt_path.resolve().parent.parent
     raw_receipt = receipt_path.read_bytes()
     receipt = json.loads(raw_receipt)
@@ -103,6 +104,8 @@ def local_baseline(receipt_path, parser, register):
             same([desc['kind'], len(desc.get('resources', desc.get('links', [])))], [item['kind'], item['entries']], 'Local entry count differs')
             entries.append((series, field, desc))
             originals[url] = len(body)
+            if observations is not None:
+                observations[series, field] = digest, sha(canonical(desc))
     return {'receiptSha256': sha(raw_receipt), 'registerSha256': sha(register), 'referenceRevision': REFERENCE,
             'series': len({r[0] for r in expected}), 'uniqueUrls': len(originals), 'originalBytes': sum(originals.values()),
             'largestOriginalBytes': max(originals.values()), **normalized_summary(entries)}
@@ -180,7 +183,7 @@ def check_pointers(instance, epoch, status):
     return result
 
 
-def verify_staging(instance, parser, register):
+def verify_staging(instance, parser, register, local_receipt=None):
     epoch = int(instance.removeprefix('federal-discovery-'))
     state = json.loads(cf('workflows', 'instances', 'get', instance, '--workflow-name', WORKFLOW, '--simple', 'true'))
     key = f'{PREFIX}/runs/{instance}.json'
@@ -221,11 +224,28 @@ def verify_staging(instance, parser, register):
     require(receipt['status'] == status, 'Run status disagrees with endpoint evidence')
     require(state.get('success') is True, 'Workflow did not complete')
     same(state['output'], {'receiptKey': key, 'status': status, 'counts': counts}, 'Workflow output differs from receipt')
+    comparison = {}
+    if local_receipt:
+        previous = {}
+        local = local_baseline(local_receipt, parser, register, previous)
+        changed = []
+        raw_changed = set()
+        for series, field, url, _ in expected:
+            source, desc = by_url[url]
+            if desc is not None:
+                prior_raw, prior_metadata = previous[series, field]
+                if sha(canonical(desc)) != prior_metadata:
+                    changed.append({'series': series, 'endpoint': field})
+                if source['sha256'] != prior_raw:
+                    raw_changed.add(url)
+        comparison = {'comparedToLocal': {'receiptSha256': local['receiptSha256'],
+                      'comparedEndpoints': len(entries), 'changedMetadataEndpoints': changed,
+                      'changedOriginalUrlsAmongVerified': len(raw_changed)}}
     return {'instanceId': instance, 'trigger': state['trigger'], 'start': state['start'], 'end': state['end'],
             'status': status, 'referenceRevision': REFERENCE, 'receiptSha256': sha(raw), 'packetSha256': receipt['packetRef']['sha256'],
             'registerSha256': sha(register), 'counts': counts, **normalized_summary(entries),
             'failedEndpoints': [{k: item[k] for k in ('series', 'endpoint', 'reason')} for item in packet['endpoints'] if not item['ok']],
-            'pointers': check_pointers(instance, epoch, status)}
+            'pointers': check_pointers(instance, epoch, status), **comparison}
 
 
 if __name__ == '__main__':
@@ -233,11 +253,14 @@ if __name__ == '__main__':
     group = cli.add_mutually_exclusive_group(required=True)
     group.add_argument('instance', nargs='?')
     group.add_argument('--local-baseline', type=Path)
+    cli.add_argument('--compare-baseline', type=Path, help='complete local receipt for comparison with a staging run')
     options = cli.parse_args()
     if options.instance and not re.fullmatch(r'federal-discovery-(?:0|[1-9]\d{0,15})', options.instance):
         cli.error('Expected the exact federal-discovery-<epoch-ms> instance ID')
+    if options.compare_baseline and not options.instance:
+        cli.error('--compare-baseline requires a staging instance')
     parser = reference_parser()
     register = REGISTER.read_bytes()
     result = (local_baseline(options.local_baseline, parser, register) if options.local_baseline
-              else verify_staging(options.instance, parser, register))
+              else verify_staging(options.instance, parser, register, options.compare_baseline))
     print(json.dumps(result, indent=2))

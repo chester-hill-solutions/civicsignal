@@ -20,5 +20,5 @@
     "service": "civicsignal-stage-federal-register-collector"
   }],
   "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-weekly" }],
-  "triggers": { "crons": ["15 16 * * 4"] }
+  "triggers": { "crons": ["0 14 * * SAT"] }
 }

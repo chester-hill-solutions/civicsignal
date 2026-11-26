@@ -83,8 +83,15 @@
   "lastGoodEvidence": "house-cloudflare.json",
   "documents": {
     "houseOpenData": "https://www.ourcommons.ca/en/open-data",
+    "houseParticipationDirectory": "https://www.ourcommons.ca/en/participate",
+    "committeeNewsletter": "https://www.ourcommons.ca/cmte-subscription/en/NewsletterRegister",
     "publisherContact": "https://www.ourcommons.ca/committees/en/contactus",
     "houseProcedure": "https://www.ourcommons.ca/procedure/procedure-and-practice-4/ch20-9-e.html"
+  },
+  "documentedAlternatives": {
+    "currentConsultationsLink": "The House participation directory and committee navigation both link to the same English participation index that returned 403.",
+    "committeeEvidenceXml": "The documented XML export describes meeting evidence, including speakers and intervention times.",
+    "committeeNewsletter": "Registered subscribers can receive email alerts for meetings, publications and other committee updates. The registration page does not describe a complete current list of bilingual calls, deadlines and submission instructions."
   },
   "supportPath": "Committees and Legislative Services Directorate, cmteweb@parl.gc.ca. Request the supported route for automated bilingual retrieval of current calls and their linked study notices.",
   "diagnosticWorkerRemoved": true,
@@ -294,5 +301,38 @@
         ]
       }
     ]
+  },
+  "standardCollectorRecheck": {
+    "instanceId": "house-calls-1795708801390",
+    "trigger": {
+      "source": "api"
+    },
+    "start": "2026-11-26T16:00:04.848Z",
+    "end": "2026-11-26T16:00:07.232Z",
+    "status": "errored",
+    "before": {
+      "ledgerRows": 1,
+      "guards": 0,
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "instanceId": "house-calls-1795652141644",
+      "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba"
+    },
+    "after": {
+      "ledgerRows": 1,
+      "guards": 0,
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "instanceId": "house-calls-1795652141644",
+      "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba"
+    },
+    "refusal": {
+      "phase": "acquisition",
+      "code": "publisher-http",
+      "status": 403,
+      "url": "https://www.ourcommons.ca/Committees/en/Participate",
+      "instanceId": "house-calls-1795708801390",
+      "scheduledTime": 1795708801390
+    },
+    "refusalSha256": "c9b981dcdd129bc583ce09fdc2d16bb774ac3a561f0d4262b58415cb663ee063",
+    "retainedReceiptSha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79"
   }
 }

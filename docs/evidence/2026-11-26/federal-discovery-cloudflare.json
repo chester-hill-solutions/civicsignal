@@ -1,0 +1,514 @@
+{
+  "scope": "Private Cloudflare staging for the federal discovery register within the weekly refresh.",
+  "candidateCommit": "532bb005a5a6b9e886d0a350ce52b616a2fa0769",
+  "weeklyArchive": {
+    "name": "civicsignal-stage-weekly",
+    "createdAt": "2026-11-26T15:37:31.750Z",
+    "location": "ENAM",
+    "storageClass": "Standard",
+    "publicR2DevEnabled": false,
+    "customDomains": []
+  },
+  "firstManualAttempt": {
+    "instance": "federal-discovery-1795707732597",
+    "trigger": {
+      "source": "api"
+    },
+    "startedAt": "2026-11-26T15:42:16.385Z",
+    "finishedAt": "2026-11-26T15:42:16.495Z",
+    "error": {
+      "message": "Worker not found.",
+      "name": "Error"
+    },
+    "enteredSteps": 0,
+    "receiptPresentAtFailure": false,
+    "latestAttemptPresentAtFailure": false,
+    "latestCompletePresentAtFailure": false
+  },
+  "prePortLocalBaseline": {
+    "receiptSha256": "128e5da5555e15bb30c9926b8af54648252c3cdba4831cc2c0a2b693bc638ee7",
+    "registerSha256": "ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746",
+    "referenceRevision": "07ba2098206f40e281b689a60ec1549cbde37be7",
+    "series": 18,
+    "uniqueUrls": 27,
+    "originalBytes": 3272156,
+    "largestOriginalBytes": 1366645,
+    "comparedEndpointInventories": 28,
+    "catalogueKinds": {
+      "dataset-resources": 7,
+      "index-links": 21
+    },
+    "catalogueEntries": {
+      "dataset-resources": 39,
+      "index-links": 2447
+    },
+    "orderedMetadataSha256": "fd355ebde46fbff568e51b50881c4c3870a8681a2431b74d5cc30c7c93c4dd82"
+  },
+  "deployments": {
+    "civicsignal-stage-federal-register": {
+      "version": "324b109a-2ed6-4282-afc7-075e0aacba59",
+      "createdOn": "2026-11-26T15:41:58.336772Z",
+      "config": {
+        "name": "civicsignal-stage-federal-register",
+        "workers_dev": false,
+        "preview_urls": false,
+        "r2_buckets": [
+          {
+            "binding": "ARCHIVE",
+            "bucket_name": "civicsignal-stage-weekly"
+          }
+        ],
+        "workflows": [
+          {
+            "binding": "REFRESH",
+            "name": "civicsignal-stage-federal-register",
+            "class_name": "FederalDiscoveryRefresh"
+          }
+        ],
+        "services": [
+          {
+            "binding": "COLLECTOR",
+            "service": "civicsignal-stage-federal-register-collector",
+            "environment": "production"
+          }
+        ],
+        "triggers": {
+          "crons": [
+            "15 16 * * 4"
+          ]
+        },
+        "limits": {
+          "cpu_ms": 300000,
+          "subrequests": 10000
+        },
+        "compatibility_flags": [
+          "nodejs_compat"
+        ]
+      },
+      "modules": {
+        "worker.js": {
+          "sha256": "63a0cb3e5e53a5216e60b56091bd688edbbdba8901aa148cce8ba56ace1de714",
+          "bytes": 803554
+        },
+        "720f16d3f0c773b704df81fa177ed6d33612ea2a-federal-public-service-sources.csv": {
+          "sha256": "ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746",
+          "bytes": 6027
+        }
+      },
+      "sourceMap": {
+        "remoteSha256": "358cad6cd82c6a0e21d85dff1686a00c31fcd04727aae269191180d584f942b3",
+        "localSha256": "b0122105dcd8ba25721722b8cf3d919707b882e80d7d8a474cd051db9e05d5aa",
+        "allSourcesAndMappingsEqual": true
+      }
+    },
+    "civicsignal-stage-federal-register-collector": {
+      "version": "447c932c-f0eb-4ebe-b1a0-7fee6e338523",
+      "createdOn": "2026-11-26T15:40:57.595035Z",
+      "config": {
+        "name": "civicsignal-stage-federal-register-collector",
+        "workers_dev": false,
+        "preview_urls": false,
+        "r2_buckets": [
+          {
+            "binding": "ARCHIVE",
+            "bucket_name": "civicsignal-stage-weekly"
+          }
+        ],
+        "limits": {
+          "cpu_ms": 300000,
+          "subrequests": 10000
+        },
+        "compatibility_flags": [
+          "python_workers",
+          "disable_python_external_sdk"
+        ]
+      },
+      "modules": {
+        "discovery.py": {
+          "sha256": "6a6b825bd324607ca42c2b26dfc9c2d74e4469270c6e6fdafca80d6928a3001e",
+          "bytes": 9766
+        },
+        "federal_catalogue.py": {
+          "sha256": "f5cf9023b026520f6574c53a22f0e31f3e908dbafb2c2122254038b8ba9b3f4e",
+          "bytes": 2770
+        },
+        "entry.py": {
+          "sha256": "ef0ec66b5c8dc245defae594779b07bacbea86384a9164a0f38690b69ff00364",
+          "bytes": 5323
+        }
+      }
+    }
+  },
+  "manual": {
+    "instance": "federal-discovery-1795707802818",
+    "trigger": {
+      "source": "api"
+    },
+    "scheduledTime": 1795707802818,
+    "queuedAt": "2026-11-26T15:43:25.794Z",
+    "startedAt": "2026-11-26T15:43:26.081Z",
+    "finishedAt": "2026-11-26T15:43:49.814Z",
+    "workflowVersion": "2637f7d3-0664-4861-a46c-7dae181efd2a",
+    "steps": [
+      {
+        "name": "archive the checked-in federal register-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire official federal catalogue endpoints-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "verify the full register and its archived originals-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "publish the immutable register receipt and advance its index-1",
+        "success": true,
+        "attempts": 1
+      }
+    ],
+    "status": "complete",
+    "counts": {
+      "series": 18,
+      "endpoints": 28,
+      "uniqueUrls": 27,
+      "verified": 28,
+      "failed": 0,
+      "originals": 27,
+      "originalBytes": 3259332
+    },
+    "receipt": {
+      "key": "weekly/federal-discovery/runs/federal-discovery-1795707802818.json",
+      "bytes": 790,
+      "sha256": "560bf8c270d814be6e37a26723f9f1630060206f3eaa5a7515f875312eed6ce1"
+    },
+    "register": {
+      "key": "weekly/federal-discovery/registers/ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746.csv",
+      "sha256": "ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746",
+      "bytes": 6027
+    },
+    "inventory": {
+      "key": "weekly/federal-discovery/inventories/4b9598665ba34fb8d23214ad0de3b55669ee23a9ad132dee6877d56fe64b7439.json",
+      "sha256": "4b9598665ba34fb8d23214ad0de3b55669ee23a9ad132dee6877d56fe64b7439",
+      "bytes": 358122
+    },
+    "pointers": {
+      "latest-complete": {
+        "instanceId": "federal-discovery-1795707802818",
+        "scheduledTime": 1795707802818,
+        "receiptKey": "weekly/federal-discovery/runs/federal-discovery-1795707802818.json",
+        "status": "complete"
+      },
+      "latest-attempt": {
+        "instanceId": "federal-discovery-1795707802818",
+        "scheduledTime": 1795707802818,
+        "receiptKey": "weekly/federal-discovery/runs/federal-discovery-1795707802818.json",
+        "status": "complete"
+      }
+    },
+    "executionTelemetry": {
+      "civicsignal-stage-federal-register": [],
+      "civicsignal-stage-federal-register-collector": [
+        {
+          "time": "2026-11-26T15:43:47.566+00:00",
+          "eventType": "fetch",
+          "outcome": "ok",
+          "version": "447c932c-f0eb-4ebe-b1a0-7fee6e338523",
+          "wallMs": 20744,
+          "cpuMs": 1289,
+          "responseStatus": 200
+        }
+      ]
+    },
+    "independentPrePortReplay": {
+      "referenceRevision": "07ba2098206f40e281b689a60ec1549cbde37be7",
+      "comparedEndpointInventories": 28,
+      "catalogueKinds": {
+        "dataset-resources": 7,
+        "index-links": 21
+      },
+      "catalogueEntries": {
+        "dataset-resources": 39,
+        "index-links": 2443
+      },
+      "orderedMetadataSha256": "a728a6906216f695d4758456c7b15fd923e307bd6ccb4a49c4a34a217620bb28",
+      "failedEndpoints": [],
+      "comparedToLocal": {
+        "receiptSha256": "128e5da5555e15bb30c9926b8af54648252c3cdba4831cc2c0a2b693bc638ee7",
+        "comparedEndpoints": 28,
+        "changedMetadataEndpoints": [
+          {
+            "series": "grant-awards",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "service-inventory",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "algorithmic-assessments",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "briefing-titles",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "briefing-titles",
+            "endpoint": "companion_url"
+          },
+          {
+            "series": "briefing-packages",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "briefing-packages",
+            "endpoint": "companion_url"
+          },
+          {
+            "series": "ati-summaries",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "consultations",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "procurement",
+            "endpoint": "companion_url"
+          }
+        ],
+        "changedOriginalUrlsAmongVerified": 21
+      }
+    }
+  },
+  "native": {
+    "instance": "federal-discovery-1795710356482",
+    "trigger": {
+      "source": "binding"
+    },
+    "scheduledTime": 1795710356482,
+    "queuedAt": "2026-11-26T16:26:05.142Z",
+    "startedAt": "2026-11-26T16:26:07.234Z",
+    "finishedAt": "2026-11-26T16:26:48.124Z",
+    "workflowVersion": "2637f7d3-0664-4861-a46c-7dae181efd2a",
+    "steps": [
+      {
+        "name": "archive the checked-in federal register-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "acquire official federal catalogue endpoints-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "verify the full register and its archived originals-1",
+        "success": true,
+        "attempts": 1
+      },
+      {
+        "name": "publish the immutable register receipt and advance its index-1",
+        "success": true,
+        "attempts": 1
+      }
+    ],
+    "status": "complete",
+    "counts": {
+      "series": 18,
+      "endpoints": 28,
+      "uniqueUrls": 27,
+      "verified": 28,
+      "failed": 0,
+      "originals": 27,
+      "originalBytes": 3259697
+    },
+    "receipt": {
+      "key": "weekly/federal-discovery/runs/federal-discovery-1795710356482.json",
+      "bytes": 790,
+      "sha256": "c2926641513dab340c4d6839f0d86d69d4f9c539574e7959ae2a165d8ae6f23e"
+    },
+    "register": {
+      "key": "weekly/federal-discovery/registers/ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746.csv",
+      "sha256": "ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746",
+      "bytes": 6027
+    },
+    "inventory": {
+      "key": "weekly/federal-discovery/inventories/e67ad768ff6dfa79fc88be33497f3122c7b1c1bb9a7fbafcc761d5095778e092.json",
+      "sha256": "e67ad768ff6dfa79fc88be33497f3122c7b1c1bb9a7fbafcc761d5095778e092",
+      "bytes": 358122
+    },
+    "pointers": {
+      "latest-complete": {
+        "instanceId": "federal-discovery-1795710356482",
+        "scheduledTime": 1795710356482,
+        "receiptKey": "weekly/federal-discovery/runs/federal-discovery-1795710356482.json",
+        "status": "complete"
+      },
+      "latest-attempt": {
+        "instanceId": "federal-discovery-1795710356482",
+        "scheduledTime": 1795710356482,
+        "receiptKey": "weekly/federal-discovery/runs/federal-discovery-1795710356482.json",
+        "status": "complete"
+      }
+    },
+    "executionTelemetry": {
+      "civicsignal-stage-federal-register": [
+        {
+          "time": "2026-11-26T16:26:05.297+00:00",
+          "eventType": "scheduled",
+          "outcome": "ok",
+          "version": "324b109a-2ed6-4282-afc7-075e0aacba59",
+          "wallMs": 6194,
+          "cpuMs": 0,
+          "cron": "25 16 * * THU",
+          "scheduledTimeMs": 1795710356482
+        }
+      ],
+      "civicsignal-stage-federal-register-collector": [
+        {
+          "time": "2026-11-26T16:26:42.439+00:00",
+          "eventType": "fetch",
+          "outcome": "ok",
+          "version": "447c932c-f0eb-4ebe-b1a0-7fee6e338523",
+          "wallMs": 33869,
+          "cpuMs": 2549,
+          "responseStatus": 200
+        }
+      ]
+    },
+    "independentPrePortReplay": {
+      "referenceRevision": "07ba2098206f40e281b689a60ec1549cbde37be7",
+      "comparedEndpointInventories": 28,
+      "catalogueKinds": {
+        "dataset-resources": 7,
+        "index-links": 21
+      },
+      "catalogueEntries": {
+        "dataset-resources": 39,
+        "index-links": 2443
+      },
+      "orderedMetadataSha256": "a728a6906216f695d4758456c7b15fd923e307bd6ccb4a49c4a34a217620bb28",
+      "failedEndpoints": [],
+      "comparedToLocal": {
+        "receiptSha256": "128e5da5555e15bb30c9926b8af54648252c3cdba4831cc2c0a2b693bc638ee7",
+        "comparedEndpoints": 28,
+        "changedMetadataEndpoints": [
+          {
+            "series": "grant-awards",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "service-inventory",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "algorithmic-assessments",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "briefing-titles",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "briefing-titles",
+            "endpoint": "companion_url"
+          },
+          {
+            "series": "briefing-packages",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "briefing-packages",
+            "endpoint": "companion_url"
+          },
+          {
+            "series": "ati-summaries",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "consultations",
+            "endpoint": "entry_url"
+          },
+          {
+            "series": "procurement",
+            "endpoint": "companion_url"
+          }
+        ],
+        "changedOriginalUrlsAmongVerified": 21
+      }
+    }
+  },
+  "calendar": {
+    "initialProvisionalCron": [
+      "15 16 * * 4"
+    ],
+    "correction": "Replaced the numeric Wednesday expression with an explicit Thursday before the qualification occurrence.",
+    "qualifiedCron": [
+      "25 16 * * THU"
+    ],
+    "operatingCron": [
+      "0 14 * * SAT"
+    ],
+    "timezone": "UTC",
+    "scriptVersionAfterScheduleOnlyChange": "324b109a-2ed6-4282-afc7-075e0aacba59",
+    "sameModuleBytes": true
+  },
+  "bulkConsumerReference": {
+    "scope": "Compare hosted resource selection with the Mac reference. CSV archive sizes and row counts are local observations.",
+    "instanceId": "federal-discovery-1795707802818",
+    "inventorySha256": "4b9598665ba34fb8d23214ad0de3b55669ee23a9ad132dee6877d56fe64b7439",
+    "series": {
+      "official-titles": {
+        "localDiscovery": "2026-11-25T07:13:44.406842+00:00",
+        "localArchiveObservation": "2026-11-25T07:28:27.674560+00:00",
+        "resources": 1,
+        "sameResourceDescriptors": true,
+        "sameOfficialResourceIdsAndUrls": true,
+        "archivedRows": 102,
+        "archivedBytes": 17930,
+        "replayedArchiveSha256": "41e34718f569dc3a5a239880e727ee9812cdc68d72b24575b3928d897a2c4a5b"
+      },
+      "service-inventory": {
+        "localDiscovery": "2026-11-25T07:13:44.113360+00:00",
+        "localArchiveObservation": "2026-11-25T07:28:32.000404+00:00",
+        "resources": 4,
+        "sameResourceDescriptors": false,
+        "sameOfficialResourceIdsAndUrls": true,
+        "archivedRows": 27405,
+        "archivedBytes": 35535453
+      },
+      "grant-awards": {
+        "localDiscovery": "2026-11-25T07:13:44.237561+00:00",
+        "localArchiveObservation": "2026-11-25T07:29:55.488151+00:00",
+        "resources": 2,
+        "sameResourceDescriptors": false,
+        "sameOfficialResourceIdsAndUrls": true,
+        "archivedRows": 1383518,
+        "archivedBytes": 2458280518
+      },
+      "ati-summaries": {
+        "localDiscovery": "2026-11-25T07:13:42.955820+00:00",
+        "localArchiveObservation": "2026-11-25T07:28:37.135993+00:00",
+        "resources": 2,
+        "sameResourceDescriptors": false,
+        "sameOfficialResourceIdsAndUrls": true,
+        "archivedRows": 212822,
+        "archivedBytes": 118654921
+      }
+    }
+  },
+  "localValidation": {
+    "bunValidate": {
+      "passed": 2761,
+      "skipped": 15
+    },
+    "pythonTestsPassed": 369,
+    "workerDryRunsPassed": 17
+  }
+}

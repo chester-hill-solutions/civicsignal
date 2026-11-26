@@ -209,6 +209,26 @@ python3 -B scripts/schedule/verify-daily-calendar.py > dist/refresh/calendar-bef
 python3 -B scripts/schedule/verify-daily-calendar.py --baseline dist/refresh/calendar-before.json --date 2026-11-25
 ```
 
+## Cloudflare weekly federal discovery staging
+
+The private federal discovery Workflow reads the checked-in register, archives its exact bytes, and acquires the registered government catalogue endpoints. It fetches each distinct publisher URL once per observation and retains every series membership. This is the discovery stage for datasets and catalogue indexes. The report and original objects live in the private weekly R2 bucket. [Registered sources](evidence/2026-11-23/federal-public-service-sources.csv) · [Workflow configuration](../services/federal-register/wrangler.jsonc)
+
+Cloudflare runs the Workflow every Saturday at 14:00 UTC, which is 09:00 Toronto in standard time and 10:00 in daylight time. The November 26 qualification used a temporary Thursday trigger. The Saturday cutover changed the calendar and verified the active deployment and bindings. [Native qualification and calendar readback](evidence/2026-11-26/federal-discovery-cloudflare.json)
+
+```sh
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+cf workflows instances list --workflow-name civicsignal-stage-federal-register --per-page 10
+cf r2 objects get weekly/federal-discovery/latest-complete.json --bucket-name civicsignal-stage-weekly
+federal_instance=$(cf r2 objects get weekly/federal-discovery/latest-attempt.json --bucket-name civicsignal-stage-weekly | jq -er '.instanceId')
+python3 -B scripts/verify-federal-register-staging.py "$federal_instance"
+```
+
+The verifier reads back every archive and request checkpoint and compares the inventory with the pre-port parser. Pass `--compare-baseline` with the latest complete local receipt and its matching download cache to identify publisher bytes and normalized endpoint inventories that changed since the Mac observation.
+
+Each occurrence creates an immutable report at `weekly/federal-discovery/runs/federal-discovery-<scheduledTime>.json`. A partial report identifies the failed endpoints through its inventory and advances only the latest attempt. Consumers use the latest complete report and its verified inventory for downstream discovery. A retry of an interrupted observation reuses verified request checkpoints. A new occurrence fetches the publisher again.
+
+The local federal bulk, publications, guidance and report-directory steps still read their local discovery database or archive. Keep the local weekly operator active while moving those consumers to the hosted register.
+
 ## Weekly local refresh
 
 The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.
