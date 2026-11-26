@@ -18,6 +18,7 @@ import unicodedata
 from urllib.parse import urlsplit
 from lib.parliament_intake import save_atomic
 from lib.federal_guidance import IRCC_LANDING
+from lib.hosted_official_titles import read_complete_titles
 
 
 ROSTER = Path("docs/evidence/2026-11-23")
@@ -767,13 +768,13 @@ def coverage(include_acquisitions=False):
         else:
             unmatched[source][" | ".join(names)] += total
 
+    titles_id, provenance_entry, titles = read_complete_titles()
+    provenance[titles_id] = provenance_entry
+    for row in titles:
+        register_published_titles(row, aliases)
+        count(titles_id, [row["Legal title"], row["Appellation légale"]])
+
     with closing(sqlite3.connect((BULK / "publications.sqlite").resolve().as_uri() + "?mode=ro", uri=True)) as db:
-        for resource in resources(db, "official-titles"):
-            provenance[resource["id"]] = {"series": "official-titles", "url": resource["url"], "sha256": resource["sha256"]}
-            for r in rows(resource):
-                names = [r["Legal title"], r["Appellation légale"]]
-                register_published_titles(r, aliases)
-                count(resource["id"], names)
         for series in ("service-inventory", "ati-summaries", "grant-awards"):
             for resource in resources(db, series):
                 key = resource["id"]

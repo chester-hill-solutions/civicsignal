@@ -1,0 +1,103 @@
+{
+  "cloudflareTitles": {
+    "bucket": "civicsignal-stage-weekly",
+    "key": "weekly/official-titles/runs/federal-discovery-1795712702888.json",
+    "sha256": "516d627c0d0876add663f6c31f1dddf8390948cfafde23cf1d0247ec64ee56e5",
+    "discoverySha256": "7ae60aa95eb858023294e852415ebdddbe0e9d958a5902651cd1e871e55281d3",
+    "recordsSha256": "4a6aa37258e65400f66ff623ff639e306bb3b59d29c5a03aa222f10b31fae20b"
+  },
+  "editions": {
+    "sourceId": "f0ca63e0-c15e-45b5-9656-77abe1564b1c",
+    "csvSha256": "41e34718f569dc3a5a239880e727ee9812cdc68d72b24575b3928d897a2c4a5b",
+    "matched": 94,
+    "unresolved": 8
+  },
+  "completeReport": {
+    "rosterEntries": 110,
+    "provisionalNames": 109,
+    "namesWithRecords": 99,
+    "sources": 33,
+    "registeredSeries": 18,
+    "matchedAcrossAllSources": 1868856,
+    "unresolvedAcrossAllSources": 291354,
+    "allOtherFieldsEqual": true,
+    "canonicalSha256ExcludingNewTitlesReceipt": "379159752a0ef591d7a1bc78ca5c7bfb3484bbd21f42c9c1352ef7f1aa6998e1",
+    "localInputReportSha256": "0601191a2b9d47c9020482fdc02a3f22cfac9d84f1c0b20e20dc556ae68d8c21",
+    "hostedInputReportSha256": "668563efd1d8dcd9fceec3480600bb6a14dea6e2fe75f4bcd212476d5fab43d4"
+  },
+  "verifiedAt": "2026-11-26T17:13:42.718129+00:00",
+  "checks": {
+    "weeklyTests": 24,
+    "institutionCoverageTests": 10,
+    "hostedTitlesReaderTests": 4,
+    "dataSource": "verified content addressed CSV/records selected in the pinned federal discovery inventory",
+    "comparator": "Fresh pre-change --include-acquisitions report vs fresh post-change report, both against the same non-titles stores. Full decoded JSON compared after deleting only sources[officialTitlesResourceId].hostedReceipt.",
+    "coverageReportReadsHostedLatestComplete": true
+  },
+  "weekly": {
+    "localSteps": 28,
+    "remainingSteps": [
+      "federal-discovery",
+      "federal-guidance",
+      "consultation-notices",
+      "federal-disclosures",
+      "service-inventory",
+      "ati-summaries",
+      "grant-awards",
+      "eccc",
+      "gazette",
+      "gazette-year",
+      "briefing-notes",
+      "federal-report-directories",
+      "departmental-report-editions",
+      "departmental-report-documents",
+      "departmental-report-html",
+      "federal-regulatory-plans",
+      "federal-publications",
+      "federal-publication-checklists",
+      "federal-policy-editions",
+      "federal-procurement",
+      "parliament",
+      "hansard-house",
+      "hansard-senate",
+      "geds",
+      "federal-institution-coverage",
+      "statutes-local",
+      "written-questions",
+      "committees"
+    ],
+    "officialTitlesLocalCommands": 0,
+    "localRegisterMetadataContinues": true,
+    "macTitlesCsvPublisherFetch": false
+  },
+  "installedLaunchAgent": {
+    "label": "com.civicsignal.refresh-weekly",
+    "calendarLocal": {
+      "Hour": 9,
+      "Minute": 0,
+      "Weekday": 6
+    },
+    "interpreter": "python3.14",
+    "program": "scripts/refresh-weekly.py",
+    "programSha256": "6a93df6ac033bedd34d48b7e6f273e461db2fb0e890d6555191062ce5645dbee",
+    "installedPlistMatchesCheckout": true,
+    "loadedProgramMatchesCheckout": true,
+    "cfFoundInInstalledPath": true,
+    "cfResolvedInInstalledBunBin": true,
+    "accountId": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+    "sourceCredentialReadback": {
+      "CLI": "cf r2 objects get weekly/official-titles/latest-complete.json --bucket-name civicsignal-stage-weekly",
+      "environment": "Installed PATH and LANG with standard HOME and explicit staging account, no inherited interactive shell variables",
+      "instanceId": "federal-discovery-1795712702888",
+      "status": "complete"
+    }
+  },
+  "weeklyOperatorRun": {
+    "ok": true,
+    "durationMs": 196310,
+    "report": "dist/refresh-weekly/2026-11-26T17-17-24.574081Z.json",
+    "reportSha256": "374e9df5d3057d6d1f3e3b8b09b851e3c381319433277cb69ef5699b52d49fe8",
+    "publishedCoverage": "dist/refresh-weekly/federal-institutions.json",
+    "publishedCoverageSha256": "668563efd1d8dcd9fceec3480600bb6a14dea6e2fe75f4bcd212476d5fab43d4"
+  }
+}
