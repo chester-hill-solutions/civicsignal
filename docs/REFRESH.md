@@ -4,11 +4,11 @@ Use the Cloudflare sections to operate private staging from any authorized host.
 
 ## Cloudflare consultations staging
 
-The [staging Worker configuration](../services/consultations/wrangler.jsonc) identifies the private Worker, its calendar and its dedicated D1, R2 and Workflow bindings. Each calendar occurrence creates the Workflow instance `consultations-<scheduledTime>`, where the suffix is the Unix time in milliseconds. Operators can inspect that instance in Cloudflare Workflows from any authorized host. A completed instance returns the revision, row count and R2 receipt key. Inspect the failed step and its error for an incomplete instance.
+The [staging Worker configuration](../services/consultations/wrangler.jsonc) identifies the private Worker and its dedicated D1, R2 and Workflow bindings. The combined daily coordinator starts the Workflow instance `consultations-<scheduledTime>`, where the suffix is the Unix time in milliseconds. Operators can inspect that instance in Cloudflare Workflows from any authorized host. A completed instance returns the revision, row count and R2 receipt key. Inspect the failed step and its error for an incomplete instance.
 
 The [Workflow](../services/consultations/worker.ts) archives the public CSV and dictionary by SHA-256 before publication. A retry of the publication step reads those checkpointed objects. The D1 transaction publishes record changes and their history together. A private service binding then uses the same lookup function as the product API to verify a source row's English and French titles. Its dated receipt in `consultations/runs/` identifies the original bytes, catalogue revision, D1 publication rows read and written, and the verified record. Request these objects through authenticated Cloudflare access. Customer workspace authorization and billing belong to the product API.
 
-For an operator-triggered staging check, select the project account in `cf` and run the command below. It creates one manual instance with the current time. For calendar evidence, correlate the Worker's scheduled event with the Workflow instance and its R2 receipt. The deployed calendar is also readable with `wrangler init --from-dash civicsignal-stage-consultations --no-delegate-c3` from an empty temporary directory.
+For an operator-triggered staging check, select the project account in `cf` and run the command below. It creates one manual instance with the current time. For calendar evidence, correlate the combined coordinator occurrence with this child instance and its R2 receipt.
 
 ```sh
 consultations_ms=$(node -p 'Date.now()')
@@ -26,7 +26,7 @@ bun run test test/consultations-refresh-workerd.test.ts
 
 ## Cloudflare NSERC funding staging
 
-The [private funding Worker](../services/funding/wrangler.jsonc) runs daily at **22:40 UTC**. Each calendar occurrence starts a Workflow with instance ID `nserc-<scheduledTime>` in Unix milliseconds. Its [private Python collector](../services/funding/collector/wrangler.jsonc) runs the same bilingual CCI catalogue parser as the local operator and preserves the official HTML pages and the dated inventory in the dedicated funding R2 bucket. Cloudflare performs the publisher fetches and all storage operations.
+The combined daily coordinator starts the [private NSERC Workflow](../services/funding/wrangler.jsonc) with instance ID `nserc-<scheduledTime>` in Unix milliseconds. Its [private Python collector](../services/funding/collector/wrangler.jsonc) runs the same bilingual CCI catalogue parser as the local operator and preserves the official HTML pages and the dated inventory in the dedicated funding R2 bucket. Cloudflare performs the publisher fetches and all storage operations.
 
 Use the instance status and `funding/nserc/runs/<instanceId>.json` in R2 to check the outcome. The receipt identifies the inventory by SHA-256, the number and size of the sources, and the serving revision. It also records publication row counts and private English and French lookups with hashes of the served terms. A later observation can capture changed HTML while leaving the edition history unchanged. Check the publication revision and edition events to establish whether program terms changed.
 
@@ -49,7 +49,7 @@ bun run test test/funding-refresh-workerd.test.ts test/funding-hosted-publish.te
 
 ## Cloudflare ESDC funding staging
 
-The [ESDC Workflow](../services/funding/esdc/wrangler.jsonc) runs daily at **23:15 UTC** with a [private collector](../services/funding/esdc-collector/wrangler.jsonc). The two Workers share the funding D1 and R2 resources with NSERC. The Workflow accepts only ESDC inventory, writes ESDC catalogue rows, and verifies an English and a French edition through the private lookup service.
+The combined daily coordinator starts the [ESDC Workflow](../services/funding/esdc/wrangler.jsonc), which uses a [private collector](../services/funding/esdc-collector/wrangler.jsonc). The two Workers share the funding D1 and R2 resources with NSERC. The Workflow accepts only ESDC inventory, writes ESDC catalogue rows, and verifies an English and a French edition through the private lookup service.
 
 The following command starts a manual observation in the staging account.
 
@@ -74,7 +74,7 @@ If acquisition stops before publication, inspect the failing URL in the collecto
 
 ## Cloudflare House committee calls staging
 
-The private House Workflow refreshes session 45-1 daily at **00:15 UTC**. This is 19:15 the preceding day in Toronto during standard time and 20:15 during daylight time. It captures the two official participation indexes, their linked study pages and eight Senate coverage probes. The Workflow retains each original and its request timestamp in R2. The publication transaction applies the dated call and study-link changes to the sealed committee database. The last full corpus cutoff still identifies the base corpus. The authenticated product check confirms the served English and French calls, linked studies and related counts. [Workflow configuration](../services/house/wrangler.jsonc) · [Collector configuration](../services/house-collector/wrangler.jsonc)
+The combined daily coordinator starts the private House Workflow for session 45-1. It captures the two official participation indexes, their linked study pages and eight Senate coverage probes. The Workflow retains each original and its request timestamp in R2. The publication transaction applies the dated call and study-link changes to the sealed committee database. The last full corpus cutoff still identifies the base corpus. The authenticated product check confirms the served English and French calls, linked studies and related counts. [Workflow configuration](../services/house/wrangler.jsonc) · [Collector configuration](../services/house-collector/wrangler.jsonc)
 
 Each occurrence uses an instance ID of the form `house-calls-<scheduledTime>`, with the UTC event timestamp in Unix milliseconds. To inspect an occurrence and read its completion receipt, select the staging account and use its instance ID.
 
@@ -84,7 +84,7 @@ cf workflows instances get "$house_instance" --workflow-name civicsignal-stage-h
 cf r2 objects get "committee/house-calls/runs/$house_instance.json" --bucket-name civicsignal-stage-funding
 ```
 
-If acquisition stops before publication, restart the same incomplete instance to reuse verified originals and request timestamps. Use the dated receipt when investigating a completed occurrence. A new calendar occurrence makes fresh publisher requests. The Cloudflare Workflow status names the failed step. The completion receipt records the R2 inventory digest, committed call counts, both language checks, and product usage. If a Senate probe is unreadable, its checkpoint records that outcome. A missing House page fails acquisition.
+If House acquisition is interrupted after retaining pages, restart the same incomplete instance to reuse verified originals and request timestamps. For a confirmed publisher 403, read the refusal under `committee/house-calls/failures/<instanceId>.json` and the combined report. Use the dated receipt when investigating a completed occurrence. A new calendar occurrence makes fresh publisher requests. The Cloudflare Workflow status names the failed step. The completion receipt records the R2 inventory digest, committed call counts, both language checks, and product usage. If a Senate probe is unreadable, its checkpoint records that outcome. A missing House page fails acquisition.
 
 For the latest completed D1 observation, compare all hosted call rows with a replay through the local intake operator using the hosted originals and the prepublication snapshot. The command writes its replay database to a temporary directory.
 
@@ -94,7 +94,7 @@ python3 -B scripts/verify-house-staging.py "$house_instance"
 
 ## Combined Cloudflare daily refresh
 
-The private combined Workflow starts consultations, NSERC, ESDC and House calls daily at **15:15 UTC** (10:15 Toronto standard time or 11:15 during daylight time). Each child keeps its own dated acquisition and publication receipt. When the children finish, the combined Workflow checks the authenticated API and writes a single immutable report. [Coordinator configuration](../services/daily/wrangler.jsonc)
+The private combined Workflow starts consultations, NSERC, ESDC and House calls daily at **15:15 UTC** (10:15 Toronto standard time or 11:15 during daylight time). The coordinator owns the staging calendar. Each child keeps its own dated acquisition and publication receipt. When the children finish, the combined Workflow checks the authenticated API and writes a single immutable report. [Coordinator configuration](../services/daily/wrangler.jsonc)
 
 ```sh
 export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a

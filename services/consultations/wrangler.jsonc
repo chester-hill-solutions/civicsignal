@@ -29,5 +29,5 @@
     "binding": "ARCHIVE",
     "bucket_name": "civicsignal-stage-consultations"
   }],
-  "triggers": { "crons": ["10 22 * * *"] }
+  "triggers": { "crons": [] }
 }

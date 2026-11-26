@@ -26,5 +26,5 @@
     "migrations_table": "cc_house_migrations"
   }],
   "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-funding" }],
-  "triggers": { "crons": ["15 0 * * *"] }
+  "triggers": { "crons": [] }
 }

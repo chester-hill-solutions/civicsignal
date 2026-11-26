@@ -25,5 +25,5 @@
     "migrations_dir": "../../preview/funding/migrations"
   }],
   "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-funding" }],
-  "triggers": { "crons": ["40 22 * * *"] }
+  "triggers": { "crons": [] }
 }
