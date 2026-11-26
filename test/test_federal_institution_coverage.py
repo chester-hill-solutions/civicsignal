@@ -302,6 +302,62 @@ class InstitutionCoverageTests(unittest.TestCase):
         self.assertEqual(counted, [("departmental-plans", ["Known"])] * 2)
         self.assertEqual(provenance["departmental-plans"]["runId"], "sample")
 
+    def test_pdf_attribution_retains_verified_archive_only_for_unchanged_temporary_failures(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            corpus = Path(temporary)
+            root = corpus / "departmental-report-documents"
+            docs = coverage.HTML_DOCUMENTS
+            root.mkdir()
+            body, extracted = b"%PDF-1.5 archived document", b"Extracted annual report"
+            body_hash, text_hash = (hashlib.sha256(value).hexdigest() for value in (body, extracted))
+            body_path = docs.store_gzip(root, body_hash, body, "objects")
+            text_path = docs.store_gzip(root, text_hash, extracted, "text-objects")
+
+            def evidence(key, status, *, year="2025-2026"):
+                url = f"https://www.canada.ca/{key}.pdf"
+                document = {"target_url": url, "fetch_url": url,
+                            "status": "readable" if status == 200 else "failed", "http_status": status}
+                if status == 200:
+                    document.update(body_sha256=body_hash, body_bytes=len(body), object_path=body_path,
+                                    text_sha256=text_hash, text_bytes=len(extracted), text_object_path=text_path,
+                                    readable_chars=len(extracted))
+                citation = {"citation_id": key, "target_url": url, "disposition": "verified" if status == 200 else "failed",
+                            "issuer_key": key, "issuer_label": key, "family": "departmental-plans",
+                            "issue_year": year, "language": "en"}
+                return document, citation
+
+            def publish(db, run_id, date, records):
+                documents, citations = map(list, zip(*records))
+                report = {"runId": run_id, "status": "partial", "observedAt": date,
+                          "documents": documents, "citations": citations}
+                path = root / "generations" / f"{run_id}.json"
+                digest, size = docs.write_json(path, report)
+                relative = str(path.relative_to(root))
+                db.execute("""
+                    INSERT INTO generations (run_id, started_at, status, source_report_run_id, source_report_path,
+                        source_report_sha256, input_path, expected_citations, unique_targets, report_path, report_sha256)
+                    VALUES (?, ?, 'partial', 'source', 'current.json', 'sha', 'input', ?, ?, ?, ?)
+                """, (run_id, date, len(citations), len(documents), relative, digest))
+                docs.write_json(root / "latest-attempt.json", {"runId": run_id, "status": "partial",
+                    "reportPath": relative, "reportSha256": digest, "reportBytes": size})
+
+            with closing(docs.open_db(root)) as db, db:
+                publish(db, "original", "2026-11-01", [evidence(key, 200) for key in
+                        ("retained", "changed-year", "gone", "missing-between", "delisted")])
+                publish(db, "retry", "2026-11-02", [evidence("retained", 429), evidence("missing-between", 404)])
+                publish(db, "current", "2026-11-03", [evidence("retained", 403),
+                        evidence("changed-year", 503, year="2026-2027"), evidence("gone", 404),
+                        evidence("missing-between", 503), evidence("fresh", 200)])
+
+            provenance, matched = {}, []
+            coverage.count_report_documents(corpus, lambda _, labels: matched.extend(labels), provenance)
+            self.assertEqual(matched, ["fresh", "retained"])
+            proof = provenance["departmental-plans"]["retainedEvidence"]
+            self.assertEqual([(item["runId"], item["countedEditions"]) for item in proof], [("original", 1)])
+            (root / body_path).write_bytes(b"corrupted")
+            with self.assertRaises(OSError):
+                coverage.count_report_documents(corpus, lambda *_: None, {})
+
     def test_html_report_editions_use_verified_snapshot_and_dedupe_shared_urls(self):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as temporary:

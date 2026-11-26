@@ -289,7 +289,7 @@
     "macPoweredOffDuringTest": false
   },
   "followup": {
-    "status": "armed",
+    "status": "degraded",
     "scheduledTime": "2026-11-26T21:00:00.000Z",
     "calendar": "0 21 * * THU",
     "fixes": [
@@ -308,6 +308,311 @@
       "passages": 70310,
       "documentVersions": 237
     },
-    "pythonTestsPassed": 392
+    "pythonTestsPassed": 392,
+    "instanceId": "institution-coverage-1795726823000",
+    "workflowVersion": "49250390-b29c-4e21-a6a3-3386daff1170",
+    "eventTime": "2026-11-26T21:00:23+00:00",
+    "eventTimestamp": 1795726825997,
+    "startedAt": "2026-11-26T21:00:26.483Z",
+    "inputRestoredFromFirstNativeRun": {
+      "key": "weekly/institution-coverage/manifests/1f0ae6f387c6077c39fc33444d897fd01188ac42107a7329fe0675c546d14936.json",
+      "sha256": "1f0ae6f387c6077c39fc33444d897fd01188ac42107a7329fe0675c546d14936",
+      "bytes": 23913
+    },
+    "workflowStatus": "complete",
+    "completedAt": "2026-11-26T21:45:44.619Z",
+    "elapsedSeconds": 2718.136,
+    "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795726823000.json",
+    "receiptSha256": "e706c21f24cd90dae4661118692af8386f75041f1f616a6efba43f27ff32e603",
+    "report": {
+      "key": "weekly/institution-coverage/reports/2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2.json",
+      "sha256": "2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2",
+      "bytes": 2763825
+    },
+    "state": {
+      "key": "weekly/institution-coverage/manifests/9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327.json",
+      "sha256": "9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327",
+      "bytes": 25739
+    },
+    "inputFreshness": {
+      "weekly": true,
+      "consultations": true
+    },
+    "sourceGroups": 33,
+    "registeredSeries": 18,
+    "institutionsWithAttributedRecords": 99,
+    "statutoryInstitutionNames": 109,
+    "namesWithoutAttributedRecords": [
+      "Director of Soldier Settlement",
+      "The Director, The Veterans’ Land Act",
+      "Energy Supplies Allocation Board",
+      "International Joint Commission (Canadian Section)",
+      "Miscarriage of Justice Review Commission",
+      "The portion of the federal public administration in the Office of the Chief Electoral Officer in which the employees referred to in section 509.3 of the Canada Elections Act occupy their positions",
+      "Staff of the Supreme Court",
+      "Canada Investment and Savings",
+      "Indian Oil and Gas Canada",
+      "Staff of the Non-Public Funds, Canadian Forces"
+    ],
+    "matchedRecords": 1869100,
+    "unresolvedRecords": 291361,
+    "recordCountChangesFromFirstNative": {
+      "departmental-plans": {
+        "matched": -8,
+        "unresolved": 0
+      },
+      "departmental-results": {
+        "matched": -43,
+        "unresolved": 0
+      },
+      "ircc-guidance": {
+        "matched": 6,
+        "unresolved": 0
+      }
+    },
+    "latestAttemptVerified": true,
+    "workspacePointerVerified": true,
+    "attempts": [
+      {
+        "source": "ati-summaries",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 7.248
+      },
+      {
+        "source": "grant-awards",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 84.524
+      },
+      {
+        "source": "briefing-notes",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 4.83
+      },
+      {
+        "source": "federal-procurement",
+        "exitCodes": [
+          0,
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 5.852
+      },
+      {
+        "source": "federal-disclosures",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 8.398
+      },
+      {
+        "source": "eccc",
+        "exitCodes": [
+          0,
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 975.112
+      },
+      {
+        "source": "federal-report-directories",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 10.155
+      },
+      {
+        "source": "departmental-report-editions",
+        "exitCodes": [
+          2,
+          2
+        ],
+        "ok": false,
+        "elapsedSeconds": 76.608
+      },
+      {
+        "source": "departmental-report-documents",
+        "exitCodes": [
+          2,
+          0
+        ],
+        "ok": false,
+        "elapsedSeconds": 500.911
+      },
+      {
+        "source": "departmental-report-html",
+        "exitCodes": [
+          2
+        ],
+        "ok": false,
+        "elapsedSeconds": 36.029
+      },
+      {
+        "source": "federal-regulatory-plans",
+        "exitCodes": [
+          0,
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 7.83
+      },
+      {
+        "source": "federal-publications",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 0.869
+      },
+      {
+        "source": "federal-publication-checklists",
+        "exitCodes": [
+          0,
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 73.095
+      },
+      {
+        "source": "federal-guidance",
+        "exitCodes": [
+          0,
+          2,
+          0
+        ],
+        "ok": false,
+        "elapsedSeconds": 369.114
+      },
+      {
+        "source": "federal-policy-editions",
+        "exitCodes": [
+          2,
+          0
+        ],
+        "ok": false,
+        "elapsedSeconds": 142.238
+      },
+      {
+        "source": "geds",
+        "exitCodes": [
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 0.833
+      }
+    ],
+    "sourceFailures": {
+      "departmental-report-editions": "382 of 435 issuer pages fetched, with 52 failures and one skip. The collector carried forward verified prior pages.",
+      "departmental-report-documents": "62 of 116 PDFs fetched, with 54 failures and 54 of 117 citations verified in this attempt. The report lost 51 previously counted PDF editions.",
+      "departmental-report-html": "1,678 of 1,697 targets fetched, with two fetch failures, four not found, 12 outside policy and one unreadable. The queue had zero pending targets.",
+      "federal-guidance": "IRCC replay verified 5,972 editions with two acquisition failures.",
+      "federal-policy-editions": "534 of 537 PDFs retrieved on the latest attempt. All 537 archived PDFs replayed and one edition remained under identity review."
+    },
+    "latestCompletePointerPresent": false
+  },
+  "savedWorkspaceReplay": {
+    "instanceId": "institution-coverage-1795725428845",
+    "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795725428845.json",
+    "receiptSha256": "6e33c889308905f50ec83b668e5d22a9a4dede9471a8eee0a7e8c1665fe34273",
+    "inputState": {
+      "key": "weekly/institution-coverage/manifests/1f0ae6f387c6077c39fc33444d897fd01188ac42107a7329fe0675c546d14936.json",
+      "sha256": "1f0ae6f387c6077c39fc33444d897fd01188ac42107a7329fe0675c546d14936",
+      "bytes": 23913
+    },
+    "report": {
+      "key": "weekly/institution-coverage/reports/703870f833d05bc64c2063b4c61b029c4ac8fc626cbc2268f8315a9a5299219f.json",
+      "sha256": "703870f833d05bc64c2063b4c61b029c4ac8fc626cbc2268f8315a9a5299219f",
+      "bytes": 2763932
+    },
+    "matchesNativeReportByteForByte": true,
+    "startedAt": "2026-11-26T20:37:10.520Z",
+    "completedAt": "2026-11-26T20:41:45.936Z",
+    "elapsedSeconds": 275.416
+  },
+  "standingSchedule": {
+    "cron": "0 16 * * SAT",
+    "timezone": "UTC",
+    "firstScheduledOccurrence": "2026-11-28T16:00:00Z",
+    "triggerDeployVerified": true,
+    "independentReadback": [
+      "0 16 * * SAT"
+    ],
+    "runtimeVersion": "a28c1b13-5b7a-4021-9f1a-832992735e0a",
+    "runtimeImageSha256": "563fff737dcdb95352d6f0629482d4100bd2a5c5b297c3e12d10e775a6a304c6"
+  },
+  "pdfRetentionVerification": {
+    "publisherFetchTimeoutsInFollowup": 54,
+    "archivedVerifiedCitations": 51,
+    "archivedOriginalsAndTextHashesVerified": true,
+    "linuxImageSha256": "563fff737dcdb95352d6f0629482d4100bd2a5c5b297c3e12d10e775a6a304c6",
+    "localLinuxCounts": {
+      "departmental-plans": 50,
+      "departmental-results": 55
+    },
+    "retainedBySeries": {
+      "departmental-plans": 8,
+      "departmental-results": 43
+    },
+    "firstHostedReplayAfterDeploy": {
+      "instanceId": "institution-coverage-1795733984606",
+      "completedAt": "2026-11-26T23:04:21.760Z",
+      "status": "complete",
+      "report": {
+        "key": "weekly/institution-coverage/reports/2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2.json",
+        "sha256": "2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2",
+        "bytes": 2763825
+      },
+      "restoredEditions": 0
+    },
+    "confirmedImageReplay": {
+      "instanceId": "institution-coverage-1795734388416",
+      "workflowStatus": "complete",
+      "workflowVersion": "a4eb5dec-ee9b-4e66-b3c7-eafb888dd3ca",
+      "trigger": "api",
+      "startedAt": "2026-11-26T23:06:31.295Z",
+      "completedAt": "2026-11-26T23:10:21.316Z",
+      "publisherStatus": "replay",
+      "inputState": {
+        "key": "weekly/institution-coverage/manifests/9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327.json",
+        "sha256": "9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327",
+        "bytes": 25739
+      },
+      "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795734388416.json",
+      "receiptSha256": "88cafb26f07cf677a082e58f1186e8501a4e3e2bab47026bb0e08a3557d5519b",
+      "report": {
+        "key": "weekly/institution-coverage/reports/b2b29fe5b8a75dae915dbbd72c1d74ffe5a55bd11a66a7a5cbfc409e5e3b74e4.json",
+        "sha256": "b2b29fe5b8a75dae915dbbd72c1d74ffe5a55bd11a66a7a5cbfc409e5e3b74e4",
+        "bytes": 2764811
+      },
+      "reportHashVerified": true,
+      "sourceGroups": 33,
+      "registeredSeries": 18,
+      "restoredEditions": 51,
+      "restoredBySeries": {
+        "departmental-plans": 8,
+        "departmental-results": 43
+      },
+      "recordCounts": {
+        "matched": 1869151,
+        "unresolved": 291361
+      }
+    }
+  },
+  "macScheduleCutover": {
+    "localScheduledReportStepRemoved": true,
+    "installedRunner": "scripts/refresh-weekly.py",
+    "configuredMacStepsAfterCutover": 26,
+    "weeklyLaunchAgentRunsAtReadback": 0,
+    "manualDiagnostic": "scripts/federal-institution-coverage.py"
   }
 }

@@ -132,6 +132,10 @@ def classify_sources(provenance, register):
 
 def latest_report_generation(root, report_dir=Path(".")):
     pointer = json.loads((root / report_dir / "latest-attempt.json").read_bytes())
+    return read_report_generation(root, report_dir, pointer)
+
+
+def read_report_generation(root, report_dir, pointer):
     directory = root / report_dir / "generations"
     path = directory / (pointer["runId"] + ".json")
     if path.parent != directory or str(path.relative_to(root)) != pointer["reportPath"]:
@@ -160,18 +164,69 @@ def report_links_by_institution(corpus, aliases):
     return counts, summary
 
 
+def retain_pdf_after_fetch_failure(document):
+    status = document["http_status"]
+    return document["status"] == "failed" and (
+        status is None or status in (403, 408, 425, 429) or 500 <= status <= 599)
+
+
+def retained_report_documents(root, report, documents):
+    """Reuse the latest archived assessment for an unchanged citation after a fetch failure."""
+    pending = {
+        citation["citation_id"]: citation for citation in report["citations"]
+        if citation["disposition"] == "failed"
+        and retain_pdf_after_fetch_failure(documents[citation["target_url"]])
+    }
+    if not pending:
+        return
+    with closing(HTML_DOCUMENTS.open_db(root, read_only=True)) as db:
+        generations = db.execute("""
+            SELECT run_id AS runId, status, report_path AS reportPath, report_sha256 AS reportSha256
+            FROM generations
+            WHERE report_path IS NOT NULL
+              AND started_at < (SELECT started_at FROM generations WHERE run_id = ?)
+            ORDER BY started_at DESC, run_id DESC
+        """, (report["runId"],)).fetchall()
+    for generation in generations:
+        archived, evidence = read_report_generation(root, Path("."), dict(generation))
+        previous_documents = {document["target_url"]: document for document in archived["documents"]}
+        checked = set()
+        for previous in archived["citations"]:
+            citation_id = previous["citation_id"]
+            if citation_id not in pending:
+                continue
+            current = pending[citation_id]
+            url = current["target_url"]
+            document = previous_documents[previous["target_url"]]
+            if retain_pdf_after_fetch_failure(document) or document["status"] == "budget-skipped":
+                continue
+            del pending[citation_id]
+            if (previous["disposition"] != "verified" or previous["target_url"] != url
+                    or previous["issuer_key"] != current["issuer_key"]
+                    or previous["issue_year"] != current["issue_year"]
+                    or document["fetch_url"] != documents[url]["fetch_url"]):
+                continue
+            if url not in checked:
+                HTML_DOCUMENTS.read_gzip(root, document["object_path"], document["body_sha256"],
+                                         document["body_bytes"], HTML_DOCUMENTS.MAX_DOCUMENT_BYTES)
+                HTML_DOCUMENTS.read_gzip(root, document["text_object_path"], document["text_sha256"],
+                                         document["text_bytes"], HTML_DOCUMENTS.MAX_DOCUMENT_BYTES)
+                checked.add(url)
+            yield current, document, evidence
+        if not pending:
+            break
+
+
 def count_report_documents(corpus, count, provenance):
-    report, evidence = latest_report_generation(corpus / "departmental-report-documents")
+    root = corpus / "departmental-report-documents"
+    report, evidence = latest_report_generation(root)
     documents = {item["target_url"]: item for item in report["documents"]}
     for family in ("departmental-plans", "departmental-results"):
         provenance[family] = {**evidence, "series": family,
                               "recordType": "distinct verified report edition linked by the issuer"}
     seen = set()
-    for citation in report["citations"]:
-        if citation["disposition"] != "verified":
-            continue
+    def count_edition(citation, document):
         family = citation["family"]
-        document = documents[citation["target_url"]]
         if (family not in ("departmental-plans", "departmental-results") or not document["body_sha256"]
                 or not document["text_sha256"] or not document["readable_chars"]):
             raise ValueError("Verified report citation has no corresponding readable document")
@@ -179,6 +234,20 @@ def count_report_documents(corpus, count, provenance):
         if identity not in seen:
             count(family, [citation["issuer_label"]])
             seen.add(identity)
+            return True
+        return False
+
+    for citation in report["citations"]:
+        if citation["disposition"] == "verified":
+            count_edition(citation, documents[citation["target_url"]])
+    retained = defaultdict(dict)
+    for citation, document, earlier in retained_report_documents(root, report, documents):
+        if count_edition(citation, document):
+            runs = retained[citation["family"]]
+            entry = runs.setdefault(earlier["runId"], {**earlier, "countedEditions": 0})
+            entry["countedEditions"] += 1
+    for family, runs in retained.items():
+        provenance[family]["retainedEvidence"] = list(runs.values())
 
 
 def count_html_report_documents(corpus, count, provenance, aliases):

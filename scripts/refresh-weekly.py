@@ -272,10 +272,6 @@ STEPS = (
     Step("federal-disclosures", (("python3", "-B", "scripts/federal-disclosures.py"),), 1800,
          "Publish the algorithmic assessment and four briefing-package catalogues.",
          artifacts=("data/corpus/federal-disclosures/receipt.json",)),
-    Step("federal-institution-coverage", (("python3", "-B", "scripts/federal-institution-coverage.py",
-          "--include-acquisitions", "--output", "dist/refresh-weekly/federal-institutions.json"),), 1800,
-         "Match published records to the statutory institution roster using the latest acquired source files.",
-         artifacts=("dist/refresh-weekly/federal-institutions.json",)),
     Step(
         "ati-summaries",
         (("python3", "-B", "scripts/federal-bulk.py", "refresh", "ati-summaries"),),
@@ -310,7 +306,7 @@ RUN_ORDER = (
     "departmental-report-documents", "departmental-report-html", "federal-regulatory-plans", "federal-publications",
     "federal-publication-checklists", "federal-policy-editions",
     "federal-procurement", "parliament", "hansard-house", "hansard-senate",
-    "geds", "federal-institution-coverage", "statutes-local", "written-questions", "committees",
+    "geds", "statutes-local", "written-questions", "committees",
 )
 
 

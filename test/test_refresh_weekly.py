@@ -20,7 +20,7 @@ SPEC.loader.exec_module(weekly)
 class WeeklyRefreshTests(unittest.TestCase):
     def test_catalog_has_expected_weekly_collections(self):
         self.assertEqual({step.name for step in weekly.STEPS}, set(weekly.RUN_ORDER))
-        retired = {"official-titles", "service-inventory"}
+        retired = {"official-titles", "service-inventory", "federal-institution-coverage"}
         self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
         self.assertTrue(all(retired.isdisjoint(command) for command in commands))
@@ -41,14 +41,10 @@ class WeeklyRefreshTests(unittest.TestCase):
                                     ("departmental-report-editions", "departmental-report-documents"),
                                     ("departmental-report-editions", "departmental-report-html"),
                                     ("departmental-report-editions", "federal-regulatory-plans"),
-                                    ("departmental-report-documents", "federal-institution-coverage"),
-                                    ("federal-regulatory-plans", "federal-institution-coverage"),
                                     ("federal-publications", "federal-publication-checklists"),
                                     ("federal-publication-checklists", "federal-policy-editions"),
                                     ("federal-guidance", "federal-policy-editions"),
-                                    ("gazette", "gazette-year"), ("federal-disclosures", "federal-institution-coverage"),
-                                    ("briefing-notes", "federal-institution-coverage"), ("eccc", "federal-institution-coverage"), ("geds", "federal-institution-coverage"),
-                                    ("federal-procurement", "federal-institution-coverage")]:
+                                    ("gazette", "gazette-year")]:
             self.assertLess(weekly.RUN_ORDER.index(dependency), weekly.RUN_ORDER.index(derived))
         self.assertEqual(weekly._resolve_date("@toronto-year@/@toronto-date@"),
                          f"{weekly.RUN_DATE.year}/{weekly.RUN_DATE.isoformat()}")

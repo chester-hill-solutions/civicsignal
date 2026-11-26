@@ -18,5 +18,5 @@
   "d1_databases": [{ "binding": "CONSULTATIONS_DB", "database_name": "civicsignal-stage-consultations",
     "database_id": "ef80296e-8122-43e9-a8bc-c5e60941bd08" }],
   "workflows": [{ "binding": "COVERAGE", "name": "civicsignal-stage-institution-coverage", "class_name": "InstitutionCoverage" }],
-  "triggers": { "crons": [] }
+  "triggers": { "crons": ["0 16 * * SAT"] }
 }
