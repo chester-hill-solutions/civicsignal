@@ -1,0 +1,30 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-house",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "limits": { "cpu_ms": 300000, "subrequests": 10000 },
+  "workflows": [{
+    "binding": "REFRESH",
+    "name": "civicsignal-stage-house",
+    "class_name": "HouseRefresh"
+  }],
+  "services": [
+    { "binding": "HOUSE_SERVING", "service": "civicsignal-stage-daily-checks", "entrypoint": "HouseServingCheck" },
+    { "binding": "COLLECTOR", "service": "civicsignal-stage-house-collector" }
+  ],
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "civicsignal-stage-committees-45-1",
+    "database_id": "fb9b6314-4b06-4690-a893-7277a8ea00bb",
+    "migrations_dir": "migrations",
+    "migrations_table": "cc_house_migrations"
+  }],
+  "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-funding" }],
+  "triggers": { "crons": ["15 0 * * *"] }
+}

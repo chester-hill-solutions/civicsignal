@@ -466,7 +466,7 @@ async function callRelatedCounts(
   };
 }
 
-function callFromRow(row: Record<string, unknown>, asOf: string): CommitteeCall {
+export function callFromRow(row: Record<string, unknown>, asOf: string): CommitteeCall {
   const metadata = parseJson(row.metadata_json);
   const deadline = readDeadline(metadata.deadline);
   const observedAt = instantString(metadata.observedAt);

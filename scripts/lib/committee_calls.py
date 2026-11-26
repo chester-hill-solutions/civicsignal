@@ -398,6 +398,11 @@ def build_call(
     }
 
 
+def dropped_call_metadata(metadata: dict) -> dict | None:
+    """Keep the last confirmed facts and revision when a previously listed call leaves."""
+    return None if metadata.get("listed") is False else {**metadata, "listed": False}
+
+
 def mark_unlisted(db, session: str, present: set[tuple[str, str]]) -> list[dict]:
     """Flag stored calls that the current listing no longer names.
 
@@ -416,10 +421,9 @@ def mark_unlisted(db, session: str, present: set[tuple[str, str]]) -> list[dict]
     ):
         if (row["id"], row["language"]) in present:
             continue
-        metadata = json.loads(row["metadata_json"])
-        if metadata.get("listed") is False:
+        metadata = dropped_call_metadata(json.loads(row["metadata_json"]))
+        if metadata is None:
             continue
-        metadata["listed"] = False
         update(db, {
             "session": row["session"], "id": row["id"], "language": row["language"],
             "kind": row["kind"], "chamber": row["chamber"], "committee_id": row["committee_id"],
