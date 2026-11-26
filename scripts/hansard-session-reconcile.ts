@@ -22,13 +22,15 @@ export async function reconcileHansardSession(chamber: 'house' | 'senate', sessi
   const absoluteArchive = resolve(archiveDirectory);
   const outputDirectory = resolve(options.receiptRoot ?? 'dist/hansard/reconciliation', session, chamber);
   const calendarObject = persistCalendarObject(outputDirectory, calendar.bytes);
-  const { DatabaseSync: SQLite } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: typeof DatabaseSync };
-  const database = new SQLite(absoluteDatabase, { readOnly: true });
+  const { Database: SQLite } = createRequire(import.meta.url)('bun:sqlite') as {
+    Database: new (file: string, options: { readonly: boolean }) => DatabaseSync;
+  };
+  const database = new SQLite(absoluteDatabase, { readonly: true });
   let analysis: SessionReconciliation;
   try { analysis = analyzeHansardSessionCoverage(database, chamber, session, calendar.sittings, { archiveRoot: absoluteArchive, cutoff }); }
   finally { database.close(); }
   const { repairs, verifiedWeeks } = repairMissingWeeks(analysis, chamber, session, absoluteDatabase, absoluteArchive);
-  const finalDatabase = new SQLite(absoluteDatabase, { readOnly: true });
+  const finalDatabase = new SQLite(absoluteDatabase, { readonly: true });
   try { analysis = analyzeHansardSessionCoverage(finalDatabase, chamber, session, calendar.sittings, { archiveRoot: absoluteArchive, cutoff }); }
   finally { finalDatabase.close(); }
   if (!analysis.conflicts.length && !repairs.length) verifyLatestArchivedWeek(analysis, absoluteDatabase, absoluteArchive, verifiedWeeks);

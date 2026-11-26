@@ -19,13 +19,13 @@ BUCKET = "civicsignal-stage-weekly"
 ACCOUNT = "ad5ec479b9a421faa2ed06c3d1c2b23a"
 
 
-def existing_chunks():
+def existing_chunks(prefix=snapshot.PREFIX):
     cursor = []
     found = {}
     while True:
         values = json.loads(subprocess.check_output([
             "cf", "r2", "objects", "list", "--bucket-name", BUCKET,
-            "--prefix", f"{snapshot.PREFIX}/chunks/", "--per-page", "1000", *cursor,
+            "--prefix", f"{prefix}/chunks/", "--per-page", "1000", *cursor,
         ], env={**os.environ, "CLOUDFLARE_ACCOUNT_ID": ACCOUNT}, timeout=90))
         found.update((item["key"], (item["size"], item["etag"].strip('"'))) for item in values)
         if len(values) < 1000:
@@ -53,7 +53,9 @@ def upload(key, data, content_type):
         raise RuntimeError(f"Cloudflare refused or timed out during upload of {key} after four attempts.")
 
 
-def publish(workspace, jobs, put):
+def publish(workspace, jobs, put, *, roots=None, prefix=snapshot.PREFIX):
+    if roots is None:
+        roots = snapshot.DEFAULT_ROOTS
     pending = set()
     submitted = set()
     with ThreadPoolExecutor(max_workers=jobs) as pool:
@@ -68,12 +70,12 @@ def publish(workspace, jobs, put):
                     pending.remove(task)
             pending.add(pool.submit(put, key, data, "application/octet-stream"))
 
-        manifest = snapshot.capture(workspace, snapshot.DEFAULT_ROOTS, put_chunk)
+        manifest = snapshot.capture(workspace, roots, put_chunk, allowed=roots, prefix=prefix)
         for task in pending:
             task.result()
     raw = snapshot.canonical(manifest)
     checksum = snapshot.digest(raw)
-    key = f"{snapshot.PREFIX}/manifests/{checksum}.json"
+    key = f"{prefix}/manifests/{checksum}.json"
     put(key, raw, "application/json")
     print(f"{len(manifest['chunks'])} chunks, {manifest['compressedBytes']:,} compressed bytes",
           file=sys.stderr)

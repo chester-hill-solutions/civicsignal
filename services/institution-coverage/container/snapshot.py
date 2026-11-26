@@ -73,8 +73,9 @@ def check_root_path(base, name):
 
 
 class ChunkWriter:
-    def __init__(self, put):
+    def __init__(self, put, prefix=PREFIX):
         self.put = put
+        self.prefix = prefix
         self.pending = bytearray()
         self.total = 0
         self.hash = hashlib.sha256()
@@ -92,7 +93,7 @@ class ChunkWriter:
         data = bytes(self.pending[:length])
         del self.pending[:length]
         checksum = digest(data)
-        key = f"{PREFIX}/chunks/{checksum}"
+        key = f"{self.prefix}/chunks/{checksum}"
         self.put(key, data)
         self.chunks.append({"key": key, "sha256": checksum, "bytes": len(data)})
 
@@ -118,11 +119,11 @@ def stamp(info):
     return (info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
 
 
-def capture(root, roots, put_chunk):
+def capture(root, roots, put_chunk, *, allowed=DEFAULT_ROOTS, prefix=PREFIX):
     """Call put_chunk(key, bytes) for each chunk, returning a manifest after the tree is stable."""
     base = Path(root).resolve(strict=True)
-    names = checked_roots(roots)
-    writer = ChunkWriter(put_chunk)
+    names = checked_roots(roots, allowed)
+    writer = ChunkWriter(put_chunk, prefix)
     observed = {}
     with gzip.GzipFile(fileobj=writer, mode="wb", filename="", mtime=0, compresslevel=1) as compressed:
         with tarfile.open(fileobj=compressed, mode="w|", format=tarfile.PAX_FORMAT) as archive:
@@ -159,16 +160,16 @@ def capture(root, roots, put_chunk):
             "compressedBytes": writer.total, "sha256": writer.hash.hexdigest()}
 
 
-def validate_manifest(manifest):
+def validate_manifest(manifest, *, allowed=DEFAULT_ROOTS + LEGACY_ROOTS, prefix=PREFIX):
     if type(manifest.get("schemaVersion")) is not int or manifest["schemaVersion"] != 1:
         raise ValueError("Invalid snapshot version")
-    roots = checked_roots(manifest["roots"], DEFAULT_ROOTS + LEGACY_ROOTS)
+    roots = checked_roots(manifest["roots"], allowed)
     chunks = manifest["chunks"]
     if not isinstance(chunks, list) or not chunks or not re.fullmatch("[0-9a-f]{64}", manifest["sha256"]):
         raise ValueError("Invalid snapshot chunks or hash")
     for index, chunk in enumerate(chunks):
         checksum, length = chunk["sha256"], chunk["bytes"]
-        if (not re.fullmatch("[0-9a-f]{64}", checksum) or chunk["key"] != f"{PREFIX}/chunks/{checksum}"
+        if (not re.fullmatch("[0-9a-f]{64}", checksum) or chunk["key"] != f"{prefix}/chunks/{checksum}"
                 or type(length) is not int or not 1 <= length <= CHUNK_SIZE
                 or (index < len(chunks) - 1 and length != CHUNK_SIZE)):
             raise ValueError("Invalid chunk descriptor")
@@ -238,9 +239,9 @@ def unpack(stream, stage, roots):
         ensure_resolved_inside(stage, stage / name, roots)
 
 
-def restore(root, manifest, read_chunk):
+def restore(root, manifest, read_chunk, *, allowed=DEFAULT_ROOTS + LEGACY_ROOTS, prefix=PREFIX):
     """Verify staged data before replacing only the manifest's declared workspace directories."""
-    roots = validate_manifest(manifest)
+    roots = validate_manifest(manifest, allowed=allowed, prefix=prefix)
     base = Path(root).resolve(strict=True)
     for name in roots:
         check_root_path(base, name)

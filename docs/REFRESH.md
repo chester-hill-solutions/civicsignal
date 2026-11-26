@@ -289,6 +289,30 @@ Departmental PDF attribution records the current acquisition status. For a curre
 
 The Mac weekly runner no longer schedules the coverage report. For a manual diagnostic from an acquired local workspace, run `python3 -B scripts/federal-institution-coverage.py --include-acquisitions --output dist/refresh-weekly/federal-institutions.json` from the repository root.
 
+## Cloudflare Hansard refresh
+
+The private Hansard Worker starts one Workflow instance per chamber from its Monday 14:00 UTC trigger. The instance ID uses the chamber and the scheduled UTC minute in Unix milliseconds. Both instances derive the last completed Toronto week from that minute. The session is pinned to 45-1. [Worker configuration](../services/hansard/wrangler.jsonc)
+
+Each instance restores its own checksum-verified SQLite store and source archive from R2. It fetches the completed week from the official House XML or Senate HTML source, replays both editions, and reconciles the full session against the publisher calendar. The container verifies archived citations through the authenticated Worker routes against the restored SQLite store. It also checks bilingual search, exact lookup, and change-feed pagination. Each chamber keeps its own last complete publication when a run degrades.
+
+The archive is private staging. The customer API configuration and corpus source-use decisions are tracked in [D-08](PLAN.md#decisions-still-required).
+
+```sh
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+workflow=civicsignal-stage-hansard
+bucket=civicsignal-stage-weekly
+cf workflows instances list --workflow-name "$workflow" --per-page 10
+chamber=house  # or senate
+prefix=weekly/hansard/$chamber
+pointer=$(cf r2 objects get "$prefix/latest-attempt.json" --bucket-name "$bucket")
+jq '{status, instanceId, scheduledTime}' <<< "$pointer"
+cf workflows instances get "$(jq -er '.instanceId' <<< "$pointer")" --workflow-name "$workflow"
+cf r2 objects get "$(jq -er '.receiptKey' <<< "$pointer")" --bucket-name "$bucket" > hansard-receipt.json
+jq '{status, reason, report, state}' hansard-receipt.json
+```
+
+Read `latest-complete.json` for the last verified chamber snapshot. A degraded receipt gives the failure and pinned prior state. A complete receipt points to the new workspace manifest and verification report by SHA-256. For a suspected publisher refusal, inspect the dated receipt before retrying. For initial seeding, `python3 -B scripts/bootstrap-hansard.py house` and its Senate equivalent upload immutable archive objects and return the manifest references. The first run reads those references from the chamber's `bootstrap.json`. Routine runs restore their predecessor's workspace.
+
 ## Weekly local refresh
 
 The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.

@@ -10,6 +10,8 @@ Search the House of Commons or Senate in one published edition, then retrieve a 
 
 Data routes use a workspace Bearer API key with `civicsignal.retrieve`. They are disabled by default. For a local or isolated fixture environment, set `HANSARD_PREVIEW=on` and load fixture rows into `CIVIC_DB` using the existing `hansard_speeches` schema. Hosted source use remains a [D-08 decision](PLAN.md#decisions-still-required).
 
+The private Cloudflare refresh publishes separate House and Senate SQLite archive snapshots and verification receipts. Its serving verification exercises these same authenticated routes against each snapshot. The [Hansard refresh runbook](REFRESH.md#cloudflare-hansard-refresh) describes operator access.
+
 ```sh
 curl --get "$CIVICSIGNAL_URL/api/debates/senate" \
   --header "Authorization: Bearer $CIVICSIGNAL_API_KEY" \
