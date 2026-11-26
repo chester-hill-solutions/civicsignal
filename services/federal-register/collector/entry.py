@@ -8,6 +8,7 @@ from pyodide.ffi import to_js
 from workers import WorkerEntrypoint
 
 from discovery import PAGE_LIMIT, SourceFailure, acquire, official, request_fields
+from official_titles import CSV_LIMIT, acquire_titles, redirect_target, resource_request
 
 
 def js_object(value):
@@ -67,13 +68,12 @@ async def bounded_body(response, limit):
     return bytes(body)
 
 
-async def fetch_source(url, dataset):
-    final_url = official(url)
-    accept = "application/json" if dataset else "text/html,application/xhtml+xml"
+async def fetch_publisher(url, accept, expected, limit, destination, signal=None):
+    final_url = url
     for _ in range(6):
         try:
             response = await js.fetch(final_url, js_object({
-                "redirect": "manual", "signal": js.AbortSignal.timeout(35000),
+                "redirect": "manual", "signal": signal if signal is not None else js.AbortSignal.timeout(35000),
                 "headers": {"Accept": accept, "User-Agent": "civicsignal.ca research crawler (info@civicsignal.ca)"},
             }))
         except Exception as error:
@@ -85,39 +85,62 @@ async def fetch_source(url, dataset):
             location = response.headers.get("location")
             if status in (301, 302, 303, 307, 308) and location:
                 try:
-                    final_url = official(urljoin(final_url, location))
+                    final_url = destination(urljoin(final_url, location))
                 except ValueError as error:
                     raise SourceFailure("publisher-redirect", final_url, status) from error
                 continue
             raise SourceFailure(f"http-{status}", final_url, status)
         media = (response.headers.get("content-type") or "").split(";")[0].strip().lower()
-        expected = ("application/json",) if dataset else ("text/html", "application/xhtml+xml")
         if media not in expected or response.headers.has("content-range") or response.headers.get("cf-mitigated") == "challenge":
             if response.body:
                 await response.body.cancel()
             raise SourceFailure("publisher-response-type", final_url, status)
         try:
-            body = await bounded_body(response, PAGE_LIMIT)
+            body = await bounded_body(response, limit)
         except Exception as error:
             raise SourceFailure("publisher-body", final_url, status) from error
-        if not dataset and not body.rstrip().lower().endswith(b"</html>"):
-            raise SourceFailure("publisher-body", final_url, status)
-        return body, final_url
+        return body, final_url, response.headers.get("last-modified") or None
     raise SourceFailure("publisher-redirect", final_url)
+
+
+async def fetch_source(url, dataset):
+    accept = "application/json" if dataset else "text/html,application/xhtml+xml"
+    expected = ("application/json",) if dataset else ("text/html", "application/xhtml+xml")
+    body, final_url, _ = await fetch_publisher(official(url), accept, expected, PAGE_LIMIT, official)
+    if not dataset and not body.rstrip().lower().endswith(b"</html>"):
+        raise SourceFailure("publisher-body", final_url, 200)
+    return body, final_url
+
+
+async def fetch_csv(url, blob_path):
+    portal_path = urlsplit(url).path
+    allowed = ("text/csv", "application/csv", "application/octet-stream", "binary/octet-stream",
+               "text/plain", "application/vnd.ms-excel", "text/comma-separated-values")
+    return await fetch_publisher(url, "text/csv,application/csv,application/octet-stream,*/*;q=0.1", allowed,
+                                 CSV_LIMIT, lambda next_url: redirect_target(next_url, portal_path, blob_path),
+                                 signal=js.AbortSignal.timeout(35000))
 
 
 class Default(WorkerEntrypoint):
     async def fetch(self, request):
-        if request.method != "POST" or urlsplit(request.url).path != "/collect":
+        path = urlsplit(request.url).path
+        if request.method != "POST" or path not in ("/collect", "/official-titles"):
             return js.Response.new("Not found", js_object({"status": 404}))
         try:
             body = await request.text()
-            if len(body) > 1024:
+            if len(body) > (1024 if path == "/collect" else 4096):
                 raise ValueError("Oversized register occurrence.")
             params = json.loads(body)
-            request_fields(params)
+            if path == "/collect":
+                request_fields(params)
+            else:
+                resource_request(params)
         except (ValueError, TypeError):
             return js.Response.new("Invalid federal register occurrence", js_object({"status": 400}))
-        result = await acquire(R2Store(self.env.ARCHIVE), fetch_source, params,
-                               on_complete=lambda event: js.console.log(js_object(event)))
+        store = R2Store(self.env.ARCHIVE)
+        if path == "/official-titles":
+            result = await acquire_titles(store, fetch_csv, params)
+        else:
+            result = await acquire(store, fetch_source, params,
+                                   on_complete=lambda event: js.console.log(js_object(event)))
         return js.Response.json(js_object(result))

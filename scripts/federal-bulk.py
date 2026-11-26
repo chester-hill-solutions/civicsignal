@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 import fcntl
 import gzip
 import hashlib
-import io
 import json
 import os
 from pathlib import Path
@@ -18,6 +17,7 @@ from urllib.parse import urlsplit
 from urllib.request import build_opener, HTTPRedirectHandler, Request
 
 from lib.committee_files import official
+from lib.federal_bulk_csv import scan
 
 DEFAULT_ROOT = Path("data/corpus/federal-bulk")
 INDEX = Path("data/corpus/federal-source-inventory/inventory.sqlite")
@@ -34,29 +34,6 @@ class PublisherRedirect(HTTPRedirectHandler):
         if not official(newurl) and not publisher_blob:
             raise ValueError("Resource redirected outside an official publication host")
         return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
-def scan(stream, series, nil=False):
-    reader = csv.reader(stream, strict=True)
-    fields = next(reader, [])
-    if not fields or not all(fields) or len(set(fields)) != len(fields):
-        raise ValueError("Missing or duplicate CSV headers")
-    required = {"official-titles": {"Legal title", "Appellation légale", "Applied title", "Titre d'usage"},
-                "service-inventory": {"service_id", "fiscal_yr", "service_name_en", "service_name_fr"},
-                "grant-awards": {"owner_org", "fiscal_year", "quarter"} if nil else {"owner_org", "ref_number", "agreement_value"},
-                "ati-summaries": {"owner_org", "year", "month"} if nil else {"owner_org", "request_number", "summary_en", "summary_fr"}}[series]
-    if not required.issubset(fields):
-        raise ValueError(f"Missing published fields: {sorted(required - set(fields))}")
-    rows = 0
-    for row in reader:
-        if not row:
-            continue
-        if len(row) != len(fields):
-            raise ValueError(f"CSV record {rows + 1} has {len(row)} values for {len(fields)} headers")
-        rows += 1
-    if not rows and not nil:
-        raise ValueError("Published CSV contains no records")
-    return fields, rows
 
 
 def published_resources(series):

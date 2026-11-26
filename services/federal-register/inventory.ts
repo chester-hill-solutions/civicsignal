@@ -67,7 +67,7 @@ export async function immutableText(bucket: R2Bucket, key: string, content: stri
   if (!stored && await (await bucket.get(key))?.text() !== content) throw new Error('Conflicting federal discovery archive object.');
 }
 
-async function bytesFor(bucket: R2Bucket, ref: ObjectRef) {
+export async function bytesFor(bucket: R2Bucket, ref: ObjectRef) {
   const object = await bucket.get(ref.key);
   if (!object || object.size !== ref.bytes) throw new Error('Missing federal discovery archive object or wrong size.');
   const bytes = new Uint8Array(await object.arrayBuffer());
@@ -75,6 +75,11 @@ async function bytesFor(bucket: R2Bucket, ref: ObjectRef) {
     throw new Error('Federal discovery archive checksum mismatch.');
   }
   return bytes;
+}
+
+export async function readInventory(bucket: R2Bucket, ref: ObjectRef) {
+  const bytes = await bytesFor(bucket, packetRef(ref));
+  return packetSchema.parse(JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes)));
 }
 
 export function packetRef(value: unknown): ObjectRef {
@@ -112,8 +117,7 @@ function verifyEndpoints(
 }
 
 export async function verifyInventory(bucket: R2Bucket, ref: ObjectRef, register: string, registerSha: string, scheduledTime: number) {
-  const bytes = await bytesFor(bucket, packetRef(ref));
-  const packet = packetSchema.parse(JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes)));
+  const packet = await readInventory(bucket, ref);
   const expected = registerEndpoints(register);
   if (packet.scheduledTime !== scheduledTime || packet.registerSha256 !== registerSha || packet.endpoints.length !== expected.length) {
     throw new Error('Federal discovery packet does not match its observation or register.');
@@ -144,12 +148,14 @@ export async function verifyInventory(bucket: R2Bucket, ref: ObjectRef, register
   };
 }
 
-export async function advancePointer(bucket: R2Bucket, key: string, next: Pointer) {
+type PublicationPointer = { scheduledTime: number; receiptKey: string; status: string };
+
+export async function advancePointer<T extends PublicationPointer>(bucket: R2Bucket, key: string, next: T, schema: z.ZodType<T>) {
   const body = JSON.stringify(next);
   for (let attempt = 0; attempt < 6; attempt++) {
     const current = await bucket.get(key);
     if (current) {
-      const prior = Pointer.parse(await current.json());
+      const prior = schema.parse(await current.json());
       if (prior.scheduledTime > next.scheduledTime) return;
       if (prior.scheduledTime === next.scheduledTime) {
         if (prior.receiptKey !== next.receiptKey || prior.status !== next.status) throw new Error('Conflicting federal discovery publication pointer.');

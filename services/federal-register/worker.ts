@@ -2,7 +2,8 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers';
 import registerText from '../../docs/evidence/2026-11-23/federal-public-service-sources.csv';
 import { textSha256 } from '../../src/corpora/text-store';
-import { advancePointer, encode, immutableText, packetRef, prefix, verifyInventory, type Pointer } from './inventory';
+import { advancePointer, encode, immutableText, packetRef, prefix, verifyInventory, Pointer } from './inventory';
+import { acquireTitles, prepareTitles, publishTitles } from './official-titles';
 
 interface Params { scheduledTime: number }
 interface Env {
@@ -38,14 +39,21 @@ export class FederalDiscoveryRefresh extends WorkflowEntrypoint<Env, Params> {
     const receiptKey = `${prefix}/runs/${instanceId}.json`;
     const status = counts.failed > 0 ? 'partial' : 'complete';
     const pointer: Pointer = { instanceId, scheduledTime, receiptKey, status };
-    return step.do('publish the immutable register receipt and advance its index', async () => {
+    const discovery = await step.do('publish the immutable register receipt and advance its index', async () => {
       await immutableText(this.env.ARCHIVE, receiptKey, JSON.stringify({
         schemaVersion: 1, ...pointer, observedAt: new Date(scheduledTime).toISOString(), register, packetRef: ref, counts,
       }), 'application/json');
-      if (status === 'complete') await advancePointer(this.env.ARCHIVE, `${prefix}/latest-complete.json`, pointer);
-      await advancePointer(this.env.ARCHIVE, `${prefix}/latest-attempt.json`, pointer);
+      if (status === 'complete') await advancePointer(this.env.ARCHIVE, `${prefix}/latest-complete.json`, pointer, Pointer);
+      await advancePointer(this.env.ARCHIVE, `${prefix}/latest-attempt.json`, pointer, Pointer);
       return { receiptKey, status, counts };
     });
+    const titles = await step.do('pin the hosted catalogue resource for official titles', () => prepareTitles(this.env.ARCHIVE, pointer, ref));
+    const resource = 'resource' in titles ? titles.resource : undefined;
+    const result = resource && await step.do('acquire official institution titles', { timeout: '3 minutes' }, () =>
+      acquireTitles(this.env.COLLECTOR, resource));
+    const officialTitles = await step.do('verify and publish official institution titles', () =>
+      publishTitles(this.env.ARCHIVE, pointer, titles, result));
+    return { ...discovery, officialTitles };
   }
 }
 

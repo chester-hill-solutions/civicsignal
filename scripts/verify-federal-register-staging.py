@@ -223,7 +223,8 @@ def verify_staging(instance, parser, register, local_receipt=None):
     status = 'complete' if counts['failed'] == 0 else 'partial'
     require(receipt['status'] == status, 'Run status disagrees with endpoint evidence')
     require(state.get('success') is True, 'Workflow did not complete')
-    same(state['output'], {'receiptKey': key, 'status': status, 'counts': counts}, 'Workflow output differs from receipt')
+    same({name: state['output'][name] for name in ('receiptKey', 'status', 'counts')},
+         {'receiptKey': key, 'status': status, 'counts': counts}, 'Workflow output differs from receipt')
     comparison = {}
     if local_receipt:
         previous = {}
