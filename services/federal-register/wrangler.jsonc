@@ -1,0 +1,24 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-federal-register",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "limits": { "cpu_ms": 300000, "subrequests": 10000 },
+  "rules": [{ "type": "Text", "globs": ["**/*.csv"], "fallthrough": true }],
+  "workflows": [{
+    "binding": "REFRESH",
+    "name": "civicsignal-stage-federal-register",
+    "class_name": "FederalDiscoveryRefresh"
+  }],
+  "services": [{
+    "binding": "COLLECTOR",
+    "service": "civicsignal-stage-federal-register-collector"
+  }],
+  "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-weekly" }],
+  "triggers": { "crons": ["15 16 * * 4"] }
+}
