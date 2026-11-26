@@ -1,3 +1,4 @@
+import errno
 import hashlib
 import importlib.util
 import json
@@ -176,7 +177,7 @@ class DepartmentalReportPdfRecoveryTests(unittest.TestCase):
         target = "https://grainscanada.gc.ca/en/about-us/reports/planning-performance-reporting/report-plans-priorities/2014-2015/pdf/report-plans-priorities-2014-2015.pdf"
         body = b"%PDF-1.7 bounded grain fixture\n%%EOF"
         opener = SequencedOpener([])
-        opener.open = mock.Mock(side_effect=urllib.error.URLError(ConnectionResetError(54, "Connection reset by peer")))
+        opener.open = mock.Mock(side_effect=urllib.error.URLError(ConnectionResetError(errno.ECONNRESET, "Connection reset by peer")))
 
         def curl(command, capture_output, text):
             Path(command[command.index("--output") + 1]).write_bytes(body)

@@ -1,3 +1,4 @@
+import errno
 import importlib.util
 from email.message import Message
 from pathlib import Path
@@ -35,7 +36,7 @@ class DepartmentalReportEditionsTests(unittest.TestCase):
             def open(self, _request, timeout):
                 transport_attempts.append(timeout)
                 if len(transport_attempts) == 1:
-                    raise urllib.error.URLError(ConnectionResetError(54, "Connection reset by peer"))
+                    raise urllib.error.URLError(ConnectionResetError(errno.ECONNRESET, "Connection reset by peer"))
                 return Response()
 
         with mock.patch.object(MODULE.urllib.request, "build_opener", return_value=TransientThenSuccess()), \
