@@ -25,6 +25,19 @@ python3 -B scripts/eccc-intake.py \
 
 The intake is deliberately sequential (`--workers 1`). canada.ca resets HTTP/2 streams under parallel load, and the polite crawler user agent is `civicsignal.ca research crawler (info@civicsignal.ca)`. A plain HTTP/1.1 fallback keeps a body that ends with its closing HTML tag or PDF EOF marker, and only when the final URL is a Government of Canada host. Legacy `http` catalogue links are fetched over `https` while the published URL stays the citation.
 
+## HTTP preview
+
+The release-candidate Worker serves the OpenAPI 3.1 document at `GET /api/departmental-publications/openapi.json` without a workspace key. Data requests require `Authorization: Bearer <workspace API key>` with `civicsignal.retrieve`. Enable `DEPARTMENTAL_PUBLICATIONS_PREVIEW=on` and bind a published ECCC serving generation as `DEPARTMENTAL_PUBLICATIONS_DB`. A disabled preview or absent generation returns `501 UNSUPPORTED_COVERAGE`. An enabled preview with a missing D1 binding returns `503 RETRIEVAL_UNAVAILABLE`. [Worker contract](../src/routes/departmental-publications.ts)
+
+| Operation | Request |
+| --- | --- |
+| Search cited passages | `GET /api/departmental-publications?query=adaptation&language=en` |
+| Retrieve an edition or verified publisher alternate | `GET /api/departmental-publications/{id}?language=fr` |
+| Read archived versions of an indexed edition | `GET /api/departmental-publications/{id}/versions?language=fr` |
+| Review collection coverage and gaps | `GET /api/departmental-publications/coverage?limit=20` |
+
+Search accepts `institution=ECCC`, `series=eval` or `series=audit`, `workId`, `fiscalYear`, and `kind`. Search, versions and coverage accept `limit` from 1 to 100 and an opaque `cursor` returned as `nextCursor`. Use the same request filters with each cursor. Exact retrieval and version history use work IDs returned by search and require `language=en` or `language=fr`.
+
 ## November 25 passage verification
 
 The second live intake reported no content changes. The serving build again produced 64,174 passages from 234 document editions. An independent offline rebuild reproduced every passage row, including its text, citation, and content and source hashes. Verification covered all 222 distinct archived originals underlying those editions. The twelve unavailable originals and 29 unresolved language pairings remain in the acquisition report. [Passage verification](evidence/2026-11-25/eccc-passage-replay.json)

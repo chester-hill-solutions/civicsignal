@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "scope": "Anonymous read-only API documentation and discovery checks for the public host and release-candidate checkout.",
+  "publicDeployment": {
+    "origin": "https://api.civicsignal.chesterhillsolutions.ca",
+    "observedAt": "2026-11-26T20:20:13.492492+00:00",
+    "discoveryVersion": "0.1.0",
+    "discoverySha256": "bb8a63902fc2a5998a603872f7e64ee4defdd868d6172d7c8806ff28a10cc1d8",
+    "discoveryFields": [
+      "auth",
+      "baseUrl",
+      "coverage",
+      "description",
+      "encoder",
+      "endpoints",
+      "errors",
+      "mcp",
+      "pricing",
+      "product",
+      "scopes",
+      "version"
+    ],
+    "advertisedDataPaths": [
+      "/api/brief",
+      "/api/statutes",
+      "/api/news",
+      "/api/bills",
+      "/api/debates"
+    ],
+    "routeChecks": [
+      {
+        "path": "/",
+        "status": 404
+      },
+      {
+        "path": "/.well-known/civicsignal.json",
+        "status": 200,
+        "contentType": "application/json; charset=UTF-8"
+      },
+      {
+        "path": "/llms.txt",
+        "status": 200,
+        "contentType": "text/plain; charset=UTF-8"
+      },
+      {
+        "path": "/api/geds/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/funding-programs/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/consultations/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/committees/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/debates/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/departmental-publications/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/parliament/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/gazette/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/written-questions/openapi.json",
+        "status": 404
+      },
+      {
+        "path": "/api/bills/openapi.json",
+        "status": 404
+      }
+    ],
+    "guideLinkChecksObservedAt": "2026-11-26T20:22:00.299072+00:00",
+    "guideLinkChecks": [
+      {
+        "path": "/docs",
+        "status": 404,
+        "contentType": "application/json; charset=UTF-8"
+      },
+      {
+        "path": "/docs/agents.md",
+        "status": 404,
+        "contentType": "application/json; charset=UTF-8"
+      },
+      {
+        "path": "/auth.md",
+        "status": 404,
+        "contentType": "application/json; charset=UTF-8"
+      },
+      {
+        "path": "/docs/licence-register.md",
+        "status": 404,
+        "contentType": "application/json; charset=UTF-8"
+      },
+      {
+        "path": "/health",
+        "status": 200,
+        "contentType": "application/json; charset=UTF-8"
+      }
+    ]
+  },
+  "candidate": {
+    "checkoutVersion": "1.0.0-rc",
+    "router": "src/index.ts",
+    "test": "test/agent-landing.test.ts",
+    "privateInstitutionCoverage": "Authenticated Cloudflare Workflows and R2 operator data.",
+    "openApiRoutesChecked": 10,
+    "anonymousValidOpenApi31Routes": 10,
+    "selectedContractTestsPassed": 25,
+    "authenticatedEcccQueriesAgainstAcquiredSqlitePassed": true
+  }
+}

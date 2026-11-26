@@ -239,7 +239,7 @@ cf r2 objects get weekly/official-titles/latest-complete.json --bucket-name civi
 python3 -B scripts/verify-official-titles-staging.py "$titles_instance"
 ```
 
-The verifier rereads the archived catalogue and CSV, runs the pre-port bulk validator, and compares every field and row. The institution coverage report follows `weekly/official-titles/latest-complete.json` to the immutable receipt and replays its archived CSV and ordered records. The local operator uses the installed `cf` account to read the private bucket and records the receipt hash alongside the source citation. The Mac weekly schedule no longer downloads the titles CSV from the publisher. [Coverage cutover](evidence/2026-11-26/coverage-titles-cutover.json)
+The verifier rereads the archived catalogue and CSV, runs the pre-port bulk validator, and compares every field and row. The institution coverage report follows `weekly/official-titles/latest-complete.json` to the immutable receipt and replays its archived CSV and ordered records. The Cloudflare Workflow reads the private bucket through its R2 binding. The local fallback uses `cf`. Both record the receipt hash alongside the source citation. The Mac weekly schedule no longer downloads the titles CSV from the publisher. [Coverage cutover](evidence/2026-11-26/coverage-titles-cutover.json)
 
 The November 26 native qualification completed all seven steps on their first attempt. It verified the original checksum and every field and row against the local reference. Cloudflare confirmed the standing Saturday calendar after the temporary Thursday trigger was removed. [Titles qualification](evidence/2026-11-26/official-titles-cloudflare.json)
 
@@ -257,23 +257,28 @@ The latest complete pointer advances after every selected CSV passes. A failed r
 
 The native November 26 qualification published all four CSVs with 27,495 rows in 40.8 seconds. Independent readback replayed every archived CSV and verified the dated discovery receipt, per-resource checkpoints and both pointers. The operating schedule remains Saturday at 14:00 UTC. [Service Inventory qualification](evidence/2026-11-26/service-inventory-cloudflare.json)
 
-The local institution coverage report reads the latest complete Service Inventory receipt through the installed `cf` account. It verifies every resource checkpoint, archive hash, header and row count before publishing the report. Its source entries retain the hosted receipt and checkpoint hashes. The Mac weekly runner no longer fetches Service Inventory CSVs from the publisher. [Coverage cutover](evidence/2026-11-26/coverage-service-cutover.json)
+The institution coverage report reads the latest complete Service Inventory receipt and verifies every resource checkpoint, archive hash, header and row count before publishing the report. Its source entries retain the hosted receipt and checkpoint hashes. The Cloudflare Workflow uses its R2 binding and the local fallback uses `cf`. The Mac weekly runner no longer fetches Service Inventory CSVs from the publisher. [Coverage cutover](evidence/2026-11-26/coverage-service-cutover.json)
 
 ### Institution coverage report
 
-The private coverage Workflow pins the latest complete titles, Service Inventory and federal discovery receipts. It reads grouped consultation publishers from staging D1, which the combined daily Cloudflare refresh populates. The Linux container restores the input workspace from digest-verified R2 objects. It uses the hosted federal register for access-request and grant CSVs, the bibliography exports, and Treasury Board and IRCC index pages. The existing source operators acquire the remaining inputs from official publishers and the existing report script verifies and attributes them. The container reads and writes through Cloudflare bindings. The installed `cf` command is needed for operator readback and the one-time bootstrap upload. [Workflow configuration](../services/institution-coverage/wrangler.jsonc)
+The private coverage Workflow pins the latest complete titles, Service Inventory and federal discovery receipts. It reads grouped consultation publishers from staging D1, which the combined daily Cloudflare refresh populates. The Linux container restores the input workspace from digest-verified R2 objects. It uses the hosted federal register for access-request and grant CSVs, the bibliography exports, and Treasury Board and IRCC index pages. The existing source operators acquire the remaining inputs from official publishers and the existing report script verifies and attributes them. Cloudflare operators retrieve the report through private R2 and inspect its run through Workflows. [Workflow configuration](../services/institution-coverage/wrangler.jsonc)
 
 ```sh
-cf workflows instances list --workflow-name civicsignal-stage-institution-coverage --per-page 10
-coverage_instance=$(cf r2 objects get weekly/institution-coverage/latest-attempt.json --bucket-name civicsignal-stage-weekly | jq -er '.instanceId')
-cf workflows instances get "$coverage_instance" --workflow-name civicsignal-stage-institution-coverage
-coverage_receipt=$(cf r2 objects get "weekly/institution-coverage/runs/$coverage_instance.json" --bucket-name civicsignal-stage-weekly)
-coverage_report=$(printf '%s' "$coverage_receipt" | jq -er '.report.key')
-cf r2 objects get "$coverage_report" --bucket-name civicsignal-stage-weekly > coverage.json
-shasum -a 256 coverage.json
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+workflow=civicsignal-stage-institution-coverage
+bucket=civicsignal-stage-weekly
+cf workflows instances list --workflow-name "$workflow" --per-page 10
+pointer=$(cf r2 objects get weekly/institution-coverage/latest-attempt.json --bucket-name "$bucket")
+instance=$(printf '%s' "$pointer" | jq -er '.instanceId')
+cf workflows instances get "$instance" --workflow-name "$workflow"
+receipt_key=$(printf '%s' "$pointer" | jq -er '.receiptKey')
+cf r2 objects get "$receipt_key" --bucket-name "$bucket" > coverage-receipt.json
+report_key=$(jq -er '.report.key' coverage-receipt.json)
+cf r2 objects get "$report_key" --bucket-name "$bucket" > coverage.json
+printf '%s  coverage.json\n' "$(jq -er '.report.sha256' coverage-receipt.json)" | shasum -a 256 -c -
 ```
 
-Compare the downloaded hash with `.report.sha256` in the receipt. Each fresh occurrence records the exit codes and duration for each source and points to its verified report, consultation owner projection, and input workspace. A degraded occurrence advances the attempt and workspace pointers and preserves the last complete report pointer. The complete pointer requires the current titles, Service Inventory and discovery occurrence, a same-day consultation publication, and successful source checks. A replay checks the archive and report and writes a dated receipt without advancing the fresh pointers.
+Use `latest-complete.json` in the same prefix to select the last fully successful report. It first appears after a complete refresh. Each published refresh records the exit codes and duration for each source, identifies which upstream collections are current, and points to its report, consultation owner projection and workspace. A degraded refresh advances the attempt and workspace pointers and preserves the last complete report pointer. The complete pointer requires the current titles, Service Inventory and discovery occurrence, a same-day consultation publication, and successful source checks. A replay writes a dated receipt without advancing the fresh pointers. For an occurrence that stops before publication, read the error from its Workflow instance.
 
 For the initial archive, `python3 -B scripts/bootstrap-institution-coverage.py` verifies and uploads a stable workspace to private R2 and writes the manifest reference to stdout. Only the initial occurrence needs the bootstrap reference at `weekly/institution-coverage/bootstrap.json`. Later runs use the workspace manifest from their predecessor. The pinned PDF extractor replays each policy PDF against its checked archive. Cloudflare's x86 extractor can wrap paragraphs differently, so the hosted replay verifies the exact words, order and citation on each page. On November 26 the Cloudflare replay matched the independent reference byte for byte across all 33 source groups. [Replay evidence](evidence/2026-11-26/institution-coverage-cloudflare.json)
 

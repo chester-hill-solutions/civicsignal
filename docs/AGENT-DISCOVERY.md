@@ -2,6 +2,8 @@
 
 Give an agent the API base URL. It can read `/.well-known/civicsignal.json` for the machine-readable contract or `/llms.txt` for the same sources and research questions in plain text. Both are anonymous GETs and consume zero workspace units. The API landing page links to both. The dedicated homepage forwards these two paths to the public API.
 
+This contract describes the `1.0.0-rc` Worker in this checkout. On November 26 the public API served version `0.1.0`, which predates `sources` and `researchQuestions`. Its discovery files responded. The landing page, collection OpenAPI URLs and documentation links advertised by its `/llms.txt` returned HTTP 404. Use the manifest from the hostname you are calling and check its `version` before relying on the fields below. [Public deployment check](evidence/2026-11-26/api-docs-verification.json)
+
 ## Which sources can I query?
 
 Read `sources[]`. Each entry names a source, gives an example question and reports the result of checking this deployment's configuration and serving data. Preview collections link to their public OpenAPI descriptions. A specification can describe operations available on other deployments.
@@ -24,6 +26,8 @@ An edition carries a scope such as a parliamentary session, Gazette part or cata
 | `revision` | Stored revision for the edition, when available. |
 
 A missing date means the deployment lacks that timestamp. Use the source coverage operation linked from its OpenAPI document to inspect unresolved editions, missing attachments or metadata-only records. Each search requires `Authorization: Bearer <workspace API key>` with `civicsignal.retrieve`. The legacy `coverage` field describes the statute service. `mcp.tools` describes statute tools. Other sources are accessed through HTTP.
+
+The weekly federal institution coverage report spans multiple sources and lives in the private staging R2 bucket. Use the operations runbook to retrieve it. The collection coverage routes in OpenAPI describe their own serving data. [Institution coverage runbook](REFRESH.md#institution-coverage-report)
 
 ## Jon’s apprenticeship question
 

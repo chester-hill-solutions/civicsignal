@@ -50,6 +50,19 @@ describe('public agent landing page', () => {
     expect(resource.headers.get('content-type')).toContain(contentType);
   });
 
+  it.each([
+    ...new Set(previews.map(({ path }) => path)),
+    '/api/consultations/openapi.json',
+    '/api/departmental-publications/openapi.json',
+  ])('serves the generated OpenAPI contract at %s without preview bindings', async (path) => {
+    const response = await request(path);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    const contract = await response.json<{ openapi: string; paths: Record<string, unknown> }>();
+    expect(contract.openapi).toBe('3.1.0');
+    expect(Object.keys(contract.paths).length).toBeGreaterThan(0);
+  });
+
   it.each(previews)('withholds $path when publication cannot be verified ($config)', async ({ path, config, bindings }) => {
     const disabled = await request('/', 'GET', bindings);
     expect(await disabled.text()).not.toContain(`href="${path}"`);
