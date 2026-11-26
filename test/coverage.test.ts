@@ -100,11 +100,14 @@ describe('machine-readable discovery', () => {
     expect(response.headers.get('content-type')).toContain('application/json');
   });
 
-  it('does not publish nonexistent documentation, OAuth or unsupported endpoints in llms.txt', async () => {
+  it('advertises the public guides and omits unsupported endpoints in llms.txt', async () => {
     const content = llmsTxt(await deploymentCapabilities({}, 'https://api.example'));
     expect(content).not.toContain('/api/news');
-    expect(content).not.toContain('/auth.md');
-    expect(content).not.toContain('/docs');
+    expect(content).toContain('(https://api.example/auth.md)');
+    expect(content).toContain('(https://api.example/docs/agents.md)');
+    expect(content).not.toContain('(https://api.example/docs)');
+    expect(content).not.toContain('/docs/licence-register.md');
+    expect(content).not.toContain('OAuth');
     expect(content).toContain('Missing coverage: committees, esdc');
     expect(content).toContain('live capabilities');
   });
