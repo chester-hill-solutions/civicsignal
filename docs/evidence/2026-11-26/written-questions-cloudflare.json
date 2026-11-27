@@ -1,0 +1,277 @@
+{
+  "instanceId": "written-questions-1795745700000",
+  "scheduledTime": 1795745700000,
+  "start": "2026-11-27T02:15:30.117Z",
+  "end": "2026-11-27T02:40:07.446Z",
+  "trigger": {
+    "source": "binding"
+  },
+  "workflowVersion": "23a59a61-eb67-4b1b-9255-6303e40caefe",
+  "receiptKey": "weekly/written-questions/runs/written-questions-1795745700000.json",
+  "receiptSha256": "a9ff18611263cc6da8ab3a859b81a6a6bb81bd2316e3f1ecc86f0311ae97d6dd",
+  "status": "complete",
+  "reportRef": {
+    "key": "weekly/written-questions/reports/5a0bb5c56980a80900f76aac96199377449f9e785efc8897c8d50fa4f409e0d5.json",
+    "sha256": "5a0bb5c56980a80900f76aac96199377449f9e785efc8897c8d50fa4f409e0d5",
+    "bytes": 4017
+  },
+  "stateRef": {
+    "key": "weekly/written-questions/manifests/3cd20d230959ee000c2e0d159fb8f404bb82cbe4f1e3c76749d1714f33afdd18.json",
+    "sha256": "3cd20d230959ee000c2e0d159fb8f404bb82cbe4f1e3c76749d1714f33afdd18",
+    "bytes": 27755
+  },
+  "report": {
+    "acquisition": {
+      "catalogue": {
+        "complete": true,
+        "detailsFetched": 3476,
+        "detailsRefetched": 3476,
+        "detailsReused": 0,
+        "enumeratedEn": 1738,
+        "enumeratedFr": 1738,
+        "officialReported": 1738,
+        "pageSize": 20,
+        "pages": 87
+      },
+      "catalogueChanges": 3144,
+      "documents": [
+        {
+          "availability": "gap",
+          "count": 1,
+          "kind": "attachment",
+          "language": "en"
+        },
+        {
+          "availability": "searchable",
+          "count": 5,
+          "kind": "attachment",
+          "language": "en"
+        },
+        {
+          "availability": "searchable",
+          "count": 1263,
+          "kind": "cover_page",
+          "language": "en"
+        },
+        {
+          "availability": "searchable",
+          "count": 5740,
+          "kind": "reply",
+          "language": "en"
+        },
+        {
+          "availability": "gap",
+          "count": 1,
+          "kind": "attachment",
+          "language": "fr"
+        },
+        {
+          "availability": "searchable",
+          "count": 10,
+          "kind": "attachment",
+          "language": "fr"
+        },
+        {
+          "availability": "searchable",
+          "count": 1263,
+          "kind": "cover_page",
+          "language": "fr"
+        },
+        {
+          "availability": "searchable",
+          "count": 5740,
+          "kind": "reply",
+          "language": "fr"
+        }
+      ],
+      "editions": [
+        {
+          "acquisition": "complete",
+          "count": 1540,
+          "language": "en",
+          "status": "answered"
+        },
+        {
+          "acquisition": "gap",
+          "count": 2,
+          "language": "en",
+          "status": "answered"
+        },
+        {
+          "acquisition": "complete",
+          "count": 190,
+          "language": "en",
+          "status": "awaiting_response"
+        },
+        {
+          "acquisition": "complete",
+          "count": 6,
+          "language": "en",
+          "status": "withdrawn"
+        },
+        {
+          "acquisition": "complete",
+          "count": 1540,
+          "language": "fr",
+          "status": "answered"
+        },
+        {
+          "acquisition": "gap",
+          "count": 2,
+          "language": "fr",
+          "status": "answered"
+        },
+        {
+          "acquisition": "complete",
+          "count": 190,
+          "language": "fr",
+          "status": "awaiting_response"
+        },
+        {
+          "acquisition": "complete",
+          "count": 6,
+          "language": "fr",
+          "status": "withdrawn"
+        }
+      ],
+      "editionsChecked": 3476,
+      "gaps": [
+        {
+          "error": "[\"8555-451-105: Library record 99665539002616 matches 8555-451-105 but publishes no digital file manifest (HTTP 404)\",\"response_13584248_missing_material\"]",
+          "language": "en",
+          "number": 105,
+          "url": "https://www.ourcommons.ca/written-questions/45-1/q-105"
+        },
+        {
+          "error": "[\"8555-451-105: Library record 99665539002616 matches 8555-451-105 but publishes no digital file manifest (HTTP 404)\",\"response_13584248_missing_material\"]",
+          "language": "fr",
+          "number": 105,
+          "url": "https://www.ourcommons.ca/questions-ecrites/45-1/q-105"
+        },
+        {
+          "error": "[\"wq:45-1:q338:r13716811:section:prairiescan:attachment:0: http_404\"]",
+          "language": "en",
+          "number": 338,
+          "url": "https://www.ourcommons.ca/written-questions/45-1/q-338"
+        },
+        {
+          "error": "[\"wq:45-1:q338:r13716811:section:prairiescan:attachment:0: http_404\"]",
+          "language": "fr",
+          "number": 338,
+          "url": "https://www.ourcommons.ca/questions-ecrites/45-1/q-338"
+        }
+      ],
+      "journalEvents": 27804,
+      "objectVerification": {
+        "invalid": [],
+        "referenced": 16109
+      },
+      "observedAt": "2026-11-27T02:35:22+00:00",
+      "publishedResponses": [
+        {
+          "language": "en",
+          "responses": 1546
+        },
+        {
+          "language": "fr",
+          "responses": 1546
+        }
+      ],
+      "responseCoverage": [
+        {
+          "answered": 1542,
+          "language": "en",
+          "withSearchableReply": 1541,
+          "withStoredReply": 1541
+        },
+        {
+          "answered": 1542,
+          "language": "fr",
+          "withSearchableReply": 1541,
+          "withStoredReply": 1541
+        }
+      ],
+      "session": "45-1",
+      "sessionsInventoried": 16,
+      "sourceCutoff": "2026-11-27T02:24:56.791020+00:00",
+      "sourceOverview": {
+        "counts": {
+          "Questions awaiting a response": 190,
+          "Questions expecting a response by December 2, 2026": 15,
+          "Questions last answered on November 23, 2026": 23,
+          "Questions submitted this session": 1738
+        },
+        "url": "https://www.ourcommons.ca/written-questions/overview"
+      }
+    },
+    "catalogue": {
+      "complete": true,
+      "detailsFetched": 3476,
+      "detailsRefetched": 3476,
+      "detailsReused": 0,
+      "enumeratedEn": 1738,
+      "enumeratedFr": 1738,
+      "observedAt": "2026-11-27T02:24:56.791020+00:00",
+      "officialReported": 1738,
+      "pageSize": 20,
+      "pages": 87
+    },
+    "complete": true,
+    "freeBeforeMaterialization": 7609417728,
+    "freeBeforeRestore": 18637520896,
+    "materialization": {
+      "actualHandlerChecks": {
+        "q1010AnswerState": "available",
+        "q1010Documents": 2,
+        "q1010SearchHits": 2,
+        "q1Documents": 1
+      },
+      "chunks": 56499,
+      "documents": 14023,
+      "ftsStageUpdates": {
+        "inserted": 18,
+        "removed": 0,
+        "replaced": 59047,
+        "retained": 910
+      },
+      "indexedPassages": 59975,
+      "materialized": true,
+      "objectBytesCopied": 0,
+      "questions": 3476,
+      "retainedFtsIndex": false,
+      "sourceEquivalent": true,
+      "sourceSha256": "8d8e202f17fa351dc170b7286f4b76bd38afe336a5df2a4b2857f94cc3220f9c",
+      "sourceTextCharacters": 378532362,
+      "target": "isolated-local-d1"
+    },
+    "scheduledTime": 1795745700000,
+    "servingTestsPassed": 1
+  },
+  "readback": {
+    "validatedOriginalRegistry": true,
+    "servingMigrationsVerified": true,
+    "servingSourceSqliteSha256": "8d8e202f17fa351dc170b7286f4b76bd38afe336a5df2a4b2857f94cc3220f9c",
+    "sqliteIntegrity": "ok"
+  },
+  "archiveReadback": {
+    "chunks": 138,
+    "compressedBytes": 2312258400,
+    "aggregateSha256": "a37393b617724718479e3c2f128ce7f9a94b1eaff656a78081b991b07c27af7e"
+  },
+  "schemaVersion": 1,
+  "scope": "private Cloudflare written-questions refresh",
+  "calendar": {
+    "worker": "civicsignal-stage-written-questions",
+    "standingCron": "0 17 * * SAT",
+    "independentReadback": [
+      "0 17 * * SAT"
+    ]
+  },
+  "macCutover": {
+    "jobsStayedIdle": true,
+    "localReportsMatchedPreRunHashes": true,
+    "weeklyStepsBefore": 8,
+    "weeklyStepsAfter": 7,
+    "retired": "written-questions"
+  }
+}

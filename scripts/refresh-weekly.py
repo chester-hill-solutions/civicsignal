@@ -36,7 +36,6 @@ COMMITTEE_LOCK = ROOT / "dist/refresh/committee-publication.lock"
 # multi-gigabyte refresh that cannot safely finish.
 GEDS_MIN_FREE_BYTES = 32 * 1024**2
 COMMITTEE_MIN_FREE_BYTES = 3 * 1024**3
-WRITTEN_QUESTIONS_MIN_FREE_BYTES = 512 * 1024**2
 ECCC_MIN_FREE_BYTES = 128 * 1024**2
 
 
@@ -106,22 +105,6 @@ STEPS = (
         artifacts=("dist/eccc/inventory.json", "data/corpus/eccc/catalogue.sqlite", "data/corpus/eccc/serving.sqlite"),
     ),
     Step(
-        "written-questions",
-        (
-            ("python3", "-B", "scripts/lib/wq_catalog.py", "--recheck-details"),
-            ("python3", "-B", "scripts/written-questions.py", "--recheck", "--verify-objects"),
-            ("python3", "-B", "scripts/compact-written-question-objects.py", "--if-supported"),
-            ("bun", "scripts/materialize-written-questions.ts", "data/corpus/written-questions/questions.sqlite", ".wrangler/written-questions-final"),
-            Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "reads the materialized House session through authenticated HTTP"),
-                    (("CIVICSIGNAL_WRITTEN_QUESTIONS_D1", "@d1:.wrangler/written-questions-final"),), verification=True),
-        ),
-        3 * 60 * 60,
-        "Refresh both 45-1 question listings and recheck existing answer editions and stored objects.",
-        WRITTEN_QUESTIONS_MIN_FREE_BYTES,
-        baseline_paths=("data/corpus/written-questions",),
-        artifacts=("data/corpus/written-questions/catalogue.json", "data/corpus/written-questions/coverage.json"),
-    ),
-    Step(
         "committees",
         _committee_commands(),
         8 * 60 * 60,
@@ -152,7 +135,7 @@ RUN_ORDER = (
     "eccc",
     "federal-report-directories", "departmental-report-editions",
     "departmental-report-documents", "federal-regulatory-plans",
-    "geds", "written-questions", "committees",
+    "geds", "committees",
 )
 
 
