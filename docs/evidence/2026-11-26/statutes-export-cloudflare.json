@@ -1,0 +1,73 @@
+{
+  "instanceId": "statutes-export-1795744500000",
+  "scheduledTime": 1795744500000,
+  "start": "2026-11-27T01:55:30.710Z",
+  "end": "2026-11-27T01:58:19.173Z",
+  "trigger": {
+    "source": "binding"
+  },
+  "workflowVersion": "612bafcd-bbad-4980-b57f-ab78599b6cd5",
+  "receiptKey": "weekly/statutes-export/runs/statutes-export-1795744500000.json",
+  "receiptSha256": "ce2355b9a01f9570858b23ee418db5bed323e11809a3363b9e23bac510f1763e",
+  "status": "complete",
+  "reportRef": {
+    "key": "weekly/statutes-export/reports/c55d6a961abf90d450ffcf68be197d8808bff6881f367dbb7018d6bfa4184fcd.json",
+    "sha256": "c55d6a961abf90d450ffcf68be197d8808bff6881f367dbb7018d6bfa4184fcd",
+    "bytes": 826
+  },
+  "stateRef": {
+    "key": "weekly/statutes-export/manifests/5c9043b437aa5b84ffd2cc16afd654e9b5472ea2e537a5c1d7cc439c96ea9709.json",
+    "sha256": "5c9043b437aa5b84ffd2cc16afd654e9b5472ea2e537a5c1d7cc439c96ea9709",
+    "bytes": 2133
+  },
+  "report": {
+    "complete": true,
+    "files": {
+      "act-titles-fr.json": "8c2c894c90db334c524a45fc1d38bd548e1ebfb9274f4851c65442f21bd15ee7",
+      "act-titles.json": "eb8daba32315284c495a9a3ac5f38350b747b41c8b95f2d1b96bd906598a1af6",
+      "statutes-fr.jsonl": "7d4b65c40e211648af2966667ed9e7c4f52b9a2350101515303fe5548b6df3f2",
+      "statutes-fr.sql": "a4a86421ab47a964fdfe6b4a20255d2e8f5ec37e4475668da74d4354f8862a5b",
+      "statutes.jsonl": "7045d74a7ba565ea89b92ab1adcbe4880a54901d678bc9febd2d22e490630b3a",
+      "statutes.sql": "b9853059a78316c5d84d5b618e979eed36beb02e73b52d16bd087992d938ddf9"
+    },
+    "generation": "16b991f7a6f7b010d635c94a06319080091aa0658664dec58e2a7f535dee42e0",
+    "previousRevision": "855cdfc65207a6906c414e09a77d7f93267c5356",
+    "revision": "855cdfc65207a6906c414e09a77d7f93267c5356",
+    "scheduledTime": 1795744500000,
+    "source": "https://github.com/justicecanada/laws-lois-xml.git"
+  },
+  "readback": {
+    "generation": "16b991f7a6f7b010d635c94a06319080091aa0658664dec58e2a7f535dee42e0",
+    "source": "https://github.com/justicecanada/laws-lois-xml.git",
+    "revision": "855cdfc65207a6906c414e09a77d7f93267c5356",
+    "files": {
+      "act-titles-fr.json": "8c2c894c90db334c524a45fc1d38bd548e1ebfb9274f4851c65442f21bd15ee7",
+      "act-titles.json": "eb8daba32315284c495a9a3ac5f38350b747b41c8b95f2d1b96bd906598a1af6",
+      "statutes-fr.jsonl": "7d4b65c40e211648af2966667ed9e7c4f52b9a2350101515303fe5548b6df3f2",
+      "statutes-fr.sql": "a4a86421ab47a964fdfe6b4a20255d2e8f5ec37e4475668da74d4354f8862a5b",
+      "statutes.jsonl": "7045d74a7ba565ea89b92ab1adcbe4880a54901d678bc9febd2d22e490630b3a",
+      "statutes.sql": "b9853059a78316c5d84d5b618e979eed36beb02e73b52d16bd087992d938ddf9"
+    }
+  },
+  "archiveReadback": {
+    "chunks": 10,
+    "compressedBytes": 152733361,
+    "aggregateSha256": "770de2e21315419aeecdf0fa431fc2d7c31310249866c2b17f8df5e991b05f3e"
+  },
+  "schemaVersion": 1,
+  "scope": "private Cloudflare bilingual statutes export",
+  "calendar": {
+    "worker": "civicsignal-stage-statutes-export",
+    "standingCron": "0 12 * * SAT",
+    "independentReadback": [
+      "0 12 * * SAT"
+    ]
+  },
+  "macCutover": {
+    "jobsStayedIdle": true,
+    "localReportsMatchedPreRunHashes": true,
+    "weeklyStepsBefore": 10,
+    "weeklyStepsAfter": 9,
+    "retired": "statutes-local"
+  }
+}

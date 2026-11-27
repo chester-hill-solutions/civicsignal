@@ -159,17 +159,13 @@ STEPS = (
          ("python3", "-B", "scripts/federal-regulatory-plans.py", "replay", "@receipt-run-id@")), 3600,
          "Verify institutional forward regulatory plan pages and retain publisher-labelled initiatives.",
          artifacts=("data/corpus/federal-regulatory-plans/dist/receipt.json",), verify_partial=True),
-    Step("statutes-local", (("bun", "scripts/ingest-statutes.ts", "--corpus", "data/corpus/justice-laws-xml",
-          "--out", "dist/statutes-local", "--publish-current"),), 3600,
-         "Build and check a bilingual local statutes export from the official Justice Canada checkout.",
-         min_free_bytes=2 * 1024**3, artifacts=("dist/statutes-local/current/receipt.json",)),
 )
 
 RUN_ORDER = (
     "consultation-notices", "eccc",
     "federal-report-directories", "departmental-report-editions",
     "departmental-report-documents", "federal-regulatory-plans",
-    "geds", "statutes-local", "written-questions", "committees",
+    "geds", "written-questions", "committees",
 )
 
 

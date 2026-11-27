@@ -23,7 +23,8 @@ class WeeklyRefreshTests(unittest.TestCase):
         retired = {"official-titles", "service-inventory", "federal-institution-coverage", "hansard-house", "hansard-senate",
                    "gazette", "gazette-year", "ati-summaries", "grant-awards", "briefing-notes", "federal-procurement",
                    "federal-disclosures", "federal-discovery", "federal-guidance", "federal-publications",
-                   "federal-publication-checklists", "federal-policy-editions", "departmental-report-html", "parliament"}
+                   "federal-publication-checklists", "federal-policy-editions", "departmental-report-html", "parliament",
+                   "statutes-local"}
         self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
         self.assertTrue(all(retired.isdisjoint(command) for command in commands))
