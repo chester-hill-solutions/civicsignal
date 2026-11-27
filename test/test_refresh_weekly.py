@@ -23,7 +23,7 @@ class WeeklyRefreshTests(unittest.TestCase):
         retired = {"official-titles", "service-inventory", "federal-institution-coverage", "hansard-house", "hansard-senate",
                    "gazette", "gazette-year", "ati-summaries", "grant-awards", "briefing-notes", "federal-procurement",
                    "federal-disclosures", "federal-discovery", "federal-guidance", "federal-publications",
-                   "federal-publication-checklists", "federal-policy-editions", "departmental-report-html"}
+                   "federal-publication-checklists", "federal-policy-editions", "departmental-report-html", "parliament"}
         self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
         self.assertTrue(all(retired.isdisjoint(command) for command in commands))
@@ -167,8 +167,8 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertNotIn("passedTests", result)
         self.assertEqual(result["error"], "Vitest JSON report is missing valid success and test counts")
 
-    def test_eccc_and_parliament_declare_two_expected_worker_checks(self):
-        expected = {"eccc": 2, "parliament": 2}
+    def test_eccc_declares_two_expected_worker_checks(self):
+        expected = {"eccc": 2}
         for step in weekly.STEPS:
             for command in step.commands:
                 if isinstance(command, weekly.Command) and command.verification:

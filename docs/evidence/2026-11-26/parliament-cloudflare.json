@@ -1,0 +1,93 @@
+{
+  "instanceId": "parliament-1795743600000",
+  "scheduledTime": 1795743600000,
+  "start": "2026-11-27T01:40:19.848Z",
+  "end": "2026-11-27T01:44:46.649Z",
+  "trigger": {
+    "source": "binding"
+  },
+  "workflowVersion": "529483e7-3829-40b4-93bf-8fdb5021c56b",
+  "receiptKey": "weekly/parliament/runs/parliament-1795743600000.json",
+  "receiptSha256": "205dc8c81491f199d10f656e302fd916ce57c20da5cfcef3ed3e429e98ce1b8c",
+  "status": "complete",
+  "reportRef": {
+    "key": "weekly/parliament/reports/bccea2a9efeb66f9388ec532492a41c5df3927c420bcc00597638d46f674d0ee.json",
+    "sha256": "bccea2a9efeb66f9388ec532492a41c5df3927c420bcc00597638d46f674d0ee",
+    "bytes": 1280
+  },
+  "stateRef": {
+    "key": "weekly/parliament/manifests/e724a24f0c5ef8c70b04866c5f9b27a3fa1d8a9bb73adae4f6ab941c471ad9f9.json",
+    "sha256": "e724a24f0c5ef8c70b04866c5f9b27a3fa1d8a9bb73adae4f6ab941c471ad9f9",
+    "bytes": 2662
+  },
+  "report": {
+    "collections": {
+      "bills": {
+        "observedAt": "2026-11-27T01:40:37.000Z",
+        "recordsPerLanguage": 203,
+        "revision": "d1b5d77fdf381d2fdd383ed16f33a745e74509d9ecc9d725668beb39f5821d36"
+      },
+      "house-journals": {
+        "observedAt": "2026-11-27T01:42:01.240Z",
+        "recordsPerLanguage": 183,
+        "revision": "d6459164f65acbf93d8ffd97268f57a2e22b8451e9ba9a38b2c24141cf693c86"
+      },
+      "house-roll-calls": {
+        "observedAt": "2026-11-27T01:43:44.363Z",
+        "recordsPerLanguage": 208,
+        "revision": "b5dce81cf0a91d9ee1f905f8cd0e61045a5d667a8f0dd85fdbfe7e12f3634bbf"
+      },
+      "house-votes": {
+        "observedAt": "2026-11-27T01:40:44.143Z",
+        "recordsPerLanguage": 208,
+        "revision": "6954ac96970532f64bd47e35025bbfb519391b6e15a7397635bcaecc8230ecb2"
+      },
+      "senate-journals": {
+        "observedAt": "2026-11-27T01:42:15.781Z",
+        "recordsPerLanguage": 107,
+        "revision": "0c23310043701cf0703e476afde2b733b274f5447a67fe735221cb74f1fc2f52"
+      },
+      "senate-roll-calls": {
+        "observedAt": "2026-11-27T01:43:55.617Z",
+        "recordsPerLanguage": 38,
+        "revision": "568b2cab8f273809b39bbefe139e30ff15e34600872da4b00149bf6a8352348d"
+      },
+      "senate-votes": {
+        "observedAt": "2026-11-27T01:40:46.653Z",
+        "recordsPerLanguage": 37,
+        "revision": "613bce2d78220cbb6ca4594d493e1cc441d189065ad21a32d676bb355ff380c7"
+      }
+    },
+    "complete": true,
+    "scheduledTime": 1795743600000,
+    "servingTestsPassed": 2,
+    "session": "45-1",
+    "sourceObjectsVerified": 1081,
+    "verifiedCollections": 7
+  },
+  "readback": {
+    "collections": 7,
+    "publisherOriginals": 1081
+  },
+  "archiveReadback": {
+    "chunks": 13,
+    "compressedBytes": 208060677,
+    "aggregateSha256": "3cdd091fae0eb74da3570e08493ba4424ce013d4c37bf19f23c199a2fb914f1a"
+  },
+  "schemaVersion": 1,
+  "scope": "private Cloudflare parliamentary catalogues",
+  "calendar": {
+    "worker": "civicsignal-stage-parliament",
+    "standingCron": "0 13 * * SAT",
+    "independentReadback": [
+      "0 13 * * SAT"
+    ]
+  },
+  "macCutover": {
+    "jobsStayedIdle": true,
+    "localReportsMatchedPreRunHashes": true,
+    "weeklyStepsBefore": 11,
+    "weeklyStepsAfter": 10,
+    "retired": "parliament"
+  }
+}

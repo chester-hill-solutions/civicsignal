@@ -37,7 +37,6 @@ COMMITTEE_LOCK = ROOT / "dist/refresh/committee-publication.lock"
 GEDS_MIN_FREE_BYTES = 32 * 1024**2
 COMMITTEE_MIN_FREE_BYTES = 3 * 1024**3
 WRITTEN_QUESTIONS_MIN_FREE_BYTES = 512 * 1024**2
-PARLIAMENT_MIN_FREE_BYTES = 1024**3
 ECCC_MIN_FREE_BYTES = 128 * 1024**2
 
 
@@ -60,24 +59,6 @@ class Command:
     env: tuple[tuple[str, str], ...] = ()
     verification: bool = False
     expected_passed_tests: int = 1
-
-
-def _parliament_commands() -> tuple[tuple[str, ...], ...]:
-    p = "data/corpus/parliament-intake"
-    py = "python3"
-    return (
-        (py, "-B", "scripts/parliament-bills.py", "--session", "45-1", "--output", f"{p}/bills.json"),
-        (py, "-B", "scripts/parliament-votes.py", "--session", "45-1", "--output", f"{p}/votes.json"),
-        (py, "-B", "scripts/parliament-senate-votes.py", "--session", "45-1", "--output", f"{p}/senate-votes.json"),
-        (py, "-B", "scripts/parliament-house-journals.py", "--session", "45-1", "--output", f"{p}/house-journals.json"),
-        (py, "-B", "scripts/parliament-senate-journals.py", "--session", "45-1", "--output", f"{p}/senate-journals.json"),
-        (py, "-B", "scripts/parliament-roll-calls.py", "--votes", f"{p}/votes.json", "--output", f"{p}/house-roll-calls.json"),
-        (py, "-B", "scripts/parliament-roll-calls.py", "--votes", f"{p}/senate-votes.json", "--output", f"{p}/senate-roll-calls.json"),
-        (py, "-B", "scripts/parliament-journal-roll-calls.py", "--journals", f"{p}/senate-journals.json", "--votes", f"{p}/senate-votes.json", "--roll-calls", f"{p}/senate-roll-calls.json", "--output", f"{p}/senate-roll-calls-complete.json"),
-        ("bun", "scripts/materialize-parliament.ts", f"{p}/catalogues.sqlite", f"{p}/bills.json", f"{p}/votes.json", f"{p}/senate-votes.json", f"{p}/house-journals.json", f"{p}/senate-journals.json", f"{p}/house-roll-calls.json", f"{p}/senate-roll-calls-complete.json"),
-        Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "serves the materialized official inventories in both languages|retrieves a cited decision and an individual vote from each official chamber edition"),
-                (("CIVICSIGNAL_PARLIAMENT_SQLITE", f"{p}/catalogues.sqlite"), ("CIVICSIGNAL_CHAMBERS_SQLITE", f"{p}/catalogues.sqlite")), verification=True, expected_passed_tests=2),
-    )
 
 
 def _committee_commands(resume_catalogue: bool = False) -> tuple[tuple[str, ...] | Command, ...]:
@@ -123,15 +104,6 @@ STEPS = (
         ECCC_MIN_FREE_BYTES,
         baseline_paths=("data/corpus/eccc",),
         artifacts=("dist/eccc/inventory.json", "data/corpus/eccc/catalogue.sqlite", "data/corpus/eccc/serving.sqlite"),
-    ),
-    Step(
-        "parliament",
-        _parliament_commands(),
-        2 * 60 * 60,
-        "Refresh 45-1 bill, vote, Journal and roll-call inventories and materialize them locally.",
-        PARLIAMENT_MIN_FREE_BYTES,
-        baseline_paths=("data/corpus/parliament-intake",),
-        artifacts=("data/corpus/parliament-intake/catalogues.sqlite",),
     ),
     Step(
         "written-questions",
@@ -197,7 +169,7 @@ RUN_ORDER = (
     "consultation-notices", "eccc",
     "federal-report-directories", "departmental-report-editions",
     "departmental-report-documents", "federal-regulatory-plans",
-    "parliament", "geds", "statutes-local", "written-questions", "committees",
+    "geds", "statutes-local", "written-questions", "committees",
 )
 
 
