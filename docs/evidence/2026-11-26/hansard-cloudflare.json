@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private Cloudflare staging refresh and authenticated snapshot verification for House and Senate Hansard in session 45-1.",
+  "worker": "civicsignal-stage-hansard",
+  "workerVersion": "c61f015e-b097-4997-abee-e5b69da64020",
+  "stagingArchive": "civicsignal-stage-weekly",
+  "containerApplication": "a03a569f-802d-4b98-81f2-e7d91486849c",
+  "imageSha256": "1001120051d4fbc2d166cfbd6739f989a3bf3afba6a47d875cafb95de824a62d",
+  "implementationCommit": "afc9d91",
+  "seed": {
+    "house": {
+      "bytes": 1722,
+      "key": "weekly/hansard/house/manifests/b9832e71590659222260af32372ca0e81e889e0044d6b0ed75cdac2b30ed19fe.json",
+      "sha256": "b9832e71590659222260af32372ca0e81e889e0044d6b0ed75cdac2b30ed19fe"
+    },
+    "senate": {
+      "bytes": 547,
+      "key": "weekly/hansard/senate/manifests/647222faf033052a4012e902c5062628ea718bb12f20d281e7664d9cf80fb0ca.json",
+      "sha256": "647222faf033052a4012e902c5062628ea718bb12f20d281e7664d9cf80fb0ca"
+    }
+  },
+  "temporaryNativeSchedule": {
+    "scheduledTime": 1795737840000,
+    "utc": "2026-11-27T00:04:00+00:00",
+    "cron": "4 0 27 11 *",
+    "initialSchedulesReadBack": [
+      "0 14 * * MON",
+      "4 0 27 11 *"
+    ],
+    "removedAfterTrigger": true
+  },
+  "standingSchedule": {
+    "cron": "0 14 * * MON",
+    "timezone": "UTC",
+    "firstScheduledOccurrence": "2026-11-30T14:00:00Z",
+    "independentReadback": [
+      "0 14 * * MON"
+    ]
+  },
+  "smokeReadback": {
+    "house": {
+      "instanceId": "hansard-house-1795736803927",
+      "trigger": "api",
+      "startedAt": "2026-11-26T23:46:51.540Z",
+      "completedAt": "2026-11-26T23:47:39.395Z",
+      "workflowVersion": "fa4d5946-81c7-49a9-a03c-b98cd2f626dc",
+      "receiptKey": "weekly/hansard/house/runs/hansard-house-1795736803927.json",
+      "receiptSha256": "42e42510ad61339f082aa4d3803db46aa68ef0b3964194b1d42c9c6b8d571087",
+      "inputState": {
+        "key": "weekly/hansard/house/manifests/b9832e71590659222260af32372ca0e81e889e0044d6b0ed75cdac2b30ed19fe.json",
+        "sha256": "b9832e71590659222260af32372ca0e81e889e0044d6b0ed75cdac2b30ed19fe",
+        "bytes": 1722
+      },
+      "state": {
+        "key": "weekly/hansard/house/manifests/19d149833680d2788bbed15be3397164fd5345d4e129a1914cc21880b339f950.json",
+        "sha256": "19d149833680d2788bbed15be3397164fd5345d4e129a1914cc21880b339f950",
+        "bytes": 1722
+      },
+      "report": {
+        "key": "weekly/hansard/house/reports/fd7050a33dbe47c193f9c5de0337c134ee768cdda6c72f361fb41b3def5f4195.json",
+        "sha256": "fd7050a33dbe47c193f9c5de0337c134ee768cdda6c72f361fb41b3def5f4195",
+        "bytes": 876
+      },
+      "reportReadback": {
+        "after": {
+          "feed": {
+            "en": {
+              "count": 55666,
+              "highWater": 139319
+            },
+            "fr": {
+              "count": 55666,
+              "highWater": 139557
+            }
+          },
+          "journal": "234063249a559d5b4980a3ad0a8f424c",
+          "speeches": 111332
+        },
+        "before": {
+          "feed": {
+            "en": {
+              "count": 55666,
+              "highWater": 139319
+            },
+            "fr": {
+              "count": 55666,
+              "highWater": 139557
+            }
+          },
+          "journal": "234063249a559d5b4980a3ad0a8f424c",
+          "speeches": 111332
+        },
+        "capturedEditions": 10,
+        "chamber": "house",
+        "counts": {
+          "archiveVerifiedWeeks": 35,
+          "conflicts": 0,
+          "expectedEditions": 338,
+          "expectedSittings": 169,
+          "feedEditions": 338,
+          "localEditions": 338,
+          "missingWeeks": 0
+        },
+        "cutoff": "2026-11-22",
+        "replayCounts": {
+          "failed": 0,
+          "imported": 0,
+          "missing": 0,
+          "unchanged": 10
+        },
+        "session": "45-1",
+        "verifiedByServingCheck": true,
+        "weekOf": "2026-11-16",
+        "workerChecks": [
+          {
+            "complete": true,
+            "exitCode": 0,
+            "failed": 0,
+            "passed": 1,
+            "selectedTest": "passed",
+            "weekOf": "2026-11-16"
+          }
+        ]
+      },
+      "archiveChunksVerified": 8,
+      "archiveCompressedBytes": 129876307,
+      "sqliteIntegrity": "ok",
+      "editionsByLanguage": {
+        "en": 169,
+        "fr": 169
+      },
+      "speechCounts": {
+        "hansard-federal": 111332
+      }
+    },
+    "senate": {
+      "instanceId": "hansard-senate-1795736803927",
+      "trigger": "api",
+      "startedAt": "2026-11-26T23:46:51.245Z",
+      "completedAt": "2026-11-26T23:47:15.562Z",
+      "workflowVersion": "fa4d5946-81c7-49a9-a03c-b98cd2f626dc",
+      "receiptKey": "weekly/hansard/senate/runs/hansard-senate-1795736803927.json",
+      "receiptSha256": "e1d3aa25f56e6e040b279b553437b3277712b0e67517b0585c5f5e19bd95faa7",
+      "inputState": {
+        "key": "weekly/hansard/senate/manifests/647222faf033052a4012e902c5062628ea718bb12f20d281e7664d9cf80fb0ca.json",
+        "sha256": "647222faf033052a4012e902c5062628ea718bb12f20d281e7664d9cf80fb0ca",
+        "bytes": 547
+      },
+      "state": {
+        "key": "weekly/hansard/senate/manifests/b6e28ada69246a334a2f7be718bc9e61aa248eb31816656f89e57c3594351cfe.json",
+        "sha256": "b6e28ada69246a334a2f7be718bc9e61aa248eb31816656f89e57c3594351cfe",
+        "bytes": 547
+      },
+      "report": {
+        "key": "weekly/hansard/senate/reports/c848b55e1b2510bff96acab7b558707d944ef01bb05594916956b401928625a0.json",
+        "sha256": "c848b55e1b2510bff96acab7b558707d944ef01bb05594916956b401928625a0",
+        "bytes": 873
+      },
+      "reportReadback": {
+        "after": {
+          "feed": {
+            "en": {
+              "count": 14793,
+              "highWater": 140728
+            },
+            "fr": {
+              "count": 14791,
+              "highWater": 140916
+            }
+          },
+          "journal": "234063249a559d5b4980a3ad0a8f424c",
+          "speeches": 29584
+        },
+        "before": {
+          "feed": {
+            "en": {
+              "count": 14793,
+              "highWater": 140728
+            },
+            "fr": {
+              "count": 14791,
+              "highWater": 140916
+            }
+          },
+          "journal": "234063249a559d5b4980a3ad0a8f424c",
+          "speeches": 29584
+        },
+        "capturedEditions": 6,
+        "chamber": "senate",
+        "counts": {
+          "archiveVerifiedWeeks": 34,
+          "conflicts": 0,
+          "expectedEditions": 208,
+          "expectedSittings": 104,
+          "feedEditions": 208,
+          "localEditions": 208,
+          "missingWeeks": 0
+        },
+        "cutoff": "2026-11-22",
+        "replayCounts": {
+          "failed": 0,
+          "imported": 6,
+          "missing": 0,
+          "unchanged": 0
+        },
+        "session": "45-1",
+        "verifiedByServingCheck": true,
+        "weekOf": "2026-11-16",
+        "workerChecks": [
+          {
+            "complete": true,
+            "exitCode": 0,
+            "failed": 0,
+            "passed": 1,
+            "selectedTest": "passed",
+            "weekOf": "2026-11-16"
+          }
+        ]
+      },
+      "archiveChunksVerified": 2,
+      "archiveCompressedBytes": 29683667,
+      "sqliteIntegrity": "ok",
+      "editionsByLanguage": {
+        "en": 104,
+        "fr": 104
+      },
+      "speechCounts": {
+        "hansard-senate": 29584
+      }
+    }
+  },
+  "scheduledReadback": {
+    "house": {
+      "instanceId": "hansard-house-1795737840000",
+      "trigger": "binding",
+      "startedAt": "2026-11-27T00:04:09.167Z",
+      "completedAt": "2026-11-27T00:05:00.587Z",
+      "workflowVersion": "fa4d5946-81c7-49a9-a03c-b98cd2f626dc",
+      "receiptKey": "weekly/hansard/house/runs/hansard-house-1795737840000.json",
+      "receiptSha256": "4d21734be218f591fcb011afdcc64b379c8d6abdb1b58b431e14993f2ba326ad",
+      "inputState": {
+        "key": "weekly/hansard/house/manifests/19d149833680d2788bbed15be3397164fd5345d4e129a1914cc21880b339f950.json",
+        "sha256": "19d149833680d2788bbed15be3397164fd5345d4e129a1914cc21880b339f950",
+        "bytes": 1722
+      },
+      "state": {
+        "key": "weekly/hansard/house/manifests/6617b62bbbcdaee54c19a3dc855709c8b30b664ec9228fcf94fac5f7b6c99f54.json",
+        "sha256": "6617b62bbbcdaee54c19a3dc855709c8b30b664ec9228fcf94fac5f7b6c99f54",
+        "bytes": 1722
+      },
+      "report": {
+        "key": "weekly/hansard/house/reports/042555cc754f8c54d54f5236fe8f9c3915b8870c85113ab30ef83ec657ad1d8c.json",
+        "sha256": "042555cc754f8c54d54f5236fe8f9c3915b8870c85113ab30ef83ec657ad1d8c",
+        "bytes": 876
+      },
+      "reportReadback": {
+        "after": {
+          "feed": {
+            "en": {
+              "count": 55666,
+              "highWater": 139319
+            },
+            "fr": {
+              "count": 55666,
+              "highWater": 139557
+            }
+          },
+          "journal": "234063249a559d5b4980a3ad0a8f424c",
+          "speeches": 111332
+        },
+        "before": {
+          "feed": {
+            "en": {
+              "count": 55666,
+              "highWater": 139319
+            },
+            "fr": {
+              "count": 55666,
+              "highWater": 139557
+            }
+          },
+          "journal": "234063249a559d5b4980a3ad0a8f424c",
+          "speeches": 111332
+        },
+        "capturedEditions": 10,
+        "chamber": "house",
+        "counts": {
+          "archiveVerifiedWeeks": 35,
+          "conflicts": 0,
+          "expectedEditions": 338,
+          "expectedSittings": 169,
+          "feedEditions": 338,
+          "localEditions": 338,
+          "missingWeeks": 0
+        },
+        "cutoff": "2026-11-22",
+        "replayCounts": {
+          "failed": 0,
+          "imported": 0,
+          "missing": 0,
+          "unchanged": 10
+        },
+        "session": "45-1",
+        "verifiedByServingCheck": true,
+        "weekOf": "2026-11-16",
+        "workerChecks": [
+          {
+            "complete": true,
+            "exitCode": 0,
+            "failed": 0,
+            "passed": 1,
+            "selectedTest": "passed",
+            "weekOf": "2026-11-16"
+          }
+        ]
+      },
+      "archiveChunksVerified": 8,
+      "archiveCompressedBytes": 129878126,
+      "sqliteIntegrity": "ok",
+      "editionsByLanguage": {
+        "en": 169,
+        "fr": 169
+      },
+      "speechCounts": {
+        "hansard-federal": 111332
+      }
+    },
+    "senate": {
+      "instanceId": "hansard-senate-1795737840000",
+      "trigger": "binding",
+      "startedAt": "2026-11-27T00:04:07.283Z",
+      "completedAt": "2026-11-27T00:04:40.054Z",
+      "workflowVersion": "fa4d5946-81c7-49a9-a03c-b98cd2f626dc",
+      "receiptKey": "weekly/hansard/senate/runs/hansard-senate-1795737840000.json",
+      "receiptSha256": "842b9633392cde8004645fdea9e768090567fedf42c67ff11f25cd152e3e9005",
+      "inputState": {
+        "key": "weekly/hansard/senate/manifests/b6e28ada69246a334a2f7be718bc9e61aa248eb31816656f89e57c3594351cfe.json",
+        "sha256": "b6e28ada69246a334a2f7be718bc9e61aa248eb31816656f89e57c3594351cfe",
+        "bytes": 547
+      },
+      "state": {
+        "key": "weekly/hansard/senate/manifests/040446f311750d55e817087fb6484b4f0ad203e14a429697542fd6389d138427.json",
+        "sha256": "040446f311750d55e817087fb6484b4f0ad203e14a429697542fd6389d138427",
+        "bytes": 547
+      },
+      "report": {
+        "key": "weekly/hansard/senate/reports/c60f7f4f750ae3fcd38f159e0d5985b24503a41532a6163d8111f4d5fea657f1.json",
+        "sha256": "c60f7f4f750ae3fcd38f159e0d5985b24503a41532a6163d8111f4d5fea657f1",
+        "bytes": 873
+      },
+      "reportReadback": {
+        "after": {
+          "feed": {
+            "en": {
+              "count": 14793,
+              "highWater": 140728
+            },
+            "fr": {
+              "count": 14791,
+              "highWater": 140916
+            }
+          },
+          "journal": "234063249a559d5b4980a3ad0a8f424c",
+          "speeches": 29584
+        },
+        "before": {
+          "feed": {
+            "en": {
+              "count": 14793,
+              "highWater": 140728
+            },
+            "fr": {
+              "count": 14791,
+              "highWater": 140916
+            }
+          },
+          "journal": "234063249a559d5b4980a3ad0a8f424c",
+          "speeches": 29584
+        },
+        "capturedEditions": 6,
+        "chamber": "senate",
+        "counts": {
+          "archiveVerifiedWeeks": 34,
+          "conflicts": 0,
+          "expectedEditions": 208,
+          "expectedSittings": 104,
+          "feedEditions": 208,
+          "localEditions": 208,
+          "missingWeeks": 0
+        },
+        "cutoff": "2026-11-22",
+        "replayCounts": {
+          "failed": 0,
+          "imported": 6,
+          "missing": 0,
+          "unchanged": 0
+        },
+        "session": "45-1",
+        "verifiedByServingCheck": true,
+        "weekOf": "2026-11-16",
+        "workerChecks": [
+          {
+            "complete": true,
+            "exitCode": 0,
+            "failed": 0,
+            "passed": 1,
+            "selectedTest": "passed",
+            "weekOf": "2026-11-16"
+          }
+        ]
+      },
+      "archiveChunksVerified": 2,
+      "archiveCompressedBytes": 30216492,
+      "sqliteIntegrity": "ok",
+      "editionsByLanguage": {
+        "en": 104,
+        "fr": 104
+      },
+      "speechCounts": {
+        "hansard-senate": 29584
+      }
+    }
+  },
+  "macCutover": {
+    "weeklyLaunchAgentRunsBefore": 0,
+    "weeklyLaunchAgentRunsAfter": 0,
+    "localArchiveSha256BeforeAndAfter": "fe1c9792370bfe31f0d8976bf0281ad4b71d1eb48eb996a35745f3c5fa8588a8",
+    "macOnlineForMonitoring": true,
+    "macIngestProcessUsed": false,
+    "retiredSteps": [
+      "hansard-house",
+      "hansard-senate"
+    ],
+    "remainingScheduledSteps": 24
+  }
+}

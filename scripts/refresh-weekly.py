@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import fcntl
 import json
 import os
@@ -39,7 +39,6 @@ GEDS_MIN_FREE_BYTES = 32 * 1024**2
 COMMITTEE_MIN_FREE_BYTES = 3 * 1024**3
 WRITTEN_QUESTIONS_MIN_FREE_BYTES = 512 * 1024**2
 PARLIAMENT_MIN_FREE_BYTES = 1024**3
-HANSARD_MIN_FREE_BYTES = 128 * 1024**2
 ECCC_MIN_FREE_BYTES = 128 * 1024**2
 
 
@@ -98,22 +97,6 @@ def _committee_commands(resume_catalogue: bool = False) -> tuple[tuple[str, ...]
                 (("CIVICSIGNAL_COMMITTEES_D1", "@d1:.wrangler/committees-45-1"),
                  ("CIVICSIGNAL_COMMITTEES_SOURCE_SQLITE", "data/corpus/committees/committee.sqlite")), verification=True),
     )
-
-
-def _hansard_step(chamber):
-    archive = f"dist/hansard/weekly/{chamber}/@week-of@"
-    store = "dist/hansard/session-45-1.sqlite"
-    manifest = archive + "/current/week.json"
-    replay = "replay-week" if chamber == "house" else "replay-senate-week"
-    return Step(f"hansard-{chamber}", (
-        ("bun", "scripts/capture-hansard-week.ts", chamber, "45-1", "@week-of@", archive),
-        ("bun", "scripts/hansard-local.ts", replay, store, manifest),
-        Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "retrieves a cited speech from each archived Hansard edition"),
-                (("CIVICSIGNAL_HANSARD_SQLITE", store), ("CIVICSIGNAL_HANSARD_WEEK_MANIFEST", manifest),
-                 ("CIVICSIGNAL_HANSARD_WEEK_RECEIPT", archive + "/current/receipt.json")), verification=True),
-        ("bun", "scripts/hansard-session-reconcile.ts", chamber, "45-1", store, f"dist/hansard/weekly/{chamber}", "@week-ending@"),
-    ), 3600, f"Capture the latest completed week of {chamber} debates and repair missed current-session weeks.",
-                HANSARD_MIN_FREE_BYTES, artifacts=(store, f"dist/hansard/reconciliation/45-1/{chamber}/receipts/latest.json"))
 
 
 STEPS = (
@@ -297,7 +280,6 @@ STEPS = (
         baseline_paths=("dist/briefing-notes", "data/corpus/briefing-notes"),
         artifacts=("dist/briefing-notes/receipt.json",),
     ),
-    *(_hansard_step(chamber) for chamber in ("house", "senate")),
 )
 
 RUN_ORDER = (
@@ -305,7 +287,7 @@ RUN_ORDER = (
     "eccc", "gazette", "gazette-year", "briefing-notes", "federal-report-directories", "departmental-report-editions",
     "departmental-report-documents", "departmental-report-html", "federal-regulatory-plans", "federal-publications",
     "federal-publication-checklists", "federal-policy-editions",
-    "federal-procurement", "parliament", "hansard-house", "hansard-senate",
+    "federal-procurement", "parliament",
     "geds", "statutes-local", "written-questions", "committees",
 )
 
@@ -370,13 +352,10 @@ def _local_d1_path(state_directory: str) -> str:
 
 
 RUN_DATE = datetime.now(ZoneInfo("America/Toronto")).date()
-RUN_WEEK_OF = (RUN_DATE - timedelta(days=RUN_DATE.weekday() + 7)).isoformat()
 
 
 def _resolve_date(value: str) -> str:
-    return (value.replace("@week-of@", RUN_WEEK_OF)
-            .replace("@week-ending@", (RUN_DATE - timedelta(days=RUN_DATE.weekday() + 1)).isoformat())
-            .replace("@toronto-year@", str(RUN_DATE.year))
+    return (value.replace("@toronto-year@", str(RUN_DATE.year))
             .replace("@toronto-date@", RUN_DATE.isoformat()))
 
 

@@ -297,6 +297,8 @@ Each instance restores its own checksum-verified SQLite store and source archive
 
 The archive is private staging. The customer API configuration and corpus source-use decisions are tracked in [D-08](PLAN.md#decisions-still-required).
 
+The November 26 native qualification started both workflows at 19:04 Toronto time. It fetched 10 House and six Senate editions for November 16–22, reconciled all 546 registered language editions through the cutoff, and preserved both change feeds. An independent restore checked each published R2 chunk, both SQLite databases and both receipt heads. The Mac weekly agent stayed idle during the native run. Its two Hansard steps were then retired. Local acquisition and replay commands remain available for diagnostics. [Qualification evidence](evidence/2026-11-26/hansard-cloudflare.json)
+
 ```sh
 export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
 workflow=civicsignal-stage-hansard
@@ -343,7 +345,7 @@ Installation registers the job. It runs while the user is logged in. Removal unl
 | Consultation participation | Resolves linked notices for the current catalogue revision and retains source bytes, participation instructions and explicit gaps. |
 | Briefing notes | Validates the official main and nil-return CSVs and schema. The source supplies briefing titles and metadata. Run `python3 -B scripts/briefing-notes.py --help` for archive replay and bilingual title search. |
 | ECCC audits and evaluations | Captures the four index pages and referenced documents, then builds a separate passage database and checks the authenticated local API. Read `GET /api/departmental-publications/openapi.json`. Enable the preview with `DEPARTMENTAL_PUBLICATIONS_PREVIEW=on` and bind the completed `data/corpus/eccc/serving.sqlite` to `DEPARTMENTAL_PUBLICATIONS_DB` in the local Worker harness. PDF text extraction uses `pdftotext`. |
-| Hansard and Canada Gazette | Captures the most recent completed Toronto week in each chamber and reconciles the full current-session calendars, serving databases, feeds, and archive hashes. Missing week packets are captured and replayed, then checked by authenticated exact lookup. Gazette discovers the newest regular Part I and Part II issues in both languages. The separate `gazette-year` step checks the annual listings through the Toronto run date and archives missing regular and separately numbered extra issues. Search and exact lookup preserve the part, extra number and language. |
+| Canada Gazette | Discovers the newest regular Part I and Part II issues in both languages. The separate `gazette-year` step checks the annual listings through the Toronto run date and archives missing regular and separately numbered extra issues. Search and exact lookup preserve the part, extra number and language. |
 | GEDS, parliamentary catalogues, Journals and votes, and written questions | Runs their acquisition and publication commands against the local stores, then checks the corresponding Worker routes. An unchanged GEDS ZIP can replay even when the host lacks space to construct a new snapshot. |
 | Committee corpus | Refreshes Senate meeting notices before extracting their publication links. The downloader checks the digest and timestamp of each parsed notice and fetches the other linked originals. The operator then builds the corpus, verifies its archived files, publishes to local D1, and tests bilingual retrieval. |
 
