@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/federal-regulatory-plans.py"
@@ -111,11 +112,25 @@ class FederalRegulatoryPlansTests(unittest.TestCase):
             self.assertEqual(second["status"], "partial")
             self.assertEqual(report["planEditions"], [])
             self.assertEqual(report["failures"][0]["failureCode"], "acquisition-failure")
+            self.assertEqual(report["failures"][0]["httpStatus"], 503)
             self.assertEqual(len(report["failures"][0]["priorVerifiedVersions"]), 1)
 
             generic = b"<html><head><title>Government-wide regulatory plans and reports</title></head><body></body></html>"
             classified = MODULE.classify_target(generic, url, "en")
             self.assertFalse(classified["confirmed"])
+
+    def test_https_fallback_is_limited_to_a_connection_reset(self):
+        url = "https://agency.gc.ca/en/forward-regulatory-plan"
+        curl_response = (b"body", "text/html", url, 4)
+        with patch.object(MODULE._editions, "_fetch_with_platform_curl", return_value=curl_response) as curl:
+            reset = MODULE._editions.FetchError("[Errno 104] Connection reset by peer")
+            with patch.object(MODULE._editions, "fetch_page", side_effect=reset):
+                self.assertEqual(MODULE.fetch_plan_page(url), curl_response)
+            curl.assert_called_once_with(url, MODULE.MAX_PAGE_BYTES, reset)
+            with patch.object(MODULE._editions, "fetch_page", side_effect=MODULE._editions.FetchError("HTTP 403", 403)):
+                with self.assertRaisesRegex(MODULE._editions.FetchError, "HTTP 403"):
+                    MODULE.fetch_plan_page(url)
+            self.assertEqual(curl.call_count, 1)
 
     def test_target_section_heading_can_confirm_a_plan_but_generic_index_cannot(self):
         section = b"<html><head><title>Acts and Regulations</title></head><body><h1>Acts and Regulations</h1>" \

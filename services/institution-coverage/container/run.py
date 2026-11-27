@@ -196,6 +196,7 @@ def verify_serving(name, log):
 
 def run_coverage(request):
     instance, mode = request['instanceId'], request['mode']
+    retry_source = request.get('retrySource')
     Handler.progress('restore')
     SCRATCH.mkdir(exist_ok=True)
     manifest = json.loads(verify_ref(request['state'], 2 * 1024 ** 2))
@@ -219,24 +220,25 @@ def run_coverage(request):
         Handler.progress('catalogues')
         catalogue = prepare_bulk_inputs(ROOT, object_read, request['discovery'])
         print(json.dumps({'instanceId': instance, 'catalogue': catalogue}), flush=True)
-        for name, commands, timeout in PRODUCERS:
-            Handler.progress('acquire', name, len(attempts))
-            print(json.dumps({'instanceId': instance, 'source': name, 'event': 'started'}), flush=True)
-            started = time.monotonic()
-            log = SCRATCH / f'{name}.log'
-            codes = run_producer(commands, timeout, log)
-            attempt = {'source': name, 'exitCodes': codes, 'ok': all(code == 0 for code in codes),
-                       'elapsedSeconds': round(time.monotonic() - started, 3)}
-            if attempt['ok'] and name in SERVING_CHECKS:
-                Handler.progress('verify-serving', name, len(attempts))
-                passed = verify_serving(name, log)
-                attempt['servingTestsPassed'] = passed
-                attempt['ok'] = passed == SERVING_CHECKS[name][3]
-                attempt['elapsedSeconds'] = round(time.monotonic() - started, 3)
-            if not attempt['ok']:
-                attempt['diagnostic'] = log_tail(log)
-            attempts.append(attempt)
-            print(json.dumps({'instanceId': instance, **attempts[-1]}), flush=True)
+    producers = PRODUCERS if mode == 'refresh' else tuple(step for step in PRODUCERS if step[0] == retry_source)
+    for name, commands, timeout in producers:
+        Handler.progress('acquire', name, len(attempts))
+        print(json.dumps({'instanceId': instance, 'source': name, 'event': 'started'}), flush=True)
+        started = time.monotonic()
+        log = SCRATCH / f'{name}.log'
+        codes = run_producer(commands, timeout, log)
+        attempt = {'source': name, 'exitCodes': codes, 'ok': all(code == 0 for code in codes),
+                   'elapsedSeconds': round(time.monotonic() - started, 3)}
+        if attempt['ok'] and name in SERVING_CHECKS:
+            Handler.progress('verify-serving', name, len(attempts))
+            passed = verify_serving(name, log)
+            attempt['servingTestsPassed'] = passed
+            attempt['ok'] = passed == SERVING_CHECKS[name][3]
+            attempt['elapsedSeconds'] = round(time.monotonic() - started, 3)
+        if not attempt['ok']:
+            attempt['diagnostic'] = log_tail(log)
+        attempts.append(attempt)
+        print(json.dumps({'instanceId': instance, **attempts[-1]}), flush=True)
 
     report_path = SCRATCH / 'report.json'
     Handler.progress('reduce')
@@ -248,7 +250,7 @@ def run_coverage(request):
     payload = json.loads(report)
     report_ref = put_object(f'{PREFIX}/reports/{sha(report)}.json', report)
     state = request['state']
-    if mode == 'refresh':
+    if mode == 'refresh' or retry_source:
         Handler.progress('archive')
         packed = canonical(capture(ROOT, DEFAULT_ROOTS, put_object))
         state = put_object(f'{PREFIX}/manifests/{sha(packed)}.json', packed)
@@ -305,6 +307,8 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length))
             if not re.fullmatch(r'institution-coverage-[1-9][0-9]{0,15}', body['instanceId']) or body['mode'] not in ('replay', 'refresh'):
                 raise ValueError('Invalid coverage request identity.')
+            if body.get('retrySource') not in (None, 'federal-regulatory-plans') or (body.get('retrySource') and body['mode'] != 'replay'):
+                raise ValueError('Invalid coverage source retry.')
         except (KeyError, TypeError, ValueError):
             return self.response(400, {'status': 'invalid-request'})
         with self.lock:

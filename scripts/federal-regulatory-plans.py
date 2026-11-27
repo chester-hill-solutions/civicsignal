@@ -345,6 +345,15 @@ def load_prior_verified(root: Path) -> dict[str, dict]:
     return {row["editionId"]: row for row in previous.get("planEditions", []) if row.get("editionId")}
 
 
+def fetch_plan_page(url: str) -> tuple[bytes, str, str, int]:
+    try:
+        return _editions.fetch_page(url)
+    except _editions.FetchError as error:
+        if error.http_status is not None or "connection reset" not in str(error).casefold():
+            raise
+        return _editions._fetch_with_platform_curl(url, MAX_PAGE_BYTES, error)
+
+
 class ArchiveBudget:
     def __init__(self, maximum: int):
         self.maximum = maximum
@@ -393,7 +402,10 @@ def attempt_candidate(candidate: dict, fetcher, budget: ArchiveBudget) -> dict:
         output["status"] = "verified"
         return output
     except Exception as error:
-        return {**base, "status": "failed", "failureCode": "acquisition-failure", "detail": str(error)[:1000]}
+        failure = {**base, "status": "failed", "failureCode": "acquisition-failure", "detail": str(error)[:1000]}
+        if isinstance(error, _editions.FetchError) and error.http_status is not None:
+            failure["httpStatus"] = error.http_status
+        return failure
     finally:
         if not settled:
             budget.settle(0)
@@ -424,7 +436,7 @@ def _refresh_locked(root: Path, edition_root: Path, max_archive_bytes: int, work
     run_id = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + "-" + uuid.uuid4().hex[:12]
     for candidate in candidates:
         candidate["root"] = root
-    fetcher = fetcher or _editions.fetch_page
+    fetcher = fetcher or fetch_plan_page
     attempts: dict[tuple[str, str], dict] = {}
     failures = []
     budget = ArchiveBudget(max_archive_bytes)
@@ -437,13 +449,16 @@ def _refresh_locked(root: Path, edition_root: Path, max_archive_bytes: int, work
             edition_id = digest("\n".join((str(candidate["language"]), candidate["fetchUrl"])).encode())
             attempt["editionId"] = edition_id
             attempt["attemptedAt"] = utc_now()
-            attempt["priorVerifiedVersions"] = previous.get(edition_id, {}).get("verifiedVersions", [])
+            prior = previous.get(edition_id)
+            attempt["priorVerifiedVersions"] = (prior["verifiedVersions"]
+                                                if prior and prior["issuerKey"] == candidate["issuerKey"] else [])
             attempts[key] = attempt
             if attempt["status"] not in ("verified", "related-unattributed"):
                 failures.append({"editionId": edition_id, "language": candidate["language"], "url": candidate["fetchUrl"],
                                  "issuerKey": candidate.get("issuerKey"), "issuerLabel": candidate.get("issuerLabel"),
                                  "issuerAttribution": candidate.get("issuerAttribution"), "failureCode": attempt.get("failureCode"),
-                                 "detail": attempt.get("detail"), "priorVerifiedVersions": attempt["priorVerifiedVersions"]})
+                                 "detail": attempt.get("detail"), "priorVerifiedVersions": attempt["priorVerifiedVersions"],
+                                 **({"httpStatus": attempt["httpStatus"]} if "httpStatus" in attempt else {})})
     plan_editions = []
     related_initiatives = []
     for candidate in candidates:

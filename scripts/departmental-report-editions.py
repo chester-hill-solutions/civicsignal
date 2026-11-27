@@ -381,7 +381,7 @@ def _fetch_with_platform_curl(url: str, max_bytes: int, original_error: Exceptio
             if urlsplit(current).hostname in PUBLISHER_INTERMEDIATE_HOSTS and os.path.isfile(PUBLISHER_HTTPS):
                 command = [PUBLISHER_HTTPS, target, str(body_path), str(max_bytes), USER_AGENT, accept]
             else:
-                command = ["curl", "--silent", "--show-error", "--globoff", "--proto", "=https",
+                command = ["curl", "--disable", "--silent", "--show-error", "--globoff", "--proto", "=https",
                            "--max-redirs", "0", "--max-time", "30", "--connect-timeout", "10",
                            "--max-filesize", str(max_bytes), "--user-agent", USER_AGENT, "--header", accept,
                            "--output", str(body_path), "--write-out", "%{http_code}\n%{content_type}\n%{redirect_url}", target]

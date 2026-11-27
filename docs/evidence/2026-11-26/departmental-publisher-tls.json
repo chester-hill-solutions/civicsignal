@@ -144,6 +144,664 @@
   },
   "stagingQualification": {
     "targetUTC": "2026-11-27T04:13:00+00:00",
-    "scheduledRunVerified": false
-  }
+    "scheduledRunVerified": true,
+    "standingCalendar": {
+      "worker": "civicsignal-stage-institution-coverage",
+      "standingCron": "0 16 * * SAT",
+      "independentReadback": [
+        "0 16 * * SAT"
+      ]
+    },
+    "readback": {
+      "status": "degraded",
+      "instanceId": "institution-coverage-1795752803000",
+      "start": "2026-11-27T04:13:27.766Z",
+      "end": "2026-11-27T04:53:23.244Z",
+      "trigger": {
+        "source": "binding"
+      },
+      "workflowVersion": "9f8cc24b-e9b5-467f-bb97-6b378b45c0af",
+      "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795752803000.json",
+      "receiptSha256": "623b570140db6a1e231c326759f632569018b0139b503778c93331295b6c9661",
+      "report": {
+        "key": "weekly/institution-coverage/reports/5a1d9553bce634843c3e5b75b348014ccc8c73d292487023ebf9a014fa35451e.json",
+        "sha256": "5a1d9553bce634843c3e5b75b348014ccc8c73d292487023ebf9a014fa35451e",
+        "bytes": 2763721
+      },
+      "state": {
+        "key": "weekly/institution-coverage/manifests/3d58f9f7b0076e4ef56e91921c3494606b9331884adf1abc39c49a36f2b48c65.json",
+        "sha256": "3d58f9f7b0076e4ef56e91921c3494606b9331884adf1abc39c49a36f2b48c65",
+        "bytes": 28988
+      },
+      "archiveChunksVerified": 139,
+      "attempts": {
+        "federal-report-directories": {
+          "source": "federal-report-directories",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 8.043
+        },
+        "departmental-report-editions": {
+          "source": "departmental-report-editions",
+          "exitCodes": [
+            2,
+            2
+          ],
+          "ok": false,
+          "elapsedSeconds": 93.04
+        },
+        "federal-regulatory-plans": {
+          "source": "federal-regulatory-plans",
+          "exitCodes": [
+            2,
+            0
+          ],
+          "ok": false,
+          "elapsedSeconds": 202.052
+        }
+      },
+      "otherChecks": {
+        "federal-procurement": {
+          "source": "federal-procurement",
+          "exitCodes": [
+            0,
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 4.449
+        },
+        "eccc": {
+          "source": "eccc",
+          "exitCodes": [
+            0,
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 960.295,
+          "servingTestsPassed": 2
+        },
+        "geds": {
+          "source": "geds",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 5.221,
+          "servingTestsPassed": 1
+        }
+      },
+      "directory": {
+        "collection": "federal-report-directories",
+        "corpusBytes": 4094446,
+        "diskFreeBytesAtStart": 5491449856,
+        "familyCounts": {
+          "departmental-plans": {
+            "bilingualIssuerGroups": 39,
+            "linkedIssuersByLanguage": {
+              "en": 86,
+              "fr": 86
+            },
+            "uniqueIssuerGroups": 132
+          },
+          "departmental-results": {
+            "bilingualIssuerGroups": 39,
+            "linkedIssuersByLanguage": {
+              "en": 86,
+              "fr": 86
+            },
+            "uniqueIssuerGroups": 132
+          },
+          "regulatory-plans": {
+            "bilingualCurrentCycles": 1,
+            "bilingualIssuerGroups": 1,
+            "currentCycles": 3,
+            "englishOnlyCycles": [
+              {
+                "cycle": "2025-2035",
+                "family": "regulatory-stock-review"
+              }
+            ],
+            "frenchOnlyCycles": [
+              {
+                "cycle": "2026-2036",
+                "family": "regulatory-stock-review"
+              }
+            ],
+            "governmentWideDirectoryLinksByLanguage": {
+              "en": 45,
+              "fr": 46
+            },
+            "issuerGroups": 1,
+            "linksByLanguage": {
+              "en": 2,
+              "fr": 2
+            }
+          }
+        },
+        "hostedOrigins": {
+          "discovery": {
+            "bytes": 790,
+            "key": "weekly/federal-discovery/runs/federal-discovery-1795714524000.json",
+            "sha256": "1d62cd89ea584e17a3920df752faebe9696f7b65cace58daf4c29031e9b24051"
+          },
+          "origins": {
+            "departmental-plans": {
+              "bytes": 38511,
+              "finalUrl": "https://www.canada.ca/en/treasury-board-secretariat/services/planned-government-spending/reports-plans-priorities.html",
+              "key": "weekly/federal-discovery/sources/17d030583b38837880d3952562170d226faad6ad7ce04f689f15c7725ab3b68f.html",
+              "observedAt": "2026-11-26T17:35:44.983Z",
+              "sha256": "17d030583b38837880d3952562170d226faad6ad7ce04f689f15c7725ab3b68f",
+              "url": "https://www.canada.ca/en/treasury-board-secretariat/services/planned-government-spending/reports-plans-priorities.html"
+            },
+            "departmental-results": {
+              "bytes": 38803,
+              "finalUrl": "https://www.canada.ca/en/treasury-board-secretariat/services/departmental-performance-reports.html",
+              "key": "weekly/federal-discovery/sources/87fd9ddb09308cf8af83c32416cf3dd9e8f6751b8522770a87340feb8d6350f4.html",
+              "observedAt": "2026-11-26T17:35:41.168Z",
+              "sha256": "87fd9ddb09308cf8af83c32416cf3dd9e8f6751b8522770a87340feb8d6350f4",
+              "url": "https://www.canada.ca/en/treasury-board-secretariat/services/departmental-performance-reports.html"
+            },
+            "regulatory-plans": {
+              "bytes": 26823,
+              "finalUrl": "https://www.canada.ca/en/treasury-board-secretariat/corporate/transparency/acts-regulations/forward-regulatory-plan.html",
+              "key": "weekly/federal-discovery/sources/74448d4947643d2c5577fb5235e63bad53a34b99395bda57b343855c6b8c0022.html",
+              "observedAt": "2026-11-26T17:35:41.176Z",
+              "sha256": "74448d4947643d2c5577fb5235e63bad53a34b99395bda57b343855c6b8c0022",
+              "url": "https://www.canada.ca/en/treasury-board-secretariat/corporate/transparency/acts-regulations/forward-regulatory-plan.html"
+            }
+          }
+        },
+        "inventoryBytes": 277099,
+        "inventoryPath": "data/corpus/federal-report-directories/inventories/53d270adb5f380ccce5f2d0fa1e3ad7a0a84056ae7c464efdc8342b4e0d87ba2.json",
+        "inventorySha256": "53d270adb5f380ccce5f2d0fa1e3ad7a0a84056ae7c464efdc8342b4e0d87ba2",
+        "observedAt": "2026-11-27T04:32:49+00:00",
+        "sourceCaptureTimes": {
+          "departmental-plans-en": "2026-11-26T17:35:44.983Z",
+          "departmental-plans-fr": "2026-11-27T04:32:42.185666+00:00",
+          "departmental-results-en": "2026-11-26T17:35:41.168Z",
+          "departmental-results-fr": "2026-11-27T04:32:44.386663+00:00",
+          "regulatory-directories-en": "2026-11-27T04:32:46.545113+00:00",
+          "regulatory-directories-fr": "2026-11-27T04:32:46.545559+00:00",
+          "regulatory-plans-en": "2026-11-26T17:35:41.176Z",
+          "regulatory-plans-fr": "2026-11-27T04:32:42.184868+00:00"
+        },
+        "sourceRegisterSha256": "ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746"
+      },
+      "issuerEditions": {
+        "sha256": "273a68850c5ce0116c8ac601476355c3ed1425f87efd16fea39d29da08eeb19b",
+        "macSummary": {
+          "issuerPages": 435,
+          "latestAttemptFailed": 38,
+          "latestAttemptSkipped": 1,
+          "withVerifiedContent": 396
+        },
+        "hostedSummary": {
+          "issuerPages": 435,
+          "latestAttemptFailed": 38,
+          "latestAttemptSkipped": 1,
+          "withVerifiedContent": 396
+        },
+        "verifiedArchivedOriginals": 396,
+        "missingMacEntries": [],
+        "unmatchedMacFetches": [],
+        "previousTlsFailureTargets": [
+          {
+            "identity": [
+              "departmental-plans",
+              "en",
+              "https://housing-infrastructure.canada.ca/pub/index-eng.html#dp"
+            ],
+            "status": "fetched",
+            "sha256": "e3e0419052181a1b484ebd8c062e4cd7f5c7314a07837da281b54e0a881a41ba",
+            "bytes": 35580,
+            "finalUrl": "https://housing-infrastructure.canada.ca/pub/index-eng.html#dp"
+          },
+          {
+            "identity": [
+              "departmental-plans",
+              "en",
+              "https://www.clo-ocol.gc.ca/en/transparency/departmental-plans"
+            ],
+            "status": "fetched",
+            "sha256": "3487e824a36f2a32cdf54cc847b09c624e95f0f98bc5d672ddb96ec8425e8b7a",
+            "bytes": 42518,
+            "finalUrl": "https://www.clo-ocol.gc.ca/en/transparency/departmental-plans"
+          },
+          {
+            "identity": [
+              "departmental-plans",
+              "en",
+              "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-plans"
+            ],
+            "status": "fetched",
+            "sha256": "cd7906dbedb3a6e4cffa9c63dc9c980142a11d94a5f652d902f96ba45b6a84f6",
+            "bytes": 24359,
+            "finalUrl": "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-plans"
+          },
+          {
+            "identity": [
+              "departmental-plans",
+              "fr",
+              "https://logement-infrastructure.canada.ca/pub/index-fra.html#pm"
+            ],
+            "status": "fetched",
+            "sha256": "3a3dc422e62722be5ef285a542a1cfac2dafa1015f5d5f6c8a055fa6f2715331",
+            "bytes": 39037,
+            "finalUrl": "https://logement-infrastructure.canada.ca/pub/index-fra.html#pm"
+          },
+          {
+            "identity": [
+              "departmental-plans",
+              "fr",
+              "https://www.clo-ocol.gc.ca/fr/transparence/plans-ministeriels"
+            ],
+            "status": "fetched",
+            "sha256": "6f373558bcae0d382538fdd44dab40c2a6e75b54867e0cb1c9fa0cb3de5ec1ad",
+            "bytes": 42436,
+            "finalUrl": "https://www.clo-ocol.gc.ca/fr/transparence/plans-ministeriels"
+          },
+          {
+            "identity": [
+              "departmental-plans",
+              "fr",
+              "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/plans-minist%C3%A9riels"
+            ],
+            "status": "fetched",
+            "sha256": "4b649fe6824dd6b8a4ddaed059a91210df421788f862fe4966a99735a590a6b3",
+            "bytes": 24487,
+            "finalUrl": "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/plans-minist%C3%A9riels"
+          },
+          {
+            "identity": [
+              "departmental-results",
+              "en",
+              "https://housing-infrastructure.canada.ca/pub/index-eng.html"
+            ],
+            "status": "fetched",
+            "sha256": "e3e0419052181a1b484ebd8c062e4cd7f5c7314a07837da281b54e0a881a41ba",
+            "bytes": 35580,
+            "finalUrl": "https://housing-infrastructure.canada.ca/pub/index-eng.html"
+          },
+          {
+            "identity": [
+              "departmental-results",
+              "en",
+              "https://www.clo-ocol.gc.ca/en/transparency/departmental-results-reports"
+            ],
+            "status": "fetched",
+            "sha256": "1b7eaf6a641e361ad30d684bd57fd6eb209c6c99676e9f162a535f318c2b9855",
+            "bytes": 48394,
+            "finalUrl": "https://www.clo-ocol.gc.ca/en/transparency/departmental-results-reports"
+          },
+          {
+            "identity": [
+              "departmental-results",
+              "en",
+              "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-performance-reports"
+            ],
+            "status": "fetched",
+            "sha256": "6de4b0caa66f5efff9240ec4928cadfd460609862328adbd75bf4a18233647e3",
+            "bytes": 24663,
+            "finalUrl": "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-performance-reports"
+          },
+          {
+            "identity": [
+              "departmental-results",
+              "fr",
+              "https://logement-infrastructure.canada.ca/pub/index-fra.html"
+            ],
+            "status": "fetched",
+            "sha256": "3a3dc422e62722be5ef285a542a1cfac2dafa1015f5d5f6c8a055fa6f2715331",
+            "bytes": 39037,
+            "finalUrl": "https://logement-infrastructure.canada.ca/pub/index-fra.html"
+          },
+          {
+            "identity": [
+              "departmental-results",
+              "fr",
+              "https://www.clo-ocol.gc.ca/fr/transparence/rapports-sur-resultats-ministeriels"
+            ],
+            "status": "fetched",
+            "sha256": "d231c4ff651f603141a66c474fe92726f2a03eb15373066d0cdb3a92d0a7ec13",
+            "bytes": 53185,
+            "finalUrl": "https://www.clo-ocol.gc.ca/fr/transparence/rapports-sur-resultats-ministeriels"
+          },
+          {
+            "identity": [
+              "departmental-results",
+              "fr",
+              "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/rapports-resultats-ministeriels"
+            ],
+            "status": "fetched",
+            "sha256": "25c314e2ca1e194b909b4bab2150f2f90268682385ea60a6f203522ddf4ed553",
+            "bytes": 24968,
+            "finalUrl": "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/rapports-resultats-ministeriels"
+          },
+          {
+            "identity": [
+              "regulatory-plans",
+              "en",
+              "https://www.crcc-ccetp.gc.ca/en/transparency"
+            ],
+            "status": "fetched",
+            "sha256": "de8361f30986c13be582bcc5fc91de5d57ea0ed0a61212b7ca3bae6f840d72fe",
+            "bytes": 26539,
+            "finalUrl": "https://www.crcc-ccetp.gc.ca/en/transparency"
+          },
+          {
+            "identity": [
+              "regulatory-plans",
+              "fr",
+              "https://www.crcc-ccetp.gc.ca/fr/transparence"
+            ],
+            "status": "fetched",
+            "sha256": "f2ca42571af1f24281f9df41fa849019b81b8de20b112f9b3d8de1a328647831",
+            "bytes": 26898,
+            "finalUrl": "https://www.crcc-ccetp.gc.ca/fr/transparence"
+          }
+        ]
+      },
+      "regulatoryPlans": {
+        "sha256": "bdbc4d4bae053d9166025a9b1124d0db0104f361f0f5db52993fddcf94139c42",
+        "status": "partial",
+        "macSummary": {
+          "archiveBytes": 2315828,
+          "discoveryLinks": 117,
+          "failedTargets": 0,
+          "forwardPlanCandidates": 70,
+          "namedInitiatives": 95,
+          "relatedOrUnattributedTargets": 0,
+          "verifiedPlanEditions": 70
+        },
+        "hostedSummary": {
+          "archiveBytes": 1438834,
+          "discoveryLinks": 117,
+          "failedTargets": 18,
+          "forwardPlanCandidates": 70,
+          "namedInitiatives": 91,
+          "relatedOrUnattributedTargets": 0,
+          "verifiedPlanEditions": 52
+        },
+        "verifiedArchivedOriginals": 52,
+        "missingMacDiscoveryIds": [],
+        "carryForwardDiscoveryIds": [],
+        "failedTargets": [
+          {
+            "url": "https://www.cbsa-asfc.gc.ca/agency-agence/actreg-loireg/frp-ppr-index-eng.html",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://cirb-ccri.gc.ca/en/legislation/forward-regulatory-plan",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://agriculture.canada.ca/en/department/transparency/acts-regulations/forward-regulatory-plan",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://grainscanada.gc.ca/en/industry/acts-regulations/forward-regulatory-plan.html",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://agriculture.canada.ca/en/department/partners-agencies/canadian-pari-mutuel/acts-regulations/forward-regulatory-plan",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://www.dfo-mpo.gc.ca/acts-lois/initiatives-eng.htm",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://ised-isde.canada.ca/site/acts-regulations/en/forward-regulatory-plan",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://parks.canada.ca/agence-agency/lr-ar/pp-fp",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://www.publicsafety.gc.ca/cnt/trnsprnc/cts-rgltns/frwrd-rgltr-pln/index-en.aspx",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 2
+          },
+          {
+            "url": "https://tc.canada.ca/en/corporate-services/acts-regulations/forward-regulatory-plan",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 3
+          },
+          {
+            "url": "https://agriculture.canada.ca/fr/ministere/partenaires-agences/canadienne-pari-mutuel/lois-reglements/plan-prospectif-reglementation",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 2
+          },
+          {
+            "url": "https://www.cbsa-asfc.gc.ca/agency-agence/actreg-loireg/frp-ppr-index-fra.html",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://agriculture.canada.ca/fr/ministere/transparence/lois-reglements/plan-prospectif-reglementation",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://grainscanada.gc.ca/fr/industrie/lois-reglements/plan-prospectif-reglementation.html",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://cirb-ccri.gc.ca/fr/legislation/plan-prospectif-reglementation",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://parcs.canada.ca/agence-agency/lr-ar/pp-fp",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 1
+          },
+          {
+            "url": "https://www.securitepublique.gc.ca/cnt/trnsprnc/cts-rgltns/frwrd-rgltr-pln/index-fr.aspx",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 2
+          },
+          {
+            "url": "https://tc.canada.ca/fr/services-generaux/lois-reglements/plan-prospectif-reglementation",
+            "failureCode": "acquisition-failure",
+            "detail": "[Errno 104] Connection reset by peer",
+            "priorVerifiedVersions": 3
+          }
+        ]
+      }
+    }
+  },
+  "regulatorySourceMacComparison": [
+    {
+      "url": "https://agriculture.canada.ca/en/department/partners-agencies/canadian-pari-mutuel/acts-regulations/forward-regulatory-plan",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "2d2dc9c0c28b62e9aec241ecb74d422c5557ed43044666bc6ad5b8fedd22c407",
+      "mediaType": "text/html",
+      "bytes": 33351,
+      "finalUrl": "https://agriculture.canada.ca/en/department/partners-agencies/canadian-pari-mutuel/acts-regulations/forward-regulatory-plan"
+    },
+    {
+      "url": "https://agriculture.canada.ca/en/department/transparency/acts-regulations/forward-regulatory-plan",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "8c655418c3234249e9f89832fe42d272d0e4006e0a1ed0b990a8eb711ada2171",
+      "mediaType": "text/html",
+      "bytes": 27684,
+      "finalUrl": "https://agriculture.canada.ca/en/department/transparency/acts-regulations/forward-regulatory-plan"
+    },
+    {
+      "url": "https://agriculture.canada.ca/fr/ministere/partenaires-agences/canadienne-pari-mutuel/lois-reglements/plan-prospectif-reglementation",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "80ef6cb14de6f9df280e6d1fd487abd8b6ec7d4e5fa577e269910d2eed6751ed",
+      "mediaType": "text/html",
+      "bytes": 36203,
+      "finalUrl": "https://agriculture.canada.ca/fr/ministere/partenaires-agences/canadienne-pari-mutuel/lois-reglements/plan-prospectif-reglementation"
+    },
+    {
+      "url": "https://agriculture.canada.ca/fr/ministere/transparence/lois-reglements/plan-prospectif-reglementation",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "ea2b628d7e76bdee9cf07730b53dfca36cd821253e2578e7ceb4a91901ebb8c4",
+      "mediaType": "text/html",
+      "bytes": 29316,
+      "finalUrl": "https://agriculture.canada.ca/fr/ministere/transparence/lois-reglements/plan-prospectif-reglementation"
+    },
+    {
+      "url": "https://cirb-ccri.gc.ca/en/legislation/forward-regulatory-plan",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "6e65385ab10ac45b322d133b13cf01c28d0ed5befde892a5347720425fd546f2",
+      "mediaType": "text/html",
+      "bytes": 40573,
+      "finalUrl": "https://cirb-ccri.gc.ca/en/legislation/forward-regulatory-plan"
+    },
+    {
+      "url": "https://cirb-ccri.gc.ca/fr/legislation/plan-prospectif-reglementation",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "d0090a7d4739b8831a8066a22a431bac018965c8087a927c7553ae6cb73d432c",
+      "mediaType": "text/html",
+      "bytes": 42212,
+      "finalUrl": "https://cirb-ccri.gc.ca/fr/legislation/plan-prospectif-reglementation"
+    },
+    {
+      "url": "https://grainscanada.gc.ca/en/industry/acts-regulations/forward-regulatory-plan.html",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "bd9eb3a2177beef78a0fd78489dbfcc436a548fe9ebca68d24480fbe706fa764",
+      "mediaType": "text/html",
+      "bytes": 9035,
+      "finalUrl": "https://grainscanada.gc.ca/en/industry/acts-regulations/forward-regulatory-plan.html"
+    },
+    {
+      "url": "https://grainscanada.gc.ca/fr/industrie/lois-reglements/plan-prospectif-reglementation.html",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "6c7559b374f0aa4994147ee7d863d37e0c2fd4476d33452c603281995944d219",
+      "mediaType": "text/html",
+      "bytes": 9436,
+      "finalUrl": "https://grainscanada.gc.ca/fr/industrie/lois-reglements/plan-prospectif-reglementation.html"
+    },
+    {
+      "url": "https://ised-isde.canada.ca/site/acts-regulations/en/forward-regulatory-plan",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "7659716256cd4dd70bdbd6a06de6e1dead699cdf3cf235fea4e6c4b315c925c8",
+      "mediaType": "text/html",
+      "bytes": 29272,
+      "finalUrl": "https://ised-isde.canada.ca/site/acts-regulations/en/forward-regulatory-plan"
+    },
+    {
+      "url": "https://parcs.canada.ca/agence-agency/lr-ar/pp-fp",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "0799d5d1a6a2d0ccafe165474d6ee04729b9e0fedea6797f9362875e0e8ad293",
+      "mediaType": "text/html",
+      "bytes": 32221,
+      "finalUrl": "https://parcs.canada.ca/agence-agency/lr-ar/pp-fp"
+    },
+    {
+      "url": "https://parks.canada.ca/agence-agency/lr-ar/pp-fp",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "0cef5bc43a320b9a7b8b0eca51e621687935bf3251923f78e7568fb6bbf56904",
+      "mediaType": "text/html",
+      "bytes": 31345,
+      "finalUrl": "https://parks.canada.ca/agence-agency/lr-ar/pp-fp"
+    },
+    {
+      "url": "https://tc.canada.ca/en/corporate-services/acts-regulations/forward-regulatory-plan",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "81ca536c42429a7b18a014a325efc8914112c8aca3f39074317abf088bd0e0c8",
+      "mediaType": "text/html",
+      "bytes": 205609,
+      "finalUrl": "https://tc.canada.ca/en/corporate-services/acts-regulations/forward-regulatory-plan"
+    },
+    {
+      "url": "https://tc.canada.ca/fr/services-generaux/lois-reglements/plan-prospectif-reglementation",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "5999403cfbbf611f074a7ee4dff7123d7bc8900b0d2d7c9e5b59bc925a9c2dbe",
+      "mediaType": "text/html",
+      "bytes": 243087,
+      "finalUrl": "https://tc.canada.ca/fr/services-generaux/lois-reglements/plan-prospectif-reglementation"
+    },
+    {
+      "url": "https://www.cbsa-asfc.gc.ca/agency-agence/actreg-loireg/frp-ppr-index-eng.html",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "4ed72c281798b2f3757b24bdef4697ad6a6b1425ddad564c4ebd62c19ea7b1d6",
+      "mediaType": "text/html",
+      "bytes": 14516,
+      "finalUrl": "https://www.cbsa-asfc.gc.ca/agency-agence/actreg-loireg/frp-ppr-index-eng.html"
+    },
+    {
+      "url": "https://www.cbsa-asfc.gc.ca/agency-agence/actreg-loireg/frp-ppr-index-fra.html",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "34ae671eae2060ac790e75f94308b5c9f99ee29d3b302c7a616dd9b80e40d9e8",
+      "mediaType": "text/html",
+      "bytes": 16825,
+      "finalUrl": "https://www.cbsa-asfc.gc.ca/agency-agence/actreg-loireg/frp-ppr-index-fra.html"
+    },
+    {
+      "url": "https://www.dfo-mpo.gc.ca/acts-lois/initiatives-eng.htm",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "f44aec209dc370076da3b05ab18f3bcbd12fe62c21fc6e950f7699bb59826662",
+      "mediaType": "text/html",
+      "bytes": 19171,
+      "finalUrl": "https://www.dfo-mpo.gc.ca/acts-lois/initiatives-eng.htm"
+    },
+    {
+      "url": "https://www.publicsafety.gc.ca/cnt/trnsprnc/cts-rgltns/frwrd-rgltr-pln/index-en.aspx",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "7bb3d03a1104c8c314f07d4de450826a2b980816fe5b869d252a0f0a07530450",
+      "mediaType": "text/html",
+      "bytes": 27576,
+      "finalUrl": "https://www.publicsafety.gc.ca/cnt/trnsprnc/cts-rgltns/frwrd-rgltr-pln/index-en.aspx"
+    },
+    {
+      "url": "https://www.securitepublique.gc.ca/cnt/trnsprnc/cts-rgltns/frwrd-rgltr-pln/index-fr.aspx",
+      "cloudflareDetail": "[Errno 104] Connection reset by peer",
+      "verified": true,
+      "sha256": "f2f53680361222ab45ccbb7dad58138acaab589e388df2a370173fdc8a1655eb",
+      "mediaType": "text/html",
+      "bytes": 29111,
+      "finalUrl": "https://www.securitepublique.gc.ca/cnt/trnsprnc/cts-rgltns/frwrd-rgltr-pln/index-fr.aspx"
+    }
+  ]
 }

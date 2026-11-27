@@ -297,6 +297,8 @@ cf workflows instances create "$workflow" --body "$body"
 cf workflows instances get "$instance" --workflow-name "$workflow"
 ```
 
+Use `retrySource: "federal-regulatory-plans"` with the same pinned replay request to reacquire and replay the regulatory plans from the archived issuer pages. The dated replay receipt records the single producer attempt and its separate workspace and report. The scheduled attempt and workspace pointers stay on their existing occurrence.
+
 Departmental PDF attribution records the current acquisition status. For a current citation with a temporary fetch failure, the report can retain a previously verified edition after checking its archived PDF and extracted text against their recorded hashes. The report identifies the retained generations in `retainedEvidence`. A current removal, a changed citation or a newer unverified assessment closes that historical match. A replay of the second staging workspace recovered all 51 editions affected by the fetch timeouts. [Replay evidence](evidence/2026-11-26/institution-coverage-cloudflare.json)
 
 The Mac weekly runner no longer schedules the coverage report. For a manual diagnostic from an acquired local workspace, run `python3 -B scripts/federal-institution-coverage.py --include-acquisitions --output dist/refresh-weekly/federal-institutions.json` from the repository root.

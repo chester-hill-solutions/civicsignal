@@ -13,6 +13,7 @@ const archiveLimit = 16 * 1024 ** 2;
 const inputSeries = ['official-titles', 'service-inventory'] as const;
 const ref = z.strictObject({ key: z.string(), sha256: digest, bytes: z.number().int().positive().max(archiveLimit) });
 const mode = z.enum(['replay', 'refresh']);
+const retrySourceName = z.literal('federal-regulatory-plans');
 const stateRef = ref.refine(value => value.bytes <= 2 * 1024 ** 2 && value.key === `${prefix}/manifests/${value.sha256}.json`);
 const idSchema = z.string().regex(/^institution-coverage-[1-9][0-9]{0,15}$/);
 const runPointer = z.strictObject({ instanceId: idSchema, scheduledTime: occurrence, receiptKey: z.string(),
@@ -40,7 +41,8 @@ const status = z.discriminatedUnion('status', [
   z.object({ status: z.literal('complete'), instanceId: idSchema, result }),
 ]);
 
-type Params = { scheduledTime: number; mode: z.infer<typeof mode>; state?: z.infer<typeof stateRef>; checkServing?: true };
+type Params = { scheduledTime: number; mode: z.infer<typeof mode>; state?: z.infer<typeof stateRef>;
+  checkServing?: true; retrySource?: z.infer<typeof retrySourceName> };
 interface Env {
   ARCHIVE: R2Bucket;
   CONSULTATIONS_DB: D1Database;
@@ -117,8 +119,11 @@ export class InstitutionCoverage extends WorkflowEntrypoint<Env, Params> {
     const scheduledTime = occurrence.parse(payload.scheduledTime);
     const executionMode = mode.parse(payload.mode);
     const checkServing = z.literal(true).optional().parse(payload.checkServing);
+    const retrySource = retrySourceName.optional().parse(payload.retrySource);
     if (instanceId !== `institution-coverage-${scheduledTime}`) throw new Error('Unexpected coverage occurrence.');
-    if (checkServing && (executionMode !== 'replay' || !payload.state)) throw new Error('Serving replay requires a pinned workspace.');
+    if ((checkServing || retrySource) && (executionMode !== 'replay' || !payload.state)) {
+      throw new Error('A serving check or source retry requires a pinned replay workspace.');
+    }
     const request = await step.do('pin the archived workspace and hosted input publications', async () => {
       const state = await selectState(this.env.ARCHIVE, payload.state);
       const pointers = await Promise.all(inputSeries.map(series => selectUpstream(this.env.ARCHIVE, series)));
@@ -140,6 +145,7 @@ export class InstitutionCoverage extends WorkflowEntrypoint<Env, Params> {
         consultations: consultationsTime <= scheduledTime && day(consultationsTime) === day(scheduledTime),
       };
       return { instanceId, mode: executionMode, state, ...(checkServing ? { checkServing } : {}),
+        ...(retrySource ? { retrySource } : {}),
         inputs: { 'official-titles': pointers[0], 'service-inventory': pointers[1] },
         discovery: { key: discovery.receiptKey, sha256: await textSha256(bytes), bytes: bytes.length },
         consultations, projection, inputFreshness };
@@ -193,6 +199,11 @@ export class InstitutionCoverage extends WorkflowEntrypoint<Env, Params> {
       await bytesFor(this.env.ARCHIVE, request.projection);
       if (executionMode === 'refresh' && (!attempts.length || new Set(attempts.map(attempt => attempt.source)).size !== attempts.length)) {
         throw new Error('Missing or duplicate source acquisition results.');
+      }
+      if (executionMode === 'replay' && (retrySource
+        ? attempts.length !== 1 || attempts[0].source !== retrySource
+        : attempts.length !== 0 || state.sha256 !== request.state.sha256)) {
+        throw new Error('Unexpected source or state in coverage replay.');
       }
       if (Boolean(published.servingReplay) !== Boolean(checkServing)) throw new Error('Unexpected coverage serving replay result.');
       const complete = request.inputFreshness.weekly && request.inputFreshness.consultations && attempts.every(attempt => attempt.ok);

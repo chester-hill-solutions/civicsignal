@@ -1,6 +1,6 @@
 # CivicSignal master plan
 
-Updated 2026-11-26. All four v1 release gates remain open.
+Updated 2026-11-27. All four v1 release gates remain open.
 
 CivicSignal will give applications and agents source-cited Canadian civic information.
 The first release serves Canadian federal statutes and regulations in English and French.
@@ -65,8 +65,8 @@ Federal discovery, guidance, publications, publication checklists, policy editio
 
 | Remaining Mac jobs | Cutover requirement |
 | --- | --- |
-| Federal report directories and departmental report editions | The hosted directory passed. Its local copy still feeds the Mac's issuer acquisition. Cloudflare fetched 382 of 435 issuer entries, 14 fewer than the Mac. The corrected Linux image verified all 14 using the publisher's missing intermediate and a trusted root. The staged image is awaiting scheduled readback. [TLS qualification](evidence/2026-11-26/departmental-publisher-tls.json) |
-| Federal regulatory plans | Cloudflare matched the Mac's 70 editions and 95 named initiatives. One discovery link still used a previously verified issuer page after a fetch failure. Qualify its fresh issuer dependency. |
+| Federal report directories and departmental report editions | Scheduled Cloudflare acquisition fetched 396 of 435 entries and matched every successful Mac fetch. Independent readback verified all 14 repaired TLS entries and all 139 archive chunks. The remaining Mac copies support its regulatory plan fallback. [Scheduled qualification](evidence/2026-11-26/departmental-publisher-tls.json) |
+| Federal regulatory plans | The latest scheduled run found the same 117 discovery links from fresh issuer pages. The publisher connections reset for 18 of 70 plan targets. A targeted check retrieved all 18 from the Mac. A private Cloudflare replay can retry the regulatory producer against the exact scheduled issuer archive. [Failure and source comparison](evidence/2026-11-26/departmental-publisher-tls.json) |
 | Full committee corpus | Qualify fresh official source access, then verify a new hosted D1 generation and carry forward the daily House fallback across the new corpus cutoff. |
 
 Parliament moved off the Mac after the native November 26 qualification published all seven bilingual 45-1 collections. Both authenticated Worker cases and independent checks of all 1,081 available publisher originals passed. Cloudflare independently reported only the standing Saturday 13:00 UTC trigger after qualification. [Parliament cutover evidence](evidence/2026-11-26/parliament-cloudflare.json)
