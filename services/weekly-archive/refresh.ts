@@ -41,7 +41,8 @@ function assertRef(ref: Ref, base: string, folder: 'manifests' | 'reports') {
 
 export async function runArchiveRefresh<P extends { scheduledTime: number }>(
   step: WorkflowStep, bucket: R2Bucket, runtime: Runtime, params: P,
-  config: { id: (params: P) => string; base: string; label: string; schema: z.ZodType<P>; report: z.ZodType },
+  config: { id: (params: P) => string; base: string; label: string; schema: z.ZodType<P>; report: z.ZodType;
+    maxPolls?: number; containerInputs?: Record<string, unknown> },
 ) {
   const { base, label } = config;
   const instanceId = config.id(params);
@@ -62,14 +63,14 @@ export async function runArchiveRefresh<P extends { scheduledTime: number }>(
     return { state: assertRef(refSchema.parse(await seed.json()), base, 'manifests'), etag: null };
   });
   const inputState = pinned.state;
-  const request = { ...params, instanceId, inputState };
+  const request = { ...config.containerInputs, ...params, instanceId, inputState };
   const start = async () => {
     const response = await runtime.fetch('http://runtime/start', { method: 'POST', body: JSON.stringify(request) });
     if (!response.ok) throw new Error(`${label} container returned HTTP ${response.status}.`);
   };
   await step.do(`start the ${label} acquisition container`, start);
   let result: Exclude<z.infer<typeof progress>, { status: 'empty' | 'running' }> | undefined;
-  for (let poll = 0; poll < 120; poll++) {
+  for (let poll = 0; poll < (config.maxPolls ?? 120); poll++) {
     if (poll) await step.sleep(`wait for the ${label} container ${poll}`, '20 seconds');
     const observation = await step.do(`inspect the ${label} container ${poll}`, async () => {
       const response = await runtime.fetch('http://runtime/status');

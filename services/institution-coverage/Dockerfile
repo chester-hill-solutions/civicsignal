@@ -1,4 +1,14 @@
 FROM oven/bun:1.3.5 AS bun
+FROM node:24.22.3-bookworm-slim AS node
+FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS dependencies
+
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+WORKDIR /app
+COPY package.json bun.lock tsconfig*.json vitest.config.ts ./
+COPY vendor/ ./vendor/
+COPY services/hansard/retain-runtime-packages.py /tmp/retain-runtime-packages.py
+RUN bun install --frozen-lockfile && python3 /tmp/retain-runtime-packages.py
+
 FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS poppler
 
 # Published PDF receipts require exact passage replay with the original extractor version.
@@ -24,19 +34,21 @@ RUN apt-get update \
       libjpeg62-turbo libopenjp2-7 liblcms2-2 libpng16-16t64 libstdc++6 zlib1g \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=poppler /build/out/utils/pdftotext /usr/local/bin/pdftotext
 
 WORKDIR /app
-COPY package.json bun.lock ./
-COPY vendor/ ./vendor/
-RUN bun install --production --frozen-lockfile
+COPY --from=dependencies /app/ /app/
 COPY scripts/ ./scripts/
 COPY src/ ./src/
+COPY test/ ./test/
+COPY migrations/ ./migrations/
+COPY preview/ ./preview/
 COPY docs/evidence/ ./docs/evidence/
+COPY services/daily-checks/*.ts ./services/daily-checks/
+COPY services/house/archive.ts services/house/publish.ts ./services/house/
 COPY services/funding/esdc-collector/html_tree.py ./services/funding/esdc-collector/html_tree.py
 COPY services/institution-coverage/container/ ./services/institution-coverage/container/
-COPY preview/geds/migrations/ ./preview/geds/migrations/
-COPY preview/departmental-publications/migrations/ ./preview/departmental-publications/migrations/
 
 RUN pdftotext -v && python3 -B scripts/federal-institution-coverage.py --help >/dev/null
 

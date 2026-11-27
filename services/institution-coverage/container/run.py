@@ -2,6 +2,7 @@
 import hashlib
 import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -51,6 +52,13 @@ PRODUCERS = (
     ('geds', (('geds-import.ts', '--download', '--min-new-snapshot-bytes', str(2 * 1024**3),
                 '--db', 'dist/geds/geds.sqlite', '--archive', 'dist/geds/archive'),), 3600),
 )
+
+SERVING_CHECKS = {
+    'eccc': ('departmental publications through the Worker', 'CIVICSIGNAL_ECCC_SQLITE',
+             'data/corpus/eccc/serving.sqlite', 2),
+    'geds': ('resolves one real unit from both published names and cites the imported contact', 'CIVICSIGNAL_GEDS_SQLITE',
+             'dist/geds/geds.sqlite', 1),
+}
 
 
 def sha(data):
@@ -162,6 +170,25 @@ def log_tail(path, size=3000):
         return log.read().decode('utf-8', 'replace')
 
 
+def verify_serving(name, log):
+    pattern, variable, database, expected = SERVING_CHECKS[name]
+    report = SCRATCH / f'{name}-serving.json'
+    report.unlink(missing_ok=True)
+    try:
+        with log.open('ab') as output:
+            subprocess.run(['bun', 'run', 'test', 'test/endpoints.test.ts', '-t', pattern, '--reporter=json',
+                            f'--outputFile={report}'], cwd=ROOT, env={**os.environ, variable: str(ROOT / database)},
+                           timeout=180, check=True, stdout=output, stderr=output)
+        result = json.loads(report.read_bytes())
+        if result['success'] is not True or result['numPassedTests'] != expected or result['numFailedTests'] != 0:
+            raise ValueError(f'Expected {expected} authenticated Worker checks.')
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError) as error:
+        with log.open('a') as output:
+            output.write(f'Authenticated serving checks failed: {error}\n')
+        return 0
+    return expected
+
+
 def run_coverage(request):
     instance, mode = request['instanceId'], request['mode']
     Handler.progress('restore')
@@ -186,6 +213,12 @@ def run_coverage(request):
             codes = run_producer(commands, timeout, log)
             attempt = {'source': name, 'exitCodes': codes, 'ok': all(code == 0 for code in codes),
                        'elapsedSeconds': round(time.monotonic() - started, 3)}
+            if attempt['ok'] and name in SERVING_CHECKS:
+                Handler.progress('verify-serving', name, len(attempts))
+                passed = verify_serving(name, log)
+                attempt['servingTestsPassed'] = passed
+                attempt['ok'] = passed == SERVING_CHECKS[name][3]
+                attempt['elapsedSeconds'] = round(time.monotonic() - started, 3)
             if not attempt['ok']:
                 attempt['diagnostic'] = log_tail(log)
             attempts.append(attempt)

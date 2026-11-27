@@ -337,6 +337,21 @@ jq '{cutoff, current, annual}' gazette-report.json
 
 Use `weekly/gazette/latest-complete.json` to select the last verified publication. For initial seeding, `python3 -B scripts/bootstrap-gazette.py` uploads the checked SQLite archive and returns the manifest reference for `weekly/gazette/bootstrap.json`. Later occurrences restore the last complete snapshot.
 
+## Additional private weekly Cloudflare refreshes
+
+These Workflows use the private `civicsignal-stage-weekly` bucket. Each occurrence pins its input workspace, verifies the acquired publication, and records an immutable receipt. Future runs restore the last complete verified state. A degraded attempt records the failure or publisher gaps and keeps the prior publication available.
+
+| Job | Saturday UTC | Publication verification |
+| --- | --- | --- |
+| `statutes-export` | 12:00 | Clones the official Justice Canada laws repository into the Container and verifies the bilingual SQL, JSONL and title exports, revision and file hashes. This replaces the local export contract independently of the reviewed MP-02 snapshot promotion. |
+| `parliament` | 13:00 | Refreshes 45-1 bills, recorded votes, Journals and roll calls. Verifies seven bilingual SQLite inventories, the cited originals, and two authenticated Worker cases. |
+| `consultation-notices` | 17:00 | Pins the hosted consultations D1 revision and immutable R2 receipt. Verifies the published CSV, dictionary, notices and bilingual citation checks. Publisher failures can leave a replayable candidate in the dated attempt report. |
+| `written-questions` | 17:00 | Checks both official 45-1 question listings and answer objects, materializes the isolated SQLite publication, and verifies authenticated lookup against the acquired observation. |
+
+For first installation, run `python3 -B scripts/bootstrap-<job>.py` to upload the verified baseline and retain the returned manifest reference. Set that reference as `weekly/<job>/bootstrap.json` in the staging bucket and read it back before the first occurrence. Each worker has its own `services/<job>/wrangler.jsonc` with a private deployment and standing cron.
+
+Check the Workflow status and read the dated `weekly/<job>/runs/<instance>.json` receipt from R2. Its report and manifest references give the exact size and SHA-256 for independent readback. Use `weekly/<job>/latest-complete.json` for the most recent verified publication and `weekly/<job>/latest-attempt.json` for the latest retained attempt.
+
 ## Weekly local refresh
 
 The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.

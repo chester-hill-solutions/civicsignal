@@ -1,0 +1,25 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-written-questions",
+  "main": "worker.ts",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "compatibility_date": "2026-11-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "containers": [{
+    "class_name": "WrittenQuestionsRuntime",
+    "name": "civicsignal-stage-written-questions",
+    "image": "./Dockerfile",
+    "image_build_context": "../..",
+    "max_instances": 2,
+    "instance_type": "standard-4",
+    "observability": { "enabled": true }
+  }],
+  "durable_objects": { "bindings": [{ "name": "RUNTIME", "class_name": "WrittenQuestionsRuntime" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WrittenQuestionsRuntime"] }],
+  "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-weekly" }],
+  "workflows": [{ "binding": "WRITTEN_QUESTIONS", "name": "civicsignal-stage-written-questions", "class_name": "WrittenQuestionsRefresh" }],
+  "triggers": { "crons": ["0 17 * * SAT"] }
+}

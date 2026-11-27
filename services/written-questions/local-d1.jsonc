@@ -1,0 +1,8 @@
+{
+  // The materializer requires the binding declaration even with an already-migrated local database.
+  "d1_databases": [{
+    "binding": "CIVIC_DB",
+    "database_name": "written-questions-local-preview",
+    "database_id": "00000000-0000-0000-0000-000000000000"
+  }]
+}

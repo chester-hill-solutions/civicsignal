@@ -22,9 +22,12 @@ const publishedState = z.strictObject({ instanceId: idSchema, scheduledTime: occ
   status: z.literal('state'), state: stateRef }).refine(value =>
   value.instanceId === `institution-coverage-${value.scheduledTime}` && value.receiptKey === `${prefix}/runs/${value.instanceId}.json`);
 const upstreamPointer = z.strictObject({ instanceId: z.string(), scheduledTime: occurrence, receiptKey: z.string(), status: z.literal('complete') });
+const servingChecks = new Map([['eccc', 2], ['geds', 1]]);
 const attemptSchema = z.strictObject({ source: z.string(), exitCodes: z.number().int().array().min(1), ok: z.boolean(),
-  elapsedSeconds: z.number().nonnegative(), diagnostic: z.string().max(3000).optional() }).refine(value =>
-    value.ok === value.exitCodes.every(code => code === 0) && value.ok === (value.diagnostic === undefined));
+  elapsedSeconds: z.number().nonnegative(), diagnostic: z.string().max(3000).optional(),
+  servingTestsPassed: z.number().int().min(0).max(2).optional() }).refine(value =>
+    value.ok === (value.exitCodes.every(code => code === 0) && value.servingTestsPassed === servingChecks.get(value.source))
+    && value.ok === (value.diagnostic === undefined));
 const result = z.strictObject({ instanceId: idSchema, mode, report: ref, state: stateRef,
   attempts: attemptSchema.array(),
   sources: z.number().int().positive(), registeredSeries: z.number().int().positive(),
