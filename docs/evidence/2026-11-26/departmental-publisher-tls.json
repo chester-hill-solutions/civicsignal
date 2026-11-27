@@ -803,5 +803,109 @@
       "bytes": 29111,
       "finalUrl": "https://www.securitepublique.gc.ca/cnt/trnsprnc/cts-rgltns/frwrd-rgltr-pln/index-fr.aspx"
     }
-  ]
+  ],
+  "cloudflareRegulatoryRetry": {
+    "status": "replay",
+    "instanceId": "institution-coverage-1795755810228",
+    "start": "2026-11-27T05:03:31.783Z",
+    "end": "2026-11-27T05:10:21.018Z",
+    "trigger": {
+      "source": "api"
+    },
+    "workflowVersion": "7329af2e-8156-432d-a9e0-692d95d12daa",
+    "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795755810228.json",
+    "receiptSha256": "52b9f7ce9af0647743412dbdc46ea26bb910b7b76e51758deb789eb30833e42a",
+    "report": {
+      "key": "weekly/institution-coverage/reports/55d255509a28c713bd7f4f15ff75810dfaccad8bb33397e18ac4c9fd6527d8cb.json",
+      "sha256": "55d255509a28c713bd7f4f15ff75810dfaccad8bb33397e18ac4c9fd6527d8cb",
+      "bytes": 2764161
+    },
+    "state": {
+      "key": "weekly/institution-coverage/manifests/f7989f9e0a190cf29c810616b795278cd6577c4d3c718f1ad491df3ce48c7e7f.json",
+      "sha256": "f7989f9e0a190cf29c810616b795278cd6577c4d3c718f1ad491df3ce48c7e7f",
+      "bytes": 28988
+    },
+    "archiveChunksVerified": 139,
+    "inputState": {
+      "key": "weekly/institution-coverage/manifests/3d58f9f7b0076e4ef56e91921c3494606b9331884adf1abc39c49a36f2b48c65.json",
+      "sha256": "3d58f9f7b0076e4ef56e91921c3494606b9331884adf1abc39c49a36f2b48c65",
+      "bytes": 28988
+    },
+    "standingStateAndAttempt": "institution-coverage-1795752803000",
+    "attempts": {
+      "federal-regulatory-plans": {
+        "source": "federal-regulatory-plans",
+        "exitCodes": [
+          0,
+          0
+        ],
+        "ok": true,
+        "elapsedSeconds": 8.072
+      }
+    },
+    "regulatoryPlans": {
+      "sha256": "9e3ab3ec1ee00a70a935c908b7562b1a82619ff302605883b3c69e4edad4f305",
+      "status": "complete",
+      "macSummary": {
+        "archiveBytes": 2315828,
+        "discoveryLinks": 117,
+        "failedTargets": 0,
+        "forwardPlanCandidates": 70,
+        "namedInitiatives": 95,
+        "relatedOrUnattributedTargets": 0,
+        "verifiedPlanEditions": 70
+      },
+      "hostedSummary": {
+        "archiveBytes": 2315381,
+        "discoveryLinks": 117,
+        "failedTargets": 0,
+        "forwardPlanCandidates": 70,
+        "namedInitiatives": 95,
+        "relatedOrUnattributedTargets": 0,
+        "verifiedPlanEditions": 70
+      },
+      "verifiedArchivedOriginals": 70,
+      "missingMacDiscoveryIds": [],
+      "carryForwardDiscoveryIds": [],
+      "failedTargets": []
+    },
+    "matchedScheduledIssuerReportSha256": "273a68850c5ce0116c8ac601476355c3ed1425f87efd16fea39d29da08eeb19b"
+  },
+  "standingCalendarAfterRetry": [
+    "0 16 * * SAT"
+  ],
+  "localScheduleAfterCutover": {
+    "weeklyStepsBefore": [
+      "committees",
+      "departmental-report-editions",
+      "federal-regulatory-plans",
+      "federal-report-directories"
+    ],
+    "weeklyStepsAfter": [
+      "committees"
+    ],
+    "civicsignalUserCrontabEntry": false,
+    "agents": {
+      "com.civicsignal.refresh-daily": {
+        "state": "not running",
+        "runs": 0,
+        "localCalendar": {
+          "Hour": 6,
+          "Minute": 15
+        },
+        "only": [
+          "committee-calls"
+        ]
+      },
+      "com.civicsignal.refresh-weekly": {
+        "state": "not running",
+        "runs": 0,
+        "localCalendar": {
+          "Hour": 9,
+          "Minute": 0,
+          "Weekday": 6
+        }
+      }
+    }
+  }
 }

@@ -391,13 +391,15 @@ python3 -B services/committee-replay/run.py carry-forward \
 
 ## Weekly local refresh
 
-The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.
+The weekly per-user LaunchAgent runs only the full committee corpus on Saturdays at 09:00 local time. The daily agent runs only House committee calls at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently.
 
 Cloudflare’s Saturday coverage Workflow owns ATI summaries, grant awards, briefing notes, CanadaBuys procurement, and the algorithmic assessment and briefing-package catalogues. The operators remain available for manual archive diagnostics. Both native workflows passed the five acquisitions. Independent R2 readback verified all 36 cited publisher originals. [Weekly cutover evidence](evidence/2026-11-26/weekly-federal-mac-cutover.json)
 
-The hosted register and coverage Workflow also own federal catalogue discovery, government bibliography and checklist publication, Treasury Board and IRCC guidance, dated policy editions, and departmental HTML. The reported publisher gaps are still visible in the archived receipts. The Mac retains its report directories and issuer pages for its remaining edition and regulatory plan checks. [Federal parity and cutover evidence](evidence/2026-11-26/weekly-federal-parity-cutover.json)
+The hosted register and coverage Workflow also own federal catalogue discovery, government bibliography and checklist publication, Treasury Board and IRCC guidance, dated policy editions, and departmental HTML. The reported publisher gaps are still visible in the archived receipts. [Federal parity and cutover evidence](evidence/2026-11-26/weekly-federal-parity-cutover.json)
 
 GEDS, ECCC and departmental PDF acquisition now run only in the hosted coverage Workflow. Independent R2 readback verified both catalogues and the PDF workflow's 116 publisher originals, 116 extraction files and 32 archive notices. The PDF acquisition reported 105 verified and 12 review citations, matching the Mac. The scheduled run passed the GEDS lookup. The hosted replay of the exact scheduled archive passed both ECCC checks after the coverage test was corrected to follow the API cursor. [Source cutover evidence](evidence/2026-11-26/coverage-source-cutover.json)
+
+Departmental report directories, issuer editions and regulatory plans also run only in the hosted coverage Workflow. A scheduled run matched all 396 Mac issuer fetches. The native receipt records 18 regulatory transport resets. A source-specific Cloudflare retry of its exact issuer archive verified all 70 plans and 95 named initiatives, and each plan original passed an independent R2 hash and size check. [Issuer and regulatory cutover](evidence/2026-11-26/departmental-publisher-tls.json)
 
 ```sh
 python3 -B scripts/schedule/weekly.py install
@@ -409,11 +411,7 @@ python3 -B scripts/schedule/weekly.py remove
 
 Installation registers the job. It runs while the user is logged in. Removal unloads it and retains its databases and dated receipts. The installed command is `python3 -B scripts/refresh-weekly.py`. Read the dated report under `dist/refresh-weekly/` to see the command, exit status, disk headroom and serving checks for each source. A failed or skipped source makes the full run fail. A partial archive can still have successful verification of its available contents. The per-source command results retain both outcomes. `latest-full.json` records the last full attempt and `latest-successful-full.json` records the last complete success. A selective retry updates `latest-partial.json`. For an interrupted committee catalogue, `python3 -B scripts/refresh-weekly.py --only committees --resume-committee-catalogue` continues its saved acquisition and then runs the remaining publication and Worker checks. Scheduled runs begin a fresh catalogue.
 
-| Collection | What the weekly operator does |
-| --- | --- |
-| Departmental report directories and editions | Refreshes the federal plans and results directories, Treasury Board’s plan cycles, and both editions of the government-wide list of institutional regulatory pages. The separate `departmental-report-editions` step archives issuer landing pages, records year-labelled plan and result links, and tracks discovery links from regulators. Its current report retains the last verified content and the latest attempt for each issuer. |
-| Institutional regulatory plans | Follows forward-plan links from the government-wide directory to issuer pages, verifies the target, and records the original, named initiatives and stated plan cycles. |
-| Committee corpus | Refreshes Senate meeting notices before extracting their publication links. The downloader checks the digest and timestamp of each parsed notice and fetches the other linked originals. The operator then builds the corpus, verifies its archived files, publishes to local D1, and tests bilingual retrieval. |
+The committee operator refreshes Senate meeting notices before extracting their publication links. The downloader checks the digest and timestamp of each parsed notice and fetches the other linked originals. The operator then builds the corpus, verifies its archived files, publishes to local D1, and tests bilingual retrieval.
 
 For a manual written-questions diagnostic, `python3 -B scripts/lib/wq_catalog.py --resume-partial-checkpoint` resumes a saved acquisition. The operator checks the new bilingual listings against the checkpoint, records which successful details it reused, and fetches the rest. Verify the answer archive and authenticated lookup after rebuilding the isolated preview.
 

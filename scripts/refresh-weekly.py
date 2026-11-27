@@ -87,24 +87,9 @@ STEPS = (
         shared_committee_lock=True,
         artifacts=("data/corpus/committees/coverage.json", "data/corpus/committees/committee.sqlite", ".wrangler/committees-45-1"),
     ),
-    Step("federal-report-directories", (("python3", "-B", "scripts/federal-report-directories.py"),), 1800,
-         "Refresh institution-linked departmental plan, results, and regulatory directories.",
-         artifacts=("data/corpus/federal-report-directories/dist/receipt.json",)),
-    Step("departmental-report-editions", (("python3", "-B", "scripts/departmental-report-editions.py", "refresh"),
-         ("python3", "-B", "scripts/departmental-report-editions.py", "replay", "@receipt-run-id@")), 3600,
-         "Archive the issuer landing pages and identify the published departmental plan and results editions by fiscal year.",
-         artifacts=("data/corpus/departmental-report-editions/generations/",), verify_partial=True),
-    Step("federal-regulatory-plans", (("python3", "-B", "scripts/federal-regulatory-plans.py", "refresh"),
-         ("python3", "-B", "scripts/federal-regulatory-plans.py", "replay", "@receipt-run-id@")), 3600,
-         "Verify institutional forward regulatory plan pages and retain publisher-labelled initiatives.",
-         artifacts=("data/corpus/federal-regulatory-plans/dist/receipt.json",), verify_partial=True),
 )
 
-RUN_ORDER = (
-    "federal-report-directories", "departmental-report-editions",
-    "federal-regulatory-plans",
-    "committees",
-)
+RUN_ORDER = ("committees",)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

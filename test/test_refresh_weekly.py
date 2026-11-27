@@ -19,12 +19,15 @@ SPEC.loader.exec_module(weekly)
 
 class WeeklyRefreshTests(unittest.TestCase):
     def test_catalog_has_expected_weekly_collections(self):
+        self.assertEqual(weekly.RUN_ORDER, ("committees",))
         self.assertEqual({step.name for step in weekly.STEPS}, set(weekly.RUN_ORDER))
         retired = {"official-titles", "service-inventory", "federal-institution-coverage", "hansard-house", "hansard-senate",
                    "gazette", "gazette-year", "ati-summaries", "grant-awards", "briefing-notes", "federal-procurement",
                    "federal-disclosures", "federal-discovery", "federal-guidance", "federal-publications",
                    "federal-publication-checklists", "federal-policy-editions", "departmental-report-html", "parliament",
-                   "statutes-local", "consultation-notices", "written-questions", "geds", "eccc", "departmental-report-documents"}
+                   "statutes-local", "consultation-notices", "written-questions", "geds", "eccc",
+                   "departmental-report-documents", "federal-report-directories", "departmental-report-editions",
+                   "federal-regulatory-plans"}
         self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
         self.assertTrue(all(retired.isdisjoint(command) for command in commands))
@@ -32,11 +35,6 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertTrue(committees.shared_committee_lock)
         self.assertIn(("python3", "-B", "scripts/committee-corpus.py"), committees.commands)
         self.assertIn(("python3", "-B", "scripts/committee-download.py", "--verify-only"), committees.commands)
-
-    def test_derived_publication_steps_follow_their_source_intakes(self):
-        for dependency, derived in [("federal-report-directories", "departmental-report-editions"),
-                                    ("departmental-report-editions", "federal-regulatory-plans")]:
-            self.assertLess(weekly.RUN_ORDER.index(dependency), weekly.RUN_ORDER.index(derived))
 
     def test_large_steps_are_gated_by_live_free_space(self):
         committees = next(step for step in weekly.STEPS if step.name == "committees")
@@ -58,8 +56,9 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertEqual(len(result["commands"]), 1)
         self.assertEqual(result["error"], "command exited with status 7")
 
-    def test_departmental_batch_replays_its_partial_generation_and_stops_on_an_invalid_id(self):
-        step = next(step for step in weekly.STEPS if step.name == "departmental-report-editions")
+    def test_operator_replays_its_partial_generation_and_stops_on_an_invalid_id(self):
+        step = weekly.Step("fixture", (("publisher", "refresh"), ("publisher", "replay", "@receipt-run-id@")),
+                           10, "fixture", verify_partial=True)
         for run_id, expected_calls in [("abc123", 2), ("../older", 1), ("", 1)]:
             result = {"commands": []}
             with patch.object(weekly, "_run_command", side_effect=[

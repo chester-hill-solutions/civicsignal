@@ -43,6 +43,22 @@ const status = z.discriminatedUnion('status', [
 
 type Params = { scheduledTime: number; mode: z.infer<typeof mode>; state?: z.infer<typeof stateRef>;
   checkServing?: true; retrySource?: z.infer<typeof retrySourceName> };
+
+function checkProducerResults(
+  request: Pick<Params, 'mode' | 'checkServing' | 'retrySource'> & { state: z.infer<typeof stateRef> },
+  { attempts, state, servingReplay }: z.infer<typeof result>,
+) {
+  if (request.mode === 'refresh' && (!attempts.length || new Set(attempts.map(attempt => attempt.source)).size !== attempts.length)) {
+    throw new Error('Missing or duplicate source acquisition results.');
+  }
+  if (request.mode === 'replay' && (request.retrySource
+    ? attempts.length !== 1 || attempts[0].source !== request.retrySource
+    : attempts.length !== 0 || state.sha256 !== request.state.sha256)) {
+    throw new Error('Unexpected source or state in coverage replay.');
+  }
+  if (Boolean(servingReplay) !== Boolean(request.checkServing)) throw new Error('Unexpected coverage serving replay result.');
+}
+
 interface Env {
   ARCHIVE: R2Bucket;
   CONSULTATIONS_DB: D1Database;
@@ -197,15 +213,7 @@ export class InstitutionCoverage extends WorkflowEntrypoint<Env, Params> {
       const stateManifest = z.object({ schemaVersion: z.literal(1), roots: z.string().array().min(1) });
       stateManifest.parse(JSON.parse(new TextDecoder().decode(stateBytes)));
       await bytesFor(this.env.ARCHIVE, request.projection);
-      if (executionMode === 'refresh' && (!attempts.length || new Set(attempts.map(attempt => attempt.source)).size !== attempts.length)) {
-        throw new Error('Missing or duplicate source acquisition results.');
-      }
-      if (executionMode === 'replay' && (retrySource
-        ? attempts.length !== 1 || attempts[0].source !== retrySource
-        : attempts.length !== 0 || state.sha256 !== request.state.sha256)) {
-        throw new Error('Unexpected source or state in coverage replay.');
-      }
-      if (Boolean(published.servingReplay) !== Boolean(checkServing)) throw new Error('Unexpected coverage serving replay result.');
+      checkProducerResults(request, published);
       const complete = request.inputFreshness.weekly && request.inputFreshness.consultations && attempts.every(attempt => attempt.ok);
       const runStatus = executionMode === 'replay' ? 'replay' : complete ? 'complete' : 'degraded';
       const receiptKey = `${prefix}/runs/${instanceId}.json`;

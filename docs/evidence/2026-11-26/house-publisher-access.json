@@ -463,5 +463,44 @@
         ]
       }
     }
+  },
+  "finalMacCutoverRecheck": {
+    "instanceId": "house-calls-1795756407733",
+    "status": "errored",
+    "start": "2026-11-27T05:13:31.130Z",
+    "end": "2026-11-27T05:13:32.616Z",
+    "workflowVersion": "e1c4112f-aba0-4068-bf1e-534c5d0f4a14",
+    "trigger": {
+      "source": "api"
+    },
+    "headBefore": {
+      "instance_id": "house-calls-1795652141644",
+      "observed_at": "2026-11-26T00:16:34.215000Z",
+      "packet_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "content_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "call_rows": 30
+    },
+    "headAfter": {
+      "instance_id": "house-calls-1795652141644",
+      "observed_at": "2026-11-26T00:16:34.215000Z",
+      "packet_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "content_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "call_rows": 30
+    },
+    "failure": {
+      "phase": "acquisition",
+      "code": "publisher-http",
+      "status": 403,
+      "url": "https://www.ourcommons.ca/Committees/en/Participate",
+      "instanceId": "house-calls-1795756407733",
+      "scheduledTime": 1795756407733
+    },
+    "failureKey": "committee/house-calls/failures/house-calls-1795756407733.json",
+    "failureSha256": "989d8c0c2fe5ff20fa062281be10a12d1bbb22dcc6006dc28adf1dd87ce7f49e",
+    "priorReceiptKey": "committee/house-calls/runs/house-calls-1795652141644.json",
+    "priorReceiptSha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79",
+    "preservationVerified": true
   }
 }
