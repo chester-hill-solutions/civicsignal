@@ -20,6 +20,11 @@ interface Env {
 const instance = ({ scheduledTime }: Params) => `consultation-notices-${scheduledTime}`;
 const digest = z.string().regex(/^[a-f0-9]{64}$/u);
 const count = z.number().int().positive();
+const optionalCount = z.number().int().nonnegative().optional();
+const gap = z.object({ consultationId: z.string().min(1), language: z.enum(['en', 'fr']), sourceUrl: z.string().min(1),
+  outcome: z.enum(['fetch-error', 'http-error']), httpStatus: z.number().int().min(100).max(599).nullable() });
+const gapKey = ({ consultationId, language, sourceUrl, outcome, httpStatus }: z.infer<typeof gap>) =>
+  JSON.stringify([consultationId, language, sourceUrl, outcome, httpStatus]);
 const catalogueSchema = z.object({ observedAt: z.iso.datetime(), revision: digest, rows: count,
   csvSha256: digest, schemaSha256: digest });
 const receiptLimit = 16 * 1024;
@@ -97,11 +102,24 @@ export class ConsultationNoticesRefresh extends WorkflowEntrypoint<Env, Params> 
     return runArchiveRefresh(step, this.env.ARCHIVE, getContainer(this.env.RUNTIME, id), params, {
       id: instance, base, label: 'consultation notices', schema, maxPolls: 360, containerInputs: { catalogue },
       report: z.object({ complete: z.literal(true), servingTestsPassed: z.literal(1),
+        publisherCoverage: z.enum(['complete', 'degraded']),
+        baseline: z.object({ receiptSha256: digest, catalogueRevision: digest, catalogueObservedAt: z.iso.datetime(),
+          knownGaps: gap.array(), verifiedEditions: z.number().int().nonnegative() }),
+        failures: gap.extend({ detail: z.string().nullable() }).array(),
+        novelFailures: z.never().array(), regressedEditions: z.never().array(),
         catalogue: z.object({ revision: z.literal(catalogue.revision), observedAt: z.literal(catalogue.observedAt),
           receipt: z.object({ key: z.literal(catalogue.receipt.key), sha256: z.literal(catalogue.receipt.sha256) }) }),
         notices: z.object({ catalogueRevision: z.literal(catalogue.revision),
           catalogueObservedAt: z.literal(catalogue.observedAt), scope: z.literal('all-open'),
-          editions: z.number().int().nonnegative() }),
+          editions: z.number().int().nonnegative(),
+          counts: z.object({ 'fetch-error': optionalCount, 'http-error': optionalCount, 'archive-budget': z.literal(0).optional() }) }),
+      }).refine(report => {
+        const known = new Set(report.baseline.knownGaps.map(gapKey));
+        const outcomes = ['fetch-error', 'http-error'] as const;
+        return ((report.publisherCoverage === 'degraded') === (report.failures.length > 0)) &&
+          report.failures.every(failure => known.has(gapKey(failure))) &&
+          outcomes.every(outcome => (report.notices.counts[outcome] ?? 0) ===
+            report.failures.filter(failure => failure.outcome === outcome).length);
       }),
     });
   }

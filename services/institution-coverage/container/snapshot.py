@@ -10,6 +10,7 @@ import re
 import stat
 import tarfile
 import tempfile
+import time
 
 PREFIX = "weekly/institution-coverage"
 CHUNK_SIZE = 16 * 1024 * 1024
@@ -189,14 +190,26 @@ class ChunkReader(io.RawIOBase):
     def readable(self):
         return True
 
+    def _read_verified(self, chunk):
+        for attempt in range(3):
+            try:
+                raw = self.get(chunk["key"])
+            except OSError:
+                if attempt == 2:
+                    raise
+            else:
+                if len(raw) == chunk["bytes"] and digest(raw) == chunk["sha256"]:
+                    return raw
+            if attempt < 2:
+                time.sleep(0.25 * 2 ** attempt)
+        raise ValueError(f"Corrupt snapshot chunk: {chunk['key']}")
+
     def readinto(self, target):
         if not self.pending:
             chunk = next(self.descriptors, None)
             if chunk is None:
                 return 0
-            raw = self.get(chunk["key"])
-            if len(raw) != chunk["bytes"] or digest(raw) != chunk["sha256"]:
-                raise ValueError(f"Corrupt snapshot chunk: {chunk['key']}")
+            raw = self._read_verified(chunk)
             self.hash.update(raw)
             self.pending = memoryview(raw)
         count = min(len(target), len(self.pending))

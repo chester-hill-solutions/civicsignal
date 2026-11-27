@@ -1,4 +1,5 @@
 """Archive source-cited notices against the pinned Cloudflare consultation catalogue."""
+from collections import Counter
 from contextlib import closing
 import importlib.util
 import json
@@ -18,6 +19,7 @@ CATALOGUE_ARCHIVE = "http://inputs.consultation-notices.internal/"
 NOTICE_PATH = Path("data/corpus/consultations")
 SOURCE_LIMITS = {"csv": 16 * 1024**2, "schema": 512 * 1024}
 PARTIAL_CODES = ("fetch-error", "http-error", "archive-budget")
+GAP_FIELDS = ("consultationId", "language", "sourceUrl", "outcome", "httpStatus")
 
 
 def notice_intake(archive):
@@ -103,6 +105,53 @@ def failures(store, revision, first_attempt):
             ORDER BY attempt_id""", (revision, first_attempt))]
 
 
+def prior_publication(store, receipt_path):
+    body = receipt_path.read_bytes()
+    receipt = json.loads(body)
+    if receipt["scope"] != "all-open":
+        raise ValueError("Previous consultation notice receipt must cover all open consultations.")
+    revision, observed = receipt["catalogueRevision"], receipt["catalogueObservedAt"]
+    with closing(sqlite3.connect(store.resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        rows = db.execute("""SELECT consultation_id, language, status FROM notices
+            WHERE catalogue_revision=? AND catalogue_observed_at=?""", (revision, observed)).fetchall()
+        covered = {(cid, language) for cid, language, status in rows if status == "fetched"}
+        if len(rows) != receipt["editions"] or len(covered) != receipt["publishedFetchedEditions"]:
+            raise ValueError("Previous consultation notice receipt differs from its published editions.")
+        last_attempt = db.execute("SELECT coalesce(max(attempt_id), 0) FROM notice_attempts").fetchone()[0]
+        # Limit prior gaps to the latest attempt for a URL that is still listed
+        # as a source in that publication. Superseded links stay in the ledger.
+        gaps = db.execute("""WITH latest AS (
+              SELECT *, row_number() OVER (PARTITION BY consultation_id, language, requested_url
+                  ORDER BY attempt_id DESC) AS rank FROM notice_attempts WHERE catalogue_revision=?
+            ) SELECT DISTINCT a.consultation_id, a.language, a.requested_url, a.outcome, a.http_status
+              FROM latest a JOIN notices n ON n.consultation_id=a.consultation_id AND n.language=a.language
+              JOIN json_each(n.sources_json) source ON json_extract(source.value,'$.sourceUrl')=a.requested_url
+              WHERE n.catalogue_revision=? AND n.catalogue_observed_at=? AND a.rank=1
+                AND a.outcome IN ('fetch-error','http-error','archive-budget')
+                AND json_extract(source.value,'$.lastAttemptAt')=a.attempted_at
+                AND json_extract(source.value,'$.lastAttemptStatus')=a.outcome
+              ORDER BY a.consultation_id,a.language,a.requested_url""", (revision, revision, observed)).fetchall()
+    counts = Counter(gap[3] for gap in gaps)
+    if any(counts[outcome] != receipt["counts"].get(outcome, 0) for outcome in PARTIAL_CODES):
+        raise ValueError("Previous consultation notice gaps differ from their published receipt.")
+    allowed = {gap for gap in gaps if gap[3] != "archive-budget"}
+    evidence = {"receiptSha256": digest(body), "catalogueRevision": revision, "catalogueObservedAt": observed,
+                "verifiedEditions": len(covered), "knownGaps": [dict(zip(GAP_FIELDS, gap)) for gap in gaps if gap in allowed]}
+    return last_attempt, covered, allowed, evidence
+
+
+def lost_editions(database, store, catalogue, previously_covered):
+    with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        open_ids = {row[0] for row in db.execute("""SELECT id FROM consultations_records
+            WHERE removed_at IS NULL AND observed_at=? AND state_at_observation='open'""", (catalogue["observedAt"],))}
+    with closing(sqlite3.connect(store.resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        current = set(db.execute("""SELECT consultation_id, language FROM notices
+            WHERE catalogue_revision=? AND catalogue_observed_at=? AND status='fetched'""",
+                                 (catalogue["revision"], catalogue["observedAt"])))
+    return [{"consultationId": cid, "language": language}
+            for cid, language in sorted(previously_covered - current) if cid in open_ids]
+
+
 def check_serving(database, store):
     # The serving check resolves archived notice object paths relative to its
     # current directory. Keep it isolated from both the image and the seed.
@@ -138,9 +187,9 @@ def refresh(request):
         module = notice_intake(archive)
         corpus = archive / NOTICE_PATH
         store = corpus / "notice-index.sqlite"
-        with closing(sqlite3.connect(store.resolve().as_uri() + "?mode=ro", uri=True)) as db:
-            last_attempt = db.execute("SELECT coalesce(max(attempt_id), 0) FROM notice_attempts").fetchone()[0]
-        notices = module.refresh(database, store, receipt_root=corpus / "notice-receipts")
+        receipts = corpus / "notice-receipts"
+        last_attempt, covered, known_gaps, report["baseline"] = prior_publication(store, receipts / "latest.json")
+        notices = module.refresh(database, store, receipt_root=receipts)
         report["notices"] = notices
         if (notices["catalogueRevision"] != catalogue["revision"] or notices["catalogueObservedAt"] != catalogue["observedAt"]
                 or notices["scope"] != "all-open" or notices["editions"] != 2 * notices["openConsultations"]):
@@ -148,6 +197,10 @@ def refresh(request):
         report["failures"] = failures(store, catalogue["revision"], last_attempt)
         if len(report["failures"]) != sum(notices["counts"].get(code, 0) for code in PARTIAL_CODES):
             raise ValueError("Consultation notice failure detail differs from the intake totals.")
+        report["novelFailures"] = [failure for failure in report["failures"]
+                                   if tuple(failure[field] for field in GAP_FIELDS) not in known_gaps]
+        report["regressedEditions"] = lost_editions(database, store, catalogue, covered)
+        report["publisherCoverage"] = "degraded" if report["failures"] or report["regressedEditions"] else "complete"
         report["verifiedOriginals"] = verified_archive(module, store)
         report["servingTestsPassed"] = check_serving(database, store)
         state = storage.snapshot()
@@ -155,10 +208,10 @@ def refresh(request):
         reason = str(error)[-2400:]
         report["error"] = reason
         return {"status": "failed", "report": storage.document("reports", report), "reason": reason}
-    if report["failures"]:
+    if report["novelFailures"] or report["regressedEditions"]:
         report["candidateState"] = state
         return {"status": "failed", "report": storage.document("reports", report),
-                "reason": "Some official consultation notices could not be acquired. The verified head was preserved."}
+                "reason": "New consultation notice gaps or lost verified editions. The verified head was preserved."}
     report["complete"] = True
     return {"state": state, "report": storage.document("reports", report)}
 

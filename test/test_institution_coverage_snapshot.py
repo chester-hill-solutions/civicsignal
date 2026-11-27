@@ -78,6 +78,24 @@ class CoverageSnapshot(unittest.TestCase):
         self.assertFalse(old.exists())
         self.assertEqual((old.parent / "new").read_text(), "new")
 
+    def test_chunk_read_retries_a_partial_response_and_transport_failure(self):
+        (self.data / "payload").write_text("verified")
+        manifest = self.capture()
+        key = manifest["chunks"][0]["key"]
+        body = self.chunks[key]
+        with patch.object(snapshot.time, "sleep"):
+            replies = iter([body[:-1], TimeoutError("timed out"), body])
+
+            def read(chunk_key):
+                self.assertEqual(chunk_key, key)
+                reply = next(replies)
+                if isinstance(reply, Exception):
+                    raise reply
+                return reply
+
+            snapshot.restore(self.dest, manifest, read)
+        self.assertEqual((self.dest / ROOT / "payload").read_text(), "verified")
+
     def test_reject_unapproved_root_or_external_symlink(self):
         with self.assertRaisesRegex(ValueError, "root"):
             snapshot.capture(self.src, ["dist"], self.chunks.__setitem__)
