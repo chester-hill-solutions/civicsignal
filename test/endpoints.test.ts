@@ -2514,11 +2514,14 @@ describe('departmental publications through the Worker', () => {
   });
 
   it.skipIf(!sourcePath)('queries each published language, original and version with the acquired ECCC database', async () => {
-    const fixture = await setup(40);
     const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
     if (!sourcePath) throw new Error('Missing acquired departmental database');
     const source = new DatabaseSync(sourcePath, { readOnly: true });
     closed.push(() => source.close());
+    const gapPageSize = 100;
+    const historicalGaps = Number(source.prepare('SELECT COUNT(*) AS n FROM dp_gaps').get()?.n);
+    const gapPages = Math.ceil((historicalGaps + 1) / gapPageSize);
+    const fixture = await setup(40 + gapPages);
     fixture.env.DEPARTMENTAL_PUBLICATIONS_DB = localD1(source);
     fixture.env.DEPARTMENTAL_PUBLICATIONS_PREVIEW = 'on';
     const get = async (url: string) => {
@@ -2595,14 +2598,23 @@ describe('departmental publications through the Worker', () => {
     gapFixture.prepare('UPDATE dp_extraction_runs SET gaps_json=? WHERE singleton=1')
       .run(JSON.stringify([{ document_id: gapDocument.id, reason: 'fixture alternate extraction gap' }]));
     fixture.env.DEPARTMENTAL_PUBLICATIONS_DB = localD1(gapFixture);
-    const coverageWithAlternateGap = await get(path + '/coverage?limit=100');
-    expect(coverageWithAlternateGap.gaps).toEqual(expect.arrayContaining([expect.objectContaining({
+    const gapRequest = path + '/coverage?limit=' + gapPageSize;
+    let cursor = '';
+    let extractionGap;
+    for (let page = 0; page < gapPages; page++) {
+      const coverageWithAlternateGap = await get(gapRequest + cursor);
+      extractionGap = (coverageWithAlternateGap.gaps as { id: string; kind: string }[])
+        .find(gap => gap.id === gapDocument.id && gap.kind === 'extraction');
+      if (extractionGap || !coverageWithAlternateGap.nextCursor) break;
+      cursor = '&cursor=' + String(coverageWithAlternateGap.nextCursor);
+    }
+    expect(extractionGap).toEqual(expect.objectContaining({
       id: gapDocument.id,
       kind: 'extraction',
       language: gapDocument.language,
       url: gapDocument.url,
       reason: 'fixture alternate extraction gap',
-    })]));
+    }));
     expect((await fixture.send(path + '?query=test&language=en&cursor=' + 'a'.repeat(64) + '.1')).status).toBe(400);
   });
 });

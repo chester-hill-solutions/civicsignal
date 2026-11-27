@@ -177,12 +177,16 @@ def verify_serving(name, log):
     report.unlink(missing_ok=True)
     try:
         with log.open('ab') as output:
-            subprocess.run(['bun', 'run', 'test', 'test/endpoints.test.ts', '-t', pattern, '--reporter=json',
-                            f'--outputFile={report}'], cwd=ROOT, env={**os.environ, variable: str(ROOT / database)},
-                           timeout=180, check=True, stdout=output, stderr=output)
+            completed = subprocess.run(
+                ['bun', 'run', 'test', 'test/endpoints.test.ts', '-t', pattern, '--reporter=json', f'--outputFile={report}'],
+                cwd=ROOT, env={**os.environ, variable: str(ROOT / database)},
+                timeout=180, stdout=output, stderr=output)
         result = json.loads(report.read_bytes())
-        if result['success'] is not True or result['numPassedTests'] != expected or result['numFailedTests'] != 0:
-            raise ValueError(f'Expected {expected} authenticated Worker checks.')
+        if (completed.returncode != 0 or result['success'] is not True
+                or result['numPassedTests'] != expected or result['numFailedTests'] != 0):
+            failures = [message for suite in result['testResults'] for test in suite['assertionResults']
+                        if test['status'] == 'failed' for message in test['failureMessages']]
+            raise ValueError(f'Expected {expected} authenticated Worker checks. ' + '\n'.join(failures)[:1800])
     except (OSError, subprocess.SubprocessError, ValueError, KeyError) as error:
         with log.open('a') as output:
             output.write(f'Authenticated serving checks failed: {error}\n')
@@ -202,6 +206,15 @@ def run_coverage(request):
     consultations = SCRATCH / 'consultations.json'
     consultations.write_bytes(canonical(request['consultations']))
     attempts = []
+    serving_replay = {}
+    if request.get('checkServing'):
+        for name, (_, _, _, expected) in SERVING_CHECKS.items():
+            Handler.progress('verify-serving', name)
+            log = SCRATCH / f'{name}-replay.log'
+            passed = verify_serving(name, log)
+            if passed != expected:
+                raise ValueError(f'{name} serving replay failed.\n{log_tail(log)}')
+            serving_replay[name] = passed
     if mode == 'refresh':
         Handler.progress('catalogues')
         catalogue = prepare_bulk_inputs(ROOT, object_read, request['discovery'])
@@ -240,6 +253,7 @@ def run_coverage(request):
         packed = canonical(capture(ROOT, DEFAULT_ROOTS, put_object))
         state = put_object(f'{PREFIX}/manifests/{sha(packed)}.json', packed)
     return {'instanceId': instance, 'mode': mode, 'report': report_ref, 'state': state, 'attempts': attempts,
+            **({'servingReplay': serving_replay} if serving_replay else {}),
             'sources': len(payload['sources']), 'registeredSeries': len(payload['registeredSeriesSummary']),
             'namesWithRecords': payload['namesWithRecords'], 'provisionalNames': payload['provisionalNames']}
 

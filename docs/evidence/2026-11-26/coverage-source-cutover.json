@@ -1,0 +1,618 @@
+{
+  "recordedDateToronto": "2026-11-26",
+  "environment": "private Cloudflare staging",
+  "standingCalendar": {
+    "worker": "civicsignal-stage-institution-coverage",
+    "standingCron": "0 16 * * SAT",
+    "independentReadback": [
+      "0 16 * * SAT"
+    ]
+  },
+  "failedNativeRestore": {
+    "instanceId": "institution-coverage-1795744921000",
+    "trigger": {
+      "source": "binding"
+    },
+    "endedAt": "2026-11-27T02:03:02.503Z",
+    "error": "Coverage container failed: Corrupt snapshot chunk: weekly/institution-coverage/chunks/ce1ca991bdd3a3dc770d4b59084fc8d615bb21399d3c784280361b0711cf7ae2",
+    "independentChunkReadback": {
+      "bytes": 16777216,
+      "sha256": "ce1ca991bdd3a3dc770d4b59084fc8d615bb21399d3c784280361b0711cf7ae2"
+    },
+    "recovery": "Three bounded attempts per R2 chunk, each requiring the same exact length and SHA-256."
+  },
+  "nativeRefresh": {
+    "instanceId": "institution-coverage-1795746703000",
+    "scheduledTime": 1795746703000,
+    "start": "2026-11-27T02:31:46.676Z",
+    "end": "2026-11-27T03:32:00.164Z",
+    "trigger": {
+      "source": "binding"
+    },
+    "workflowVersion": "1166ab90-f734-43ba-85d8-c564c906f48e",
+    "status": "degraded",
+    "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795746703000.json",
+    "receiptSha256": "8f615f2abed544a43a4b1437d8bf045a3a9819d577edeb0b917a9ce8c0320056",
+    "state": {
+      "key": "weekly/institution-coverage/manifests/a7289b45297a2a3fc2743d68f22ea0e59deb06e47d709aa7b9ed2f8e9daa7cdb.json",
+      "sha256": "a7289b45297a2a3fc2743d68f22ea0e59deb06e47d709aa7b9ed2f8e9daa7cdb",
+      "bytes": 27363
+    },
+    "report": {
+      "key": "weekly/institution-coverage/reports/00e919de866b9766d53e495ffcf3ed2f4ba5fa34879ac5f72751aabd6db43d21.json",
+      "sha256": "00e919de866b9766d53e495ffcf3ed2f4ba5fa34879ac5f72751aabd6db43d21",
+      "bytes": 2763932
+    },
+    "archiveChunkCount": 131,
+    "inputFreshness": {
+      "weekly": false,
+      "consultations": false
+    }
+  },
+  "sourceAttempts": {
+    "ati-summaries": {
+      "source": "ati-summaries",
+      "exitCodes": [
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 8.946
+    },
+    "grant-awards": {
+      "source": "grant-awards",
+      "exitCodes": [
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 88.88
+    },
+    "briefing-notes": {
+      "source": "briefing-notes",
+      "exitCodes": [
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 5.136
+    },
+    "federal-procurement": {
+      "source": "federal-procurement",
+      "exitCodes": [
+        1
+      ],
+      "ok": false,
+      "elapsedSeconds": 1.57,
+      "diagnostic": "CanadaBuys data index is missing a tender, award, or contract-history dataset link"
+    },
+    "federal-disclosures": {
+      "source": "federal-disclosures",
+      "exitCodes": [
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 11.103
+    },
+    "eccc": {
+      "source": "eccc",
+      "exitCodes": [
+        0,
+        0
+      ],
+      "ok": false,
+      "elapsedSeconds": 1180.181,
+      "servingTestsPassed": 0
+    },
+    "federal-report-directories": {
+      "source": "federal-report-directories",
+      "exitCodes": [
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 8.243
+    },
+    "departmental-report-editions": {
+      "source": "departmental-report-editions",
+      "exitCodes": [
+        2,
+        2
+      ],
+      "ok": false,
+      "elapsedSeconds": 190.978
+    },
+    "departmental-report-documents": {
+      "source": "departmental-report-documents",
+      "exitCodes": [
+        2,
+        0
+      ],
+      "ok": false,
+      "elapsedSeconds": 536.691
+    },
+    "departmental-report-html": {
+      "source": "departmental-report-html",
+      "exitCodes": [
+        2
+      ],
+      "ok": false,
+      "elapsedSeconds": 40.249
+    },
+    "federal-regulatory-plans": {
+      "source": "federal-regulatory-plans",
+      "exitCodes": [
+        0,
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 29.134
+    },
+    "federal-publications": {
+      "source": "federal-publications",
+      "exitCodes": [
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 2.373
+    },
+    "federal-publication-checklists": {
+      "source": "federal-publication-checklists",
+      "exitCodes": [
+        0,
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 74.693
+    },
+    "federal-guidance": {
+      "source": "federal-guidance",
+      "exitCodes": [
+        0,
+        2,
+        0
+      ],
+      "ok": false,
+      "elapsedSeconds": 526.368
+    },
+    "federal-policy-editions": {
+      "source": "federal-policy-editions",
+      "exitCodes": [
+        2,
+        0
+      ],
+      "ok": false,
+      "elapsedSeconds": 440.629
+    },
+    "geds": {
+      "source": "geds",
+      "exitCodes": [
+        0
+      ],
+      "ok": true,
+      "elapsedSeconds": 13.398,
+      "servingTestsPassed": 1
+    }
+  },
+  "geds": {
+    "sqliteIntegrity": "ok",
+    "databaseBytes": 1103048704,
+    "authenticatedWorkerChecks": 1,
+    "snapshotId": "snap_5eb69f7b8a23b19c66f29b96cbc7a3cb",
+    "sourceDate": "2026-10-25T14:55:39.000Z",
+    "zipSha256": "8f6f075f63e1d40a51da444417c35ce5f2f2de86dafa44f0c998ab9463313751",
+    "sourceRows": 189994,
+    "organizations": 21874
+  },
+  "departmentalPdfs": {
+    "localReportSha256": "f927985a49c80715175522b9c70437522d1e5edb075b51afccc9c21169925a85",
+    "hostedReportSha256": "916894b3593c4cecdd172310457afeda04895fb8307f5dcec64befea5e534e9b",
+    "localSummary": {
+      "archivedBodyBytes": 112582206,
+      "byFamilyLanguage": {
+        "departmental-plans/en": {
+          "acquisitionFailures": 0,
+          "citations": 26,
+          "languageMismatches": 0,
+          "review": 0,
+          "verified": 26,
+          "yearMismatches": 0
+        },
+        "departmental-plans/fr": {
+          "acquisitionFailures": 0,
+          "citations": 26,
+          "languageMismatches": 1,
+          "review": 2,
+          "verified": 24,
+          "yearMismatches": 0
+        },
+        "departmental-results/en": {
+          "acquisitionFailures": 0,
+          "citations": 36,
+          "languageMismatches": 1,
+          "review": 7,
+          "verified": 29,
+          "yearMismatches": 6
+        },
+        "departmental-results/fr": {
+          "acquisitionFailures": 0,
+          "citations": 29,
+          "languageMismatches": 0,
+          "review": 3,
+          "verified": 26,
+          "yearMismatches": 3
+        }
+      },
+      "directLinkCitations": 117,
+      "failedTargets": 0,
+      "fetchedTargets": 116,
+      "readableTargets": 116,
+      "reviewCitations": 12,
+      "uniquePdfTargets": 116,
+      "verifiedCitations": 105
+    },
+    "hostedSummary": {
+      "archivedBodyBytes": 112582206,
+      "byFamilyLanguage": {
+        "departmental-plans/en": {
+          "acquisitionFailures": 0,
+          "citations": 26,
+          "languageMismatches": 0,
+          "review": 0,
+          "verified": 26,
+          "yearMismatches": 0
+        },
+        "departmental-plans/fr": {
+          "acquisitionFailures": 0,
+          "citations": 26,
+          "languageMismatches": 1,
+          "review": 2,
+          "verified": 24,
+          "yearMismatches": 0
+        },
+        "departmental-results/en": {
+          "acquisitionFailures": 0,
+          "citations": 36,
+          "languageMismatches": 1,
+          "review": 7,
+          "verified": 29,
+          "yearMismatches": 6
+        },
+        "departmental-results/fr": {
+          "acquisitionFailures": 0,
+          "citations": 29,
+          "languageMismatches": 0,
+          "review": 3,
+          "verified": 26,
+          "yearMismatches": 3
+        }
+      },
+      "directLinkCitations": 117,
+      "failedTargets": 0,
+      "fetchedTargets": 116,
+      "readableTargets": 116,
+      "reviewCitations": 12,
+      "uniquePdfTargets": 116,
+      "verifiedCitations": 105
+    },
+    "localRunId": "cb6751365ba035804a8deda87f2e1625",
+    "hostedRunId": "63c2b8fc5e688680610bf364d6149822",
+    "documentParity": {
+      "missing": [],
+      "added": [],
+      "changed": []
+    },
+    "citationParity": {
+      "missing": [],
+      "added": [],
+      "changed": []
+    },
+    "verifiedArchives": {
+      "object_path": 116,
+      "text_object_path": 116,
+      "archivePath": 32
+    },
+    "textByteParity": {
+      "missing": [],
+      "added": [],
+      "changed": []
+    }
+  },
+  "eccc": {
+    "sqliteIntegrity": "ok",
+    "databaseBytes": 106680320,
+    "authenticatedWorkerChecks": 0,
+    "catalogueCutoff": "2026-11-27T02:34:53.902812Z",
+    "documentsSeen": 246,
+    "documentsExtracted": 234,
+    "alternatesExtracted": 31,
+    "passages": 70310,
+    "sqliteSha256": "7757de3f81d9ec931640d35784504c71debb970b6ba8c96f3e82141185823604",
+    "historicalDocumentGaps": 108,
+    "testOnExactArchive": {
+      "before": {
+        "passed": 1,
+        "failed": 1
+      },
+      "after": {
+        "passed": 2,
+        "failed": 0
+      }
+    },
+    "fix": "Follow real coverage API cursors and require the intended gap ID and extraction kind.",
+    "cloudflareReplay": {
+      "instanceId": "institution-coverage-1795750611072",
+      "workflowVersion": "9a784350-8d1d-4334-9818-c61a78e49817",
+      "start": "2026-11-27T03:36:54.483Z",
+      "end": "2026-11-27T03:40:44.916Z",
+      "trigger": {
+        "source": "api"
+      },
+      "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795750611072.json",
+      "receiptSha256": "c086d3f0b0e5744e62f114ef7a2ee72a989ca5234dccb24223c70a83599712ed",
+      "state": {
+        "key": "weekly/institution-coverage/manifests/a7289b45297a2a3fc2743d68f22ea0e59deb06e47d709aa7b9ed2f8e9daa7cdb.json",
+        "sha256": "a7289b45297a2a3fc2743d68f22ea0e59deb06e47d709aa7b9ed2f8e9daa7cdb",
+        "bytes": 27363
+      },
+      "report": {
+        "key": "weekly/institution-coverage/reports/00e919de866b9766d53e495ffcf3ed2f4ba5fa34879ac5f72751aabd6db43d21.json",
+        "sha256": "00e919de866b9766d53e495ffcf3ed2f4ba5fa34879ac5f72751aabd6db43d21",
+        "bytes": 2763932
+      },
+      "servingReplay": {
+        "eccc": 2,
+        "geds": 1
+      },
+      "stateAndAttemptPointersAfter": "institution-coverage-1795746703000"
+    }
+  },
+  "remainingIssuerDependency": {
+    "issuerEditions": {
+      "local": {
+        "issuerPages": 435,
+        "latestAttemptFailed": 38,
+        "latestAttemptSkipped": 1,
+        "withVerifiedContent": 396
+      },
+      "hosted": {
+        "issuerPages": 435,
+        "latestAttemptFailed": 52,
+        "latestAttemptSkipped": 1,
+        "withVerifiedContent": 396
+      },
+      "newlyFailedComparedToMac": [
+        [
+          "departmental-plans",
+          "en",
+          "https://housing-infrastructure.canada.ca/pub/index-eng.html#dp"
+        ],
+        [
+          "departmental-plans",
+          "en",
+          "https://www.clo-ocol.gc.ca/en/transparency/departmental-plans"
+        ],
+        [
+          "departmental-plans",
+          "en",
+          "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-plans"
+        ],
+        [
+          "departmental-plans",
+          "fr",
+          "https://logement-infrastructure.canada.ca/pub/index-fra.html#pm"
+        ],
+        [
+          "departmental-plans",
+          "fr",
+          "https://www.clo-ocol.gc.ca/fr/transparence/plans-ministeriels"
+        ],
+        [
+          "departmental-plans",
+          "fr",
+          "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/plans-minist%C3%A9riels"
+        ],
+        [
+          "departmental-results",
+          "en",
+          "https://housing-infrastructure.canada.ca/pub/index-eng.html"
+        ],
+        [
+          "departmental-results",
+          "en",
+          "https://www.clo-ocol.gc.ca/en/transparency/departmental-results-reports"
+        ],
+        [
+          "departmental-results",
+          "en",
+          "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-performance-reports"
+        ],
+        [
+          "departmental-results",
+          "fr",
+          "https://logement-infrastructure.canada.ca/pub/index-fra.html"
+        ],
+        [
+          "departmental-results",
+          "fr",
+          "https://www.clo-ocol.gc.ca/fr/transparence/rapports-sur-resultats-ministeriels"
+        ],
+        [
+          "departmental-results",
+          "fr",
+          "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/rapports-resultats-ministeriels"
+        ],
+        [
+          "regulatory-plans",
+          "en",
+          "https://www.crcc-ccetp.gc.ca/en/transparency"
+        ],
+        [
+          "regulatory-plans",
+          "fr",
+          "https://www.crcc-ccetp.gc.ca/fr/transparence"
+        ]
+      ]
+    },
+    "directoryReceipt": {
+      "collection": "federal-report-directories",
+      "corpusBytes": 3757429,
+      "diskFreeBytesAtStart": 5843591168,
+      "familyCounts": {
+        "departmental-plans": {
+          "bilingualIssuerGroups": 39,
+          "linkedIssuersByLanguage": {
+            "en": 86,
+            "fr": 86
+          },
+          "uniqueIssuerGroups": 132
+        },
+        "departmental-results": {
+          "bilingualIssuerGroups": 39,
+          "linkedIssuersByLanguage": {
+            "en": 86,
+            "fr": 86
+          },
+          "uniqueIssuerGroups": 132
+        },
+        "regulatory-plans": {
+          "bilingualCurrentCycles": 1,
+          "bilingualIssuerGroups": 1,
+          "currentCycles": 3,
+          "englishOnlyCycles": [
+            {
+              "cycle": "2025-2035",
+              "family": "regulatory-stock-review"
+            }
+          ],
+          "frenchOnlyCycles": [
+            {
+              "cycle": "2026-2036",
+              "family": "regulatory-stock-review"
+            }
+          ],
+          "governmentWideDirectoryLinksByLanguage": {
+            "en": 45,
+            "fr": 46
+          },
+          "issuerGroups": 1,
+          "linksByLanguage": {
+            "en": 2,
+            "fr": 2
+          }
+        }
+      },
+      "hostedOrigins": {
+        "discovery": {
+          "bytes": 790,
+          "key": "weekly/federal-discovery/runs/federal-discovery-1795714524000.json",
+          "sha256": "1d62cd89ea584e17a3920df752faebe9696f7b65cace58daf4c29031e9b24051"
+        },
+        "origins": {
+          "departmental-plans": {
+            "bytes": 38511,
+            "finalUrl": "https://www.canada.ca/en/treasury-board-secretariat/services/planned-government-spending/reports-plans-priorities.html",
+            "key": "weekly/federal-discovery/sources/17d030583b38837880d3952562170d226faad6ad7ce04f689f15c7725ab3b68f.html",
+            "observedAt": "2026-11-26T17:35:44.983Z",
+            "sha256": "17d030583b38837880d3952562170d226faad6ad7ce04f689f15c7725ab3b68f",
+            "url": "https://www.canada.ca/en/treasury-board-secretariat/services/planned-government-spending/reports-plans-priorities.html"
+          },
+          "departmental-results": {
+            "bytes": 38803,
+            "finalUrl": "https://www.canada.ca/en/treasury-board-secretariat/services/departmental-performance-reports.html",
+            "key": "weekly/federal-discovery/sources/87fd9ddb09308cf8af83c32416cf3dd9e8f6751b8522770a87340feb8d6350f4.html",
+            "observedAt": "2026-11-26T17:35:41.168Z",
+            "sha256": "87fd9ddb09308cf8af83c32416cf3dd9e8f6751b8522770a87340feb8d6350f4",
+            "url": "https://www.canada.ca/en/treasury-board-secretariat/services/departmental-performance-reports.html"
+          },
+          "regulatory-plans": {
+            "bytes": 26823,
+            "finalUrl": "https://www.canada.ca/en/treasury-board-secretariat/corporate/transparency/acts-regulations/forward-regulatory-plan.html",
+            "key": "weekly/federal-discovery/sources/74448d4947643d2c5577fb5235e63bad53a34b99395bda57b343855c6b8c0022.html",
+            "observedAt": "2026-11-26T17:35:41.176Z",
+            "sha256": "74448d4947643d2c5577fb5235e63bad53a34b99395bda57b343855c6b8c0022",
+            "url": "https://www.canada.ca/en/treasury-board-secretariat/corporate/transparency/acts-regulations/forward-regulatory-plan.html"
+          }
+        }
+      },
+      "inventoryBytes": 277099,
+      "inventoryPath": "data/corpus/federal-report-directories/inventories/9109e4c2861136b9e80e9e75797ad4c9b24453bec1531b80a6aaef75e001c913.json",
+      "inventorySha256": "9109e4c2861136b9e80e9e75797ad4c9b24453bec1531b80a6aaef75e001c913",
+      "observedAt": "2026-11-27T02:54:41+00:00",
+      "sourceCaptureTimes": {
+        "departmental-plans-en": "2026-11-26T17:35:44.983Z",
+        "departmental-plans-fr": "2026-11-27T02:54:34.169683+00:00",
+        "departmental-results-en": "2026-11-26T17:35:41.168Z",
+        "departmental-results-fr": "2026-11-27T02:54:36.281737+00:00",
+        "regulatory-directories-en": "2026-11-27T02:54:38.569686+00:00",
+        "regulatory-directories-fr": "2026-11-27T02:54:38.570215+00:00",
+        "regulatory-plans-en": "2026-11-26T17:35:41.176Z",
+        "regulatory-plans-fr": "2026-11-27T02:54:34.168983+00:00"
+      },
+      "sourceRegisterSha256": "ff890001145b6337db3ddba9ef7edc45fa142df55df28bfbb201099b23db1746"
+    },
+    "regulatoryPlans": {
+      "hostedReportSha256": "d90367386946b1a4c8e0e18a520525ed8ee5fc8b628991da8d2f65f134099cdb",
+      "localReportSha256": "42afd78166e4ba13aa497edfafd2389ffe730b9097acef0a4784ae19e5527542",
+      "hostedSummary": {
+        "archiveBytes": 2315292,
+        "discoveryLinks": 117,
+        "failedTargets": 0,
+        "forwardPlanCandidates": 70,
+        "namedInitiatives": 95,
+        "relatedOrUnattributedTargets": 0,
+        "verifiedPlanEditions": 70
+      },
+      "localSummary": {
+        "archiveBytes": 2315828,
+        "discoveryLinks": 117,
+        "failedTargets": 0,
+        "forwardPlanCandidates": 70,
+        "namedInitiatives": 95,
+        "relatedOrUnattributedTargets": 0,
+        "verifiedPlanEditions": 70
+      },
+      "missingLocalDiscoveryIds": [],
+      "addedDiscoveryIds": [],
+      "carryForward": {
+        "failed": 1
+      }
+    }
+  },
+  "localSchedule": {
+    "weeklyStepsBefore": [
+      "committees",
+      "departmental-report-documents",
+      "departmental-report-editions",
+      "eccc",
+      "federal-regulatory-plans",
+      "federal-report-directories",
+      "geds"
+    ],
+    "weeklyStepsAfter": [
+      "committees",
+      "departmental-report-editions",
+      "federal-regulatory-plans",
+      "federal-report-directories"
+    ],
+    "agents": {
+      "com.civicsignal.refresh-daily": {
+        "state": "not running",
+        "runs": 0,
+        "localCalendar": {
+          "Hour": 6,
+          "Minute": 15
+        },
+        "only": [
+          "committee-calls"
+        ]
+      },
+      "com.civicsignal.refresh-weekly": {
+        "state": "not running",
+        "runs": 0,
+        "localCalendar": {
+          "Hour": 9,
+          "Minute": 0,
+          "Weekday": 6
+        }
+      }
+    },
+    "civicsignalUserCrontabEntry": false
+  }
+}

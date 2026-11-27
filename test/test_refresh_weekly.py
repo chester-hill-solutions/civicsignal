@@ -24,7 +24,7 @@ class WeeklyRefreshTests(unittest.TestCase):
                    "gazette", "gazette-year", "ati-summaries", "grant-awards", "briefing-notes", "federal-procurement",
                    "federal-disclosures", "federal-discovery", "federal-guidance", "federal-publications",
                    "federal-publication-checklists", "federal-policy-editions", "departmental-report-html", "parliament",
-                   "statutes-local", "consultation-notices", "written-questions"}
+                   "statutes-local", "consultation-notices", "written-questions", "geds", "eccc", "departmental-report-documents"}
         self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
         self.assertTrue(all(retired.isdisjoint(command) for command in commands))
@@ -35,14 +35,13 @@ class WeeklyRefreshTests(unittest.TestCase):
 
     def test_derived_publication_steps_follow_their_source_intakes(self):
         for dependency, derived in [("federal-report-directories", "departmental-report-editions"),
-                                    ("departmental-report-editions", "departmental-report-documents"),
                                     ("departmental-report-editions", "federal-regulatory-plans")]:
             self.assertLess(weekly.RUN_ORDER.index(dependency), weekly.RUN_ORDER.index(derived))
 
     def test_large_steps_are_gated_by_live_free_space(self):
-        geds = next(step for step in weekly.STEPS if step.name == "geds")
-        with patch.object(weekly, "_free_bytes", return_value=weekly.GEDS_MIN_FREE_BYTES - 1), patch.object(weekly, "_run_command") as run:
-            result = weekly._run_step(geds)
+        committees = next(step for step in weekly.STEPS if step.name == "committees")
+        with patch.object(weekly, "_free_bytes", return_value=weekly.COMMITTEE_MIN_FREE_BYTES - 1), patch.object(weekly, "_run_command") as run:
+            result = weekly._run_step(committees)
         self.assertTrue(result["skipped"])
         self.assertFalse(result["ok"])
         self.assertIn("insufficient disk headroom", result["error"])
@@ -60,7 +59,7 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertEqual(result["error"], "command exited with status 7")
 
     def test_departmental_batch_replays_its_partial_generation_and_stops_on_an_invalid_id(self):
-        step = next(step for step in weekly.STEPS if step.name == "departmental-report-documents")
+        step = next(step for step in weekly.STEPS if step.name == "departmental-report-editions")
         for run_id, expected_calls in [("abc123", 2), ("../older", 1), ("", 1)]:
             result = {"commands": []}
             with patch.object(weekly, "_run_command", side_effect=[
@@ -73,7 +72,7 @@ class WeeklyRefreshTests(unittest.TestCase):
                 self.assertEqual(run.call_args.args[0][-2:], ("replay", run_id))
 
     def test_only_selects_one_named_step_and_rejects_unknown(self):
-        self.assertEqual(weekly.parse_args(["--only", "eccc"]).only, ["eccc"])
+        self.assertEqual(weekly.parse_args(["--only", "committees"]).only, ["committees"])
         with self.assertRaises(SystemExit) as raised:
             weekly.parse_args(["--only", "no-such-source"])
         self.assertEqual(raised.exception.code, 2)
@@ -155,12 +154,10 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertNotIn("passedTests", result)
         self.assertEqual(result["error"], "Vitest JSON report is missing valid success and test counts")
 
-    def test_eccc_declares_two_expected_worker_checks(self):
-        expected = {"eccc": 2}
-        for step in weekly.STEPS:
-            for command in step.commands:
-                if isinstance(command, weekly.Command) and command.verification:
-                    self.assertEqual(command.expected_passed_tests, expected.get(step.name, 1), step.name)
+    def test_scheduled_committee_requires_one_worker_check(self):
+        checks = [command.expected_passed_tests for command in weekly._committee_commands()
+                  if isinstance(command, weekly.Command) and command.verification]
+        self.assertEqual(checks, [1])
 
     def test_full_report_pointer_tracks_success_and_failure(self):
         with tempfile.TemporaryDirectory() as directory:

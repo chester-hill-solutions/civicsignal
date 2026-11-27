@@ -334,5 +334,134 @@
     },
     "refusalSha256": "c9b981dcdd129bc583ce09fdc2d16bb774ac3a561f0d4262b58415cb663ee063",
     "retainedReceiptSha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79"
+  },
+  "lateCollectorRecheck": {
+    "instanceId": "house-calls-1795749303280",
+    "status": "errored",
+    "start": "2026-11-27T03:15:05.813Z",
+    "end": "2026-11-27T03:15:08.316Z",
+    "workflowVersion": "e1c4112f-aba0-4068-bf1e-534c5d0f4a14",
+    "trigger": {
+      "source": "api"
+    },
+    "headBefore": {
+      "instance_id": "house-calls-1795652141644",
+      "observed_at": "2026-11-26T00:16:34.215000Z",
+      "packet_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "content_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "call_rows": 30
+    },
+    "headAfter": {
+      "instance_id": "house-calls-1795652141644",
+      "observed_at": "2026-11-26T00:16:34.215000Z",
+      "packet_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "content_sha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "call_rows": 30
+    },
+    "failure": {
+      "phase": "acquisition",
+      "code": "publisher-http",
+      "status": 403,
+      "url": "https://www.ourcommons.ca/Committees/en/Participate",
+      "instanceId": "house-calls-1795749303280",
+      "scheduledTime": 1795749303280
+    },
+    "failureKey": "committee/house-calls/failures/house-calls-1795749303280.json",
+    "failureSha256": "926b772b3921d877f8d1721d919f17de27ca1ff935a5db36dd90eba1aa97207f",
+    "priorReceiptKey": "committee/house-calls/runs/house-calls-1795652141644.json",
+    "priorReceiptSha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79",
+    "preservationVerified": true,
+    "independentOriginalReplay": {
+      "instance": "house-calls-1795652141644",
+      "trigger": {
+        "source": "binding"
+      },
+      "start": "2026-11-26T00:15:47.394Z",
+      "end": "2026-11-26T00:17:14.608Z",
+      "observedAt": "2026-11-26T00:16:34.215000Z",
+      "priorObservedAt": "2026-11-25T11:15:39Z",
+      "sessionCutoff": "2026-11-25T08:33:25+00:00",
+      "originals": 40,
+      "bytes": 4944772,
+      "senate": {
+        "https://sencanada.ca/en/committees/": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/en/committees/aefa/": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/en/committees/aefa/briefs/45-1": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/en/committees/aefa/studiesandbills/45-1": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/fr/comites/": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/fr/comites/aefa/": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/fr/comites/aefa/etudesetprojetsdeloi/45-1": "no-call-listing-in-archived-html",
+        "https://sencanada.ca/fr/comites/aefa/memoires/45-1": "no-call-listing-in-archived-html"
+      },
+      "allHostedCallRowsMatched": 30,
+      "replayCounts": {
+        "calls": 30,
+        "added": 0,
+        "changed": 1,
+        "unchanged": 29,
+        "dropped": 0,
+        "pending": 1,
+        "conflicts": 0,
+        "committees": 6,
+        "deadlines": 14,
+        "deadlineInstants": 14,
+        "instructionBlocks": 18,
+        "contentWarnings": 5
+      },
+      "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+      "receiptSha256": "a739dda90791b1ebc23f76e8675c354850ca3bf858802a47e2ff87afc3244f79",
+      "serving": {
+        "observedAt": "2026-11-26T00:16:34.215000Z",
+        "cutoff": "2026-11-25T08:33:25+00:00",
+        "packetSha256": "409f35dd62212f0d0164d27580cd52ab1e972262f638941cc7c2a9efbaff84ba",
+        "languages": [
+          {
+            "language": "en",
+            "listed": 15,
+            "newlyDropped": 0,
+            "retainedUnlisted": 0,
+            "sample": {
+              "callId": "house-chpc-call-13668976",
+              "studyId": "house-chpc-study-13668976",
+              "related": {
+                "submissions": 17,
+                "evidence": 0,
+                "meetings": 4
+              }
+            }
+          },
+          {
+            "language": "fr",
+            "listed": 15,
+            "newlyDropped": 0,
+            "retainedUnlisted": 0,
+            "sample": {
+              "callId": "house-chpc-call-13668976",
+              "studyId": "house-chpc-study-13668976",
+              "related": {
+                "submissions": 17,
+                "evidence": 0,
+                "meetings": 4
+              }
+            }
+          }
+        ],
+        "usage": {
+          "before": 28,
+          "after": 34,
+          "retrievals": 6
+        },
+        "correlationIds": [
+          "req_mwwsyzbeosigro19hn",
+          "req_mwwsz0jos0ekgkxwv1",
+          "req_mwwsz1omv78cxytny5",
+          "req_mwwsz30kur80zvxa7c",
+          "req_mwwsz45merh6q2msdi",
+          "req_mwwsz5alm8sz3v0qf5"
+        ]
+      }
+    }
   }
 }

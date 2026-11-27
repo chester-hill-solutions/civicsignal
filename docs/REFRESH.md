@@ -283,7 +283,19 @@ Use `latest-complete.json` in the same prefix to select the last fully successfu
 
 For the initial archive, `python3 -B scripts/bootstrap-institution-coverage.py` verifies and uploads a stable workspace to private R2 and writes the manifest reference to stdout. Only the initial occurrence needs the bootstrap reference at `weekly/institution-coverage/bootstrap.json`. Later runs use the workspace manifest from their predecessor. The pinned PDF extractor replays each policy PDF against its checked archive. Cloudflare's x86 extractor can wrap paragraphs differently, so the hosted replay verifies the exact words, order and citation on each page. On November 26 the Cloudflare replay matched the independent reference byte for byte across all 33 source groups. [Replay evidence](evidence/2026-11-26/institution-coverage-cloudflare.json)
 
-The standing staging schedule is Saturday at 16:00 UTC, two hours after the federal register and 45 minutes after the combined daily refresh starts. The first occurrence on this schedule is due November 28. On November 26, two native staging occurrences published verified reports across 33 source groups and 18 series. The follow-up restored the first run’s R2 workspace and verified fresh hosted inputs, ECCC and regulatory plans. Both receipts are `degraded` and list the remaining source gaps. [Native run evidence](evidence/2026-11-26/institution-coverage-cloudflare.json)
+The standing staging schedule is Saturday at 16:00 UTC, two hours after the federal register and 45 minutes after the combined daily refresh starts. The first occurrence on this schedule is due November 28. The initial November 26 native occurrences published verified reports across 33 source groups and 18 series. A subsequent November 26 occurrence in Toronto restored the R2 workspace and repeated the source acquisitions. Its receipt is `degraded` and lists the source gaps and the prior UTC day's register and consultation inputs. [Initial native runs](evidence/2026-11-26/institution-coverage-cloudflare.json) · [Follow-up and source cutovers](evidence/2026-11-26/coverage-source-cutover.json)
+
+To rerun the authenticated ECCC and GEDS checks inside Cloudflare, set `state` to the `.state` object from the dated refresh receipt you want to verify. The Workflow restores that exact archive and saves the check counts in `servingReplay` on its dated receipt.
+
+```sh
+state=$(jq -ce '.state' coverage-receipt.json)
+scheduled_time=$(node -p 'Date.now()')
+instance="institution-coverage-$scheduled_time"
+body=$(jq -cn --arg id "$instance" --argjson time "$scheduled_time" --argjson state "$state" \
+  '{instance_id:$id, params:{scheduledTime:$time, mode:"replay", state:$state, checkServing:true}}')
+cf workflows instances create "$workflow" --body "$body"
+cf workflows instances get "$instance" --workflow-name "$workflow"
+```
 
 Departmental PDF attribution records the current acquisition status. For a current citation with a temporary fetch failure, the report can retain a previously verified edition after checking its archived PDF and extracted text against their recorded hashes. The report identifies the retained generations in `retainedEvidence`. A current removal, a changed citation or a newer unverified assessment closes that historical match. A replay of the second staging workspace recovered all 51 editions affected by the fetch timeouts. [Replay evidence](evidence/2026-11-26/institution-coverage-cloudflare.json)
 
@@ -381,13 +393,15 @@ The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily
 
 Cloudflare’s Saturday coverage Workflow owns ATI summaries, grant awards, briefing notes, CanadaBuys procurement, and the algorithmic assessment and briefing-package catalogues. The operators remain available for manual archive diagnostics. Both native workflows passed the five acquisitions. Independent R2 readback verified all 36 cited publisher originals. [Weekly cutover evidence](evidence/2026-11-26/weekly-federal-mac-cutover.json)
 
-The hosted register and coverage Workflow also own federal catalogue discovery, government bibliography and checklist publication, Treasury Board and IRCC guidance, dated policy editions, and departmental HTML. The reported publisher gaps are still visible in the archived receipts. The Mac retains its independent report directories, issuer pages, PDF acquisition and regulatory plans while hosted freshness is qualified. [Federal parity and cutover evidence](evidence/2026-11-26/weekly-federal-parity-cutover.json)
+The hosted register and coverage Workflow also own federal catalogue discovery, government bibliography and checklist publication, Treasury Board and IRCC guidance, dated policy editions, and departmental HTML. The reported publisher gaps are still visible in the archived receipts. The Mac retains its report directories and issuer pages for its remaining edition and regulatory plan checks. [Federal parity and cutover evidence](evidence/2026-11-26/weekly-federal-parity-cutover.json)
+
+GEDS, ECCC and departmental PDF acquisition now run only in the hosted coverage Workflow. Independent R2 readback verified both catalogues and the PDF workflow's 116 publisher originals, 116 extraction files and 32 archive notices. The PDF acquisition reported 105 verified and 12 review citations, matching the Mac. The scheduled run passed the GEDS lookup. The hosted replay of the exact scheduled archive passed both ECCC checks after the coverage test was corrected to follow the API cursor. [Source cutover evidence](evidence/2026-11-26/coverage-source-cutover.json)
 
 ```sh
 python3 -B scripts/schedule/weekly.py install
 python3 -B scripts/refresh-weekly.py --help
 python3 -B scripts/refresh-weekly.py --status
-python3 -B scripts/refresh-weekly.py --only geds
+python3 -B scripts/refresh-weekly.py --only committees
 python3 -B scripts/schedule/weekly.py remove
 ```
 
@@ -396,10 +410,7 @@ Installation registers the job. It runs while the user is logged in. Removal unl
 | Collection | What the weekly operator does |
 | --- | --- |
 | Departmental report directories and editions | Refreshes the federal plans and results directories, Treasury Board’s plan cycles, and both editions of the government-wide list of institutional regulatory pages. The separate `departmental-report-editions` step archives issuer landing pages, records year-labelled plan and result links, and tracks discovery links from regulators. Its current report retains the last verified content and the latest attempt for each issuer. |
-| Departmental report documents | Verifies the year, language and type of directly linked report PDFs. |
 | Institutional regulatory plans | Follows forward-plan links from the government-wide directory to issuer pages, verifies the target, and records the original, named initiatives and stated plan cycles. |
-| ECCC audits and evaluations | Captures the four index pages and referenced documents, then builds a separate passage database and checks the authenticated local API. Read `GET /api/departmental-publications/openapi.json`. Enable the preview with `DEPARTMENTAL_PUBLICATIONS_PREVIEW=on` and bind the completed `data/corpus/eccc/serving.sqlite` to `DEPARTMENTAL_PUBLICATIONS_DB` in the local Worker harness. PDF text extraction uses `pdftotext`. |
-| GEDS | Acquires the publisher export, imports it into the local catalogue, and runs the authenticated lookup. An unchanged ZIP can replay even when the host lacks space to construct a new snapshot. |
 | Committee corpus | Refreshes Senate meeting notices before extracting their publication links. The downloader checks the digest and timestamp of each parsed notice and fetches the other linked originals. The operator then builds the corpus, verifies its archived files, publishes to local D1, and tests bilingual retrieval. |
 
 For a manual written-questions diagnostic, `python3 -B scripts/lib/wq_catalog.py --resume-partial-checkpoint` resumes a saved acquisition. The operator checks the new bilingual listings against the checkpoint, records which successful details it reused, and fetches the rest. Verify the answer archive and authenticated lookup after rebuilding the isolated preview.

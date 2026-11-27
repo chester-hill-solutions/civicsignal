@@ -34,9 +34,7 @@ COMMITTEE_LOCK = ROOT / "dist/refresh/committee-publication.lock"
 # These are observed local working-set sizes plus room for an incoming
 # generation and SQLite journals. Requiring headroom avoids beginning a
 # multi-gigabyte refresh that cannot safely finish.
-GEDS_MIN_FREE_BYTES = 32 * 1024**2
 COMMITTEE_MIN_FREE_BYTES = 3 * 1024**3
-ECCC_MIN_FREE_BYTES = 128 * 1024**2
 
 
 @dataclass(frozen=True)
@@ -80,31 +78,6 @@ def _committee_commands(resume_catalogue: bool = False) -> tuple[tuple[str, ...]
 
 STEPS = (
     Step(
-        "geds",
-        (
-            ("bun", "scripts/geds-import.ts", "--download", "--min-new-snapshot-bytes", str(2 * 1024**3), "--db", "dist/geds/geds.sqlite", "--archive", "dist/geds/archive"),
-            Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "resolves one real unit from both published names and cites the imported contact"),
-                    (("CIVICSIGNAL_GEDS_SQLITE", "dist/geds/geds.sqlite"),), verification=True),
-        ),
-        60 * 60,
-        "Download, archive and import the current GEDS export.",
-        GEDS_MIN_FREE_BYTES,
-        baseline_paths=("dist/geds",),
-        artifacts=("dist/geds/receipt.json", "dist/geds/geds.sqlite"),
-    ),
-    Step(
-        "eccc",
-        (("python3", "-B", "scripts/eccc-intake.py", "--workers", "1"),
-         ("python3", "-B", "scripts/eccc-passages.py"),
-         Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "departmental publications through the Worker"),
-                 (("CIVICSIGNAL_ECCC_SQLITE", "data/corpus/eccc/serving.sqlite"),), verification=True, expected_passed_tests=2)),
-        60 * 60,
-        "Refresh ECCC publication indexes and archived originals.",
-        ECCC_MIN_FREE_BYTES,
-        baseline_paths=("data/corpus/eccc",),
-        artifacts=("dist/eccc/inventory.json", "data/corpus/eccc/catalogue.sqlite", "data/corpus/eccc/serving.sqlite"),
-    ),
-    Step(
         "committees",
         _committee_commands(),
         8 * 60 * 60,
@@ -121,10 +94,6 @@ STEPS = (
          ("python3", "-B", "scripts/departmental-report-editions.py", "replay", "@receipt-run-id@")), 3600,
          "Archive the issuer landing pages and identify the published departmental plan and results editions by fiscal year.",
          artifacts=("data/corpus/departmental-report-editions/generations/",), verify_partial=True),
-    Step("departmental-report-documents", (("python3", "-B", "scripts/departmental-report-documents.py", "refresh"),
-         ("python3", "-B", "scripts/departmental-report-documents.py", "replay", "@receipt-run-id@")), 3600,
-         "Archive explicitly linked departmental reports and verify the edition against the document text.",
-         artifacts=("data/corpus/departmental-report-documents/latest-attempt.json",), verify_partial=True),
     Step("federal-regulatory-plans", (("python3", "-B", "scripts/federal-regulatory-plans.py", "refresh"),
          ("python3", "-B", "scripts/federal-regulatory-plans.py", "replay", "@receipt-run-id@")), 3600,
          "Verify institutional forward regulatory plan pages and retain publisher-labelled initiatives.",
@@ -132,10 +101,9 @@ STEPS = (
 )
 
 RUN_ORDER = (
-    "eccc",
     "federal-report-directories", "departmental-report-editions",
-    "departmental-report-documents", "federal-regulatory-plans",
-    "geds", "committees",
+    "federal-regulatory-plans",
+    "committees",
 )
 
 
