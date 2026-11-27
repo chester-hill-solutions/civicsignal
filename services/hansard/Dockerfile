@@ -17,6 +17,7 @@ COPY --from=dependencies /app/ /app/
 COPY src/ ./src/
 COPY scripts/ ./scripts/
 COPY services/hansard/run.py ./services/hansard/run.py
+COPY services/weekly-archive/runtime.py ./services/weekly-archive/runtime.py
 COPY services/institution-coverage/container/snapshot.py ./services/institution-coverage/container/snapshot.py
 COPY services/daily-checks/*.ts ./services/daily-checks/
 COPY services/house/archive.ts services/house/publish.ts ./services/house/

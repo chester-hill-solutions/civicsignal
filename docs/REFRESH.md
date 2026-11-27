@@ -315,6 +315,25 @@ jq '{status, reason, report, state}' hansard-receipt.json
 
 Read `latest-complete.json` for the last verified chamber snapshot. A degraded receipt gives the failure and pinned prior state. A complete receipt points to the new workspace manifest and verification report by SHA-256. For a suspected publisher refusal, inspect the dated receipt before retrying. For initial seeding, `python3 -B scripts/bootstrap-hansard.py house` and its Senate equivalent upload immutable archive objects and return the manifest references. The first run reads those references from the chamber's `bootstrap.json`. Routine runs restore their predecessor's workspace.
 
+## Cloudflare Canada Gazette refresh
+
+The private staging Worker runs every Saturday at 15:00 UTC. It derives the Toronto cutoff from the scheduled event and restores the last verified SQLite store and publisher archive from R2. The Workflow runs the current issue refresh and annual reconciliation serially against the same store. [Worker configuration](../services/gazette/wrangler.jsonc)
+
+The current refresh verifies the four latest regular Part I and II language editions. The annual phase reads the four publisher listings, replays archived editions against the store, and captures missing regular issues and separately numbered extras. The authenticated checks verify current searches and citations, annual regular edition lookups, and extra edition search and lookup. A failed phase records its result in the dated report and preserves the last complete publication. The archive and verification are private staging, with customer API publication tracked under [D-08](PLAN.md#decisions-still-required).
+
+```sh
+export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
+bucket=civicsignal-stage-weekly
+cf workflows instances list --workflow-name civicsignal-stage-gazette --per-page 10
+pointer=$(cf r2 objects get weekly/gazette/latest-attempt.json --bucket-name "$bucket")
+cf r2 objects get "$(jq -er '.receiptKey' <<< "$pointer")" --bucket-name "$bucket" > gazette-receipt.json
+cf r2 objects get "$(jq -er '.report.key' gazette-receipt.json)" --bucket-name "$bucket" > gazette-report.json
+printf '%s  gazette-report.json\n' "$(jq -er '.report.sha256' gazette-receipt.json)" | shasum -a 256 -c -
+jq '{cutoff, current, annual}' gazette-report.json
+```
+
+Use `weekly/gazette/latest-complete.json` to select the last verified publication. For initial seeding, `python3 -B scripts/bootstrap-gazette.py` uploads the checked SQLite archive and returns the manifest reference for `weekly/gazette/bootstrap.json`. Later occurrences restore the last complete snapshot.
+
 ## Weekly local refresh
 
 The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.

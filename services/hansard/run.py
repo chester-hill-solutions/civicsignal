@@ -1,51 +1,19 @@
 """Run the existing chamber intake and serving checks in a private container."""
 from contextlib import closing
 import datetime as dt
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
-import re
 import sqlite3
-import subprocess
 import sys
-import threading
-import urllib.request
 from zoneinfo import ZoneInfo
 
-ROOT = Path("/app")
-sys.path.insert(0, str(ROOT / "services/institution-coverage/container"))
-from snapshot import CHUNK_SIZE, canonical, capture, digest, restore  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "weekly-archive"))
+from runtime import Archive, command, serve  # noqa: E402
 
 GATEWAY = "http://archive.hansard.internal/"
 WORKSPACE = Path("/hansard")
 SESSION = "45-1"
-
-
-def pointer(prefix, folder, data):
-    checksum = digest(data)
-    key = f"{prefix}/{folder}/{checksum}.json"
-    put(key, data)
-    return {"key": key, "sha256": checksum, "bytes": len(data)}
-
-
-def read(key):
-    with urllib.request.urlopen(GATEWAY + key, timeout=120) as response:
-        return response.read(CHUNK_SIZE + 1)
-
-
-def put(key, data):
-    request = urllib.request.Request(GATEWAY + key, data=data, method="PUT")
-    with urllib.request.urlopen(request, timeout=120):
-        pass
-
-
-def command(*args, env=None, timeout=900):
-    result = subprocess.run(args, cwd=ROOT, env=env, capture_output=True, text=True, timeout=timeout)
-    if result.returncode:
-        detail = (result.stderr or result.stdout).strip().splitlines()[-8:]
-        raise RuntimeError(f"{Path(args[1]).name} exited {result.returncode}: " + "\n".join(detail)[-2400:])
-    return result.stdout
 
 
 def last_completed_week(milliseconds):
@@ -70,12 +38,8 @@ def store_status(database):
 def refresh(request):
     chamber = request["chamber"]
     prefix = f"weekly/hansard/{chamber}"
-    initial = request["inputState"]
-    body = read(initial["key"])
-    if len(body) != initial["bytes"] or digest(body) != initial["sha256"]:
-        raise ValueError("Hansard workspace manifest failed verification.")
-    WORKSPACE.mkdir(exist_ok=True)
-    restore(WORKSPACE, json.loads(body), read, allowed=("archive",), prefix=prefix)
+    storage = Archive(GATEWAY, WORKSPACE, prefix)
+    storage.restore(request["inputState"])
     archive = WORKSPACE / "archive"
     database = archive / f"session-{SESSION}.sqlite"
     weekly = archive / "weekly"
@@ -105,72 +69,21 @@ def refresh(request):
     serving = json.loads(serving_file.read_bytes())
     if serving["numPassedTests"] != 1 or serving["numFailedTests"] != 0:
         raise ValueError("The authenticated Hansard search and change-feed check did not pass.")
-    manifest = capture(WORKSPACE, ("archive",), put, allowed=("archive",), prefix=prefix)
-    state = pointer(prefix, "manifests", canonical(manifest))
     report = {
         "session": SESSION, "chamber": chamber, "weekOf": str(monday), "cutoff": str(sunday),
         "capturedEditions": capture_out["editions"], "replayCounts": observed["counts"],
         "counts": reconciliation["counts"], "workerChecks": reconciliation["workerChecks"],
         "verifiedByServingCheck": True, "before": before, "after": after,
     }
-    return {"state": state, "report": pointer(prefix, "reports", canonical(report))}
+    return {"state": storage.snapshot(), "report": storage.document("reports", report)}
 
 
-class Handler(BaseHTTPRequestHandler):
-    lock = threading.Lock()
-    job = None
-
-    def respond(self, status, body):
-        raw = canonical(body)
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(raw)))
-        self.end_headers()
-        self.wfile.write(raw)
-
-    def do_GET(self):
-        if self.path == "/health":
-            return self.respond(200, {"ready": True})
-        if self.path == "/status":
-            with self.lock:
-                return self.respond(200, type(self).job or {"status": "empty"})
-        return self.respond(404, {"status": "unknown-route"})
-
-    @classmethod
-    def run(cls, request):
-        try:
-            result = {"status": "complete", **refresh(request)}
-        except Exception as error:
-            result = {"status": "failed", "reason": str(error)[-2600:]}
-        with cls.lock:
-            cls.job = {"instanceId": request["instanceId"], **result}
-        print(json.dumps(cls.job), flush=True)
-
-    def do_POST(self):
-        if self.path != "/start":
-            return self.respond(404, {"status": "unknown-route"})
-        try:
-            length = int(self.headers["Content-Length"])
-            if not 0 < length <= 16_384:
-                raise ValueError("invalid request length")
-            request = json.loads(self.rfile.read(length))
-            chamber, scheduled = request["chamber"], request["scheduledTime"]
-            state = request["inputState"]
-            if (chamber not in ("house", "senate") or type(scheduled) is not int or not 0 < scheduled < 4102444800000
-                    or request["instanceId"] != f"hansard-{chamber}-{scheduled}"
-                    or not re.fullmatch("[0-9a-f]{64}", state["sha256"])
-                    or state["key"] != f"weekly/hansard/{chamber}/manifests/{state['sha256']}.json"):
-                raise ValueError("invalid identity")
-        except (ValueError, KeyError, TypeError):
-            return self.respond(400, {"status": "invalid-request"})
-        with self.lock:
-            current = type(self).job
-            if current:
-                return self.respond(202 if current["instanceId"] == request["instanceId"] else 409, current)
-            type(self).job = {"instanceId": request["instanceId"], "status": "running"}
-            threading.Thread(target=self.run, args=(request,), daemon=True).start()
-        return self.respond(202, type(self).job)
+def identity(request):
+    chamber = request["chamber"]
+    if chamber not in ("house", "senate"):
+        raise ValueError("invalid chamber")
+    return f"hansard-{chamber}-{request['scheduledTime']}", f"weekly/hansard/{chamber}"
 
 
 if __name__ == "__main__":
-    ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+    serve(refresh, identity)
