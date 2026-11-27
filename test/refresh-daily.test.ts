@@ -22,6 +22,14 @@ describe('daily Worker verification', () => {
       .toEqual({ passedTests: 4, passedAssertions: selected });
   });
 
+  it('requires both scheduled fallback checks when funding has cut over', () => {
+    const steps = ['consultations', 'committee-calls'] as const;
+    expect(verifyDailyWorkerReport(report(['passed', 'passed', 'skipped', 'skipped']), steps))
+      .toEqual({ passedTests: 2, passedAssertions: selected.slice(0, 2) });
+    expect(() => verifyDailyWorkerReport(report(['passed', 'skipped', 'passed', 'passed']), steps))
+      .toThrow(/Selected Worker checks did not all pass/);
+  });
+
   it('rejects a skipped selected check even when the Vitest process succeeds', () => {
     expect(() => verifyDailyWorkerReport(report(['passed', 'passed', 'passed', 'skipped'], 257)))
       .toThrow(/Selected Worker checks did not all pass/);

@@ -9,6 +9,10 @@
   <array>
     <string>__BUN__</string>
     <string>__REPO__/scripts/refresh-daily.ts</string>
+    <string>--only</string>
+    <string>consultations</string>
+    <string>--only</string>
+    <string>committee-calls</string>
   </array>
   <key>WorkingDirectory</key>
   <string>__REPO__</string>

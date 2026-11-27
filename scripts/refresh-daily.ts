@@ -17,9 +17,9 @@
 
 import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { checkReportPath, publishRefreshReport } from './lib/refresh-reports';
+import { checkReportPath, dailyStepNames, publishRefreshReport } from './lib/refresh-reports';
 import { verifyCommitteeCalls, verifyConsultations, verifyFunding } from './lib/refresh-serving';
-import { verifyDailyWorkerReport } from './lib/refresh-daily-worker';
+import { dailyWorkerTestFilter, verifyDailyWorkerReport } from './lib/refresh-daily-worker';
 
 const ROOT = resolve(import.meta.dir, '..');
 const REPORTS = resolve(ROOT, 'dist/refresh');
@@ -27,7 +27,7 @@ const RECEIPTS = resolve(REPORTS, 'receipts');
 const LOCK = resolve(REPORTS, 'lock.json');
 
 interface Step {
-  name: string;
+  name: typeof dailyStepNames[number];
   timeoutMs: number;
   commands: string[][];
   /** Current acquisition receipt name under the receipts directory, if applicable. */
@@ -201,17 +201,22 @@ async function runLockedCommitteeStep(temporary: string): Promise<Awaited<Return
 
 async function verifyDailyWorker(results: Awaited<ReturnType<typeof runStep>>[]) {
   const paths = Object.fromEntries(results.map(step => [step.name, step.serving?.database]));
-  const checks = 'serves reconciled coverage, bilingual results and revisions from the acquired observation|computes dated states and follows bilingual listings to their acquired studies|follows both recommendations to the brief and related published terms';
+  const selected = results.map(step => step.name);
+  const checks = dailyWorkerTestFilter(selected);
   const result = await run(['bun', 'run', 'test', 'test/endpoints.test.ts', '-t', checks, '--reporter=json'], 180_000, {
     ...process.env,
-    CIVICSIGNAL_CONSULTATIONS_SQLITE: String(paths.consultations),
-    CIVICSIGNAL_CONSULTATIONS_RECEIPT: resolve(RECEIPTS, 'consultations.json'),
-    CIVICSIGNAL_COMMITTEES_D1: String(paths['committee-calls']),
-    CIVICSIGNAL_COMMITTEE_CALLS_RECEIPT: resolve(RECEIPTS, 'committee-calls.json'),
-    CIVICSIGNAL_FUNDING_SQLITE: String(paths.funding),
+    ...(paths.consultations ? {
+      CIVICSIGNAL_CONSULTATIONS_SQLITE: String(paths.consultations),
+      CIVICSIGNAL_CONSULTATIONS_RECEIPT: resolve(RECEIPTS, 'consultations.json'),
+    } : {}),
+    ...(paths['committee-calls'] ? {
+      CIVICSIGNAL_COMMITTEES_D1: String(paths['committee-calls']),
+      CIVICSIGNAL_COMMITTEE_CALLS_RECEIPT: resolve(RECEIPTS, 'committee-calls.json'),
+    } : {}),
+    ...(paths.funding ? { CIVICSIGNAL_FUNDING_SQLITE: String(paths.funding) } : {}),
   });
   if (!result.ok) throw new Error(result.stderr || tail(result.stdout));
-  const report = verifyDailyWorkerReport(result.stdout);
+  const report = verifyDailyWorkerReport(result.stdout, selected);
   return { ok: true, ...report, durationMs: result.durationMs };
 }
 
@@ -244,7 +249,7 @@ async function main() {
       if (result.error) console.error(result.error);
     }
     let workerVerification;
-    if (results.length === steps.length && results.every(step => step.ok)) {
+    if (results.every(step => step.ok)) {
       try { workerVerification = await verifyDailyWorker(results); }
       catch (failure) { workerVerification = { ok: false, error: errorMessage(failure) }; }
     }

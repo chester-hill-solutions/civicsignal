@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "scope": "private Cloudflare coverage and local weekly schedule",
+  "standingSchedule": {
+    "cron": "0 16 * * SAT",
+    "timezone": "UTC",
+    "firstOccurrence": "2026-11-28T16:00:00Z"
+  },
+  "nativeOccurrences": [
+    {
+      "instanceId": "institution-coverage-1795722646000",
+      "scheduledTime": 1795722646000,
+      "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795722646000.json",
+      "status": "degraded",
+      "state": {
+        "key": "weekly/institution-coverage/manifests/1f0ae6f387c6077c39fc33444d897fd01188ac42107a7329fe0675c546d14936.json",
+        "sha256": "1f0ae6f387c6077c39fc33444d897fd01188ac42107a7329fe0675c546d14936",
+        "bytes": 23913
+      },
+      "report": {
+        "key": "weekly/institution-coverage/reports/703870f833d05bc64c2063b4c61b029c4ac8fc626cbc2268f8315a9a5299219f.json",
+        "sha256": "703870f833d05bc64c2063b4c61b029c4ac8fc626cbc2268f8315a9a5299219f",
+        "bytes": 2763932
+      },
+      "receiptSha256": "610aa819607b41dbcbdaadb1d833c3f5f8e203bccc9759e9cb766ba8d93f3aa3",
+      "verifiedSourceAttempts": [
+        {
+          "source": "ati-summaries",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 6.077
+        },
+        {
+          "source": "grant-awards",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 90.358
+        },
+        {
+          "source": "briefing-notes",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 6.402
+        },
+        {
+          "source": "federal-procurement",
+          "exitCodes": [
+            0,
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 6.555
+        },
+        {
+          "source": "federal-disclosures",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 8.752
+        }
+      ]
+    },
+    {
+      "instanceId": "institution-coverage-1795726823000",
+      "scheduledTime": 1795726823000,
+      "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795726823000.json",
+      "status": "degraded",
+      "state": {
+        "key": "weekly/institution-coverage/manifests/9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327.json",
+        "sha256": "9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327",
+        "bytes": 25739
+      },
+      "report": {
+        "key": "weekly/institution-coverage/reports/2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2.json",
+        "sha256": "2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2",
+        "bytes": 2763825
+      },
+      "receiptSha256": "e706c21f24cd90dae4661118692af8386f75041f1f616a6efba43f27ff32e603",
+      "verifiedSourceAttempts": [
+        {
+          "source": "ati-summaries",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 7.248
+        },
+        {
+          "source": "grant-awards",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 84.524
+        },
+        {
+          "source": "briefing-notes",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 4.83
+        },
+        {
+          "source": "federal-procurement",
+          "exitCodes": [
+            0,
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 5.852
+        },
+        {
+          "source": "federal-disclosures",
+          "exitCodes": [
+            0
+          ],
+          "ok": true,
+          "elapsedSeconds": 8.398
+        }
+      ]
+    }
+  ],
+  "independentArchiveReadback": {
+    "aggregateSha256": "6579ff98ba9a4c1dc565009685685098ba433ddb8da6fe38e3aef81c34231bc9",
+    "manifestSha256": "9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327",
+    "reportSha256": "2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2",
+    "chunks": 123,
+    "compressedBytes": 2048855723,
+    "publisherOriginals": {
+      "briefing-notes": 2,
+      "ati-summaries": 2,
+      "grant-awards": 2,
+      "federal-disclosures": 28,
+      "federal-procurement": 2
+    }
+  },
+  "macCutover": {
+    "label": "com.civicsignal.refresh-weekly",
+    "stateAtCutover": "not running",
+    "runsAtCutover": 0,
+    "configuredStepsBefore": 22,
+    "configuredStepsAfter": 17,
+    "retired": [
+      "ati-summaries",
+      "briefing-notes",
+      "federal-disclosures",
+      "federal-procurement",
+      "grant-awards"
+    ]
+  }
+}

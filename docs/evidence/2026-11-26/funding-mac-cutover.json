@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "scope": "private Cloudflare staging and local daily LaunchAgent",
+  "workflow": {
+    "instanceId": "daily-refresh-1795706126953",
+    "nativeSchedule": "15 15 * * *",
+    "scheduledTime": 1795706126953,
+    "start": "2026-11-26T15:15:30.682Z",
+    "end": "2026-11-26T15:23:23.434Z",
+    "trigger": {
+      "source": "binding"
+    },
+    "status": "degraded",
+    "reportKey": "daily/runs/daily-refresh-1795706126953.json",
+    "reportSha256": "78e671845410d9dfb1c6049733080681ca2b106bc9bb0b23b04f39321d63a19e",
+    "funding": {
+      "nserc": {
+        "source": "nserc",
+        "instanceId": "nserc-1795706126953",
+        "workflowState": "complete",
+        "status": "published",
+        "receipt": {
+          "receiptKey": "funding/nserc/runs/nserc-1795706126953.json",
+          "receiptSha256": "cd30399fbfd6d39737cbe90a4bb2bcf39cfe48dc48686211691faba3d8f78481",
+          "observedAt": "2026-11-26T15:15:26.953Z",
+          "revision": "2e930740d7c816bc4767e39efa014a2c1f164840e2cb8d70572ef4e3e1237894"
+        }
+      },
+      "esdc": {
+        "source": "esdc",
+        "instanceId": "esdc-1795706126953",
+        "workflowState": "complete",
+        "status": "published",
+        "receipt": {
+          "receiptKey": "funding/esdc/runs/esdc-1795706126953.json",
+          "receiptSha256": "8f8418500602e371d9d385bf15ef45782548e301c05b13c6d0e2a030254ed952",
+          "observedAt": "2026-11-26T15:15:26.953Z",
+          "revision": "7c46811f97ed7ac6df0ff1dac91a3b8e247a20b3c3b43a263579ec44750958d2"
+        }
+      }
+    },
+    "authenticatedChecksPassed": 9,
+    "fundingAuthenticatedChecks": [
+      "nserc-en",
+      "esdc-en",
+      "nserc-fr",
+      "esdc-fr"
+    ],
+    "house": {
+      "status": "preserved-last-good",
+      "publisherHttpStatus": 403
+    }
+  },
+  "macCutover": {
+    "label": "com.civicsignal.refresh-daily",
+    "calendarToronto": "06:15 daily",
+    "afterInstallState": "not running",
+    "afterInstallRuns": 0,
+    "previousPlistSha256": "e250996c8c4245639d232776b7af8518443b577066f16f344a1d70365b4a3716",
+    "installedPlistSha256": "82bf40239af3b918d3acc68344e8f76e4b23a5f8de9608cf62835850908b5028",
+    "previousArguments": [],
+    "installedArguments": [
+      "--only",
+      "consultations",
+      "--only",
+      "committee-calls"
+    ],
+    "retired": [
+      "funding"
+    ],
+    "remaining": [
+      "consultations",
+      "committee-calls"
+    ],
+    "remainingAuthenticatedChecksPassedAgainstRetainedData": 2,
+    "remainingAuthenticatedReportSha256": "e63e935df1c7bb8381ba7080f2e6c0cdbe4f734a8ed8318f0d99e21bf045faa8"
+  }
+}

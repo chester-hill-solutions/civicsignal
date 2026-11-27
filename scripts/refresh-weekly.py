@@ -226,47 +226,14 @@ STEPS = (
           "--out", "dist/statutes-local", "--publish-current"),), 3600,
          "Build and check a bilingual local statutes export from the official Justice Canada checkout.",
          min_free_bytes=2 * 1024**3, artifacts=("dist/statutes-local/current/receipt.json",)),
-    Step("federal-procurement", (("python3", "-B", "scripts/federal-procurement.py", "refresh"),
-          ("python3", "-B", "scripts/federal-procurement.py", "verify")), 3600,
-         "Archive current fiscal-year CanadaBuys award notices and contract history.",
-         artifacts=("data/corpus/federal-procurement/",)),
-    Step("federal-disclosures", (("python3", "-B", "scripts/federal-disclosures.py"),), 1800,
-         "Publish the algorithmic assessment and four briefing-package catalogues.",
-         artifacts=("data/corpus/federal-disclosures/receipt.json",)),
-    Step(
-        "ati-summaries",
-        (("python3", "-B", "scripts/federal-bulk.py", "refresh", "ati-summaries"),),
-        60 * 60,
-        "Refresh summaries from Access to Information disclosures.",
-        0,
-        baseline_paths=("data/corpus/federal-bulk",),
-    ),
-    Step(
-        "grant-awards",
-        (("python3", "-B", "scripts/federal-bulk.py", "refresh", "grant-awards"),),
-        2 * 60 * 60,
-        "Refresh the federal grants and contributions awards disclosure.",
-        0,
-        baseline_paths=("data/corpus/federal-bulk",),
-    ),
-    Step(
-        "briefing-notes",
-        (("python3", "-B", "scripts/briefing-notes.py", "--download"),),
-        60 * 60,
-        "Download and archive the latest federal briefing note and nil inventory CSVs.",
-        0,
-        baseline_paths=("dist/briefing-notes", "data/corpus/briefing-notes"),
-        artifacts=("dist/briefing-notes/receipt.json",),
-    ),
 )
 
 RUN_ORDER = (
-    "federal-discovery", "federal-guidance", "consultation-notices", "federal-disclosures", "ati-summaries", "grant-awards",
-    "eccc", "briefing-notes", "federal-report-directories", "departmental-report-editions",
+    "federal-discovery", "federal-guidance", "consultation-notices", "eccc",
+    "federal-report-directories", "departmental-report-editions",
     "departmental-report-documents", "departmental-report-html", "federal-regulatory-plans", "federal-publications",
     "federal-publication-checklists", "federal-policy-editions",
-    "federal-procurement", "parliament",
-    "geds", "statutes-local", "written-questions", "committees",
+    "parliament", "geds", "statutes-local", "written-questions", "committees",
 )
 
 

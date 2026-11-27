@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "dist/refresh"
 LABEL = "com.civicsignal.refresh-daily"
 TORONTO = ZoneInfo("America/Toronto")
+FULL_STEPS = ["consultations", "committee-calls", "funding"]
+FALLBACK_STEPS = ["consultations", "committee-calls"]
+FALLBACK_ARGUMENTS = [argument for step in FALLBACK_STEPS for argument in ("--only", step)]
 
 
 def require(condition, message):
@@ -26,20 +29,25 @@ def observe():
     with (Path.home() / "Library/LaunchAgents" / (LABEL + ".plist")).open("rb") as stream:
         plist = plistlib.load(stream)
     calendar = plist["StartCalendarInterval"]
+    program = plist["ProgramArguments"]
     require(calendar == {"Hour": 6, "Minute": 15} and plist["Label"] == LABEL
             and not plist.get("RunAtLoad") and Path(plist["WorkingDirectory"]) == ROOT
-            and plist["ProgramArguments"][1:] == [str(ROOT / "scripts/refresh-daily.ts")],
+            and program[1:2] == [str(ROOT / "scripts/refresh-daily.ts")]
+            and program[2:] in ([], FALLBACK_ARGUMENTS),
             "Installed job differs from the regular daily schedule or runner")
+    steps = FALLBACK_STEPS if program[2:] else FULL_STEPS
+    scope = "partial" if program[2:] else "full"
     status = subprocess.run(["launchctl", "print", f"gui/{os.getuid()}/{LABEL}"], check=True,
                             capture_output=True, text=True).stdout
     fields = dict(re.findall(r"^\t(state|runs|last exit code) = (.+)$", status, re.MULTILINE))
     require({"state", "runs", "last exit code"} <= fields.keys(), "Missing launchd job status fields")
     log = Path(plist["StandardOutPath"])
     stat = log.stat()
-    full = json.loads((REPORTS / "latest-full.json").read_bytes())
+    latest = REPORTS / f"latest-{scope}.json"
+    started = json.loads(latest.read_bytes())["startedAt"] if latest.exists() else None
     return {"observedAt": datetime.now(timezone.utc).isoformat(), "label": LABEL,
             "calendar": calendar, "status": fields, "logBytes": stat.st_size,
-            "logInode": stat.st_ino, "lastFullStartedAt": full["startedAt"]}, log
+            "logInode": stat.st_ino, "steps": steps, "lastStartedAt": started}, log
 
 
 def verify(before, after, log, day, reports=REPORTS):
@@ -48,6 +56,12 @@ def verify(before, after, log, day, reports=REPORTS):
             "The observations must bracket the scheduled time")
     require(before["label"] == after["label"] == LABEL and before["calendar"] == after["calendar"],
             "Schedule identity changed between observations")
+    expected_steps = before.get("steps", FULL_STEPS)
+    require(expected_steps == after.get("steps", FULL_STEPS) and expected_steps in (FULL_STEPS, FALLBACK_STEPS),
+            "The scheduled steps changed between observations")
+    scope = "full" if expected_steps == FULL_STEPS else "partial"
+    prior_started = before.get("lastStartedAt", before.get("lastFullStartedAt"))
+    latest_started = after.get("lastStartedAt", after.get("lastFullStartedAt"))
     require(before["status"]["state"] == after["status"]["state"] == "not running"
             and int(after["status"]["runs"]) == int(before["status"]["runs"]) + 1
             and after["status"]["last exit code"] == "0", "Expected one completed successful launch")
@@ -63,19 +77,21 @@ def verify(before, after, log, day, reports=REPORTS):
             "Agent log did not identify a dated report in the daily report directory")
     data = path.read_bytes()
     report = json.loads(data)
-    require(report.get("scope") == "full" and report.get("ok") is True
-            and before["lastFullStartedAt"] != report["startedAt"] == after["lastFullStartedAt"],
-            "Dated full run does not match the latest completed attempt")
+    require(report.get("scope") == scope and report.get("ok") is True
+            and prior_started != report["startedAt"] == latest_started,
+            "Dated run does not match the latest completed attempt for the schedule")
     started = datetime.fromisoformat(report["startedAt"])
     finished = datetime.fromisoformat(report["finishedAt"])
     require(0 <= (started - target).total_seconds() < 60 and started <= finished <= datetime.fromisoformat(after["observedAt"]),
             "Dated run did not start in the scheduled minute or finish within the observed interval")
     checks = report["workerVerification"]
-    require(checks.get("ok") is True and checks.get("passedTests") == 4, "Expected four authenticated Worker checks")
+    expected_checks = 4 if scope == "full" else 2
+    require(checks.get("ok") is True and checks.get("passedTests") == expected_checks,
+            f"Expected {'four' if scope == 'full' else 'two'} authenticated Worker checks")
     steps = report["steps"]
-    require([s["name"] for s in steps] == ["consultations", "committee-calls", "funding"]
+    require([s["name"] for s in steps] == expected_steps
             and all(s.get("ok") is True and s.get("serving", {}).get("database") for s in steps),
-            "Expected successful serving checks for all three daily intakes")
+            "Expected successful serving checks for every scheduled daily intake")
     return {"calendarTarget": target.isoformat(), "before": before, "after": after,
             "report": {"file": path.name, "sha256": hashlib.sha256(data).hexdigest(), "startedAt": report["startedAt"],
                        "finishedAt": report["finishedAt"], "durationMs": report["durationMs"]},
