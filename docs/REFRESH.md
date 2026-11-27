@@ -321,6 +321,8 @@ The private staging Worker runs every Saturday at 15:00 UTC. It derives the Toro
 
 The current refresh verifies the four latest regular Part I and II language editions. The annual phase reads the four publisher listings, replays archived editions against the store, and captures missing regular issues and separately numbered extras. The authenticated checks verify current searches and citations, annual regular edition lookups, and extra edition search and lookup. A failed phase records its result in the dated report and preserves the last complete publication. The archive and verification are private staging, with customer API publication tracked under [D-08](PLAN.md#decisions-still-required).
 
+The November 26 native qualification verified all four current editions, all 70 regular issues and all nine separately numbered extras. The independent R2 restore verified the publisher objects, SQLite integrity and unchanged change-feed positions. Both Mac Gazette steps were retired afterward. The first standing Saturday occurrence is November 28. [Qualification evidence](evidence/2026-11-26/gazette-cloudflare.json)
+
 ```sh
 export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
 bucket=civicsignal-stage-weekly
@@ -364,7 +366,6 @@ Installation registers the job. It runs while the user is logged in. Removal unl
 | Consultation participation | Resolves linked notices for the current catalogue revision and retains source bytes, participation instructions and explicit gaps. |
 | Briefing notes | Validates the official main and nil-return CSVs and schema. The source supplies briefing titles and metadata. Run `python3 -B scripts/briefing-notes.py --help` for archive replay and bilingual title search. |
 | ECCC audits and evaluations | Captures the four index pages and referenced documents, then builds a separate passage database and checks the authenticated local API. Read `GET /api/departmental-publications/openapi.json`. Enable the preview with `DEPARTMENTAL_PUBLICATIONS_PREVIEW=on` and bind the completed `data/corpus/eccc/serving.sqlite` to `DEPARTMENTAL_PUBLICATIONS_DB` in the local Worker harness. PDF text extraction uses `pdftotext`. |
-| Canada Gazette | Discovers the newest regular Part I and Part II issues in both languages. The separate `gazette-year` step checks the annual listings through the Toronto run date and archives missing regular and separately numbered extra issues. Search and exact lookup preserve the part, extra number and language. |
 | GEDS, parliamentary catalogues, Journals and votes, and written questions | Runs their acquisition and publication commands against the local stores, then checks the corresponding Worker routes. An unchanged GEDS ZIP can replay even when the host lacks space to construct a new snapshot. |
 | Committee corpus | Refreshes Senate meeting notices before extracting their publication links. The downloader checks the digest and timestamp of each parsed notice and fetches the other linked originals. The operator then builds the corpus, verifies its archived files, publishes to local D1, and tests bilingual retrieval. |
 

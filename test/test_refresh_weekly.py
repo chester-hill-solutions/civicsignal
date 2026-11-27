@@ -20,7 +20,8 @@ SPEC.loader.exec_module(weekly)
 class WeeklyRefreshTests(unittest.TestCase):
     def test_catalog_has_expected_weekly_collections(self):
         self.assertEqual({step.name for step in weekly.STEPS}, set(weekly.RUN_ORDER))
-        retired = {"official-titles", "service-inventory", "federal-institution-coverage", "hansard-house", "hansard-senate"}
+        retired = {"official-titles", "service-inventory", "federal-institution-coverage", "hansard-house", "hansard-senate",
+                   "gazette", "gazette-year"}
         self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
         self.assertTrue(all(retired.isdisjoint(command) for command in commands))
@@ -43,11 +44,8 @@ class WeeklyRefreshTests(unittest.TestCase):
                                     ("departmental-report-editions", "federal-regulatory-plans"),
                                     ("federal-publications", "federal-publication-checklists"),
                                     ("federal-publication-checklists", "federal-policy-editions"),
-                                    ("federal-guidance", "federal-policy-editions"),
-                                    ("gazette", "gazette-year")]:
+                                    ("federal-guidance", "federal-policy-editions")]:
             self.assertLess(weekly.RUN_ORDER.index(dependency), weekly.RUN_ORDER.index(derived))
-        self.assertEqual(weekly._resolve_date("@toronto-year@/@toronto-date@"),
-                         f"{weekly.RUN_DATE.year}/{weekly.RUN_DATE.isoformat()}")
 
     def test_large_steps_are_gated_by_live_free_space(self):
         geds = next(step for step in weekly.STEPS if step.name == "geds")
@@ -108,33 +106,6 @@ class WeeklyRefreshTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as raised:
             weekly.parse_args(["--only", "no-such-source"])
         self.assertEqual(raised.exception.code, 2)
-
-    def test_partial_gazette_run_verifies_the_exact_dated_acquisition(self):
-        step = next(step for step in weekly.STEPS if step.name == "gazette-year")
-        path = "dist/gazette/backfills/catchups/2026-through-2026-11-25/one-attempt.json"
-        receipt = {"receiptPath": path, "counts": {"archiveVerifiedPairs": 69}}
-        partial = {"ok": False, "exitCode": 1, "stdout": json.dumps(receipt)}
-        result = {"commands": []}
-        with patch.object(weekly, "_run_command", side_effect=[partial, {"ok": True}]) as run:
-            weekly._run_commands(step, result)
-        self.assertIn(("CIVICSIGNAL_GAZETTE_CATCHUP_RECEIPT", path), run.call_args_list[1].args[0].env)
-        self.assertIn("error", result)
-
-    def test_gazette_worker_requires_a_receipt_from_this_attempt(self):
-        step = next(step for step in weekly.STEPS if step.name == "gazette-year")
-        for stdout in ['{"counts": {}}', '[]', 'null', 'invalid']:
-            with self.subTest(stdout=stdout):
-                result = {"commands": []}
-                with patch.object(weekly, "_run_command", return_value={"ok": True, "stdout": stdout}) as run:
-                    weekly._run_commands(step, result)
-                self.assertEqual(run.call_count, 1)
-                self.assertIn("receipt", result["error"])
-
-    def test_gazette_worker_verifies_regular_and_extra_annual_records(self):
-        step = next(step for step in weekly.STEPS if step.name == "gazette-year")
-        verification = step.commands[1]
-        self.assertIn("serves a cited record from each verified annual Gazette edition|serves separately numbered bilingual extras through search and exact lookup",
-                      verification.argv)
 
     def test_scheduled_committee_catalogue_starts_fresh_and_operator_can_resume(self):
         self.assertNotIn("--resume", weekly._committee_commands()[0])
@@ -213,8 +184,8 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertNotIn("passedTests", result)
         self.assertEqual(result["error"], "Vitest JSON report is missing valid success and test counts")
 
-    def test_eccc_gazette_and_parliament_declare_two_expected_worker_checks(self):
-        expected = {"eccc": 2, "gazette-year": 2, "parliament": 2}
+    def test_eccc_and_parliament_declare_two_expected_worker_checks(self):
+        expected = {"eccc": 2, "parliament": 2}
         for step in weekly.STEPS:
             for command in step.commands:
                 if isinstance(command, weekly.Command) and command.verification:

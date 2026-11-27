@@ -24,7 +24,6 @@ import subprocess
 import sys
 import time
 from typing import Iterator
-from zoneinfo import ZoneInfo
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -126,20 +125,6 @@ STEPS = (
         artifacts=("dist/eccc/inventory.json", "data/corpus/eccc/catalogue.sqlite", "data/corpus/eccc/serving.sqlite"),
     ),
     Step(
-        "gazette",
-        (
-            ("bun", "scripts/gazette-local.ts", "sync-current", "data/corpus/gazette-preview.sqlite"),
-            Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "reads the current bilingual records through the acquired Gazette database"),
-                    (("CIVICSIGNAL_GAZETTE_SQLITE", "data/corpus/gazette-preview.sqlite"),
-                     ("CIVICSIGNAL_GAZETTE_RECEIPT", "dist/gazette/receipt.json")), verification=True),
-        ),
-        60 * 60,
-        "Refresh current bilingual Gazette indexes and verify authenticated retrieval from the local store.",
-        64 * 1024**2,
-        baseline_paths=("data/corpus/gazette",),
-        artifacts=("data/corpus/gazette-preview.sqlite", "dist/gazette/receipt.json"),
-    ),
-    Step(
         "parliament",
         _parliament_commands(),
         2 * 60 * 60,
@@ -148,13 +133,6 @@ STEPS = (
         baseline_paths=("data/corpus/parliament-intake",),
         artifacts=("data/corpus/parliament-intake/catalogues.sqlite",),
     ),
-    Step("gazette-year", (("bun", "scripts/gazette-local.ts", "sync-year-catchup",
-          "data/corpus/gazette-preview.sqlite", "@toronto-year@", "@toronto-date@"),
-          Command(("bun", "run", "test", "test/endpoints.test.ts", "-t",
-                  "serves a cited record from each verified annual Gazette edition|serves separately numbered bilingual extras through search and exact lookup"),
-                  (("CIVICSIGNAL_GAZETTE_SQLITE", "data/corpus/gazette-preview.sqlite"),), verification=True, expected_passed_tests=2)), 3600,
-         "Reconcile regular issues and separately numbered extras against this year's bilingual Part I and Part II listings.",
-         min_free_bytes=64 * 1024**2, artifacts=("dist/gazette/backfills/catchups/",), verify_partial=True),
     Step(
         "written-questions",
         (
@@ -284,7 +262,7 @@ STEPS = (
 
 RUN_ORDER = (
     "federal-discovery", "federal-guidance", "consultation-notices", "federal-disclosures", "ati-summaries", "grant-awards",
-    "eccc", "gazette", "gazette-year", "briefing-notes", "federal-report-directories", "departmental-report-editions",
+    "eccc", "briefing-notes", "federal-report-directories", "departmental-report-editions",
     "departmental-report-documents", "departmental-report-html", "federal-regulatory-plans", "federal-publications",
     "federal-publication-checklists", "federal-policy-editions",
     "federal-procurement", "parliament",
@@ -351,14 +329,6 @@ def _local_d1_path(state_directory: str) -> str:
     return str(files[0].relative_to(ROOT))
 
 
-RUN_DATE = datetime.now(ZoneInfo("America/Toronto")).date()
-
-
-def _resolve_date(value: str) -> str:
-    return (value.replace("@toronto-year@", str(RUN_DATE.year))
-            .replace("@toronto-date@", RUN_DATE.isoformat()))
-
-
 def _tail(value: str, limit: int = 5000) -> str:
     return value if len(value) <= limit else "…" + value[-limit:]
 
@@ -408,10 +378,8 @@ def _run_command(command: tuple[str, ...] | Command, timeout_seconds: int) -> di
     for key, value in requested_env.items():
         if value.startswith("@d1:"):
             value = _local_d1_path(value.removeprefix("@d1:"))
-        else:
-            value = _resolve_date(value)
         command_env[key] = value
-    resolved_argv = tuple(_resolve_date(item) for item in argv)
+    resolved_argv = argv
     if verification and "--reporter=json" not in resolved_argv:
         resolved_argv += ("--reporter=json",)
     environment = os.environ.copy()
@@ -521,15 +489,6 @@ def _run_commands(step: Step, result: dict) -> None:
                 result["error"] = "Acquisition did not return the digest of its dated report"
                 break
             command += ("--report", report_hash)
-        if step.name == "gazette-year" and isinstance(command, Command) and command.verification:
-            try:
-                receipt_path = json.loads(result["commands"][-1]["stdout"])["receiptPath"]
-                if not isinstance(receipt_path, str) or not receipt_path:
-                    raise ValueError
-            except (ValueError, KeyError, IndexError, TypeError):
-                result["error"] = "Gazette acquisition did not return its dated receipt path"
-                break
-            command = replace(command, env=command.env + (("CIVICSIGNAL_GAZETTE_CATCHUP_RECEIPT", receipt_path),))
         outcome = _run_command(command, step.timeout_seconds)
         result["commands"].append(outcome)
         if not outcome["ok"]:
@@ -552,11 +511,6 @@ def _run_commands(step: Step, result: dict) -> None:
                 fetched = receipt.get("publishedFetchedEditions")
                 if (step.name == "consultation-notices" and receipt.get("scope") == "all-open"
                         and type(fetched) is int and fetched > 0):
-                    continue
-                counts = receipt.get("counts", {})
-                if (step.name == "gazette-year" and receipt.get("receiptPath") and isinstance(counts, dict)
-                        and any(type(counts.get(key)) is int and counts[key] > 0
-                                for key in ("archiveVerifiedPairs", "newlyVerifiedIssues"))):
                     continue
             break
 

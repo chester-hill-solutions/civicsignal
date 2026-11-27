@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private Cloudflare staging for the current Canada Gazette refresh and annual reconciliation.",
+  "worker": "civicsignal-stage-gazette",
+  "workerVersion": "37d2c1a0-e4b4-493a-b13b-083173a6fafb",
+  "stagingArchive": "civicsignal-stage-weekly",
+  "containerApplication": "a038f541-9d46-496c-8335-f174d030f43d",
+  "imageSha256": "c35f6d0ae508cacbe912354efd00e7b956f8687f302d3e946628144bbe90beac",
+  "implementationCommit": "5a1affc",
+  "seed": {
+    "bytes": 341,
+    "key": "weekly/gazette/manifests/79909053e8c48a89acaf31ec52334dec522224a56c09eba6a2223dd2a65f1f0c.json",
+    "sha256": "79909053e8c48a89acaf31ec52334dec522224a56c09eba6a2223dd2a65f1f0c"
+  },
+  "temporaryNativeSchedule": {
+    "scheduledTime": 1795739820000,
+    "utc": "2026-11-27T00:37:00+00:00",
+    "cron": "37 0 27 11 *",
+    "initialSchedulesReadBack": [
+      "0 15 * * SAT",
+      "37 0 27 11 *"
+    ],
+    "eventObservedAt": "2026-11-27T00:38:01.587000+00:00",
+    "workflowCreatedFromOriginalTrigger": true,
+    "retryTriggersArmedDuringDelay": [
+      {
+        "scheduledTime": 1795740180000,
+        "utc": "2026-11-27T00:43:00+00:00",
+        "cron": "43 0 27 11 *"
+      },
+      {
+        "scheduledTime": 1795740960000,
+        "utc": "2026-11-27T00:56:00+00:00",
+        "cron": "56 0 27 11 *"
+      }
+    ],
+    "temporaryTriggersRemoved": true
+  },
+  "standingSchedule": {
+    "cron": "0 15 * * SAT",
+    "timezone": "UTC",
+    "firstScheduledOccurrence": "2026-11-28T15:00:00Z",
+    "independentReadback": [
+      "0 15 * * SAT"
+    ]
+  },
+  "smokeReadback": {
+    "instanceId": "gazette-1795738784216",
+    "trigger": "api",
+    "startedAt": "2026-11-27T00:19:52.793Z",
+    "completedAt": "2026-11-27T00:20:36.701Z",
+    "workflowVersion": "fb9e2266-66d0-4983-8a3f-ee11ef2e9308",
+    "receiptKey": "weekly/gazette/runs/gazette-1795738784216.json",
+    "receiptSha256": "63a44866e80978cc61c06b3a26adeb4b7d67b67bed49e9a00315941f03c82adc",
+    "inputState": {
+      "key": "weekly/gazette/manifests/79909053e8c48a89acaf31ec52334dec522224a56c09eba6a2223dd2a65f1f0c.json",
+      "sha256": "79909053e8c48a89acaf31ec52334dec522224a56c09eba6a2223dd2a65f1f0c",
+      "bytes": 341
+    },
+    "state": {
+      "key": "weekly/gazette/manifests/d8dc70af101069b9f46ca77911e27dc38e562e887de139baf60ef8c97b45e2d3.json",
+      "sha256": "d8dc70af101069b9f46ca77911e27dc38e562e887de139baf60ef8c97b45e2d3",
+      "bytes": 341
+    },
+    "report": {
+      "key": "weekly/gazette/reports/c7088c62714b03edd97e4d42c217591310391563b3f5250e2c58a523b2654588.json",
+      "sha256": "c7088c62714b03edd97e4d42c217591310391563b3f5250e2c58a523b2654588",
+      "bytes": 1699
+    },
+    "reportReadback": {
+      "after": {
+        "extraLanguageEditions": {
+          "I": 16,
+          "II": 2
+        },
+        "feed": {
+          "en": {
+            "count": 1247,
+            "highWater": 2495
+          },
+          "fr": {
+            "count": 1249,
+            "highWater": 2496
+          }
+        },
+        "journal": "5e7ea7ddea6cf42e2532a02c01914fcb",
+        "regularLanguageEditions": {
+          "I": 94,
+          "II": 46
+        }
+      },
+      "annual": {
+        "complete": true,
+        "counts": {
+          "archiveVerifiedExtras": 9,
+          "archiveVerifiedPairs": 70,
+          "archivedSourceBytes": 148502,
+          "corruptArchiveExtras": 0,
+          "corruptArchivePairs": 0,
+          "discoveredExtras": 9,
+          "discoveredIssues": 70,
+          "newlyVerifiedExtras": 0,
+          "newlyVerifiedIssues": 0,
+          "unavailableExtras": 0,
+          "unavailableIssues": 0,
+          "unsupportedExtraRows": 0,
+          "unsupportedRegularRows": 0
+        },
+        "receipt": "dist/gazette/backfills/catchups/2026-through-2026-11-26/catchup-2026-through-2026-11-26-2026-11-27T00-20-13-325Z-17227603-f41b-43fd-a9cd-d4789fbf7dbc.json",
+        "servingTestsPassed": 2
+      },
+      "before": {
+        "extraLanguageEditions": {
+          "I": 16,
+          "II": 2
+        },
+        "feed": {
+          "en": {
+            "count": 1247,
+            "highWater": 2495
+          },
+          "fr": {
+            "count": 1249,
+            "highWater": 2496
+          }
+        },
+        "journal": "5e7ea7ddea6cf42e2532a02c01914fcb",
+        "regularLanguageEditions": {
+          "I": 94,
+          "II": 46
+        }
+      },
+      "current": {
+        "complete": true,
+        "editions": [
+          {
+            "issueDate": "2026-11-21",
+            "issueNumber": 47,
+            "language": "en",
+            "part": "I",
+            "recordCount": 21,
+            "removed": 0,
+            "status": "unchanged",
+            "volume": 160,
+            "written": 0
+          },
+          {
+            "issueDate": "2026-11-21",
+            "issueNumber": 47,
+            "language": "fr",
+            "part": "I",
+            "recordCount": 21,
+            "removed": 0,
+            "status": "unchanged",
+            "volume": 160,
+            "written": 0
+          },
+          {
+            "issueDate": "2026-11-18",
+            "issueNumber": 23,
+            "language": "en",
+            "part": "II",
+            "recordCount": 19,
+            "removed": 0,
+            "status": "unchanged",
+            "volume": 160,
+            "written": 0
+          },
+          {
+            "issueDate": "2026-11-18",
+            "issueNumber": 23,
+            "language": "fr",
+            "part": "II",
+            "recordCount": 19,
+            "removed": 0,
+            "status": "unchanged",
+            "volume": 160,
+            "written": 0
+          }
+        ],
+        "receipt": "dist/gazette/receipt.json",
+        "servingTestsPassed": 1
+      },
+      "cutoff": "2026-11-26"
+    },
+    "archiveChunksVerified": 1,
+    "archiveCompressedBytes": 1813045,
+    "sourceObjectsVerified": 4,
+    "officialAnnualListingsVerified": 4,
+    "sqliteIntegrity": "ok",
+    "sqliteSha256": "0414754c1d604797c8f99fbad24173daf0bc60f644ca4c9d28b9f911fbbb52f3"
+  },
+  "scheduledReadback": {
+    "instanceId": "gazette-1795739820000",
+    "trigger": "binding",
+    "startedAt": "2026-11-27T00:38:02.633Z",
+    "completedAt": "2026-11-27T00:38:49.640Z",
+    "workflowVersion": "fb9e2266-66d0-4983-8a3f-ee11ef2e9308",
+    "receiptKey": "weekly/gazette/runs/gazette-1795739820000.json",
+    "receiptSha256": "5794d2b81f8c8aa09991e25545ebc5cd935939e2267bcec4422cc69309c8947e",
+    "inputState": {
+      "key": "weekly/gazette/manifests/d8dc70af101069b9f46ca77911e27dc38e562e887de139baf60ef8c97b45e2d3.json",
+      "sha256": "d8dc70af101069b9f46ca77911e27dc38e562e887de139baf60ef8c97b45e2d3",
+      "bytes": 341
+    },
+    "state": {
+      "key": "weekly/gazette/manifests/bd7b0e831a7bfdf765edfffc1dda970497eb2c533e1b8b0ead76b474ded863ca.json",
+      "sha256": "bd7b0e831a7bfdf765edfffc1dda970497eb2c533e1b8b0ead76b474ded863ca",
+      "bytes": 341
+    },
+    "report": {
+      "key": "weekly/gazette/reports/93927ee11f41b764564e6d0621256ca6c5f80a211946c987c1ef275dce0bd138.json",
+      "sha256": "93927ee11f41b764564e6d0621256ca6c5f80a211946c987c1ef275dce0bd138",
+      "bytes": 1699
+    },
+    "reportReadback": {
+      "after": {
+        "extraLanguageEditions": {
+          "I": 16,
+          "II": 2
+        },
+        "feed": {
+          "en": {
+            "count": 1247,
+            "highWater": 2495
+          },
+          "fr": {
+            "count": 1249,
+            "highWater": 2496
+          }
+        },
+        "journal": "5e7ea7ddea6cf42e2532a02c01914fcb",
+        "regularLanguageEditions": {
+          "I": 94,
+          "II": 46
+        }
+      },
+      "annual": {
+        "complete": true,
+        "counts": {
+          "archiveVerifiedExtras": 9,
+          "archiveVerifiedPairs": 70,
+          "archivedSourceBytes": 148502,
+          "corruptArchiveExtras": 0,
+          "corruptArchivePairs": 0,
+          "discoveredExtras": 9,
+          "discoveredIssues": 70,
+          "newlyVerifiedExtras": 0,
+          "newlyVerifiedIssues": 0,
+          "unavailableExtras": 0,
+          "unavailableIssues": 0,
+          "unsupportedExtraRows": 0,
+          "unsupportedRegularRows": 0
+        },
+        "receipt": "dist/gazette/backfills/catchups/2026-through-2026-11-26/catchup-2026-through-2026-11-26-2026-11-27T00-38-24-385Z-5d9ec6d2-b244-48ec-80f9-7f6242b53575.json",
+        "servingTestsPassed": 2
+      },
+      "before": {
+        "extraLanguageEditions": {
+          "I": 16,
+          "II": 2
+        },
+        "feed": {
+          "en": {
+            "count": 1247,
+            "highWater": 2495
+          },
+          "fr": {
+            "count": 1249,
+            "highWater": 2496
+          }
+        },
+        "journal": "5e7ea7ddea6cf42e2532a02c01914fcb",
+        "regularLanguageEditions": {
+          "I": 94,
+          "II": 46
+        }
+      },
+      "current": {
+        "complete": true,
+        "editions": [
+          {
+            "issueDate": "2026-11-21",
+            "issueNumber": 47,
+            "language": "en",
+            "part": "I",
+            "recordCount": 21,
+            "removed": 0,
+            "status": "unchanged",
+            "volume": 160,
+            "written": 0
+          },
+          {
+            "issueDate": "2026-11-21",
+            "issueNumber": 47,
+            "language": "fr",
+            "part": "I",
+            "recordCount": 21,
+            "removed": 0,
+            "status": "unchanged",
+            "volume": 160,
+            "written": 0
+          },
+          {
+            "issueDate": "2026-11-18",
+            "issueNumber": 23,
+            "language": "en",
+            "part": "II",
+            "recordCount": 19,
+            "removed": 0,
+            "status": "unchanged",
+            "volume": 160,
+            "written": 0
+          },
+          {
+            "issueDate": "2026-11-18",
+            "issueNumber": 23,
+            "language": "fr",
+            "part": "II",
+            "recordCount": 19,
+            "removed": 0,
+            "status": "unchanged",
+            "volume": 160,
+            "written": 0
+          }
+        ],
+        "receipt": "dist/gazette/receipt.json",
+        "servingTestsPassed": 1
+      },
+      "cutoff": "2026-11-26"
+    },
+    "archiveChunksVerified": 1,
+    "archiveCompressedBytes": 1828210,
+    "sourceObjectsVerified": 4,
+    "officialAnnualListingsVerified": 4,
+    "sqliteIntegrity": "ok",
+    "sqliteSha256": "0414754c1d604797c8f99fbad24173daf0bc60f644ca4c9d28b9f911fbbb52f3"
+  },
+  "macCutover": {
+    "weeklyLaunchAgentRunsBefore": 0,
+    "weeklyLaunchAgentRunsAfter": 0,
+    "localArchiveSha256BeforeAndAfter": "a9eb547969bc525d9ddbe89e4f9d6a2b33d3c6fa1ea48a6d34f71ea9f999ae6f",
+    "localIngestProcessUsed": false,
+    "retiredSteps": [
+      "gazette",
+      "gazette-year"
+    ],
+    "remainingScheduledSteps": 22
+  }
+}
