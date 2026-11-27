@@ -15,12 +15,14 @@ APP = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(APP / "scripts"))
 from lib import committee_files  # noqa: E402
 from lib.federal_catalogue import describe, source_endpoints  # noqa: E402
-from lib.federal_guidance import IRCC_LANDING, TB_LANDING  # noqa: E402
+from lib.federal_guidance import IRCC_LANDING, TB_LANDING, atomic_write  # noqa: E402
 from lib.hosted_federal_bulk import DISCOVERY, csv_identity, require, verified  # noqa: E402
 
 REGISTER = APP / "docs/evidence/2026-11-23/federal-public-service-sources.csv"
 DATASETS = {"ati-summaries": "0797e893-751e-4695-8229-a5066e4fe43c", "grant-awards": "432527ab-7aac-45b5-81d6-7597107a7013"}
 PUBLICATIONS = "30f7114d-4b3f-4201-8dc7-0d71eb769617"
+REPORT_DIRECTORIES = ("departmental-plans", "departmental-results", "regulatory-plans")
+DIRECTORY_ORIGINS = "report-directory-origins.json"
 
 
 def _catalogue_row(read, packet, series, dataset, scheduled):
@@ -58,14 +60,22 @@ def _guidance_sources(read, packet, scheduled):
     return [_catalogue_source(read, packet, item, scheduled)[:2] for item in items]
 
 
+def _report_directory_sources(read, packet, scheduled):
+    return {item["series"]: _catalogue_source(read, packet, item, scheduled)[:2]
+            for item in packet["endpoints"] if item["series"] in REPORT_DIRECTORIES and item["endpoint"] == "entry_url"}
+
+
+def _cache_original(cache, source, raw):
+    path = committee_files.object_path(cache, source["sha256"])
+    if not path.exists():
+        atomic_write(path, gzip.compress(raw, mtime=0))
+    require(committee_files.read_object(cache, source["sha256"]) == raw, "Cached index differs from the hosted original")
+
+
 def _write_guidance_cache(cache, guidance):
     rows = []
     for source, raw in guidance:
-        path = committee_files.object_path(cache, source["sha256"])
-        path.parent.mkdir(parents=True, exist_ok=True)
-        if not path.exists():
-            path.write_bytes(gzip.compress(raw, mtime=0))
-        require(committee_files.read_object(cache, source["sha256"]) == raw, "Guidance cache differs from the hosted original")
+        _cache_original(cache, source, raw)
         rows.append((source["url"], source["sha256"], "text/html", source["bytes"], None,
                      source["observedAt"], source["finalUrl"]))
     with closing(committee_files.cache_db(cache)) as db:
@@ -87,7 +97,7 @@ def _csv_resources(series, dataset, normalized):
 
 
 def prepare_bulk_inputs(workspace, object_read, discovery_ref):
-    """Verify the immutable parent and original CKAN responses before changing the scratch SQLite index."""
+    """Verify pinned register inputs before materializing the scratch index and originals."""
     key = discovery_ref["key"]
     match = re.fullmatch(re.escape(DISCOVERY) + r"/runs/(federal-discovery-([1-9]\d{0,12}))[.]json", key)
     require(match is not None, "Expected a dated federal discovery receipt reference")
@@ -124,6 +134,8 @@ def prepare_bulk_inputs(workspace, object_read, discovery_ref):
         prepared[series] = row, _csv_resources(series, dataset, inventory)
     publications, _ = _catalogue_row(object_read, packet, "publications", PUBLICATIONS, scheduled)
     guidance = _guidance_sources(object_read, packet, scheduled)
+    directories = _report_directory_sources(object_read, packet, scheduled)
+    require(set(directories) == set(REPORT_DIRECTORIES), "Missing registered report directory origins")
     path = Path(workspace) / "data/corpus/federal-source-inventory/inventory.sqlite"
     path.parent.mkdir(parents=True, exist_ok=True)
     with closing(sqlite3.connect(path)) as db, db:
@@ -139,7 +151,14 @@ def prepare_bulk_inputs(workspace, object_read, discovery_ref):
             require(latest[:3] == row[2:5] and json.loads(latest[3]) == json.loads(row[5]),
                     "Another observation would be selected by the native operator for " + row[0])
     _write_guidance_cache(path.parent, guidance)
+    for source, raw in directories.values():
+        _cache_original(path.parent, source, raw)
+    origins = {series: {key: source[key] for key in ("key", "url", "finalUrl", "observedAt", "sha256", "bytes")}
+               for series, (source, _) in directories.items()}
+    manifest = {"schemaVersion": 1, "registerSha256": receipt["register"]["sha256"],
+                "discovery": discovery_ref, "origins": origins}
+    atomic_write(path.parent / DIRECTORY_ORIGINS, (json.dumps(manifest, sort_keys=True) + "\n").encode())
     return {"instanceId": instance, "discovery": discovery_ref, "packetRef": ref,
             "series": {series: {"observedAt": row[2], "catalogueSha256": row[3], "csvResourceIds": selected}
                        for series, (row, selected) in prepared.items()}, "publicationsCatalogueSha256": publications[3],
-            "guidance": {source["url"]: source["sha256"] for source, _ in guidance}}
+            "guidance": {source["url"]: source["sha256"] for source, _ in guidance}, "reportDirectoryOrigins": origins}

@@ -14,7 +14,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from bulk_inputs import prepare_bulk_inputs
+from bulk_inputs import DIRECTORY_ORIGINS, prepare_bulk_inputs
 from snapshot import DEFAULT_ROOTS, canonical, capture, restore
 
 ROOT = Path('/app')
@@ -33,7 +33,8 @@ PRODUCERS = (
     ('federal-procurement', (('federal-procurement.py', 'refresh'), ('federal-procurement.py', 'verify')), 3600),
     ('federal-disclosures', (('federal-disclosures.py',),), 3600),
     ('eccc', (('eccc-intake.py', '--workers', '1'), ('eccc-passages.py',)), 3600),
-    ('federal-report-directories', (('federal-report-directories.py',),), 1800),
+    ('federal-report-directories', (('federal-report-directories.py', '--hosted-origins',
+                                    f'data/corpus/federal-source-inventory/{DIRECTORY_ORIGINS}'),), 1800),
     ('departmental-report-editions', (('departmental-report-editions.py', 'refresh'),
                                      ('departmental-report-editions.py', 'replay', '@runId')), 3600),
     ('departmental-report-documents', (('departmental-report-documents.py', 'refresh'),

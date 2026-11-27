@@ -42,7 +42,8 @@ class InstitutionBulkInputs(unittest.TestCase):
                         {'id':resource,'url':csv_url,'format':'CSV','name':'Resource'}]}}).encode()
                     source.update(self.save('sources',raw,'json'))
                     entry['inventory'] = inputs.describe(raw,url,dataset)
-                if url in {*inputs.TB_LANDING.values(), *inputs.IRCC_LANDING.values()}:
+                if (url in {*inputs.TB_LANDING.values(), *inputs.IRCC_LANDING.values()}
+                        or series in inputs.REPORT_DIRECTORIES and field == 'entry_url'):
                     raw = f'<main><h1>{url}</h1><a href="/index.html">Index</a></main>'.encode()
                     source.update(self.save('sources',raw,'html'))
                     entry['inventory'] = inputs.describe(raw,url,None)
@@ -100,3 +101,23 @@ class InstitutionBulkInputs(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'differ'):
             self.prepare()
         self.assertFalse((self.workspace/'data').exists())
+
+    def test_directory_origins_pin_all_three_objects_and_the_discovery_receipt(self):
+        prepared = self.prepare()
+        cache = self.workspace / 'data/corpus/federal-source-inventory'
+        manifest = json.loads((cache / inputs.DIRECTORY_ORIGINS).read_bytes())
+        self.assertEqual(manifest['discovery'], self.seal())
+        self.assertEqual(manifest['registerSha256'], self.register['sha256'])
+        self.assertEqual(manifest['origins'], prepared['reportDirectoryOrigins'])
+        self.assertEqual(set(manifest['origins']), set(inputs.REPORT_DIRECTORIES))
+        for origin in manifest['origins'].values():
+            self.assertEqual(origin['observedAt'], self.stamp)
+            self.assertEqual(inputs.committee_files.read_object(cache, origin['sha256']), self.objects[origin['key']])
+
+    def test_directory_origin_corruption_is_rejected_before_database_writes(self):
+        entry = next(e for e in self.packet['endpoints'] if e['series'] == 'departmental-plans')
+        source = next(s for s in self.packet['sources'] if s['url'] == entry['url'])
+        self.objects[source['key']] = b'corrupt original'
+        with self.assertRaisesRegex(ValueError, 'Invalid hosted bulk object'):
+            self.prepare()
+        self.assertFalse((self.workspace / 'data').exists())

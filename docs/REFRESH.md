@@ -352,6 +352,12 @@ For first installation, run `python3 -B scripts/bootstrap-<job>.py` to upload th
 
 Check the Workflow status and read the dated `weekly/<job>/runs/<instance>.json` receipt from R2. Its report and manifest references give the exact size and SHA-256 for independent readback. Use `weekly/<job>/latest-complete.json` for the most recent verified publication and `weekly/<job>/latest-attempt.json` for the latest retained attempt.
 
+## Offline committee replay on Cloudflare
+
+The private `civicsignal-stage-committee-replay` Workflow rebuilds the 45-1 SQLite preview from the pinned originals in R2. Run `python3 -B scripts/bootstrap-committee-replay.py` once to upload the sealed catalogue, original objects and acquisition database. Install the returned reference at `weekly/committee-replay/bootstrap.json`. The preview build replays the original publication dates, preserves the retained source archive, and verifies the resulting authenticated API routes before archiving the separate serving manifest.
+
+Start the replay with `wrangler workflows trigger civicsignal-stage-committee-replay '{"scheduledTime":<epoch-ms>}' --id committee-replay-<epoch-ms> --config services/committee-replay/wrangler.jsonc`, substituting one new millisecond timestamp in both places. Read the dated R2 occurrence receipt and its report. The report's `servingState` pins the separate verified preview archive. The standing full committee schedule will need fresh official House and Senate inputs and a shadow D1 generation that also verifies the newer daily House calls overlay.
+
 ## Weekly local refresh
 
 The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.

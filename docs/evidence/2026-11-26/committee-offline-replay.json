@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "scope": "local-offline-committee-replay",
+  "checkedDate": "2026-11-26",
+  "session": "45-1",
+  "retainedCutoff": "2026-11-25T08:33:25+00:00",
+  "sourceArchive": {
+    "logicalBytes": 8913724900,
+    "files": 65251,
+    "retainedOriginalObjects": 65247,
+    "compressedBytes": 7648067328,
+    "chunks": 456,
+    "manifestBytes": 90899,
+    "dryCaptureSha256": "2d8698e3195ce528de3fab81fdff0691eb4db0f126a017dec6e3956dcce7f7ec"
+  },
+  "originalsVerified": 29546,
+  "publicationPartsSourcePages": 10875,
+  "publicationPartsRestoredFromHistoricalOriginals": 18,
+  "retainedExtraction": {
+    "cataloguedEditions": 33191,
+    "newExtractions": 0
+  },
+  "baseline": {
+    "records": {
+      "en": 17047,
+      "fr": 17047
+    },
+    "links": 89295,
+    "passages": 1769377,
+    "itemChanges": 156157,
+    "linkChanges": 47004
+  },
+  "rebuilt": {
+    "records": {
+      "en": 17047,
+      "fr": 17047
+    },
+    "links": 89235,
+    "passages": 1769377,
+    "itemChanges": 156187,
+    "linkChanges": 47064
+  },
+  "serving": {
+    "sourceEquivalent": true,
+    "bytes": 1388888064,
+    "compressedBytes": 584035918,
+    "chunks": 35,
+    "manifestBytes": 7119,
+    "dryCaptureSha256": "17aadce054295c7046f087e8b8cbe4673c511ac3fdd587572504ef035a7a1f71",
+    "tables": {
+      "cc_records": {
+        "count": 34094,
+        "sha256": "5e2d07354fcf41491bb9460ee5df6782264bc91e0b2148c31289e80012f76de5"
+      },
+      "cc_links": {
+        "count": 89235,
+        "sha256": "b8a5d0fc48212c1eabf09eb72e28cf51c4cc4ff3b1cb9d8d04e6871da967f5fb"
+      },
+      "cc_passages": {
+        "count": 1769377,
+        "textCharacters": 569320368,
+        "sha256": "a47323a0de71aab863928f0ff3a9f86acd9013d12dec3f2eebac19400d44e327"
+      }
+    },
+    "ftsProbe": {
+      "term": "Honourable",
+      "matches": 8066
+    },
+    "authenticatedTestsPassed": 1
+  },
+  "verification": {
+    "inputs": "scripts/bootstrap-committee-replay.py seed() against retained corpus; services/committee-replay/run.py replay() in scratch",
+    "originals": "python3 -B scripts/committee-download.py --root $CORPUS --verify-only",
+    "rebuild": "python3 -B scripts/committee-corpus.py --root $CORPUS --workers 2",
+    "materialize": "python3 -B scripts/materialize-committee-corpus.py --source $CORPUS/committee.sqlite --persist-to $STATE --timeout-seconds 30",
+    "authenticatedHttp": "CIVICSIGNAL_COMMITTEES_D1=$PREVIEW CIVICSIGNAL_COMMITTEES_SOURCE_SQLITE=$CORPUS/committee.sqlite bun run test test/endpoints.test.ts -t \"traverses real bilingual committee publications with a workspace key\"",
+    "pythonTests": "python3 -B -m unittest discover -s test -p \"test_*committee*.py\"",
+    "pythonTestsPassed": 84,
+    "vitest": "bun run test test/committee-corpus.test.ts test/committee-study.test.ts",
+    "vitestTestsPassed": 10,
+    "workerTypecheck": "bun run typecheck:worker",
+    "wrangler": "wrangler deploy --config services/committee-replay/wrangler.jsonc --dry-run --containers-rollout=none"
+  },
+  "remaining": [
+    "Hosted Linux replay qualification",
+    "Fresh House acquisition after HTTP 403",
+    "Carry forward daily House discoveries to the subsequent hosted D1 generation"
+  ]
+}

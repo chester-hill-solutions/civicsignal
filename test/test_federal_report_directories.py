@@ -1,12 +1,21 @@
+from contextlib import chdir, closing
+import gzip
+from hashlib import sha256
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("federal_report_directories", ROOT / "scripts/federal-report-directories.py")
 directory = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(directory)
+EDITIONS_SPEC = importlib.util.spec_from_file_location("editions", ROOT / "scripts/departmental-report-editions.py")
+editions = importlib.util.module_from_spec(EDITIONS_SPEC)
+EDITIONS_SPEC.loader.exec_module(editions)
 
 
 class FederalReportDirectoryTests(unittest.TestCase):
@@ -106,6 +115,71 @@ class FederalReportDirectoryTests(unittest.TestCase):
             "url":"https://www.canada.ca/index", "finalUrl":"https://www.canada.ca/index",
             "sha256":"digest", "bytes":123, "archive":"objects/digest.gz",
         })
+
+    def test_hosted_origins_are_read_only_and_only_linked_indexes_are_fetched(self):
+        registered = directory._read_register(directory.REGISTER)
+        pinned_stamp, fresh_stamp = "2026-11-28T14:00:30+00:00", "2026-11-28T16:00:30+00:00"
+        registered_urls = [registered[family]["entry_url"] for family in directory.FAMILIES]
+        french_urls = {family: f"https://www.canada.ca/fr/{family}.html" for family in directory.FAMILIES}
+        wide_urls = ["https://www.canada.ca/en/wide.html", "https://www.canada.ca/fr/wide.html"]
+        bodies = {}
+        for family, url in zip(directory.FAMILIES, registered_urls):
+            switch = f'<a href="{french_urls[family]}">Français</a>'
+            if family == "regulatory-plans":
+                bodies[url] = (switch + f'<a href="{wide_urls[0]}">Government-wide regulatory plans and reports</a>'
+                               '<a href="/en/current">Forward Regulatory Plan: 2026 to 2028</a>')
+                bodies[french_urls[family]] = (f'<a href="{wide_urls[1]}">Plans et rapports prospectifs à l’échelle du gouvernement</a>'
+                                              '<a href="/fr/current">Plan prospectif de la réglementation de 2026 à 2028</a>')
+            else:
+                bodies[url] = switch + '<h2>List of institutions</h2><ul><li><a href="/en/plan">Issuer</a></li></ul>'
+                bodies[french_urls[family]] = '<h2>Liste des institutions</h2><ul><li><a href="/fr/plan">Organisme</a></li></ul>'
+        for url in wide_urls:
+            bodies[url] = '<main><h3>Institutions starting with the letter A</h3><ul><li><a href="/plan">Issuer</a></li></ul></main>'
+
+        def archive(cache, url, stamp):
+            raw = bodies[url].encode()
+            digest = sha256(raw).hexdigest()
+            path = directory.committee_files.object_path(cache, digest)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(gzip.compress(raw, mtime=0))
+            return {"url": url, "finalUrl": url, "observedAt": stamp, "sha256": digest, "bytes": len(raw),
+                    "key": f"weekly/federal-discovery/sources/{digest}.html"}
+
+        def capture(cache, urls, *, workers, refresh):
+            self.assertTrue(refresh)
+            rows = [archive(cache, url, fresh_stamp) for url in urls]
+            with closing(directory.committee_files.cache_db(cache)) as db:
+                directory.committee_files.checkpoint(db, [(row["url"], row["sha256"], "text/html", row["bytes"], None,
+                                                           row["observedAt"], row["finalUrl"]) for row in rows])
+
+        with tempfile.TemporaryDirectory() as temporary, patch.object(directory.committee_files, "capture", side_effect=capture) as fetched:
+            workspace = Path(temporary).resolve()
+            cache = workspace / "inputs"
+            origins = {family: archive(cache, url, pinned_stamp) for family, url in zip(directory.FAMILIES, registered_urls)}
+            manifest = cache / "report-directory-origins.json"
+            discovery = {"key": "weekly/federal-discovery/runs/federal-discovery-1795874400000.json"}
+            manifest.write_text(json.dumps({"schemaVersion": 1, "registerSha256": sha256(directory.REGISTER.read_bytes()).hexdigest(),
+                                            "discovery": discovery, "origins": origins}))
+            output = workspace / "directories"
+            output.mkdir()
+            with patch.object(directory, "ROOT", workspace):
+                result = directory.build(output, hosted_origins=manifest)
+                self.assertEqual([call.args[1] for call in fetched.call_args_list], [sorted(french_urls.values()), wide_urls])
+                for family in directory.FAMILIES:
+                    source = result["sourceArchives"][f"{family}-en"]
+                    self.assertEqual(source["sha256"], origins[family]["sha256"])
+                    self.assertEqual(result["receipt"]["sourceCaptureTimes"][f"{family}-en"], pinned_stamp)
+                    self.assertEqual(result["receipt"]["sourceCaptureTimes"][f"{family}-fr"], fresh_stamp)
+                    self.assertTrue((workspace / source["archive"]).is_file())
+                    self.assertFalse(Path(source["archive"]).is_absolute())
+                self.assertEqual(result["receipt"]["hostedOrigins"], {"discovery": discovery, "origins": origins})
+                with chdir(workspace), patch.object(editions, "ROOT", workspace):
+                    _, replayed = editions.load_verified_inventory(output / "dist/receipt.json")
+                    self.assertEqual(replayed["sourceArchives"], result["sourceArchives"])
+                fetched.reset_mock()
+                local = directory.build(output)
+                self.assertEqual(fetched.call_args_list[0].args[1], registered_urls)
+                self.assertNotIn("hostedOrigins", local["receipt"])
 
 
 if __name__ == "__main__":

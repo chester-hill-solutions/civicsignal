@@ -25,7 +25,6 @@ from lib import committee_files  # noqa: E402
 
 REGISTER = ROOT / "docs/evidence/2026-11-23/federal-public-service-sources.csv"
 DEFAULT_ROOT = ROOT / "data/corpus/federal-report-directories"
-SOURCE_CACHE = ROOT / "data/corpus/federal-source-inventory"
 FAMILIES = ("departmental-plans", "departmental-results", "regulatory-plans")
 MAX_REFRESH_BYTES = 12 * 1024 * 1024
 MIN_FREE_BYTES = 64 * 1024 * 1024
@@ -118,7 +117,7 @@ class RegulatorDirectoryLinks(PageLinks):
                 normal(self.current_heading or "")))
 
 
-def regulator_directories(root, tbs_pages):
+def regulator_directories(root, tbs_pages, *, pinned_urls=()):
     labels = {"en": "Government-wide regulatory plans and reports",
               "fr": "Plans et rapports prospectifs à l’échelle du gouvernement"}
     urls = {}
@@ -130,6 +129,8 @@ def regulator_directories(root, tbs_pages):
         if len(links) != 1:
             raise ValueError(f"Cannot identify one government-wide regulatory index in the {lang} edition")
         urls[lang], = links
+    if set(urls.values()).intersection(pinned_urls):
+        raise ValueError("A government-wide directory links back to a registered origin")
     committee_files.capture(root, list(urls.values()), workers=2, refresh=True)
     pages = {lang: cached_page(root, url) for lang, url in urls.items()}
     entries = []
@@ -195,6 +196,30 @@ def cached_page(root: Path, url: str) -> dict:
         db.close()
 
 
+def hosted_pages(path: Path, urls: dict[str, str], register_sha256: str) -> tuple[dict, dict]:
+    """Replay the registered origin bytes without consulting a mutable URL cache."""
+    manifest = json.loads(path.read_bytes())
+    if (manifest.get("schemaVersion") != 1 or manifest.get("registerSha256") != register_sha256
+            or set(manifest.get("origins", {})) != set(urls)):
+        raise ValueError("Hosted directory origins do not cover the checked source register")
+    pages = {}
+    for family, url in urls.items():
+        origin = manifest["origins"][family]
+        digest, size = origin["sha256"], origin["bytes"]
+        final = urlsplit(origin["finalUrl"])
+        if (origin["url"] != url or not re.fullmatch(r"[a-f0-9]{64}", digest)
+                or type(size) is not int or not 0 < size <= MAX_INDEX_BYTES
+                or origin["key"] != f"weekly/federal-discovery/sources/{digest}.html"
+                or not committee_files.official(origin["finalUrl"]) or final.port not in (None, 443) or final.fragment
+                or dt.datetime.fromisoformat(origin["observedAt"]).utcoffset() is None):
+            raise ValueError(f"Invalid hosted report directory origin: {family}")
+        body = committee_files.read_object(path.parent, digest)
+        if len(body) != size:
+            raise ValueError(f"Hosted report directory byte length mismatch: {family}")
+        pages[family] = {**origin, "archive": str(committee_files.object_path(path.parent, digest)), "body": body}
+    return pages, {"discovery": manifest["discovery"], "origins": manifest["origins"]}
+
+
 def language_url(page: dict) -> str | None:
     parser = PageLinks(page["finalUrl"] or page["url"])
     parser.feed(page["body"].decode("utf-8-sig", errors="replace"))
@@ -210,8 +235,11 @@ def language_url_from_links(parser: PageLinks) -> str | None:
     return None
 
 
-def source_ref(page: dict) -> dict:
-    return {key: page[key] for key in ("url", "finalUrl", "sha256", "bytes", "archive")}
+def source_ref(page: dict, *, portable=False) -> dict:
+    ref = {key: page[key] for key in ("url", "finalUrl", "sha256", "bytes", "archive")}
+    if portable:
+        ref["archive"] = Path(ref["archive"]).resolve().relative_to(ROOT).as_posix()
+    return ref
 
 
 def _read_register(path: Path) -> dict[str, dict]:
@@ -307,22 +335,30 @@ def cycle_coverage(records: list[dict]) -> dict:
             "frenchOnlyCycles": [{"family": family, "cycle": cycle} for family, cycle in sorted(per_language["fr"] - per_language["en"])]}
 
 
-def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER) -> dict:
+def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER, *, hosted_origins: Path | None = None) -> dict:
     start_bytes = tree_bytes(root)
     free = shutil.disk_usage(root).free
     if free < MAX_REFRESH_BYTES + MIN_FREE_BYTES:
         raise RuntimeError(f"need {MAX_REFRESH_BYTES + MIN_FREE_BYTES} bytes free to keep {MIN_FREE_BYTES} bytes reserved")
     root.mkdir(parents=True, exist_ok=True)
     rows = _read_register(register)
-    english_urls = [rows[key]["entry_url"] for key in FAMILIES]
-    committee_files.capture(root, english_urls, workers=2, refresh=True)
-    english_pages = {key: cached_page(root, rows[key]["entry_url"]) for key in FAMILIES}
+    register_sha256 = sha256(register.read_bytes()).hexdigest()
+    english_urls = {key: rows[key]["entry_url"] for key in FAMILIES}
+    discovery = None
+    if hosted_origins is not None:
+        english_pages, discovery = hosted_pages(hosted_origins, english_urls, register_sha256)
+    else:
+        committee_files.capture(root, list(english_urls.values()), workers=2, refresh=True)
+        english_pages = {key: cached_page(root, url) for key, url in english_urls.items()}
+    pinned_urls = set(english_urls.values()) if discovery is not None else set()
 
     french_urls = {key: language_url(page) for key, page in english_pages.items()}
     for key, url in french_urls.items():
         if not url:
             raise ValueError(f"The registered current {key} index does not link its French edition")
     all_urls = sorted(set(french_urls.values()))
+    if pinned_urls.intersection(all_urls):
+        raise ValueError("A French directory links back to a registered origin")
     committee_files.capture(root, all_urls, workers=2, refresh=True)
     french_pages = {key: cached_page(root, french_urls[key]) for key in FAMILIES}
 
@@ -337,7 +373,7 @@ def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER) -> dict:
             links = verified_labelled_links(parser)
             if not links:
                 raise ValueError(f"No verified labelled issuer links found in {key}/{lang}")
-            source = source_ref(page)
+            source = source_ref(page, portable=discovery is not None)
             source_refs[f"{key}-{lang}"] = source
             for item in links:
                 editions.append({"language": lang, "issuerLabel": item["label"], "indexHeading": item["heading"],
@@ -359,7 +395,7 @@ def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER) -> dict:
         current = current_regulatory_links(parser, lang)
         if not current:
             raise ValueError(f"No current labelled regulatory plan links found in {lang} index")
-        source_refs[f"regulatory-plans-{lang}"] = source_ref(page)
+        source_refs[f"regulatory-plans-{lang}"] = source_ref(page, portable=discovery is not None)
         for item in current:
             cycle_keys.add((item["cycleFamily"], item["cycle"]))
             regulatory_records.append({"issuerLabel": "Treasury Board of Canada Secretariat" if lang == "en" else "Secrétariat du Conseil du Trésor du Canada",
@@ -369,9 +405,10 @@ def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER) -> dict:
                                       "sourceIndexUrl": page["url"], "sourceIndexSha256": page["sha256"]})
     reg_issuers = _pair_bilingual(regulatory_records)
     national_pages, regulator_links = regulator_directories(root, {"en": english_pages["regulatory-plans"],
-                                                                   "fr": french_pages["regulatory-plans"]})
+                                                                   "fr": french_pages["regulatory-plans"]},
+                                                            pinned_urls=pinned_urls)
     for lang, page in national_pages.items():
-        source_refs[f"regulatory-directories-{lang}"] = source_ref(page)
+        source_refs[f"regulatory-directories-{lang}"] = source_ref(page, portable=discovery is not None)
     cycle_summary = cycle_coverage(regulatory_records)
     families["regulatory-plans"] = {"counts": {**cycle_summary,
                                                  "governmentWideDirectoryLinksByLanguage": {
@@ -385,7 +422,7 @@ def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER) -> dict:
                                     "coverageNote": "Plan cycles refer to TBS. The government-wide directory lists institutional regulatory pages. Each link retains its publisher label and directory citation."}
 
     inventory = {"collection": "federal-report-directories",
-                 "sourceRegisterSha256": sha256(register.read_bytes()).hexdigest(),
+                 "sourceRegisterSha256": register_sha256,
                  "sourceArchives": source_refs,
                  "families": families,
                  "scope": "Publisher-labelled issuer index links only. Linked issuer report pages and full plan documents were not fetched."}
@@ -409,6 +446,8 @@ def build(root: Path = DEFAULT_ROOT, register: Path = REGISTER) -> dict:
                    **{f"regulatory-directories-{lang}": page for lang, page in national_pages.items()},
                }.items()},
                "familyCounts": {key: value["counts"] for key, value in families.items()}}
+    if discovery is not None:
+        receipt["hostedOrigins"] = discovery
     atomic_write(root / "dist" / "receipt.json", (json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode())
     inventory["receipt"] = receipt
     return inventory
@@ -438,13 +477,15 @@ def atomic_write(path: Path, body: bytes) -> None:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    parser.add_argument("--hosted-origins", type=Path,
+                        help="Read the registered index originals from a pinned discovery manifest and its adjacent object cache")
     args = parser.parse_args(argv)
     args.root.mkdir(parents=True, exist_ok=True)
     lock_path = args.root / "run.lock"
     try:
         with lock_path.open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            inventory = build(args.root)
+            inventory = build(args.root, hosted_origins=args.hosted_origins)
         receipt_path = args.root / "dist" / "receipt.json"
         print(json.dumps({"receipt": os.path.relpath(receipt_path, ROOT), "families": inventory["receipt"]["familyCounts"],
                           "corpusBytes": inventory["receipt"]["corpusBytes"], "ok": True}, ensure_ascii=False, sort_keys=True))
