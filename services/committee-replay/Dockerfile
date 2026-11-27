@@ -20,12 +20,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils &
 COPY services/committee-replay/run.py ./services/committee-replay/run.py
 COPY services/weekly-archive/runtime.py ./services/weekly-archive/runtime.py
 COPY services/institution-coverage/container/snapshot.py ./services/institution-coverage/container/snapshot.py
+COPY services/funding/esdc-collector/html_tree.py ./services/funding/esdc-collector/html_tree.py
 COPY services/daily-checks/*.ts ./services/daily-checks/
 COPY services/house/archive.ts services/house/publish.ts ./services/house/
 COPY test/ ./test/
 COPY migrations/ ./migrations/
 COPY preview/ ./preview/
 COPY docs/evidence/ ./docs/evidence/
+
+RUN python3 -B scripts/committee-download.py --help >/dev/null && python3 -B scripts/committee-corpus.py --help >/dev/null
 
 ENV TZ=America/Toronto
 EXPOSE 8080

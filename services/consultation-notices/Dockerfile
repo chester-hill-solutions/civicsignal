@@ -19,12 +19,15 @@ COPY scripts/ ./scripts/
 COPY services/consultation-notices/run.py ./services/consultation-notices/run.py
 COPY services/weekly-archive/runtime.py ./services/weekly-archive/runtime.py
 COPY services/institution-coverage/container/snapshot.py ./services/institution-coverage/container/snapshot.py
+COPY services/funding/esdc-collector/html_tree.py ./services/funding/esdc-collector/html_tree.py
 COPY services/daily-checks/*.ts ./services/daily-checks/
 COPY services/house/archive.ts services/house/publish.ts ./services/house/
 COPY test/ ./test/
 COPY migrations/ ./migrations/
 COPY preview/ ./preview/
 COPY docs/evidence/ ./docs/evidence/
+
+RUN python3 -B scripts/consultation-notices.py --help >/dev/null
 
 EXPOSE 8080
 CMD ["python3", "-B", "/app/services/consultation-notices/run.py"]

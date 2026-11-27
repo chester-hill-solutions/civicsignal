@@ -21,12 +21,15 @@ COPY services/written-questions/run.py ./services/written-questions/run.py
 COPY services/written-questions/local-d1.jsonc ./wrangler.jsonc
 COPY services/weekly-archive/runtime.py ./services/weekly-archive/runtime.py
 COPY services/institution-coverage/container/snapshot.py ./services/institution-coverage/container/snapshot.py
+COPY services/funding/esdc-collector/html_tree.py ./services/funding/esdc-collector/html_tree.py
 COPY services/daily-checks/*.ts ./services/daily-checks/
 COPY services/house/archive.ts services/house/publish.ts ./services/house/
 COPY test/ ./test/
 COPY migrations/ ./migrations/
 COPY preview/ ./preview/
 COPY docs/evidence/ ./docs/evidence/
+
+RUN python3 -B scripts/lib/wq_catalog.py --help >/dev/null && python3 -B scripts/written-questions.py --help >/dev/null
 
 ENV TZ=America/Toronto
 EXPOSE 8080
