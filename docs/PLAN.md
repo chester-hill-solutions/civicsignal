@@ -65,7 +65,7 @@ Federal discovery, guidance, publications, publication checklists, policy editio
 
 | Remaining Mac jobs | Cutover requirement |
 | --- | --- |
-| Federal report directories and departmental report editions | The hosted directory passed. Its local copy still feeds the Mac's issuer acquisition. Cloudflare fetched 382 of 435 issuer entries, 14 fewer occurrences than the Mac. Restore verified TLS acquisition for the four affected government publisher hosts. |
+| Federal report directories and departmental report editions | The hosted directory passed. Its local copy still feeds the Mac's issuer acquisition. Cloudflare fetched 382 of 435 issuer entries, 14 fewer than the Mac. The corrected Linux image verified all 14 using the publisher's missing intermediate and a trusted root. The staged image is awaiting scheduled readback. [TLS qualification](evidence/2026-11-26/departmental-publisher-tls.json) |
 | Federal regulatory plans | Cloudflare matched the Mac's 70 editions and 95 named initiatives. One discovery link still used a previously verified issuer page after a fetch failure. Qualify its fresh issuer dependency. |
 | Full committee corpus | Qualify fresh official source access, then verify a new hosted D1 generation and carry forward the daily House fallback across the new corpus cutoff. |
 

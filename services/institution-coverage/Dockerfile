@@ -27,6 +27,14 @@ RUN curl -fSL --retry 3 https://poppler.freedesktop.org/poppler-26.01.0.tar.xz -
  && cmake --build out --target pdftotext --parallel 4 \
  && strip out/utils/pdftotext
 
+FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS publisher-https
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends gcc libc6-dev libcurl4-openssl-dev \
+ && rm -rf /var/lib/apt/lists/*
+COPY services/institution-coverage/container/publisher_https.c /tmp/
+RUN gcc -std=c11 -O2 -Wall -Wextra -Werror /tmp/publisher_https.c -o /usr/local/bin/civicsignal-publisher-https -lcurl
+
 FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
 
 RUN apt-get update \
@@ -36,6 +44,7 @@ RUN apt-get update \
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=poppler /build/out/utils/pdftotext /usr/local/bin/pdftotext
+COPY --from=publisher-https /usr/local/bin/civicsignal-publisher-https /usr/local/bin/civicsignal-publisher-https
 
 WORKDIR /app
 COPY --from=dependencies /app/ /app/
@@ -50,7 +59,11 @@ COPY services/house/archive.ts services/house/publish.ts ./services/house/
 COPY services/funding/esdc-collector/html_tree.py ./services/funding/esdc-collector/html_tree.py
 COPY services/institution-coverage/container/ ./services/institution-coverage/container/
 
-RUN pdftotext -v && python3 -B scripts/federal-institution-coverage.py --help >/dev/null
+# Keep the publisher's missing intermediate out of the system CA bundle.
+RUN cat /etc/ssl/certs/ca-certificates.crt scripts/lib/entrust-ov-tls-issuing-rsa-ca-2.pem \
+      > /usr/local/share/civicsignal-publisher-ca.pem \
+ && pdftotext -v \
+ && python3 -B scripts/federal-institution-coverage.py --help >/dev/null
 
 EXPOSE 8080
 CMD ["python3", "-B", "/app/services/institution-coverage/container/run.py"]

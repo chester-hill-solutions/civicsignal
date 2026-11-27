@@ -68,6 +68,11 @@ PUBLISHER_LISTED_HOSTS = {
     "www.pilotagedelatlantique.com", "pilotagedelatlantique.com",
     "cdc-ccl.ca", "www.cdc-ccl.ca",
 }
+PUBLISHER_INTERMEDIATE_HOSTS = frozenset({
+    "housing-infrastructure.canada.ca", "logement-infrastructure.canada.ca",
+    "www.clo-ocol.gc.ca", "www.crcc-ccetp.gc.ca",
+})
+PUBLISHER_HTTPS = "/usr/local/bin/civicsignal-publisher-https"
 
 # These are exact legacy URLs present in the checksum-verified publisher
 # directories. The replacement targets were confirmed on the issuer's own
@@ -315,6 +320,8 @@ def _fetch_page_once(url: str, max_bytes: int = MAX_PAGE_BYTES) -> tuple[bytes, 
 
     if not acquisition_official(url):
         raise FetchError("URL is outside official HTTPS hosts")
+    if urlsplit(url).hostname in PUBLISHER_INTERMEDIATE_HOSTS and os.path.isfile(PUBLISHER_HTTPS):
+        return _fetch_with_platform_curl(url, max_bytes)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT,
         "Accept": "text/html,application/xhtml+xml,application/pdf;q=0.8,*/*;q=0.1"})
     opener = urllib.request.build_opener(CheckedRedirect())
@@ -361,20 +368,23 @@ def fetch_page(url: str, max_bytes: int = MAX_PAGE_BYTES) -> tuple[bytes, str, s
     return _fetch_page_once(url, max_bytes)
 
 
-def _fetch_with_platform_curl(url: str, max_bytes: int, original_error: Exception) -> tuple[bytes, str, str, int]:
-    """Retry certificate failures with curl's normal platform trust store; never disable verification."""
+def _fetch_with_platform_curl(url: str, max_bytes: int, original_error: Exception | None = None) -> tuple[bytes, str, str, int]:
+    """Fetch with curl, checking each redirect and bounding the response body."""
     current = url
     with tempfile.TemporaryDirectory(prefix="departmental-report-curl-") as temp_dir:
         body_path = Path(temp_dir) / "source"
         for _ in range(MAX_REDIRECTS + 1):
             if not acquisition_official(current):
                 raise FetchError("URL or redirect is outside official HTTPS hosts") from original_error
-            command = ["curl", "--silent", "--show-error", "--globoff", "--proto", "=https",
-                       "--max-redirs", "0", "--max-time", "30", "--connect-timeout", "10",
-                       "--max-filesize", str(max_bytes), "--user-agent", USER_AGENT,
-                       "--header", "Accept: text/html,application/xhtml+xml,application/pdf;q=0.8,*/*;q=0.1",
-                       "--output", str(body_path), "--write-out", "%{http_code}\n%{content_type}\n%{redirect_url}",
-                       quote(current, safe=":/?#[]@!$&'()*+,;=%")]
+            target = quote(current, safe=":/?#[]@!$&'()*+,;=%")
+            accept = "Accept: text/html,application/xhtml+xml,application/pdf;q=0.8,*/*;q=0.1"
+            if urlsplit(current).hostname in PUBLISHER_INTERMEDIATE_HOSTS and os.path.isfile(PUBLISHER_HTTPS):
+                command = [PUBLISHER_HTTPS, target, str(body_path), str(max_bytes), USER_AGENT, accept]
+            else:
+                command = ["curl", "--silent", "--show-error", "--globoff", "--proto", "=https",
+                           "--max-redirs", "0", "--max-time", "30", "--connect-timeout", "10",
+                           "--max-filesize", str(max_bytes), "--user-agent", USER_AGENT, "--header", accept,
+                           "--output", str(body_path), "--write-out", "%{http_code}\n%{content_type}\n%{redirect_url}", target]
             result = subprocess.run(command, capture_output=True, text=True)
             if result.returncode and result.returncode != 22:
                 detail = "response exceeded per-page byte limit" if result.returncode == 63 else (result.stderr.strip() or f"curl exit {result.returncode}")

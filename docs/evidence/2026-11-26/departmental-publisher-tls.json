@@ -1,0 +1,149 @@
+{
+  "recordedDateToronto": "2026-11-26",
+  "previousScheduledRefresh": "institution-coverage-1795746703000",
+  "difference": "The Mac fetched these 14 issuer entries while the hosted editions report carried forward its verified originals.",
+  "intermediate": {
+    "name": "Entrust OV TLS Issuing RSA CA 2",
+    "issuer": "Sectigo Public Server Authentication Root R46",
+    "publisherLeafAuthorityInformationAccess": "http://crt.sectigo.com/EntrustOVTLSIssuingRSACA2.crt",
+    "derSha256": "1f927f37470306afc3018ab049e6be1d3c0a3a45ca207f64f532512ba969eb94",
+    "notAfter": "2027-12-10T23:59:59Z"
+  },
+  "exactLinuxImage": "sha256:c66be9a807135a9a2845e40a09d19bc26e118ea4bc490253eb8df1d2dd2d1b1d",
+  "acquisition": [
+    {
+      "family": "departmental-plans",
+      "language": "en",
+      "url": "https://housing-infrastructure.canada.ca/pub/index-eng.html#dp",
+      "finalUrl": "https://housing-infrastructure.canada.ca/pub/index-eng.html#dp",
+      "bytes": 35580,
+      "sha256": "e3e0419052181a1b484ebd8c062e4cd7f5c7314a07837da281b54e0a881a41ba",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-plans",
+      "language": "en",
+      "url": "https://www.clo-ocol.gc.ca/en/transparency/departmental-plans",
+      "finalUrl": "https://www.clo-ocol.gc.ca/en/transparency/departmental-plans",
+      "bytes": 42518,
+      "sha256": "3487e824a36f2a32cdf54cc847b09c624e95f0f98bc5d672ddb96ec8425e8b7a",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-plans",
+      "language": "en",
+      "url": "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-plans",
+      "finalUrl": "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-plans",
+      "bytes": 24359,
+      "sha256": "cd7906dbedb3a6e4cffa9c63dc9c980142a11d94a5f652d902f96ba45b6a84f6",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-plans",
+      "language": "fr",
+      "url": "https://logement-infrastructure.canada.ca/pub/index-fra.html#pm",
+      "finalUrl": "https://logement-infrastructure.canada.ca/pub/index-fra.html#pm",
+      "bytes": 39037,
+      "sha256": "3a3dc422e62722be5ef285a542a1cfac2dafa1015f5d5f6c8a055fa6f2715331",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-plans",
+      "language": "fr",
+      "url": "https://www.clo-ocol.gc.ca/fr/transparence/plans-ministeriels",
+      "finalUrl": "https://www.clo-ocol.gc.ca/fr/transparence/plans-ministeriels",
+      "bytes": 42436,
+      "sha256": "6f373558bcae0d382538fdd44dab40c2a6e75b54867e0cb1c9fa0cb3de5ec1ad",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-plans",
+      "language": "fr",
+      "url": "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/plans-minist%C3%A9riels",
+      "finalUrl": "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/plans-minist%C3%A9riels",
+      "bytes": 24487,
+      "sha256": "4b649fe6824dd6b8a4ddaed059a91210df421788f862fe4966a99735a590a6b3",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-results",
+      "language": "en",
+      "url": "https://housing-infrastructure.canada.ca/pub/index-eng.html",
+      "finalUrl": "https://housing-infrastructure.canada.ca/pub/index-eng.html",
+      "bytes": 35580,
+      "sha256": "e3e0419052181a1b484ebd8c062e4cd7f5c7314a07837da281b54e0a881a41ba",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-results",
+      "language": "en",
+      "url": "https://www.clo-ocol.gc.ca/en/transparency/departmental-results-reports",
+      "finalUrl": "https://www.clo-ocol.gc.ca/en/transparency/departmental-results-reports",
+      "bytes": 48394,
+      "sha256": "1b7eaf6a641e361ad30d684bd57fd6eb209c6c99676e9f162a535f318c2b9855",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-results",
+      "language": "en",
+      "url": "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-performance-reports",
+      "finalUrl": "https://www.crcc-ccetp.gc.ca/en/commission/corporate-reports/departmental-performance-reports",
+      "bytes": 24663,
+      "sha256": "6de4b0caa66f5efff9240ec4928cadfd460609862328adbd75bf4a18233647e3",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-results",
+      "language": "fr",
+      "url": "https://logement-infrastructure.canada.ca/pub/index-fra.html",
+      "finalUrl": "https://logement-infrastructure.canada.ca/pub/index-fra.html",
+      "bytes": 39037,
+      "sha256": "3a3dc422e62722be5ef285a542a1cfac2dafa1015f5d5f6c8a055fa6f2715331",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-results",
+      "language": "fr",
+      "url": "https://www.clo-ocol.gc.ca/fr/transparence/rapports-sur-resultats-ministeriels",
+      "finalUrl": "https://www.clo-ocol.gc.ca/fr/transparence/rapports-sur-resultats-ministeriels",
+      "bytes": 53185,
+      "sha256": "d231c4ff651f603141a66c474fe92726f2a03eb15373066d0cdb3a92d0a7ec13",
+      "media": "text/html"
+    },
+    {
+      "family": "departmental-results",
+      "language": "fr",
+      "url": "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/rapports-resultats-ministeriels",
+      "finalUrl": "https://www.crcc-ccetp.gc.ca/fr/commission/rapports-organisationnels/rapports-resultats-ministeriels",
+      "bytes": 24968,
+      "sha256": "25c314e2ca1e194b909b4bab2150f2f90268682385ea60a6f203522ddf4ed553",
+      "media": "text/html"
+    },
+    {
+      "family": "regulatory-plans",
+      "language": "en",
+      "url": "https://www.crcc-ccetp.gc.ca/en/transparency",
+      "finalUrl": "https://www.crcc-ccetp.gc.ca/en/transparency",
+      "bytes": 26539,
+      "sha256": "de8361f30986c13be582bcc5fc91de5d57ea0ed0a61212b7ca3bae6f840d72fe",
+      "media": "text/html"
+    },
+    {
+      "family": "regulatory-plans",
+      "language": "fr",
+      "url": "https://www.crcc-ccetp.gc.ca/fr/transparence",
+      "finalUrl": "https://www.crcc-ccetp.gc.ca/fr/transparence",
+      "bytes": 26898,
+      "sha256": "f2ca42571af1f24281f9df41fa849019b81b8de20b112f9b3d8de1a328647831",
+      "media": "text/html"
+    }
+  ],
+  "negativeControls": {
+    "onlyIntermediateNoTrustedRoot": "Certificate verification refused the connection with exit 60 and no body.",
+    "bodyByteLimit": "The transfer ended with exit 63 at its configured 16-byte limit."
+  },
+  "stagingQualification": {
+    "targetUTC": "2026-11-27T04:13:00+00:00",
+    "scheduledRunVerified": false
+  }
+}

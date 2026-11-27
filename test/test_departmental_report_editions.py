@@ -16,6 +16,16 @@ SPEC.loader.exec_module(MODULE)
 
 
 class DepartmentalReportEditionsTests(unittest.TestCase):
+    def test_publisher_intermediate_helper_keeps_official_redirect_validation(self):
+        url = "https://www.clo-ocol.gc.ca/en/transparency/departmental-plans"
+        redirect = MODULE.subprocess.CompletedProcess([], 0, "302\ntext/html\nhttps://example.org/report", "")
+        with mock.patch.object(MODULE.os.path, "isfile", return_value=True), \
+             mock.patch.object(MODULE.subprocess, "run", return_value=redirect) as fetch:
+            with self.assertRaisesRegex(MODULE.FetchError, "redirect is outside official HTTPS"):
+                MODULE.fetch_page(url)
+        fetch.assert_called_once()
+        self.assertEqual(fetch.call_args.args[0][:2], [MODULE.PUBLISHER_HTTPS, url])
+
     def test_fetch_retries_one_transient_reset_but_does_not_retry_publisher_responses(self):
         class Response:
             status = 200
