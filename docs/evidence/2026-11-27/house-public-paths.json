@@ -1,0 +1,167 @@
+{
+  "source": "One-time private Cloudflare Workflow using the live collector’s public crawler identification.",
+  "scheduledHouseFailure": {
+    "instanceId": "house-calls-1795792526000",
+    "combinedInstanceId": "daily-refresh-1795792526000",
+    "scheduledAt": "2026-11-27T15:15:26.000Z",
+    "url": "https://www.ourcommons.ca/Committees/en/Participate",
+    "httpStatus": 403,
+    "combinedReportStatus": "degraded",
+    "houseVerificationBasis": "last-good",
+    "servingChecksPassed": 9
+  },
+  "initialProbe": {
+    "startedAt": "2026-11-27T20:36:16.790Z",
+    "finishedAt": "2026-11-27T20:36:18.176Z",
+    "responses": [
+      {
+        "label": "participate-en",
+        "url": "https://www.ourcommons.ca/Committees/en/Participate",
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "participate-fr",
+        "url": "https://www.ourcommons.ca/Committees/fr/Participate",
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "work-en",
+        "url": "https://www.ourcommons.ca/Committees/en/Work",
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "work-fr",
+        "url": "https://www.ourcommons.ca/Committees/fr/Work",
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "current-study",
+        "url": "https://www.ourcommons.ca/committees/en/CHPC/StudyActivity?studyActivityId=13668976",
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "news-release",
+        "url": "https://www.ourcommons.ca/DocumentViewer/en/45-1/HUMA/news-release/14079052",
+        "location": null,
+        "title": "Committee News Release - May 7, 2026 - HUMA (45-1) - House of Commons of Canada",
+        "hasStudyLinks": true,
+        "hasSubmissionText": true,
+        "hasDeadline": true,
+        "hasHouseError": false
+      },
+      {
+        "label": "meeting-evidence",
+        "url": "https://www.ourcommons.ca/DocumentViewer/en/45-1/HUMA/meeting-30/evidence",
+        "location": null,
+        "title": "Evidence - HUMA (45-1) - No. 30 - House of Commons of Canada",
+        "hasStudyLinks": false,
+        "hasSubmissionText": true,
+        "hasDeadline": false,
+        "hasHouseError": false
+      },
+      {
+        "label": "open-data",
+        "url": "https://www.ourcommons.ca/en/open-data",
+        "location": null,
+        "title": "Open Data - House of Commons of Canada",
+        "hasStudyLinks": false,
+        "hasSubmissionText": true,
+        "hasDeadline": true,
+        "hasHouseError": false
+      }
+    ]
+  },
+  "confirmedHttpStatuses": {
+    "startedAt": "2026-11-27T20:37:11.034Z",
+    "finishedAt": "2026-11-27T20:37:11.573Z",
+    "responses": [
+      {
+        "label": "work-en",
+        "url": "https://www.ourcommons.ca/Committees/en/Work",
+        "httpStatus": 403,
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "work-fr",
+        "url": "https://www.ourcommons.ca/Committees/fr/Work",
+        "httpStatus": 403,
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "release-index-en",
+        "url": "https://www.ourcommons.ca/committees/en/HUMA/NewsReleases",
+        "httpStatus": 403,
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "release-index-fr",
+        "url": "https://www.ourcommons.ca/committees/fr/HUMA/NewsReleases",
+        "httpStatus": 403,
+        "location": null,
+        "title": "System error - Erreur de système",
+        "hasStudyLinks": false,
+        "hasSubmissionText": false,
+        "hasDeadline": false,
+        "hasHouseError": true
+      },
+      {
+        "label": "independent-news-check",
+        "url": "https://www.ourcommons.ca/DocumentViewer/en/45-1/HUMA/news-release/14079052",
+        "httpStatus": 200,
+        "location": null,
+        "title": "Committee News Release - May 7, 2026 - HUMA (45-1) - House of Commons of Canada",
+        "hasStudyLinks": true,
+        "hasSubmissionText": true,
+        "hasDeadline": true,
+        "hasHouseError": false
+      }
+    ]
+  },
+  "currentLocalCoverage": {
+    "observedAt": "2026-11-27T11:15:41.053254Z",
+    "bilingualStudyPagesChecked": 30,
+    "studyPagesWithLinkedRelease": 5,
+    "method": "Counted study-page links to House news-release documents in the saved publisher HTML."
+  },
+  "temporaryCloudflareResourcesRemoved": true
+}
