@@ -35,10 +35,32 @@ class DailyCalendarEvidenceTests(unittest.TestCase):
             self.assertEqual(verify()["report"]["file"], path.name)
             report["workerVerification"]["passedTests"] = 3
             path.write_text(json.dumps(report))
-            with self.assertRaisesRegex(ValueError, "four authenticated"):
+            with self.assertRaisesRegex(ValueError, "4 authenticated"):
                 verify()
             report["workerVerification"]["passedTests"] = 4
             after["lastFullStartedAt"] = report["startedAt"] = "2026-11-25T11:02:00Z"
             path.write_text(json.dumps(report))
             with self.assertRaisesRegex(ValueError, "scheduled minute"):
                 verify()
+
+    def test_accepts_the_house_only_schedule_with_one_authenticated_check(self):
+        with tempfile.TemporaryDirectory() as directory:
+            reports = Path(directory)
+            path = reports / "2026-11-26T11-15-00-000Z.json"
+            log = reports / "agent.log"
+            report = {
+                "scope": "partial", "ok": True, "startedAt": "2026-11-26T11:15:00Z",
+                "finishedAt": "2026-11-26T11:15:29Z", "durationMs": 29000,
+                "workerVerification": {"ok": True, "passedTests": 1},
+                "steps": [{"name": "committee-calls", "ok": True, "serving": {"database": "fixture.sqlite"}}],
+            }
+            path.write_text(json.dumps(report))
+            log.write_text(json.dumps({"ok": True, "report": str(path)}) + "\n")
+            before = {"label": calendar.LABEL, "calendar": {"Hour": 6, "Minute": 15}, "logInode": 12,
+                      "observedAt": "2026-11-26T11:00:00Z", "logBytes": 0, "lastStartedAt": None,
+                      "steps": ["committee-calls"], "status": {"state": "not running", "runs": "0"}}
+            after = {**before, "observedAt": "2026-11-26T11:16:00Z", "logBytes": log.stat().st_size,
+                     "lastStartedAt": report["startedAt"],
+                     "status": {"state": "not running", "runs": "1", "last exit code": "0"}}
+            verified = calendar.verify(before, after, log, date(2026, 11, 26), reports)
+            self.assertEqual(verified["workerVerification"]["passedTests"], 1)

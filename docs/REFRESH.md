@@ -136,11 +136,10 @@ The Workflow writes the receipt after every case passes. It records each request
 
 ## Daily Mac fallback
 
-The installed 06:15 Toronto LaunchAgent runs consultations and House committee calls. The combined Cloudflare calendar owns scheduled NSERC and ESDC funding. Both funding publications passed the November 26 native run and authenticated bilingual readback. [Funding cutover evidence](evidence/2026-11-26/funding-mac-cutover.json)
+The installed 06:15 Toronto LaunchAgent runs House committee calls. The combined Cloudflare calendar owns scheduled consultations, NSERC and ESDC funding. Both funding publications passed native authenticated bilingual readback. The weekly notices workflow consumes the hosted consultations catalogue. [Funding cutover evidence](evidence/2026-11-26/funding-mac-cutover.json) · [Consultation notices cutover](evidence/2026-11-26/consultation-notices-cloudflare.json)
 
 | Collection | Command | Measured (2026-11-24) |
 | --- | --- | --- |
-| Federal consultations | `bun run refresh:consultations` | ~5 s, 6.8 MB catalogue + schema |
 | House committee calls | `bun run refresh:committee-calls` | ~30 s, 30 study pages + 8 Senate pages |
 
 After an interrupted local ESDC capture, run `python3 -B scripts/funding-esdc.py --output data/corpus/funding/esdc.json --resume` before the next regular capture. This resumes that observation, verifies archived pages, and reuses confirmed missing detail pages. A fresh invocation begins a new observation and checks the publisher again. The full-size recovery test withheld one page, then recovered it while preserving the 196 editions and 56 reported gaps. [Checkpoint evidence](evidence/2026-11-25/esdc-checkpoint.json)
@@ -162,7 +161,7 @@ bun run refresh:daily --only consultations --report dist/refresh/one.json
 
 Every invocation writes a dated report in `dist/refresh/`. The installed schedule and manual selective retries update `latest-partial.json`. Use `latest-full.json` for the most recent attempt covering all three intakes and `latest-successful-full.json` for the last successful full run. The existing `latest.json` follows the latest invocation of either scope. For older reports, check the step names and whether serving verification was recorded.
 
-The daily run checks consultations and any manually selected funding against their local catalogue databases. It publishes House calls into the dedicated committee D1 database and checks the served editions against the intake. After all selected steps pass, the runner records their authenticated Worker checks in `workerVerification` before writing the report. The installed schedule runs two checks and a full manual run uses four. Use the dated report to look up an edition in the same database served by the Worker.
+The daily runner checks manually selected consultations and funding against their local catalogue databases. It publishes House calls into the dedicated committee D1 database and checks the served editions against the intake. After all selected steps pass, it records their authenticated Worker checks in `workerVerification` before writing the report. The installed schedule runs one check and a full manual run uses four. Use the dated report to look up an edition in the same database served by the Worker.
 
 To verify the current consultation observation through authenticated Worker requests, point the endpoint test at the matching database and intake receipt. It checks both languages against the archived publisher files and verifies the usage charged for the requests.
 
@@ -356,11 +355,15 @@ The November 26 Parliament qualification completed in 4 minutes 27 seconds. Inde
 
 The November 26 statutes export qualification checked the current Justice Canada head, cloned it, and rebuilt all six files in 2 minutes 48 seconds. The file hashes matched the verified prior generation. Independent readback checked all 10 R2 chunks and all six file hashes. The Mac's `statutes-local` step has retired. [Qualification evidence](evidence/2026-11-26/statutes-export-cloudflare.json)
 
+The November 26 consultation notices qualification published 144 current language editions, including 98 with verified original notices. All nine acquisition failures matched known publisher gaps and the prior verified open editions remained available. The authenticated Worker check and independent R2 restore passed. The Mac's daily consultations and weekly notices steps have retired. [Qualification evidence](evidence/2026-11-26/consultation-notices-cloudflare.json)
+
 ## Offline committee replay on Cloudflare
 
 The private `civicsignal-stage-committee-replay` Workflow rebuilds the 45-1 SQLite preview from the pinned originals in R2. Run `python3 -B scripts/bootstrap-committee-replay.py` once to upload the sealed catalogue, original objects and acquisition database. Install the returned reference at `weekly/committee-replay/bootstrap.json`. The preview build replays the original publication dates, preserves the retained source archive, and verifies the resulting authenticated API routes before archiving the separate serving manifest.
 
 Start the replay with `wrangler workflows trigger civicsignal-stage-committee-replay '{"scheduledTime":<epoch-ms>}' --id committee-replay-<epoch-ms> --config services/committee-replay/wrangler.jsonc`, substituting one new millisecond timestamp in both places. Read the dated R2 occurrence receipt and its report. The report's `servingState` pins the separate verified preview archive. The standing full committee schedule will need fresh official House and Senate inputs and a shadow D1 generation that also verifies the newer daily House calls overlay.
+
+For a preview at the same verified weekly cutoff, the existing `materialize-committee-corpus.py --calls-only` operator reapplies the retained daily overlay and preserves its original observation timestamps. The replay verified all 30 editions, 60 links, and 40 publisher originals. Applying it twice produced zero additional writes. A different weekly cutoff requires validation of the carried-forward bilingual study links and a separate receipt linking the original daily observation to the new D1 generation. [Overlay replay evidence](evidence/2026-11-26/committee-offline-replay.json)
 
 ## Weekly local refresh
 
@@ -385,7 +388,6 @@ Installation registers the job. It runs while the user is logged in. Removal unl
 | Departmental report directories and editions | Refreshes the federal plans and results directories, Treasury Board’s plan cycles, and both editions of the government-wide list of institutional regulatory pages. The separate `departmental-report-editions` step archives issuer landing pages, records year-labelled plan and result links, and tracks discovery links from regulators. Its current report retains the last verified content and the latest attempt for each issuer. |
 | Departmental report documents | Verifies the year, language and type of directly linked report PDFs. |
 | Institutional regulatory plans | Follows forward-plan links from the government-wide directory to issuer pages, verifies the target, and records the original, named initiatives and stated plan cycles. |
-| Consultation participation | Resolves linked notices for the current catalogue revision and retains source bytes, participation instructions and explicit gaps. |
 | ECCC audits and evaluations | Captures the four index pages and referenced documents, then builds a separate passage database and checks the authenticated local API. Read `GET /api/departmental-publications/openapi.json`. Enable the preview with `DEPARTMENTAL_PUBLICATIONS_PREVIEW=on` and bind the completed `data/corpus/eccc/serving.sqlite` to `DEPARTMENTAL_PUBLICATIONS_DB` in the local Worker harness. PDF text extraction uses `pdftotext`. |
 | GEDS and written questions | Runs their acquisition and publication commands against the local stores, then checks the corresponding Worker routes. An unchanged GEDS ZIP can replay even when the host lacks space to construct a new snapshot. |
 | Committee corpus | Refreshes Senate meeting notices before extracting their publication links. The downloader checks the digest and timestamp of each parsed notice and fetches the other linked originals. The operator then builds the corpus, verifies its archived files, publishes to local D1, and tests bilingual retrieval. |

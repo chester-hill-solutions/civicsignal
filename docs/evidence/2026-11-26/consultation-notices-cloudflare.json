@@ -1,0 +1,284 @@
+{
+  "instanceId": "consultation-notices-1795746480000",
+  "scheduledTime": 1795746480000,
+  "start": "2026-11-27T02:28:04.060Z",
+  "end": "2026-11-27T02:29:10.166Z",
+  "trigger": {
+    "source": "binding"
+  },
+  "workflowVersion": "4dc97323-a040-4c52-83dd-e0ef66b09f29",
+  "receiptKey": "weekly/consultation-notices/runs/consultation-notices-1795746480000.json",
+  "receiptSha256": "b90f41e3b93df6844685059cdf6275767e8ee5d7c73dc336245661030214088d",
+  "status": "complete",
+  "reportRef": {
+    "key": "weekly/consultation-notices/reports/2c923cb47e9f54f5d658bc58c4261ffc98d2b31ce591019625a6f311c5bf0a66.json",
+    "sha256": "2c923cb47e9f54f5d658bc58c4261ffc98d2b31ce591019625a6f311c5bf0a66",
+    "bytes": 6446
+  },
+  "stateRef": {
+    "key": "weekly/consultation-notices/manifests/864be627b265f57f6ec4a1523ccdc589da3c2fabc047da4650b0612dceb19ad2.json",
+    "sha256": "864be627b265f57f6ec4a1523ccdc589da3c2fabc047da4650b0612dceb19ad2",
+    "bytes": 356
+  },
+  "report": {
+    "baseline": {
+      "catalogueObservedAt": "2026-11-26T15:15:26.953Z",
+      "catalogueRevision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea",
+      "knownGaps": [
+        {
+          "consultationId": "crtc_C-000072",
+          "httpStatus": 403,
+          "language": "en",
+          "outcome": "http-error",
+          "sourceUrl": "https://crtc.gc.ca/eng/consultation/indg-atch.htm"
+        },
+        {
+          "consultationId": "crtc_C-000072",
+          "httpStatus": 403,
+          "language": "fr",
+          "outcome": "http-error",
+          "sourceUrl": "https://crtc.gc.ca/fra/consultation/atch-indg.htm"
+        },
+        {
+          "consultationId": "cta-otc_cta-otc-2026-3",
+          "httpStatus": null,
+          "language": "en",
+          "outcome": "fetch-error",
+          "sourceUrl": "https://otc-cta.gc.ca/eng/cpkc-vancouver-logistics-park-consultation"
+        },
+        {
+          "consultationId": "cta-otc_cta-otc-2026-3",
+          "httpStatus": null,
+          "language": "fr",
+          "outcome": "fetch-error",
+          "sourceUrl": "https://otc-cta.gc.ca/fra/cpkc-vancouver-logistics-park-consultation"
+        },
+        {
+          "consultationId": "nrcan-rncan_C-0000173",
+          "httpStatus": 202,
+          "language": "en",
+          "outcome": "http-error",
+          "sourceUrl": "https://natural-resources.canada.ca/climate-change/canada-changing-climate/canada-changing-climate-national-assessment-process"
+        },
+        {
+          "consultationId": "nrcan-rncan_C-0000209",
+          "httpStatus": 202,
+          "language": "en",
+          "outcome": "http-error",
+          "sourceUrl": "https://natural-resources.canada.ca/energy-sources/renewable-energy/offshore-renewable-energy-regulations-initiative"
+        },
+        {
+          "consultationId": "nrcan-rncan_C-0000209",
+          "httpStatus": 202,
+          "language": "fr",
+          "outcome": "http-error",
+          "sourceUrl": "https://ressources-naturelles.canada.ca/source-energie/energies-renouvelables/initiative-reglement-energie-renouvelable-extracotiere"
+        },
+        {
+          "consultationId": "nrcan-rncan_C-0000743",
+          "httpStatus": 202,
+          "language": "en",
+          "outcome": "http-error",
+          "sourceUrl": "https://natural-resources.canada.ca/corporate/transparency/public-consultations-engagements/strengthening-canada-s-energy-natural-resources"
+        },
+        {
+          "consultationId": "nrcan-rncan_C-0000743",
+          "httpStatus": 202,
+          "language": "fr",
+          "outcome": "http-error",
+          "sourceUrl": "https://ressources-naturelles.canada.ca/organisation/transparence/consultations-seances-engagement-publiques/renforcer-energie-ressources-naturelles-canada"
+        }
+      ],
+      "receiptSha256": "f1723417b95b651160b084b21e37c724de0b4fbcc82c9f0b7ef57ca50b420b42",
+      "verifiedEditions": 98
+    },
+    "catalogue": {
+      "csvSha256": "8076d01eb4c36cba6b7212d90287687cf89fe626265bb8a1a91cd952c0d3d3ca",
+      "observedAt": "2026-11-26T15:15:26.953Z",
+      "receipt": {
+        "bytes": 1285,
+        "key": "consultations/runs/consultations-1795706126953.json",
+        "sha256": "b41f9a9dfb3004b3eb0924e4168423543ee7b4118e33f77db4925af030179d78"
+      },
+      "revision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea",
+      "rows": 5210,
+      "schemaSha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da",
+      "sources": {
+        "csv": {
+          "archivedAs": "consultations/sources/8076d01eb4c36cba6b7212d90287687cf89fe626265bb8a1a91cd952c0d3d3ca.csv",
+          "bytes": 6799911,
+          "input": "https://open.canada.ca/static/consultations_open.csv",
+          "sha256": "8076d01eb4c36cba6b7212d90287687cf89fe626265bb8a1a91cd952c0d3d3ca"
+        },
+        "schema": {
+          "archivedAs": "consultations/sources/712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da.json",
+          "bytes": 42120,
+          "input": "https://open.canada.ca/data/recombinant-published-schema/consultations.json",
+          "sha256": "712cf342ed36f8349d71513bb963ada6adf32fb2210582cd331e122bcc5d10da"
+        }
+      }
+    },
+    "complete": true,
+    "failures": [
+      {
+        "consultationId": "crtc_C-000072",
+        "detail": "HTTP Error 403: Forbidden",
+        "httpStatus": 403,
+        "language": "en",
+        "outcome": "http-error",
+        "sourceUrl": "https://crtc.gc.ca/eng/consultation/indg-atch.htm"
+      },
+      {
+        "consultationId": "crtc_C-000072",
+        "detail": "HTTP Error 403: Forbidden",
+        "httpStatus": 403,
+        "language": "fr",
+        "outcome": "http-error",
+        "sourceUrl": "https://crtc.gc.ca/fra/consultation/atch-indg.htm"
+      },
+      {
+        "consultationId": "cta-otc_cta-otc-2026-3",
+        "detail": "<urlopen error [Errno 104] Connection reset by peer>",
+        "httpStatus": null,
+        "language": "en",
+        "outcome": "fetch-error",
+        "sourceUrl": "https://otc-cta.gc.ca/eng/cpkc-vancouver-logistics-park-consultation"
+      },
+      {
+        "consultationId": "cta-otc_cta-otc-2026-3",
+        "detail": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+        "httpStatus": null,
+        "language": "fr",
+        "outcome": "fetch-error",
+        "sourceUrl": "https://otc-cta.gc.ca/fra/cpkc-vancouver-logistics-park-consultation"
+      },
+      {
+        "consultationId": "nrcan-rncan_C-0000173",
+        "detail": "HTTP Error 202: publisher did not return a complete notice",
+        "httpStatus": 202,
+        "language": "en",
+        "outcome": "http-error",
+        "sourceUrl": "https://natural-resources.canada.ca/climate-change/canada-changing-climate/canada-changing-climate-national-assessment-process"
+      },
+      {
+        "consultationId": "nrcan-rncan_C-0000209",
+        "detail": "HTTP Error 202: publisher did not return a complete notice",
+        "httpStatus": 202,
+        "language": "en",
+        "outcome": "http-error",
+        "sourceUrl": "https://natural-resources.canada.ca/energy-sources/renewable-energy/offshore-renewable-energy-regulations-initiative"
+      },
+      {
+        "consultationId": "nrcan-rncan_C-0000209",
+        "detail": "HTTP Error 202: publisher did not return a complete notice",
+        "httpStatus": 202,
+        "language": "fr",
+        "outcome": "http-error",
+        "sourceUrl": "https://ressources-naturelles.canada.ca/source-energie/energies-renouvelables/initiative-reglement-energie-renouvelable-extracotiere"
+      },
+      {
+        "consultationId": "nrcan-rncan_C-0000743",
+        "detail": "HTTP Error 202: publisher did not return a complete notice",
+        "httpStatus": 202,
+        "language": "en",
+        "outcome": "http-error",
+        "sourceUrl": "https://natural-resources.canada.ca/corporate/transparency/public-consultations-engagements/strengthening-canada-s-energy-natural-resources"
+      },
+      {
+        "consultationId": "nrcan-rncan_C-0000743",
+        "detail": "HTTP Error 202: publisher did not return a complete notice",
+        "httpStatus": 202,
+        "language": "fr",
+        "outcome": "http-error",
+        "sourceUrl": "https://ressources-naturelles.canada.ca/organisation/transparence/consultations-seances-engagement-publiques/renforcer-energie-ressources-naturelles-canada"
+      }
+    ],
+    "notices": {
+      "attemptedFetches": 105,
+      "catalogueObservedAt": "2026-11-26T15:15:26.953Z",
+      "catalogueRevision": "ae1756cf1d5ec0b4bfc78f94791facb3055a1b74fb9a6f239631ec003d2695ea",
+      "counts": {
+        "fetch-error": 2,
+        "fetched": 96,
+        "fetched-reused-url": 4,
+        "http-error": 7,
+        "missing-link": 28,
+        "published-editions": 98,
+        "unrecognized-url": 9
+      },
+      "diskFreeBytesAtStart": 10926977024,
+      "editions": 144,
+      "openConsultations": 72,
+      "publishedArchivedSources": 100,
+      "publishedFetchedEditions": 98,
+      "rawBytesArchived": 7732336,
+      "scope": "all-open",
+      "selectedConsultationIds": null
+    },
+    "novelFailures": [],
+    "publisherCoverage": "degraded",
+    "regressedEditions": [],
+    "servingTestsPassed": 1,
+    "verifiedOriginals": 164
+  },
+  "readback": {
+    "verifiedDatabases": 1,
+    "publisherOriginals": 164,
+    "states": {
+      "fetch-error": 2,
+      "fetched": 98,
+      "http-error": 7,
+      "missing-link": 28,
+      "unrecognized-url": 9
+    },
+    "formerlyVerifiedStillOpenWithLostCoverage": []
+  },
+  "archiveReadback": {
+    "chunks": 1,
+    "compressedBytes": 16475522,
+    "aggregateSha256": "fdf665d1a1c94ffb4096d72b5fd631808bebf54e83548e4198130f5d5ba50850"
+  },
+  "schemaVersion": 1,
+  "scope": "private Cloudflare weekly consultation notices and Mac schedule cutover",
+  "calendar": {
+    "worker": "civicsignal-stage-consultation-notices",
+    "standingCron": "0 17 * * SAT",
+    "independentReadback": [
+      "0 17 * * SAT"
+    ]
+  },
+  "priorSmoke": {
+    "instanceId": "consultation-notices-1795745601843",
+    "receiptSha256": "a22bc8269339091d48aeba8c11b97e84f601a3092d6df8afa62af3ad86ccf120",
+    "state": {
+      "key": "weekly/consultation-notices/manifests/835e2c2735bc349ed03ab7f343d27b7dd3c5d440776fcb34f69a20a3db6b6eb5.json",
+      "sha256": "835e2c2735bc349ed03ab7f343d27b7dd3c5d440776fcb34f69a20a3db6b6eb5",
+      "bytes": 356
+    }
+  },
+  "initialHostedFailure": {
+    "instanceId": "consultation-notices-1795744080000",
+    "receiptSha256": "3f3c6da464a5c8c1669761499be52624f7dcf6f7b0d325daf6f159386b4e5a95",
+    "reason": "No module named 'lib.html_tree'"
+  },
+  "macCutover": {
+    "jobsStayedIdleBeforeRetirement": true,
+    "localReportsMatchedPreRunHashes": true,
+    "weeklyStepsBefore": 9,
+    "weeklyStepsAfter": 8,
+    "retired": [
+      "weekly:consultation-notices",
+      "daily:consultations"
+    ],
+    "previousPlistSha256": "82bf40239af3b918d3acc68344e8f76e4b23a5f8de9608cf62835850908b5028",
+    "installedPlistSha256": "b13884c92be5329c838f96e68d70c0d1d7ea938f117a541a0c0030d0729ab9c8",
+    "installedArguments": [
+      "--only",
+      "committee-calls"
+    ],
+    "remainingDailySteps": [
+      "committee-calls"
+    ],
+    "remainingHouseAuthenticatedTestAgainstRetainedDataSha256": "8b79bcd8587516cc0f7decdae44c4f32e68d31933358996d0c20e634ed636f5c"
+  }
+}

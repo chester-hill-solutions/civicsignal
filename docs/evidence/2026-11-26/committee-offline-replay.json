@@ -85,5 +85,268 @@
     "Hosted Linux replay qualification",
     "Fresh House acquisition after HTTP 403",
     "Carry forward daily House discoveries to the subsequent hosted D1 generation"
-  ]
+  ],
+  "dailyOverlayReplay": {
+    "schemaVersion": 1,
+    "scope": "local-offline-committee-overlay-carry-forward",
+    "verifiedAt": "2026-11-27T02:21:13.333727+00:00",
+    "session": "45-1",
+    "receipt": {
+      "path": "dist/refresh/receipts/committee-calls.json",
+      "sha256": "b421b93bf7ef03fac98336531f0ee836aadc68b0928a1bb526828f05dc1efef8",
+      "asObservedAt": "2026-11-25T11:15:39Z",
+      "sourceObjectsVerified": 40,
+      "editions": 30,
+      "pending": 2,
+      "missingStudies": 0
+    },
+    "weeklyCutoffBefore": "2026-11-25T08:33:25+00:00",
+    "weeklyCutoffAfter": "2026-11-25T08:33:25+00:00",
+    "linksBefore": 89235,
+    "linksAfter": 89295,
+    "addedLinksByRelation": {
+      "study-call": 30,
+      "publishes": 30
+    },
+    "exactDailyLinkSet": true,
+    "exactDailyCallRecords": true,
+    "preservedDailyObservationTimestamps": {
+      "2026-11-25T11:15:39Z": 30
+    },
+    "passages": 1769377,
+    "ftsMatches": 8066,
+    "historicalPublicationPartsRestored": 18,
+    "firstApply": {
+      "binding": "COMMITTEE_DB",
+      "databaseId": "2e6f6b5d-bddd-4ae9-b879-92114cc37799",
+      "session": "45-1",
+      "calls": 30,
+      "rowsWritten": 30,
+      "linksAdded": 60,
+      "linksRemoved": 0,
+      "studyTitlesRepaired": 0
+    },
+    "secondApply": {
+      "binding": "COMMITTEE_DB",
+      "databaseId": "2e6f6b5d-bddd-4ae9-b879-92114cc37799",
+      "session": "45-1",
+      "calls": 30,
+      "rowsWritten": 0,
+      "linksAdded": 0,
+      "linksRemoved": 0,
+      "studyTitlesRepaired": 0
+    },
+    "localCallHttpChecks": {
+      "observedAt": "2026-11-25T11:15:39.000Z",
+      "listedEditions": 30,
+      "droppedEditions": 0
+    },
+    "authenticatedCommitteeEndpointTestsPassed": 2,
+    "verifiedCommand": "python3 -B scripts/materialize-committee-corpus.py --source $FROZEN_DAILY_SOURCE --persist-to $ISOLATED_REBUILT_STATE --calls-only --timeout-seconds 30",
+    "refusalOnDifferentWeeklyCutoff": "committee materialization failed: call overlay requires matching source and local D1 base cutoffs"
+  },
+  "hostedReplay": {
+    "instanceId": "committee-replay-1795745980260",
+    "scheduledTime": 1795745980260,
+    "start": "2026-11-27T02:19:44.936Z",
+    "end": "2026-11-27T02:29:33.971Z",
+    "trigger": {
+      "source": "api"
+    },
+    "workflowVersion": "28fbf2eb-3112-4221-acb5-c37804ba8523",
+    "receiptKey": "weekly/committee-replay/runs/committee-replay-1795745980260.json",
+    "receiptSha256": "c3df46792c1df79e77fb8a28455b5781c448413e8cc3822dd0ea0a2ac624e36c",
+    "status": "complete",
+    "reportRef": {
+      "key": "weekly/committee-replay/reports/ae3ba833cdbc5a90667b0691ebb245577c3dbed4563e3af8d577655a843b77fe.json",
+      "sha256": "ae3ba833cdbc5a90667b0691ebb245577c3dbed4563e3af8d577655a843b77fe",
+      "bytes": 6390
+    },
+    "stateRef": {
+      "key": "weekly/committee-replay/manifests/7955518a904e26fc3e973dedb4c5a8b49638a65f8ecc32443ffa2b058f6fbe58.json",
+      "sha256": "7955518a904e26fc3e973dedb4c5a8b49638a65f8ecc32443ffa2b058f6fbe58",
+      "bytes": 90899
+    },
+    "report": {
+      "baseline": {
+        "cc_changes": 156157,
+        "cc_link_changes": 47004,
+        "cc_links": 89295,
+        "cc_passages": 1769377,
+        "cutoff": "2026-11-25T08:33:25+00:00",
+        "recordsByLanguage": {
+          "en": 17047,
+          "fr": 17047
+        },
+        "session": "45-1"
+      },
+      "complete": true,
+      "freeBeforeMaterialization": 9603952640,
+      "freeBeforeRestore": 18637488128,
+      "input": {
+        "bytes": 8913724900,
+        "files": 65251
+      },
+      "materialization": {
+        "cutoff": "2026-11-25T08:33:25+00:00",
+        "ftsProbe": {
+          "hits": 8066,
+          "term": "Honourable"
+        },
+        "materialized": true,
+        "originalObjectBytesCopied": 0,
+        "session": "45-1",
+        "sourceEquivalent": true,
+        "tables": {
+          "cc_links": {
+            "count": 89235,
+            "sha256": "b8a5d0fc48212c1eabf09eb72e28cf51c4cc4ff3b1cb9d8d04e6871da967f5fb",
+            "textCharacters": 0
+          },
+          "cc_passages": {
+            "count": 1769377,
+            "sha256": "a47323a0de71aab863928f0ff3a9f86acd9013d12dec3f2eebac19400d44e327",
+            "textCharacters": 569320368
+          },
+          "cc_records": {
+            "count": 34094,
+            "sha256": "5e2d07354fcf41491bb9460ee5df6782264bc91e0b2148c31289e80012f76de5",
+            "textCharacters": 0
+          },
+          "cutoff": "2026-11-25T08:33:25+00:00"
+        },
+        "target": "isolated-local-d1"
+      },
+      "originalsVerified": 29546,
+      "phase": "complete",
+      "publicationParts": {
+        "pages": 10875,
+        "restored": [
+          {
+            "archivedSha256": "83df749df18db6dd7b745cbff384b627d12b49cf5a62c2dc36f138e3f0d8fe58",
+            "downloadIndexSha256": "1747618c536bb9bea3ee49deec36aadb6e4543fad07323b61a364bf744013b37",
+            "url": "https://www.ourcommons.ca/committees/en/FEWO/StudyActivity?studyActivityId=13612330"
+          },
+          {
+            "archivedSha256": "c6b6b5f19a6f21d40b789ddf41e631c4ef4c932de28d6d90d427006ea687a490",
+            "downloadIndexSha256": "0a5dbad1e0cbf07767062192824fc882f12328d07e3618d83fc31c7345d278d3",
+            "url": "https://www.ourcommons.ca/committees/en/FEWO/StudyActivity?studyActivityId=13634118"
+          },
+          {
+            "archivedSha256": "52b367752d610714f25a584a6aa48bda45d8600ec252f622ae951f66e491c002",
+            "downloadIndexSha256": "49ba1727508ece24cc91aa7c3b63f6020d19d0254da5ad0000f4463dd223ab3e",
+            "url": "https://www.ourcommons.ca/committees/en/HESA/StudyActivity?studyActivityId=13145156"
+          },
+          {
+            "archivedSha256": "79dab3d941fcecf98e24d81395259ee0d16e5c91baf8f51305ab89786c2c0baf",
+            "downloadIndexSha256": "12fac57f1aba941e9954b57ac4e6c3717a96d45c3197ad97fa6c55364e6747ad",
+            "url": "https://www.ourcommons.ca/committees/en/HESA/StudyActivity?studyActivityId=13632807"
+          },
+          {
+            "archivedSha256": "d2cf1f8c0a4049a68498d62a0cdcac5dfb8dfd622f409c53a110b956ed18776d",
+            "downloadIndexSha256": "c6ba5450adfbbf711dd1327c199182a5fb1d1a3559da8ac41dd1cb5929cd61e2",
+            "url": "https://www.ourcommons.ca/committees/en/HUMA/StudyActivity?studyActivityId=13604489"
+          },
+          {
+            "archivedSha256": "07701d60e08de0692a0ab5519143a0ce7f3ae9f3f80ae01ae2109e7a567f0e82",
+            "downloadIndexSha256": "828ec18b6ac658c6e635b1fd5a0ffa08b3c2750b86919a3d68a8bd44ee3429cb",
+            "url": "https://www.ourcommons.ca/committees/en/HUMA/StudyActivity?studyActivityId=13604490"
+          },
+          {
+            "archivedSha256": "eed22b20424731c9c2905b807e05ae774940009ae6b6d832e410864ecd8d86c7",
+            "downloadIndexSha256": "2551c1cdd5659124e952b220513042a323e719f9b659922a176ad3ac77e3a765",
+            "url": "https://www.ourcommons.ca/committees/en/HUMA/StudyActivity?studyActivityId=13666586"
+          },
+          {
+            "archivedSha256": "9942d4d261b7f0ebffc0ca6d9524818ad5ded1a010b263a79c04bfa666ca8f94",
+            "downloadIndexSha256": "8aed2e7a27b68c64375ae5ea36ad5f173b115d184a902b4128fad187c00ea9b0",
+            "url": "https://www.ourcommons.ca/committees/en/SRSR/StudyActivity?studyActivityId=13583486"
+          },
+          {
+            "archivedSha256": "424db77462e7eb0d06a02c8a7baa906dfb6e91b0f184bdea9efd7777272f6405",
+            "downloadIndexSha256": "33eb5fb4f660515821e0c2f2e36813f6210673813eae3920abd06f9085af597f",
+            "url": "https://www.ourcommons.ca/committees/en/SRSR/StudyActivity?studyActivityId=13631120"
+          },
+          {
+            "archivedSha256": "6fd9a3d12051539076dfbdbd2cce30f3a769755f9fbca40573fa7ad6d9556fa9",
+            "downloadIndexSha256": "716e4688947cf96611e1d30f116d8a8748dbcfc428ff4098633b65c13b3ab8f1",
+            "url": "https://www.ourcommons.ca/committees/en/SRSR/StudyActivity?studyActivityId=13688263"
+          },
+          {
+            "archivedSha256": "001b3c1815bf7a5f0e5a69268f38fcb30446239f183cf65c3a70c938ed82849e",
+            "downloadIndexSha256": "7bf03da3144d7450b23ee69c3ccf4393e5bcad81189b07b6813c64fe332fc250",
+            "url": "https://www.ourcommons.ca/committees/fr/FEWO/StudyActivity?studyActivityId=13634118"
+          },
+          {
+            "archivedSha256": "a970a847c887d7df397c203cb97e392ec18a03b8eb99c96c1528d6bf4449371a",
+            "downloadIndexSha256": "ebe9fcf3f6a56ffe94b5cc11bb55c1cb96eefdd31385296f9ef1bda377504c8a",
+            "url": "https://www.ourcommons.ca/committees/fr/HESA/StudyActivity?studyActivityId=13632808"
+          },
+          {
+            "archivedSha256": "3edaa42f0d2f21ceb5afc632c4a4858f46d408bf92a2f3b13e8ed8823532f86c",
+            "downloadIndexSha256": "f20cd26ac88632ddde1b227efbdfc5ecc5e0741e5eed4d45a78f3e588fe6077c",
+            "url": "https://www.ourcommons.ca/committees/fr/HUMA/StudyActivity?studyActivityId=13604489"
+          },
+          {
+            "archivedSha256": "6c69391043bab67dba27952e6168f079ec67e2bfb4d9fb5885ff915012a1bd0c",
+            "downloadIndexSha256": "4fc71306a29558988cbd8fd6b22988c6edc66394680e7f2825a36d9406c5b6e8",
+            "url": "https://www.ourcommons.ca/committees/fr/HUMA/StudyActivity?studyActivityId=13604490"
+          },
+          {
+            "archivedSha256": "a9428af0ba1bd2b723ed97497212f93a4c948578d18b92ff36df300fd7d85822",
+            "downloadIndexSha256": "c10a7108546c367222482c1d02c23c954d85f8a988a7c828918f3d55c25a900b",
+            "url": "https://www.ourcommons.ca/committees/fr/HUMA/StudyActivity?studyActivityId=13666586"
+          },
+          {
+            "archivedSha256": "3fcf7953929d06a6e81822c738a7b109af749abf5c4a12affbcddf38fbe88b00",
+            "downloadIndexSha256": "ac49c8b0d05232b3f2e2cf5660e902965984974d3e89be7a90d4acf982ba5e0f",
+            "url": "https://www.ourcommons.ca/committees/fr/SRSR/StudyActivity?studyActivityId=13583486"
+          },
+          {
+            "archivedSha256": "0307b43e93e0d566210e2f08668f17ccec5071b594dd439232c02bb51d09f490",
+            "downloadIndexSha256": "36e4d7c8eb286e83200a2f314fa0ec2f08f97c5f8e1a49ae2bde87689e1a22e9",
+            "url": "https://www.ourcommons.ca/committees/fr/SRSR/StudyActivity?studyActivityId=13631120"
+          },
+          {
+            "archivedSha256": "dcd723288e352c0fe5faf4fe6f274bc42436af50ada57986ec3583bbcd6af63b",
+            "downloadIndexSha256": "6808fa859ff14289ccc2fde6f2d5a3790509121b684b257203252651225d3890",
+            "url": "https://www.ourcommons.ca/committees/fr/SRSR/StudyActivity?studyActivityId=13688263"
+          }
+        ]
+      },
+      "rebuild": {
+        "cc_changes": 156187,
+        "cc_link_changes": 47064,
+        "cc_links": 89235,
+        "cc_passages": 1769377,
+        "cutoff": "2026-11-25T08:33:25+00:00",
+        "recordsByLanguage": {
+          "en": 17047,
+          "fr": 17047
+        },
+        "session": "45-1"
+      },
+      "scheduledTime": 1795745980260,
+      "scope": "offline-replay",
+      "servingBytes": 1388888064,
+      "servingState": {
+        "bytes": 6521,
+        "key": "weekly/committee-replay/manifests/043c52cde7c21ee13b5f09de85d4c72de6c7a54909a2581471e8be318fd8c41f.json",
+        "sha256": "043c52cde7c21ee13b5f09de85d4c72de6c7a54909a2581471e8be318fd8c41f"
+      },
+      "servingTestsPassed": 1
+    },
+    "readback": {
+      "cutoff": "2026-11-25T08:33:25+00:00",
+      "cc_records": 34094,
+      "cc_links": 89235,
+      "cc_passages": 1769377,
+      "verifiedDatabases": 1
+    },
+    "archiveReadback": {
+      "chunks": 32,
+      "compressedBytes": 525159303,
+      "aggregateSha256": "12b8836ba71162fb4bc6300788286c8a353f96b362831806316c03ed3f51e9ac"
+    }
+  }
 }

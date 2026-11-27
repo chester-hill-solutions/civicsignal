@@ -131,19 +131,6 @@ STEPS = (
         shared_committee_lock=True,
         artifacts=("data/corpus/committees/coverage.json", "data/corpus/committees/committee.sqlite", ".wrangler/committees-45-1"),
     ),
-    Step(
-        "consultation-notices",
-        (("python3", "-B", "scripts/consultation-notices.py", "refresh"),
-         Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "serves archived English and French participation instructions with exact source citations"),
-                 (("CIVICSIGNAL_CONSULTATIONS_SQLITE", "data/corpus/consultations/catalogue.sqlite"),
-                  ("CIVICSIGNAL_CONSULTATION_NOTICES_SQLITE", "data/corpus/consultations/notice-index.sqlite")), verification=True)),
-        2 * 60 * 60,
-        "Archive labelled participation sections from current open consultation notices.",
-        0,
-        baseline_paths=("data/corpus/consultations/notice-index.sqlite", "data/corpus/consultations/notice-objects"),
-        artifacts=("data/corpus/consultations/notice-receipts/latest.json", "data/corpus/consultations/notice-index.sqlite"),
-        verify_partial=True,
-    ),
     Step("federal-report-directories", (("python3", "-B", "scripts/federal-report-directories.py"),), 1800,
          "Refresh institution-linked departmental plan, results, and regulatory directories.",
          artifacts=("data/corpus/federal-report-directories/dist/receipt.json",)),
@@ -162,7 +149,7 @@ STEPS = (
 )
 
 RUN_ORDER = (
-    "consultation-notices", "eccc",
+    "eccc",
     "federal-report-directories", "departmental-report-editions",
     "departmental-report-documents", "federal-regulatory-plans",
     "geds", "written-questions", "committees",
@@ -393,10 +380,6 @@ def _run_commands(step: Step, result: dict) -> None:
                 if (outcome["exitCode"] == 2 and isinstance(step.commands[-1], tuple)
                         and step.commands[-1][-1] == "@receipt-run-id@"
                         and command == step.commands[0] and receipt.get("status") in {"pending", "partial"}):
-                    continue
-                fetched = receipt.get("publishedFetchedEditions")
-                if (step.name == "consultation-notices" and receipt.get("scope") == "all-open"
-                        and type(fetched) is int and fetched > 0):
                     continue
             break
 

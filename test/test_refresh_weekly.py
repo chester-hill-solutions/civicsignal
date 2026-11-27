@@ -24,13 +24,10 @@ class WeeklyRefreshTests(unittest.TestCase):
                    "gazette", "gazette-year", "ati-summaries", "grant-awards", "briefing-notes", "federal-procurement",
                    "federal-disclosures", "federal-discovery", "federal-guidance", "federal-publications",
                    "federal-publication-checklists", "federal-policy-editions", "departmental-report-html", "parliament",
-                   "statutes-local"}
+                   "statutes-local", "consultation-notices"}
         self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
         self.assertTrue(all(retired.isdisjoint(command) for command in commands))
-        self.assertEqual(weekly.RUN_ORDER[0], "consultation-notices")
-        notices = next(step for step in weekly.STEPS if step.name == "consultation-notices")
-        self.assertIn(("python3", "-B", "scripts/consultation-notices.py", "refresh"), notices.commands)
         committees = next(step for step in weekly.STEPS if step.name == "committees")
         self.assertTrue(committees.shared_committee_lock)
         self.assertIn(("python3", "-B", "scripts/committee-corpus.py"), committees.commands)
@@ -61,16 +58,6 @@ class WeeklyRefreshTests(unittest.TestCase):
             weekly._run_commands(step, result)
         self.assertEqual(len(result["commands"]), 1)
         self.assertEqual(result["error"], "command exited with status 7")
-
-    def test_partial_notice_fetch_can_verify_archived_editions_but_still_fails_the_source(self):
-        step = next(step for step in weekly.STEPS if step.name == "consultation-notices")
-        result = {"commands": []}
-        partial = {"ok": False, "exitCode": 1, "stdout": '{"scope":"all-open","publishedFetchedEditions":3}'}
-        verified = {"ok": True, "exitCode": 0, "verification": True}
-        with patch.object(weekly, "_run_command", side_effect=[partial, verified]):
-            weekly._run_commands(step, result)
-        self.assertEqual(result["commands"], [partial, verified])
-        self.assertIn("error", result)
 
     def test_departmental_batch_replays_its_partial_generation_and_stops_on_an_invalid_id(self):
         step = next(step for step in weekly.STEPS if step.name == "departmental-report-documents")

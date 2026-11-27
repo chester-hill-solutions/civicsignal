@@ -16,8 +16,11 @@ REPORTS = ROOT / "dist/refresh"
 LABEL = "com.civicsignal.refresh-daily"
 TORONTO = ZoneInfo("America/Toronto")
 FULL_STEPS = ["consultations", "committee-calls", "funding"]
-FALLBACK_STEPS = ["consultations", "committee-calls"]
-FALLBACK_ARGUMENTS = [argument for step in FALLBACK_STEPS for argument in ("--only", step)]
+SCHEDULES = {
+    (): FULL_STEPS,
+    ("--only", "consultations", "--only", "committee-calls"): ["consultations", "committee-calls"],
+    ("--only", "committee-calls"): ["committee-calls"],
+}
 
 
 def require(condition, message):
@@ -30,13 +33,12 @@ def observe():
         plist = plistlib.load(stream)
     calendar = plist["StartCalendarInterval"]
     program = plist["ProgramArguments"]
+    steps = SCHEDULES.get(tuple(program[2:]))
     require(calendar == {"Hour": 6, "Minute": 15} and plist["Label"] == LABEL
             and not plist.get("RunAtLoad") and Path(plist["WorkingDirectory"]) == ROOT
-            and program[1:2] == [str(ROOT / "scripts/refresh-daily.ts")]
-            and program[2:] in ([], FALLBACK_ARGUMENTS),
+            and program[1:2] == [str(ROOT / "scripts/refresh-daily.ts")] and steps is not None,
             "Installed job differs from the regular daily schedule or runner")
-    steps = FALLBACK_STEPS if program[2:] else FULL_STEPS
-    scope = "partial" if program[2:] else "full"
+    scope = "full" if steps == FULL_STEPS else "partial"
     status = subprocess.run(["launchctl", "print", f"gui/{os.getuid()}/{LABEL}"], check=True,
                             capture_output=True, text=True).stdout
     fields = dict(re.findall(r"^\t(state|runs|last exit code) = (.+)$", status, re.MULTILINE))
@@ -57,7 +59,7 @@ def verify(before, after, log, day, reports=REPORTS):
     require(before["label"] == after["label"] == LABEL and before["calendar"] == after["calendar"],
             "Schedule identity changed between observations")
     expected_steps = before.get("steps", FULL_STEPS)
-    require(expected_steps == after.get("steps", FULL_STEPS) and expected_steps in (FULL_STEPS, FALLBACK_STEPS),
+    require(expected_steps == after.get("steps", FULL_STEPS) and expected_steps in SCHEDULES.values(),
             "The scheduled steps changed between observations")
     scope = "full" if expected_steps == FULL_STEPS else "partial"
     prior_started = before.get("lastStartedAt", before.get("lastFullStartedAt"))
@@ -85,9 +87,9 @@ def verify(before, after, log, day, reports=REPORTS):
     require(0 <= (started - target).total_seconds() < 60 and started <= finished <= datetime.fromisoformat(after["observedAt"]),
             "Dated run did not start in the scheduled minute or finish within the observed interval")
     checks = report["workerVerification"]
-    expected_checks = 4 if scope == "full" else 2
+    expected_checks = len(expected_steps) + ("funding" in expected_steps)
     require(checks.get("ok") is True and checks.get("passedTests") == expected_checks,
-            f"Expected {'four' if scope == 'full' else 'two'} authenticated Worker checks")
+            f"Expected {expected_checks} authenticated Worker checks")
     steps = report["steps"]
     require([s["name"] for s in steps] == expected_steps
             and all(s.get("ok") is True and s.get("serving", {}).get("database") for s in steps),
