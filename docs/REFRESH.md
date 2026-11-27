@@ -367,6 +367,14 @@ Start the replay with `wrangler workflows trigger civicsignal-stage-committee-re
 
 For a preview at the same verified weekly cutoff, the existing `materialize-committee-corpus.py --calls-only` operator reapplies the retained daily overlay and preserves its original observation timestamps. The replay verified all 30 editions, 60 links, and 40 publisher originals. Applying it twice produced zero additional writes. A different weekly cutoff requires validation of the carried-forward bilingual study links and a separate receipt linking the original daily observation to the new D1 generation. [Overlay replay evidence](evidence/2026-11-26/committee-offline-replay.json)
 
+The private shadow operator verifies the same publisher receipt and requires the target preview to have a later weekly cutoff. It checks both language editions of every retained committee and study, then writes a separate SQLite output. The recorded test used the real earlier receipt and a controlled later cutoff. It preserved the original daily observation and restored all 60 links. [Shadow replay evidence](evidence/2026-11-26/committee-offline-replay.json)
+
+```sh
+python3 -B services/committee-replay/run.py carry-forward \
+  --retained "$FROZEN_ACQUISITION" --receipt "$RETAINED_RECEIPT" \
+  --originals "$ORIGINALS_ROOT" --base "$LATER_SHADOW_PREVIEW" --output "$NEW_SHADOW_SQLITE"
+```
+
 ## Weekly local refresh
 
 The weekly per-user LaunchAgent runs on Saturdays at 09:00 local time. The daily agent continues to run at 06:15. Both acquire the same kernel lock while publishing committees. A conflicting weekly or daily committee step exits with an error and can be retried independently. The other collections continue.

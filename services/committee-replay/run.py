@@ -171,4 +171,9 @@ def identity(request):
 
 
 if __name__ == "__main__":
-    serve(refresh, identity)
+    if sys.argv[1:2] == ["carry-forward"]:
+        from carry_forward import main
+
+        main(sys.argv[2:])
+    else:
+        serve(refresh, identity)

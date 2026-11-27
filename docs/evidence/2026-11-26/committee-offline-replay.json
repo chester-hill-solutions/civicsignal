@@ -348,5 +348,41 @@
       "compressedBytes": 525159303,
       "aggregateSha256": "12b8836ba71162fb4bc6300788286c8a353f96b362831806316c03ed3f51e9ac"
     }
+  },
+  "shadowCarryForwardControlledLaterCutoff": {
+    "schemaVersion": 1,
+    "scope": "private-local-sqlite-controlled-later-cutoff",
+    "verifiedAt": "2026-11-27T02:44:46.443904+00:00",
+    "fixture": "Actual retained House observation and actual rebuilt bilingual committee data with later cutoff assigned to scratch target before carry-forward. No fresh publisher acquisition.",
+    "output": {
+      "session": "45-1",
+      "retainedCutoff": "2026-11-25T08:33:25+00:00",
+      "cutoff": "2026-11-26T08:33:25+00:00",
+      "observedAt": "2026-11-25T11:15:39Z",
+      "receiptSha256": "b421b93bf7ef03fac98336531f0ee836aadc68b0928a1bb526828f05dc1efef8",
+      "originalsVerified": 40,
+      "calls": 30,
+      "links": 60,
+      "linksAdded": 60,
+      "linksRemoved": 0
+    },
+    "exactRetainedMetadata": true,
+    "exactRetainedLinkSet": true,
+    "inputSnapshotsPreserved": true,
+    "oldWeeklyStatusSupersededCount": 30,
+    "linksBefore": 89235,
+    "linksAfter": 89295,
+    "passages": 1769377,
+    "ftsHonourable": 8066,
+    "authenticatedHouseCallsTestsPassed": 1,
+    "laterCutoffKind": "Controlled placeholder assigned to the isolated target fixture before carry-forward. It is not a publisher observation.",
+    "verification": {
+      "operatorCommand": "python3 -B services/committee-replay/run.py carry-forward --retained $FROZEN_ACQUISITION --receipt $RETAINED_RECEIPT --originals $ORIGINALS_ROOT --base $LATER_SCRATCH_PREVIEW --output $SHADOW_SQLITE",
+      "focusedPythonCommand": "python3 -B -m unittest discover -s test -p \"test_committee_carry_forward.py\" -v",
+      "focusedPythonTestsPassed": 7,
+      "committeePythonCommand": "python3 -B -m unittest discover -s test -p \"test_*committee*.py\"",
+      "committeePythonTestsPassed": 91,
+      "authenticatedWorkerCommand": "CIVICSIGNAL_COMMITTEES_D1=$SHADOW_SQLITE CIVICSIGNAL_COMMITTEES_SOURCE_SQLITE=$FROZEN_ACQUISITION CIVICSIGNAL_COMMITTEE_CALLS_RECEIPT=$RETAINED_RECEIPT bun run test test/endpoints.test.ts -t \"computes dated states and follows bilingual listings to their acquired studies\""
+    }
   }
 }

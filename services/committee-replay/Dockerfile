@@ -17,7 +17,7 @@ COPY --from=dependencies /app/ /app/
 COPY src/ ./src/
 COPY scripts/ ./scripts/
 RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils && rm -rf /var/lib/apt/lists/*
-COPY services/committee-replay/run.py ./services/committee-replay/run.py
+COPY services/committee-replay/run.py services/committee-replay/carry_forward.py ./services/committee-replay/
 COPY services/weekly-archive/runtime.py ./services/weekly-archive/runtime.py
 COPY services/institution-coverage/container/snapshot.py ./services/institution-coverage/container/snapshot.py
 COPY services/funding/esdc-collector/html_tree.py ./services/funding/esdc-collector/html_tree.py
@@ -28,7 +28,9 @@ COPY migrations/ ./migrations/
 COPY preview/ ./preview/
 COPY docs/evidence/ ./docs/evidence/
 
-RUN python3 -B scripts/committee-download.py --help >/dev/null && python3 -B scripts/committee-corpus.py --help >/dev/null
+RUN python3 -B scripts/committee-download.py --help >/dev/null \
+ && python3 -B scripts/committee-corpus.py --help >/dev/null \
+ && python3 -B services/committee-replay/run.py carry-forward --help >/dev/null
 
 ENV TZ=America/Toronto
 EXPOSE 8080
