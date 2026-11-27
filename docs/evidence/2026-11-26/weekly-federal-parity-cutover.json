@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "scope": "private Cloudflare staging publications and Mac weekly operator",
+  "coverageOccurrence": {
+    "instanceId": "institution-coverage-1795726823000",
+    "receiptKey": "weekly/institution-coverage/runs/institution-coverage-1795726823000.json",
+    "receiptSha256": "e706c21f24cd90dae4661118692af8386f75041f1f616a6efba43f27ff32e603",
+    "workspace": {
+      "key": "weekly/institution-coverage/manifests/9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327.json",
+      "sha256": "9f29270b1cefdf6546e4e01106f8d001da14579f3f94ce189116cddeff483327",
+      "bytes": 25739
+    },
+    "report": {
+      "key": "weekly/institution-coverage/reports/2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2.json",
+      "sha256": "2261d45578e4a4afa6c33ad77800b4f5dfc86ee503437c85db2ea70717c6a3d2",
+      "bytes": 2763825
+    },
+    "reportStatus": "degraded"
+  },
+  "register": {
+    "instanceId": "federal-discovery-1795714524000",
+    "trigger": {
+      "source": "binding"
+    },
+    "receiptSha256": "1d62cd89ea584e17a3920df752faebe9696f7b65cace58daf4c29031e9b24051",
+    "packetSha256": "709aaec18bd88a1f580fe386a34408b39371ca5de4666ccd4f64603db45bb9ca",
+    "counts": {
+      "series": 18,
+      "endpoints": 28,
+      "uniqueUrls": 27,
+      "verified": 28,
+      "failed": 0,
+      "originals": 27,
+      "originalBytes": 3262648
+    },
+    "comparedEndpointInventories": 28
+  },
+  "guidance": {
+    "localReport": {
+      "reportSha256": "cdc0aa8b8abc5e2d4191db5578846934576ad95d23b71e9159fb61b98a550741",
+      "summary": {
+        "availableEditions": 5964,
+        "failedEditions": 2,
+        "linkedReferences": 0,
+        "listedEditions": 5966,
+        "verifiedThisRun": 5964
+      }
+    },
+    "hostedReport": {
+      "reportSha256": "a8b486d9299b02602ed9bc7731f82230b8645545df682726dd3c0b89a533dc7f",
+      "summary": {
+        "availableEditions": 5972,
+        "failedEditions": 2,
+        "linkedReferences": 0,
+        "listedEditions": 5974,
+        "verifiedThisRun": 5972
+      }
+    },
+    "sharedGaps": [
+      [
+        "en",
+        "https://www.canada.ca/content/canadasite/en/immigration-refugees-citizenship/corporate/publications-manuals/operational-bulletins-manuals/updates/application-authorization-permanent-resident-a25-r307-r66.html",
+        "HTTP 404"
+      ],
+      [
+        "fr",
+        "https://www.canada.ca/content/canadasite/fr/immigration-refugies-citoyennete/organisation/publications-guides/bulletins-guides-operationnels/mises-a-jour/demande-autorisation-resident-permanent-l25-r307-r66.html",
+        "HTTP 404"
+      ]
+    ],
+    "additionalVerifiedEditions": 8
+  },
+  "policyEditions": {
+    "localReport": {
+      "reportSha256": "88cd9aa069fd59d99f4e2243061ad1eb1b59009142e5963de5478e4d3797716e",
+      "summary": {
+        "catalogueEditionLinks": 537,
+        "catalogueIds": 534,
+        "editionIdentityChecks": {
+          "catalogue-title-first-three-pages": 527,
+          "printed-catalogue-heading": 1,
+          "printed-catalogue-title": 2,
+          "printed-register-title": 6,
+          "review": 1
+        },
+        "latestFetch": {
+          "failed": 4,
+          "retrieved": 533
+        },
+        "linkedPolicyLanguageIds": 444,
+        "registeredLanguageIds": 1378,
+        "titleChecks": {
+          "matched": 527,
+          "review": 10
+        },
+        "uniquePdfTargets": 537
+      }
+    },
+    "hostedReport": {
+      "reportSha256": "1e29d01aae4b41829ac13cf2b521f2dabe2f8b048a603c4b80204331e87f2cd6",
+      "summary": {
+        "catalogueEditionLinks": 537,
+        "catalogueIds": 534,
+        "editionIdentityChecks": {
+          "catalogue-title-first-three-pages": 527,
+          "printed-catalogue-heading": 1,
+          "printed-catalogue-title": 2,
+          "printed-register-title": 6,
+          "review": 1
+        },
+        "latestFetch": {
+          "failed": 3,
+          "retrieved": 534
+        },
+        "linkedPolicyLanguageIds": 444,
+        "registeredLanguageIds": 1378,
+        "titleChecks": {
+          "matched": 527,
+          "review": 10
+        },
+        "uniquePdfTargets": 537
+      }
+    },
+    "matchingIdentities": 537,
+    "verifiedIdentities": 536,
+    "verifiedRetainedPdfs": {
+      "https://publications.gc.ca/collections/collection_2018/sct-tbs/BT22-146-2014-eng.pdf": "3beade1c8a3ff771be36b95a15b94f359ee1772d9e5b12aa4f2b82cf2ee69b08",
+      "https://publications.gc.ca/collections/collection_2018/sct-tbs/BT22-147-2012-fra.pdf": "df3b05812cc52f5610f7bff443fdd195c88e0cf86a4d1b34cd984a4e1c208d92",
+      "https://publications.gc.ca/collections/collection_2018/sct-tbs/BT39-17-2004-eng.pdf": "700a41f641cacf0e760f71854191b54bbec123e8d105e3c65384e7b4d715d62a"
+    }
+  },
+  "departmentalHtml": {
+    "localReportSha256": "72476abad0fd1d625756035d1ec398dcea2c651ba10f827dc2c85005fd35fdf2",
+    "hostedReportSha256": "cbd78ebc76f9dba8ef5635c3565a083ea8800f7e4c985b6b6395e6d961b8cf98",
+    "sameOutstandingTargets": 19,
+    "allPendingTargetsProcessed": true,
+    "hostedAcceptedByFamilyLanguage": {
+      "departmental-plans/en": 259,
+      "departmental-plans/fr": 311,
+      "departmental-results/en": 239,
+      "departmental-results/fr": 339
+    }
+  },
+  "bibliography": {
+    "localCatalogue": "ad7b82872876c18ae11ae2898e5e5ed707c6bf8e4ef45e74103a8dc952c261f2",
+    "hostedCatalogue": "69ad75dfb67ef4eceafe0bc5e4757c02f3904628bd23c4140bb39b77c040b136",
+    "matchedDistinctChecklistIds": 8615,
+    "hostedSources": {
+      "monographs": {
+        "format": "MODS XML",
+        "records": 133228,
+        "sha256": "26f0858eaaff0063f8487adca4232bfb184e9c60d137fa764b396f37a5337f58",
+        "snapshotDate": "2025-11-20",
+        "url": "https://donnees-data.tpsgc-pwgsc.gc.ca/bi1/pub-pub/monographies-monographs.zip"
+      },
+      "periodicals": {
+        "format": "MODS XML",
+        "records": 22803,
+        "sha256": "43cce78a11091daf185c1c99ad5b8bd564cad6a0584289acf4fdbfbf4b3d2e8b",
+        "snapshotDate": "2025-11-20",
+        "url": "https://donnees-data.tpsgc-pwgsc.gc.ca/bi1/pub-pub/periodiques-periodicals.zip"
+      },
+      "series": {
+        "format": "MODS XML",
+        "records": 165438,
+        "sha256": "8ac3993960546bb0b7a382446ce6ce525b180284f1c94431f430f4ded8629d08",
+        "snapshotDate": "2025-11-20",
+        "url": "https://donnees-data.tpsgc-pwgsc.gc.ca/bi1/pub-pub/series.zip"
+      },
+      "weekly-checklists": {
+        "format": "JSONL",
+        "latestIssue": "2026-26-47",
+        "records": 8618,
+        "sha256": "b08a5046334cd1b227febff157d78facb8fc45e0aea9732fad64cc9a75fad7a5"
+      }
+    }
+  },
+  "macCutover": {
+    "configuredStepsBefore": 17,
+    "configuredStepsAfter": 11,
+    "retired": [
+      "federal-discovery",
+      "federal-guidance",
+      "federal-publications",
+      "federal-publication-checklists",
+      "federal-policy-editions",
+      "departmental-report-html"
+    ]
+  }
+}

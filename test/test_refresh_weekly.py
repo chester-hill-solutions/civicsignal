@@ -21,15 +21,13 @@ class WeeklyRefreshTests(unittest.TestCase):
     def test_catalog_has_expected_weekly_collections(self):
         self.assertEqual({step.name for step in weekly.STEPS}, set(weekly.RUN_ORDER))
         retired = {"official-titles", "service-inventory", "federal-institution-coverage", "hansard-house", "hansard-senate",
-                   "gazette", "gazette-year"}
+                   "gazette", "gazette-year", "ati-summaries", "grant-awards", "briefing-notes", "federal-procurement",
+                   "federal-disclosures", "federal-discovery", "federal-guidance", "federal-publications",
+                   "federal-publication-checklists", "federal-policy-editions", "departmental-report-html"}
         self.assertTrue(retired.isdisjoint(weekly.RUN_ORDER))
         commands = (cmd.argv if isinstance(cmd, weekly.Command) else cmd for step in weekly.STEPS for cmd in step.commands)
         self.assertTrue(all(retired.isdisjoint(command) for command in commands))
-        self.assertEqual(weekly.RUN_ORDER[0], "federal-discovery")
-        self.assertEqual(weekly.RUN_ORDER[1], "federal-guidance")
-        guidance = next(step for step in weekly.STEPS if step.name == "federal-guidance")
-        self.assertIn(("python3", "-B", "scripts/federal-guidance.py", "--refresh"), guidance.commands)
-        self.assertEqual(weekly.RUN_ORDER[2], "consultation-notices")
+        self.assertEqual(weekly.RUN_ORDER[0], "consultation-notices")
         notices = next(step for step in weekly.STEPS if step.name == "consultation-notices")
         self.assertIn(("python3", "-B", "scripts/consultation-notices.py", "refresh"), notices.commands)
         committees = next(step for step in weekly.STEPS if step.name == "committees")
@@ -40,11 +38,7 @@ class WeeklyRefreshTests(unittest.TestCase):
     def test_derived_publication_steps_follow_their_source_intakes(self):
         for dependency, derived in [("federal-report-directories", "departmental-report-editions"),
                                     ("departmental-report-editions", "departmental-report-documents"),
-                                    ("departmental-report-editions", "departmental-report-html"),
-                                    ("departmental-report-editions", "federal-regulatory-plans"),
-                                    ("federal-publications", "federal-publication-checklists"),
-                                    ("federal-publication-checklists", "federal-policy-editions"),
-                                    ("federal-guidance", "federal-policy-editions")]:
+                                    ("departmental-report-editions", "federal-regulatory-plans")]:
             self.assertLess(weekly.RUN_ORDER.index(dependency), weekly.RUN_ORDER.index(derived))
 
     def test_large_steps_are_gated_by_live_free_space(self):
@@ -78,7 +72,7 @@ class WeeklyRefreshTests(unittest.TestCase):
         self.assertIn("error", result)
 
     def test_departmental_batch_replays_its_partial_generation_and_stops_on_an_invalid_id(self):
-        step = next(step for step in weekly.STEPS if step.name == "departmental-report-html")
+        step = next(step for step in weekly.STEPS if step.name == "departmental-report-documents")
         for run_id, expected_calls in [("abc123", 2), ("../older", 1), ("", 1)]:
             result = {"commands": []}
             with patch.object(weekly, "_run_command", side_effect=[
@@ -88,18 +82,7 @@ class WeeklyRefreshTests(unittest.TestCase):
             self.assertIn("error", result)
             self.assertEqual(run.call_count, expected_calls)
             if expected_calls == 2:
-                self.assertEqual(run.call_args.args[0][-2:], ("html-replay", run_id))
-
-    def test_partial_policy_archive_replays_the_exact_receipt_and_keeps_the_failure(self):
-        step = next(step for step in weekly.STEPS if step.name == "federal-policy-editions")
-        digest = "6" * 64
-        result = {"commands": []}
-        with patch.object(weekly, "_run_command", side_effect=[
-                {"ok": False, "exitCode": 2, "stdout": json.dumps({"reportSha256": digest})},
-                {"ok": True}]) as run:
-            weekly._run_commands(step, result)
-        self.assertEqual(run.call_args_list[1].args[0][-2:], ("--report", digest))
-        self.assertIn("error", result)
+                self.assertEqual(run.call_args.args[0][-2:], ("replay", run_id))
 
     def test_only_selects_one_named_step_and_rejects_unknown(self):
         self.assertEqual(weekly.parse_args(["--only", "eccc"]).only, ["eccc"])

@@ -160,26 +160,6 @@ STEPS = (
         artifacts=("data/corpus/committees/coverage.json", "data/corpus/committees/committee.sqlite", ".wrangler/committees-45-1"),
     ),
     Step(
-        "federal-discovery",
-        (("python3", "-B", "scripts/federal-source-inventory.py"),),
-        30 * 60,
-        "Refresh the registered federal source index pages and dataset resource listings.",
-        0,
-        baseline_paths=("data/corpus/federal-source-inventory",),
-        artifacts=("data/corpus/federal-source-inventory/",),
-    ),
-    Step(
-        "federal-guidance",
-        (("python3", "-B", "scripts/federal-guidance.py", "--refresh"),
-         ("python3", "-B", "scripts/ircc-guidance-documents.py", "refresh"),
-         ("python3", "-B", "scripts/ircc-guidance-documents.py", "replay")),
-        60 * 60,
-        "Refresh the bilingual TBS and IRCC indexes, archive listed IRCC manuals and bulletin pages and reproduce their cited passages.",
-        0,
-        baseline_paths=("data/corpus/federal-guidance",),
-        artifacts=("data/corpus/federal-guidance/dist/receipt.json", "data/corpus/ircc-guidance-documents/latest.json"), verify_partial=True,
-    ),
-    Step(
         "consultation-notices",
         (("python3", "-B", "scripts/consultation-notices.py", "refresh"),
          Command(("bun", "run", "test", "test/endpoints.test.ts", "-t", "serves archived English and French participation instructions with exact source citations"),
@@ -203,25 +183,10 @@ STEPS = (
          ("python3", "-B", "scripts/departmental-report-documents.py", "replay", "@receipt-run-id@")), 3600,
          "Archive explicitly linked departmental reports and verify the edition against the document text.",
          artifacts=("data/corpus/departmental-report-documents/latest-attempt.json",), verify_partial=True),
-    Step("departmental-report-html", (("python3", "-B", "scripts/departmental-report-documents.py", "html-refresh", "--batch-size", "40"),
-         ("python3", "-B", "scripts/departmental-report-documents.py", "html-replay", "@receipt-run-id@")), 3600,
-         "Capture the next bounded batch of publisher-labelled HTML report targets and verify the actual document identities.",
-         artifacts=("data/corpus/departmental-report-documents/latest-html-attempt.json",), verify_partial=True),
     Step("federal-regulatory-plans", (("python3", "-B", "scripts/federal-regulatory-plans.py", "refresh"),
          ("python3", "-B", "scripts/federal-regulatory-plans.py", "replay", "@receipt-run-id@")), 3600,
          "Verify institutional forward regulatory plan pages and retain publisher-labelled initiatives.",
          artifacts=("data/corpus/federal-regulatory-plans/dist/receipt.json",), verify_partial=True),
-    Step("federal-publications", (("python3", "-B", "scripts/federal-publications.py", "refresh", "--download"),), 3600,
-         "Verify and publish the three registered government bibliography exports.",
-         artifacts=("data/corpus/federal-publications/",)),
-    Step("federal-publication-checklists", (("python3", "-B", "scripts/federal-publication-checklists.py", "refresh", "--download"),
-         ("python3", "-B", "scripts/federal-publication-catalogue.py", "build")), 3600,
-         "Acquire bilingual weekly publication checklists since the bibliography snapshot and reconcile their catalogue records.",
-         artifacts=("data/corpus/federal-publication-checklists/current/receipt.json", "data/corpus/federal-publication-catalogue/catalogue.sqlite")),
-    Step("federal-policy-editions", (("python3", "-B", "scripts/federal-policy-editions.py", "refresh"),
-         ("python3", "-B", "scripts/federal-policy-editions.py", "replay")), 3600,
-         "Reconcile dated federal bibliography PDFs with explicit Treasury Board policy IDs and reproduce the archived pages.",
-         artifacts=("data/corpus/federal-policy-editions/latest.json",), verify_partial=True),
     Step("statutes-local", (("bun", "scripts/ingest-statutes.ts", "--corpus", "data/corpus/justice-laws-xml",
           "--out", "dist/statutes-local", "--publish-current"),), 3600,
          "Build and check a bilingual local statutes export from the official Justice Canada checkout.",
@@ -229,10 +194,9 @@ STEPS = (
 )
 
 RUN_ORDER = (
-    "federal-discovery", "federal-guidance", "consultation-notices", "eccc",
+    "consultation-notices", "eccc",
     "federal-report-directories", "departmental-report-editions",
-    "departmental-report-documents", "departmental-report-html", "federal-regulatory-plans", "federal-publications",
-    "federal-publication-checklists", "federal-policy-editions",
+    "departmental-report-documents", "federal-regulatory-plans",
     "parliament", "geds", "statutes-local", "written-questions", "committees",
 )
 
@@ -447,15 +411,6 @@ def _run_commands(step: Step, result: dict) -> None:
                 result["error"] = "Acquisition did not identify an immutable report to replay"
                 break
             command = (*command[:-1], run_id)
-        if step.name in {"federal-guidance", "federal-policy-editions"} and isinstance(command, tuple) and command[-1] == "replay":
-            try:
-                report_hash = json.loads(result["commands"][-1]["stdout"])["reportSha256"]
-                if not isinstance(report_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", report_hash):
-                    raise ValueError
-            except (KeyError, ValueError, IndexError, TypeError):
-                result["error"] = "Acquisition did not return the digest of its dated report"
-                break
-            command += ("--report", report_hash)
         outcome = _run_command(command, step.timeout_seconds)
         result["commands"].append(outcome)
         if not outcome["ok"]:
@@ -470,10 +425,6 @@ def _run_commands(step: Step, result: dict) -> None:
                 if (outcome["exitCode"] == 2 and isinstance(step.commands[-1], tuple)
                         and step.commands[-1][-1] == "@receipt-run-id@"
                         and command == step.commands[0] and receipt.get("status") in {"pending", "partial"}):
-                    continue
-                if (step.name in {"federal-guidance", "federal-policy-editions"} and
-                        re.fullmatch(r"[0-9a-f]{64}", str(receipt.get("reportSha256", ""))) and
-                        command[-1] == "refresh" and outcome["exitCode"] == 2):
                     continue
                 fetched = receipt.get("publishedFetchedEditions")
                 if (step.name == "consultation-notices" and receipt.get("scope") == "all-open"
