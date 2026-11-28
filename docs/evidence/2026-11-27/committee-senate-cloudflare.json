@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private 45-1 Senate committee directory acquisition and verified R2 publication.",
+  "bootstrapReadbackVerified": true,
+  "manualQualification": {
+    "versionId": "7c154ff0-a8c1-40a2-b959-9eab059b21ce",
+    "start": "2026-11-27T23:42:56.843Z",
+    "end": "2026-11-27T23:43:20.788Z",
+    "trigger": {
+      "source": "api"
+    },
+    "receiptSha256": "a9ea4aea2f99077bf0f49f04bdb3dfa9188c1e37044bfa8af3f4510b35a21ade",
+    "receiptKey": "weekly/committee-senate/runs/committee-senate-1795822975796.json",
+    "status": "complete",
+    "report": {
+      "catalogueSha256": "79f03fd85e852f5ea106736a51d289b3fb5cb7e49af8996fab563d402dceadc0",
+      "complete": true,
+      "observedAt": "2026-11-27T23:42:59.574Z",
+      "phase": "complete",
+      "scheduledTime": 1795822975796,
+      "scope": "bilingual-senate-committee-directory",
+      "session": "45-1",
+      "sources": {
+        "en": {
+          "bytes": 13638,
+          "committees": 29,
+          "file": "en.html",
+          "httpStatus": 200,
+          "sha256": "aaa4d8165a48a00a017171b6c75cebfc058afa27ce98f7f1c35b4f59ecb7baa9",
+          "url": "https://sencanada.ca/umbraco/surface/CommitteesAjax/GetCommitteeListPartialView?forMenu=false&Session=45-1&Lang=en"
+        },
+        "fr": {
+          "bytes": 14011,
+          "committees": 29,
+          "file": "fr.html",
+          "httpStatus": 200,
+          "sha256": "0ddefc763a33622cf994ba20307a3a6f0e5d31ab979e2e702c87ff79b1ff6684",
+          "url": "https://sencanada.ca/umbraco/surface/CommitteesAjax/GetCommitteeListPartialView?forMenu=false&Session=45-1&Lang=fr"
+        }
+      }
+    },
+    "archiveManifest": {
+      "key": "weekly/committee-senate/manifests/ce9e7c1b3881ae83104fc6111390c2646821176ee9a81b578c96f266fb7f23c7.json",
+      "sha256": "ce9e7c1b3881ae83104fc6111390c2646821176ee9a81b578c96f266fb7f23c7",
+      "bytes": 344
+    },
+    "r2ChunksVerified": 1,
+    "independentReadbackVerified": true
+  },
+  "nativeQualification": {
+    "versionId": "7c154ff0-a8c1-40a2-b959-9eab059b21ce",
+    "verifiedDeploymentVersion": "4d72c8aa-0614-46a3-bb4b-e19d7e6f46fa",
+    "qualificationCron": "11 0 28 11 *",
+    "scheduledAt": "2026-11-28T00:11:00+00:00",
+    "start": "2026-11-28T00:11:25.505Z",
+    "end": "2026-11-28T00:11:49.374Z",
+    "trigger": {
+      "source": "binding"
+    },
+    "inputMatchesManualPublication": true,
+    "receiptSha256": "ab413e181c0ad1fd90db9b923b82a503cc60af552dd866c8f2bae17183df48a7",
+    "receiptKey": "weekly/committee-senate/runs/committee-senate-1795824660000.json",
+    "status": "complete",
+    "report": {
+      "catalogueSha256": "79f03fd85e852f5ea106736a51d289b3fb5cb7e49af8996fab563d402dceadc0",
+      "complete": true,
+      "observedAt": "2026-11-28T00:11:28.076Z",
+      "phase": "complete",
+      "scheduledTime": 1795824660000,
+      "scope": "bilingual-senate-committee-directory",
+      "session": "45-1",
+      "sources": {
+        "en": {
+          "bytes": 13638,
+          "committees": 29,
+          "file": "en.html",
+          "httpStatus": 200,
+          "sha256": "aaa4d8165a48a00a017171b6c75cebfc058afa27ce98f7f1c35b4f59ecb7baa9",
+          "url": "https://sencanada.ca/umbraco/surface/CommitteesAjax/GetCommitteeListPartialView?forMenu=false&Session=45-1&Lang=en"
+        },
+        "fr": {
+          "bytes": 14011,
+          "committees": 29,
+          "file": "fr.html",
+          "httpStatus": 200,
+          "sha256": "0ddefc763a33622cf994ba20307a3a6f0e5d31ab979e2e702c87ff79b1ff6684",
+          "url": "https://sencanada.ca/umbraco/surface/CommitteesAjax/GetCommitteeListPartialView?forMenu=false&Session=45-1&Lang=fr"
+        }
+      }
+    },
+    "archiveManifest": {
+      "key": "weekly/committee-senate/manifests/941f24cbe208b9851255967ebc6f39a8176fbee879e46ac7e0ee9703e7e31be2.json",
+      "sha256": "941f24cbe208b9851255967ebc6f39a8176fbee879e46ac7e0ee9703e7e31be2",
+      "bytes": 344
+    },
+    "r2ChunksVerified": 1,
+    "independentReadbackVerified": true
+  },
+  "standingSchedule": {
+    "crons": [
+      "30 17 * * SAT"
+    ],
+    "timezone": "UTC",
+    "firstStandingOccurrence": "2026-11-28T17:30:00Z",
+    "temporaryTriggersRemoved": true
+  }
+}

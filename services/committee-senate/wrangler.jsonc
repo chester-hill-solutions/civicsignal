@@ -1,0 +1,25 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-committee-senate",
+  "main": "worker.ts",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "compatibility_date": "2026-11-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "containers": [{
+    "class_name": "SenateCommitteeRuntime",
+    "name": "civicsignal-stage-committee-senate",
+    "image": "./Dockerfile",
+    "image_build_context": "../..",
+    "max_instances": 1,
+    "instance_type": "basic",
+    "observability": { "enabled": true }
+  }],
+  "durable_objects": { "bindings": [{ "name": "RUNTIME", "class_name": "SenateCommitteeRuntime" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SenateCommitteeRuntime"] }],
+  "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-weekly" }],
+  "workflows": [{ "binding": "DISCOVERY", "name": "civicsignal-stage-committee-senate", "class_name": "SenateCommitteeDiscovery" }],
+  "triggers": { "crons": ["30 17 * * SAT"] }
+}

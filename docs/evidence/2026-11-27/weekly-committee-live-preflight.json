@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "scope": "One read-only Cloudflare Linux container preflight of the existing weekly committee discovery inputs. No archive or serving bindings.",
+  "workflow": {
+    "instanceId": "committee-live-preflight-once",
+    "start": "2026-11-27T23:13:55.868Z",
+    "end": "2026-11-27T23:14:05.083Z",
+    "status": "complete",
+    "versionId": "4c555c33-2bd3-470f-8497-12bb36af8a4a"
+  },
+  "discovery": [
+    {
+      "name": "house-directory-en",
+      "requestedUrl": "https://www.ourcommons.ca/Committees/en/List?parl=45&session=1",
+      "startedAt": "2026-11-27T23:14:03.923838+00:00",
+      "httpStatus": 403,
+      "finalUrl": "https://www.ourcommons.ca/Committees/en/List?parl=45&session=1",
+      "curlExitCode": 0,
+      "curlError": null,
+      "title": "System error - Erreur de système",
+      "rayId": null,
+      "hasExpectedMarker": false,
+      "houseSystemError": true
+    },
+    {
+      "name": "house-directory-fr",
+      "requestedUrl": "https://www.ourcommons.ca/Committees/fr/List?parl=45&session=1",
+      "startedAt": "2026-11-27T23:14:03.924412+00:00",
+      "httpStatus": 403,
+      "finalUrl": "https://www.ourcommons.ca/Committees/fr/List?parl=45&session=1",
+      "curlExitCode": 0,
+      "curlError": null,
+      "title": "System error - Erreur de système",
+      "rayId": null,
+      "hasExpectedMarker": false,
+      "houseSystemError": true
+    },
+    {
+      "name": "senate-directory-en",
+      "requestedUrl": "https://sencanada.ca/umbraco/surface/CommitteesAjax/GetCommitteeListPartialView?forMenu=false&Session=45-1&Lang=en",
+      "startedAt": "2026-11-27T23:14:04.110596+00:00",
+      "httpStatus": 200,
+      "finalUrl": "https://sencanada.ca/umbraco/surface/CommitteesAjax/GetCommitteeListPartialView?forMenu=false&Session=45-1&Lang=en",
+      "curlExitCode": 0,
+      "curlError": null,
+      "title": null,
+      "rayId": null,
+      "hasExpectedMarker": true,
+      "houseSystemError": false
+    },
+    {
+      "name": "senate-directory-fr",
+      "requestedUrl": "https://sencanada.ca/umbraco/surface/CommitteesAjax/GetCommitteeListPartialView?forMenu=false&Session=45-1&Lang=fr",
+      "startedAt": "2026-11-27T23:14:04.127105+00:00",
+      "httpStatus": 200,
+      "finalUrl": "https://sencanada.ca/umbraco/surface/CommitteesAjax/GetCommitteeListPartialView?forMenu=false&Session=45-1&Lang=fr",
+      "curlExitCode": 0,
+      "curlError": null,
+      "title": null,
+      "rayId": null,
+      "hasExpectedMarker": true,
+      "houseSystemError": false
+    },
+    {
+      "name": "house-huma-work",
+      "requestedUrl": "https://www.ourcommons.ca/Committees/en/HUMA/Work?parl=45&session=1",
+      "startedAt": "2026-11-27T23:14:04.285894+00:00",
+      "httpStatus": 403,
+      "finalUrl": "https://www.ourcommons.ca/Committees/en/HUMA/Work?parl=45&session=1",
+      "curlExitCode": 0,
+      "curlError": null,
+      "title": "System error - Erreur de système",
+      "rayId": null,
+      "hasExpectedMarker": false,
+      "houseSystemError": true
+    },
+    {
+      "name": "house-huma-meetings",
+      "requestedUrl": "https://www.ourcommons.ca/Committees/fr/HUMA/Meetings?parl=45&session=1",
+      "startedAt": "2026-11-27T23:14:04.287599+00:00",
+      "httpStatus": 403,
+      "finalUrl": "https://www.ourcommons.ca/Committees/fr/HUMA/Meetings?parl=45&session=1",
+      "curlExitCode": 0,
+      "curlError": null,
+      "title": "System error - Erreur de système",
+      "rayId": null,
+      "hasExpectedMarker": false,
+      "houseSystemError": true
+    },
+    {
+      "name": "house-chpc-study",
+      "requestedUrl": "https://www.ourcommons.ca/committees/en/CHPC/StudyActivity?studyActivityId=13668976",
+      "startedAt": "2026-11-27T23:14:04.411334+00:00",
+      "httpStatus": 403,
+      "finalUrl": "https://www.ourcommons.ca/committees/en/CHPC/StudyActivity?studyActivityId=13668976",
+      "curlExitCode": 0,
+      "curlError": null,
+      "title": "System error - Erreur de système",
+      "rayId": null,
+      "hasExpectedMarker": false,
+      "houseSystemError": true
+    },
+    {
+      "name": "house-evidence-control",
+      "requestedUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/HUMA/meeting-30/evidence",
+      "startedAt": "2026-11-27T23:14:04.416871+00:00",
+      "httpStatus": 200,
+      "finalUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/HUMA/meeting-30/evidence",
+      "curlExitCode": 0,
+      "curlError": null,
+      "title": "Evidence - HUMA (45-1) - No. 30 - House of Commons of Canada",
+      "rayId": null,
+      "hasExpectedMarker": true,
+      "houseSystemError": false
+    }
+  ],
+  "conclusion": "Both required House directories and the sampled House Work, Meetings and study routes returned HTTP 403. Both Senate directory seeds and the House DocumentViewer control returned HTTP 200 with expected content. A complete fresh bilingual House and Senate corpus could not be acquired.",
+  "temporaryCloudflareResourcesRemoved": true
+}

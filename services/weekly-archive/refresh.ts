@@ -42,7 +42,7 @@ function assertRef(ref: Ref, base: string, folder: 'manifests' | 'reports') {
 export async function runArchiveRefresh<P extends { scheduledTime: number }>(
   step: WorkflowStep, bucket: R2Bucket, runtime: Runtime, params: P,
   config: { id: (params: P) => string; base: string; label: string; schema: z.ZodType<P>; report: z.ZodType;
-    maxPolls?: number; containerInputs?: Record<string, unknown> },
+    maxPolls?: number; containerInputs?: Record<string, unknown>; verifyReportWorkspace?: boolean },
 ) {
   const { base, label } = config;
   const instanceId = config.id(params);
@@ -92,7 +92,14 @@ export async function runArchiveRefresh<P extends { scheduledTime: number }>(
     const report = outcome.report && assertRef(outcome.report, base, 'reports');
     if (report) {
       const readback = JSON.parse(new TextDecoder().decode(await bytesFor(bucket, report)));
-      if (outcome.status === 'complete') config.report.parse(readback);
+      if (outcome.status === 'complete') {
+        config.report.parse(readback);
+        if (config.verifyReportWorkspace) {
+          const { workspace } = z.object({ workspace: refSchema }).parse(readback);
+          if (workspace.key !== outcome.state.key || workspace.sha256 !== outcome.state.sha256 ||
+              workspace.bytes !== outcome.state.bytes) throw new Error(`The ${label} report pins a different workspace.`);
+        }
+      }
     }
     if (outcome.status === 'failed') {
       const pointer = pointerSchema.parse({ ...common, status: 'degraded' });

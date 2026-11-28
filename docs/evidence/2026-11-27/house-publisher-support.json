@@ -1,0 +1,144 @@
+{
+  "scope": "Read-only Cloudflare staging probes of official House committee pages.",
+  "httpProbe": {
+    "start": "2026-11-27T21:56:12.116Z",
+    "end": "2026-11-27T21:56:13.343Z",
+    "status": "complete",
+    "responses": [
+      {
+        "name": "participate-en",
+        "url": "https://www.ourcommons.ca/Committees/en/Participate",
+        "startedAt": "2026-11-27T21:56:12.435Z",
+        "httpStatus": 403,
+        "title": "System error - Erreur de système",
+        "date": "Fri, 27 Nov 2026 21:56:12 GMT",
+        "rayId": "a61461a9bf4d13f1-ORD",
+        "mitigated": null,
+        "server": "cloudflare",
+        "location": null,
+        "bytes": 17887,
+        "systemError": true,
+        "studyLinks": false,
+        "mentionsDeadline": false,
+        "newsletter": false
+      },
+      {
+        "name": "participate-fr",
+        "url": "https://www.ourcommons.ca/Committees/fr/Participate",
+        "startedAt": "2026-11-27T21:56:12.614Z",
+        "httpStatus": 403,
+        "title": "System error - Erreur de système",
+        "date": "Fri, 27 Nov 2026 21:56:12 GMT",
+        "rayId": "a61461aadf9f13f1-ORD",
+        "mitigated": null,
+        "server": "cloudflare",
+        "location": null,
+        "bytes": 17887,
+        "systemError": true,
+        "studyLinks": false,
+        "mentionsDeadline": false,
+        "newsletter": false
+      },
+      {
+        "name": "instructions-en",
+        "url": "https://www.ourcommons.ca/committee-participation/en/submit-brief/chpc/13668976",
+        "startedAt": "2026-11-27T21:56:12.636Z",
+        "httpStatus": 200,
+        "title": "Submit a Brief - House of Commons of Canada",
+        "date": "Fri, 27 Nov 2026 21:56:12 GMT",
+        "rayId": "a61461aaffaa13f1-ORD",
+        "mitigated": null,
+        "server": "cloudflare",
+        "location": null,
+        "bytes": 32954,
+        "systemError": false,
+        "studyLinks": false,
+        "mentionsDeadline": false,
+        "newsletter": false
+      },
+      {
+        "name": "instructions-fr",
+        "url": "https://www.ourcommons.ca/committee-participation/fr/submit-brief/chpc/13668976",
+        "startedAt": "2026-11-27T21:56:12.931Z",
+        "httpStatus": 200,
+        "title": "Soumettre un m&#xE9;moire - Chambre des communes du Canada",
+        "date": "Fri, 27 Nov 2026 21:56:13 GMT",
+        "rayId": "a61461acd81d13f1-ORD",
+        "mitigated": null,
+        "server": "cloudflare",
+        "location": null,
+        "bytes": 34270,
+        "systemError": false,
+        "studyLinks": false,
+        "mentionsDeadline": false,
+        "newsletter": false
+      },
+      {
+        "name": "newsletter",
+        "url": "https://www.ourcommons.ca/cmte-subscription/en/Newsletter?AspxAutoDetectCookieSupport=1",
+        "startedAt": "2026-11-27T21:56:13.101Z",
+        "httpStatus": 200,
+        "title": "Committees Newsletter",
+        "date": "Fri, 27 Nov 2026 21:56:13 GMT",
+        "rayId": "a61461ade84513f1-ORD",
+        "mitigated": null,
+        "server": "cloudflare",
+        "location": null,
+        "bytes": 105127,
+        "systemError": false,
+        "studyLinks": false,
+        "mentionsDeadline": false,
+        "newsletter": true
+      },
+      {
+        "name": "release-control",
+        "url": "https://www.ourcommons.ca/DocumentViewer/en/45-1/HUMA/news-release/14079052",
+        "startedAt": "2026-11-27T21:56:13.175Z",
+        "httpStatus": 200,
+        "title": "Committee News Release - May 7, 2026 - HUMA (45-1) - House of Commons of Canada",
+        "date": "Fri, 27 Nov 2026 21:56:13 GMT",
+        "rayId": "a61461ae685a13f1-ORD",
+        "mitigated": null,
+        "server": "cloudflare",
+        "location": null,
+        "bytes": 94892,
+        "systemError": false,
+        "studyLinks": true,
+        "mentionsDeadline": true,
+        "newsletter": false
+      }
+    ]
+  },
+  "crabScape": {
+    "start": "2026-11-27T21:49:34.095Z",
+    "end": "2026-11-27T21:49:43.177Z",
+    "status": "complete",
+    "syntheticControlRendered": true,
+    "listings": [
+      {
+        "requestedUrl": "https://www.ourcommons.ca/Committees/en/Participate",
+        "finalUrl": "https://www.ourcommons.ca/Committees/en/Participate",
+        "title": "System error - Erreur de système",
+        "systemError": true,
+        "currentStudySection": false
+      },
+      {
+        "requestedUrl": "https://www.ourcommons.ca/Committees/fr/Participate",
+        "finalUrl": "https://www.ourcommons.ca/Committees/fr/Participate",
+        "title": "System error - Erreur de système",
+        "systemError": true,
+        "currentStudySection": false
+      }
+    ]
+  },
+  "retainedCoverage": {
+    "observedAt": "2026-11-27T11:15:41.053254Z",
+    "studies": 15,
+    "listedEditions": 30,
+    "editionsWithParsedDeadline": 14,
+    "editionsWithLinkedRelease": 5,
+    "editionsWithParsedDeadlineWithoutLinkedRelease": 9,
+    "method": "Joined current call editions and study relationships to news-release links in the retained committee catalogue."
+  },
+  "temporaryCloudflareResourcesRemoved": true
+}

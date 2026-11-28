@@ -373,6 +373,18 @@ The November 26 consultation notices qualification published 144 current languag
 
 The November 26 written-questions qualification completed in 24 minutes 37 seconds. Cloudflare rechecked all 3,476 listed editions and verified 16,109 referenced originals. The four existing coverage gaps remained visible. The authenticated Worker case passed. An independent R2 restore verified the serving database, migrations and matching source digest before the Mac weekly step retired. [Qualification evidence](evidence/2026-11-26/written-questions-cloudflare.json)
 
+## Cloudflare Library of Parliament summary archive
+
+`civicsignal-stage-library-summaries` refreshes 45-1 at 13:30 UTC on Saturdays. Its private Linux container fetches the reconciled LEGISinfo bills and the Library's published bilingual catalogue. It archives each listed PDF, verifies the printed bill and edition, and records both the catalogue and cover dates when the Library's detail page corroborates a difference. The archive and receipts stay private. [Scheduled qualification](evidence/2026-11-27/library-summaries-cloudflare.json)
+
+Read `weekly/library-summaries/runs/<instanceId>.json` in `civicsignal-stage-weekly`. The receipt pins the report and workspace. `latest-attempt.json` records a degraded run, and `latest-complete.json` advances only after every listed edition verifies. For a degraded document run, the report links the archived workspace with the individual failure dispositions. To verify an independent R2 restore, run `python3 -B services/library-summaries/run.py --verify-archive <restored-root>/archive` and compare its inventory and source counts to the dated report.
+
+## Cloudflare Senate committee directory
+
+`civicsignal-stage-committee-senate` refreshes the 45-1 directory at 17:30 UTC on Saturdays. It archives both published language pages, requires their committee code sets to agree, and reconstructs the directory from the original bytes before publishing its receipt under `weekly/committee-senate/`. The scope is the directory. The full weekly corpus still runs on the Mac until both chambers' publication coverage can be reconciled and checked through the hosted API. [Scheduled qualification](evidence/2026-11-27/committee-senate-cloudflare.json)
+
+For an independent restore run `python3 -B services/committee-senate/run.py --verify-directory <restored-root>/archive/directory` and compare the catalogue digest and source references to the R2 report. A new private prefix for either Workflow can use `python3 -B scripts/bootstrap-weekly-empty.py <service-name> <new-output-dir>` to produce the initial object paths and files. Upload the chunk and manifest before `bootstrap.json` and verify the remote bytes.
+
 ## Offline committee replay on Cloudflare
 
 The private `civicsignal-stage-committee-replay` Workflow rebuilds the 45-1 SQLite preview from the pinned originals in R2. Run `python3 -B scripts/bootstrap-committee-replay.py` once to upload the sealed catalogue, original objects and acquisition database. Install the returned reference at `weekly/committee-replay/bootstrap.json`. The preview build replays the original publication dates, preserves the retained source archive, and verifies the resulting authenticated API routes before archiving the separate serving manifest.

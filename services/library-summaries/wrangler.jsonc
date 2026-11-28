@@ -1,0 +1,25 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-library-summaries",
+  "main": "worker.ts",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "compatibility_date": "2026-11-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "containers": [{
+    "class_name": "LibrarySummariesRuntime",
+    "name": "civicsignal-stage-library-summaries",
+    "image": "./Dockerfile",
+    "image_build_context": "../..",
+    "max_instances": 1,
+    "instance_type": "standard-1",
+    "observability": { "enabled": true }
+  }],
+  "durable_objects": { "bindings": [{ "name": "RUNTIME", "class_name": "LibrarySummariesRuntime" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LibrarySummariesRuntime"] }],
+  "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-weekly" }],
+  "workflows": [{ "binding": "LIBRARY_SUMMARIES", "name": "civicsignal-stage-library-summaries", "class_name": "LibrarySummariesRefresh" }],
+  "triggers": { "crons": ["30 13 * * SAT"] }
+}

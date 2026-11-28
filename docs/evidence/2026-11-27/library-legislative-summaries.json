@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private Cloudflare source-access checks for the Library of Parliament current-session legislative-summary inventory. No archives or serving databases were written.",
+  "session": "45-1",
+  "sourceDiscovery": {
+    "instanceId": "library-45-1-preflight-once",
+    "start": "2026-11-27T23:14:26.200Z",
+    "end": "2026-11-27T23:14:27.500Z",
+    "status": "complete",
+    "responses": [
+      {
+        "name": "library-index-en",
+        "url": "https://lop.parl.ca/en/researchpublications/legislativesummaries?parliament_session=45-1",
+        "startedAt": "2026-11-27T23:14:26.424Z",
+        "httpStatus": 200,
+        "location": null,
+        "rayId": "a614d443297e85b0-EWR",
+        "media": "text/html; charset=UTF-8",
+        "expectedMarker": true,
+        "libraryCatalogueLinks": true,
+        "title": "Legislative summaries | Library of Parliament"
+      },
+      {
+        "name": "library-index-fr",
+        "url": "https://lop.parl.ca/fr/publicationsderecherche/resumeslegislatifs?parliament_session=45-1",
+        "startedAt": "2026-11-27T23:14:26.486Z",
+        "httpStatus": 200,
+        "location": null,
+        "rayId": "a614d44389bf85b0-EWR",
+        "media": "text/html; charset=UTF-8",
+        "expectedMarker": true,
+        "libraryCatalogueLinks": true,
+        "title": "Résumé législatif | Bibliothèque du Parlement"
+      },
+      {
+        "name": "bill-catalogue-en",
+        "url": "https://www.parl.ca/legisinfo/en/bills/json",
+        "startedAt": "2026-11-27T23:14:26.522Z",
+        "httpStatus": 200,
+        "location": null,
+        "rayId": "a614d443c9e985b0-EWR",
+        "media": "text/json; charset=utf-8",
+        "expectedMarker": true,
+        "libraryCatalogueLinks": false,
+        "title": null
+      },
+      {
+        "name": "bill-catalogue-fr",
+        "url": "https://www.parl.ca/legisinfo/fr/projets-de-loi/json",
+        "startedAt": "2026-11-27T23:14:27.029Z",
+        "httpStatus": 200,
+        "location": null,
+        "rayId": "a614d446fc6b85b0-EWR",
+        "media": "text/json; charset=utf-8",
+        "expectedMarker": true,
+        "libraryCatalogueLinks": false,
+        "title": null
+      },
+      {
+        "name": "library-c5-pdf-en",
+        "url": "https://lop.parl.ca/staticfiles/PublicWebsite/Home/ResearchPublications/LegislativeSummaries/PDF/45-1/45-1-C5-E.pdf",
+        "startedAt": "2026-11-27T23:14:27.393Z",
+        "httpStatus": 301,
+        "location": "/sites/default/files/researchpublications/legislativesummaries/pdf/45-1/45-1-c5-e.pdf",
+        "rayId": "a614d4494e1085b0-EWR",
+        "media": "text/html; charset=utf-8",
+        "expectedMarker": false,
+        "libraryCatalogueLinks": false,
+        "title": null
+      },
+      {
+        "name": "library-c5-pdf-fr",
+        "url": "https://lop.parl.ca/staticfiles/PublicWebsite/Home/ResearchPublications/LegislativeSummaries/PDF/45-1/45-1-C5-F.pdf",
+        "startedAt": "2026-11-27T23:14:27.433Z",
+        "httpStatus": 301,
+        "location": "/sites/default/files/researchpublications/legislativesummaries/pdf/45-1/45-1-c5-f.pdf",
+        "rayId": "a614d4498e4b85b0-EWR",
+        "media": "text/html; charset=utf-8",
+        "expectedMarker": false,
+        "libraryCatalogueLinks": false,
+        "title": null
+      }
+    ],
+    "versionId": "334c2544-eefb-4840-be9e-eb112200ded6"
+  },
+  "pdfControls": {
+    "instanceId": "library-45-1-pdf-check",
+    "start": "2026-11-27T23:15:00.792Z",
+    "end": "2026-11-27T23:15:01.182Z",
+    "status": "complete",
+    "responses": [
+      {
+        "name": "library-c5-pdf-en",
+        "url": "https://lop.parl.ca/sites/default/files/researchpublications/legislativesummaries/pdf/45-1/45-1-c5-e.pdf",
+        "startedAt": "2026-11-27T23:15:01.047Z",
+        "httpStatus": 200,
+        "location": null,
+        "rayId": "a614d51b896f0aae-EWR",
+        "media": "application/pdf",
+        "expectedMarker": true,
+        "libraryCatalogueLinks": false,
+        "title": null
+      },
+      {
+        "name": "library-c5-pdf-fr",
+        "url": "https://lop.parl.ca/sites/default/files/researchpublications/legislativesummaries/pdf/45-1/45-1-c5-f.pdf",
+        "startedAt": "2026-11-27T23:15:01.120Z",
+        "httpStatus": 200,
+        "location": null,
+        "rayId": "a614d51c09c70aae-EWR",
+        "media": "application/pdf",
+        "expectedMarker": true,
+        "libraryCatalogueLinks": false,
+        "title": null
+      }
+    ],
+    "versionId": "334c2544-eefb-4840-be9e-eb112200ded6"
+  },
+  "temporaryCloudflareResourcesRemoved": true,
+  "independentPdfFrontMatterCheck": {
+    "scope": "Full publisher PDFs downloaded on the Mac into scratch storage and checked with pdftotext.",
+    "bill": "45-1/C-5",
+    "editions": [
+      {
+        "language": "en",
+        "publicationNumber": "45-1-C5-E",
+        "publicationDate": "2025-06-18",
+        "bytes": 704248,
+        "sha256": "70e6ce5cfe17015a4da9c903f5a3d5d3a41bad9aee7099a0024e6ea1ba7785cf"
+      },
+      {
+        "language": "fr",
+        "publicationNumber": "45-1-C5-F",
+        "publicationDate": "2025-06-18",
+        "bytes": 717509,
+        "sha256": "5d10298a6d9f8d3f371436d5422f404321d4c2f350ebb01185feb4eb87ef3819"
+      }
+    ]
+  },
+  "inventoryVerification": {
+    "scope": "One manual private Linux Cloudflare Workflow. Catalogue editions were written to scratch. This run did not publish a standing inventory.",
+    "instanceId": "library-45-1-live-inventory-once",
+    "versionId": "8e5ef00c-9828-42a0-9897-02c27a3c6798",
+    "status": "complete",
+    "start": "2026-11-27T23:19:30.880Z",
+    "end": "2026-11-27T23:19:46.089Z",
+    "inventoryScriptSha256": "e9c305efde7bf1316ccac800f3d398617994da1832f2276f4abb5de5dd83e04a",
+    "localInventorySha256": "c27454612e5ddd0df9d715a2e99d947d29099fdee490d1ac60565e6e4da9094a",
+    "localAndHostedCoverageAndC5Match": true,
+    "checks": [
+      "wait for the Library inventory container-1",
+      "acquire and verify the actual Library inventory-1",
+      "release the Library inventory container-1"
+    ],
+    "result": {
+      "session": "45-1",
+      "collection": "legislative-summaries",
+      "observedAt": "2026-11-27T23:19:45Z",
+      "billInventorySha256": "4dd5b0612e4b05bba3513b08539f5e8279cb0a473b43aa5b5c76af576c6bf384",
+      "inventorySha256": "b36b828d9e95bfd27f702f34e2fece94055d9fbc58a7fc23adc9997a65b84b66",
+      "sources": [
+        {
+          "url": "https://lop.parl.ca/en/researchpublications/legislativesummaries?parliament_session=45-1",
+          "sha256": "b7cdcaa7c475ab0bf57e2328e1719e0f4d9ea6538c97ae374b31eb8cf2a197f6",
+          "bytes": 113901
+        },
+        {
+          "url": "https://lop.parl.ca/en/researchpublications/legislativesummaries?parliament_session=45-1&page=1",
+          "sha256": "cb2be9272cf2bfaea98705c932025fd6fc4d600dc90c6e69cefd77e7015c125a",
+          "bytes": 111785
+        },
+        {
+          "url": "https://lop.parl.ca/en/researchpublications/legislativesummaries?parliament_session=45-1&page=2",
+          "sha256": "25c20181aff7e971291e2bbe90d2bead22bead621a283380b30baab17d95d2d8",
+          "bytes": 112418
+        },
+        {
+          "url": "https://lop.parl.ca/en/researchpublications/legislativesummaries?parliament_session=45-1&page=3",
+          "sha256": "9ec95d74b19ca25bfe76a471e705429d4cd396d49a97f27ebfab7393e79d2a73",
+          "bytes": 90771
+        },
+        {
+          "url": "https://lop.parl.ca/fr/publicationsderecherche/resumeslegislatifs?parliament_session=45-1",
+          "sha256": "71d22efc37a0ffdc8055d4f0fd34e1292634ade3be235c095351b2a4e6106293",
+          "bytes": 99279
+        },
+        {
+          "url": "https://lop.parl.ca/fr/publicationsderecherche/resumeslegislatifs?parliament_session=45-1&page=1",
+          "sha256": "2701d7274797c32e6b2c5894febbcb4681baabab138d451ee0bad0297c7d463b",
+          "bytes": 95906
+        },
+        {
+          "url": "https://lop.parl.ca/fr/publicationsderecherche/resumeslegislatifs?parliament_session=45-1&page=2",
+          "sha256": "2794d6f149ff8ee112d09be8670dd5ab2a6a9f128ca3cfd3f5d92a16604356dc",
+          "bytes": 88594
+        },
+        {
+          "url": "https://lop.parl.ca/fr/publicationsderecherche/resumeslegislatifs?parliament_session=45-1&page=3",
+          "sha256": "cf9aeabc8f6b1007727ee7ba646c7fe05698506cf2c39b96ffcf1c785cae75ae",
+          "bytes": 73886
+        }
+      ],
+      "sourceReceiptsVerified": 12,
+      "coverage": {
+        "basis": "published Library catalogue listings",
+        "pages": {
+          "en": 4,
+          "fr": 4
+        },
+        "editions": {
+          "en": 37,
+          "fr": 37
+        },
+        "languageOnly": {
+          "en": [],
+          "fr": []
+        },
+        "unmatchedBills": [],
+        "missingPdfLinks": []
+      },
+      "c5": [
+        {
+          "billNumber": "C-5",
+          "language": "en",
+          "title": "Legislative Summary of Bill C-5: An Act to enact the Free Trade and Labour Mobility in Canada Act and the Building Canada Act",
+          "url": "https://lop.parl.ca/en/researchpublications/legislativesummaries/451c5E",
+          "revisionDate": "2025-06-18",
+          "pdfUrl": "https://lop.parl.ca/sites/default/files/researchpublications/legislativesummaries/pdf/45-1/45-1-c5-e.pdf",
+          "catalogueUrl": "https://lop.parl.ca/en/researchpublications/legislativesummaries?parliament_session=45-1&page=3",
+          "legisInfoId": 13547622,
+          "billUrl": "https://www.parl.ca/legisinfo/en/bill/45-1/c-5"
+        },
+        {
+          "billNumber": "C-5",
+          "language": "fr",
+          "title": "Résumé législatif du projet de loi C-5 : Loi édictant la Loi sur le libre-échange et la mobilité de la main-d'œuvre au Canada et la Loi visant à bâtir le Canada",
+          "url": "https://lop.parl.ca/fr/publicationsderecherche/resumeslegislatifs/451c5F",
+          "revisionDate": "2025-06-18",
+          "pdfUrl": "https://lop.parl.ca/sites/default/files/researchpublications/legislativesummaries/pdf/45-1/45-1-c5-f.pdf",
+          "catalogueUrl": "https://lop.parl.ca/fr/publicationsderecherche/resumeslegislatifs?parliament_session=45-1&page=3",
+          "legisInfoId": 13547622,
+          "billUrl": "https://www.parl.ca/legisinfo/fr/projet-de-loi/45-1/c-5"
+        }
+      ],
+      "editions": 74
+    }
+  }
+}

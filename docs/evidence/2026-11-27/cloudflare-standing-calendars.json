@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only verification of standing private Cloudflare calendars.",
+  "timezone": "UTC",
+  "existing": [
+    {
+      "worker": "civicsignal-stage-daily",
+      "cron": [
+        "15 15 * * *"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:44.826183+00:00"
+    },
+    {
+      "worker": "civicsignal-stage-federal-register",
+      "cron": [
+        "0 14 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:46.635410+00:00"
+    },
+    {
+      "worker": "civicsignal-stage-institution-coverage",
+      "cron": [
+        "0 16 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:48.714702+00:00"
+    },
+    {
+      "worker": "civicsignal-stage-statutes-export",
+      "cron": [
+        "0 12 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:40.836346+00:00"
+    },
+    {
+      "worker": "civicsignal-stage-parliament",
+      "cron": [
+        "0 13 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:42.925708+00:00"
+    },
+    {
+      "worker": "civicsignal-stage-consultation-notices",
+      "cron": [
+        "0 17 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:45.485717+00:00"
+    },
+    {
+      "worker": "civicsignal-stage-gazette",
+      "cron": [
+        "0 15 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:44.477223+00:00"
+    },
+    {
+      "worker": "civicsignal-stage-hansard",
+      "cron": [
+        "0 14 * * MON"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:46.612070+00:00"
+    },
+    {
+      "worker": "civicsignal-stage-written-questions",
+      "cron": [
+        "0 17 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-27T23:59:48.833991+00:00"
+    }
+  ],
+  "new": [
+    {
+      "worker": "civicsignal-stage-committee-senate",
+      "cron": [
+        "30 17 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-28T00:12:05.431417+00:00",
+      "nativeQualificationReceipt": "weekly/committee-senate/runs/committee-senate-1795824660000.json"
+    },
+    {
+      "worker": "civicsignal-stage-library-summaries",
+      "cron": [
+        "30 13 * * SAT"
+      ],
+      "remoteReadbackMatched": true,
+      "observedAt": "2026-11-28T00:13:05.071687+00:00",
+      "nativeQualificationReceipt": "weekly/library-summaries/runs/library-summaries-1795824720000.json"
+    }
+  ]
+}

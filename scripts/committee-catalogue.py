@@ -37,12 +37,20 @@ def get(url):
     raise RuntimeError(f'Official source fetch failed after retries: {url}: {last}')
 
 
+def senate_directory_url(language):
+    return SENATE_AJAX + 'GetCommitteeListPartialView?' + urlencode({'forMenu':'false','Session':'45-1','Lang':language})
+
+
+def parse_senate_directory(html, source):
+    return [{'code':n.attrs['id'].upper(),'name':n.find(lambda t: cls(t,'sc-committee-list-item-name')).text(),
+             'url':urljoin(SENATE,n.attrs['href']), 'directory':source}
+            for n in tree(html).walk() if cls(n,'sc-committee-list-item') and n.attrs.get('id')]
+
+
 def directories(chamber, language):
     if chamber == 'senate':
-        src = SENATE_AJAX + 'GetCommitteeListPartialView?' + urlencode({'forMenu':'false','Session':'45-1','Lang':language})
-        root = tree(get(src))
-        return [{'code':n.attrs['id'].upper(),'name':n.find(lambda t: cls(t,'sc-committee-list-item-name')).text(),
-                 'url':urljoin(SENATE,n.attrs['href']), 'directory':src} for n in root.walk() if cls(n,'sc-committee-list-item') and n.attrs.get('id')]
+        src = senate_directory_url(language)
+        return parse_senate_directory(get(src), src)
     src = HOUSE + f'/Committees/{language}/List?parl=45&session=1'
     committees = []
     for group in tree(get(src)).findall(lambda n: cls(n,'accordion-item')):

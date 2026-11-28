@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private 45-1 bilingual Library of Parliament legislative summary and PDF archive.",
+  "bootstrapReadbackVerified": true,
+  "manualQualification": {
+    "versionId": "1817dabb-281d-4a58-89eb-55ab46009fd5",
+    "start": "2026-11-27T23:46:08.906Z",
+    "end": "2026-11-27T23:47:03.739Z",
+    "trigger": {
+      "source": "api"
+    },
+    "receiptSha256": "d15203bef538f0f5889d5704de11f9f7c8887430bb6e1ec81691b69c02e7c3ea",
+    "receiptKey": "weekly/library-summaries/runs/library-summaries-1795823165149.json",
+    "status": "complete",
+    "report": {
+      "billInventorySha256": "51060b29698b3728fc7f5d24e09ba9866479c2acbc251eee15ab3329eee3eaa9",
+      "bills": 37,
+      "complete": true,
+      "coverage": {
+        "basis": "published Library catalogue listings",
+        "editions": {
+          "en": 37,
+          "fr": 37
+        },
+        "languageOnly": {
+          "en": [],
+          "fr": []
+        },
+        "missingPdfLinks": [],
+        "pages": {
+          "en": 4,
+          "fr": 4
+        },
+        "unmatchedBills": []
+      },
+      "documentStatuses": {
+        "verified": 74
+      },
+      "inventorySha256": "e5823f1d41134cd69ce79742e6d61c9f977bf4a48bac6e00e03c92df7f4cb122",
+      "languages": {
+        "en": 37,
+        "fr": 37
+      },
+      "listedEditions": 74,
+      "observedAt": "2026-11-27T23:46:27Z",
+      "scheduledTime": 1795823165149,
+      "session": "45-1",
+      "sourceObjectsVerified": 92,
+      "verifiedEditions": 74,
+      "workspace": {
+        "bytes": 753,
+        "key": "weekly/library-summaries/manifests/4b7dda321a96e4cd895ec4cf59a0afd86a19868eb549eb61794dcd8f4714b8c4.json",
+        "sha256": "4b7dda321a96e4cd895ec4cf59a0afd86a19868eb549eb61794dcd8f4714b8c4"
+      }
+    },
+    "archiveManifest": {
+      "key": "weekly/library-summaries/manifests/4b7dda321a96e4cd895ec4cf59a0afd86a19868eb549eb61794dcd8f4714b8c4.json",
+      "sha256": "4b7dda321a96e4cd895ec4cf59a0afd86a19868eb549eb61794dcd8f4714b8c4",
+      "bytes": 753
+    },
+    "r2ChunksVerified": 3,
+    "independentReadbackVerified": true,
+    "coverReplay": {
+      "pdfCoversReplayed": 74,
+      "dateEvidence": {
+        "matched": 68,
+        "catalogue-detail-confirmed": 6
+      }
+    },
+    "matchedLocalQualification": {
+      "pdfs": 74,
+      "bytes": 50073348
+    }
+  },
+  "nativeQualification": {
+    "versionId": "f8fb84e2-67bc-4df0-9def-06aafe009b0d",
+    "verifiedDeploymentVersion": "dd16a417-ccb9-4f36-9cc9-6139ca120f6c",
+    "qualificationCron": "12 0 28 11 *",
+    "scheduledAt": "2026-11-28T00:12:00+00:00",
+    "start": "2026-11-28T00:12:10.161Z",
+    "end": "2026-11-28T00:12:54.936Z",
+    "trigger": {
+      "source": "binding"
+    },
+    "inputMatchesManualPublication": true,
+    "receiptSha256": "06d6cff26122e9c70b5c0b901f327f88c7472d9a746162cabde6249381941a84",
+    "receiptKey": "weekly/library-summaries/runs/library-summaries-1795824720000.json",
+    "status": "complete",
+    "report": {
+      "billInventorySha256": "3581076005d64d24b027db8b79ec40d83171496fd288c532e70c2e359b189973",
+      "bills": 37,
+      "complete": true,
+      "coverage": {
+        "basis": "published Library catalogue listings",
+        "editions": {
+          "en": 37,
+          "fr": 37
+        },
+        "languageOnly": {
+          "en": [],
+          "fr": []
+        },
+        "missingPdfLinks": [],
+        "pages": {
+          "en": 4,
+          "fr": 4
+        },
+        "unmatchedBills": []
+      },
+      "documentStatuses": {
+        "verified": 74
+      },
+      "inventorySha256": "09cbe7fe48fb1e0d203b1865153e29030bcfa661995a8664b44864bbac7de00d",
+      "languages": {
+        "en": 37,
+        "fr": 37
+      },
+      "listedEditions": 74,
+      "observedAt": "2026-11-28T00:12:19Z",
+      "scheduledTime": 1795824720000,
+      "session": "45-1",
+      "sourceObjectsVerified": 92,
+      "verifiedEditions": 74,
+      "workspace": {
+        "bytes": 753,
+        "key": "weekly/library-summaries/manifests/5dbc4cb9ac484a2ba580870030d9c7576df3e01d7fdac9a1f7b65244fe4af632.json",
+        "sha256": "5dbc4cb9ac484a2ba580870030d9c7576df3e01d7fdac9a1f7b65244fe4af632"
+      }
+    },
+    "archiveManifest": {
+      "key": "weekly/library-summaries/manifests/5dbc4cb9ac484a2ba580870030d9c7576df3e01d7fdac9a1f7b65244fe4af632.json",
+      "sha256": "5dbc4cb9ac484a2ba580870030d9c7576df3e01d7fdac9a1f7b65244fe4af632",
+      "bytes": 753
+    },
+    "r2ChunksVerified": 3,
+    "independentReadbackVerified": true,
+    "coverReplay": {
+      "pdfCoversReplayed": 74,
+      "dateEvidence": {
+        "matched": 68,
+        "catalogue-detail-confirmed": 6
+      }
+    },
+    "sourceHashes": {
+      "scripts/library-legislative-summaries.py": "c65fa233ed5deabe85ec5214e4ff70c1f3b68f51db0a93d7ac9d7780e290b7c7",
+      "scripts/lib/library_summary_documents.py": "2e27a0694f3c414b6d33fca529ef26853c71611523ec5adcd141b3f5ac5871e8",
+      "services/library-summaries/run.py": "d2de9f230e881e1ec40dc2b73887d77c924f35bd3fbe9a738e42971686691755",
+      "services/library-summaries/worker.ts": "00fe6553fff308da0ca865bbf81e4501985d9b37eb5d217d38779cd7152b5211",
+      "services/weekly-archive/refresh.ts": "2daae9d59fed44a063d07ed1fba074589e3f868a317be72ed940b666ae94fa09"
+    }
+  },
+  "standingSchedule": {
+    "crons": [
+      "30 13 * * SAT"
+    ],
+    "timezone": "UTC",
+    "firstStandingOccurrence": "2026-11-28T13:30:00Z",
+    "temporaryTriggersRemoved": true
+  },
+  "sourceAccessEvidence": "library-legislative-summaries.json",
+  "archiveGuards": {
+    "sourceUrlAndDateProvenanceVerified": true,
+    "manifestMismatchRejectedBeforeWrites": true,
+    "degradedFixturePreservedLastComplete": true
+  }
+}
