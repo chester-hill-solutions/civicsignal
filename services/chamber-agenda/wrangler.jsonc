@@ -1,0 +1,26 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "civicsignal-stage-chamber-agenda",
+  "main": "worker.ts",
+  "account_id": "ad5ec479b9a421faa2ed06c3d1c2b23a",
+  "compatibility_date": "2026-11-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "upload_source_maps": true,
+  "observability": { "enabled": true },
+  "containers": [{
+    "class_name": "ChamberAgendaRuntime",
+    "name": "civicsignal-stage-chamber-agenda",
+    "image": "./Dockerfile",
+    "image_build_context": "../..",
+    "max_instances": 2,
+    "instance_type": "basic",
+    "observability": { "enabled": true }
+  }],
+  "durable_objects": { "bindings": [{ "name": "RUNTIME", "class_name": "ChamberAgendaRuntime" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ChamberAgendaRuntime"] }],
+  "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "civicsignal-stage-weekly" }],
+  "workflows": [{ "binding": "AGENDA", "name": "civicsignal-stage-chamber-agenda", "class_name": "ChamberAgendaRefresh" }],
+  "triggers": { "crons": ["0 1 * * MON-SAT", "15 12 * * MON-FRI"] }
+}

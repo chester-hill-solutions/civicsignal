@@ -30,9 +30,22 @@ export class GazetteRefresh extends WorkflowEntrypoint<Env, Params> {
     const id = instance(params);
     if (event.instanceId !== id) throw new Error('Unexpected Gazette occurrence.');
     const complete = z.object({ complete: z.literal(true), servingTestsPassed: z.number().int().positive() });
+    const sha256 = z.string().regex(/^[a-f0-9]{64}$/u);
+    const positiveCount = z.number().int().positive();
+    const publication = z.object({
+      manifest: z.literal('part-three/latest.json'), manifestSha256: sha256,
+      issue: z.object({ part: z.literal('III'), volume: positiveCount, number: positiveCount,
+        nominalVolumeYear: positiveCount, publicationDate: z.iso.date(), pdfSha256: sha256 }),
+      chapters: positiveCount, sources: positiveCount,
+    });
+    const partThree = z.discriminatedUnion('complete', [
+      z.object({ complete: z.literal(true), status: z.enum(['verified', 'unchanged']), publication }),
+      z.object({ complete: z.literal(false), status: z.literal('degraded'), reason: z.string().min(1),
+        lastVerified: publication.nullable() }),
+    ]);
     return runArchiveRefresh(step, this.env.ARCHIVE, getContainer(this.env.RUNTIME, id), params, {
       id: instance, base, label: 'Gazette', schema,
-      report: z.object({ current: complete, annual: complete }),
+      report: z.object({ current: complete, annual: complete, partThree }),
     });
   }
 }

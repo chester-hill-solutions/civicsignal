@@ -1,11 +1,13 @@
 """Refresh current Gazette issues and annual coverage against one private snapshot."""
 from contextlib import closing
 import datetime as dt
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
 import sqlite3
 import sys
+from tempfile import TemporaryDirectory
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "weekly-archive"))
@@ -14,6 +16,8 @@ from runtime import ROOT, Archive, command, run, serve  # noqa: E402
 PREFIX = "weekly/gazette"
 WORKSPACE = Path("/gazette")
 INTAKE = str(ROOT / "scripts/gazette-local.ts")
+PART_THREE = str(ROOT / "scripts/gazette-part-three.py")
+PART_THREE_MANIFEST = "part-three/latest.json"
 
 
 def store_status(database):
@@ -66,6 +70,64 @@ def annual(archive, database, cutoff):
             "receipt": str(receipt.relative_to(archive)), "counts": counts}
 
 
+def part_three_publication(manifest):
+    if not manifest.is_file() or manifest.is_symlink():
+        raise ValueError("The Part III manifest is missing or is not a regular file.")
+    verified = json.loads(command("python3", "-B", PART_THREE, "--verify-archive", str(manifest), timeout=60))
+    return {"manifest": PART_THREE_MANIFEST, "manifestSha256": sha256(manifest.read_bytes()).hexdigest(), **verified}
+
+
+def part_three(archive, cutoff):
+    target = archive / PART_THREE_MANIFEST
+    previous = None
+    stage = "restore"
+    try:
+        if target.exists():
+            previous = part_three_publication(target)
+        stage = "acquire"
+        with TemporaryDirectory(prefix="gazette-part-three-", dir=archive.parent) as scratch:
+            staging = Path(scratch)
+            candidate = staging / "candidate" / target.name
+            command("python3", "-B", PART_THREE, "--output", str(candidate), timeout=210)
+            stage = "verify"
+            verified = part_three_publication(candidate)
+            issue = verified["issue"]
+            if issue["publicationDate"] > cutoff:
+                raise ValueError(f"Part III issue publication {issue['publicationDate']} follows the cutoff {cutoff}.")
+            if previous:
+                prior = previous["issue"]
+                if ((issue["volume"], issue["number"]) < (prior["volume"], prior["number"])
+                        or issue["publicationDate"] < prior["publicationDate"]):
+                    raise ValueError("The publisher returned an older Part III issue.")
+                old_packet, new_packet = (json.loads(path.read_bytes()) for path in (target, candidate))
+                old_packet.pop("observedAt")
+                new_packet.pop("observedAt")
+                if old_packet == new_packet:
+                    return {"complete": True, "status": "unchanged", "publication": previous}
+            stage = "archive"
+            # Source files are content-addressed. Publish the manifest only after the
+            # retained archive can replay it, leaving the previous manifest intact on failure.
+            for source in (candidate.parent / "sources").rglob("*"):
+                if not source.is_file():
+                    continue
+                destination = target.parent / source.relative_to(candidate.parent)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                if not destination.exists():
+                    source.rename(destination)
+            pending = target.with_name(f".{verified['manifestSha256']}.json")
+            candidate.replace(pending)
+            try:
+                if part_three_publication(pending) != verified:
+                    raise ValueError("The promoted Part III archive differs from the verified candidate.")
+                pending.replace(target)
+            finally:
+                pending.unlink(missing_ok=True)
+            return {"complete": True, "status": "verified", "publication": verified}
+    except Exception as error:
+        return {"complete": False, "status": "degraded", "reason": f"{stage}: {error}"[-2200:],
+                "lastVerified": previous}
+
+
 def refresh(request):
     storage = Archive("http://archive.gazette.internal/", WORKSPACE, PREFIX)
     storage.restore(request["inputState"])
@@ -79,6 +141,7 @@ def refresh(request):
             report[phase.__name__] = phase(archive, database, cutoff)
         except Exception as error:
             report[phase.__name__] = {"complete": False, "reason": str(error)[-2200:]}
+    report["partThree"] = part_three(archive, cutoff)
     report["after"] = after = store_status(database)
     if before["journal"] != after["journal"] or any(
             after["feed"][lang][field] < before["feed"][lang][field]

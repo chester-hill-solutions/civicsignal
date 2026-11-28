@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "scope": "Gazette Parts I\u2013III private weekly staging archive",
+  "worker": "civicsignal-stage-gazette",
+  "workerVersionId": "ee72b741-7927-46ab-bc5c-416d07a139f4",
+  "imageSha256": "cf9d4dab72c7a00a38393e2420274ce8210ed9232fdade9e56e00ffd9f7dadcc",
+  "verifiedAt": "2026-11-28T03:47:09.922526Z",
+  "standingCron": "0 15 * * SAT",
+  "firstStandingScheduledAt": "2026-11-28T15:00:00Z",
+  "firstStandingVerified": false,
+  "failureIsolation": {
+    "receipt": {
+      "schemaVersion": 1,
+      "scheduledTime": 1795837229940,
+      "instanceId": "gazette-1795837229940",
+      "receiptKey": "weekly/gazette/runs/gazette-1795837229940.json",
+      "status": "complete",
+      "state": {
+        "key": "weekly/gazette/manifests/b85772f6be1973050044ed591cf02503ca9f2be639ddb115a19caf662480cb06.json",
+        "sha256": "b85772f6be1973050044ed591cf02503ca9f2be639ddb115a19caf662480cb06",
+        "bytes": 341
+      },
+      "inputState": {
+        "key": "weekly/gazette/manifests/bd7b0e831a7bfdf765edfffc1dda970497eb2c533e1b8b0ead76b474ded863ca.json",
+        "sha256": "bd7b0e831a7bfdf765edfffc1dda970497eb2c533e1b8b0ead76b474ded863ca",
+        "bytes": 341
+      },
+      "report": {
+        "key": "weekly/gazette/reports/cca0368caa3e93070f392bfea1b9e7e8ea113dd4b7198319b710bc92548d02b4.json",
+        "sha256": "cca0368caa3e93070f392bfea1b9e7e8ea113dd4b7198319b710bc92548d02b4",
+        "bytes": 1997
+      }
+    },
+    "currentServingTestsPassed": 1,
+    "annualServingTestsPassed": 2,
+    "partThreeStatus": {
+      "complete": false,
+      "lastVerified": null,
+      "reason": "acquire: -B exited 1: Traceback (most recent call last):\n  File \"/app/scripts/gazette-part-three.py\", line 15, in <module>\n    from lib.html_tree import tree\nModuleNotFoundError: No module named 'lib.html_tree'",
+      "status": "degraded"
+    },
+    "correction": "Include the shared HTML parser symlink target in the Gazette image and check the Part III CLI during image build."
+  },
+  "firstVerifiedPartThree": {
+    "start": "2026-11-28T03:43:59.164Z",
+    "end": "2026-11-28T03:44:42.628Z",
+    "workflowVersionId": "cad8aa3e-2333-4993-bf25-67e2ee39cff9",
+    "receipt": {
+      "schemaVersion": 1,
+      "scheduledTime": 1795837437933,
+      "instanceId": "gazette-1795837437933",
+      "receiptKey": "weekly/gazette/runs/gazette-1795837437933.json",
+      "status": "complete",
+      "state": {
+        "key": "weekly/gazette/manifests/bd782467befd280543a24ae1851d3b6581edc0607fe1295b806d7eceec5da25f.json",
+        "sha256": "bd782467befd280543a24ae1851d3b6581edc0607fe1295b806d7eceec5da25f",
+        "bytes": 341
+      },
+      "inputState": {
+        "key": "weekly/gazette/manifests/b85772f6be1973050044ed591cf02503ca9f2be639ddb115a19caf662480cb06.json",
+        "sha256": "b85772f6be1973050044ed591cf02503ca9f2be639ddb115a19caf662480cb06",
+        "bytes": 341
+      },
+      "report": {
+        "key": "weekly/gazette/reports/b098c1656211d5abf7d04535b62ad2f5b93dd67276f08fb4632ac19b349c6d01.json",
+        "sha256": "b098c1656211d5abf7d04535b62ad2f5b93dd67276f08fb4632ac19b349c6d01",
+        "bytes": 2281
+      }
+    },
+    "current": {
+      "complete": true,
+      "editions": [
+        {
+          "issueDate": "2026-11-21",
+          "issueNumber": 47,
+          "language": "en",
+          "part": "I",
+          "recordCount": 21,
+          "removed": 0,
+          "status": "unchanged",
+          "volume": 160,
+          "written": 0
+        },
+        {
+          "issueDate": "2026-11-21",
+          "issueNumber": 47,
+          "language": "fr",
+          "part": "I",
+          "recordCount": 21,
+          "removed": 0,
+          "status": "unchanged",
+          "volume": 160,
+          "written": 0
+        },
+        {
+          "issueDate": "2026-11-18",
+          "issueNumber": 23,
+          "language": "en",
+          "part": "II",
+          "recordCount": 19,
+          "removed": 0,
+          "status": "unchanged",
+          "volume": 160,
+          "written": 0
+        },
+        {
+          "issueDate": "2026-11-18",
+          "issueNumber": 23,
+          "language": "fr",
+          "part": "II",
+          "recordCount": 19,
+          "removed": 0,
+          "status": "unchanged",
+          "volume": 160,
+          "written": 0
+        }
+      ],
+      "receipt": "dist/gazette/receipt.json",
+      "servingTestsPassed": 1
+    },
+    "annual": {
+      "complete": true,
+      "counts": {
+        "archiveVerifiedExtras": 9,
+        "archiveVerifiedPairs": 70,
+        "archivedSourceBytes": 149420,
+        "corruptArchiveExtras": 0,
+        "corruptArchivePairs": 0,
+        "discoveredExtras": 9,
+        "discoveredIssues": 70,
+        "newlyVerifiedExtras": 0,
+        "newlyVerifiedIssues": 0,
+        "unavailableExtras": 0,
+        "unavailableIssues": 0,
+        "unsupportedExtraRows": 0,
+        "unsupportedRegularRows": 0
+      },
+      "receipt": "dist/gazette/backfills/catchups/2026-through-2026-11-27/catchup-2026-through-2026-11-27-2026-11-28T03-44-16-087Z-76dfdba5-ea88-4992-9e7e-90ee9c893d6c.json",
+      "servingTestsPassed": 2
+    },
+    "partThree": {
+      "complete": true,
+      "publication": {
+        "chapters": 6,
+        "issue": {
+          "indexUrls": {
+            "en": "https://gazette.gc.ca/rp-pr/p3/2025/index-eng.html",
+            "fr": "https://gazette.gc.ca/rp-pr/p3/2025/index-fra.html"
+          },
+          "nominalVolumeYear": 2025,
+          "number": 1,
+          "part": "III",
+          "pdfSha256": "63cbdd28a312e8e4409f3fed62e7e654694a7b5409845100ab7cefa8100c7de1",
+          "pdfUrl": "https://gazette.gc.ca/rp-pr/p3/2025/g3-04801.pdf",
+          "publicationDate": "2026-04-10",
+          "volume": 48
+        },
+        "manifest": "part-three/latest.json",
+        "manifestSha256": "a0451e4f1075d5a921f86a32e779b4e6796c530e732b8e6c66e8a3d5a5d36085",
+        "sources": 5
+      },
+      "status": "verified"
+    },
+    "independentReadback": {
+      "chunks": 1,
+      "issue": {
+        "part": "III",
+        "volume": 48,
+        "number": 1,
+        "publicationDate": "2026-04-10",
+        "nominalVolumeYear": 2025,
+        "pdfUrl": "https://gazette.gc.ca/rp-pr/p3/2025/g3-04801.pdf",
+        "indexUrls": {
+          "en": "https://gazette.gc.ca/rp-pr/p3/2025/index-eng.html",
+          "fr": "https://gazette.gc.ca/rp-pr/p3/2025/index-fra.html"
+        },
+        "pdfSha256": "63cbdd28a312e8e4409f3fed62e7e654694a7b5409845100ab7cefa8100c7de1"
+      },
+      "chapters": 6,
+      "sources": 5
+    }
+  },
+  "verifiedReplay": {
+    "start": "2026-11-28T03:45:27.784Z",
+    "end": "2026-11-28T03:46:10.801Z",
+    "workflowVersionId": "cad8aa3e-2333-4993-bf25-67e2ee39cff9",
+    "receipt": {
+      "schemaVersion": 1,
+      "scheduledTime": 1795837525112,
+      "instanceId": "gazette-1795837525112",
+      "receiptKey": "weekly/gazette/runs/gazette-1795837525112.json",
+      "status": "complete",
+      "state": {
+        "key": "weekly/gazette/manifests/6da1fac1dd7567be71c6de7080836ba53f56b46c8e4842143edab180da4202c1.json",
+        "sha256": "6da1fac1dd7567be71c6de7080836ba53f56b46c8e4842143edab180da4202c1",
+        "bytes": 341
+      },
+      "inputState": {
+        "key": "weekly/gazette/manifests/bd782467befd280543a24ae1851d3b6581edc0607fe1295b806d7eceec5da25f.json",
+        "sha256": "bd782467befd280543a24ae1851d3b6581edc0607fe1295b806d7eceec5da25f",
+        "bytes": 341
+      },
+      "report": {
+        "key": "weekly/gazette/reports/e7613963c34fd92576e05e5d6e431af4b2ffa017120ee6f385d920b432b4e943.json",
+        "sha256": "e7613963c34fd92576e05e5d6e431af4b2ffa017120ee6f385d920b432b4e943",
+        "bytes": 2282
+      }
+    },
+    "partThree": {
+      "complete": true,
+      "publication": {
+        "chapters": 6,
+        "issue": {
+          "indexUrls": {
+            "en": "https://gazette.gc.ca/rp-pr/p3/2025/index-eng.html",
+            "fr": "https://gazette.gc.ca/rp-pr/p3/2025/index-fra.html"
+          },
+          "nominalVolumeYear": 2025,
+          "number": 1,
+          "part": "III",
+          "pdfSha256": "63cbdd28a312e8e4409f3fed62e7e654694a7b5409845100ab7cefa8100c7de1",
+          "pdfUrl": "https://gazette.gc.ca/rp-pr/p3/2025/g3-04801.pdf",
+          "publicationDate": "2026-04-10",
+          "volume": 48
+        },
+        "manifest": "part-three/latest.json",
+        "manifestSha256": "a0451e4f1075d5a921f86a32e779b4e6796c530e732b8e6c66e8a3d5a5d36085",
+        "sources": 5
+      },
+      "status": "unchanged"
+    },
+    "manifestByteIdentical": true,
+    "currentServingTestsPassed": 1,
+    "annualServingTestsPassed": 2,
+    "independentReadback": {
+      "chunks": 1,
+      "issue": {
+        "part": "III",
+        "volume": 48,
+        "number": 1,
+        "publicationDate": "2026-04-10",
+        "nominalVolumeYear": 2025,
+        "pdfUrl": "https://gazette.gc.ca/rp-pr/p3/2025/g3-04801.pdf",
+        "indexUrls": {
+          "en": "https://gazette.gc.ca/rp-pr/p3/2025/index-eng.html",
+          "fr": "https://gazette.gc.ca/rp-pr/p3/2025/index-fra.html"
+        },
+        "pdfSha256": "63cbdd28a312e8e4409f3fed62e7e654694a7b5409845100ab7cefa8100c7de1"
+      },
+      "chapters": 6,
+      "sources": 5
+    }
+  }
+}

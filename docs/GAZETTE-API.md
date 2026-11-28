@@ -2,7 +2,7 @@
 
 Search Part I notices and proposed regulations or Part II registered instruments in English or French. This local preview covers the April 25 and April 22 issues respectively. Each result identifies its issue, kind, language, title and official citation. Registration, consultation and effective dates have distinct fields. An absent date means the issue index supplied no verified value for that field.
 
-The [private Cloudflare refresh](REFRESH.md#cloudflare-canada-gazette-refresh) checks current bilingual issues and reconciles the year against official listings. It verifies these same authenticated routes against the archived SQLite snapshot.
+The [private Cloudflare refresh](REFRESH.md#cloudflare-canada-gazette-refresh) checks current bilingual issues and reconciles the year against official listings. It verifies these same authenticated routes against the archived SQLite snapshot. The refresh also archives Part III privately. The API operations below currently serve Parts I and II.
 
 ## Search the official April issues locally
 

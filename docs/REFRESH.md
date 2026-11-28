@@ -337,6 +337,8 @@ The current refresh verifies the four latest regular Part I and II language edit
 
 The November 26 native qualification verified all four current editions, all 70 regular issues and all nine separately numbered extras. The independent R2 restore verified the publisher objects, SQLite integrity and unchanged change-feed positions. Both Mac Gazette steps were retired afterward. The first standing Saturday occurrence is November 28. [Qualification evidence](evidence/2026-11-26/gazette-cloudflare.json)
 
+The November 27 staging update adds a `partThree` phase to the same weekly report. It verifies the bilingual volume indexes, chapter citations and shared PDF before advancing `archive/part-three/latest.json`. A degraded Part III attempt records the reason and the last verified issue while successful Parts I and II can publish. The corrected staging run verified Volume 48, number 1 and six bilingual chapter citations, and an independent restore replayed all five Part III originals. The second hosted run reported `unchanged` and restored the same Part III manifest byte for byte. Use `python3 -B scripts/gazette-part-three.py --verify-archive <restored-root>/archive/part-three/latest.json` for the restore check. [Part III hosted evidence](evidence/2026-11-27/gazette-part-three-cloudflare.json)
+
 ```sh
 export CLOUDFLARE_ACCOUNT_ID=ad5ec479b9a421faa2ed06c3d1c2b23a
 bucket=civicsignal-stage-weekly
@@ -384,6 +386,26 @@ Read `weekly/library-summaries/runs/<instanceId>.json` in `civicsignal-stage-wee
 `civicsignal-stage-committee-senate` refreshes the 45-1 directory at 17:30 UTC on Saturdays. It archives both published language pages, requires their committee code sets to agree, and reconstructs the directory from the original bytes before publishing its receipt under `weekly/committee-senate/`. The scope is the directory. The full weekly corpus still runs on the Mac until both chambers' publication coverage can be reconciled and checked through the hosted API. [Scheduled qualification](evidence/2026-11-27/committee-senate-cloudflare.json)
 
 For an independent restore run `python3 -B services/committee-senate/run.py --verify-directory <restored-root>/archive/directory` and compare the catalogue digest and source references to the R2 report. A new private prefix for either Workflow can use `python3 -B scripts/bootstrap-weekly-empty.py <service-name> <new-output-dir>` to produce the initial object paths and files. Upload the chunk and manifest before `bootstrap.json` and verify the remote bytes.
+
+## Cloudflare chamber agenda archive
+
+The private `civicsignal-stage-chamber-agenda` Workflow collects 45-1 agenda originals and verifies both languages. The House run compares the two latest aliases, archives the numbered Order and Notice Paper and its linked sections, and verifies projected business as a separate edition. The Senate run reconciles both indexes, archives the two latest issues and their PDFs, and compares numbered notices when the issues are consecutive. [Coverage and remaining intake work](PLAN.md#upcoming-chamber-business)
+
+House and Senate each use their own `weekly/chamber-agenda-<chamber>/` prefix in `civicsignal-stage-weekly`. Prepare an empty archive with `python3 -B scripts/bootstrap-weekly-empty.py chamber-agenda-<chamber> <new-output-dir>`. Upload and read back the chunk and manifest before writing the bootstrap reference. A failed or older acquisition leaves that chamber's last complete archive in place. Read `latest-attempt.json` for its dated result, and `latest-complete.json` for the verified workspace.
+
+The initial staging calendar checks before weekday sittings at 12:15 UTC Monday through Friday and in the Toronto evening at 01:00 UTC Monday through Saturday. The qualification trigger delivered both chambers. Senate published. House reported a read timeout and the earlier verified archive stayed in place. The follow-up image added bounded retries for transient House errors and independent readback verified both structured archives. The first standing occurrence is November 30 at 01:00 UTC. Authenticated API citation checks remain pending. [Scheduled and structured readback](evidence/2026-11-27/chamber-agenda-cloudflare.json)
+
+In the Workflow payload, `chamber` is `house` or `senate` and `scheduledTime` is the occurrence timestamp in epoch milliseconds. The instance name is `chamber-agenda-<chamber>-<scheduledTime>`. After restoring the receipt's workspace and verifying its R2 chunk hashes, run `python3 -B services/chamber-agenda/run.py --chamber <chamber> --verify-archive <restored-root>/archive` and compare counts, latest edition and inventory hash to the report.
+
+```sh
+chamber=house
+scheduled_time=$(node -p 'Date.now()')
+instance="chamber-agenda-$chamber-$scheduled_time"
+body=$(jq -cn --arg id "$instance" --arg chamber "$chamber" --argjson time "$scheduled_time" \
+  '{instance_id:$id, params:{chamber:$chamber, scheduledTime:$time}}')
+cf workflows instances create civicsignal-stage-chamber-agenda --body "$body"
+cf workflows instances get "$instance" --workflow-name civicsignal-stage-chamber-agenda
+```
 
 ## Offline committee replay on Cloudflare
 

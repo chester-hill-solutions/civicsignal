@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 1,
+  "session": "45-1",
+  "workflow": "civicsignal-stage-chamber-agenda",
+  "workerVersionId": "c2fe174d-0f11-49fc-b564-7478521809a5",
+  "imageSha256": "301760f61b4d9f97bd88a4ba296f07b21e5386054b013e403a2858722271a233",
+  "bucket": "civicsignal-stage-weekly",
+  "verifiedAt": "2026-11-28T03:38:59.400324Z",
+  "manual": {
+    "house": {
+      "start": "2026-11-28T03:18:23.376Z",
+      "end": "2026-11-28T03:18:46.890Z",
+      "workflowVersionId": "bd5a816c-0c4d-49f4-9726-8855b413e25e",
+      "steps": 7,
+      "receipt": {
+        "schemaVersion": 1,
+        "chamber": "house",
+        "scheduledTime": 1795835902436,
+        "instanceId": "chamber-agenda-house-1795835902436",
+        "receiptKey": "weekly/chamber-agenda-house/runs/chamber-agenda-house-1795835902436.json",
+        "status": "complete",
+        "state": {
+          "key": "weekly/chamber-agenda-house/manifests/2eb90b58c683a64dd8aa2f7c21ac6471680e31e26e5c0b7816015001f4a37e94.json",
+          "sha256": "2eb90b58c683a64dd8aa2f7c21ac6471680e31e26e5c0b7816015001f4a37e94",
+          "bytes": 354
+        },
+        "inputState": {
+          "key": "weekly/chamber-agenda-house/manifests/2771b8d95c464a7feb5f7d7fe39da86892efcdb03f35516aae7f603a9d6403ee.json",
+          "sha256": "2771b8d95c464a7feb5f7d7fe39da86892efcdb03f35516aae7f603a9d6403ee",
+          "bytes": 346
+        },
+        "report": {
+          "key": "weekly/chamber-agenda-house/reports/660d6cc899e4fcfe5bfee4c06a9573767b878dccfb39ecae55df8d467900e0ba.json",
+          "sha256": "660d6cc899e4fcfe5bfee4c06a9573767b878dccfb39ecae55df8d467900e0ba",
+          "bytes": 878
+        }
+      },
+      "independentReadback": {
+        "collection": "house-agenda",
+        "observedAt": "2026-11-28T03:18:37.332487Z",
+        "inventorySha256": "d2ec54f673158f996e893788e40b3eb9e6135adbf6f77d5b657dc5650811a60a",
+        "records": 20,
+        "languages": {
+          "en": 10,
+          "fr": 10
+        },
+        "sources": 22,
+        "sourceObjectsVerified": 22,
+        "latest": {
+          "paper": {
+            "number": 175,
+            "date": "2026-11-30"
+          },
+          "projected": {
+            "number": 175,
+            "date": "2026-11-30"
+          }
+        },
+        "chunks": 1
+      },
+      "matchedIndependentPublisherRecords": true
+    },
+    "senate": {
+      "start": "2026-11-28T03:18:24.271Z",
+      "end": "2026-11-28T03:18:48.115Z",
+      "workflowVersionId": "bd5a816c-0c4d-49f4-9726-8855b413e25e",
+      "steps": 7,
+      "receipt": {
+        "schemaVersion": 1,
+        "chamber": "senate",
+        "scheduledTime": 1795835902436,
+        "instanceId": "chamber-agenda-senate-1795835902436",
+        "receiptKey": "weekly/chamber-agenda-senate/runs/chamber-agenda-senate-1795835902436.json",
+        "status": "complete",
+        "state": {
+          "key": "weekly/chamber-agenda-senate/manifests/b7af24677b44098fa5aac4fd7bfe5420699790b7eaae61fbf0041b78e9f7e600.json",
+          "sha256": "b7af24677b44098fa5aac4fd7bfe5420699790b7eaae61fbf0041b78e9f7e600",
+          "bytes": 355
+        },
+        "inputState": {
+          "key": "weekly/chamber-agenda-senate/manifests/73caa4060429f1b1961d1a414986a82dc757dc2707a13a798b05aa5fbbbd448a.json",
+          "sha256": "73caa4060429f1b1961d1a414986a82dc757dc2707a13a798b05aa5fbbbd448a",
+          "bytes": 347
+        },
+        "report": {
+          "key": "weekly/chamber-agenda-senate/reports/57aebc9ee37856813a17018d8d6b0673c612dc59cd8189b21346ae611da5fb8b.json",
+          "sha256": "57aebc9ee37856813a17018d8d6b0673c612dc59cd8189b21346ae611da5fb8b",
+          "bytes": 830
+        }
+      },
+      "independentReadback": {
+        "collection": "senate-agenda",
+        "observedAt": "2026-11-28T03:18:29.740876Z",
+        "inventorySha256": "15a1efbc987981fd1ca590a7748b972d9d7809e4c6d168c4f3c98504922e049c",
+        "records": 4,
+        "languages": {
+          "en": 2,
+          "fr": 2
+        },
+        "sources": 8,
+        "sourceObjectsVerified": 8,
+        "latest": {
+          "paper": {
+            "number": 108,
+            "date": "2026-12-01"
+          }
+        },
+        "chunks": 1
+      },
+      "matchedIndependentPublisherRecords": true
+    }
+  },
+  "structuredFollowup": {
+    "house": {
+      "method": "replay of archived bilingual publisher originals",
+      "sourceObservations": 26,
+      "writtenQuestionNoticeComparison": {
+        "previousSitting": "174",
+        "previousSittingDate": "2026-11-27",
+        "sitting": "175",
+        "sittingDate": "2026-11-30",
+        "newlyNoticed": [
+          {
+            "publisherQuestionId": "14384623",
+            "questionNumber": "Q-1748",
+            "noticeDate": "2026-11-27",
+            "citations": {
+              "en": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-175/order-notice/page-11#DOC--461f358d-825c-45d9-87b7-a059a41972f8",
+              "fr": "https://www.ourcommons.ca/documentviewer/fr/45-1/chambre/seance-175/feuilleton-avis/page-11#DOC--461f358d-825c-45d9-87b7-a059a41972f8"
+            }
+          },
+          {
+            "publisherQuestionId": "14384624",
+            "questionNumber": "Q-1749",
+            "noticeDate": "2026-11-27",
+            "citations": {
+              "en": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-175/order-notice/page-11#DOC--61e78464-d048-460b-bbea-c08a30de4950",
+              "fr": "https://www.ourcommons.ca/documentviewer/fr/45-1/chambre/seance-175/feuilleton-avis/page-11#DOC--61e78464-d048-460b-bbea-c08a30de4950"
+            }
+          },
+          {
+            "publisherQuestionId": "14384625",
+            "questionNumber": "Q-1750",
+            "noticeDate": "2026-11-27",
+            "citations": {
+              "en": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-175/order-notice/page-11#DOC--b33dbcf6-6120-4d92-8217-fb97c7f254dd",
+              "fr": "https://www.ourcommons.ca/documentviewer/fr/45-1/chambre/seance-175/feuilleton-avis/page-11#DOC--b33dbcf6-6120-4d92-8217-fb97c7f254dd"
+            }
+          }
+        ]
+      }
+    },
+    "senate": {
+      "method": "independent live collector run",
+      "sourceObservations": 8,
+      "editions": [
+        {
+          "issue": 107,
+          "language": "en",
+          "orders": 88,
+          "ordersWithBillReference": 23
+        },
+        {
+          "issue": 107,
+          "language": "fr",
+          "orders": 88,
+          "ordersWithBillReference": 23
+        },
+        {
+          "issue": 108,
+          "language": "en",
+          "orders": 88,
+          "ordersWithBillReference": 23
+        },
+        {
+          "issue": 108,
+          "language": "fr",
+          "orders": 88,
+          "ordersWithBillReference": 23
+        }
+      ]
+    }
+  },
+  "nativeQualification": {
+    "cron": "24,30,36 3 * * SAT",
+    "scheduledAt": "2026-11-28T03:30:00Z",
+    "temporaryCronCleared": true,
+    "scheduleApiPutStatus": 200,
+    "chambers": {
+      "house": {
+        "start": "2026-11-28T03:30:58.097Z",
+        "end": "2026-11-28T03:31:42.897Z",
+        "versionId": "bd5a816c-0c4d-49f4-9726-8855b413e25e",
+        "status": "complete",
+        "receipt": {
+          "schemaVersion": 1,
+          "chamber": "house",
+          "scheduledTime": 1795836600000,
+          "instanceId": "chamber-agenda-house-1795836600000",
+          "receiptKey": "weekly/chamber-agenda-house/runs/chamber-agenda-house-1795836600000.json",
+          "status": "degraded",
+          "inputState": {
+            "key": "weekly/chamber-agenda-house/manifests/2eb90b58c683a64dd8aa2f7c21ac6471680e31e26e5c0b7816015001f4a37e94.json",
+            "sha256": "2eb90b58c683a64dd8aa2f7c21ac6471680e31e26e5c0b7816015001f4a37e94",
+            "bytes": 354
+          },
+          "reason": "acquire: -B exited 2: usage: parliament-house-agenda.py [-h] [--session SESSION]\n                                  (--sitting SITTING | --latest) --output\n                                  OUTPUT\nparliament-house-agenda.py: error: The read operation timed out",
+          "report": {
+            "key": "weekly/chamber-agenda-house/reports/dc879383276dfc32937ac05ed6e2f602c3ac40ffcc6b80c9822395079d0f8511.json",
+            "sha256": "dc879383276dfc32937ac05ed6e2f602c3ac40ffcc6b80c9822395079d0f8511",
+            "bytes": 594
+          }
+        },
+        "lastGoodUnchanged": true
+      },
+      "senate": {
+        "start": "2026-11-28T03:30:57.881Z",
+        "end": "2026-11-28T03:31:22.892Z",
+        "versionId": "bd5a816c-0c4d-49f4-9726-8855b413e25e",
+        "status": "complete",
+        "receipt": {
+          "schemaVersion": 1,
+          "chamber": "senate",
+          "scheduledTime": 1795836600000,
+          "instanceId": "chamber-agenda-senate-1795836600000",
+          "receiptKey": "weekly/chamber-agenda-senate/runs/chamber-agenda-senate-1795836600000.json",
+          "status": "complete",
+          "state": {
+            "key": "weekly/chamber-agenda-senate/manifests/8d192e7e86a1c279196fbacdda11828aae6ba29e221df772b8498640a99b22fd.json",
+            "sha256": "8d192e7e86a1c279196fbacdda11828aae6ba29e221df772b8498640a99b22fd",
+            "bytes": 355
+          },
+          "inputState": {
+            "key": "weekly/chamber-agenda-senate/manifests/b7af24677b44098fa5aac4fd7bfe5420699790b7eaae61fbf0041b78e9f7e600.json",
+            "sha256": "b7af24677b44098fa5aac4fd7bfe5420699790b7eaae61fbf0041b78e9f7e600",
+            "bytes": 355
+          },
+          "report": {
+            "key": "weekly/chamber-agenda-senate/reports/83cb01bc337d7020e9948a429f8a95f880e83c9a63efd54aea1421ad2b85dc67.json",
+            "sha256": "83cb01bc337d7020e9948a429f8a95f880e83c9a63efd54aea1421ad2b85dc67",
+            "bytes": 830
+          }
+        },
+        "normalizedReplayIdentical": true,
+        "independentReadback": {
+          "collection": "senate-agenda",
+          "observedAt": "2026-11-28T03:31:03.428561Z",
+          "inventorySha256": "b4caedb4263cd7664d4ea4ded61aba08c7f8fb7f66b271cebad721e125288004",
+          "records": 4,
+          "languages": {
+            "en": 2,
+            "fr": 2
+          },
+          "sources": 8,
+          "sourceObjectsVerified": 8,
+          "latest": {
+            "paper": {
+              "number": 108,
+              "date": "2026-12-01"
+            }
+          },
+          "chunks": 1
+        }
+      }
+    }
+  },
+  "structuredDeployment": {
+    "workerVersionId": "5b786908-ea4a-4e95-9869-0876671c8683",
+    "imageSha256": "da3ccd382c1317807721d31d93ac4f8b937836352d6ec9df7559dce17e1b42b1",
+    "standingCrons": [
+      "0 1 * * MON-SAT",
+      "15 12 * * MON-FRI"
+    ],
+    "firstStandingUtc": "2026-11-30T01:00:00Z",
+    "firstStandingVerified": false,
+    "chambers": {
+      "house": {
+        "start": "2026-11-28T03:37:23.549Z",
+        "end": "2026-11-28T03:37:48.061Z",
+        "workflowVersionId": "b2a601ba-8016-420d-80bc-6e0b281ed6ca",
+        "receipt": {
+          "schemaVersion": 1,
+          "chamber": "house",
+          "scheduledTime": 1795837042159,
+          "instanceId": "chamber-agenda-house-1795837042159",
+          "receiptKey": "weekly/chamber-agenda-house/runs/chamber-agenda-house-1795837042159.json",
+          "status": "complete",
+          "state": {
+            "key": "weekly/chamber-agenda-house/manifests/91be9cf37b2b624e208b0245d21de4896b0bf58e993ed6a9fed989918b3efae7.json",
+            "sha256": "91be9cf37b2b624e208b0245d21de4896b0bf58e993ed6a9fed989918b3efae7",
+            "bytes": 354
+          },
+          "inputState": {
+            "key": "weekly/chamber-agenda-house/manifests/2dfb9fca26d19ef7f7061d37aea1d28fba79920fab23ad4eaf17ae1eef919fb7.json",
+            "sha256": "2dfb9fca26d19ef7f7061d37aea1d28fba79920fab23ad4eaf17ae1eef919fb7",
+            "bytes": 354
+          },
+          "report": {
+            "key": "weekly/chamber-agenda-house/reports/806ed3fe94443547eb88e05cb4f3478653ba01192cdf4880ca6f3aa2eb978ff8.json",
+            "sha256": "806ed3fe94443547eb88e05cb4f3478653ba01192cdf4880ca6f3aa2eb978ff8",
+            "bytes": 878
+          }
+        },
+        "independentReadback": {
+          "collection": "house-agenda",
+          "observedAt": "2026-11-28T03:37:39.648827Z",
+          "inventorySha256": "6ef932c34aa1d295e84a3a1f8d660444bad855cb56edb38fdffd160be401e285",
+          "records": 20,
+          "languages": {
+            "en": 10,
+            "fr": 10
+          },
+          "sources": 26,
+          "sourceObjectsVerified": 26,
+          "latest": {
+            "paper": {
+              "number": 175,
+              "date": "2026-11-30"
+            },
+            "projected": {
+              "number": 175,
+              "date": "2026-11-30"
+            }
+          },
+          "chunks": 1
+        }
+      },
+      "senate": {
+        "start": "2026-11-28T03:35:09.909Z",
+        "end": "2026-11-28T03:35:36.064Z",
+        "workflowVersionId": "b2a601ba-8016-420d-80bc-6e0b281ed6ca",
+        "receipt": {
+          "schemaVersion": 1,
+          "chamber": "senate",
+          "scheduledTime": 1795836907523,
+          "instanceId": "chamber-agenda-senate-1795836907523",
+          "receiptKey": "weekly/chamber-agenda-senate/runs/chamber-agenda-senate-1795836907523.json",
+          "status": "complete",
+          "state": {
+            "key": "weekly/chamber-agenda-senate/manifests/ce9e9caa0c4dc33443ec5a0ce49139b76b63f0940bc12306458af0d38a38fd91.json",
+            "sha256": "ce9e9caa0c4dc33443ec5a0ce49139b76b63f0940bc12306458af0d38a38fd91",
+            "bytes": 355
+          },
+          "inputState": {
+            "key": "weekly/chamber-agenda-senate/manifests/8d192e7e86a1c279196fbacdda11828aae6ba29e221df772b8498640a99b22fd.json",
+            "sha256": "8d192e7e86a1c279196fbacdda11828aae6ba29e221df772b8498640a99b22fd",
+            "bytes": 355
+          },
+          "report": {
+            "key": "weekly/chamber-agenda-senate/reports/cf6d4c5e4dac42bfd9e36f89c1195af362df94a8c91ab2439c6ec933a49aa8b5.json",
+            "sha256": "cf6d4c5e4dac42bfd9e36f89c1195af362df94a8c91ab2439c6ec933a49aa8b5",
+            "bytes": 830
+          }
+        },
+        "independentReadback": {
+          "collection": "senate-agenda",
+          "observedAt": "2026-11-28T03:35:17.893410Z",
+          "inventorySha256": "0899c47ca0f04fc8d286742d66c57823b2062974f9ed7cb1e382d3f0836f78e8",
+          "records": 4,
+          "languages": {
+            "en": 2,
+            "fr": 2
+          },
+          "sources": 8,
+          "sourceObjectsVerified": 8,
+          "latest": {
+            "paper": {
+              "number": 108,
+              "date": "2026-12-01"
+            }
+          },
+          "chunks": 1
+        }
+      }
+    }
+  }
+}

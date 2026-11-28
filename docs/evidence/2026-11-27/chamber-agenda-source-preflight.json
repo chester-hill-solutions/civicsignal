@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only Cloudflare source qualification for 45-1 advances in chamber business. No serving or schedule bindings.",
+  "workflow": {
+    "instanceId": "chamber-agenda-once",
+    "versionId": "5008cda1-fec5-49da-8463-7b2b5d8129dc",
+    "start": "2026-11-28T02:33:19.713Z",
+    "end": "2026-11-28T02:33:24.036Z",
+    "status": "complete"
+  },
+  "sources": [
+    {
+      "name": "house-toc-en",
+      "requestedUrl": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-175/order-notice",
+      "finalUrl": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-175/order-notice",
+      "chain": [],
+      "httpStatus": 200,
+      "bytes": 150522,
+      "title": "Order Paper and Notice Paper No. 175 - November 30, 2026 (45-1) - House of Commons of Canada",
+      "expectedStructure": true,
+      "expectedEditionOrBill": true,
+      "houseError": false
+    },
+    {
+      "name": "house-toc-fr",
+      "requestedUrl": "https://www.ourcommons.ca/documentviewer/fr/45-1/chambre/seance-175/feuilleton-avis",
+      "finalUrl": "https://www.ourcommons.ca/documentviewer/fr/45-1/chambre/seance-175/feuilleton-avis",
+      "chain": [],
+      "httpStatus": 200,
+      "bytes": 183333,
+      "title": "Feuilleton et Feuilleton des avis no 175 - 30 novembre 2026 (45-1) - Chambre des communes du Canada",
+      "expectedStructure": true,
+      "expectedEditionOrBill": true,
+      "houseError": false
+    },
+    {
+      "name": "house-notices-en",
+      "requestedUrl": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-175/order-notice/page-11",
+      "finalUrl": "https://www.ourcommons.ca/documentviewer/en/45-1/house/sitting-175/order-notice/page-11",
+      "chain": [],
+      "httpStatus": 200,
+      "bytes": 180811,
+      "title": "Order Paper and Notice Paper No. 175 - November 30, 2026 (45-1) - House of Commons of Canada",
+      "expectedStructure": true,
+      "expectedEditionOrBill": true,
+      "houseError": false
+    },
+    {
+      "name": "house-projected-business",
+      "requestedUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/projected-business",
+      "finalUrl": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/projected-business",
+      "chain": [],
+      "httpStatus": 200,
+      "bytes": 148871,
+      "title": "Projected Order of Business - House of Commons of Canada",
+      "expectedStructure": true,
+      "expectedEditionOrBill": true,
+      "houseError": false
+    },
+    {
+      "name": "senate-index-en",
+      "requestedUrl": "https://sencanada.ca/en/in-the-chamber/order-papers-notice-papers/",
+      "finalUrl": "https://sencanada.ca/en/in-the-chamber/order-papers-notice-papers/",
+      "chain": [],
+      "httpStatus": 200,
+      "bytes": 92927,
+      "title": "Order Papers and Notice Papers - 45-1",
+      "expectedStructure": true,
+      "expectedEditionOrBill": true,
+      "houseError": false
+    },
+    {
+      "name": "senate-index-fr",
+      "requestedUrl": "https://sencanada.ca/fr/dans-la-chambre/feuilleton-et-feuilleton-des-preavis/",
+      "finalUrl": "https://sencanada.ca/fr/dans-la-chambre/feuilleton-et-feuilleton-des-preavis/",
+      "chain": [],
+      "httpStatus": 200,
+      "bytes": 94526,
+      "title": "Feuilleton et Feuilleton des preavis - 45-1",
+      "expectedStructure": true,
+      "expectedEditionOrBill": true,
+      "houseError": false
+    },
+    {
+      "name": "senate-edition-en",
+      "requestedUrl": "https://sencanada.ca/en/content/sen/chamber/451/orderpaper/108op_2026-12-01-e",
+      "finalUrl": "https://sencanada.ca/en/content/sen/chamber/451/orderpaper/108op_2026-12-01-e",
+      "chain": [],
+      "httpStatus": 200,
+      "bytes": 153390,
+      "title": "Order Paper and Notice Paper, Issue 108 (December 1, 2026)",
+      "expectedStructure": true,
+      "expectedEditionOrBill": true,
+      "houseError": false
+    },
+    {
+      "name": "senate-edition-fr",
+      "requestedUrl": "https://sencanada.ca/fr/content/sen/chamber/451/orderpaper/108op_2026-12-01-f",
+      "finalUrl": "https://sencanada.ca/fr/content/sen/chamber/451/orderpaper/108op_2026-12-01-f",
+      "chain": [],
+      "httpStatus": 200,
+      "bytes": 163648,
+      "title": "Feuilleton et Feuilleton des pr&#xE9;avis No. 108 (Le 1er d&#xE9;cembre 2026)",
+      "expectedStructure": true,
+      "expectedEditionOrBill": true,
+      "houseError": false
+    }
+  ],
+  "houseProjectedExample": {
+    "sitting": 175,
+    "date": "2026-11-30",
+    "bill": "C-31",
+    "item": "Deferred recorded division on a third-reading amendment",
+    "projectedLocalTime": "15:00",
+    "timezone": "America/Toronto",
+    "status": "projected",
+    "citation": "https://www.ourcommons.ca/DocumentViewer/en/45-1/house/projected-business",
+    "exampleSourceSha256": "2429ab64cbd387fd9f548563cb928bf6e80c025f17699f088c031f1ee28ee095"
+  },
+  "senateNoticeExample": {
+    "previousIssue": 107,
+    "previousSitting": "2026-11-26",
+    "latestIssue": 108,
+    "latestSitting": "2026-12-01",
+    "method": "Compared published motion and inquiry numbers within the HTML Notice Paper section in both languages.",
+    "englishAndFrenchMatched": true,
+    "identities": {
+      "previous": [
+        [
+          "inquiry",
+          15
+        ],
+        [
+          "inquiry",
+          21
+        ],
+        [
+          "motion",
+          96
+        ],
+        [
+          "motion",
+          110
+        ]
+      ],
+      "latest": [
+        [
+          "inquiry",
+          15
+        ],
+        [
+          "inquiry",
+          21
+        ],
+        [
+          "motion",
+          110
+        ],
+        [
+          "motion",
+          127
+        ]
+      ],
+      "newlyListed": [
+        [
+          "motion",
+          127
+        ]
+      ]
+    },
+    "status": "newly-listed",
+    "citation": "https://sencanada.ca/en/content/sen/chamber/451/orderpaper/108op_2026-12-01-e"
+  },
+  "temporaryCloudflareResourcesRemoved": true
+}

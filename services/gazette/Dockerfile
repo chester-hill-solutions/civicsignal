@@ -17,6 +17,8 @@ COPY --from=dependencies /app/ /app/
 COPY src/ ./src/
 COPY scripts/ ./scripts/
 RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils && rm -rf /var/lib/apt/lists/*
+COPY services/funding/esdc-collector/html_tree.py ./services/funding/esdc-collector/html_tree.py
+RUN python3 -B scripts/gazette-part-three.py --help >/dev/null
 COPY services/gazette/run.py ./services/gazette/run.py
 COPY services/weekly-archive/runtime.py ./services/weekly-archive/runtime.py
 COPY services/institution-coverage/container/snapshot.py ./services/institution-coverage/container/snapshot.py
